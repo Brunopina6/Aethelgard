@@ -1,0 +1,25 @@
+---
+name: aet-auditoria-godot
+description: Audita el estado real de Godot, escenas, código y dependencias sin escribir archivos.
+---
+
+# aet-auditoria-godot — Aethelgard
+
+## Contexto obligatorio
+Aethelgard es un JRPG de fantasía Godot, actualmente con sistemas existentes que no pueden romperse, Android primero y PC futuro. En el proyecto se trabaja preferentemente en `desarrollo`; `main` es estable. Conservar Érebo, Garon, combate, guardados y assets originales. Cada tarea empieza en **solo lectura** hasta aprobación explícita del usuario. No confundir una propuesta o simulación con prueba real.
+
+## Procedimiento
+1. Confirmar la versión del motor, estado Git, archivos y subsistemas implicados mediante evidencia de solo lectura. Si falta acceso a datos o imagen, declararlo sin inventar.
+2. Inspeccionar `project.godot`, versión del motor, renderer, escena inicial, autoloads, carpetas, imports, scripts, recursos y export presets. Hacer inventario de nodos 2D/3D, señales, rutas, personajes, mapas, combate, UI y guardados. Distinguir hallazgo comprobado y supuesto. Usar búsquedas de texto y operaciones Git de lectura sin abrir Godot si puede modificar cachés.
+3. Comparar alternativas, compatibilidad Mobile/Compatibility/PC, riesgos de migración, coste en batería/FPS/memoria, licencias y esfuerzo.
+4. Proponer **una primera mejora mínima** en área aislada, con archivos exactos que cambiarían, dependencias y criterios de éxito en Android. No ejecutarla hasta autorización.
+5. Tras una autorización futura concreta, exigir checkpoint verificable, aplicar cambios pequeños, pruebas de regresión, evidencias antes/después y rollback.
+
+## Entrega requerida
+Informe con rutas de evidencia, mapa de dependencias, problemas ordenados por gravedad y propuesta de una sola mejora mínima.
+
+## Restricciones especiales
+No ejecutar importación/editor, compilación, escrituras, instalaciones, acciones Git que alteren el estado ni cambios automáticos.
+
+## Formato de respuesta
+**Hechos (rutas reales) → Carencias → Opciones → Riesgos → Primera tarea con pruebas → Pregunta de aprobación**. Explicar en español y no afirmar acciones no realizadas.

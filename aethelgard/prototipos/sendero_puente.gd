@@ -88,6 +88,7 @@ func _ready() -> void:
 	super._ready()
 	var inicio: Vector3 = SENDERO[0] + Vector3(0, altura(SENDERO[0].x, SENDERO[0].z), 0)
 	kael.global_position = inicio
+	seguro = inicio
 	foco = inicio
 	_colocar_camara(1.0)
 	_crear_fauna()
@@ -236,11 +237,19 @@ func _crear_terreno() -> void:
 	cuerpo.add_child(col)
 
 
-# Kael no sale de la zona jugable (así la cámara nunca enseña el borde del terreno).
-func _altura_suelo(p: Vector3, y_actual: float) -> float:
+# Zonas que no se pisan (Skill aet-fisica-recorrido): fuera de la zona jugable (así la cámara nunca
+# enseña el borde del terreno), el barranco del río salvo sobre el puente, y el canal de la cascada.
+func _prohibido(p: Vector3) -> bool:
 	if not LIMITE.has_point(Vector2(p.x, p.z)):
-		return y_actual + 99.0
-	return super._altura_suelo(p, y_actual)
+		return true
+	var d := absf(p.x - RIO_X)
+	if p.z > CASCADA_Z - 0.5:
+		if d < RIO_ANCHO + BORDE + 0.25:
+			var sobre_puente := absf(p.z - (-2.0)) < 1.05 and p.x > SENDERO[4].x - 0.6 and p.x < SENDERO[5].x + 0.6
+			return not sobre_puente
+	elif d < 2.4:
+		return true                                     # canal que alimenta la cascada
+	return false
 
 
 # ---------------------------------------------------------------- sendero, puente, agua

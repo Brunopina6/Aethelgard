@@ -58,6 +58,8 @@ func _ready() -> void:
 	info.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
 	info.add_theme_constant_override("outline_size", 6)
 	capa.add_child(info)
+	_crear_panel_rnd(capa)
+	seguro = kael.global_position
 
 
 # ---------------------------------------------------------------- mundo de prueba
@@ -276,14 +278,21 @@ func _process(delta: float) -> void:
 			corre = falta.length() > CORRER_DESDE
 			paso = falta.normalized()
 	if paso != Vector3.ZERO:
-		var vel := VELOCIDAD * (1.8 if corre else 1.0)
-		var siguiente: Vector3 = kael.global_position + paso * vel * delta
-		var y := _altura_suelo(siguiente, kael.global_position.y)
-		if y - kael.global_position.y > SUBE_MAX:          # pared o roca: no pasa
+		# el avance del fotograma se hace en tramos cortos: igual a 20 que a 60 FPS
+		var total := VELOCIDAD * (1.8 if corre else 1.0) * delta
+		var tramos := maxi(1, ceili(total / TRAMO_MAX))
+		var avanzo := false
+		for t in tramos:
+			var siguiente: Vector3 = kael.global_position + paso * (total / tramos)
+			var y := _altura_suelo(siguiente, kael.global_position.y)
+			if is_nan(y):                                   # pared, pendiente, agua o borde: no pasa
+				break
+			kael.global_position = Vector3(siguiente.x, y, siguiente.z)
+			avanzo = true
+		if not avanzo:
 			destino = null
 			paso = Vector3.ZERO
-		else:
-			kael.global_position = Vector3(siguiente.x, y, siguiente.z)
+	_vigilar_atasco(delta)
 	if paso != Vector3.ZERO:
 		kael.mirar(paso, 0.12)
 		var nuevo := "correr" if corre else "andar"
@@ -295,27 +304,162 @@ func _process(delta: float) -> void:
 		kael.reposo()
 	_colocar_camara(1.0 - exp(-suavizado * delta))
 	_oclusion()
-	info.text = "Prototipo de cámara · %s · inclinación %d° · distancia %.0f m · %d FPS\nToca para andar · rueda/pellizco: zoom · Q/E: inclinación · T: perspectiva/orto · R: reiniciar" % [
+	_medir(delta)
+	info.text ="Prototipo de cámara · %s · inclinación %d° · distancia %.0f m · %d FPS\nToca para andar · rueda/pellizco: zoom · Q/E: inclinación · T: perspectiva/orto · R: reiniciar" % [
 		"perspectiva" if cam.projection == Camera3D.PROJECTION_PERSPECTIVE else "ortográfica",
 		inclinacion, distancia, Engine.get_frames_per_second()]
 
 
-# Altura de lo que se pisa en un punto: se mira hacia abajo desde «un escalón» por encima de los pies,
-# así se suben escalones y se puede pasar bajo arcos y copas de árbol. Si a la altura de las rodillas
-# hay algo delante (pared, columna, tronco), devuelve una altura imposible y Kael no pasa.
+# ---------------------------------------------------------------- recorrido seguro (Skill aet-fisica-recorrido)
+# Reglas iguales para subir y para bajar (así no hay trampas de un solo sentido):
+#   - escalón máximo SUBE_MAX hacia arriba y hacia abajo;
+#   - pendiente máxima PENDIENTE_MAX (con la normal del suelo);
+#   - nada a la altura de las rodillas delante (pared, columna, tronco);
+#   - las zonas prohibidas de cada escena (_prohibido: agua, barrancos, bordes) no se pisan.
+# Además: el destino tocado se acerca al último punto andable, y si Kael acaba en un sitio prohibido
+# vuelve al último punto seguro. El paso de cada fotograma se divide en tramos de TRAMO_MAX.
 const SUBE_MAX := 0.5
+const PENDIENTE_MAX := 40.0                 # grados
+const TRAMO_MAX := 0.15                     # metros
+var seguro := Vector3.ZERO                  # último sitio andable donde estuvo Kael
+var _t_seguro := 0.0
+var _atasco_t := 0.0
+var _atasco_dist := INF
+
+
+# Las escenas dicen qué zonas no se pisan (agua, barranco, fuera del mapa). Aquí, ninguna.
+func _prohibido(_p: Vector3) -> bool:
+	return false
+
+
+# Altura de lo que se pisa en p viniendo desde y_actual, o NAN si no se puede pasar.
 func _altura_suelo(p: Vector3, y_actual: float) -> float:
+	if _prohibido(p):
+		return NAN
 	var espacio := get_world_3d().direct_space_state
 	var desde := Vector3(kael.global_position.x, y_actual + SUBE_MAX + 0.1, kael.global_position.z)
 	var hacia := Vector3(p.x, y_actual + SUBE_MAX + 0.1, p.z)
-	hacia += (hacia - desde).normalized() * 0.3
-	if not espacio.intersect_ray(PhysicsRayQueryParameters3D.create(desde, hacia)).is_empty():
-		return y_actual + 99.0
+	if hacia.distance_to(desde) > 0.001:
+		hacia += (hacia - desde).normalized() * 0.3
+		if not espacio.intersect_ray(PhysicsRayQueryParameters3D.create(desde, hacia)).is_empty():
+			return NAN
 	var q := PhysicsRayQueryParameters3D.create(Vector3(p.x, y_actual + SUBE_MAX + 0.05, p.z), Vector3(p.x, y_actual - 8.0, p.z))
 	var r := espacio.intersect_ray(q)
-	if r.is_empty() or r["position"].y < y_actual - 0.8:   # borde de un barranco: no se tira
-		return y_actual + 99.0
-	return r["position"].y
+	if r.is_empty():
+		return NAN
+	var y: float = r["position"].y
+	if absf(y - y_actual) > SUBE_MAX:                    # escalón demasiado alto o caída
+		return NAN
+	var n: Vector3 = r["normal"]
+	if n.y < cos(deg_to_rad(PENDIENTE_MAX)) and absf(y - y_actual) > 0.02:
+		return NAN                                       # pendiente demasiado empinada (en los dos sentidos)
+	return y
+
+
+# Si se toca un sitio prohibido (el río, el barranco), Kael va al último punto andable hacia él.
+func _ajustar_destino(p):
+	if p == null or kael == null:
+		return null
+	var desde := kael.global_position
+	var hacia: Vector3 = p
+	var plano := Vector2(hacia.x - desde.x, hacia.z - desde.z)
+	var pasos := int(plano.length() / 0.25)
+	var ultimo = null
+	for k in pasos + 1:
+		var t := float(k) / maxf(pasos, 1)
+		var q := desde.lerp(hacia, t)
+		if _prohibido(q):
+			break
+		ultimo = q
+	return ultimo
+
+
+# Último punto seguro y atascos: si en 1 s no se acerca al destino, se para; si está en zona prohibida,
+# vuelve al último punto seguro.
+func _vigilar_atasco(delta: float) -> void:
+	if _prohibido(kael.global_position):
+		kael.global_position = seguro
+		destino = null
+		return
+	_t_seguro += delta
+	if _t_seguro > 0.25:
+		_t_seguro = 0.0
+		seguro = kael.global_position
+	if destino == null:
+		_atasco_t = 0.0
+		_atasco_dist = INF
+		return
+	var falta := Vector2(destino.x - kael.global_position.x, destino.z - kael.global_position.z).length()
+	_atasco_t += delta
+	if _atasco_t >= 1.0:
+		if falta > _atasco_dist - 0.1:
+			destino = null                               # no avanza: se queda donde está (sitio seguro)
+		_atasco_t = 0.0
+		_atasco_dist = falta
+
+
+# ---------------------------------------------------------------- panel de rendimiento (Skill aet-rendimiento-android)
+# Tecla F3 o botón «RND»: muestra FPS, ms por fotograma (mediana y percentil 95 de los últimos 10 s),
+# ms de proceso y de física, llamadas de dibujo, primitivas y memoria de vídeo. Mientras está abierto
+# guarda una línea cada 0,5 s en user://rendimiento_<escena>.csv.
+var panel_rnd: Label
+var _ms: Array = []
+var _t_rnd := 0.0
+var _t_total := 0.0
+var _csv: FileAccess
+
+
+func _crear_panel_rnd(capa: CanvasLayer) -> void:
+	panel_rnd = Label.new()
+	panel_rnd.position = Vector2(16, 84)
+	panel_rnd.add_theme_font_size_override("font_size", 22)
+	panel_rnd.add_theme_color_override("font_color", Color(1.0, 1.0, 0.75))
+	panel_rnd.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	panel_rnd.add_theme_constant_override("outline_size", 6)
+	panel_rnd.visible = false
+	capa.add_child(panel_rnd)
+	var b := Button.new()
+	b.text = "RND"
+	b.position = Vector2(1180, 12)
+	b.custom_minimum_size = Vector2(88, 56)
+	b.focus_mode = Control.FOCUS_NONE
+	b.pressed.connect(_alternar_panel)
+	capa.add_child(b)
+
+
+func _alternar_panel() -> void:
+	panel_rnd.visible = not panel_rnd.visible
+	if panel_rnd.visible and _csv == null:
+		var nombre := String(scene_file_path.get_file().get_basename()) if scene_file_path != "" else "escena"
+		_csv = FileAccess.open("user://rendimiento_%s.csv" % nombre, FileAccess.WRITE)
+		if _csv != null:
+			_csv.store_line("tiempo,fps,ms_fotograma,ms_proceso,ms_fisica,dibujos,primitivas,memoria_video_mb")
+
+
+func _medir(delta: float) -> void:
+	_t_total += delta
+	_ms.append(delta * 1000.0)
+	if _ms.size() > 600:
+		_ms.pop_front()
+	_t_rnd += delta
+	if _t_rnd < 0.5 or panel_rnd == null or not panel_rnd.visible:
+		return
+	_t_rnd = 0.0
+	var orden := _ms.duplicate()
+	orden.sort()
+	var mediana: float = orden[orden.size() / 2]
+	var p95: float = orden[mini(orden.size() - 1, int(orden.size() * 0.95))]
+	var fps := Performance.get_monitor(Performance.TIME_FPS)
+	var proceso := Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0
+	var fisica := Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0
+	var dibujos := Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)
+	var primitivas := Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME)
+	var vram := Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED) / 1048576.0
+	panel_rnd.text = "%d FPS · %.1f ms (p95 %.1f)\nproceso %.1f ms · física %.1f ms\n%d dibujos · %dk triángulos · %d MB vídeo" % [
+		fps, mediana, p95, proceso, fisica, dibujos, int(primitivas / 1000), int(vram)]
+	if _csv != null:
+		_csv.store_line("%.1f,%d,%.2f,%.2f,%.2f,%d,%d,%.1f" % [_t_total, fps, mediana, proceso, fisica, dibujos, primitivas, vram])
+		_csv.flush()
 
 
 func _punto_suelo(pantalla: Vector2):
@@ -333,7 +477,7 @@ func _unhandled_input(ev: InputEvent) -> void:
 			dedos.erase(ev.index)
 		dist_pellizco = 0.0
 		if ev.pressed and dedos.size() == 1:
-			destino = _punto_suelo(ev.position)
+			destino = _ajustar_destino(_punto_suelo(ev.position))
 	elif ev is InputEventScreenDrag:
 		dedos[ev.index] = ev.position
 		if dedos.size() == 2:                  # pellizco: zoom
@@ -343,17 +487,17 @@ func _unhandled_input(ev: InputEvent) -> void:
 				distancia = clampf(distancia * dist_pellizco / d, DIST_MIN, DIST_MAX)
 			dist_pellizco = d
 		elif dedos.size() == 1:
-			destino = _punto_suelo(ev.position)
+			destino = _ajustar_destino(_punto_suelo(ev.position))
 	elif ev is InputEventMouseButton and ev.pressed:
 		match ev.button_index:
 			MOUSE_BUTTON_LEFT:
-				destino = _punto_suelo(ev.position)
+				destino = _ajustar_destino(_punto_suelo(ev.position))
 			MOUSE_BUTTON_WHEEL_UP:
 				distancia = clampf(distancia - 1.0, DIST_MIN, DIST_MAX)
 			MOUSE_BUTTON_WHEEL_DOWN:
 				distancia = clampf(distancia + 1.0, DIST_MIN, DIST_MAX)
 	elif ev is InputEventMouseMotion and ev.button_mask & MOUSE_BUTTON_MASK_LEFT:
-		destino = _punto_suelo(ev.position)
+		destino = _ajustar_destino(_punto_suelo(ev.position))
 	elif ev is InputEventKey and ev.pressed and not ev.echo:
 		match ev.keycode:
 			KEY_Q:
@@ -362,6 +506,8 @@ func _unhandled_input(ev: InputEvent) -> void:
 				inclinacion = clampf(inclinacion - 5.0, INCL_MIN, INCL_MAX)
 			KEY_T:
 				cam.projection = Camera3D.PROJECTION_ORTHOGONAL if cam.projection == Camera3D.PROJECTION_PERSPECTIVE else Camera3D.PROJECTION_PERSPECTIVE
+			KEY_F3:
+				_alternar_panel()
 			KEY_R:
 				inclinacion = 45.0
 				distancia = 20.0
