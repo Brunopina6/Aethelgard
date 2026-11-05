@@ -1,0 +1,2 @@
+﻿Texturas de suelo, roca, nieve, arena, empedrado, muros y tejados: Poly Haven (https://polyhaven.com), licencia CC0.
+hierba=leafy_grass, hierba_oscura=forest_leaves_02, tierra=dirt_aerial_02, grava=gravel, roca=aerial_rocks_02, roca_musgo=mossy_rock, nieve=snow_02, nieve_pisada=snow_field_aerial, roca_nevada=snow_03, arena=coast_sand_01, arena_dura=dry_ground_01, arenisca=sandstone_cracks, ceniza=burned_ground_01, basalto=aerial_ground_rock, empedrado=cobblestone_01, piedra=old_stone_wall, tejado=clay_roof_tiles

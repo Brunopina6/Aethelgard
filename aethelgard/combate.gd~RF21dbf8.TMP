@@ -1,0 +1,590 @@
+extends Node2D
+# Combate ATB con personajes articulados para Aethelgard (Godot 4.x)
+# Se adjunta al nodo raíz de combate.tscn (Nodo 2D). Crea toda la interfaz por código.
+# Necesita en res://: fondo.png y la carpeta personajes/ con las piezas de cada personaje.
+
+const ATB_MAX := 100.0
+const COSTE_MAGIA := 8
+const ESC := 0.8
+const CANVAS := Vector2(320, 480)
+
+const MODELOS := {
+	"kael": {
+		"cadera": Vector2(160, 215),
+		"cerrada": "res://personajes/kael_cabeza_cerrada.png",
+		"partes": [
+			{"n": "piernas", "r": "res://personajes/kael_piernas.png", "p": Vector2(0, 0), "padre": "root", "detras": false},
+			{"n": "torso", "r": "res://personajes/kael_torso.png", "p": Vector2(0, 0), "padre": "cuerpo", "detras": false},
+			{"n": "brazo_a", "r": "res://personajes/kael_brazo_a.png", "p": Vector2(122, 106), "padre": "cuerpo", "detras": false},
+			{"n": "cabeza", "r": "res://personajes/kael_cabeza.png", "p": Vector2(160, 88), "padre": "cuerpo", "detras": false},
+			{"n": "brazo_f", "r": "res://personajes/kael_brazo_f.png", "p": Vector2(198, 106), "padre": "cuerpo", "detras": false},
+			{"n": "arma", "r": "res://personajes/kael_espada.png", "p": Vector2(214, 246), "padre": "brazo_f", "detras": true}
+		]},
+	"nyx": {
+		"cadera": Vector2(160, 215),
+		"cerrada": "res://personajes/nyx_cabeza_cerrada.png",
+		"partes": [
+			{"n": "falda", "r": "res://personajes/nyx_falda.png", "p": Vector2(0, 0), "padre": "root", "detras": false},
+			{"n": "pelo", "r": "res://personajes/nyx_pelo.png", "p": Vector2(0, 0), "padre": "cuerpo", "detras": false},
+			{"n": "torso", "r": "res://personajes/nyx_torso.png", "p": Vector2(0, 0), "padre": "cuerpo", "detras": false},
+			{"n": "brazo_a", "r": "res://personajes/nyx_brazo_a.png", "p": Vector2(120, 108), "padre": "cuerpo", "detras": false},
+			{"n": "cabeza", "r": "res://personajes/nyx_cabeza.png", "p": Vector2(160, 88), "padre": "cuerpo", "detras": false},
+			{"n": "brazo_f", "r": "res://personajes/nyx_brazo_f.png", "p": Vector2(200, 108), "padre": "cuerpo", "detras": false},
+			{"n": "arma", "r": "res://personajes/nyx_baston.png", "p": Vector2(222, 234), "padre": "brazo_f", "detras": true}
+		]},
+	"hollin_a": {
+		"cadera": Vector2(160, 240),
+		"partes": [
+			{"n": "piernas", "r": "res://personajes/hollin_a_piernas.png", "p": Vector2(0, 0), "padre": "root", "detras": false},
+			{"n": "torso", "r": "res://personajes/hollin_a_torso.png", "p": Vector2(0, 0), "padre": "cuerpo", "detras": false},
+			{"n": "brazo_f", "r": "res://personajes/hollin_a_brazo_f.png", "p": Vector2(222, 142), "padre": "cuerpo", "detras": false},
+			{"n": "brazo_a", "r": "res://personajes/hollin_a_brazo_a.png", "p": Vector2(112, 150), "padre": "cuerpo", "detras": false},
+			{"n": "cabeza", "r": "res://personajes/hollin_a_cabeza.png", "p": Vector2(130, 130), "padre": "cuerpo", "detras": false}
+		]},
+	"hollin_b": {
+		"cadera": Vector2(160, 240),
+		"partes": [
+			{"n": "piernas", "r": "res://personajes/hollin_b_piernas.png", "p": Vector2(0, 0), "padre": "root", "detras": false},
+			{"n": "torso", "r": "res://personajes/hollin_b_torso.png", "p": Vector2(0, 0), "padre": "cuerpo", "detras": false},
+			{"n": "brazo_f", "r": "res://personajes/hollin_b_brazo_f.png", "p": Vector2(222, 142), "padre": "cuerpo", "detras": false},
+			{"n": "arma", "r": "res://personajes/hollin_b_cuchilla.png", "p": Vector2(246, 380), "padre": "brazo_f", "detras": true},
+			{"n": "brazo_a", "r": "res://personajes/hollin_b_brazo_a.png", "p": Vector2(112, 150), "padre": "cuerpo", "detras": false},
+			{"n": "cabeza", "r": "res://personajes/hollin_b_cabeza.png", "p": Vector2(130, 130), "padre": "cuerpo", "detras": false}
+		]},
+}
+
+
+# Ángulos en grados (positivo = sentido horario). Cada modelo ataca según su arma.
+const ANIM := {
+	"kael": {"distancia": 130.0, "prep": -110.0, "arma_prep": 170.0, "golpe": -300.0, "arma_golpe": 150.0,
+		"ret": -360.0, "lean_prep": 8.0, "lean_golpe": -14.0,
+		"m_brazo": -120.0, "m_arma": 90.0, "m_brazo_a": 25.0, "m_lean": 5.0, "punta": Vector2(214, 6)},
+	"nyx": {"distancia": 100.0, "prep": -100.0, "arma_prep": 150.0, "golpe": -260.0, "arma_golpe": 140.0,
+		"ret": -360.0, "lean_prep": 6.0, "lean_golpe": -10.0,
+		"m_brazo": -120.0, "m_arma": 90.0, "m_brazo_a": 30.0, "m_lean": 4.0, "punta": Vector2(223, 36)},
+	"hollin_a": {"distancia": 90.0, "prep": -120.0, "golpe": -290.0, "ret": -360.0,
+		"a_prep": -100.0, "a_golpe": -270.0, "a_ret": -360.0, "lean_prep": 10.0, "lean_golpe": -18.0},
+	"hollin_b": {"distancia": 110.0, "prep": -150.0, "arma_prep": 175.0, "golpe": -310.0, "arma_golpe": 160.0,
+		"ret": -360.0, "lean_prep": 12.0, "lean_golpe": -20.0},
+}
+
+var heroes: Array = [
+	{"nombre": "Kael", "modelo": "kael", "hero": true, "hp": 120, "hp_max": 120, "mp": 16, "mp_max": 16,
+		"atk": 18, "mag": 10, "vel": 22.0, "atb": 0.0, "pos": Vector2(800, 150)},
+	{"nombre": "Nyx", "modelo": "nyx", "hero": true, "hp": 80, "hp_max": 80, "mp": 40, "mp_max": 40,
+		"atk": 8, "mag": 24, "vel": 26.0, "atb": 0.0, "pos": Vector2(990, 230)},
+]
+
+var enemigos: Array = [
+	{"nombre": "Hombre de Hollín (garras)", "modelo": "hollin_a", "hero": false, "hp": 60, "hp_max": 60,
+		"atk": 12, "vel": 13.0, "atb": 0.0, "pos": Vector2(400, 150)},
+	{"nombre": "Hombre de Hollín (cuchilla)", "modelo": "hollin_b", "hero": false, "hp": 60, "hp_max": 60,
+		"atk": 14, "vel": 12.0, "atb": 0.0, "pos": Vector2(230, 230)},
+]
+
+var pociones := 3
+var cola: Array = []          # quién tiene la barra llena y espera turno
+var actor = null              # héroe que está eligiendo acción
+var estado := "esperando"     # esperando, menu, objetivo, enemigo, accion, fin
+var accion := ""
+
+var capa: CanvasLayer
+var menu: HBoxContainer
+var menu_objetivos: HBoxContainer
+var boton_pocion: Button
+var boton_magia: Button
+var registro: Label
+var glow_tex: GradientTexture2D
+var mat_aditivo: CanvasItemMaterial
+
+
+func _ready() -> void:
+	randomize()
+	_crear_brillo_tex()
+	_crear_interfaz()
+	_actualizar()
+
+
+# ---------------------------------------------------------------- interfaz
+
+func _crear_brillo_tex() -> void:
+	var g := Gradient.new()
+	g.colors = PackedColorArray([Color(1, 1, 1, 1), Color(1, 1, 1, 0)])
+	g.offsets = PackedFloat32Array([0.0, 1.0])
+	glow_tex = GradientTexture2D.new()
+	glow_tex.gradient = g
+	glow_tex.fill = GradientTexture2D.FILL_RADIAL
+	glow_tex.fill_from = Vector2(0.5, 0.5)
+	glow_tex.fill_to = Vector2(1.0, 0.5)
+	glow_tex.width = 256
+	glow_tex.height = 256
+	mat_aditivo = CanvasItemMaterial.new()
+	mat_aditivo.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+
+
+func _crear_interfaz() -> void:
+	capa = CanvasLayer.new()
+	add_child(capa)
+
+	_crear_fondo()
+
+	for f in enemigos + heroes:
+		_crear_rig(f)
+
+	_crear_columna(enemigos, Vector2(40, 30))
+	_crear_columna(heroes, Vector2(840, 628))
+
+	registro = Label.new()
+	registro.position = Vector2(400, 30)
+	registro.add_theme_font_size_override("font_size", 22)
+	registro.text = "¡Combate!"
+	capa.add_child(registro)
+
+	menu = HBoxContainer.new()
+	menu.position = Vector2(40, 620)
+	menu.visible = false
+	capa.add_child(menu)
+	menu.add_child(_boton("Atacar", func(): _elegir("atacar")))
+	boton_magia = _boton("Magia", func(): _elegir("magia"))
+	menu.add_child(boton_magia)
+	boton_pocion = _boton("Poción", _usar_pocion)
+	menu.add_child(boton_pocion)
+
+	menu_objetivos = HBoxContainer.new()
+	menu_objetivos.position = Vector2(40, 620)
+	menu_objetivos.visible = false
+	capa.add_child(menu_objetivos)
+
+
+func _crear_fondo() -> void:
+	if ResourceLoader.exists("res://fondo.png"):
+		var fondo := TextureRect.new()
+		fondo.texture = load("res://fondo.png")
+		fondo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		fondo.stretch_mode = TextureRect.STRETCH_SCALE
+		fondo.size = Vector2(1280, 720)
+		capa.add_child(fondo)
+	else:
+		var plano := ColorRect.new()
+		plano.color = Color(0.08, 0.08, 0.12)
+		plano.size = Vector2(1280, 720)
+		capa.add_child(plano)
+
+
+# Construye al personaje como un muñeco articulado: cada pieza gira desde su articulación.
+func _crear_rig(f: Dictionary) -> void:
+	var m: Dictionary = MODELOS[f["modelo"]]
+	var raiz := Node2D.new()
+	var base: Vector2 = f["pos"]
+	if f["hero"]:
+		raiz.scale = Vector2(ESC, ESC)
+	else:
+		raiz.scale = Vector2(-ESC, ESC)          # los enemigos se miran hacia la derecha
+		base += Vector2(CANVAS.x * ESC, 0)
+	raiz.position = base
+	capa.add_child(raiz)
+
+	var cuerpo := Node2D.new()
+	cuerpo.position = m["cadera"]
+	var nodos := {"root": raiz, "cuerpo": cuerpo}
+	var pivotes := {"root": Vector2.ZERO, "cuerpo": m["cadera"]}
+	var partes := {}
+	var cuerpo_puesto := false
+	for d in m["partes"]:
+		if d["padre"] == "cuerpo" and not cuerpo_puesto:
+			raiz.add_child(cuerpo)
+			cuerpo_puesto = true
+		var s := Sprite2D.new()
+		if ResourceLoader.exists(d["r"]):
+			s.texture = load(d["r"])
+		s.centered = false
+		s.offset = -d["p"]
+		s.position = d["p"] - pivotes[d["padre"]]
+		s.show_behind_parent = d["detras"]
+		nodos[d["padre"]].add_child(s)
+		nodos[d["n"]] = s
+		pivotes[d["n"]] = d["p"]
+		partes[d["n"]] = s
+
+	f["rig"] = raiz
+	f["rig_base"] = base
+	f["cuerpo"] = cuerpo
+	f["partes"] = partes
+	f["pivotes"] = pivotes
+	f["animando"] = false
+	f["fase"] = randf() * 6.28
+	f["cab_cerrada"] = null
+	if m.has("cerrada") and ResourceLoader.exists(m["cerrada"]):
+		f["cab_abierta"] = partes["cabeza"].texture
+		f["cab_cerrada"] = load(m["cerrada"])
+
+
+func _crear_columna(lista: Array, pos: Vector2) -> void:
+	var caja := VBoxContainer.new()
+	caja.position = pos
+	caja.add_theme_constant_override("separation", 2)
+	capa.add_child(caja)
+	for f in lista:
+		var etiqueta := Label.new()
+		var barra := ProgressBar.new()
+		barra.max_value = ATB_MAX
+		barra.custom_minimum_size = Vector2(320, 12)
+		barra.show_percentage = false
+		f["etiqueta"] = etiqueta
+		f["barra"] = barra
+		caja.add_child(etiqueta)
+		caja.add_child(barra)
+		var hueco := Control.new()
+		hueco.custom_minimum_size = Vector2(0, 6)
+		caja.add_child(hueco)
+
+
+func _boton(texto: String, accion_boton: Callable) -> Button:
+	var b := Button.new()
+	b.text = texto
+	b.custom_minimum_size = Vector2(150, 60)
+	b.pressed.connect(accion_boton)
+	return b
+
+
+# ---------------------------------------------------------------- bucle ATB
+
+func _process(delta: float) -> void:
+	var t := Time.get_ticks_msec() / 1000.0
+	for f in heroes + enemigos:
+		if f["hp"] > 0:
+			f["cuerpo"].scale = Vector2(1.0, 1.0 + 0.012 * sin(t * 1.9 + f["fase"]))
+			if not f["animando"]:
+				f["cuerpo"].rotation_degrees = sin(t * 1.3 + f["fase"]) * 0.8
+				f["partes"]["brazo_a"].rotation_degrees = sin(t * 1.6 + f["fase"] + 1.0) * 2.0
+	if estado == "fin":
+		return
+	for f in heroes + enemigos:
+		if f["hp"] > 0 and f["atb"] < ATB_MAX:
+			f["atb"] = min(ATB_MAX, f["atb"] + f["vel"] * delta)
+			if f["atb"] >= ATB_MAX:
+				cola.append(f)
+	_siguiente_turno()
+	_actualizar()
+
+
+func _siguiente_turno() -> void:
+	if estado != "esperando" or cola.is_empty():
+		return
+	var f = cola.pop_front()
+	if f["hp"] <= 0:
+		return
+	if f["hero"]:
+		actor = f
+		estado = "menu"
+		_mostrar_menu()
+	else:
+		estado = "enemigo"
+		_turno_enemigo(f)
+
+
+func _turno_enemigo(f: Dictionary) -> void:
+	var vivos := heroes.filter(func(h): return h["hp"] > 0)
+	var objetivo = vivos.pick_random()
+	var dano: int = f["atk"] + randi_range(-2, 3)
+	registro.text = "%s ataca a %s" % [f["nombre"], objetivo["nombre"]]
+	await _animar_golpe(f, objetivo, dano, false)
+	f["atb"] = 0.0
+	await get_tree().create_timer(0.3).timeout
+	if not _comprobar_fin():
+		estado = "esperando"
+
+
+# ---------------------------------------------------------------- turno del jugador
+
+func _mostrar_menu() -> void:
+	registro.text = "Turno de %s" % actor["nombre"]
+	menu.visible = true
+	menu_objetivos.visible = false
+	boton_magia.disabled = actor["mp"] < COSTE_MAGIA
+	boton_pocion.disabled = pociones <= 0
+	boton_pocion.text = "Poción (%d)" % pociones
+
+
+func _elegir(a: String) -> void:
+	accion = a
+	estado = "objetivo"
+	menu.visible = false
+	for hijo in menu_objetivos.get_children():
+		hijo.queue_free()
+	for e in enemigos:
+		if e["hp"] > 0:
+			var enemigo = e
+			menu_objetivos.add_child(_boton(e["nombre"], func(): _aplicar(enemigo)))
+	menu_objetivos.add_child(_boton("Atrás", _volver))
+	menu_objetivos.visible = true
+
+
+func _volver() -> void:
+	estado = "menu"
+	_mostrar_menu()
+
+
+func _aplicar(objetivo: Dictionary) -> void:
+	var quien = actor
+	var es_magia := accion == "magia"
+	var dano := 0
+	if es_magia:
+		quien["mp"] -= COSTE_MAGIA
+		dano = int(quien["mag"] * 1.5) + randi_range(-2, 3)
+		registro.text = "%s lanza Fuego sobre %s" % [quien["nombre"], objetivo["nombre"]]
+	else:
+		dano = quien["atk"] + randi_range(-2, 3)
+		registro.text = "%s ataca a %s" % [quien["nombre"], objetivo["nombre"]]
+	estado = "accion"
+	menu.visible = false
+	menu_objetivos.visible = false
+	await _animar_golpe(quien, objetivo, dano, es_magia)
+	_terminar_turno()
+
+
+func _usar_pocion() -> void:
+	if pociones <= 0:
+		return
+	pociones -= 1
+	estado = "accion"
+	menu.visible = false
+	var quien = actor
+	quien["hp"] = min(quien["hp_max"], quien["hp"] + 50)
+	registro.text = "%s usa una Poción (+50 HP)" % quien["nombre"]
+	quien["rig"].modulate = Color(0.6, 1.5, 0.7)
+	_numero_flotante(quien, "+50", Color(0.5, 1.0, 0.55))
+	await get_tree().create_timer(0.5).timeout
+	quien["rig"].modulate = Color(1, 1, 1)
+	_terminar_turno()
+
+
+func _terminar_turno() -> void:
+	estado = "accion"
+	actor["atb"] = 0.0
+	actor = null
+	menu.visible = false
+	menu_objetivos.visible = false
+	_actualizar()
+	await get_tree().create_timer(0.3).timeout
+	if not _comprobar_fin():
+		estado = "esperando"
+
+
+# ---------------------------------------------------------------- animaciones
+
+func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: bool) -> void:
+	var impacto: Callable = func():
+		objetivo["hp"] = max(0, objetivo["hp"] - dano)
+		_golpe_visual(objetivo, dano, magia)
+	if magia:
+		await _anim_magia(origen, objetivo, impacto)
+	else:
+		await _anim_fisico(origen, objetivo, impacto)
+
+
+# Ataque cuerpo a cuerpo: avanza, levanta el arma, golpea y vuelve. Cada modelo usa sus propios ángulos.
+func _anim_fisico(o: Dictionary, obj: Dictionary, impacto: Callable) -> void:
+	var p: Dictionary = o["partes"]
+	var a: Dictionary = ANIM[o["modelo"]]
+	var rig: Node2D = o["rig"]
+	var base: Vector2 = o["rig_base"]
+	var cuerpo: Node2D = o["cuerpo"]
+	var heroe: bool = o["hero"]
+	var dist: float = a["distancia"]
+	var dx: float = obj["pos"].x - o["pos"].x + (dist if heroe else -dist)
+	var dy: float = (obj["pos"].y - o["pos"].y) * 0.8
+	o["animando"] = true
+	rig.z_index = 5
+
+	# 1. avanzar y preparar el golpe
+	var t1 := create_tween().set_parallel(true)
+	t1.tween_property(rig, "position", base + Vector2(dx, dy), 0.45).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	t1.tween_property(p["brazo_f"], "rotation_degrees", a["prep"], 0.45)
+	if p.has("arma"):
+		t1.tween_property(p["arma"], "rotation_degrees", a["arma_prep"], 0.45)
+	if a.has("a_prep"):
+		t1.tween_property(p["brazo_a"], "rotation_degrees", a["a_prep"], 0.45)
+	t1.tween_property(cuerpo, "rotation_degrees", a["lean_prep"], 0.45)
+	await t1.finished
+
+	# 2. golpe rápido
+	var t2 := create_tween().set_parallel(true)
+	t2.tween_property(p["brazo_f"], "rotation_degrees", a["golpe"], 0.17).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	if p.has("arma"):
+		t2.tween_property(p["arma"], "rotation_degrees", a["arma_golpe"], 0.17)
+	if a.has("a_golpe"):
+		t2.tween_property(p["brazo_a"], "rotation_degrees", a["a_golpe"], 0.17)
+	t2.tween_property(cuerpo, "rotation_degrees", a["lean_golpe"], 0.17)
+	await t2.finished
+	impacto.call()
+	await get_tree().create_timer(0.35).timeout
+
+	# 3. volver a la posición
+	var t3 := create_tween().set_parallel(true)
+	t3.tween_property(p["brazo_f"], "rotation_degrees", a["ret"], 0.35)
+	if p.has("arma"):
+		t3.tween_property(p["arma"], "rotation_degrees", 0.0, 0.35)
+	if a.has("a_ret"):
+		t3.tween_property(p["brazo_a"], "rotation_degrees", a["a_ret"], 0.35)
+	t3.tween_property(cuerpo, "rotation_degrees", 0.0, 0.35)
+	t3.tween_property(rig, "position", base, 0.45).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	await t3.finished
+	p["brazo_f"].rotation_degrees = 0.0
+	p["brazo_a"].rotation_degrees = 0.0
+	rig.z_index = 0
+	o["animando"] = false
+
+
+# Magia: cierra los ojos, levanta el arma, carga una luz en la punta y la lanza al objetivo.
+func _anim_magia(o: Dictionary, obj: Dictionary, impacto: Callable) -> void:
+	var p: Dictionary = o["partes"]
+	var a: Dictionary = ANIM[o["modelo"]]
+	var cuerpo: Node2D = o["cuerpo"]
+	o["animando"] = true
+	_set_ojos(o, true)
+
+	var t1 := create_tween().set_parallel(true)
+	t1.tween_property(p["brazo_f"], "rotation_degrees", a["m_brazo"], 0.6).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	t1.tween_property(p["arma"], "rotation_degrees", a["m_arma"], 0.6)
+	t1.tween_property(p["brazo_a"], "rotation_degrees", a["m_brazo_a"], 0.6)
+	t1.tween_property(cuerpo, "rotation_degrees", a["m_lean"], 0.6)
+	await t1.finished
+
+	# luz que se concentra en la punta del arma
+	var halo := Sprite2D.new()
+	halo.texture = glow_tex
+	halo.material = mat_aditivo
+	halo.modulate = Color(1.0, 0.55, 0.2, 0.9)
+	halo.position = a["punta"] - o["pivotes"]["arma"]
+	halo.scale = Vector2.ZERO
+	p["arma"].add_child(halo)
+	var t2 := create_tween()
+	t2.tween_property(halo, "scale", Vector2(0.9, 0.9), 0.5)
+	t2.tween_property(halo, "scale", Vector2(0.65, 0.65), 0.15)
+	await t2.finished
+
+	# proyectil hacia el objetivo
+	var inicio: Vector2 = halo.global_position
+	halo.queue_free()
+	var bola := Sprite2D.new()
+	bola.texture = glow_tex
+	bola.material = mat_aditivo
+	bola.modulate = Color(1.0, 0.6, 0.2, 1.0)
+	bola.position = inicio
+	bola.scale = Vector2(0.55, 0.55)
+	capa.add_child(bola)
+	var t3 := create_tween()
+	t3.tween_property(bola, "position", _centro(obj), 0.4).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	await t3.finished
+	bola.queue_free()
+	impacto.call()
+	await get_tree().create_timer(0.55).timeout
+
+	# bajar el arma y abrir los ojos
+	var t4 := create_tween().set_parallel(true)
+	t4.tween_property(p["brazo_f"], "rotation_degrees", 0.0, 0.4)
+	t4.tween_property(p["arma"], "rotation_degrees", 0.0, 0.4)
+	t4.tween_property(p["brazo_a"], "rotation_degrees", 0.0, 0.4)
+	t4.tween_property(cuerpo, "rotation_degrees", 0.0, 0.4)
+	await t4.finished
+	_set_ojos(o, false)
+	o["animando"] = false
+
+
+func _set_ojos(f: Dictionary, cerrados: bool) -> void:
+	if f["cab_cerrada"] != null:
+		f["partes"]["cabeza"].texture = f["cab_cerrada"] if cerrados else f["cab_abierta"]
+
+
+func _centro(f: Dictionary) -> Vector2:
+	return f["pos"] + Vector2(CANVAS.x * ESC * 0.5, CANVAS.y * ESC * 0.45)
+
+
+func _golpe_visual(objetivo: Dictionary, dano: int, magia: bool) -> void:
+	var rig: Node2D = objetivo["rig"]
+	var base: Vector2 = objetivo["rig_base"]
+	rig.modulate = Color(1.6, 0.6, 0.2) if magia else Color(1.6, 0.3, 0.3)
+	_numero_flotante(objetivo, str(dano), Color(1, 0.9, 0.4) if magia else Color(1, 1, 1))
+	if magia:
+		_destello(_centro(objetivo), Color(1.0, 0.5, 0.15), 1.8)
+	else:
+		_destello(_centro(objetivo), Color(1.0, 0.95, 0.85), 1.0)
+	if objetivo["animando"]:
+		_restablecer_color(objetivo)
+		return
+	var t := create_tween()
+	t.tween_property(rig, "position", base + Vector2(14, 0), 0.04)
+	t.tween_property(rig, "position", base - Vector2(14, 0), 0.04)
+	t.tween_property(rig, "position", base + Vector2(7, 0), 0.04)
+	t.tween_property(rig, "position", base, 0.04)
+	t.tween_callback(func(): _restablecer_color(objetivo))
+
+
+func _restablecer_color(f: Dictionary) -> void:
+	var rig: Node2D = f["rig"]
+	if f["hp"] > 0:
+		rig.modulate = Color(1, 1, 1)
+	elif f["hero"]:
+		rig.modulate = Color(0.35, 0.35, 0.4)
+		f["cuerpo"].rotation_degrees = 25.0
+		rig.position = f["rig_base"] + Vector2(0, 30)
+	else:
+		var t := create_tween()
+		t.tween_property(rig, "modulate:a", 0.0, 0.5)
+
+
+func _destello(centro: Vector2, color: Color, tam: float) -> void:
+	var g := Sprite2D.new()
+	g.texture = glow_tex
+	g.material = mat_aditivo
+	g.modulate = color
+	g.position = centro
+	g.scale = Vector2(0.2, 0.2) * tam
+	capa.add_child(g)
+	var t := create_tween()
+	t.set_parallel(true)
+	t.tween_property(g, "scale", Vector2(1.5, 1.5) * tam, 0.35)
+	t.tween_property(g, "modulate:a", 0.0, 0.35)
+	t.chain().tween_callback(g.queue_free)
+
+
+func _numero_flotante(f: Dictionary, texto: String, color: Color) -> void:
+	var l := Label.new()
+	l.text = texto
+	l.add_theme_font_size_override("font_size", 36)
+	l.add_theme_color_override("font_color", color)
+	l.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	l.add_theme_constant_override("outline_size", 8)
+	l.position = f["pos"] + Vector2(90, 10)
+	capa.add_child(l)
+	var t := create_tween()
+	t.set_parallel(true)
+	t.tween_property(l, "position:y", l.position.y - 60.0, 0.9)
+	t.tween_property(l, "modulate:a", 0.0, 0.9)
+	t.chain().tween_callback(l.queue_free)
+
+
+# ---------------------------------------------------------------- fin y textos
+
+func _comprobar_fin() -> bool:
+	var ganan := enemigos.all(func(e): return e["hp"] <= 0)
+	var pierden := heroes.all(func(h): return h["hp"] <= 0)
+	if ganan or pierden:
+		estado = "fin"
+		menu.visible = false
+		menu_objetivos.visible = false
+		registro.text = "¡Victoria!" if ganan else "Derrota..."
+		return true
+	return false
+
+
+func _actualizar() -> void:
+	for f in heroes:
+		f["etiqueta"].text = "%s   HP %d/%d   MP %d/%d" % [f["nombre"], f["hp"], f["hp_max"], f["mp"], f["mp_max"]]
+		f["barra"].value = f["atb"]
+		f["etiqueta"].modulate = Color(1, 1, 1) if f["hp"] > 0 else Color(0.4, 0.4, 0.4)
+	for f in enemigos:
+		f["etiqueta"].text = "%s   HP %d/%d" % [f["nombre"], f["hp"], f["hp_max"]]
+		f["barra"].value = f["atb"]
+		f["etiqueta"].modulate = Color(1, 1, 1) if f["hp"] > 0 else Color(0.4, 0.4, 0.4)

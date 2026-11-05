@@ -1,0 +1,13 @@
+join kael (normal) left
+join lya (normal) right
+lya: Kael… ¿lo has visto? La niebla ha vuelto a tragarse otra aldea al norte de Oakhaven.
+kael: Lo he visto. Y como siempre, a mí ni me roza. Será que hasta la niebla tiene buen gusto.
+lya: No bromees. Nadie es inmune a la niebla. Nadie… salvo tú.
+kael: Supongo que este brazalete sirve para algo más que para presumir.
+lya: Ese brazalete… He visto ese símbolo en los libros prohibidos del templo. Lo llamaban la «Llave del Confino».
+kael: ¿La llave de qué?
+lya: No lo sé. Pero si los Hollines han empezado a salir del bosque, alguien tiene que averiguarlo.
+kael: Entonces vamos. El Gran Bosque Verde no está lejos.
+lya: Ten cuidado ahí fuera. Los Hollines ya no son solo sombras: ahora llevan hachas del Vacío.
+leave lya
+leave kael

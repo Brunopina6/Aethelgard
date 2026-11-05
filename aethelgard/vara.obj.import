@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://b0e48gcyfgwn7"
+path="res://.godot/imported/vara.obj-d9d9d3d5893b42d20714fa4162a9701e.mesh"
+
+[deps]
+
+files=["res://.godot/imported/vara.obj-d9d9d3d5893b42d20714fa4162a9701e.mesh"]
+
+source_file="res://vara.obj"
+dest_files=["res://.godot/imported/vara.obj-d9d9d3d5893b42d20714fa4162a9701e.mesh", "res://.godot/imported/vara.obj-d9d9d3d5893b42d20714fa4162a9701e.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false

@@ -1,0 +1,313 @@
+extends Control
+# Menús del grupo (Godot 4.x): Grupo (nivel, atributos y equipo), Objetos y Habilidades.
+# Se crea por código desde el mapa:  var m = load("res://menus.gd").new(); m.pestana = "Grupo"; ui.add_child(m)
+# Al cerrarse emite "cerrado" y se borra solo.
+
+signal cerrado
+
+# Colores y estilo común (estilo.gd): los títulos van en cursiva dorada.
+const Estilo := preload("res://estilo.gd")
+const COLOR_TITULO := Estilo.ORO
+const COLOR_TEXTO := Estilo.LUZ_CLARA
+const COLOR_SUAVE := Estilo.GRIS
+const COLOR_BIEN := Estilo.CURA
+
+var pestana := "Grupo"
+var heroe := ""
+var Grupo
+var Inv
+var cuerpo: VBoxContainer
+
+
+func _ready() -> void:
+	add_to_group("menu_quieto")                  # Recursos activa el modo ahorro mientras está abierto
+	Grupo = load("res://grupo.gd")
+	Inv = load("res://inventario.gd")
+	heroe = Grupo.miembros()[0]
+	size = Vector2(1280, 720)
+	var oscuro := ColorRect.new()
+	oscuro.color = Color(Estilo.SOMBRA, 0.55)
+	oscuro.size = size
+	add_child(oscuro)
+	var panel := PanelContainer.new()
+	panel.position = Vector2(90, 40)
+	panel.custom_minimum_size = Vector2(1100, 600)
+	panel.add_theme_stylebox_override("panel", Estilo.ventana(0.88))
+	add_child(panel)
+	var todo := VBoxContainer.new()
+	todo.add_theme_constant_override("separation", 12)
+	panel.add_child(todo)
+	var arriba := HBoxContainer.new()
+	arriba.add_theme_constant_override("separation", 10)
+	todo.add_child(arriba)
+	var pestanas: Array = []
+	for p in ["Grupo", "Objetos", "Habilidades"]:
+		var b := _boton(p, 22, Vector2(170, 44))
+		b.set_meta("nombre", p)
+		pestanas.append(b)
+		b.pressed.connect(func():
+			pestana = p
+			for x in pestanas:
+				x.add_theme_color_override("font_color", COLOR_TITULO if x.get_meta("nombre") == pestana else COLOR_TEXTO)
+			_pintar_de_nuevo())
+		arriba.add_child(b)
+	for x in pestanas:
+		x.add_theme_color_override("font_color", COLOR_TITULO if x.get_meta("nombre") == pestana else COLOR_TEXTO)
+	var hueco := Control.new()
+	hueco.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	arriba.add_child(hueco)
+	var cerrar := _boton("Cerrar", 22, Vector2(150, 44))
+	cerrar.pressed.connect(func():
+		cerrado.emit()
+		queue_free())
+	arriba.add_child(cerrar)
+	var marco := ScrollContainer.new()
+	marco.custom_minimum_size = Vector2(1080, 520)
+	todo.add_child(marco)
+	cuerpo = VBoxContainer.new()
+	cuerpo.add_theme_constant_override("separation", 8)
+	cuerpo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	marco.add_child(cuerpo)
+	_pintar()
+
+
+func _pintar_de_nuevo() -> void:
+	for c in cuerpo.get_children():
+		c.queue_free()
+	_pintar()
+
+
+func _pintar() -> void:
+	match pestana:
+		"Grupo":
+			_pintar_grupo()
+		"Objetos":
+			_pintar_objetos()
+		"Habilidades":
+			_pintar_habilidades()
+
+
+# ---------------------------------------------------------------- Grupo
+
+func _pintar_grupo() -> void:
+	var fila_heroes := HBoxContainer.new()
+	fila_heroes.add_theme_constant_override("separation", 8)
+	cuerpo.add_child(fila_heroes)
+	for n in Grupo.miembros():
+		var b := _boton(n, 22, Vector2(140, 40))
+		if n == heroe:
+			b.add_theme_color_override("font_color", COLOR_TITULO)
+		b.pressed.connect(func():
+			heroe = n
+			_pintar_de_nuevo())
+		fila_heroes.add_child(b)
+
+	var h: Dictionary = Grupo.datos()[heroe]
+	var e: Dictionary = Grupo.estadisticas(heroe)
+	var columnas := HBoxContainer.new()
+	columnas.add_theme_constant_override("separation", 40)
+	cuerpo.add_child(columnas)
+
+	# izquierda: nivel y atributos
+	var izq := VBoxContainer.new()
+	izq.custom_minimum_size = Vector2(520, 0)
+	izq.add_theme_constant_override("separation", 6)
+	columnas.add_child(izq)
+	izq.add_child(_texto("%s — %s" % [heroe, Grupo.HEROES[heroe]["clase"]], 26, COLOR_TITULO))
+	izq.add_child(_texto("Nivel %d     EXP %d / %d" % [h["nivel"], h["exp"], Grupo.exp_para(h["nivel"])], 20, COLOR_TEXTO))
+	var barra := ProgressBar.new()
+	barra.custom_minimum_size = Vector2(420, 3)
+	barra.show_percentage = false
+	barra.max_value = Grupo.exp_para(h["nivel"])
+	barra.value = h["exp"]
+	izq.add_child(barra)
+	izq.add_child(_texto("PV %d / %d     PM %d / %d     Ataque %d     Defensa %d" % [e["pv"], e["pv_max"], e["pm"], e["pm_max"],
+		e["ataque"], e["defensa"]], 18, COLOR_SUAVE))
+	izq.add_child(_texto("Puntos para mejorar: %d" % h["puntos"], 22, COLOR_BIEN if h["puntos"] > 0 else COLOR_SUAVE))
+	for k in Grupo.ATRIBUTOS:
+		var f := HBoxContainer.new()
+		f.add_theme_constant_override("separation", 10)
+		var base: int = h["atributos"][k]
+		var total: int = e["atributos"][k]
+		var nombre := _texto(Grupo.NOMBRES[k], 20, COLOR_TEXTO)
+		nombre.custom_minimum_size = Vector2(120, 0)
+		f.add_child(nombre)
+		var valor := _texto("%d" % total + ("  (%+d)" % (total - base) if total != base else ""), 20, COLOR_TEXTO)
+		valor.custom_minimum_size = Vector2(90, 0)
+		f.add_child(valor)
+		var mas := _boton("+", 20, Vector2(40, 34))
+		mas.disabled = h["puntos"] <= 0
+		var atr: String = k
+		mas.pressed.connect(func():
+			if Grupo.subir_atributo(heroe, atr):
+				_pintar_de_nuevo())
+		f.add_child(mas)
+		f.add_child(_texto(Grupo.AYUDA[k], 16, COLOR_SUAVE))
+		izq.add_child(f)
+
+	# derecha: equipo
+	var der := VBoxContainer.new()
+	der.add_theme_constant_override("separation", 6)
+	columnas.add_child(der)
+	der.add_child(_texto("Equipo", 26, COLOR_TITULO))
+	var lleva: Dictionary = Inv.equipo_de(heroe)
+	for r in Inv.RANURAS:
+		var f := HBoxContainer.new()
+		f.add_theme_constant_override("separation", 8)
+		var nr := _texto(Inv.NOMBRES_RANURA[r], 20, COLOR_SUAVE)
+		nr.custom_minimum_size = Vector2(90, 0)
+		f.add_child(nr)
+		var ranura: String = r
+		var atras := _boton("◀", 18, Vector2(36, 34))
+		atras.pressed.connect(func(): _cambiar(ranura, -1))
+		f.add_child(atras)
+		var id: String = lleva.get(r, "")
+		var nombre := _texto(Inv.objeto(id)["nombre"] if id != "" else "—", 20, COLOR_TEXTO)
+		nombre.custom_minimum_size = Vector2(220, 0)
+		f.add_child(nombre)
+		var adelante := _boton("▶", 18, Vector2(36, 34))
+		adelante.pressed.connect(func(): _cambiar(ranura, 1))
+		f.add_child(adelante)
+		der.add_child(f)
+		if id != "" and Inv.resumen(id) != "":
+			der.add_child(_texto("      " + Inv.resumen(id), 16, COLOR_BIEN))
+	var tipo: String = Grupo.tipo_arma(heroe)
+	der.add_child(_texto("Arma: solo %s." % ("espadas" if tipo == "espada" else "cetros"), 16, COLOR_SUAVE))
+
+
+# Pasa al objeto anterior o siguiente que puede llevar en esa ranura (o a ninguno).
+func _cambiar(ranura: String, paso: int) -> void:
+	var lista: Array = [""] + Inv.opciones(heroe, ranura)
+	if ranura == "arma":
+		lista.erase("")                            # siempre lleva un arma
+	var actual: String = Inv.equipo_de(heroe).get(ranura, "")
+	var i := lista.find(actual)
+	var nuevo: String = lista[posmod(i + paso, lista.size())]
+	Inv.equipar(heroe, ranura, nuevo)
+	_pintar_de_nuevo()
+
+
+# ---------------------------------------------------------------- Objetos
+
+func _pintar_objetos() -> void:
+	cuerpo.add_child(_texto("Objetos", 26, COLOR_TITULO))
+	cuerpo.add_child(_texto("Monedas: %d" % Inv.oro(), 22, COLOR_TITULO))
+	var usos: Dictionary = load("res://combate.gd").OBJETOS_COMBATE
+	for o in Inv.datos()["objetos"]:
+		var f := HBoxContainer.new()
+		f.add_theme_constant_override("separation", 12)
+		var ic := TextureRect.new()
+		ic.custom_minimum_size = Vector2(40, 48)
+		ic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		if usos.has(o) and ResourceLoader.exists(usos[o]["imagen"]):
+			ic.texture = load(usos[o]["imagen"])
+		f.add_child(ic)
+		var nombre := _texto("%s   x%d" % [o, Inv.cantidad(o)], 20, COLOR_TEXTO)
+		nombre.custom_minimum_size = Vector2(200, 0)
+		f.add_child(nombre)
+		var Progreso = load("res://progreso.gd")
+		if o == Progreso.INCIENSO:                   # quita los encuentros un rato
+			f.add_child(_texto("Sin encuentros durante %d pasos" % Progreso.PASOS_INCIENSO, 18, COLOR_BIEN))
+			var usar := _boton("Usar", 16, Vector2(110, 32))
+			usar.disabled = Inv.cantidad(o) <= 0 or Progreso.incienso_activo()
+			if Progreso.incienso_activo():
+				usar.text = "Encendido"
+			usar.pressed.connect(func():
+				if Inv.cantidad(Progreso.INCIENSO) > 0:
+					Inv.gastar(Progreso.INCIENSO)
+					Progreso.usar_incienso()
+					_pintar_de_nuevo())
+			f.add_child(usar)
+		if usos.has(o):
+			f.add_child(_texto("Recupera %d %s" % [usos[o]["cura"], usos[o]["que"]], 18, COLOR_BIEN))
+			var objeto: String = o
+			for n in Grupo.miembros():               # usarlo fuera del combate
+				var b := _boton("Dar a %s" % n, 16, Vector2(110, 32))
+				var heroe_n: String = n
+				b.disabled = Inv.cantidad(o) <= 0
+				b.pressed.connect(func(): _usar_fuera(objeto, heroe_n))
+				f.add_child(b)
+		cuerpo.add_child(f)
+	cuerpo.add_child(_texto("Equipo", 26, COLOR_TITULO))
+	for r in Inv.RANURAS:
+		for id in Inv.datos()["equipables"]:
+			var o: Dictionary = Inv.objeto(id)
+			if o["ranura"] != r:
+				continue
+			var f := HBoxContainer.new()
+			f.add_theme_constant_override("separation", 14)
+			var n := _texto(o["nombre"], 20, COLOR_TEXTO)
+			n.custom_minimum_size = Vector2(260, 0)
+			f.add_child(n)
+			var t := _texto(Inv.NOMBRES_RANURA[r], 18, COLOR_SUAVE)
+			t.custom_minimum_size = Vector2(100, 0)
+			f.add_child(t)
+			var res := _texto(Inv.resumen(id), 18, COLOR_BIEN)
+			res.custom_minimum_size = Vector2(300, 0)
+			f.add_child(res)
+			var quien: String = Inv.quien_lleva(id)
+			var para := {"todos": "Todos", "espada": "Espadachines", "cetro": "Magos"}
+			f.add_child(_texto(("Lo lleva %s" % quien) if quien != "" else para[o["para"]], 18, COLOR_SUAVE))
+			cuerpo.add_child(f)
+
+
+# Usar una poción o un éter desde el menú (sin combate).
+func _usar_fuera(objeto: String, heroe_n: String) -> void:
+	var u: Dictionary = load("res://combate.gd").OBJETOS_COMBATE[objeto]
+	var e: Dictionary = Grupo.estadisticas(heroe_n)
+	var pv: int = e["pv"]
+	var pm: int = e["pm"]
+	if u["que"] == "PV":
+		if pv >= e["pv_max"]:
+			return
+		pv = mini(e["pv_max"], pv + u["cura"])
+	else:
+		if pm >= e["pm_max"]:
+			return
+		pm = mini(e["pm_max"], pm + u["cura"])
+	Inv.gastar(objeto)
+	Grupo.guardar_vida(heroe_n, pv, pm)
+	_pintar_de_nuevo()
+
+
+# ---------------------------------------------------------------- Habilidades
+
+func _pintar_habilidades() -> void:
+	var niveles: Dictionary = load("res://combate.gd").NIVELES_MAGIA
+	var romano := ["I", "II", "III"]
+	for n in Grupo.miembros():
+		cuerpo.add_child(_texto("%s (nivel %d)" % [n, Grupo.datos()[n]["nivel"]], 24, COLOR_TITULO))
+		if Grupo.HEROES[n]["magias"].is_empty():
+			cuerpo.add_child(_texto("   No usa magia.", 18, COLOR_SUAVE))
+		for m in Grupo.HEROES[n]["magias"]:
+			var tiene: int = Grupo.nivel_magia(n, m)
+			for i in 3:
+				var d: Dictionary = niveles[m][i]
+				var texto := "   %s %s — %s, %d PM, %s" % [m, romano[i], d["nombre"], d["coste"], "a todos" if d["todos"] else "a uno"]
+				if i < tiene:
+					cuerpo.add_child(_texto(texto + "   ✔", 18, COLOR_BIEN))
+				else:
+					cuerpo.add_child(_texto(texto + "   (se aprende al nivel %d)" % Grupo.NIVEL_MAGIA[i], 18, COLOR_SUAVE))
+
+
+# ---------------------------------------------------------------- piezas
+
+# Los títulos (dorados y grandes) van en cursiva, como el nombre del héroe en el menú de combate.
+func _texto(t: String, tam: int, color: Color) -> Label:
+	var l := Label.new()
+	l.text = t
+	if color == COLOR_TITULO and tam >= 24:
+		l.add_theme_font_override("font", Estilo.cursiva())
+		tam += 8
+	l.add_theme_font_size_override("font_size", tam)
+	l.add_theme_color_override("font_color", color)
+	return l
+
+
+func _boton(t: String, tam: int, minimo: Vector2) -> Button:
+	var b := Button.new()
+	b.text = t
+	b.custom_minimum_size = minimo
+	b.add_theme_font_size_override("font_size", tam)
+	return b

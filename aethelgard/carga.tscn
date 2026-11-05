@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://carga.gd" id="1_carga"]
+
+[node name="Carga" type="Node2D"]
+script = ExtResource("1_carga")
