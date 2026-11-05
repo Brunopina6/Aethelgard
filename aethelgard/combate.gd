@@ -2640,7 +2640,11 @@ func _anim_ataque_3d(o: Dictionary, obj: Dictionary, impacto: Callable, metodo: 
 	o["animando"] = true
 	rig.z_index = 5
 	p.mirar(ida, 0.15)
-	p.correr()
+	var en_guardia: bool = p.has_method("avanzar") and p.has_method("retroceder")   # Garon: pasos de doble espada
+	if en_guardia:
+		p.avanzar()
+	else:
+		p.correr()
 	var t1 := create_tween()
 	t1.tween_property(rig, "position", destino, 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	await t1.finished
@@ -2664,8 +2668,11 @@ func _anim_ataque_3d(o: Dictionary, obj: Dictionary, impacto: Callable, metodo: 
 			await p.atacar_giro(al_golpear)
 	if golpes[0] == 0:                                 # sin esa animación: el golpe igualmente
 		impacto.call()
-	p.mirar(-ida, 0.2)
-	p.correr()
+	if en_guardia:                                     # vuelve de espaldas, sin perder de vista al enemigo
+		p.retroceder()
+	else:
+		p.mirar(-ida, 0.2)
+		p.correr()
 	var t3 := create_tween()
 	t3.tween_property(rig, "position", base, 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	await t3.finished

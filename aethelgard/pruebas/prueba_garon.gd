@@ -11,4 +11,4 @@ func _process(_d: float) -> bool:
 		for h in c.heroes:
 			if h["nombre"] == "Garon": g = h
 		print(n, " estado=", c.estado, " ts=", Engine.time_scale, " paused=", paused, " garon atb=", g["atb"], " emb=", g.get("embuir",""), "/", g.get("embuir_turnos",0), " reg=", c.registro.text, " enem=", c.enemigos.map(func(e): return e["hp"]))
-	return n > 750
+	return n > 1100

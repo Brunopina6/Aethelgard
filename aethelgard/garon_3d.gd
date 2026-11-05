@@ -51,6 +51,7 @@ const GUARDIA_A := 0.0          # segundos de «Juicio» de la primera pose
 const GUARDIA_B := 0.25         # y de la segunda
 const GUARDIA_MEZCLA := 0.7     # cuánto se acerca a la segunda pose (1 = del todo)
 const GUARDIA_PERIODO := 3.2    # segundos de ida y vuelta
+const RUTA_ESPADAS := "res://garon_espadas.res"   # GuardiaDoble, AvanzarDoble, RetrocederDoble
 const GOLPES_JUICIO := [1.10]
 const FIN_JUICIO := 2.3
 const GOLPES_GIRO := [0.90, 1.50]
@@ -129,8 +130,21 @@ func _mapear_animaciones() -> void:
 		if lib.has_animation(n):
 			nombres[n] = n
 			_quitar_avance(n)
+	# Movimientos de doble espada (pack «Dual-Blade Combat Essentials», pasados a los huesos de Garon
+	# con el redireccionamiento de esqueleto de Godot): guardia de combate y pasos adelante/atrás.
+	if ResourceLoader.exists(RUTA_ESPADAS):
+		var extra: AnimationLibrary = load(RUTA_ESPADAS)
+		for n in extra.get_animation_list():
+			if not lib.has_animation(n):
+				lib.add_animation(n, extra.get_animation(n))
+	if lib.has_animation("GuardiaDoble"):
+		lib.add_animation("Guardia", lib.get_animation("GuardiaDoble"))
+	for n in ["AvanzarDoble", "RetrocederDoble"]:
+		if lib.has_animation(n):
+			nombres[n] = n
+			lib.get_animation(n).loop_mode = Animation.LOOP_LINEAR
 	if lib.has_animation("Juicio") and not lib.has_animation("Guardia"):
-		lib.add_animation("Guardia", _guardia_viva("Juicio"))
+		lib.add_animation("Guardia", _guardia_viva("Juicio"))     # sin el pack: la guardia hecha a mano
 	var quieto := "Guardia" if lib.has_animation("Guardia") else "Paseo"
 	nombres["Guardia"] = quieto
 	nombres["Reposo"] = quieto
@@ -561,6 +575,27 @@ func correr() -> void:
 	_base_movimiento()
 	play("Correr")
 	_viento(2.0)
+
+
+# En combate se acerca y se aleja en guardia, con los pasos de doble espada (si no están, corre).
+func avanzar(velocidad := 1.6) -> void:
+	if not nombres.has("AvanzarDoble"):
+		correr()
+		return
+	_base_movimiento()
+	play("AvanzarDoble", 0.15)
+	anim.speed_scale = velocidad
+	_viento(1.2)
+
+
+func retroceder(velocidad := 1.6) -> void:
+	if not nombres.has("RetrocederDoble"):
+		correr()
+		return
+	_base_movimiento()
+	play("RetrocederDoble", 0.15)
+	anim.speed_scale = velocidad
+	_viento(1.2)
 
 
 # Ataque normal: salta y cae con un tajo. "impacto" se llama al tocar al enemigo.
