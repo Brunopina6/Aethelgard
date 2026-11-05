@@ -313,7 +313,9 @@ func _altura_suelo(p: Vector3, y_actual: float) -> float:
 		return y_actual + 99.0
 	var q := PhysicsRayQueryParameters3D.create(Vector3(p.x, y_actual + SUBE_MAX + 0.05, p.z), Vector3(p.x, y_actual - 8.0, p.z))
 	var r := espacio.intersect_ray(q)
-	return r["position"].y if not r.is_empty() else y_actual
+	if r.is_empty() or r["position"].y < y_actual - 0.8:   # borde de un barranco: no se tira
+		return y_actual + 99.0
+	return r["position"].y
 
 
 func _punto_suelo(pantalla: Vector2):
