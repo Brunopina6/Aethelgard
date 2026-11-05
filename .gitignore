@@ -1,2 +1,21 @@
+# Aethelgard: lo que nunca se sube a GitHub
+
+# Compilaciones de Android (van a las Releases, no al historial)
 *.apk
-*.apk
+*.apk.idsig
+*.aab
+
+# Claves de firma y credenciales (nunca en el repositorio)
+*.keystore
+*.jks
+export_credentials.cfg
+.env
+
+# Caché de Godot y proyecto Android generado
+.godot/
+android/build/
+
+# Basura del sistema
+Thumbs.db
+desktop.ini
+.DS_Store
