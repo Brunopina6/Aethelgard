@@ -922,6 +922,7 @@ func _crear_escenario() -> void:
 	# faroles junto a las entradas del puente
 	_poste(Vector3(SENDERO[4].x - 1.0, altura(SENDERO[4].x - 1.0, -3.8), -3.8), 1.8, true)
 	_poste(Vector3(SENDERO[5].x + 1.0, altura(SENDERO[5].x + 1.0, -0.2), -0.2), 1.8, true)
+	_estatua_guardian(Vector3(2.6, 0, -10.5), 15.0)            # Fase 2.1: primer modelo real de Meshy (mirador de la cascada)
 	_arbustos()
 	_hierba_y_flores()
 	_mariposas()
@@ -944,6 +945,55 @@ func _crear_escenario() -> void:
 		cm.radial_segments = 9
 		_al_lote(cm, Transform3D(Basis(), Vector3(-70 + k * 26, cm.height * 0.5 - 8, -120 - randf() * 30)), mat_monte)
 	_cerrar_lotes()                                      # puente, rocas y montañas: una malla por material
+
+
+# ---------------------------------------------------------------- modelos reales (Fase 2.1)
+
+# Monta el material de un modelo preparado con pruebas/herramientas/preparar_meshy.gd (las texturas van como PNG
+# comprimidos por Godot; la malla solo anota si el color lleva transparencia recortada).
+func _mat_modelo(carpeta: String, nombre: String, malla: Mesh) -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	var base := "res://modelos/%s/%s" % [carpeta, nombre]
+	if ResourceLoader.exists(base + "_color.png"):
+		m.albedo_texture = load(base + "_color.png")
+	if perfil.get("relieve", true) and ResourceLoader.exists(base + "_normal.png"):
+		m.normal_enabled = true
+		m.normal_texture = load(base + "_normal.png")
+	if ResourceLoader.exists(base + "_rugosidad.png"):
+		m.roughness_texture = load(base + "_rugosidad.png")
+	m.roughness = 1.0
+	if malla.has_meta("alfa_recortado") and malla.get_meta("alfa_recortado"):
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
+		m.alpha_scissor_threshold = 0.5
+		m.cull_mode = BaseMaterial3D.CULL_DISABLED
+	return m
+
+
+# Estatua del guardián de piedra (Meshy, reducida a ~5 700 triángulos). Marca un sitio para pararse junto al
+# camino (Skill aet-diseno-exploracion). Si falta el archivo, la escena sigue igual sin ella.
+func _estatua_guardian(p: Vector3, giro_grados: float) -> void:
+	var ruta := "res://modelos/guardian/guardian.res"
+	if not ResourceLoader.exists(ruta):
+		return
+	var malla: Mesh = load(ruta)
+	var cuerpo := StaticBody3D.new()
+	cuerpo.position = Vector3(p.x, altura(p.x, p.z) - 0.05, p.z)
+	cuerpo.rotation_degrees.y = giro_grados
+	add_child(cuerpo)
+	var mi := MeshInstance3D.new()
+	mi.mesh = malla
+	mi.material_override = _mat_modelo("guardian", "guardian", malla)
+	cuerpo.add_child(mi)
+	mi.add_to_group("ocluye")
+	var col := CollisionShape3D.new()                  # Kael no la atraviesa
+	var cil := CylinderShape3D.new()
+	cil.radius = 1.0
+	cil.height = 3.0
+	col.shape = cil
+	col.position.y = 1.5
+	cuerpo.add_child(col)
+	var pedestal := _mat_detalle(Color(0.62, 0.6, 0.56), 0.9, false, 1.0)   # losa a sus pies
+	_bloque(Vector3(p.x, altura(p.x, p.z) + 0.02, p.z), Vector3(3.2, 0.12, 2.6), pedestal, Vector3(0, deg_to_rad(giro_grados), 0), false)
 
 
 func _crear_fauna() -> void:
