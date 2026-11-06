@@ -468,6 +468,13 @@ func _crear_panel_rnd(capa: CanvasLayer) -> void:
 	bd.focus_mode = Control.FOCUS_NONE
 	bd.pressed.connect(func(): _empezar_banco(BANCO_DIAG))
 	capa.add_child(bd)
+	var bt := Button.new()
+	bt.text = "TOPE"
+	bt.position = Vector2(1160, 204)
+	bt.custom_minimum_size = Vector2(108, 56)
+	bt.focus_mode = Control.FOCUS_NONE
+	bt.pressed.connect(func(): _empezar_banco(BANCO_TOPE))
+	capa.add_child(bt)
 	panel_rnd = Label.new()
 	panel_rnd.position = Vector2(16, 84)
 	panel_rnd.add_theme_font_size_override("font_size", 22)
@@ -564,6 +571,9 @@ func _exit_tree() -> void:
 # Caso: [perfil, distancia, CSV antiguo, cambios sobre el perfil (A/B), nombre en la tabla]
 const BANCO_CASOS := [["bajo", 20.0, false], ["bajo", 34.0, false], ["medio", 20.0, false], ["medio", 34.0, false],
 	["alto", 20.0, false], ["alto", 34.0, false], ["bajo", 20.0, true]]
+# Botón «TOPE»: los tres perfiles con su tope real de FPS (como se jugará), para medir los tirones
+const BANCO_TOPE := [["bajo", 20.0, false, {}, "bajo", true], ["medio", 20.0, false, {}, "medio", true],
+	["medio", 34.0, false, {}, "medio", true], ["alto", 20.0, false, {}, "alto", true]]
 # Botón «DIAG»: qué frena al perfil medio (quitando una cosa cada vez, Skill aet-rendimiento-android)
 const BANCO_DIAG := [["medio", 20.0, false, {}, "medio"],
 	["medio", 20.0, false, {"relieve": false}, "medio-relieve"],
@@ -630,7 +640,8 @@ func _seguir_banco() -> void:
 func _banco_paso(delta: float) -> void:
 	if _banco.is_empty():
 		return
-	Engine.max_fps = 0                               # medir la capacidad, no el tope
+	var con_tope: bool = _banco["caso"].size() > 5 and _banco["caso"][5]
+	Engine.max_fps = perfil_fps if con_tope else 0   # sin tope: la capacidad; con tope: como se jugará
 	if destino == null:
 		destino = BANCO_RUTA[_bpunto % BANCO_RUTA.size()]
 		_bpunto += 1
@@ -651,8 +662,17 @@ func _banco_paso(delta: float) -> void:
 	var med: float = _bms[_bms.size() / 2]
 	var b: Dictionary = Engine.get_meta("banco_proto")
 	var caso: Array = _banco["caso"]
-	b["resultados"].append([caso[4] if caso.size() > 4 else caso[0], caso[1], caso[2], _bms.size() / BANCO_MIDE, med, _bms[int(_bms.size() * 0.95)],
-		_bsum[0] / _bn, _bsum[1] / _bn, _bsum[2] / _bn, _bsum[3] / _bn, _bsum[4]])
+	# tirones: fotogramas que tardan más de 1,5 veces lo previsto (con tope, lo que pide su FPS)
+	var previsto: float = 1000.0 / perfil_fps if con_tope else med
+	var tirones := 0
+	for m in _bms:
+		if m > previsto * 1.5:
+			tirones += 1
+	var nombre: String = caso[4] if caso.size() > 4 else caso[0]
+	if con_tope:
+		nombre += " tope%d" % perfil_fps
+	b["resultados"].append([nombre, caso[1], caso[2], _bms.size() / BANCO_MIDE, med, _bms[int(_bms.size() * 0.95)],
+		_bsum[0] / _bn, _bsum[1] / _bn, _bsum[2] / _bn, _bsum[3] / _bn, _bsum[4], 100.0 * tirones / maxf(1.0, _bms.size())])
 	b["i"] += 1
 	Engine.set_meta("banco_proto", b)
 	_banco = {}
@@ -663,12 +683,12 @@ func _banco_paso(delta: float) -> void:
 func _mostrar_tabla_banco(b: Dictionary) -> void:
 	Engine.remove_meta("banco_proto")
 	Engine.set_meta("calidad_proto", b["perfil_previo"])
-	var lineas := ["perfil          dist  CSV   FPS   mediana  p95    CPU    GPU    dibujos  triáng.  memoria"]
-	var csv := ["perfil,distancia_m,csv_0_5s,fps,ms_mediana,ms_p95,cpu_dibujo_ms,gpu_ms,dibujos,primitivas,memoria_video_mb"]
+	var lineas := ["perfil          dist  CSV   FPS   mediana  p95    CPU    GPU    dibujos  triáng.  memoria  tirones"]
+	var csv := ["perfil,distancia_m,csv_0_5s,fps,ms_mediana,ms_p95,cpu_dibujo_ms,gpu_ms,dibujos,primitivas,memoria_video_mb,tirones_pct"]
 	for r in b["resultados"]:
-		lineas.append("%-14s  %2dm  %-4s %5.1f  %5.1f ms %5.1f ms %4.1f ms %s  %4d     %4dk    %d MB" % [
-			r[0], r[1], "sí" if r[2] else "no", r[3], r[4], r[5], r[6], ("%4.1f ms" % r[7]) if r[7] > 0.0 else "  —   ", int(r[8]), int(r[9] / 1000), int(r[10])])
-		csv.append("%s,%d,%s,%.1f,%.2f,%.2f,%.2f,%.2f,%d,%d,%.1f" % [r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9], r[10]])
+		lineas.append("%-14s  %2dm  %-4s %5.1f  %5.1f ms %5.1f ms %4.1f ms %s  %4d     %4dk    %d MB   %4.1f %%" % [
+			r[0], r[1], "sí" if r[2] else "no", r[3], r[4], r[5], r[6], ("%4.1f ms" % r[7]) if r[7] > 0.0 else "  —   ", int(r[8]), int(r[9] / 1000), int(r[10]), r[11]])
+		csv.append("%s,%d,%s,%.1f,%.2f,%.2f,%.2f,%.2f,%d,%d,%.1f,%.2f" % [r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9], r[10], r[11]])
 	var f := FileAccess.open("user://banco_%s.csv" % scene_file_path.get_file().get_basename(), FileAccess.WRITE)
 	if f != null:
 		f.store_string("\n".join(csv))

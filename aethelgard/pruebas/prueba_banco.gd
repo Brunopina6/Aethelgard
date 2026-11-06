@@ -16,7 +16,9 @@ func _initialize() -> void:
 func _process(_d: float) -> bool:
 	n += 1
 	if n == 30:
-		if "diag" in OS.get_cmdline_user_args():
+		if "tope" in OS.get_cmdline_user_args():
+			current_scene._empezar_banco(current_scene.BANCO_TOPE)
+		elif "diag" in OS.get_cmdline_user_args():
 			current_scene._empezar_banco(current_scene.BANCO_DIAG)
 		else:
 			current_scene._empezar_banco()
