@@ -588,6 +588,7 @@ const BANCO_ESPERA := 3.0
 const BANCO_MIDE := 8.0
 var _banco := {}                    # caso en curso
 var _bt := 0.0
+var _bu0 := 0                       # reloj real al empezar a medir (µs)
 var _bms: Array = []
 var _bsum := [0.0, 0.0, 0.0, 0.0, 0.0]   # cpu, gpu, dibujos, primitivas, memoria
 var _bn := 0
@@ -645,9 +646,13 @@ func _banco_paso(delta: float) -> void:
 	if destino == null:
 		destino = BANCO_RUTA[_bpunto % BANCO_RUTA.size()]
 		_bpunto += 1
+	# La ventana se mide con el reloj REAL: Godot recorta el delta a 8 pasos de física (~133 ms), así que con
+	# fotogramas más lentos el delta avanzaba menos que el tiempo y el FPS se quedaba clavado en ~7,5.
 	_bt += delta
 	if _bt < BANCO_ESPERA:
 		return
+	if _bu0 == 0:
+		_bu0 = Time.get_ticks_usec()
 	_bms.append(_ms[_ms.size() - 1] if _ms.size() > 0 else delta * 1000.0)
 	var v := _valores()
 	_bsum[0] += v[3]
@@ -656,13 +661,16 @@ func _banco_paso(delta: float) -> void:
 	_bsum[3] += v[6]
 	_bsum[4] = v[7]
 	_bn += 1
-	if _bt < BANCO_ESPERA + BANCO_MIDE:
+	var real := (Time.get_ticks_usec() - _bu0) / 1000000.0
+	if real < BANCO_MIDE:
 		return
+	_bu0 = 0
 	_bms.sort()
 	var med: float = _bms[_bms.size() / 2]
 	var b: Dictionary = Engine.get_meta("banco_proto")
 	var caso: Array = _banco["caso"]
-	# tirones: fotogramas que tardan más de 1,5 veces lo previsto (con tope, lo que pide su FPS)
+	# picos: fotogramas que tardan más de 1,5 veces lo previsto. Sin tope, lo previsto es la mediana del propio caso
+	# (mide tirones, no si se llega a 30 FPS: un caso lento pero regular da 0 %); con tope, lo que pide su FPS
 	var previsto: float = 1000.0 / perfil_fps if con_tope else med
 	var tirones := 0
 	for m in _bms:
@@ -671,7 +679,7 @@ func _banco_paso(delta: float) -> void:
 	var nombre: String = caso[4] if caso.size() > 4 else caso[0]
 	if con_tope:
 		nombre += " tope%d" % perfil_fps
-	b["resultados"].append([nombre, caso[1], caso[2], _bms.size() / BANCO_MIDE, med, _bms[int(_bms.size() * 0.95)],
+	b["resultados"].append([nombre, caso[1], caso[2], _bms.size() / real, med, _bms[int(_bms.size() * 0.95)],
 		_bsum[0] / _bn, _bsum[1] / _bn, _bsum[2] / _bn, _bsum[3] / _bn, _bsum[4], 100.0 * tirones / maxf(1.0, _bms.size())])
 	b["i"] += 1
 	Engine.set_meta("banco_proto", b)
@@ -683,8 +691,8 @@ func _banco_paso(delta: float) -> void:
 func _mostrar_tabla_banco(b: Dictionary) -> void:
 	Engine.remove_meta("banco_proto")
 	Engine.set_meta("calidad_proto", b["perfil_previo"])
-	var lineas := ["perfil          dist  CSV   FPS   mediana  p95    CPU    GPU    dibujos  triáng.  memoria  tirones"]
-	var csv := ["perfil,distancia_m,csv_0_5s,fps,ms_mediana,ms_p95,cpu_dibujo_ms,gpu_ms,dibujos,primitivas,memoria_video_mb,tirones_pct"]
+	var lineas := ["perfil          dist  CSV   FPS   mediana  p95    CPU    GPU    dibujos  triáng.  memoria  picos"]
+	var csv := ["perfil,distancia_m,csv_0_5s,fps,ms_mediana,ms_p95,cpu_dibujo_ms,gpu_ms,dibujos,primitivas,memoria_video_mb,picos_pct"]
 	for r in b["resultados"]:
 		lineas.append("%-14s  %2dm  %-4s %5.1f  %5.1f ms %5.1f ms %4.1f ms %s  %4d     %4dk    %d MB   %4.1f %%" % [
 			r[0], r[1], "sí" if r[2] else "no", r[3], r[4], r[5], r[6], ("%4.1f ms" % r[7]) if r[7] > 0.0 else "  —   ", int(r[8]), int(r[9] / 1000), int(r[10]), r[11]])
