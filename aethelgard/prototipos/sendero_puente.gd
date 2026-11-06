@@ -301,6 +301,7 @@ func _crear_sendero() -> void:
 		mm.set_instance_color(k, Color(g, g * 0.95, g * 0.86))
 	var mmi := MultiMeshInstance3D.new()
 	mmi.multimesh = mm
+	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF   # las losas reciben sombra, no la dan (casi invisible y cara)
 	add_child(mmi)
 
 
@@ -432,6 +433,49 @@ func _poste(pos: Vector3, alto: float, farol := false) -> void:
 			luz.omni_range = 4.0
 			luz.position = f.position
 			add_child(luz)
+		else:
+			_halo_falso(pos, f.position)
+
+
+# Halo falso de un farol (perfiles sin luces reales). Medido en el Redmi: las dos luces de los faroles
+# costaban ~7 ms por fotograma. En su lugar: un disco de luz cálida pintado en el suelo (sumando color,
+# sin escribir profundidad) y un resplandor suave alrededor de la caja del farol. Casi gratis.
+func _halo_falso(suelo: Vector3, farol: Vector3) -> void:
+	var g := Gradient.new()
+	g.colors = PackedColorArray([Color(1.0, 0.72, 0.38, 0.28), Color(1.0, 0.66, 0.3, 0.09), Color(1.0, 0.6, 0.25, 0.0)])
+	g.offsets = PackedFloat32Array([0.0, 0.45, 1.0])
+	var tex := GradientTexture2D.new()
+	tex.gradient = g
+	tex.fill = GradientTexture2D.FILL_RADIAL
+	tex.fill_from = Vector2(0.5, 0.5)
+	tex.fill_to = Vector2(1.0, 0.5)
+	tex.width = 64
+	tex.height = 64
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	m.no_depth_test = false
+	m.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
+	m.albedo_texture = tex
+	var disco := MeshInstance3D.new()
+	var pm := PlaneMesh.new()
+	pm.size = Vector2(5.0, 5.0)
+	disco.mesh = pm
+	disco.material_override = m
+	disco.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	disco.position = suelo + Vector3(0, 0.12, 0)          # algo por encima del suelo y de las losas: sin parpadeos
+	add_child(disco)
+	var brillo := Sprite3D.new()                          # resplandor alrededor de la caja del farol
+	brillo.texture = tex
+	brillo.pixel_size = 1.4 / 64.0
+	brillo.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	brillo.shaded = false
+	brillo.transparent = true
+	brillo.modulate = Color(1, 1, 1, 0.9)
+	brillo.position = farol
+	brillo.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(brillo)
 
 
 func _mat_agua() -> Material:
@@ -540,6 +584,7 @@ func _crear_agua() -> void:
 	bm.vertex_color_use_as_albedo = true
 	bola.material = bm
 	espuma.mesh = bola
+	espuma.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	espuma.position = Vector3(RIO_X, AGUA_RIO + 0.1, CASCADA_Z + 1.1)   # justo donde la cortina entra en el río
 	add_child(espuma)
 	# rocas mojadas a los lados de la caída, arriba y abajo
@@ -770,6 +815,7 @@ func _arbustos() -> void:
 		mm.set_instance_color(k, piezas[k][1])
 	var mmi := MultiMeshInstance3D.new()
 	mmi.multimesh = mm
+	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF   # matas bajas: reciben sombra, no la dan
 	add_child(mmi)
 
 
@@ -798,6 +844,7 @@ func _mariposas() -> void:
 		m.cull_mode = BaseMaterial3D.CULL_DISABLED
 		q.material = m
 		p.mesh = q
+		p.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		var g := Gradient.new()
 		g.colors = PackedColorArray([Color(1, 0.95, 0.6, 0.0), Color(1, 0.95, 0.6, 1), Color(1, 0.8, 0.9, 1), Color(1, 0.8, 0.9, 0.0)])
 		g.offsets = PackedFloat32Array([0.0, 0.15, 0.85, 1.0])
@@ -813,12 +860,23 @@ func _crear_ambiente() -> void:
 	for n in get_children():                         # luz más cálida y cielo más intenso, como la referencia
 		if n is DirectionalLight3D:
 			n.light_color = Color(1.0, 0.9, 0.72)
-			# Medido: en Compatibility, activar las sombras de la luz principal aclara toda la imagen (brillo
-			# medio 0,66 frente a 0,48). Se compensa la energía para que todos los perfiles tengan la misma luz.
+			# (la luminosidad de los perfiles se iguala con la exposición: ver EXPO_CON_SOMBRAS)
 			n.light_energy = perfil.get("luz_sol", 1.05)
 			n.shadow_enabled = perfil["sombras"]
 			n.directional_shadow_max_distance = perfil["dist_sombras"]
 			n.shadow_blur = 1.5
+			# Sombras más baratas sin cambiar su aspecto: Godot divide por defecto la sombra del sol en 4 tramos
+			# y vuelve a pintar todo lo que da sombra en cada uno. Con la cámara elevada casi todo está a la
+			# misma distancia, así que bastan 2 (o 1). La resolución del mapa de sombras va según el perfil.
+			match int(perfil.get("sombra_tramos", 4)):
+				1:
+					n.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
+				2:
+					n.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
+				_:
+					n.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS
+			if perfil["sombras"]:
+				RenderingServer.directional_shadow_atlas_set_size(int(perfil.get("sombra_res", 4096)), true)
 		elif n is WorldEnvironment:
 			var e: Environment = n.environment
 			var cielo: ProceduralSkyMaterial = e.sky.sky_material

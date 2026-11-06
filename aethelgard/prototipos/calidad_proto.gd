@@ -12,6 +12,8 @@ const PERFILES := {
 		"msaa": 0,
 		"sombras": false,
 		"dist_sombras": 0.0,
+		"sombra_tramos": 0,
+		"sombra_res": 2048,
 		"hierba": 2400,
 		"flores": 280,
 		"dist_hierba": 30.0,    # la hierba se deja de dibujar más allá (en trozos)
@@ -26,11 +28,13 @@ const PERFILES := {
 		"msaa": 0,
 		"sombras": true,
 		"dist_sombras": 30.0,
+		"sombra_tramos": 2,       # 2 tramos en vez de los 4 de Godot: la escena se pinta 2 veces menos para la sombra
+		"sombra_res": 2048,
 		"hierba": 4200,
 		"flores": 450,
 		"dist_hierba": 42.0,
 		"relieve": true,
-		"luces_faroles": true,
+		"luces_faroles": false, # medido en el Redmi: −7 ms; halo falso en su lugar
 		"refraccion": false,
 		"espuma": 60,
 		"fps": 30,
@@ -40,6 +44,8 @@ const PERFILES := {
 		"msaa": 2,
 		"sombras": true,
 		"dist_sombras": 55.0,
+		"sombra_tramos": 2,
+		"sombra_res": 4096,
 		"hierba": 7000,
 		"flores": 700,
 		"dist_hierba": 80.0,

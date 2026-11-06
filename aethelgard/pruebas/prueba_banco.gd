@@ -16,7 +16,10 @@ func _initialize() -> void:
 func _process(_d: float) -> bool:
 	n += 1
 	if n == 30:
-		current_scene._empezar_banco()
+		if "diag" in OS.get_cmdline_user_args():
+			current_scene._empezar_banco(current_scene.BANCO_DIAG)
+		else:
+			current_scene._empezar_banco()
 	if n > 30 and not Engine.has_meta("banco_proto"):
 		return n > 40 and current_scene.tabla_banco != null
 	return false

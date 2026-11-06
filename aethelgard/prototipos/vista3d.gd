@@ -461,6 +461,13 @@ func _crear_panel_rnd(capa: CanvasLayer) -> void:
 	bp.focus_mode = Control.FOCUS_NONE
 	bp.pressed.connect(_empezar_banco)
 	capa.add_child(bp)
+	var bd := Button.new()
+	bd.text = "DIAG"
+	bd.position = Vector2(1160, 140)
+	bd.custom_minimum_size = Vector2(108, 56)
+	bd.focus_mode = Control.FOCUS_NONE
+	bd.pressed.connect(func(): _empezar_banco(BANCO_DIAG))
+	capa.add_child(bd)
 	panel_rnd = Label.new()
 	panel_rnd.position = Vector2(16, 84)
 	panel_rnd.add_theme_font_size_override("font_size", 22)
@@ -502,6 +509,8 @@ func _valores() -> Array:
 	var rid := get_viewport().get_viewport_rid()
 	var cpu := RenderingServer.viewport_get_measured_render_time_cpu(rid) + RenderingServer.get_frame_setup_time_cpu()
 	var gpu := RenderingServer.viewport_get_measured_render_time_gpu(rid)
+	if gpu < 0.0 or gpu > 1000.0:
+		gpu = 0.0                                       # algunos drivers (Mali del Redmi) devuelven basura: «—»
 	return [Performance.get_monitor(Performance.TIME_FPS), mediana, p95, cpu, gpu,
 		Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),
 		Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME),
@@ -552,8 +561,18 @@ func _exit_tree() -> void:
 # puente; se esperan 3 s y se miden 8 s sin tope de FPS (en el móvil manda la sincronía de la pantalla).
 # Al final se ve la tabla en pantalla y se guarda en user://banco_<escena>.csv. Se cambia de perfil
 # recargando la escena, así que el estado va en Engine (meta «banco_proto»).
+# Caso: [perfil, distancia, CSV antiguo, cambios sobre el perfil (A/B), nombre en la tabla]
 const BANCO_CASOS := [["bajo", 20.0, false], ["bajo", 34.0, false], ["medio", 20.0, false], ["medio", 34.0, false],
 	["alto", 20.0, false], ["alto", 34.0, false], ["bajo", 20.0, true]]
+# Botón «DIAG»: qué frena al perfil medio (quitando una cosa cada vez, Skill aet-rendimiento-android)
+const BANCO_DIAG := [["medio", 20.0, false, {}, "medio"],
+	["medio", 20.0, false, {"relieve": false}, "medio-relieve"],
+	["medio", 20.0, false, {"sombras": false}, "medio-sombras"],
+	["medio", 20.0, false, {"escala_3d": 0.75}, "medio-res75"],
+	["medio", 20.0, false, {"hierba": 2400, "flores": 280, "dist_hierba": 30.0}, "medio-hierba"],
+	["medio", 20.0, false, {"luces_faroles": false}, "medio-faroles"],
+	["alto", 20.0, false, {}, "alto"],
+	["alto", 20.0, false, {"sombra_res": 2048}, "alto-sombra2k"]]
 const BANCO_RUTA := [Vector3(-3, 0, 5), Vector3(5.3, 0, -2), Vector3(12.7, 0, -2), Vector3(5.3, 0, -2)]
 const BANCO_ESPERA := 3.0
 const BANCO_MIDE := 8.0
@@ -566,15 +585,21 @@ var _bpunto := 0
 var tabla_banco: Label
 
 
-func _empezar_banco() -> void:
-	Engine.set_meta("banco_proto", {"i": 0, "resultados": [], "perfil_previo": load("res://prototipos/calidad_proto.gd").actual()})
+func _empezar_banco(casos: Array = BANCO_CASOS) -> void:
+	Engine.set_meta("banco_proto", {"i": 0, "resultados": [], "casos": casos,
+		"perfil_previo": load("res://prototipos/calidad_proto.gd").actual()})
 	_cargar_caso_banco()
 
 
 func _cargar_caso_banco() -> void:
 	var b: Dictionary = Engine.get_meta("banco_proto")
-	if b["i"] < BANCO_CASOS.size():
-		Engine.set_meta("calidad_proto", BANCO_CASOS[b["i"]][0])
+	var casos: Array = b["casos"]
+	if Engine.has_meta("calidad_extra"):
+		Engine.remove_meta("calidad_extra")
+	if b["i"] < casos.size():
+		Engine.set_meta("calidad_proto", casos[b["i"]][0])
+		if casos[b["i"]].size() > 3 and not casos[b["i"]][3].is_empty():
+			Engine.set_meta("calidad_extra", casos[b["i"]][3])
 	else:
 		Engine.set_meta("calidad_proto", b["perfil_previo"])   # al acabar, la tabla se ve con el perfil de antes
 	get_tree().reload_current_scene()
@@ -583,10 +608,11 @@ func _cargar_caso_banco() -> void:
 # Se llama al cargar la escena con un banco en marcha.
 func _seguir_banco() -> void:
 	var b: Dictionary = Engine.get_meta("banco_proto")
-	if b["i"] >= BANCO_CASOS.size():
+	var casos: Array = b["casos"]
+	if b["i"] >= casos.size():
 		_mostrar_tabla_banco(b)
 		return
-	var caso: Array = BANCO_CASOS[b["i"]]
+	var caso: Array = casos[b["i"]]
 	distancia = caso[1]
 	_banco = {"caso": caso}
 	_bt = 0.0
@@ -598,7 +624,7 @@ func _seguir_banco() -> void:
 		csv_cada_medio_segundo = true
 		if not panel_rnd.visible:
 			_alternar_panel()
-	info.text = "Banco de pruebas %d/%d: %s, %d m%s" % [b["i"] + 1, BANCO_CASOS.size(), caso[0], caso[1], " (CSV cada 0,5 s)" if caso[2] else ""]
+	info.text = "Banco de pruebas %d/%d: %s, %d m%s" % [b["i"] + 1, casos.size(), caso[4] if caso.size() > 4 else caso[0], caso[1], " (CSV cada 0,5 s)" if caso[2] else ""]
 
 
 func _banco_paso(delta: float) -> void:
@@ -625,7 +651,7 @@ func _banco_paso(delta: float) -> void:
 	var med: float = _bms[_bms.size() / 2]
 	var b: Dictionary = Engine.get_meta("banco_proto")
 	var caso: Array = _banco["caso"]
-	b["resultados"].append([caso[0], caso[1], caso[2], _bms.size() / BANCO_MIDE, med, _bms[int(_bms.size() * 0.95)],
+	b["resultados"].append([caso[4] if caso.size() > 4 else caso[0], caso[1], caso[2], _bms.size() / BANCO_MIDE, med, _bms[int(_bms.size() * 0.95)],
 		_bsum[0] / _bn, _bsum[1] / _bn, _bsum[2] / _bn, _bsum[3] / _bn, _bsum[4]])
 	b["i"] += 1
 	Engine.set_meta("banco_proto", b)
@@ -637,10 +663,10 @@ func _banco_paso(delta: float) -> void:
 func _mostrar_tabla_banco(b: Dictionary) -> void:
 	Engine.remove_meta("banco_proto")
 	Engine.set_meta("calidad_proto", b["perfil_previo"])
-	var lineas := ["perfil  dist  CSV   FPS   mediana  p95    CPU    GPU    dibujos  triáng.  memoria"]
+	var lineas := ["perfil          dist  CSV   FPS   mediana  p95    CPU    GPU    dibujos  triáng.  memoria"]
 	var csv := ["perfil,distancia_m,csv_0_5s,fps,ms_mediana,ms_p95,cpu_dibujo_ms,gpu_ms,dibujos,primitivas,memoria_video_mb"]
 	for r in b["resultados"]:
-		lineas.append("%-6s  %2dm  %-4s %5.1f  %5.1f ms %5.1f ms %4.1f ms %s  %4d     %4dk    %d MB" % [
+		lineas.append("%-14s  %2dm  %-4s %5.1f  %5.1f ms %5.1f ms %4.1f ms %s  %4d     %4dk    %d MB" % [
 			r[0], r[1], "sí" if r[2] else "no", r[3], r[4], r[5], r[6], ("%4.1f ms" % r[7]) if r[7] > 0.0 else "  —   ", int(r[8]), int(r[9] / 1000), int(r[10])])
 		csv.append("%s,%d,%s,%.1f,%.2f,%.2f,%.2f,%.2f,%d,%d,%.1f" % [r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9], r[10]])
 	var f := FileAccess.open("user://banco_%s.csv" % scene_file_path.get_file().get_basename(), FileAccess.WRITE)
@@ -657,7 +683,7 @@ func _mostrar_tabla_banco(b: Dictionary) -> void:
 	tabla_banco.add_theme_constant_override("outline_size", 8)
 	var fondo := ColorRect.new()
 	fondo.color = Color(0, 0, 0, 0.6)
-	fondo.size = Vector2(1200, 330)
+	fondo.size = Vector2(1200, 60 + 30 * b["resultados"].size())
 	fondo.position = Vector2(30, 140)
 	fondo.mouse_filter = Control.MOUSE_FILTER_STOP
 	fondo.gui_input.connect(func(ev: InputEvent):
