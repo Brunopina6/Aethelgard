@@ -17,15 +17,24 @@ const RIO_ANCHO := 2.6            # media anchura del fondo del barranco
 const BORDE := 1.1                # anchura de la pared (de arriba al fondo)
 const FONDO := -6.0               # profundidad del barranco
 const CASCADA_Z := -16.0          # río arriba de aquí, el agua va por un canal a nivel del suelo
+const AGUA_RIO := FONDO + 0.35    # altura del agua del río (sin olas)
+const AGUA_CANAL := -0.45         # altura del agua del canal de arriba
+const CANAL_SOLAPE := 0.3         # el canal sobresale del borde y tapa el arranque de la cascada
+const OLAS := 0.3                 # altura de las olas (el sombreado traía 1,5 m: el canal rebosaba)
 const LIMITE := Rect2(-21, -23, 48, 44)   # zona por la que puede andar Kael (x, z): el borde nunca se ve
 const SENDERO := [Vector3(-16, 0, 16), Vector3(-9, 0, 9), Vector3(-3, 0, 5), Vector3(2, 0, -0.5),
 	Vector3(RIO_X - RIO_ANCHO - BORDE - 0.6, 0, -2), Vector3(RIO_X + RIO_ANCHO + BORDE + 0.6, 0, -2),
 	Vector3(16, 0, -6), Vector3(20, 0, -14), Vector3(22, 0, -22)]
 
 var movil := false
+var perfil: Dictionary = {}       # perfil de calidad (prototipos/calidad_proto.gd)
 var hierba_n := 6000
 var flores_n := 600
-var tex_detalle: Texture2D        # grano para hierba, tierra y piedra (gris claro, se multiplica por el color)
+const TROZO_HIERBA := 12.0
+# Medido: en Compatibility, activar las sombras de la luz principal aclara toda la imagen (brillo medio
+# 0,66 frente a 0,48 en la misma vista). Con sombras se baja la exposición para igualar los perfiles.
+const EXPO_CON_SOMBRAS := 0.58
+var tex_detalle: Texture2D       # grano para hierba, tierra y piedra (gris claro, se multiplica por el color)
 var tex_relieve: Texture2D        # mapa de normales del mismo ruido
 
 const SHADER_HIERBA := """
@@ -80,10 +89,10 @@ void fragment() {
 
 
 func _ready() -> void:
-	movil = OS.has_feature("mobile") or "movil" in OS.get_cmdline_user_args()
-	if movil:
-		hierba_n = 2600
-		flores_n = 300
+	perfil = load("res://prototipos/calidad_proto.gd").datos()
+	movil = load("res://prototipos/calidad_proto.gd").actual() == "bajo"
+	hierba_n = perfil["hierba"]
+	flores_n = perfil["flores"]
 	_crear_texturas()
 	super._ready()
 	var inicio: Vector3 = SENDERO[0] + Vector3(0, altura(SENDERO[0].x, SENDERO[0].z), 0)
@@ -129,7 +138,7 @@ func _mat_detalle(color := Color.WHITE, escala := 0.5, por_vertice := false, rel
 	m.albedo_color = color
 	m.albedo_texture = tex_detalle
 	m.vertex_color_use_as_albedo = por_vertice
-	m.normal_enabled = true
+	m.normal_enabled = perfil.get("relieve", true)      # perfil bajo: sin mapas de relieve (3 lecturas menos por píxel)
 	m.normal_texture = tex_relieve
 	m.normal_scale = relieve
 	m.uv1_triplanar = true
@@ -295,27 +304,44 @@ func _crear_sendero() -> void:
 	add_child(mmi)
 
 
+# ---------------------------------------------------------------- agrupación de geometría
+# Las piezas pequeñas que no se mueven y comparten material (puente, rocas, montañas) se juntan en
+# una sola malla por material: una llamada de dibujo en vez de decenas. Las colisiones siguen siendo
+# piezas separadas. No se agrupa lo que conviene recortar por separado (árboles, hierba en trozos).
+var _lotes := {}                                    # Material -> SurfaceTool
+
+
+func _al_lote(malla: Mesh, t: Transform3D, mat: Material) -> void:
+	if not _lotes.has(mat):
+		var st := SurfaceTool.new()
+		st.begin(Mesh.PRIMITIVE_TRIANGLES)
+		_lotes[mat] = st
+	_lotes[mat].append_from(malla, 0, t)
+
+
+func _cerrar_lotes() -> void:
+	for mat in _lotes:
+		var mi := MeshInstance3D.new()
+		mi.mesh = _lotes[mat].commit()
+		mi.material_override = mat
+		add_child(mi)
+	_lotes.clear()
+
+
 func _bloque(pos: Vector3, tam: Vector3, mat: Material, giro := Vector3.ZERO, choca := true) -> void:
-	var mi := MeshInstance3D.new()
 	var bm := BoxMesh.new()
 	bm.size = tam
-	mi.mesh = bm
-	mi.material_override = mat
+	_al_lote(bm, Transform3D(Basis.from_euler(giro), pos), mat)
 	if choca:
 		var cuerpo := StaticBody3D.new()
 		cuerpo.position = pos
 		cuerpo.rotation = giro
 		add_child(cuerpo)
-		cuerpo.add_child(mi)
 		var col := CollisionShape3D.new()
 		var bs := BoxShape3D.new()
 		bs.size = tam
 		col.shape = bs
 		cuerpo.add_child(col)
-	else:
-		mi.position = pos
-		mi.rotation = giro
-		add_child(mi)
 
 
 # Puente medieval de piedra: un arco rebajado de dovelas entre las dos paredes del barranco, relleno
@@ -399,19 +425,25 @@ func _poste(pos: Vector3, alto: float, farol := false) -> void:
 		f.material_override = fm
 		f.position = pos + Vector3(0, alto + 0.15, 0)
 		add_child(f)
-		var luz := OmniLight3D.new()
-		luz.light_color = Color(1.0, 0.75, 0.4)
-		luz.light_energy = 1.2
-		luz.omni_range = 4.0
-		luz.position = f.position
-		add_child(luz)
+		if perfil["luces_faroles"]:                     # en Compatibility cada luz redibuja lo que toca
+			var luz := OmniLight3D.new()
+			luz.light_color = Color(1.0, 0.75, 0.4)
+			luz.light_energy = 1.2
+			luz.omni_range = 4.0
+			luz.position = f.position
+			add_child(luz)
 
 
 func _mat_agua() -> Material:
 	if not ResourceLoader.exists("res://shaders/water.gdshader"):
 		return _mat(Color(0.2, 0.55, 0.75), 0.1)
 	var sm := ShaderMaterial.new()
-	sm.shader = load("res://shaders/water.gdshader")
+	# perfil alto: el agua original con refracción; bajo y medio: la variante sin textura de pantalla
+	# (con ella Godot copia la pantalla entera cada fotograma aunque la refracción esté apagada)
+	if perfil["refraccion"]:
+		sm.shader = load("res://shaders/water.gdshader")
+	else:
+		sm.shader = load("res://prototipos/agua_sin_refraccion.gdshader")
 	# el shader necesita sus texturas de olas y normales (sin ellas el agua sale plana)
 	var olas := FastNoiseLite.new()
 	olas.frequency = 0.02
@@ -439,14 +471,16 @@ func _mat_agua() -> Material:
 	sm.set_shader_parameter("albedo_1", Color(0.06, 0.36, 0.42))
 	sm.set_shader_parameter("albedo_2", Color(0.32, 0.74, 0.76))
 	sm.set_shader_parameter("wave_speed", 0.04)
+	sm.set_shader_parameter("wave_size", OLAS)
 	return sm
 
 
 func _crear_agua() -> void:
 	var mat_agua := _mat_agua()
-	# río en el fondo del barranco (hasta lejos, fuera de la vista) y canal de arriba
-	for datos in [[Vector3(RIO_X, FONDO + 0.35, (CASCADA_Z + 56.0) * 0.5), Vector2(RIO_ANCHO * 2.0 + 0.6, 56.0 - CASCADA_Z)],
-			[Vector3(RIO_X, -0.45, (CASCADA_Z - 56.0) * 0.5), Vector2(3.4, 56.0 + CASCADA_Z)]]:
+	# río en el fondo del barranco (hasta lejos, fuera de la vista) y canal de arriba. El canal llega
+	# CANAL_SOLAPE metros más allá del borde para tapar la parte de arriba de la cascada (sin hueco).
+	for datos in [[Vector3(RIO_X, AGUA_RIO, (CASCADA_Z + 56.0) * 0.5), Vector2(RIO_ANCHO * 2.0 + 0.6, 56.0 - CASCADA_Z)],
+			[Vector3(RIO_X, AGUA_CANAL, (CASCADA_Z + CANAL_SOLAPE - 56.0) * 0.5), Vector2(3.4, 56.0 + CASCADA_Z + CANAL_SOLAPE)]]:
 		var agua := MeshInstance3D.new()
 		var pm := PlaneMesh.new()
 		pm.size = datos[1]
@@ -456,24 +490,35 @@ func _crear_agua() -> void:
 		agua.material_override = mat_agua
 		agua.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		add_child(agua)
-	# la cascada: dos cortinas con rayas que caen (una delante, más estrecha) y espuma abajo
+	# La cascada: dos cortinas con rayas que caen. Antes eran rectángulos verticales metidos en la pendiente
+	# de la pared (de z = CASCADA_Z a CASCADA_Z + 0,6): la mitad de abajo quedaba detrás de la roca.
+	# Ahora cada cortina va inclinada, siempre por delante de la pared (sin superficies casi coplanares),
+	# es más ancha abajo (no se ve como un rectángulo), empieza bajo el agua del canal y termina por
+	# debajo del agua del río: no queda ningún hueco. La espuma tapa el contacto con el río.
 	var cm := ShaderMaterial.new()
 	cm.shader = Shader.new()
 	cm.shader.code = SHADER_CASCADA
-	for capa in [[3.6, 0.15], [2.6, 0.35]]:
+	for capa in [[3.0, 3.9, 0.12, 0.95], [2.2, 3.0, 0.3, 1.15]]:   # ancho arriba, ancho abajo, z arriba, z abajo
+		var arriba := Vector3(RIO_X, AGUA_CANAL + 0.05, CASCADA_Z + capa[2])
+		var abajo := Vector3(RIO_X, AGUA_RIO - 0.35, CASCADA_Z + capa[3])
+		var st := SurfaceTool.new()
+		st.begin(Mesh.PRIMITIVE_TRIANGLES)
+		var esquinas := [[arriba - Vector3(capa[0] * 0.5, 0, 0), Vector2(0, 0)], [arriba + Vector3(capa[0] * 0.5, 0, 0), Vector2(1, 0)],
+			[abajo - Vector3(capa[1] * 0.5, 0, 0), Vector2(0, 1)], [abajo + Vector3(capa[1] * 0.5, 0, 0), Vector2(1, 1)]]
+		for k in [0, 1, 2, 1, 3, 2]:
+			st.set_uv(esquinas[k][1])
+			st.add_vertex(esquinas[k][0])
+		st.generate_normals()
 		var cortina := MeshInstance3D.new()
-		var q := QuadMesh.new()
-		q.size = Vector2(capa[0], -0.45 - FONDO - 0.2)
-		cortina.mesh = q
-		cortina.position = Vector3(RIO_X, (-0.45 + FONDO + 0.35) * 0.5, CASCADA_Z + capa[1])
+		cortina.mesh = st.commit()
 		cortina.material_override = cm
 		cortina.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		add_child(cortina)
 	var espuma := CPUParticles3D.new()
-	espuma.amount = 40 if movil else 90
+	espuma.amount = perfil["espuma"]
 	espuma.lifetime = 1.4
 	espuma.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
-	espuma.emission_box_extents = Vector3(1.8, 0.1, 0.3)
+	espuma.emission_box_extents = Vector3(2.0, 0.1, 0.4)
 	espuma.direction = Vector3(0, 1, 1)
 	espuma.spread = 35.0
 	espuma.initial_velocity_min = 0.8
@@ -495,7 +540,7 @@ func _crear_agua() -> void:
 	bm.vertex_color_use_as_albedo = true
 	bola.material = bm
 	espuma.mesh = bola
-	espuma.position = Vector3(RIO_X, FONDO + 0.45, CASCADA_Z + 0.6)
+	espuma.position = Vector3(RIO_X, AGUA_RIO + 0.1, CASCADA_Z + 1.1)   # justo donde la cortina entra en el río
 	add_child(espuma)
 	# rocas mojadas a los lados de la caída, arriba y abajo
 	var roca := _mat_detalle(Color(0.45, 0.45, 0.46), 0.8, false, 1.0)
@@ -505,18 +550,14 @@ func _crear_agua() -> void:
 
 
 func _roca(p: Vector3, r: float, mat: Material) -> void:
-	var mi := MeshInstance3D.new()
 	var sm := SphereMesh.new()
 	sm.radius = r
 	sm.height = r * 1.3
 	sm.radial_segments = 8
 	sm.rings = 5
-	mi.mesh = sm
-	mi.material_override = mat
-	mi.position = p
-	mi.rotation = Vector3(randf(), randf() * TAU, randf()) * 0.4
-	mi.scale = Vector3(randf_range(0.9, 1.3), randf_range(0.7, 1.0), randf_range(0.9, 1.2))
-	add_child(mi)
+	var b := Basis.from_euler(Vector3(randf(), randf() * TAU, randf()) * 0.4).scaled(
+		Vector3(randf_range(0.9, 1.3), randf_range(0.7, 1.0), randf_range(0.9, 1.2)))
+	_al_lote(sm, Transform3D(b, p), mat)                # todas las rocas: una malla por material
 
 
 # ---------------------------------------------------------------- vegetación
@@ -544,21 +585,27 @@ func _arbol_viento(pos: Vector3, alto: float, color: Color) -> void:
 	tronco.position.y = alto * 0.3
 	tronco.material_override = _mat_detalle(Color(0.45, 0.32, 0.22), 1.2, false, 1.2)
 	cuerpo.add_child(tronco)
-	var mat := _mat_copa(color)
-	for k in 5:                                     # copa hecha de varias bolas: silueta más natural
-		var copa := MeshInstance3D.new()
+	# copa hecha de varias bolas (silueta natural) juntadas en UNA malla: 1 llamada de dibujo por copa
+	# en vez de 5. Cada árbol sigue siendo una pieza aparte (se recorta y se vuelve transparente solo).
+	var centro_copa := alto * 0.78
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for k in 5:
 		var sm := SphereMesh.new()
 		var r := alto * randf_range(0.2, 0.27)
 		sm.radius = r
 		sm.height = r * 1.7
 		sm.radial_segments = 12
 		sm.rings = 7
-		copa.mesh = sm
-		copa.material_override = mat
 		var a := k * TAU / 4.0 + randf() * 0.5
-		copa.position = Vector3(cos(a) * alto * 0.14, alto * randf_range(0.66, 0.8), sin(a) * alto * 0.14) if k > 0 else Vector3(0, alto * 0.9, 0)
-		cuerpo.add_child(copa)
-		copa.add_to_group("ocluye")
+		var p := Vector3(cos(a) * alto * 0.14, alto * randf_range(0.66, 0.8), sin(a) * alto * 0.14) if k > 0 else Vector3(0, alto * 0.9, 0)
+		st.append_from(sm, 0, Transform3D(Basis(), p - Vector3(0, centro_copa, 0)))
+	var copa := MeshInstance3D.new()
+	copa.mesh = st.commit()
+	copa.material_override = _mat_copa(color)
+	copa.position.y = centro_copa                       # el vaivén se calcula desde el centro de la copa
+	cuerpo.add_child(copa)
+	copa.add_to_group("ocluye")
 	tronco.add_to_group("ocluye")
 	var col := CollisionShape3D.new()
 	var cs := SphereShape3D.new()
@@ -617,10 +664,6 @@ func _hierba_y_flores() -> void:
 	mat.shader = Shader.new()
 	mat.shader.code = SHADER_HIERBA
 	hoja.surface_set_material(0, mat)
-	var mm := MultiMesh.new()
-	mm.transform_format = MultiMesh.TRANSFORM_3D
-	mm.use_colors = true
-	mm.mesh = hoja
 	var lista: Array = []
 	var intentos := 0
 	while lista.size() < hierba_n and intentos < hierba_n * 4:
@@ -628,18 +671,36 @@ func _hierba_y_flores() -> void:
 		var p := Vector3(randf_range(-26, 32), 0, randf_range(-28, 26))
 		if _libre(p, 1.2):
 			lista.append(p)
-	mm.instance_count = lista.size()
-	for k in lista.size():
-		var p: Vector3 = lista[k]
-		var e := randf_range(0.6, 1.4)
-		mm.set_instance_transform(k, Transform3D(Basis(Vector3.UP, randf() * TAU).scaled(Vector3(e, e * randf_range(0.8, 1.3), e)),
-			Vector3(p.x, altura(p.x, p.z), p.z)))
-		var tono := randf_range(0.85, 1.1)
-		mm.set_instance_color(k, Color(tono, tono, tono * randf_range(0.9, 1.0)))
-	var mmi := MultiMeshInstance3D.new()
-	mmi.multimesh = mm
-	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(mmi)
+	# la hierba va en trozos de TROZO_HIERBA metros: lo que queda fuera de la cámara no se dibuja, y más
+	# allá de la distancia del perfil («dist_hierba») tampoco (el suelo ya tiene el color de la hierba)
+	var trozos := {}
+	for p in lista:
+		var clave := Vector2i(floori(p.x / TROZO_HIERBA), floori(p.z / TROZO_HIERBA))
+		if not trozos.has(clave):
+			trozos[clave] = []
+		trozos[clave].append(p)
+	for clave in trozos:
+		var centro := Vector3((clave.x + 0.5) * TROZO_HIERBA, 0, (clave.y + 0.5) * TROZO_HIERBA)
+		centro.y = altura(centro.x, centro.z)
+		var puntos: Array = trozos[clave]
+		var mm := MultiMesh.new()
+		mm.transform_format = MultiMesh.TRANSFORM_3D
+		mm.use_colors = true
+		mm.mesh = hoja
+		mm.instance_count = puntos.size()
+		for k in puntos.size():
+			var p: Vector3 = puntos[k]
+			var e := randf_range(0.6, 1.4)
+			mm.set_instance_transform(k, Transform3D(Basis(Vector3.UP, randf() * TAU).scaled(Vector3(e, e * randf_range(0.8, 1.3), e)),
+				Vector3(p.x, altura(p.x, p.z), p.z) - centro))
+			var tono := randf_range(0.85, 1.1)
+			mm.set_instance_color(k, Color(tono, tono, tono * randf_range(0.9, 1.0)))
+		var mmi := MultiMeshInstance3D.new()
+		mmi.multimesh = mm
+		mmi.position = centro
+		mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mmi.visibility_range_end = perfil["dist_hierba"]
+		add_child(mmi)
 	# flores: bolitas de color en matas (lavanda, rosa, blanco y amarillo, como la referencia)
 	var flor := SphereMesh.new()
 	flor.radius = 0.07
@@ -752,8 +813,11 @@ func _crear_ambiente() -> void:
 	for n in get_children():                         # luz más cálida y cielo más intenso, como la referencia
 		if n is DirectionalLight3D:
 			n.light_color = Color(1.0, 0.9, 0.72)
-			n.light_energy = 1.05
-			n.shadow_enabled = not ("movil" in OS.get_cmdline_user_args() or OS.has_feature("mobile"))
+			# Medido: en Compatibility, activar las sombras de la luz principal aclara toda la imagen (brillo
+			# medio 0,66 frente a 0,48). Se compensa la energía para que todos los perfiles tengan la misma luz.
+			n.light_energy = perfil.get("luz_sol", 1.05)
+			n.shadow_enabled = perfil["sombras"]
+			n.directional_shadow_max_distance = perfil["dist_sombras"]
 			n.shadow_blur = 1.5
 		elif n is WorldEnvironment:
 			var e: Environment = n.environment
@@ -764,12 +828,16 @@ func _crear_ambiente() -> void:
 			e.fog_density = 0.0045
 			e.ambient_light_color = Color(0.62, 0.7, 0.88)
 			e.ambient_light_energy = 0.38
+			# misma luminosidad en todos los perfiles: con sombras se baja la exposición (no el sol, que
+			# dejaría la escena gris); medido con el brillo medio de la misma vista
+			e.tonemap_exposure = perfil.get("exposicion", EXPO_CON_SOMBRAS if perfil["sombras"] else 1.0)
 			e.adjustment_enabled = true                     # colores más vivos, como la ilustración de referencia
 			e.adjustment_saturation = 1.3
 			e.adjustment_contrast = 1.1
 
 
 func _crear_escenario() -> void:
+	seed(1234)                                           # la escena sale siempre igual: comparaciones justas
 	_crear_terreno()
 	_crear_sendero()
 	_crear_puente()
@@ -786,6 +854,7 @@ func _crear_escenario() -> void:
 	_arbol_viento(Vector3(-4, altura(-4, -14), -14), 5.0, Color(0.9, 0.62, 0.74))
 	# rocas
 	var roca := _mat_detalle(Color(0.6, 0.58, 0.55), 0.8, false, 1.0)
+	seed(4242)                                           # misma escena siempre: comparaciones justas
 	for k in 26:
 		var p := Vector3(randf_range(-22, 28), 0, randf_range(-24, 22))
 		if not _libre(p, 1.6):
@@ -808,17 +877,15 @@ func _crear_escenario() -> void:
 		isla.shaded = false
 		isla.modulate = Color(0.85, 0.9, 1.0, 0.9)
 		add_child(isla)
+	var mat_monte := _mat_detalle(Color(0.5, 0.58, 0.72), 0.05, false, 0.3)
 	for k in 7:
-		var monte := MeshInstance3D.new()
 		var cm := CylinderMesh.new()
 		cm.top_radius = 0.0
 		cm.bottom_radius = randf_range(18, 30)
 		cm.height = randf_range(22, 40)
 		cm.radial_segments = 9
-		monte.mesh = cm
-		monte.material_override = _mat_detalle(Color(0.5, 0.58, 0.72), 0.05, false, 0.3)
-		monte.position = Vector3(-70 + k * 26, cm.height * 0.5 - 8, -120 - randf() * 30)
-		add_child(monte)
+		_al_lote(cm, Transform3D(Basis(), Vector3(-70 + k * 26, cm.height * 0.5 - 8, -120 - randf() * 30)), mat_monte)
+	_cerrar_lotes()                                      # puente, rocas y montañas: una malla por material
 
 
 func _crear_fauna() -> void:

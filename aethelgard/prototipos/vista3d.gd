@@ -60,6 +60,30 @@ func _ready() -> void:
 	capa.add_child(info)
 	_crear_panel_rnd(capa)
 	seguro = kael.global_position
+	_aplicar_perfil()
+	if Engine.has_meta("banco_proto"):
+		_seguir_banco.call_deferred()
+
+
+# Perfil de calidad (prototipos/calidad_proto.gd): resolución del 3D (la interfaz va siempre a
+# resolución completa y nítida), MSAA y tope de FPS. El resto lo aplica cada escena al construirse.
+var perfil_fps := 30
+
+
+func _aplicar_perfil() -> void:
+	var cal = load("res://prototipos/calidad_proto.gd")
+	var pf: Dictionary = cal.datos()
+	var vp := get_viewport()
+	vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_BILINEAR
+	vp.scaling_3d_scale = pf["escala_3d"]
+	vp.msaa_3d = Viewport.MSAA_2X if pf["msaa"] == 2 else Viewport.MSAA_DISABLED
+	perfil_fps = pf["fps"]
+
+
+func _cambiar_perfil() -> void:
+	var cal = load("res://prototipos/calidad_proto.gd")
+	Engine.set_meta("calidad_proto", cal.siguiente())
+	get_tree().reload_current_scene()
 
 
 # ---------------------------------------------------------------- mundo de prueba
@@ -304,7 +328,11 @@ func _process(delta: float) -> void:
 		kael.reposo()
 	_colocar_camara(1.0 - exp(-suavizado * delta))
 	_oclusion()
+	if _banco.is_empty() and Engine.max_fps != perfil_fps:
+		Engine.max_fps = perfil_fps                     # el del perfil (Recursos pone 30 al cambiar de escena)
 	_medir(delta)
+	if not _banco.is_empty():
+		return                                          # el banco escribe su estado en «info»
 	info.text ="Prototipo de cámara · %s · inclinación %d° · distancia %.0f m · %d FPS\nToca para andar · rueda/pellizco: zoom · Q/E: inclinación · T: perspectiva/orto · R: reiniciar" % [
 		"perspectiva" if cam.projection == Camera3D.PROJECTION_PERSPECTIVE else "ortográfica",
 		inclinacion, distancia, Engine.get_frames_per_second()]
@@ -399,17 +427,40 @@ func _vigilar_atasco(delta: float) -> void:
 
 
 # ---------------------------------------------------------------- panel de rendimiento (Skill aet-rendimiento-android)
-# Tecla F3 o botón «RND»: muestra FPS, ms por fotograma (mediana y percentil 95 de los últimos 10 s),
-# ms de proceso y de física, llamadas de dibujo, primitivas y memoria de vídeo. Mientras está abierto
-# guarda una línea cada 0,5 s en user://rendimiento_<escena>.csv.
+# Tecla F3 o botón «RND»: muestra FPS, ms por fotograma con el reloj real (mediana y percentil 95 de los
+# últimos ~10 s; el delta de Godot está suavizado y esconde los tirones), ms de CPU y de GPU del dibujo
+# (los que mide el motor; si el dispositivo no da la GPU sale «—»), llamadas de dibujo, triángulos y
+# memoria de vídeo. Mientras está abierto guarda una línea cada 0,5 s en user://rendimiento_<escena>.csv,
+# pero escribe en el almacenamiento solo cada 10 s (escribir cada medio segundo podía causar tirones).
+# Botón «CAL»: cambia de perfil (bajo → medio → alto). Botón «PRUEBA»: banco de pruebas automático.
 var panel_rnd: Label
 var _ms: Array = []
+var _u_ant := 0
 var _t_rnd := 0.0
 var _t_total := 0.0
 var _csv: FileAccess
+var _csv_pendiente: PackedStringArray = []
+var _t_csv := 0.0
+var csv_cada_medio_segundo := false          # solo para comparar en el banco (la forma antigua)
+var _midiendo := false
 
 
 func _crear_panel_rnd(capa: CanvasLayer) -> void:
+	var cal = load("res://prototipos/calidad_proto.gd")
+	var bc := Button.new()
+	bc.text = "CAL: " + cal.actual()
+	bc.position = Vector2(1060, 12)
+	bc.custom_minimum_size = Vector2(110, 56)
+	bc.focus_mode = Control.FOCUS_NONE
+	bc.pressed.connect(_cambiar_perfil)
+	capa.add_child(bc)
+	var bp := Button.new()
+	bp.text = "PRUEBA"
+	bp.position = Vector2(1160, 76)
+	bp.custom_minimum_size = Vector2(108, 56)
+	bp.focus_mode = Control.FOCUS_NONE
+	bp.pressed.connect(_empezar_banco)
+	capa.add_child(bp)
 	panel_rnd = Label.new()
 	panel_rnd.position = Vector2(16, 84)
 	panel_rnd.add_theme_font_size_override("font_size", 22)
@@ -429,37 +480,193 @@ func _crear_panel_rnd(capa: CanvasLayer) -> void:
 
 func _alternar_panel() -> void:
 	panel_rnd.visible = not panel_rnd.visible
+	_medir_render(panel_rnd.visible)
 	if panel_rnd.visible and _csv == null:
 		var nombre := String(scene_file_path.get_file().get_basename()) if scene_file_path != "" else "escena"
 		_csv = FileAccess.open("user://rendimiento_%s.csv" % nombre, FileAccess.WRITE)
 		if _csv != null:
-			_csv.store_line("tiempo,fps,ms_fotograma,ms_proceso,ms_fisica,dibujos,primitivas,memoria_video_mb")
+			_csv.store_line("tiempo,perfil,fps,ms_mediana,ms_p95,cpu_dibujo_ms,gpu_ms,dibujos,primitivas,memoria_video_mb")
+
+
+func _medir_render(si: bool) -> void:
+	_midiendo = si
+	RenderingServer.viewport_set_measure_render_time(get_viewport().get_viewport_rid(), si)
+
+
+# Valores de este momento: [fps, mediana, p95, cpu_dibujo, gpu, dibujos, primitivas, memoria]
+func _valores() -> Array:
+	var orden := _ms.duplicate()
+	orden.sort()
+	var mediana: float = orden[orden.size() / 2] if orden.size() > 0 else 0.0
+	var p95: float = orden[mini(orden.size() - 1, int(orden.size() * 0.95))] if orden.size() > 0 else 0.0
+	var rid := get_viewport().get_viewport_rid()
+	var cpu := RenderingServer.viewport_get_measured_render_time_cpu(rid) + RenderingServer.get_frame_setup_time_cpu()
+	var gpu := RenderingServer.viewport_get_measured_render_time_gpu(rid)
+	return [Performance.get_monitor(Performance.TIME_FPS), mediana, p95, cpu, gpu,
+		Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),
+		Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME),
+		Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED) / 1048576.0]
 
 
 func _medir(delta: float) -> void:
 	_t_total += delta
-	_ms.append(delta * 1000.0)
+	var ahora := Time.get_ticks_usec()                  # reloj real: el delta de Godot está suavizado
+	if _u_ant > 0:
+		_ms.append((ahora - _u_ant) / 1000.0)
+	_u_ant = ahora
 	if _ms.size() > 600:
 		_ms.pop_front()
+	_banco_paso(delta)
 	_t_rnd += delta
 	if _t_rnd < 0.5 or panel_rnd == null or not panel_rnd.visible:
 		return
 	_t_rnd = 0.0
-	var orden := _ms.duplicate()
-	orden.sort()
-	var mediana: float = orden[orden.size() / 2]
-	var p95: float = orden[mini(orden.size() - 1, int(orden.size() * 0.95))]
-	var fps := Performance.get_monitor(Performance.TIME_FPS)
-	var proceso := Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0
-	var fisica := Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0
-	var dibujos := Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)
-	var primitivas := Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME)
-	var vram := Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED) / 1048576.0
-	panel_rnd.text = "%d FPS · %.1f ms (p95 %.1f)\nproceso %.1f ms · física %.1f ms\n%d dibujos · %dk triángulos · %d MB vídeo" % [
-		fps, mediana, p95, proceso, fisica, dibujos, int(primitivas / 1000), int(vram)]
+	var v := _valores()
+	var cal = load("res://prototipos/calidad_proto.gd")
+	panel_rnd.text = "%s · %d FPS · %.1f ms (p95 %.1f)\nCPU dibujo %.1f ms · GPU %s\n%d dibujos · %dk triángulos · %d MB vídeo" % [
+		cal.actual(), v[0], v[1], v[2], v[3], ("%.1f ms" % v[4]) if v[4] > 0.0 else "—", v[5], int(v[6] / 1000), int(v[7])]
 	if _csv != null:
-		_csv.store_line("%.1f,%d,%.2f,%.2f,%.2f,%d,%d,%.1f" % [_t_total, fps, mediana, proceso, fisica, dibujos, primitivas, vram])
-		_csv.flush()
+		_csv_pendiente.append("%.1f,%s,%d,%.2f,%.2f,%.2f,%.2f,%d,%d,%.1f" % [_t_total, cal.actual(), v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7]])
+		_t_csv += 0.5
+		if csv_cada_medio_segundo or _t_csv >= 10.0:  # se escribe de golpe cada 10 s
+			_escribir_csv()
+
+
+func _escribir_csv() -> void:
+	if _csv == null:
+		return
+	for l in _csv_pendiente:
+		_csv.store_line(l)
+	_csv.flush()
+	_csv_pendiente.clear()
+	_t_csv = 0.0
+
+
+func _exit_tree() -> void:
+	_escribir_csv()
+
+
+# ---------------------------------------------------------------- banco de pruebas (botón «PRUEBA»)
+# Recorre solo todos los casos: perfil bajo, medio y alto, cámara a 20 m y a 34 m, y un caso con el CSV
+# escribiendo cada medio segundo (la forma antigua). En cada caso Kael camina en bucle por el camino y el
+# puente; se esperan 3 s y se miden 8 s sin tope de FPS (en el móvil manda la sincronía de la pantalla).
+# Al final se ve la tabla en pantalla y se guarda en user://banco_<escena>.csv. Se cambia de perfil
+# recargando la escena, así que el estado va en Engine (meta «banco_proto»).
+const BANCO_CASOS := [["bajo", 20.0, false], ["bajo", 34.0, false], ["medio", 20.0, false], ["medio", 34.0, false],
+	["alto", 20.0, false], ["alto", 34.0, false], ["bajo", 20.0, true]]
+const BANCO_RUTA := [Vector3(-3, 0, 5), Vector3(5.3, 0, -2), Vector3(12.7, 0, -2), Vector3(5.3, 0, -2)]
+const BANCO_ESPERA := 3.0
+const BANCO_MIDE := 8.0
+var _banco := {}                    # caso en curso
+var _bt := 0.0
+var _bms: Array = []
+var _bsum := [0.0, 0.0, 0.0, 0.0, 0.0]   # cpu, gpu, dibujos, primitivas, memoria
+var _bn := 0
+var _bpunto := 0
+var tabla_banco: Label
+
+
+func _empezar_banco() -> void:
+	Engine.set_meta("banco_proto", {"i": 0, "resultados": [], "perfil_previo": load("res://prototipos/calidad_proto.gd").actual()})
+	_cargar_caso_banco()
+
+
+func _cargar_caso_banco() -> void:
+	var b: Dictionary = Engine.get_meta("banco_proto")
+	if b["i"] < BANCO_CASOS.size():
+		Engine.set_meta("calidad_proto", BANCO_CASOS[b["i"]][0])
+	else:
+		Engine.set_meta("calidad_proto", b["perfil_previo"])   # al acabar, la tabla se ve con el perfil de antes
+	get_tree().reload_current_scene()
+
+
+# Se llama al cargar la escena con un banco en marcha.
+func _seguir_banco() -> void:
+	var b: Dictionary = Engine.get_meta("banco_proto")
+	if b["i"] >= BANCO_CASOS.size():
+		_mostrar_tabla_banco(b)
+		return
+	var caso: Array = BANCO_CASOS[b["i"]]
+	distancia = caso[1]
+	_banco = {"caso": caso}
+	_bt = 0.0
+	_bms.clear()
+	_bsum = [0.0, 0.0, 0.0, 0.0, 0.0]
+	_bn = 0
+	_medir_render(true)
+	if caso[2]:                                     # caso «CSV antiguo»: panel abierto escribiendo cada 0,5 s
+		csv_cada_medio_segundo = true
+		if not panel_rnd.visible:
+			_alternar_panel()
+	info.text = "Banco de pruebas %d/%d: %s, %d m%s" % [b["i"] + 1, BANCO_CASOS.size(), caso[0], caso[1], " (CSV cada 0,5 s)" if caso[2] else ""]
+
+
+func _banco_paso(delta: float) -> void:
+	if _banco.is_empty():
+		return
+	Engine.max_fps = 0                               # medir la capacidad, no el tope
+	if destino == null:
+		destino = BANCO_RUTA[_bpunto % BANCO_RUTA.size()]
+		_bpunto += 1
+	_bt += delta
+	if _bt < BANCO_ESPERA:
+		return
+	_bms.append(_ms[_ms.size() - 1] if _ms.size() > 0 else delta * 1000.0)
+	var v := _valores()
+	_bsum[0] += v[3]
+	_bsum[1] += v[4]
+	_bsum[2] += v[5]
+	_bsum[3] += v[6]
+	_bsum[4] = v[7]
+	_bn += 1
+	if _bt < BANCO_ESPERA + BANCO_MIDE:
+		return
+	_bms.sort()
+	var med: float = _bms[_bms.size() / 2]
+	var b: Dictionary = Engine.get_meta("banco_proto")
+	var caso: Array = _banco["caso"]
+	b["resultados"].append([caso[0], caso[1], caso[2], _bms.size() / BANCO_MIDE, med, _bms[int(_bms.size() * 0.95)],
+		_bsum[0] / _bn, _bsum[1] / _bn, _bsum[2] / _bn, _bsum[3] / _bn, _bsum[4]])
+	b["i"] += 1
+	Engine.set_meta("banco_proto", b)
+	_banco = {}
+	_escribir_csv()
+	_cargar_caso_banco()
+
+
+func _mostrar_tabla_banco(b: Dictionary) -> void:
+	Engine.remove_meta("banco_proto")
+	Engine.set_meta("calidad_proto", b["perfil_previo"])
+	var lineas := ["perfil  dist  CSV   FPS   mediana  p95    CPU    GPU    dibujos  triáng.  memoria"]
+	var csv := ["perfil,distancia_m,csv_0_5s,fps,ms_mediana,ms_p95,cpu_dibujo_ms,gpu_ms,dibujos,primitivas,memoria_video_mb"]
+	for r in b["resultados"]:
+		lineas.append("%-6s  %2dm  %-4s %5.1f  %5.1f ms %5.1f ms %4.1f ms %s  %4d     %4dk    %d MB" % [
+			r[0], r[1], "sí" if r[2] else "no", r[3], r[4], r[5], r[6], ("%4.1f ms" % r[7]) if r[7] > 0.0 else "  —   ", int(r[8]), int(r[9] / 1000), int(r[10])])
+		csv.append("%s,%d,%s,%.1f,%.2f,%.2f,%.2f,%.2f,%d,%d,%.1f" % [r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9], r[10]])
+	var f := FileAccess.open("user://banco_%s.csv" % scene_file_path.get_file().get_basename(), FileAccess.WRITE)
+	if f != null:
+		f.store_string("\n".join(csv))
+	for l in lineas:
+		print(l)
+	tabla_banco = Label.new()
+	tabla_banco.text = "\n".join(lineas) + "\n\n(toca para cerrar)"
+	tabla_banco.position = Vector2(40, 150)
+	tabla_banco.add_theme_font_size_override("font_size", 20)
+	tabla_banco.add_theme_color_override("font_color", Color(1.0, 1.0, 0.8))
+	tabla_banco.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	tabla_banco.add_theme_constant_override("outline_size", 8)
+	var fondo := ColorRect.new()
+	fondo.color = Color(0, 0, 0, 0.6)
+	fondo.size = Vector2(1200, 330)
+	fondo.position = Vector2(30, 140)
+	fondo.mouse_filter = Control.MOUSE_FILTER_STOP
+	fondo.gui_input.connect(func(ev: InputEvent):
+		if ev is InputEventMouseButton and ev.pressed:
+			fondo.queue_free()
+			tabla_banco.queue_free())
+	info.get_parent().add_child(fondo)
+	info.get_parent().add_child(tabla_banco)
+	info.text = "Banco de pruebas terminado"
 
 
 func _punto_suelo(pantalla: Vector2):
