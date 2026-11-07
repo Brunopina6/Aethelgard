@@ -122,6 +122,31 @@ Se compila con `compilar_apk_experimental.ps1`, en un entorno de datos aislado.
 - **No lleva el prototipo de Pastos Verdes 3D.** La característica `rebelum3d` todavía no hace nada, porque la región 3D entra en la Fase 2.3, y el preset excluye `prototipos/`.
 - **Para qué sirve:** comprobar que la app experimental se instala y convive con la estable, que es el criterio de la Fase 2.0.
 
+## 6.3 APK del prototipo de Pastos Verdes 3D (opción A, autorizada después de la fase)
+
+Compilada con `compilar_apk_experimental.ps1 -Preset "Android prueba 3D"` (commit `98ac41f`), en el entorno aislado.
+
+| Qué | Resultado |
+|---|---|
+| Archivo | `D:\REBELUM_compilaciones\Aethelgard_prueba3d-20261107-98ac41f-local.apk` (271,6 MB) |
+| SHA-256 | `8677785d0c0dbc8714e2282d13c7809ec455fbca82ebaae629a1cb2266710d51` |
+| Identificador | `com.aethelgard.prueba3d`, nombre «Aethelgard Prueba 3D». Es distinto del de la estable y del de la experimental |
+| Versión | `versionCode` 24 · `prueba3d-20261107-98ac41f-local`. Acaba en «-local» porque lleva cambios sin confirmar: el reflejo en `prototipos/`, 5 `.import` que actualizó el editor y los modelos de Quaternius sin seguimiento |
+| Arranque | Directamente en el prototipo `sendero_puente.tscn` |
+| Firma | El mismo certificado de depuración que las demás |
+| Partidas, claves y ajustes | Ninguno dentro |
+| Datos reales durante la exportación | Sin cambios |
+| `export_presets.cfg` | Restaurado idéntico |
+| `main`, `desarollo` y `v0.1.0` | Sin cambios |
+| Licencias | Además de lo de las otras APK, lleva EmacE y los árboles y el guardián de Meshy: **NO DISTRIBUIR** |
+
+## 6.4 La partida del PC cambió por la sesión de Godot del director (no por esta fase)
+
+- **Qué pasó y cuándo:** entre la última comprobación (03:49, huella `de2bbe37…`) y la exportación del prototipo (03:54), el director abrió el editor (03:49:04) y lanzó el juego desde él (03:49:59). A las **03:50:12**, el guardado automático **sobrescribió `partida.save`**, que pasó de 1447 a 900 bytes y tiene ahora la huella `063a6680…`. Ninguna prueba ni exportación de esta fase tocó la partida: todas fueron aisladas y comprobaron la carpeta antes y después.
+- **Qué falta en la partida nueva:** no tiene la clave `grupo`, es decir, los niveles, la experiencia y los atributos de Kael, Lya y Garon. La original los tenía, los tres a nivel 2.
+- **La original está a salvo** en `D:\REBELUM_respaldos\2026-11-07_antes_fase2.0\partida.save` (`de2bbe37…`). Restaurarla es copiar ese archivo a `%APPDATA%\Godot\app_userdata\Aethelgard\`. Solo se hará con el permiso del director.
+- **Hallazgo para la Fase 2.3:** el problema está en `progreso.gd`. `guardar()` escribe solo las claves que hay en memoria. Si se arranca una escena sin cargar antes la partida (por ejemplo, con F6 desde el editor), el guardado automático sustituye la partida completa por una parcial. Conviene que el sistema de guardado no sobrescriba una partida que la sesión no cargó, o que conserve las claves que falten.
+
 ## 7. Hallazgos
 
 - **`prueba_guardado` escribe en `user://partida.save`.** Fuera del entorno aislado escribiría en la partida real del PC: la copia, la sustituye y la restaura al final, así que si falla a mitad la partida podría perderse. Ahora solo se ejecuta aislada. En la Fase 2.3, junto con la partida separada del modo 3D, conviene que use su propia ruta de prueba.
