@@ -7,7 +7,7 @@
 #   insegura  no se puede ejecutar sin riesgo para los datos reales: nunca se ejecuta → NO SEGURA
 # «Qué escribe»: nada, user:// (siempre la carpeta aislada de la pasada) o {salida} (la carpeta de la pasada).
 # Dentro de «argumentos», {salida} se sustituye por la carpeta de la pasada, fuera del proyecto.
-prueba_escenas    | auto     |                      | 150 | user://     | mapa → zona → mapa con Recursos.cambiar_escena
+prueba_escenas    | auto     | sin_prologo          | 150 | user://     | mapa → zona → mapa con Recursos.cambiar_escena (sin prólogo: con él abierto, el mapa no deja entrar)
 prueba_huir       | auto     |                      | 150 | user://     | huir de un combate
 prueba_garon      | auto     | grupo=1 auto         | 240 | user://     | combate con Garon (ejemplo de pruebas/LEEME.md)
 prueba_dpad       | auto     | escena=zona dpad     | 150 | user://     | cruceta táctil

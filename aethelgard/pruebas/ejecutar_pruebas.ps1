@@ -130,6 +130,12 @@ foreach ($linea in (Get-Content -Encoding UTF8 $lista)) {
         Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -like "Godot*" -and $_.StartTime -ge $inicio } |
             Stop-Process -Force -ErrorAction SilentlyContinue
         $resultado = "FALLIDA"; $detalle = "TIEMPO: más de $seg s"
+        Start-Sleep -Milliseconds 300                   # deja que se cierren los registros
+        $texto = ""
+        if (Test-Path $log) { $texto += (Get-Content $log -Raw -Encoding UTF8) }
+        if (Test-Path $err) { $texto += "`n" + (Get-Content $err -Raw -Encoding UTF8) }
+        $causa = ($texto -split "`r?`n" | Where-Object { $l = $_; $PATRONES | Where-Object { $l -match $_ } } | Select-Object -First 1)
+        if ($causa) { $detalle += " · causa probable: " + ("" + $causa).Trim() }
     } else {
         $p.WaitForExit()
         $texto = ""
