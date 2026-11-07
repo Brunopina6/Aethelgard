@@ -6,8 +6,9 @@ extends Node2D
 # Si falta algo, se usa la versión 2D de antes (aventurero o Nyx 2D).
 # Se adjunta al nodo raíz de combate.tscn (Nodo 2D). Crea toda la interfaz por código.
 
-# Modo pruebas: las magias no gastan PM. Ponlo en false para el juego de verdad.
-const MODO_PRUEBAS := true
+# Modo pruebas: las magias no gastan PM. Es solo de depuración: se activa al arrancar con «-- pm_infinitos».
+# En el juego normal siempre se pagan los PM («false para el juego de verdad», como decía este comentario).
+var MODO_PRUEBAS: bool = "pm_infinitos" in OS.get_cmdline_user_args()
 # Frostfang: cada golpe de Kael congela al enemigo (pierde 2 de Vitalidad = 16 PV máximos durante
 # 2 rondas). PROB_CONGELAR = probabilidad (1.0 = siempre).
 const PROB_CONGELAR := 1.0
