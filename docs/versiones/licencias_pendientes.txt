@@ -36,3 +36,38 @@ emace | EmacE Stylized Grass | Prohíbe redistribuir sus archivos
 modelos/ | Árboles, arbustos y guardián de Meshy | Plan de Meshy sin confirmar (el preset excluye la carpeta)
 musica/ | Canciones de Pastos Verdes (Suno) | Plan de Suno sin confirmar (aún no están en el proyecto)
 audio/musica/ | Canciones de Pastos Verdes (Suno) | Plan de Suno sin confirmar (aún no están en el proyecto)
+#
+# Añadidos el 2026-11-07 con el inventario completo (docs/versiones/inventario_licencias.md).
+# Meshy: con plan gratuito, CC BY 4.0 (uso comercial con atribución); con plan de pago, del autor. Para distribuir
+# faltan los créditos de Meshy y confirmar que las imágenes de partida eran del autor o libres.
+assets/isla/ | Ciudad flotante (renders de un modelo de Meshy) | Faltan los créditos de Meshy
+decorado/abedul | Decorado 2D | Origen sin registrar (¿render de Meshy?)
+decorado/arce | Decorado 2D | Origen sin registrar (¿render de Meshy?)
+decorado/cerezo | Decorado 2D | Origen sin registrar (¿render de Meshy?)
+decorado/flor_azul | Decorado 2D | Origen sin registrar (¿render de Meshy?)
+decorado/glicinia | Decorado 2D | Origen sin registrar (¿render de Meshy?)
+decorado/helecho | Decorado 2D | Origen sin registrar (¿render de Meshy?)
+decorado/hierba_alta | Decorado 2D | Origen sin registrar (¿render de Meshy?)
+decorado/pino | Decorado 2D | Origen sin registrar (¿render de Meshy?)
+decorado/platanera | Decorado 2D | Origen sin registrar (¿render de Meshy?)
+assets/personajes/ | Dibujos 2D (Hollín, Kael, Nyx, Kael en el mapa, NPC y slime) | Origen sin registrar; el slime es de «Free RPG Sprites», sin licencia registrada
+assets/enemigos/ | Enemigos 2D | Origen sin registrar
+assets/dialogos/retratos/ | Retratos de los diálogos | Origen sin registrar
+assets/objetos/ | Poción, éter y portal | Origen sin registrar
+hollin_ | Dibujos 2D de Hollín | Origen sin registrar
+kael2_ | Recortables 2D de Kael | Origen sin registrar
+kael_ilu_ | Recortables 2D de Kael | Origen sin registrar
+assets/kael.png | Dibujo 2D de Kael | Origen sin registrar
+nyx | Dibujos 2D de Nyx | Origen sin registrar
+aventurero_ | Dibujos 2D del aventurero | Origen sin registrar
+assets/fondo.png | Fondo 2D | Origen sin registrar
+mapa_kael | Kael en el mapa | Origen sin registrar
+vfx/cura.png | Efecto de curación (GLB aportado) | Origen sin registrar
+vfx/cura_circulo | Efecto de curación (GLB aportado) | Origen sin registrar
+vfx/cura_espiral | Efecto de curación (GLB aportado) | Origen sin registrar
+vfx/geiser_agua.png | Efecto de agua (GLB aportado) | Origen sin registrar
+vfx/geiser_agua.res | Efecto de agua (GLB aportado) | Origen sin registrar
+vfx/rayo.png | Efecto de rayo (GLB aportado) | Origen sin registrar
+vfx/rayo.res | Efecto de rayo (GLB aportado) | Origen sin registrar
+vfx/vortice_fuego.png | Efecto de fuego (GLB aportado) | Origen sin registrar
+vfx/vortice_fuego.res | Efecto de fuego (GLB aportado) | Origen sin registrar
