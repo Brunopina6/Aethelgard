@@ -1010,6 +1010,12 @@ func _crear_ambiente() -> void:
 			e.adjustment_enabled = true                     # colores más vivos, como la ilustración de referencia
 			e.adjustment_saturation = 1.3
 			e.adjustment_contrast = 1.1
+			# Reflejo del cielo («reflejo_cielo» del perfil): bajo y medio sin él, alto con él. Mali Offline Compiler: es
+			# el coste evitable más alto de cada píxel iluminado (−13 a −26 % de cálculo); en el Redmi, −3,3 ms a 20 m y
+			# −8 ms a 34 m, con −0,7 % de brillo (docs/vegetacion_rendimiento.md, ronda 8). Para recuperarlo: poner
+			# "reflejo_cielo": true en prototipos/calidad_proto.gd (o {"reflejo_cielo": true} en «calidad_extra»).
+			e.reflected_light_source = Environment.REFLECTION_SOURCE_BG if perfil.get("reflejo_cielo", true) \
+				else Environment.REFLECTION_SOURCE_DISABLED
 
 
 func _crear_escenario() -> void:

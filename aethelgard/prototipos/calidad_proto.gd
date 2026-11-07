@@ -20,6 +20,7 @@ const PERFILES := {
 		"relieve": false,       # sin mapas de relieve (el grano de color se mantiene)
 		"luces_faroles": false, # los faroles brillan por emisión, sin luz real
 		"refraccion": false,
+		"reflejo_cielo": false, # Pastos Verdes: sin reflejo del cielo (medido en el Redmi: −3,3 ms a 20 m; brillo −0,7 %)
 		"espuma": 30,
 		"arbol_matas": 0.65,     # árboles: menos matas y algo más grandes (medido en el Redmi)
 		"arbol_sombra_simple": true,
@@ -38,6 +39,7 @@ const PERFILES := {
 		"relieve": true,
 		"luces_faroles": false, # medido en el Redmi: −7 ms; halo falso en su lugar
 		"refraccion": false,
+		"reflejo_cielo": false, # medido en el Redmi: −3,3 ms a 20 m y −8 ms a 34 m (ronda 8)
 		"espuma": 60,
 		"arbol_matas": 0.65,
 		"arbol_sombra_simple": true,  # sombra de la copa con forma sencilla (la de hoja a hoja costaba mucho)
@@ -56,6 +58,7 @@ const PERFILES := {
 		"relieve": true,
 		"luces_faroles": true,
 		"refraccion": true,
+		"reflejo_cielo": true,  # alto: el reflejo original del cielo (referencia de máxima calidad)
 		"espuma": 90,
 		"arbol_matas": 1.0,
 		"arbol_sombra_simple": false, # alto: todas las matas y sombra hoja a hoja
