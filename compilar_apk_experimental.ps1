@@ -40,8 +40,8 @@ $resumen   = New-Object System.Collections.Generic.List[string]
 function Abortar([string]$m) { Write-Host "ABORTADO: $m" -ForegroundColor Red; exit 1 }
 function Titulo([string]$m)  { Write-Host ""; Write-Host "== $m" -ForegroundColor Cyan }
 function Anotar([string]$m)  { Write-Host $m; $resumen.Add($m) }
-function Git([string[]]$a) {
-    $o = & git -C $raiz @a 2>$null
+function GitTexto([string[]]$a) {          # no se llama «Git»: en PowerShell taparía al propio git y se llamaría a sí misma
+    $o = & git.exe -C $raiz @a 2>$null
     if ($LASTEXITCODE -ne 0) { Abortar ("git " + ($a -join " ") + " ha fallado") }
     return ($o | Out-String).Trim()
 }
@@ -64,7 +64,7 @@ function CertificadoSha256([string]$ruta, [string]$apksigner) {
 Titulo "Comprobaciones previas"
 if (-not (Test-Path $Godot))     { Abortar "No encuentro Godot en $Godot" }
 if (-not (Test-Path $licencias)) { Abortar "Falta la lista de licencias pendientes: $licencias" }
-$rama = Git @("branch", "--show-current")
+$rama = GitTexto @("branch", "--show-current")
 if ($rama -eq "" -or $rama -eq "main" -or $rama -eq "desarollo") {
     Abortar "No se compila desde '$rama': usa la rama rebelum-3d."
 }
@@ -72,13 +72,13 @@ if (Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -l
     Abortar "Hay un Godot abierto: ciérralo antes de exportar (dos Godot sobre el mismo proyecto se pisan)."
 }
 $antes = @{}
-foreach ($r in $PROTEGIDAS) { $antes[$r] = Git @("rev-parse", $r) }
+foreach ($r in $PROTEGIDAS) { $antes[$r] = GitTexto @("rev-parse", $r) }
 
-$sha     = Git @("rev-parse", "--short=7", "HEAD")
-$cuenta  = [int](Git @("rev-list", "--count", "HEAD"))
-$fecha   = Git @("show", "-s", "--format=%cd", "--date=format:%Y%m%d", "HEAD")
+$sha     = GitTexto @("rev-parse", "--short=7", "HEAD")
+$cuenta  = [int](GitTexto @("rev-list", "--count", "HEAD"))
+$fecha   = GitTexto @("show", "-s", "--format=%cd", "--date=format:%Y%m%d", "HEAD")
 $version = "exp-$fecha-$sha"
-$cambios = @((Git @("status", "--porcelain", "--", "aethelgard")) -split "`r?`n" | Where-Object { $_ -ne "" })
+$cambios = @((GitTexto @("status", "--porcelain", "--", "aethelgard")) -split "`r?`n" | Where-Object { $_ -ne "" })
 $entran  = @($cambios | Where-Object {
     $ruta = $_.Substring(3)
     -not ($EXCLUIDAS | Where-Object { $ruta.StartsWith($_) })
@@ -228,7 +228,7 @@ if ($cambiados.Count -gt 0) {
 } else { Anotar "Carpeta real de datos del juego ($($huellasAntes.Count) archivos, partida.save incluida): sin cambios" }
 
 foreach ($ref in $PROTEGIDAS) {
-    if ((Git @("rev-parse", $ref)) -ne $antes[$ref]) { Anotar "FALLO: $ref ha cambiado"; $ok = $false }
+    if ((GitTexto @("rev-parse", $ref)) -ne $antes[$ref]) { Anotar "FALLO: $ref ha cambiado"; $ok = $false }
 }
 Anotar "main, desarollo y v0.1.0 sin cambios"
 
