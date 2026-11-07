@@ -1,0 +1,38 @@
+# Recursos con licencia sin verificar: NO pueden ir en un APK que se distribuya (tampoco por GitHub).
+# Las compilaciones locales sí los admiten (pruebas del autor). compilar_apk_experimental.ps1 busca cada patrón,
+# sin distinguir mayúsculas, en los nombres de archivo del APK. Si encuentra alguno, marca el APK como
+# «NO DISTRIBUIR».
+# Cuando una licencia quede verificada, se anota en docs/recursos.md y se borra su línea de aquí.
+#
+# Formato: patrón | recurso | motivo
+Meshy_AI_ | Personajes de Meshy (FBX originales) | El plan de Meshy del autor está sin confirmar
+kael.fbx | Kael (Meshy) | Plan de Meshy sin confirmar
+kael.glb | Kael (Meshy) | Plan de Meshy sin confirmar
+maga.fbx | Lya (Meshy) | Plan de Meshy sin confirmar
+maga.glb | Lya (Meshy) | Plan de Meshy sin confirmar
+garon.fbx | Garon (Meshy) | Plan de Meshy sin confirmar
+garon.glb | Garon (Meshy) | Plan de Meshy sin confirmar
+garon_escudo.glb | Escudo de Garon (Meshy) | Plan de Meshy sin confirmar
+goblin.fbx | Grimfang (Meshy) | Plan de Meshy sin confirmar
+goblin.glb | Grimfang (Meshy) | Plan de Meshy sin confirmar
+erebo.fbx | Érebo (Meshy) | Plan de Meshy sin confirmar
+erebo.glb | Érebo (Meshy) | Plan de Meshy sin confirmar
+erebo_coger.fbx | Animación de Érebo | Plan de Meshy sin confirmar
+erebo_conjuro.fbx | Animación de Érebo | Plan de Meshy sin confirmar
+erebo_idle.fbx | Animación de Érebo | Plan de Meshy sin confirmar
+erebo_mano | Animaciones de la mano de Érebo | Plan de Meshy sin confirmar
+erebo_salir.fbx | Animación de Érebo | Plan de Meshy sin confirmar
+sable.obj | Sable «Frostfang» (Meshy) | Plan de Meshy sin confirmar
+espada2.obj | Arma 3D | Origen sin registrar en docs/recursos.md
+hacha.obj | Arma 3D | Origen sin registrar en docs/recursos.md
+hoja_infernal.obj | Arma 3D | Origen sin registrar en docs/recursos.md
+vara.obj | Bastón 3D | Origen sin registrar en docs/recursos.md
+averno.obj | Objeto 3D | Origen sin registrar en docs/recursos.md
+diamante_azul.obj | Objeto 3D | Origen sin registrar en docs/recursos.md
+sonidos/erebo_ | 7 sonidos de Érebo | Origen sin registrar en docs/recursos.md
+musica_combate_normal | Música de combate | Origen sin registrar en docs/recursos.md
+vegetacion_prueba/ | Quaternius MegaKit (CC0) y EmacE Stylized Grass | EmacE prohíbe redistribuir sus archivos (el preset excluye la carpeta)
+emace | EmacE Stylized Grass | Prohíbe redistribuir sus archivos
+modelos/ | Árboles, arbustos y guardián de Meshy | Plan de Meshy sin confirmar (el preset excluye la carpeta)
+musica/ | Canciones de Pastos Verdes (Suno) | Plan de Suno sin confirmar (aún no están en el proyecto)
+audio/musica/ | Canciones de Pastos Verdes (Suno) | Plan de Suno sin confirmar (aún no están en el proyecto)
