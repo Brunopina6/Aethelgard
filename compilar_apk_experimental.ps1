@@ -43,7 +43,7 @@ function Anotar([string]$m)  { Write-Host $m; $resumen.Add($m) }
 function GitTexto([string[]]$a) {          # no se llama «Git»: en PowerShell taparía al propio git y se llamaría a sí misma
     $o = & git.exe -C $raiz @a 2>$null
     if ($LASTEXITCODE -ne 0) { Abortar ("git " + ($a -join " ") + " ha fallado") }
-    return ($o | Out-String).Trim()
+    return ($o | Out-String).TrimEnd()          # solo el final: «git status» empieza con espacio significativo
 }
 function Huellas([string]$carpeta) {
     $h = @{}
@@ -213,6 +213,15 @@ if ($pendientes.Count -gt 0) {
 } else {
     Anotar "Ningún recurso de la lista de licencias pendientes."
 }
+
+$colados = @()
+foreach ($c in $EXCLUIDAS) {
+    $dentro = "assets/" + $c.Substring("aethelgard/".Length)
+    $n = @($entradas | Where-Object { $_.StartsWith($dentro) }).Count
+    if ($n -gt 0) { $colados += "$dentro ($n archivos)" }
+}
+if ($colados.Count -gt 0) { Anotar "FALLO: el APK lleva carpetas que el preset excluye: $($colados -join ', ')"; $ok = $false }
+else { Anotar "Ninguna carpeta excluida dentro del APK (para_meshy, pruebas, prototipos, modelos y vegetacion_prueba)" }
 
 $prohibidos = @($entradas | Where-Object { $_ -match '(?i)(partida\.save|\.save$|export_credentials|keystore|\.jks$|\.p12$|editor_settings|override\.cfg)' })
 if ($prohibidos.Count -gt 0) {
