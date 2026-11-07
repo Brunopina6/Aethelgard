@@ -45,6 +45,15 @@ function Git([string[]]$a) {
     if ($LASTEXITCODE -ne 0) { Abortar ("git " + ($a -join " ") + " ha fallado") }
     return ($o | Out-String).Trim()
 }
+function Huellas([string]$carpeta) {
+    $h = @{}
+    if (Test-Path $carpeta) {
+        Get-ChildItem $carpeta -Recurse -File -Force | ForEach-Object {
+            $h[$_.FullName.Substring($carpeta.Length)] = (Get-FileHash $_.FullName -Algorithm SHA256).Hash
+        }
+    }
+    return $h
+}
 function CertificadoSha256([string]$ruta, [string]$apksigner) {
     $t = (& $apksigner verify --print-certs $ruta 2>&1 | Out-String)
     if ($LASTEXITCODE -ne 0) { return "" }
@@ -106,16 +115,35 @@ $r = 2
 while (Test-Path "$base.apk") { $base = Join-Path $Salida ("Aethelgard_$version-r" + $r); $r++ }   # nunca sobrescribe
 $apk = "$base.apk"
 
+# ------------------------------------------------------------------ entorno de datos aislado para Godot
+# Godot exporta con APPDATA, LOCALAPPDATA, TEMP y TMP apuntando a carpetas propias. Lleva una copia de los
+# ajustes del editor (rutas del SDK y del JDK, y la ruta de la clave de depuración, que solo se lee) y la
+# plantilla android_debug.apk. Así no escribe nada en la carpeta real de datos del juego.
+$aislado = Join-Path $Salida "entorno_aislado"
+$roam = Join-Path $aislado "Roaming"; $loc = Join-Path $aislado "Local"; $tmp = Join-Path $aislado "Temp"
+$tpl  = Join-Path $roam "Godot\export_templates\4.7.2.stable"
+New-Item -ItemType Directory -Force -Path $tpl, $loc, $tmp | Out-Null
+Copy-Item (Join-Path $env:APPDATA "Godot\editor_settings-4.7.tres") (Join-Path $roam "Godot") -Force
+if (-not (Test-Path (Join-Path $tpl "android_debug.apk"))) {
+    Copy-Item (Join-Path $env:APPDATA "Godot\export_templates\4.7.2.stable\android_debug.apk") $tpl
+}
+$datosReales  = Join-Path $env:APPDATA "Godot\app_userdata\Aethelgard"
+$huellasAntes = Huellas $datosReales
+
 # ------------------------------------------------------------------ exportar
-Titulo "Exportando con Godot (puede tardar varios minutos)"
+Titulo "Exportando con Godot en el entorno aislado (puede tardar varios minutos)"
 $codigo = -1
+$entornoOriginal = @{ A = $env:APPDATA; L = $env:LOCALAPPDATA; T = $env:TEMP; M = $env:TMP }
 try {
     [System.IO.File]::WriteAllText($presets, $nuevo, (New-Object System.Text.UTF8Encoding($false)))
+    $env:APPDATA = $roam; $env:LOCALAPPDATA = $loc; $env:TEMP = $tmp; $env:TMP = $tmp
     $argumentos = "--headless --path `"$proyecto`" --export-debug `"$PRESET`" `"$apk`""
     $p = Start-Process -FilePath $Godot -ArgumentList $argumentos -NoNewWindow -Wait -PassThru `
         -RedirectStandardOutput "$base.godot.log" -RedirectStandardError "$base.godot.err.log"
     $codigo = $p.ExitCode
 } finally {
+    $env:APPDATA = $entornoOriginal.A; $env:LOCALAPPDATA = $entornoOriginal.L
+    $env:TEMP = $entornoOriginal.T; $env:TMP = $entornoOriginal.M
     [System.IO.File]::WriteAllBytes($presets, $original)
     if ((Get-FileHash $presets -Algorithm SHA256).Hash -eq $huella) {
         Anotar "export_presets.cfg restaurado (idéntico al original)"
@@ -185,6 +213,19 @@ if ($pendientes.Count -gt 0) {
 } else {
     Anotar "Ningún recurso de la lista de licencias pendientes."
 }
+
+$prohibidos = @($entradas | Where-Object { $_ -match '(?i)(partida\.save|\.save$|export_credentials|keystore|\.jks$|\.p12$|editor_settings|override\.cfg)' })
+if ($prohibidos.Count -gt 0) {
+    Anotar "FALLO: el APK contiene partidas, claves o ajustes que no deben ir dentro:"; $prohibidos | ForEach-Object { Anotar "   $_" }; $ok = $false
+} else { Anotar "El APK no lleva partidas guardadas, claves, credenciales ni ajustes del editor" }
+
+$huellasDespues = Huellas $datosReales
+$cambiados = @()
+foreach ($k in $huellasAntes.Keys)   { if (-not $huellasDespues.ContainsKey($k)) { $cambiados += "borrado: $k" } elseif ($huellasDespues[$k] -ne $huellasAntes[$k]) { $cambiados += "cambiado: $k" } }
+foreach ($k in $huellasDespues.Keys) { if (-not $huellasAntes.ContainsKey($k)) { $cambiados += "nuevo: $k" } }
+if ($cambiados.Count -gt 0) {
+    Anotar "FALLO: la carpeta real de datos del juego ha cambiado al exportar:"; $cambiados | ForEach-Object { Anotar "   $_" }; $ok = $false
+} else { Anotar "Carpeta real de datos del juego ($($huellasAntes.Count) archivos, partida.save incluida): sin cambios" }
 
 foreach ($ref in $PROTEGIDAS) {
     if ((Git @("rev-parse", $ref)) -ne $antes[$ref]) { Anotar "FALLO: $ref ha cambiado"; $ok = $false }
