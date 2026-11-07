@@ -21,6 +21,8 @@ const PERFILES := {
 		"luces_faroles": false, # los faroles brillan por emisión, sin luz real
 		"refraccion": false,
 		"espuma": 30,
+		"arbol_matas": 0.65,     # árboles: menos matas y algo más grandes (medido en el Redmi)
+		"arbol_sombra_simple": true,
 		"fps": 30,
 	},
 	"medio": {
@@ -37,6 +39,8 @@ const PERFILES := {
 		"luces_faroles": false, # medido en el Redmi: −7 ms; halo falso en su lugar
 		"refraccion": false,
 		"espuma": 60,
+		"arbol_matas": 0.65,
+		"arbol_sombra_simple": true,  # sombra de la copa con forma sencilla (la de hoja a hoja costaba mucho)
 		"fps": 30,
 	},
 	"alto": {
@@ -53,6 +57,8 @@ const PERFILES := {
 		"luces_faroles": true,
 		"refraccion": true,
 		"espuma": 90,
+		"arbol_matas": 1.0,
+		"arbol_sombra_simple": false, # alto: todas las matas y sombra hoja a hoja
 		"fps": 60,
 	},
 }

@@ -19,3 +19,15 @@ android/build/
 Thumbs.db
 desktop.ini
 .DS_Store
+
+# Recursos de terceros cuya licencia prohíbe redistribuirlos (aunque el repositorio sea privado).
+# Se usan en el juego, pero el original se guarda solo en el PC del autor (ver docs/recursos.md).
+aethelgard/vegetacion_prueba/emace/
+
+# Arce de Meshy (árbol descartado) y sus herramientas: licencia pendiente de confirmar (docs/recursos.md).
+# Se conservan solo en el PC del autor hasta que se confirme la licencia.
+aethelgard/modelos/arce/
+aethelgard/pruebas/herramientas/arbol_3d_meshy.gd
+aethelgard/pruebas/herramientas/arbol_3d_meshy.gd.uid
+aethelgard/pruebas/herramientas/tarjeta_arbol.gd
+aethelgard/pruebas/herramientas/tarjeta_arbol.gd.uid

@@ -10,13 +10,20 @@ var n := 0
 func _initialize() -> void:
 	if "sin_vsync" in OS.get_cmdline_user_args():
 		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
-	change_scene_to_file("res://prototipos/sendero_puente.tscn")
+	if "veg" in OS.get_cmdline_user_args():
+		change_scene_to_file("res://prototipos/vegetacion_paquetes.tscn")   # banco A/B de vegetación
+	else:
+		change_scene_to_file("res://prototipos/sendero_puente.tscn")
 
 
 func _process(_d: float) -> bool:
 	n += 1
 	if n == 30:
-		if "tope" in OS.get_cmdline_user_args():
+		if "veg" in OS.get_cmdline_user_args():
+			current_scene._empezar_banco(current_scene.BANCO_VEG)
+		elif "arb" in OS.get_cmdline_user_args():
+			current_scene._empezar_banco(current_scene.BANCO_ARBOLES)
+		elif "tope" in OS.get_cmdline_user_args():
 			current_scene._empezar_banco(current_scene.BANCO_TOPE)
 		elif "diag" in OS.get_cmdline_user_args():
 			current_scene._empezar_banco(current_scene.BANCO_DIAG)

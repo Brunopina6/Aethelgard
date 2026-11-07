@@ -31,6 +31,13 @@ var perfil: Dictionary = {}       # perfil de calidad (prototipos/calidad_proto.
 var hierba_n := 6000
 var flores_n := 600
 const TROZO_HIERBA := 12.0
+# Árboles del mapa: "mezcla" (pradera + abedul + mágico en lugares especiales, elegido por el autor),
+# "pradera", "abedul", "magico" o "arce" (los arces de Meshy anteriores, para volver atrás).
+const ARBOLES_MAPA := "mezcla"
+const SITIOS_MAGICOS := [Vector3(4, 0, -16), Vector3(16, 0, 2)]   # junto a la estatua y a la salida del puente
+var arboles_mapa := true         # false: sin los árboles del mapa (lo usa prototipos/arboles_prueba.gd)
+const ARBOLES_3D := true         # Fase 2.1: árboles 3D (tronco real + copa de matas del arce de Meshy)
+const ARBOLES_TARJETA := false    # tarjeta plana (descartada: «parece una hoja de papel»); se queda como reserva
 # Medido: en Compatibility, activar las sombras de la luz principal aclara toda la imagen (brillo medio
 # 0,66 frente a 0,48 en la misma vista). Con sombras se baja la exposición para igualar los perfiles.
 const EXPO_CON_SOMBRAS := 0.58
@@ -616,7 +623,7 @@ func _mat_copa(color: Color) -> ShaderMaterial:
 	return mat
 
 
-func _arbol_viento(pos: Vector3, alto: float, color: Color) -> void:
+func _arbol_viento(pos: Vector3, alto: float, color: Color) -> StaticBody3D:
 	var cuerpo := StaticBody3D.new()
 	cuerpo.position = pos
 	add_child(cuerpo)
@@ -665,6 +672,112 @@ func _arbol_viento(pos: Vector3, alto: float, color: Color) -> void:
 	col2.shape = cil
 	col2.position.y = alto * 0.3
 	cuerpo.add_child(col2)
+	return cuerpo
+
+
+# Árbol de tarjeta (Fase 2.1): la imagen del árbol de Meshy renderizada desde el ángulo de la cámara
+# (pruebas/herramientas/tarjeta_arbol.gd) en un plano que siempre la mira (2 triángulos en vez de 102 000).
+# Debajo va el árbol sencillo de siempre, pero INVISIBLE: solo da la sombra y la colisión.
+# Como la tarjeta es vertical y la cámara mira a 45°, se adelanta hacia la cámara y se sube lo mismo que
+# sobresalen las raíces por delante de la base: así nada queda enterrado y la base se ve en su sitio.
+var _tarjetas := {}                                    # nombre -> [material, datos]
+
+
+func _arbol_tarjeta(pos: Vector3, nombre: String, escala: float, espejo: bool) -> void:
+	if not _tarjetas.has(nombre):
+		var datos: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://modelos/%s/%s_tarjeta.json" % [nombre, nombre]))
+		var m := StandardMaterial3D.new()
+		m.albedo_texture = load("res://modelos/%s/%s_tarjeta.png" % [nombre, nombre])
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED    # la luz ya va en la imagen (misma que la escena)
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR  # recortado: sin mezcla (barato en móvil)
+		m.alpha_scissor_threshold = 0.45
+		m.billboard_mode = BaseMaterial3D.BILLBOARD_FIXED_Y
+		m.billboard_keep_scale = true
+		m.cull_mode = BaseMaterial3D.CULL_DISABLED
+		_tarjetas[nombre] = [m, datos]
+	var mat: StandardMaterial3D = _tarjetas[nombre][0]
+	var d: Dictionary = _tarjetas[nombre][1]
+	var alto: float = 6.5 * escala                        # la tarjeta se hizo para un árbol de 6,5 m
+	var cuerpo := _arbol_viento(pos, alto, Color(0.3, 0.5, 0.2))
+	for mi in cuerpo.find_children("*", "MeshInstance3D", true, false):
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY   # solo sombra
+		mi.remove_from_group("ocluye")
+	var q := QuadMesh.new()
+	q.size = Vector2(d["ancho"], d["alto"]) * escala
+	q.center_offset = Vector3(-d["base_x"] * escala, (d["alto"] * 0.5 - d["base_y"]) * escala, 0)
+	var tarjeta := MeshInstance3D.new()
+	tarjeta.mesh = q
+	tarjeta.material_override = mat.duplicate()          # cada árbol el suyo (se vuelve transparente solo)
+	tarjeta.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var t: float = d["base_y"] * escala * sin(deg_to_rad(d["inclinacion"]))
+	tarjeta.position = Vector3(0, t, t)                  # hacia la cámara (+z) y hacia arriba lo mismo
+	if espejo:
+		tarjeta.scale.x = -1.0                           # variedad: la misma imagen, reflejada
+	cuerpo.add_child(tarjeta)
+	tarjeta.add_to_group("ocluye")
+
+
+# Árbol 3D (Fase 2.1, sustituye a la tarjeta plana): tronco real del arce de Meshy reducido (~1 600 triángulos)
+# y copa de 36 matas de hojas del propio arce repartidas en forma de bola, con normales de esfera: la luz de la
+# escena las ilumina como un volumen (arriba claro, abajo en sombra) y da sombra propia. Se ve 3D desde
+# cualquier ángulo. Hecho con pruebas/herramientas/arbol_3d_meshy.gd.
+var _arbol3d := {}                                     # nombre -> [malla tronco, malla copa, mat tronco, mat copa, datos]
+
+
+func _arbol_3d(pos: Vector3, nombre: String, escala: float, giro: float) -> void:
+	if not _arbol3d.has(nombre):
+		var base := "res://modelos/%s/%s" % [nombre, nombre]
+		var mt := _mat_detalle(Color.WHITE, 1.0, false, 0.0)
+		mt.albedo_texture = load(base + "_tronco_color.png")
+		mt.normal_enabled = false
+		mt.uv1_triplanar = false
+		var mc := StandardMaterial3D.new()
+		mc.albedo_texture = load(base + "_matas.png")
+		mc.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR   # recortado: sin mezcla (barato en móvil)
+		mc.alpha_scissor_threshold = 0.5
+		mc.cull_mode = BaseMaterial3D.CULL_DISABLED
+		mc.roughness = 1.0
+		mc.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
+		mc.backlight_enabled = true                       # algo de luz atravesando las hojas
+		mc.backlight = Color(0.25, 0.22, 0.1)
+		var datos: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(base + "_3d.json"))
+		_arbol3d[nombre] = [load(base + "_tronco.res"), load(base + "_copa.res"), mt, mc, datos]
+	var a: Array = _arbol3d[nombre]
+	var d: Dictionary = a[4]
+	var cuerpo := StaticBody3D.new()
+	cuerpo.position = pos
+	cuerpo.rotation.y = giro
+	cuerpo.scale = Vector3.ONE * escala
+	add_child(cuerpo)
+	var tronco := MeshInstance3D.new()
+	tronco.mesh = a[0]
+	tronco.material_override = a[2].duplicate()
+	cuerpo.add_child(tronco)
+	var copa := MeshInstance3D.new()
+	copa.mesh = a[1]
+	copa.material_override = a[3].duplicate()          # cada árbol el suyo: se vuelve transparente solo
+	cuerpo.add_child(copa)
+	for mi in [tronco, copa]:
+		mi.add_to_group("ocluye")
+	var centro := Vector3(d["copa_centro"][0], d["copa_centro"][1], d["copa_centro"][2])
+	var radio: float = minf(d["copa_radios"][0], d["copa_radios"][2])
+	var col := CollisionShape3D.new()                  # copa (para la oclusión) y tronco (Kael no lo atraviesa)
+	var cs := SphereShape3D.new()
+	cs.radius = radio
+	col.shape = cs
+	col.position = centro
+	cuerpo.add_child(col)
+	var col2 := CollisionShape3D.new()
+	var cil := CylinderShape3D.new()
+	cil.radius = 0.35
+	cil.height = centro.y
+	col2.shape = cil
+	col2.position.y = centro.y * 0.5
+	cuerpo.add_child(col2)
+
+
+func _opciones_arbol() -> Dictionary:
+	return {"matas": perfil.get("arbol_matas", 1.0), "sombra_simple": perfil.get("arbol_sombra_simple", false)}
 
 
 # Lo que tapa a Kael se vuelve medio transparente. Las copas usan un sombreado con viento, así que
@@ -677,6 +790,11 @@ func _transparente(mi: MeshInstance3D, si: bool) -> void:
 			var col: Color = mi.get_meta("mat_original").get_shader_parameter("color")
 			var m := StandardMaterial3D.new()
 			m.albedo_color = Color(col, 0.3)
+			var atlas = mi.get_meta("mat_original").get_shader_parameter("atlas")
+			if atlas != null:                              # copas con textura de hojas: se ven las hojas, no un cuadrado
+				m.albedo_texture = atlas
+				m.vertex_color_use_as_albedo = true
+				m.cull_mode = BaseMaterial3D.CULL_DISABLED
 			m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 			mi.material_override = m
 		elif mi.has_meta("mat_original"):
@@ -906,10 +1024,36 @@ func _crear_escenario() -> void:
 		Vector3(-14, 0, -6), Vector3(-2, 0, -9), Vector3(16, 0, 2), Vector3(22, 0, -4), Vector3(14, 0, -14),
 		Vector3(-20, 0, -14), Vector3(4, 0, -16), Vector3(24, 0, 8), Vector3(-24, 0, 2), Vector3(26, 0, -18),
 		Vector3(-12, 0, 18), Vector3(6, 0, 14), Vector3(-17, 0, -20)]
+	var con_3d := ARBOLES_3D and ResourceLoader.exists("res://modelos/arce/arce_copa.res")
+	var con_tarjetas := ARBOLES_TARJETA and ResourceLoader.exists("res://modelos/arce/arce_tarjeta.png")
 	for p in sitios:
-		_arbol_viento(Vector3(p.x, altura(p.x, p.z), p.z), randf_range(5.0, 7.5), verdes[randi() % verdes.size()])
-	_arbol_viento(Vector3(17, altura(17, -9), -9), 5.5, Color(0.92, 0.6, 0.72))      # cerezo rosa tras el puente
-	_arbol_viento(Vector3(-4, altura(-4, -14), -14), 5.0, Color(0.9, 0.62, 0.74))
+		var alto := randf_range(5.0, 7.5)
+		var color: Color = verdes[randi() % verdes.size()]
+		if not arboles_mapa:
+			continue                                       # escena de comparación de árboles: el claro vacío
+		# árboles estilizados (elegidos por el autor: los tres mezclados). El banco «ARB» puede forzar otro tipo.
+		var tipo_est: String = perfil.get("arboles_tipo", ARBOLES_MAPA)
+		if tipo_est != "arce":
+			var tipo: String = tipo_est
+			if tipo_est == "mezcla":
+				tipo = "magico" if p in SITIOS_MAGICOS else ["pradera", "pradera", "abedul"][sitios.find(p) % 3]
+			load("res://prototipos/arbol_estilizado.gd").crear(self, Vector3(p.x, altura(p.x, p.z), p.z), tipo, alto / 6.5, randf() * TAU, tex_detalle, _opciones_arbol())
+			continue
+		if con_3d:
+			_arbol_3d(Vector3(p.x, altura(p.x, p.z), p.z), "arce", alto / 6.5, randf() * TAU)
+		elif con_tarjetas:
+			_arbol_tarjeta(Vector3(p.x, altura(p.x, p.z), p.z), "arce", alto / 6.5, randf() < 0.5)
+		else:
+			_arbol_viento(Vector3(p.x, altura(p.x, p.z), p.z), alto, color)
+	if arboles_mapa:
+		if perfil.get("arboles_tipo", ARBOLES_MAPA) != "arce":
+			# los dos «cerezos» pasan a ser árboles mágicos: lugares especiales (tras el puente y junto a las ruinas)
+			var est := load("res://prototipos/arbol_estilizado.gd")
+			est.crear(self, Vector3(17, altura(17, -9), -9), "magico", 0.9, 0.8, tex_detalle, _opciones_arbol())
+			est.crear(self, Vector3(-4, altura(-4, -14), -14), "magico", 0.85, 2.4, tex_detalle, _opciones_arbol())
+		else:
+			_arbol_viento(Vector3(17, altura(17, -9), -9), 5.5, Color(0.92, 0.6, 0.72))      # cerezo rosa tras el puente
+			_arbol_viento(Vector3(-4, altura(-4, -14), -14), 5.0, Color(0.9, 0.62, 0.74))
 	# rocas
 	var roca := _mat_detalle(Color(0.6, 0.58, 0.55), 0.8, false, 1.0)
 	seed(4242)                                           # misma escena siempre: comparaciones justas

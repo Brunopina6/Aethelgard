@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://prototipos/vegetacion_paquetes.gd" id="1"]
+
+[node name="VegetacionPaquetes" type="Node3D"]
+script = ExtResource("1")

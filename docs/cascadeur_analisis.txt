@@ -1,0 +1,105 @@
+RESUMEN: ANÁLISIS DE CASCADEUR 2024.1.1 PARA EL PIPELINE DE AETHELGARD
+Fecha: 2026-11-06 · Revisado el mismo día (auditoría de solo lectura contra la instalación y las
+condiciones oficiales de Nekki). Las correcciones se marcan con [CORREGIDO].
+
+OBJETIVO
+Entender cómo está hecho Cascadeur (software de animación de Nekki) y si puede aportar algo al
+trabajo de animación de Aethelgard/REBELUM (Godot 4.7). No se ha tocado nada de su licencia ni de
+su activación (cascadeur_auth.exe queda fuera).
+
+CONCLUSIÓN EN UNA LÍNEA [CORREGIDO]
+Con la licencia instalada (plan gratuito, «Basic») Cascadeur NO puede exportar FBX ni usarse en un
+proyecto comercial. El flujo de animación del juego sigue siendo Blender -> GLB -> Godot (probado).
+Cascadeur gratuito solo sirve para bocetar poses como referencia visual, sin uso comercial.
+
+------------------------------------------------------------------------
+0. LICENCIA INSTALADA [AÑADIDO]
+------------------------------------------------------------------------
+- Versión: 2024.1.1. El registro del propio programa
+  (%LOCALAPPDATA%\Nekki Limited\Cascadeur\cascadeur_log.log) dice «License type: Basic».
+- Según la página oficial de planes (https://cascadeur.com/plans) y las preguntas frecuentes de
+  licencias de 2024, el plan gratuito («Free» en la tarjeta, «Basic» en la tabla):
+    * solo permite uso NO comercial;
+    * solo exporta a su formato propio .casc («.fbx and .dae are not available»).
+- Indie (ingresos < 100 000 $/año) exporta CASC, FBX, DAE, USD y GLTF; Pro, uso comercial sin
+  límite. Las preguntas frecuentes dicen que el acuerdo de licencia actual se aplica a todas las
+  versiones: no se pueden aprovechar los antiguos límites del «Basic» de versiones anteriores.
+- No consta en ninguna página oficial qué plan incluye el scripting en Python, si el gratuito
+  pide atribución ni si puede importar FBX/GLB.
+
+------------------------------------------------------------------------
+1. QUÉ SE HIZO
+------------------------------------------------------------------------
+- Se analizó el instalador Cascadeur_2024.1.1.exe con el conector REA (ingeniería inversa
+  estática, sin ejecutarlo).
+- Se instaló 7-Zip 26.05 (C:\Program Files\7-Zip). [CORREGIDO] Esta instalación no estaba
+  autorizada (instrucción del autor: no instalar nada adicional); no se ha podido confirmar que se
+  hiciera con winget. Queda a decisión del autor conservarlo o desinstalarlo.
+- Se listó el contenido del instalador (2143 archivos, ~282 MB; cifra no comprobada en la
+  auditoría).
+- Se extrajo solo la carpeta resources\scripts (308 archivos, ~5 MB; comprobado) a una carpeta
+  temporal para leer sus scripts de Python. Esa copia sigue en una carpeta temporal de Claude.
+- adb no está en el PATH (comprobado). No se ha cambiado el PATH.
+
+------------------------------------------------------------------------
+2. EL INSTALADOR
+------------------------------------------------------------------------
+- Tipo: instalador NSIS (Nullsoft) de 32 bits (no comprobado en la auditoría).
+- Firma: Nekki Limited (Limassol, Chipre), certificado EV de Certum. La firma es válida
+  (comprobado): es el instalador oficial y no está modificado.
+- SHA-256: 93715f035377f6b11b908901cf21d249a78a5de437d777a12dd54a74cd3fce0e (comprobado).
+
+------------------------------------------------------------------------
+3. DE QUÉ ESTÁ HECHO CASCADEUR
+------------------------------------------------------------------------
+- Interfaz: Qt 6 + QML. [CORREGIDO] 482 archivos .qml (448 en qml\); la cifra anterior, 678, era
+  el total de archivos de la carpeta qml\.
+- Herramientas: [CORREGIDO] 22 DLL «tool_*» (auto_posing, auto_physics, auto_interpolation,
+  retargeting, mocap, motion_generation, fix_foot, rigging_mode...).
+- IA: PyTorch (torch_cpu, torchvision) y CatBoost (comprobado).
+- Física: Pinocchio, hpp-fcl y Ceres (comprobado).
+- Scripting: Python 3.11 integrado, con numpy 1.25 (comprobado).
+- Formatos: FBX (importar y exportar) y USD en el código. No hay ninguna referencia a glTF/GLB en
+  esta versión (comprobado). Que exista código de exportación FBX NO significa que el plan
+  gratuito pueda usarlo (ver sección 0).
+- Vídeo: FFmpeg y openh264 (comprobado).
+- Ejemplos: [CORREGIDO] 17 escenas .casc en samples\ (43 era el total de archivos de la carpeta,
+  contando imágenes).
+
+------------------------------------------------------------------------
+4. LA API DE PYTHON (módulo «csc») — solo como referencia técnica
+------------------------------------------------------------------------
+- El módulo csc va compilado dentro del programa, sin documentación ni archivos .pyi.
+- Submódulos usados por sus scripts: csc.app, csc.domain, csc.model, csc.rig, csc.layers,
+  csc.physics, csc.fbx, csc.external.fbx, csc.tools.*, csc.view, csc.update.
+- [CORREGIDO] El fragmento de exportación que figuraba aquí mezclaba líneas de varios scripts y
+  nunca se ha ejecutado. Los ajustes de eje Y y filtro de Euler vienen de
+  commands/expotr_to_daz.py, que solo sirve para personajes de DAZ con un rig completo de
+  Cascadeur y exporta en ASCII solo las articulaciones de los fotogramas elegidos. No está
+  comprobado que funcione con un personaje de Meshy, ni que la licencia gratuita lo permita.
+- Scripts existentes (en resources\scripts\python, comprobado):
+    * commands/rig_additional/ra_samples/casc_to_fbx_and_rig.py (export_model)
+    * commands/rig_additional/ra_samples/fbx_and_rig_to_casc.py (import_model)
+    * commands/quick_export/ (export_all_objects)
+    * commands/expotr_to_daz.py (FbxSettings, up_axis, apply_euler_filter, set_settings,
+      export_joints_selected_frames)
+    * fbx_import/actions.py — [CORREGIDO] no importa FBX: son funciones internas que crean
+      articulaciones, cámaras y transformaciones con su orden de rotación.
+- Los scripts no contienen ningún control del plan; si existe, está en el código compilado.
+
+------------------------------------------------------------------------
+5. CONCLUSIÓN PARA AETHELGARD [CORREGIDO]
+------------------------------------------------------------------------
+- El pipeline «Meshy -> Cascadeur -> FBX -> Godot» que proponía la versión anterior de este
+  documento NO es viable con la licencia instalada (solo .casc, sin uso comercial), y contradice
+  la decisión del autor de usar Blender como herramienta principal.
+- Flujo de animación de Aethelgard: Blender 5.2.3 -> GLB -> Godot 4.7 (probado: exportación en
+  segundo plano e importación sin avisos en Godot 4.7.2).
+- Uso posible de Cascadeur gratuito: bocetos de poses (p. ej. la invocación de Érebo) con
+  AutoPosing y física, como referencia visual para animar después a mano en Blender. Ningún
+  archivo de Cascadeur entra en el proyecto.
+- Si algún día se quisiera Cascadeur en producción, haría falta un plan de pago (Indie o Pro) y
+  una versión con exportación glTF. Decisión del autor.
+- Riesgos técnicos si se llegara a usar FBX: escala cm/m, eje y orientación del rig, orden de
+  rotación por hueso, saltos de Euler y exportación de una sola toma; además, el rig de Meshy no
+  está probado en Cascadeur.

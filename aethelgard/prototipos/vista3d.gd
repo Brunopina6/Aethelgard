@@ -275,7 +275,9 @@ func _transparente(mi: MeshInstance3D, si: bool) -> void:
 	var m := mi.material_override as StandardMaterial3D
 	if m == null:
 		return
-	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA if si else BaseMaterial3D.TRANSPARENCY_DISABLED
+	if si and not mi.has_meta("trans_original"):
+		mi.set_meta("trans_original", m.transparency)  # p. ej. alfa recortado de los árboles de tarjeta
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA if si else mi.get_meta("trans_original", BaseMaterial3D.TRANSPARENCY_DISABLED)
 	m.albedo_color.a = 0.3 if si else 1.0
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 
@@ -475,6 +477,13 @@ func _crear_panel_rnd(capa: CanvasLayer) -> void:
 	bt.focus_mode = Control.FOCUS_NONE
 	bt.pressed.connect(func(): _empezar_banco(BANCO_TOPE))
 	capa.add_child(bt)
+	var ba := Button.new()
+	ba.text = "ARB"
+	ba.position = Vector2(1160, 268)
+	ba.custom_minimum_size = Vector2(108, 56)
+	ba.focus_mode = Control.FOCUS_NONE
+	ba.pressed.connect(func(): _empezar_banco(BANCO_ARBOLES))
+	capa.add_child(ba)
 	panel_rnd = Label.new()
 	panel_rnd.position = Vector2(16, 84)
 	panel_rnd.add_theme_font_size_override("font_size", 22)
@@ -572,6 +581,14 @@ func _exit_tree() -> void:
 const BANCO_CASOS := [["bajo", 20.0, false], ["bajo", 34.0, false], ["medio", 20.0, false], ["medio", 34.0, false],
 	["alto", 20.0, false], ["alto", 34.0, false], ["bajo", 20.0, true]]
 # Botón «TOPE»: los tres perfiles con su tope real de FPS (como se jugará), para medir los tirones
+# Botón «ARB»: coste de los árboles candidatos llenando el bosque del mapa (solo durante la medición)
+const BANCO_ARBOLES := [["medio", 20.0, false, {"arboles_tipo": "arce"}, "arce anterior", true],
+	["medio", 20.0, false, {"arbol_matas": 1.0, "arbol_sombra_simple": false}, "mezcla completa", true],
+	["medio", 20.0, false, {"arbol_matas": 1.0, "arbol_sombra_simple": true}, "solo sombra simple", true],
+	["medio", 20.0, false, {"arbol_matas": 0.65, "arbol_sombra_simple": false}, "solo menos matas", true],
+	["medio", 20.0, false, {}, "medio ajustado", true],
+	["medio", 34.0, false, {}, "medio ajustado", true],
+	["bajo", 20.0, false, {}, "bajo ajustado", true]]
 const BANCO_TOPE := [["bajo", 20.0, false, {}, "bajo", true], ["medio", 20.0, false, {}, "medio", true],
 	["medio", 34.0, false, {}, "medio", true], ["alto", 20.0, false, {}, "alto", true]]
 # Botón «DIAG»: qué frena al perfil medio (quitando una cosa cada vez, Skill aet-rendimiento-android)
