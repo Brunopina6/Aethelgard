@@ -21,7 +21,9 @@ const PASOS_MIN := 40                    # pasos seguros al entrar (como zona.gd
 const PROB_ENCUENTRO := 0.012            # como zona.gd
 const RADIO_SALIDA := 1.3                # metros: al llegar tan cerca de una salida, se vuelve al mapa
 const ARMAR_SALIDA := 2.5                # una salida solo funciona después de alejarse de ella esta distancia
-const BOTONES_BANCO := ["PRUEBA", "DIAG", "TOPE", "ARB"]   # bancos del prototipo: no son para el juego
+# Bancos del prototipo que no sirven en la región (experimentos de árboles y del perfil medio). PRUEBA y TOPE se
+# quedan: miden la región en el móvil igual que se midió el prototipo.
+const BOTONES_BANCO := ["DIAG", "ARB"]
 
 # misión
 const ESPERA_PV02 := 2.5                 # segundos tras entrar (deja ver el título de la zona)
@@ -56,7 +58,8 @@ func _ready() -> void:
 	_crear_interfaz()
 	_crear_salidas()
 	_crear_personajes()
-	if Engine.get_meta("pos_3d_ok", false) and Engine.get_meta("pos_3d_lugar", -1) == INDICE:
+	var vuelve: bool = Engine.get_meta("pos_3d_ok", false) and Engine.get_meta("pos_3d_lugar", -1) == INDICE
+	if vuelve and not en_banco():
 		_colocar_kael(Engine.get_meta("pos_3d"))       # vuelve del combate o de una partida guardada aquí
 	_ultima = kael.global_position
 	for s in salidas:
@@ -67,7 +70,14 @@ func _ready() -> void:
 	if dg != null:
 		dg.timeline_ended.connect(_al_terminar_dialogo)
 	Engine.set_meta("zona", ZONA)
-	load("res://progreso.gd").guardar(scene_file_path)   # guardado automático al entrar (como zona.gd)
+	if not en_banco():
+		load("res://progreso.gd").guardar(scene_file_path)   # guardado automático al entrar (como zona.gd)
+
+
+# Banco de medida en marcha (botones PRUEBA y TOPE de vista3d.gd): la escena se recarga en cada caso y Kael recorre
+# la ruta del banco desde el principio del camino, sin encuentros, misión, salidas ni guardado.
+func en_banco() -> bool:
+	return Engine.has_meta("banco_proto")
 
 
 func _colocar_kael(p: Vector3) -> void:
@@ -100,6 +110,11 @@ func _cambiar_perfil() -> void:
 func _process(delta: float) -> void:
 	_t_entrada += delta
 	_bloqueo_accion = maxf(0.0, _bloqueo_accion - delta)
+	if en_banco():
+		boton_accion.visible = false
+		super(delta)
+		_ultima = kael.global_position
+		return
 	if ocupado():                        # diálogo abierto: Kael quieto y sin pasos
 		_parar_kael()
 		boton_accion.visible = false
