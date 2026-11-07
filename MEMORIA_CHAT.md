@@ -36,7 +36,11 @@
     (T-021);
   - el inventario de licencias (T-070);
   - la APK experimental `Aethelgard_exp-20261107-03b960a.apk`, de prueba privada.
-- **Siguiente:** T-022, la región completa: grupo, Tilo, estela, cofre y misión.
+- **Hecho después** (`e212400`):
+  - la misión del corte alfa, de PV-02 a PV-14, con Tilo, la estela y el centinela;
+  - la APK `Aethelgard_exp-20261107-07ac036.apk`.
+- **Siguiente:** T-022 (Lya y Garon siguiendo a Kael, el cofre y la cinemática del mirador). Después, la prueba en el
+  Redmi.
 - **Vigente:**
   - el Redmi está reservado;
   - la partida del PC se conserva tal cual;

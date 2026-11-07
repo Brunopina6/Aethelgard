@@ -1,6 +1,6 @@
 # TASKS: tareas de AETHELGARD / REBELUM
 
-**Actualizado el 2026-11-07 a las 16:55 (hora local, UTC+1).**
+**Actualizado el 2026-11-07 a las 17:10 (hora local, UTC+1).**
 - Copia del usuario: `rebelum-3d` @ `ce84422`.
 - Árbol del encargo: `rebelum-alpha` @ `c2a524c`.
 
@@ -29,7 +29,7 @@
 | [T-012](#t-012) | APK «Prueba 3D» de Pastos Verdes | Terminada (compilada) | — |
 | [T-020](#t-020) | Encargo, Fase 0: línea base, respaldo y diagnóstico | Terminada | — |
 | [T-021](#t-021) | Pastos Verdes 3D desde el mapa (encargo 2.1-2.2; plan 2.3-2.4) | Terminada en PC; falta el móvil | Alta |
-| [T-022](#t-022) | Región 3D completa (encargo 2.3-2.5; plan 2.4-2.5) | Pendiente: es la siguiente | Alta |
+| [T-022](#t-022) | Región 3D completa (encargo 2.3-2.5; plan 2.4-2.5) | En curso: misión hecha; faltan el grupo y el cofre | Alta |
 | [T-023](#t-023) | Cierre del perfil bajo: precalentado y sombra precalculada (plan 2.1) | Pendiente | Media |
 | [T-024](#t-024) | Métricas de referencia y matriz de cobertura | Pendiente | Media |
 | [T-025](#t-025) | Entrada: mando, teclado y foco; Android TV (plan 2.2) | Pendiente | Media |
@@ -198,7 +198,25 @@
 
 ### T-022
 **Región 3D completa (encargo: Fase 1, puntos 2.3-2.5; plan 3D: 2.4-2.5)**
-- **Estado:** pendiente. **Prioridad:** alta. **Dependencias:** T-021.
+- **Estado:** en curso desde el 2026-11-07. **Prioridad:** alta. **Dependencias:** T-021. **Decisión:**
+  [D-052](DECISIONS.md#d-052).
+- **Hecho** (`e212400`, rama `rebelum-alpha`): la misión del corte alfa.
+  - PV-02 al entrar y PV-03 en el camino.
+  - Tilo, el farolero (figura provisional), junto al puente: PV-05, su recordatorio, PV-14 con la mecha y la despedida.
+  - La estela del camino (detalle de lore «pastos_estela»).
+  - El centinela del mirador: PV-06, el combate fijo «pastos_centinela» con dos Grimfang, y PV-07 al ganarlo.
+  - Botón «Hablar con Tilo» o «Examinar».
+  - **Pruebas:** `prueba_ruta_alpha`, nueva, recorre la misión entera con Dialogic de verdad y el combate fijo
+    cargado. Batería `2026-11-07_170431`: **19 superadas, 0 fallidas**, 10 manuales y 0 no seguras.
+  - **APK:** `D:\REBELUM_compilaciones\Aethelgard_exp-20261107-07ac036.apk`, de 244,7 MB.
+    - SHA-256 `f63e99b18f5172705454d12ec25e693ae35beacd2e29848925f018cb6cf444b9`.
+    - Es de prueba privada, con el aviso `NO_DISTRIBUIR`.
+- **Falta:**
+  - Lya y Garon siguiendo a Kael;
+  - el cofre;
+  - la cinemática del mirador.
+  - Revisar con ventana el aspecto de Tilo, la estela y las salidas.
+  - El combate del centinela se ha probado cargando de verdad; la victoria se simuló.
 - **Objetivo:**
   - NPC, diálogos, interacción, cofres y encuentros.
   - De la zona al combate y de vuelta, tras ganar, huir o perder, sin resolver dos veces el mismo encuentro o botín.

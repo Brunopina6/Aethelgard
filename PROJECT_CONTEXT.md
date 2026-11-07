@@ -177,7 +177,9 @@ objetos.
     - hereda de `sendero_puente.gd`;
     - tiene encuentros, combate con vuelta al mismo sitio, guardado y salidas al mapa;
     - la prueba es `pruebas/prueba_zona3d.gd`.
-  - Todavía no tiene seguidores, Tilo, la estela, el cofre ni la misión (T-022).
+  - Tiene la misión del corte alfa PV-02 → PV-14 con Tilo, la estela y el centinela (`e212400`,
+    [D-052](DECISIONS.md#d-052)). La prueba es `pruebas/prueba_ruta_alpha.gd`.
+  - Faltan los seguidores, el cofre y la cinemática del mirador (T-022).
 
 ## 6. Diálogos y narrativa
 

@@ -63,6 +63,7 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 | [D-049](#d-049) | La memoria se publica en `memoria-desarrollo`, y solo la memoria | Aprobada |
 | [D-050](#d-050) | Licencias: recursos autorizados o sustitutos; el entregable excluye lo no acreditado | Aprobada |
 | [D-051](#d-051) | Primera versión de la región 3D de Pastos Verdes | Aprobada en el encargo |
+| [D-052](#d-052) | La misión del corte alfa dentro de la región | Aprobada en el encargo |
 | [D-H01 a D-H15](#6-diseño-ya-implementado-del-3010-al-0511) | Diseño ya implementado antes de Git | Aprobada (historial) |
 
 ## 1. Reglas de trabajo, Git y versiones
@@ -619,8 +620,35 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 - **Alternativas descartadas:**
   - **Copiar el escenario en la región:** habría dos versiones que mantener.
   - **Un botón «Mapa»:** no es propio de un JRPG. Se sale andando, como en las zonas 2D.
-- **Pendiente (T-022):** Lya y Garon siguiendo a Kael, Tilo, la estela, el cofre, el combate fijo «pastos_centinela» y
-  la misión PV-02 → PV-14.
+- **Pendiente:** la misión está en [D-052](#d-052). Faltan Lya y Garon siguiendo a Kael, el cofre y la cinemática del
+  mirador (T-022).
+
+### D-052
+**La misión del corte alfa dentro de la región**
+- **Fecha y estado:** 2026-11-07, hacia las 17:00. Aprobada en el encargo [asistente].
+- **El corte en sí** está aprobado por el usuario como alfa y no es canon (D-035). Los textos son los de la biblia v3,
+  §6.3.
+- **Decisión:**
+  - **Disparadores:**
+    - PV-02, a los 2,5 s de entrar;
+    - PV-03, al llegar a SENDERO[2];
+    - PV-05, al hablar con Tilo;
+    - PV-06, al acercarse al centinela, solo después de PV-05;
+    - PV-07, al volver tras ganar;
+    - PV-14, al hablar con Tilo después.
+  - Cada escena pone su hito (`progreso.gd`, «hitos») y guarda la partida.
+  - **Combate del centinela:** el fijo «pastos_centinela» con `GRUPOS[0]`, dos Grimfang («Quietos. Dos.»). Si se
+    pierde, no se repite hasta alejarse y volver.
+  - **Tilo:** figura provisional hecha con formas sencillas (abrigo, sombrero y pértiga con el farol), hasta que haya
+    un modelo.
+  - **La mecha de Tilo:** es un hito («mecha_tilo») con aviso, no un objeto del inventario, para no tocar el catálogo
+    de objetos.
+  - **Durante un diálogo** Kael se queda quieto y no cuenta pasos.
+  - **Tras cerrar un diálogo,** la acción se ignora 0,35 s para que la misma pulsación no abra otro.
+- **Alternativas descartadas:**
+  - poner la mecha en el inventario: habría que tocar `inventario.gd` y sus menús;
+  - usar un sprite 2D de NPC para Tilo: desentona en el 3D.
+- **Archivos:** `zonas3d/pastos_verdes_3d.gd`, `pruebas/prueba_ruta_alpha.gd` y `dialogos/pv_*.dtl` (commit `e212400`).
 
 ## 6. Diseño ya implementado del 30/10 al 05/11
 
