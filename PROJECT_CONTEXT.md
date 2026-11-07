@@ -1,6 +1,7 @@
 # PROJECT_CONTEXT: arquitectura real de AETHELGARD / REBELUM
 
 **Verificado el 2026-11-07** sobre `desarollo` @ `2d1adc4`. El código del juego es idéntico en `rebelum-3d` @ `ce84422`.
+La rama `rebelum-alpha` @ `03b960a` añade la región 3D de Pastos Verdes (ver §5).
 
 Cómo leer las etiquetas:
 - **[código]**: observado en el código.
@@ -91,7 +92,7 @@ La etiqueta local `recuperacion-antes-fase2.0` apunta a `2d1adc4`.
   - Una sesión que no carga la partida, por ejemplo con F6 desde el editor, puede sobrescribirla con datos parciales.
   - Así ocurrió con la partida del PC, que perdió la clave `grupo`.
   - Está en la tarea T-076.
-- **[alpha sin confirmar]** en `rebelum-alpha`:
+- **En `rebelum-alpha`** (`d066fe9`, probado aislado):
   - partida experimental en `user://partida_exp.save`;
   - claves nuevas `hitos`, `pos_3d`, `pos_3d_ok` y `pos_3d_lugar`;
   - funciones `volcar()` y `restaurar()`;
@@ -169,17 +170,22 @@ objetos.
   - `vegetacion_paquetes.gd`/`.tscn`: Quaternius y EmacE, con LOD, mallas indexadas y sombras C+ como opciones.
   - `calidad_proto.gd`: los perfiles bajo, medio y alto; sin reflejo del cielo en bajo y medio.
   - `titulo_rebelum.gd`: el título con el logo `marca/rebelum_logo.webp`.
-- **[alpha sin confirmar]** en `rebelum-alpha`:
+- **En `rebelum-alpha`** (app experimental; confirmado y probado aislado el 2026-11-07):
   - el interruptor `modo3d.gd` (característica `rebelum3d` o `-- 3d`);
-  - Pastos Verdes como lugar 10 del mapa, que abre `zonas3d/pastos_verdes_3d.tscn`. **Ese archivo aún no existe.**
+  - Pastos Verdes como lugar 10 del mapa, que abre la región `zonas3d/pastos_verdes_3d.tscn`
+    ([D-051](DECISIONS.md#d-051)):
+    - hereda de `sendero_puente.gd`;
+    - tiene encuentros, combate con vuelta al mismo sitio, guardado y salidas al mapa;
+    - la prueba es `pruebas/prueba_zona3d.gd`.
+  - Todavía no tiene seguidores, Tilo, la estela, el cofre ni la misión (T-022).
 
 ## 6. Diálogos y narrativa
 
 - **Dialogic** [código]:
   - Timelines: `prologo`, `npc_aldric`, `npc_pip`, `npc_rosa` y `npc_selene`.
   - Personajes: aldric, kael, lya, pip, rosa y selene.
-  - [alpha sin confirmar]: `pv_02`, `pv_03`, `pv_05`, `pv_06`, `pv_07`, `pv_14`, `pv_tilo` y `pv_tilo_fin`, más
-    garon y tilo, sin retrato.
+  - En `rebelum-alpha` (`f039c72`), todavía sin usar: `pv_02`, `pv_03`, `pv_05`, `pv_06`, `pv_07`, `pv_14`, `pv_tilo`
+    y `pv_tilo_fin`, más garon y tilo, sin retrato.
 - **Biblia:** [docs/biblia/rebelum_biblia_narrativa_v3.md](docs/biblia/rebelum_biblia_narrativa_v3.md), en propuesta.
   También la v2 y `rebelum_propuesta.md`.
 - **La conversación original del director:** en `C:\Users\G513\Downloads\Telegram Desktop\`, fuera del repositorio.
@@ -276,6 +282,9 @@ Lista que aplica la compilación: [docs/versiones/licencias_pendientes.txt](docs
 Registro de recursos: [docs/recursos.md](docs/recursos.md).
 
 ## 12. Resumen: integrado, prototipo y propuesta
+
+En `rebelum-alpha` (app experimental), Pastos Verdes 3D ya está dentro del recorrido: mapa → región → combate →
+región → mapa. La tabla describe `desarollo`.
 
 | Integrado en el juego | Prototipo aislado | Propuesta (sin hacer) |
 |---|---|---|

@@ -28,7 +28,7 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 | [D-008](#d-008) | Licencias antes de distribuir | Aprobada |
 | [D-010](#d-010) | Pruebas con datos aislados | Aprobada |
 | [D-011](#d-011) | La partida del PC se conserva tal cual | Aprobada |
-| [D-012](#d-012) | Versión experimental con paquete y partida propios | Aprobada (partida a medias) |
+| [D-012](#d-012) | Versión experimental con paquete y partida propios | Aprobada (hecha en `rebelum-alpha`) |
 | [D-013](#d-013) | El Redmi queda reservado | Aprobada |
 | [D-014](#d-014) | Usar el Redmi por ADB para instalar y medir | Sustituida por D-013 |
 | [D-015](#d-015) | PM infinitos solo con `-- pm_infinitos` | Aprobada en el encargo |
@@ -62,6 +62,7 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 | [D-048](#d-048) | Las magias existentes no cambian; las ampliaciones son futuras | Aprobada |
 | [D-049](#d-049) | La memoria se publica en `memoria-desarrollo`, y solo la memoria | Aprobada |
 | [D-050](#d-050) | Licencias: recursos autorizados o sustitutos; el entregable excluye lo no acreditado | Aprobada |
+| [D-051](#d-051) | Primera versión de la región 3D de Pastos Verdes | Aprobada en el encargo |
 | [D-H01 a D-H15](#6-diseño-ya-implementado-del-3010-al-0511) | Diseño ya implementado antes de Git | Aprobada (historial) |
 
 ## 1. Reglas de trabajo, Git y versiones
@@ -199,8 +200,8 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 
 ### D-012
 **Versión experimental con paquete y partida propios**
-- **Fecha y estado:** 2026-11-07. Aprobada [usuario]: paquetes y partidas separados. La partida propia está a medias,
-  sin confirmar en `rebelum-alpha`.
+- **Fecha y estado:** 2026-11-07. Aprobada [usuario]: paquetes y partidas separados. La partida propia está hecha en
+  `rebelum-alpha` (`d066fe9`).
 - **Decisión:**
   - **Paquete:** `com.aethelgard.experimental` («Aethelgard Exp»), con el preset «Android experimental».
   - **Partida en el PC:** allí `user://` es el mismo para todos los presets, porque depende de `config/name`. Por eso el
@@ -469,7 +470,9 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 ### D-042
 **Pastos Verdes como lugar 10 del mapa en modo 3D**
 - **Fecha y estado:** 2026-11-07, hacia las 15:30. Aprobada en el encargo [asistente]: el encargo deja que yo decida
-  esto. Se retomó a las 16:30 (D-046) desde el trabajo a medias en `rebelum-alpha`.
+  esto.
+  - Se retomó a las 16:30 (D-046) desde el trabajo a medias en `rebelum-alpha`.
+  - Está hecho en `d066fe9` y `a89a8a5` (T-021).
 - **Diseño:**
   - `modo3d.gd`: `activo()` se cumple con la característica `rebelum3d` o con el argumento `-- 3d`.
   - Lugar 10 del mapa en `(660, 478)`, que abre `zonas3d/pastos_verdes_3d.tscn`. **Esa escena todavía no existe.**
@@ -593,6 +596,31 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
   - Si el usuario quiere que tampoco la prueba en su móvil lleve recursos sin acreditar, se compila una variante con
     sustitutos.
 - **Amplía:** [D-008](#d-008). El inventario de licencias está en [T-070](TASKS.md#t-070).
+
+### D-051
+**Primera versión de la región 3D de Pastos Verdes**
+- **Fecha y estado:** 2026-11-07, hacia las 16:45. Aprobada en el encargo [asistente]: el encargo deja que yo decida
+  los detalles técnicos.
+- **Decisión:**
+  - **Escenario:** `zonas3d/pastos_verdes_3d.gd` hereda del prototipo (`sendero_puente.gd`). No se copia: lo que se
+    mejore en el prototipo llega a la región.
+  - **Contrato de zona** (`zona.gd`):
+    - entrada por el principio del camino;
+    - encuentros por pasos: 0,5 m por paso, 40 pasos seguros y probabilidad 0,012, con `progreso.prob_encuentro`;
+    - combate con `escena_retorno` y vuelta al mismo sitio (`pos_3d`);
+    - guardado automático al entrar y en `guardar_posicion()`.
+  - **Salidas:** las dos puntas del camino llevan al mapa.
+    - Se marcan con un círculo dorado y el letrero «Mapa del mundo».
+    - Una salida solo funciona después de alejarse 2,5 m de ella: así no se sale nada más volver de un combate.
+  - **Panel:** quedan CAL (perfil de calidad) y RND (rendimiento), que sirven para probar en el móvil. Los botones de
+    los bancos se quitan.
+  - **APK experimental:** incluye solo los prototipos de los que depende la región, y `modelos/hojas` y
+    `modelos/guardian`.
+- **Alternativas descartadas:**
+  - **Copiar el escenario en la región:** habría dos versiones que mantener.
+  - **Un botón «Mapa»:** no es propio de un JRPG. Se sale andando, como en las zonas 2D.
+- **Pendiente (T-022):** Lya y Garon siguiendo a Kael, Tilo, la estela, el cofre, el combate fijo «pastos_centinela» y
+  la misión PV-02 → PV-14.
 
 ## 6. Diseño ya implementado del 30/10 al 05/11
 

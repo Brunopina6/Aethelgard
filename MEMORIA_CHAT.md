@@ -31,8 +31,12 @@
   - la Fase 0 del encargo único (rama `rebelum-alpha` en `D:\Aethelgard_alpha`): dos pruebas corregidas y los PM
     infinitos solo con un argumento;
   - la APK «Prueba 3D», compilada.
-- **En curso:** la Fase 1 del encargo (Pastos Verdes 3D desde el mapa). El usuario la reanudó a las 16:30. Había
-  trabajo a medias, **sin probar ni confirmar**.
+- **Hecho el 07/11 por la tarde** (rama `rebelum-alpha`, commits locales):
+  - Pastos Verdes 3D ya se juega desde el mapa de la app experimental: encuentros, combate con vuelta y salidas
+    (T-021);
+  - el inventario de licencias (T-070);
+  - la APK experimental `Aethelgard_exp-20261107-03b960a.apk`, de prueba privada.
+- **Siguiente:** T-022, la región completa: grupo, Tilo, estela, cofre y misión.
 - **Vigente:**
   - el Redmi está reservado;
   - la partida del PC se conserva tal cual;
@@ -40,8 +44,10 @@
   - no se toca `main`, `desarollo` ni el bloque B;
   - las pruebas, siempre aisladas;
   - calidad visual primero.
-- **Pendiente del usuario:** licencias (Meshy, Suno y efectos) y decisiones de narrativa, de Érebo (D1-D12), de las
-  Skills y de GitHub.
+- **Pendiente del usuario:**
+  - licencias: el origen de las imágenes que subió a Meshy, el plan de Suno de cada pista y el origen de los recursos
+    sin registrar;
+  - decisiones de narrativa, de Érebo (D1-D12), de las Skills y de GitHub.
 - **Siguiente paso:** el de [SESSION_HANDOFF.md](SESSION_HANDOFF.md).
 
 ## Índice
@@ -335,6 +341,10 @@ Nada de esto está implementado. Las magias que existen no cambian ([D-048](DECI
 **Herramientas del PC:** las verificadas están en [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md#1-repositorio-y-entorno).
 
 **Licencias:** en [T-070](TASKS.md#t-070) y [docs/versiones/licencias_pendientes.txt](docs/versiones/licencias_pendientes.txt).
+El inventario completo, con las condiciones oficiales de Meshy y Suno leídas el 07/11, está en
+`D:\Aethelgard_alpha\docs\versiones\inventario_licencias.md`. En resumen:
+- **Meshy:** CC BY 4.0 con el plan gratuito y propiedad del usuario con el de pago. Con créditos se puede distribuir.
+- **Suno:** con el plan gratuito, solo uso personal; suscribirse después no da derechos retroactivos.
 
 ## 8. Diagnósticos, errores y soluciones
 
@@ -401,7 +411,8 @@ Todo, con su evidencia, en [TASKS.md](TASKS.md). En breve:
   - T-010: la Fase 2.0;
   - T-011 y T-012: las dos APK compiladas;
   - T-020: la Fase 0 del encargo.
-- **En curso:** T-021, Pastos Verdes 3D desde el mapa, retomado a las 16:30.
+- **Terminado por la tarde:** T-021, Pastos Verdes 3D desde el mapa, en el PC. Falta probarlo en el Redmi.
+- **Siguiente:** T-022.
 - **Pendiente:**
   - la región completa, el perfil bajo, la entrada, el audio, la magia, las invocaciones y la optimización;
   - el riesgo de guardado (T-076).

@@ -1,6 +1,6 @@
 # TASKS: tareas de AETHELGARD / REBELUM
 
-**Actualizado el 2026-11-07 a las 16:35 (hora local, UTC+1).**
+**Actualizado el 2026-11-07 a las 16:55 (hora local, UTC+1).**
 - Copia del usuario: `rebelum-3d` @ `ce84422`.
 - Árbol del encargo: `rebelum-alpha` @ `c2a524c`.
 
@@ -28,8 +28,8 @@
 | [T-011](#t-011) | APK experimental local | Terminada (compilada) | — |
 | [T-012](#t-012) | APK «Prueba 3D» de Pastos Verdes | Terminada (compilada) | — |
 | [T-020](#t-020) | Encargo, Fase 0: línea base, respaldo y diagnóstico | Terminada | — |
-| [T-021](#t-021) | Pastos Verdes 3D desde el mapa (encargo 2.1-2.2; plan 2.3-2.4) | En curso | Alta |
-| [T-022](#t-022) | Región 3D completa (encargo 2.3-2.5; plan 2.4-2.5) | Pendiente | Alta |
+| [T-021](#t-021) | Pastos Verdes 3D desde el mapa (encargo 2.1-2.2; plan 2.3-2.4) | Terminada en PC; falta el móvil | Alta |
+| [T-022](#t-022) | Región 3D completa (encargo 2.3-2.5; plan 2.4-2.5) | Pendiente: es la siguiente | Alta |
 | [T-023](#t-023) | Cierre del perfil bajo: precalentado y sombra precalculada (plan 2.1) | Pendiente | Media |
 | [T-024](#t-024) | Métricas de referencia y matriz de cobertura | Pendiente | Media |
 | [T-025](#t-025) | Entrada: mando, teclado y foco; Android TV (plan 2.2) | Pendiente | Media |
@@ -42,7 +42,8 @@
 | [T-060](#t-060) | Optimización continua y cierre técnico | Pendiente | Media |
 | [T-061](#t-061) | Activar por defecto las optimizaciones de vegetación | Bloqueada (autorización) | Media |
 | [T-062](#t-062) | Césped distribuible en lugar de EmacE | Pendiente | Media |
-| [T-070](#t-070) | Licencias pendientes | Bloqueada (usuario) | Alta |
+| [T-063](#t-063) | Créditos de Meshy y paquete entregable | Pendiente | Media |
+| [T-070](#t-070) | Licencias pendientes (inventario hecho) | Bloqueada (usuario) | Alta |
 | [T-071](#t-071) | Decisiones narrativas de la biblia v3 | Bloqueada (usuario) | Media |
 | [T-072](#t-072) | Decisiones D1-D12 de la cinemática de Érebo | Bloqueada (usuario) | Media |
 | [T-073](#t-073) | Decisiones D1-D7 sobre las Skills | Bloqueada (usuario) | Baja |
@@ -149,43 +150,51 @@
 
 ### T-021
 **Pastos Verdes 3D accesible desde el recorrido normal (encargo: Fase 1, puntos 2.1-2.2; plan 3D: 2.3-2.4)**
-- **Estado:** en curso; se retomó el 2026-11-07 a las 16:30. Hay trabajo a medias, sin confirmar. **Prioridad:** alta.
+- **Estado:** terminada en el PC el 2026-11-07. Falta verla en el Redmi (T-078) y revisar su aspecto con ventana.
 - **Objetivo:** en la compilación experimental, ir del mapa a Pastos Verdes 3D y volver, sin abrir escenas a mano, con
   la variante 2D como respaldo.
 - **Dependencias:** T-020.
-- **Hecho, sin probar ni confirmar** (en `D:\Aethelgard_alpha`):
-  - **`aethelgard/progreso.gd`:** `partida_exp.save`, `hitos`, `pos_3d`, `volcar()`/`restaurar()` y el detalle
-    «Estela del camino».
-  - **`aethelgard/modo3d.gd`** (nuevo).
-  - **`aethelgard/mapa.gd`:** el lugar 10.
-  - **`aethelgard/project.godot`:** diálogos `pv_*`, personajes garon y tilo, y `ui_accept`/`ui_cancel` con mando.
-  - **Diálogos nuevos:** 8 archivos `aethelgard/dialogos/pv_*.dtl`, más `dialogos/personajes/garon.dch` y `tilo.dch`.
-  - **Copia** en `D:\REBELUM_respaldos\2026-11-07_1518_antes_encargo_unico\`:
-    `rebelum-alpha_fase1_parcial_sin_confirmar.patch` y `rebelum-alpha_archivos_nuevos.tar`.
-- **Falta:**
-  - **`aethelgard/zonas3d/pastos_verdes_3d.gd` y `.tscn`.** El diseño ya está pensado:
-    - hereda de `prototipos/sendero_puente.gd`;
-    - Lya y Garon siguen a Kael;
-    - Tilo como personaje provisional;
-    - un cofre y la estela;
-    - HUD;
-    - encuentros: paso de 0,5 m, 40 pasos seguros, probabilidad de 0,012;
-    - combate fijo «pastos_centinela»;
-    - salidas al mapa.
-  - **Pruebas:** `prueba_zona3d` y una del recorrido alfa.
-  - **Preset experimental:** que su lista de exclusiones conserve `prototipos/{vista3d.gd, sendero_puente.gd,
-    calidad_proto.gd, arbol_estilizado.gd, fauna_simple.gd, agua_sin_refraccion.gdshader}`.
 - **Criterio de aceptación:**
   - Se entra y se sale de Pastos Verdes 3D desde el mapa de la compilación experimental, con la posición y el estado
     coherentes.
   - Sin el modo 3D, todo vuelve al mapa 2D.
   - Las pruebas de siempre y las nuevas pasan en el ejecutor aislado.
   - Commits locales pequeños en `rebelum-alpha`.
-- **Siguiente acción** (cuando el usuario lo ordene):
-  1. Revisar el trabajo a medias con `git -C D:\Aethelgard_alpha diff`.
-  2. Escribir la escena de la región y su prueba.
-  3. Ejecutar `aethelgard/pruebas/ejecutar_pruebas.ps1`.
-  4. Confirmar.
+- **Antes de empezar** se verificó que el trabajo a medias era idéntico byte a byte a su respaldo (el parche y los 11
+  archivos nuevos del `.tar`). Se reutilizó tal cual, sin aplicar nada.
+- **Evidencia** (commits locales en `rebelum-alpha`):
+  - **`d066fe9`:**
+    - `modo3d.gd`, el interruptor;
+    - `mapa.gd`, el lugar 10;
+    - `progreso.gd`: `partida_exp.save`, `hitos`, `pos_3d`, `volcar()`/`restaurar()` y la «Estela del camino».
+  - **`f039c72`:**
+    - los 8 diálogos `pv_*` y los personajes garon y tilo;
+    - `ui_accept` y `ui_cancel` con mando en `project.godot`.
+  - **`a89a8a5`:** la región `zonas3d/pastos_verdes_3d.gd` y `.tscn`, más `pruebas/prueba_zona3d.gd`.
+    - Hereda de `sendero_puente.gd`.
+    - Entrada por el principio del camino.
+    - Encuentros: paso de 0,5 m, 40 pasos seguros y probabilidad 0,012.
+    - Combate con vuelta al mismo sitio.
+    - Guardado automático al entrar y al pausar.
+    - Dos salidas al mapa, marcadas con un círculo dorado y el letrero «Mapa del mundo».
+    - Del panel del prototipo solo quedan CAL y RND.
+  - **`03b960a`:** el preset experimental incluye lo que necesita la región y deja fuera los bancos y la vegetación
+    de prueba.
+  - **Pruebas:**
+    - `prueba_zona3d`, pasada `2026-11-07_164457`: entrada, 39 pasos seguros sin encuentro, encuentro, **combate de
+      verdad** y vuelta a 0,00 m del sitio, salida al mapa con el lugar 10 y guardado en `partida_exp.save`.
+    - Batería completa `2026-11-07_164526`: **18 superadas, 0 fallidas**, 10 manuales y 0 no seguras. Ni la partida
+      real ni el proyecto cambiaron.
+  - **APK:** `D:\REBELUM_compilaciones\Aethelgard_exp-20261107-03b960a.apk`.
+    - 244,7 MB, versionCode 34.
+    - SHA-256 `1a2b43178cd4ff1944a71d205a879af79e2d9b1aaa4b7e6297e74980d04ef08b`.
+    - Paquete `com.aethelgard.experimental` y firma verificada.
+    - Lleva la región y sus dependencias, y no lleva pruebas, prototipos de banco, EmacE ni partidas.
+    - Es una **prueba privada**, con el aviso `NO_DISTRIBUIR`: lleva recursos de la tabla de licencias.
+- **Lo que no cubre:**
+  - **Aspecto:** no se ha visto con ventana: las pruebas van sin ventana.
+  - **Redmi:** no se ha probado en el móvil.
+  - **Grupo y contenido:** los seguidores, Tilo, la estela, el cofre y el combate fijo están en T-022.
 
 ### T-022
 **Región 3D completa (encargo: Fase 1, puntos 2.3-2.5; plan 3D: 2.4-2.5)**
@@ -303,11 +312,36 @@
 - **Objetivo:** un césped con licencia clara para la app, como matas opacas más densas, porque EmacE no se puede
   redistribuir.
 
+### T-063
+**Créditos de Meshy y paquete entregable**
+- **Estado:** pendiente. **Prioridad:** media. **Decisión:** [D-050](DECISIONS.md#d-050).
+- **Objetivo:** que algún día pueda haber una APK **entregable**.
+- **Pasos:**
+  1. Una pantalla o un archivo de créditos con la atribución de Meshy: «Model created with Meshy – CC BY 4.0 License».
+     Con ella, los modelos de Meshy se pueden distribuir con cualquier plan (las condiciones están en el inventario).
+  2. Un preset o un modo del script de compilación que **se niegue** a compilar si queda dentro algo de
+     `licencias_pendientes.txt`.
+- **Dependencias:** las respuestas del usuario en T-070.
+- **Criterio de aceptación:** una compilación entregable sin ningún patrón de `licencias_pendientes.txt`.
+
 ## Decisiones y recursos que dependen del usuario
 
 ### T-070
 **Licencias pendientes**
 - **Estado:** bloqueada: depende del usuario. **Prioridad:** alta.
+- **Inventario hecho el 2026-11-07:** `D:\Aethelgard_alpha\docs\versiones\inventario_licencias.md` (commit `e8b9ed4`,
+  rama `rebelum-alpha`).
+  - Tiene 13 grupos con derechos pendientes. Para cada uno dice qué usos bloquea: commit, prueba privada o APK
+    entregable.
+  - Recoge las condiciones de Meshy y de Suno, leídas ese día en sus páginas oficiales.
+  - `licencias_pendientes.txt` tiene ya los patrones que faltaban.
+- **Meshy:**
+  - Con el plan gratuito, CC BY 4.0 (uso comercial con atribución). Con plan de pago, los modelos son del usuario.
+  - Con los créditos (T-063), se pueden distribuir con cualquiera de los dos planes.
+  - **Falta que el usuario confirme** que las imágenes que subió a Meshy eran suyas o libres.
+- **Suno:**
+  - Con el plan gratuito, solo uso personal no comercial. Suscribirse después no da derechos retroactivos.
+  - **Falta saber** con qué plan se generó y descargó cada pista.
 - **Falta confirmar:**
   - el plan de Meshy (personajes, armas, árboles y guardián);
   - el plan de Suno de las cuatro pistas;
