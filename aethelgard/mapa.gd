@@ -57,6 +57,10 @@ const LUGARES := [
 		"texto": "Un arco de oro con un remolino morado. Al otro lado se oye el viento."},
 ]
 const ESCENA_PORTAL := "res://isla.tscn"
+# Pastos Verdes: solo existe con la exploración 3D activa (modo3d.gd, rama experimental). Está en la ruta de
+# Oakhaven al Gran Bosque, en tierra y lejos del radio de Oakhaven y del portal. Su índice es el 10.
+const LUGAR_PASTOS := {"nombre": "Pastos Verdes", "pos": Vector2(660, 478), "tipo": "lugar", "zona": "llanura",
+	"texto": "Colinas verdes, un puente de piedra y una cascada. Tilo enciende los faroles a pleno día."}
 
 const REGIONES := [
 	{"nombre": "OCÉANO DE BRUMA", "pos": Vector2(1330, 800), "rot": -3.0},
@@ -84,6 +88,7 @@ var tiempo := 0.0
 var zona_actual := ""
 var menu_abierto: Control = null
 var portal_tex: Texture2D
+var lugares: Array = LUGARES      # LUGARES y, con la exploración 3D activa, Pastos Verdes (índice 10)
 
 
 func _ready() -> void:
@@ -94,6 +99,8 @@ func _ready() -> void:
 			zonas_img = tex.get_image()
 	if zonas_img == null:
 		_generar_terreno()
+	if load("res://modo3d.gd").activo():
+		lugares = LUGARES + [LUGAR_PASTOS]
 	_crear_mapa()
 	_crear_jugador()
 	_crear_ui()
@@ -200,7 +207,7 @@ func _crear_mapa() -> void:
 	add_child(marcas)
 	marcas.draw.connect(func(): _dibujar_marcas(marcas))
 
-	for l in LUGARES:
+	for l in lugares:
 		var et := Label.new()
 		et.text = l["nombre"]
 		et.size = Vector2(260, 26)
@@ -228,7 +235,7 @@ func _crear_mapa() -> void:
 
 
 func _dibujar_marcas(n: Node2D) -> void:
-	for l in LUGARES:
+	for l in lugares:
 		var p: Vector2 = l["pos"]
 		if l["tipo"] == "portal":                     # la foto del portal de Meshy, en pequeño
 			if portal_tex == null and ResourceLoader.exists("res://objetos/portal.png"):
@@ -479,7 +486,7 @@ func _zona_en(p: Vector2) -> String:
 
 func _comprobar_cerca() -> void:
 	var mejor = null
-	for l in LUGARES:
+	for l in lugares:
 		if jugador.position.distance_to(l["pos"]) < RADIO_LUGAR:
 			mejor = l
 	if mejor != cerca:
@@ -556,7 +563,7 @@ func _entrar() -> void:
 		return
 	en_encuentro = true
 	tiene_destino = false
-	var i := LUGARES.find(cerca)
+	var i := lugares.find(cerca)
 	if cerca["tipo"] == "portal":                     # sube a la ciudad flotante; al bajar se vuelve aquí
 		Engine.set_meta("pos_mapa", jugador.position)
 		Engine.set_meta("pos_mapa_ok", true)
@@ -573,7 +580,7 @@ func _entrar() -> void:
 		Recursos.cambiar_escena(ESCENA_PORTAL)
 		return
 	Engine.set_meta("lugar", {"indice": i, "nombre": cerca["nombre"], "tipo": cerca["tipo"],
-		"zona": ZONA_LUGAR[i], "texto": cerca["texto"]})
+		"zona": cerca.get("zona", ZONA_LUGAR[i] if i < ZONA_LUGAR.size() else "llanura"), "texto": cerca["texto"]})
 	Engine.set_meta("pos_mapa", jugador.position)
 	Engine.set_meta("pos_mapa_ok", true)
 	Engine.set_meta("pos_zona_ok", false)
@@ -585,7 +592,13 @@ func _entrar() -> void:
 	var t := create_tween()
 	t.tween_property(negro, "color:a", 1.0, 0.5)
 	await t.finished
-	# la Garganta del Diablo es una mazmorra hecha a mano (garganta.gd); el resto, zonas generadas
+	# la Garganta del Diablo es una mazmorra hecha a mano (garganta.gd); las regiones 3D (modo3d.gd) tienen su
+	# escena; el resto, zonas generadas
+	var region_3d: String = load("res://modo3d.gd").escena_de(i)
+	if region_3d != "":
+		Engine.set_meta("pos_3d_ok", false)          # entra por el principio del camino
+		Recursos.cambiar_escena(region_3d)
+		return
 	Recursos.cambiar_escena("res://garganta.tscn" if i == INDICE_GARGANTA else "res://zona.tscn")
 
 

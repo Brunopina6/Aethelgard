@@ -40,6 +40,9 @@ const DETALLES := {
 			"texto": "Contratos de la Compañía del Águila, firmados con el sello de la corona."}],
 	7: [{"id": "templo_mural", "nombre": "Mural del Templo", "donde": "ruinas",
 			"texto": "Una sacerdotisa con un bebé. Los reyes le ciñen un anillo al niño."}],
+	# Pastos Verdes (región 3D de la rama experimental; texto propuesto en la biblia v3 §6.3, PV-04, no canon).
+	10: [{"id": "pastos_estela", "nombre": "Estela del camino", "donde": "ruinas",
+			"texto": "El anillo partido y nombres raspados. Uno de los raspados es reciente."}],
 }
 # Actos: qué lugares entran y la escena extra que se desbloquea con todos sus detalles.
 const ACTOS := [
@@ -49,10 +52,21 @@ const ACTOS := [
 		"texto": "El Sello alimentaba las máquinas de los reyes y devoraba a quien lo llevaba. Para la última pieza no buscaron un caballero: buscaron un niño."},
 ]
 const GUARDADO := "user://partida.save"
-# Datos de Engine que forman la partida.
+# La versión experimental (exploración 3D, modo3d.gd) guarda en otro archivo: nunca toca la partida estable,
+# ni siquiera en el PC, donde las dos comparten la carpeta user:// (el proyecto se llama igual).
+const GUARDADO_EXP := "user://partida_exp.save"
+# Datos de Engine que forman la partida. Las claves nuevas solo se añaden: una partida antigua carga igual
+# (faltan y se usan los valores por defecto) y una nueva en una versión antigua deja esas claves sin leer.
 const CLAVES := ["grupo", "inventario", "cofres_abiertos", "prologo_visto", "lugar", "pos_mapa", "pos_mapa_ok",
 	"pos_zona", "pos_zona_ok", "pos_zona_lugar", "lore_visto", "incienso", "escena_guardada",
-	"mazmorras", "combates_ganados", "decisiones", "pos_isla", "pos_isla_ok"]
+	"mazmorras", "combates_ganados", "decisiones", "pos_isla", "pos_isla_ok",
+	"hitos", "pos_3d", "pos_3d_ok", "pos_3d_lugar"]
+const MAPA := "res://mapa.tscn"
+
+
+# Archivo de la partida: el de la versión experimental si la exploración 3D está activa.
+static func archivo() -> String:
+	return GUARDADO_EXP if load("res://modo3d.gd").activo() else GUARDADO
 
 
 # ================================================================= ritmo
@@ -171,40 +185,67 @@ static func ganado(id: String) -> bool:
 	return Engine.get_meta("combates_ganados", {}).has(id)
 
 
+# ================================================================= hitos de la historia
+
+# Hitos de la historia (biblia v3: «hitos.<id>»). Se guardan en la partida; los que faltan valen false.
+static func hito(id: String) -> bool:
+	return Engine.get_meta("hitos", {}).get(id, false)
+
+
+static func poner_hito(id: String) -> void:
+	var h: Dictionary = Engine.get_meta("hitos", {})
+	h[id] = true
+	Engine.set_meta("hitos", h)
+
+
 # ================================================================= guardado
 
 static func hay_partida() -> bool:
-	return FileAccess.file_exists(GUARDADO)
+	return FileAccess.file_exists(archivo())
 
 
-# Guarda la partida. "escena" = dónde se vuelve al abrir el juego (el mapa o la zona).
-static func guardar(escena := "") -> void:
-	if "--script" in OS.get_cmdline_args() or not OS.get_cmdline_user_args().is_empty():
-		return                                     # las pruebas no tocan la partida de verdad
+# Lo que se guarda: las CLAVES que haya en Engine. Lo usan guardar() y las pruebas (que no escriben archivos).
+static func volcar(escena := "") -> Dictionary:
 	if escena != "":
 		Engine.set_meta("escena_guardada", escena)
 	var d := {}
 	for k in CLAVES:
 		if Engine.has_meta(k):
 			d[k] = Engine.get_meta(k)
-	var f := FileAccess.open(GUARDADO, FileAccess.WRITE)
+	return d
+
+
+# Guarda la partida. "escena" = dónde se vuelve al abrir el juego (el mapa o la zona).
+static func guardar(escena := "") -> void:
+	if "--script" in OS.get_cmdline_args() or not OS.get_cmdline_user_args().is_empty():
+		return                                     # las pruebas no tocan la partida de verdad
+	var d := volcar(escena)
+	var f := FileAccess.open(archivo(), FileAccess.WRITE)
 	if f == null:
 		push_warning("No se pudo guardar la partida")
 		return
 	f.store_string(var_to_str(d))
 
 
+# Pone en Engine una partida ya leída y devuelve la escena a la que volver. Si esa escena no existe en esta
+# versión (por ejemplo, una región 3D en una versión sin exploración 3D), se vuelve al mapa sin error.
+static func restaurar(d: Dictionary) -> String:
+	for k in d:
+		Engine.set_meta(k, d[k])
+	var escena: String = d.get("escena_guardada", MAPA)
+	if not ResourceLoader.exists(escena) or (escena.begins_with("res://zonas3d/") and not load("res://modo3d.gd").activo()):
+		escena = MAPA
+	if escena != MAPA:
+		Engine.set_meta("pos_zona_ok", true)        # vuelve al mismo sitio de la zona o la mazmorra
+	return escena
+
+
 # Carga la partida guardada. Devuelve la escena donde estabas ("" si no hay partida).
 static func cargar() -> String:
 	if not hay_partida():
 		return ""
-	var d = str_to_var(FileAccess.get_file_as_string(GUARDADO))
+	var d = str_to_var(FileAccess.get_file_as_string(archivo()))
 	if not d is Dictionary:
 		push_warning("La partida guardada no se pudo leer")
 		return ""
-	for k in d:
-		Engine.set_meta(k, d[k])
-	var escena: String = d.get("escena_guardada", "res://mapa.tscn")
-	if escena != "res://mapa.tscn":
-		Engine.set_meta("pos_zona_ok", true)        # vuelve al mismo sitio de la zona o la mazmorra
-	return escena
+	return restaurar(d)
