@@ -35,6 +35,7 @@ func _initialize() -> void:
 		_fallo("con la exploración 3D, la partida no va a partida_exp.save")
 		return
 	Engine.set_meta("pos_3d_ok", false)
+	Engine.set_meta("hitos", {"pv_02": true, "pv_03": true})   # sin las escenas de la misión (prueba_ruta_alpha)
 	change_scene_to_file(REGION)
 	_siguiente()
 
