@@ -1,0 +1,15 @@
+{
+"@path": "res://addons/dialogic/Resources/character.gd",
+"@subpath": NodePath(""),
+&"_translation_id": "",
+&"color": Color(0.75, 0.82, 0.95, 1),
+&"custom_info": {},
+&"default_portrait": "",
+&"description": "Provisional: sin retrato todavía.",
+&"display_name": "Garon",
+&"mirror": false,
+&"nicknames": [],
+&"offset": Vector2(0, 0),
+&"portraits": {},
+&"scale": 0.72
+}

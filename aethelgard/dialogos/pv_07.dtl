@@ -1,0 +1,11 @@
+join kael (normal) left
+join lya (normal) right
+lya: Una ciudad… en el cielo.
+kael: Y nosotros aquí, con los pies mojados.
+lya: Kael, te está mirando.
+kael: Las estatuas no miran.
+garon: Esta, sí.
+lya: Hay flores frescas a sus pies. Alguien las ha puesto esta mañana.
+garon: Y esas huellas de hollín dan vueltas alrededor… sin pisarlas.
+leave kael
+leave lya

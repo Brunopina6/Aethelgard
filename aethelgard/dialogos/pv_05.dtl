@@ -1,0 +1,16 @@
+join kael (normal) left
+join lya (normal) right
+garon: Llegáis tarde.
+kael: ¿Garon? ¿Has venido andando o te han traído en carro?
+garon: A caballo, antes del alba. Nadie sale de noche. Vosotros salisteis.
+garon: Volvéis conmigo a Oakhaven.
+lya: Están desapareciendo aldeas, Garon.
+garon: Por eso. Fuera de la muralla no os puedo proteger.
+tilo: Aquí nadie va a ninguna parte sin saludar antes al viejo.
+kael: ¿Qué viejo?
+tilo: El centinela del mirador. Los peregrinos lo saludaban antes de cruzar.
+tilo: Cuarenta años con el ojo apagado… y esta madrugada se le encendió.
+tilo: Cuando al viejo se le enciende el ojo, algo viene.
+garon: …Os acompaño. Solo hasta la estatua.
+leave kael
+leave lya
