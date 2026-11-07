@@ -1,6 +1,9 @@
 ﻿<#
-  Compila en local el APK experimental de REBELUM y lo comprueba.
-  La app se llama «Aethelgard Exp» y su paquete es com.aethelgard.experimental, distinto del de la estable.
+  Compila en local un APK de prueba de REBELUM y lo comprueba.
+  Por defecto compila la app experimental, «Aethelgard Exp» (com.aethelgard.experimental). Con -Preset se puede elegir
+  otro preset que NO sea la app estable: por ejemplo, «Android prueba 3D» (com.aethelgard.prueba3d), que arranca en
+  el prototipo de Pastos Verdes 3D. El paquete y las carpetas excluidas se leen del propio preset, y el script se
+  niega a compilar el paquete de la app estable (com.aethelgard.juego).
 
   Fase 2.0: solo modo ENSAYO.
     - No publica nada, no usa GitHub, no hace push ni crea etiquetas.
@@ -9,14 +12,17 @@
 
   Uso, desde D:\Aethelgard:
     powershell -ExecutionPolicy Bypass -File .\compilar_apk_experimental.ps1
+    powershell -ExecutionPolicy Bypass -File .\compilar_apk_experimental.ps1 -Preset "Android prueba 3D"
 
   Salida en D:\REBELUM_compilaciones\:
-    - el APK (Aethelgard_exp-AAAAMMDD-sha7.apk) y su .sha256;
+    - el APK (Aethelgard_<prefijo>-AAAAMMDD-sha7[-local].apk) y su .sha256;
     - el registro de Godot;
     - un resumen de las comprobaciones;
     - si el APK lleva recursos con licencia pendiente, un aviso NO_DISTRIBUIR.
 #>
 param(
+    [string]$Preset  = "Android experimental",
+    [string]$Prefijo = "",       # prefijo de la versión; si va vacío: «exp», «prueba3d» o el nombre del preset
     [string]$Godot  = "C:\Users\G513\Desktop\jueo personal\Godot_v4.7.2-stable_win64_console.exe",
     [string]$Sdk    = (Join-Path $env:LOCALAPPDATA "Android\Sdk"),
     [string]$Jdk    = "C:\Program Files\Eclipse Adoptium\jdk-17.0.20.101-hotspot",
@@ -24,12 +30,9 @@ param(
 )
 
 $ErrorActionPreference = "Continue"
-$PRESET     = "Android experimental"
-$PAQUETE    = "com.aethelgard.experimental"
+$PRESET     = $Preset
+$ESTABLE    = "com.aethelgard.juego"     # este script NUNCA compila la app estable
 $PROTEGIDAS = @("refs/heads/main", "refs/heads/desarollo", "refs/tags/v0.1.0")
-# Carpetas que el preset excluye: lo que cambie en ellas no entra en el APK.
-$EXCLUIDAS  = @("aethelgard/para_meshy/", "aethelgard/pruebas/", "aethelgard/prototipos/",
-                "aethelgard/modelos/", "aethelgard/vegetacion_prueba/")
 
 $raiz      = $PSScriptRoot
 $proyecto  = Join-Path $raiz "aethelgard"
@@ -77,7 +80,34 @@ foreach ($r in $PROTEGIDAS) { $antes[$r] = GitTexto @("rev-parse", $r) }
 $sha     = GitTexto @("rev-parse", "--short=7", "HEAD")
 $cuenta  = [int](GitTexto @("rev-list", "--count", "HEAD"))
 $fecha   = GitTexto @("show", "-s", "--format=%cd", "--date=format:%Y%m%d", "HEAD")
-$version = "exp-$fecha-$sha"
+
+# Preset: paquete, carpetas excluidas y prefijo de la versión, leídos del propio preset.
+$original = [System.IO.File]::ReadAllBytes($presets)
+$huella   = (Get-FileHash $presets -Algorithm SHA256).Hash
+$texto    = [System.Text.Encoding]::UTF8.GetString($original)
+$m = [regex]::Match($texto, '\[preset\.(\d+)\]\s*name="' + [regex]::Escape($PRESET) + '"')
+if (-not $m.Success) { Abortar "No existe el preset '$PRESET' en export_presets.cfg" }
+$n   = $m.Groups[1].Value
+$cab = $texto.IndexOf("[preset.$n]")
+$ini = $texto.IndexOf("[preset.$n.options]")
+if ($ini -lt 0) { Abortar "Falta [preset.$n.options]" }
+$fin = $texto.IndexOf("[preset.", $ini + 1)
+if ($fin -lt 0) { $fin = $texto.Length }
+$cabecera = $texto.Substring($cab, $ini - $cab)
+$opciones = $texto.Substring($ini, $fin - $ini)
+$PAQUETE  = [regex]::Match($opciones, 'package/unique_name="([^"]+)"').Groups[1].Value
+if ($PAQUETE -eq "") { Abortar "El preset '$PRESET' no tiene package/unique_name" }
+if ($PAQUETE -eq $ESTABLE) { Abortar "El preset '$PRESET' es la app estable ($ESTABLE): este script no la compila." }
+$filtro = [regex]::Match($cabecera, 'exclude_filter="([^"]*)"').Groups[1].Value
+# Carpetas que el preset excluye: lo que cambie en ellas no entra en el APK.
+$EXCLUIDAS = @($filtro.Split(",") | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne "" } |
+    ForEach-Object { "aethelgard/" + ($_ -replace '\*$', '') })
+if ($Prefijo -eq "") {
+    $Prefijo = if ($PRESET -match "experimental") { "exp" } elseif ($PRESET -match "prueba 3D") { "prueba3d" } `
+               else { ($PRESET -replace '[^A-Za-z0-9]', '').ToLower() }
+}
+Anotar "Preset «$PRESET» · paquete $PAQUETE · excluye: $filtro"
+$version = "$Prefijo-$fecha-$sha"
 $cambios = @((GitTexto @("status", "--porcelain", "--", "aethelgard")) -split "`r?`n" | Where-Object { $_ -ne "" })
 $entran  = @($cambios | Where-Object {
     $ruta = $_.Substring(3)
@@ -91,20 +121,6 @@ if ($entran.Count -gt 0) {
 Anotar "Rama $rama · commit $sha · versionCode $cuenta · versionName $version"
 
 # ------------------------------------------------------------------ versión en el preset (temporal)
-$original = [System.IO.File]::ReadAllBytes($presets)
-$huella   = (Get-FileHash $presets -Algorithm SHA256).Hash
-$texto    = [System.Text.Encoding]::UTF8.GetString($original)
-$m = [regex]::Match($texto, '\[preset\.(\d+)\]\s*name="' + [regex]::Escape($PRESET) + '"')
-if (-not $m.Success) { Abortar "No existe el preset '$PRESET' en export_presets.cfg" }
-$n   = $m.Groups[1].Value
-$ini = $texto.IndexOf("[preset.$n.options]")
-if ($ini -lt 0) { Abortar "Falta [preset.$n.options]" }
-$fin = $texto.IndexOf("[preset.", $ini + 1)
-if ($fin -lt 0) { $fin = $texto.Length }
-$opciones = $texto.Substring($ini, $fin - $ini)
-if ($opciones -notmatch [regex]::Escape("package/unique_name=`"$PAQUETE`"")) {
-    Abortar "El preset '$PRESET' no usa el paquete $PAQUETE"
-}
 $opciones2 = [regex]::Replace($opciones, 'version/code=\d+', "version/code=$cuenta")
 $opciones2 = [regex]::Replace($opciones2, 'version/name="[^"]*"', "version/name=`"$version`"")
 $nuevo = $texto.Substring(0, $ini) + $opciones2 + $texto.Substring($fin)
@@ -221,7 +237,7 @@ foreach ($c in $EXCLUIDAS) {
     if ($n -gt 0) { $colados += "$dentro ($n archivos)" }
 }
 if ($colados.Count -gt 0) { Anotar "FALLO: el APK lleva carpetas que el preset excluye: $($colados -join ', ')"; $ok = $false }
-else { Anotar "Ninguna carpeta excluida dentro del APK (para_meshy, pruebas, prototipos, modelos y vegetacion_prueba)" }
+else { Anotar "Ninguna carpeta excluida por el preset dentro del APK ($filtro)" }
 
 $prohibidos = @($entradas | Where-Object { $_ -match '(?i)(partida\.save|\.save$|export_credentials|keystore|\.jks$|\.p12$|editor_settings|override\.cfg)' })
 if ($prohibidos.Count -gt 0) {
