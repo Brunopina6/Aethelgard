@@ -1,0 +1,37 @@
+MENSAJE PARA EMPEZAR UNA CONVERSACIÓN NUEVA SOBRE AETHELGARD / REBELUM
+Preparado el 2026-11-07.
+
+Cómo usarlo:
+1. Abre la conversación nueva en la carpeta D:\Aethelgard (o D:\Aethelgard\aethelgard).
+2. Copia y pega todo lo que hay entre las dos líneas de guiones.
+
+------------------------------------------------------------------------
+Proyecto: AETHELGARD / REBELUM, un JRPG hecho con Godot 4.7.2.
+- Repositorio: D:\Aethelgard. El proyecto de Godot está en D:\Aethelgard\aethelgard.
+- GitHub privado: Brunopina6/Aethelgard.
+
+Abre este repositorio y lee CLAUDE.md, SESSION_HANDOFF.md, TASKS.md, el resumen e índice de MEMORIA_CHAT.md y los apartados pertinentes de PROJECT_CONTEXT.md y DECISIONS.md. Comprueba la rama, el commit y los cambios locales. Recupera las restricciones y autorizaciones vigentes, identifica el siguiente paso pendiente y continúa dentro del alcance autorizado. Contrasta los documentos con el estado real antes de modificar archivos.
+
+CONSULTA OBLIGATORIA DE MEMORIA ANTES DE RESPONDER O ACTUAR
+
+Antes de responder a cualquier petición sobre el proyecto o de modificar archivos:
+1. Comprueba el último commit de la rama memoria-desarrollo del repositorio de GitHub Brunopina6/Aethelgard, solo leyendo:
+   git ls-remote origin refs/heads/memoria-desarrollo
+   El 2026-11-07 esa rama todavía no existía.
+2. Consulta el índice de memoria, SESSION_HANDOFF.md y TASKS.md. Lee los apartados de MEMORIA_CHAT.md, PROJECT_CONTEXT.md y DECISIONS.md que pida la petición.
+3. Compara esa información con la rama local, el commit actual y los cambios sin confirmar. Comprueba también qué versión del código describe la memoria.
+4. Basa tu respuesta y tus acciones en ese estado contrastado y en mis instrucciones actuales.
+
+Además:
+- Si ya leíste la memoria en esta sesión, comprueba si el commit remoto ha cambiado. Relee solo los documentos modificados y lo que pida la petición.
+- Consulta GitHub sin sobrescribir archivos locales y sin cambiar de rama en una copia con trabajo pendiente.
+- Si encuentras discrepancias, averigua su origen antes de cambiar nada y conserva los avances locales.
+- Si GitHub no está disponible, usa la última memoria local verificada, di brevemente que no has podido comprobar novedades remotas y sigue con lo que se pueda hacer con seguridad. No afirmes haber consultado GitHub si el acceso falló.
+- Mis instrucciones actuales prevalecen sobre los encargos antiguos. Trata la memoria como documentación histórica y contrástala con el código y con lo que puedas comprobar.
+- Después de una decisión importante o de un cambio verificado, actualiza la memoria correspondiente. Publícala según la autorización y las reglas de revisión establecidas. Hoy eso significa publicar solo con mi autorización expresa.
+------------------------------------------------------------------------
+
+FRASE CORTA
+Úsala si la conversación ya está abierta en D:\Aethelgard, porque Claude carga CLAUDE.md solo:
+
+Lee CLAUDE.md y sigue su protocolo de inicio: comprueba memoria-desarrollo, lee SESSION_HANDOFF.md, TASKS.md y el resumen de MEMORIA_CHAT.md, contrasta con Git y dime el estado y el siguiente paso antes de tocar nada.
