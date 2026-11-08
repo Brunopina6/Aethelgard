@@ -1,8 +1,8 @@
 # TASKS: tareas de AETHELGARD / REBELUM
 
-**Actualizado el 2026-11-08 a las 17:45 (hora local, UTC+1).**
+**Actualizado el 2026-11-08 a las 19:05 (hora local, UTC+1).**
 - Copia del usuario: `rebelum-3d` @ `ce84422`.
-- Árbol del encargo: `rebelum-alpha` @ `091d1d1`.
+- Árbol del encargo: `rebelum-alpha` @ `36502e9`.
 
 **Estados**
 - **Pendiente:** sin empezar.
@@ -29,8 +29,8 @@
 | [T-012](#t-012) | APK «Prueba 3D» de Pastos Verdes | Terminada (compilada) | — |
 | [T-020](#t-020) | Encargo, Fase 0: línea base, respaldo y diagnóstico | Terminada | — |
 | [T-021](#t-021) | Pastos Verdes 3D desde el mapa (encargo 2.1-2.2; plan 2.3-2.4) | Terminada en PC; falta el móvil | Alta |
-| [T-022](#t-022) | Región 3D completa (encargo 2.3-2.5; plan 2.4-2.5) | Hecha en el PC (misión, grupo, cofre, mirador, objetivo y combate real); faltan escuchar y el Redmi | Alta |
-| [T-023](#t-023) | Cierre del perfil bajo: precalentado y sombra precalculada (plan 2.1) | Pendiente | Media |
+| [T-022](#t-022) | Región 3D completa (encargo 2.3-2.5; plan 2.4-2.5) | Hecha en el PC (misión, grupo activo, cofre, mirador, objetivo y combate real); faltan escuchar y el Redmi | Alta |
+| [T-023](#t-023) | Cierre del perfil bajo: precalentado y sombra precalculada (plan 2.1) | En curso: tirones de diálogos y de la primera vez, arreglados en el PC; faltan el Redmi y la sombra | Media |
 | [T-024](#t-024) | Métricas de referencia y matriz de cobertura | Pendiente | Media |
 | [T-025](#t-025) | Entrada: mando, teclado y foco; Android TV (plan 2.2) | Pendiente | Media |
 | [T-026](#t-026) | Combate híbrido: coste de las ventanas 3D | Pendiente | Baja |
@@ -292,12 +292,19 @@
       que se compilan (T-023).
   - **Solo orienta:** el PC no es el Redmi. Lo que cuesta el grupo allí se mide con el banco GRUPO.
 - **APK:** «08/11/2026 · Prueba v47» (`exp-20261108-091d1d1`) ([T-079](#t-079)).
+- **Hecho después** (`e670a5d`, [D-060](DECISIONS.md#d-060)), a petición del usuario («Sí. Antes de que Lya se una en
+  PV-03, los combates aleatorios deben ser solo de Kael…»):
+  - el grupo activo es la fuente común de la exploración, el combate, los menús, la tienda y el guardado;
+  - los encuentros al azar dependen de cuántos son, para que Kael solo pueda ganarlos;
+  - avisos del guardado y la opción de desarrollo «Probar la misión desde el principio», en otra ranura.
+  - **Pruebas:** `prueba_grupos_combate` (grupos de 1, 2 y 3), `prueba_partida` (casos 7 y 8) y
+    `prueba_ranura_prueba`. Batería `2026-11-08_175301`: **27 superadas, 0 fallidas** y 13 manuales.
+- **Después, los tirones** (`e630b02`, [D-061](DECISIONS.md#d-061)): ver [T-023](#t-023).
+- **APK:** «08/11/2026 · Prueba v50» (`exp-20261108-36502e9`) ([T-079](#t-079)).
 - **Falta:**
   - **escuchar** el sonido del cofre y las campanas;
   - la opinión visual del usuario y medir el grupo en el Redmi (botón GRUPO);
-  - decidir si los combates por pasos antes de PV-03 deben llevar solo a Kael ([D-059](DECISIONS.md#d-059)).
-  - Revisar con ventana el aspecto de Tilo, la estela y las salidas.
-  - El combate del centinela se ha probado cargando de verdad; la victoria se simuló.
+  - revisar con ventana el aspecto de Tilo, la estela y las salidas.
 - **Objetivo:**
   - NPC, diálogos, interacción, cofres y encuentros.
   - De la zona al combate y de vuelta, tras ganar, huir o perder, sin resolver dos veces el mismo encuentro o botín.
@@ -311,7 +318,21 @@
 
 ### T-023
 **Cierre del perfil bajo: precalentado de sombreados y sombra precalculada (plan 3D: 2.1)**
-- **Estado:** pendiente. **Prioridad:** media.
+- **Estado:** en curso. **Prioridad:** media.
+- **Hecho el 2026-11-08 por la tarde** (`e630b02`, [D-061](DECISIONS.md#d-061)), medido en el PC con
+  `pruebas/medir_primeras_veces.gd` (pantalla de carga real, dos pasadas, primer arranque y con caché; datos en
+  `D:\REBELUM_diagnostico\primeras_veces\comparacion.md`):
+  - **Diálogos:** la interfaz de Dialogic se prepara oculta en la pantalla de carga y se reutiliza. El primer diálogo
+    pasa de 184 a 9-11 ms y cada uno de los siguientes, de 54-56 a 6-7 ms.
+  - **Al andar:** los árboles que tapan a Kael usan una copia transparente guardada, y una vitrina dibuja en la entrada,
+    en negro, cada material de la escena. El primer paseo pasa de picos de 41 ms (tras instalar) y 19 ms (con caché) a
+    4-5 ms; cada oclusión, de unos 11 a 3-4,7 ms.
+  - **Lo que crece:** la pantalla de carga, un fotograma de unos 30 ms; la entrada en la región, en negro, unos
+    0,1-0,2 s en el PC.
+  - **Pruebas:** `prueba_dialogo_interfaz`, nueva. Batería `2026-11-08_184433`: **28 superadas, 0 fallidas** y
+    16 manuales; capturas de la región, del grupo y del diálogo revisadas, iguales que antes.
+  - **Falta:** medirlo en el Redmi (tiempos de carga, tirones que queden y si la caché de sombreados funciona en el
+    Mali-G57), y la sombra precalculada.
 - **Dependencias:** necesita el Redmi para medir (T-078).
 - **Contexto [historial]:** el perfil bajo daba unos 34,5 ms de mediana en el Redmi, todavía sin 30 FPS estables.
 - **Medido en el Redmi el 2026-11-08** (región 3D, APK `989d35e`, sin seguidores):
@@ -324,11 +345,10 @@
   - **Cuidado al leerlo** (corrección del 08/11): que la mediana sin tope sea 21,5 ms no garantiza unos 12 ms libres
     dentro de los 33,3 ms de 30 FPS. Cuentan el p95 (38,4 ms), los picos, la memoria y las cargas. Lo que cueste el
     grupo hay que medirlo en el Redmi (banco GRUPO).
-  - **Siguiente:** precalentar los sombreados y precalcular la sombra para bajar el p95 sin tope; y medir los picos y la
-    carga.
-  - **Candidatos medidos en el PC el 08/11** (`medir_ruta.gd`; ver [T-022](#t-022)):
+  - **Siguiente:** precalcular la sombra para bajar el p95 sin tope, y medir en el Redmi los picos y las cargas.
+  - **Candidatos medidos en el PC el 08/11** (`medir_ruta.gd`; ver [T-022](#t-022)), ya arreglados en `e630b02`:
     - picos de unos 50 ms al empezar a andar (sombreados que se compilan);
-    - unos 180 ms la primera vez que se abre un diálogo de Dialogic (se podría preparar al cargar).
+    - unos 180 ms la primera vez que se abre un diálogo de Dialogic.
 - **Criterio de aceptación** (plan 3D, punto 2.1), medido en el Redmi con el escenario y Kael en bajo:
   - mediana ≤ 31 ms y p95 ≤ 38 ms;
   - ningún pico > 100 ms después del precalentado;
@@ -514,6 +534,9 @@
     misión y posición tras un combate, partida antigua sin claves ni lista de objetos, dañada, escritura fallida y
     corte al guardar.
   - La partida real del PC no cambió.
+- **Ampliado en `e670a5d`** ([D-060](DECISIONS.md#d-060)): avisos al jugador; casos 7 (la partida y su `.bak`
+  dañadas: se apartan las dos y empieza una nueva) y 8 (partida nueva sin archivos). **Alcance:** lo comprobado
+  reduce el riesgo de perder la partida, no lo elimina ([D-056](DECISIONS.md#d-056)).
 - **Restricción:** la partida del PC no se restaura ([D-011](DECISIONS.md#d-011)).
 
 ### T-077
@@ -591,4 +614,14 @@
 - **Prueba v47** (08/11, hacia las 17:40), con la misma convención:
   - la release `exp-20261108-091d1d1` contiene el archivo `Aethelgard_Exp_2026-11-08_v47.apk`, de 256 629 386 bytes;
   - SHA-256 `988f9a8e…`; certificado y grupos de licencia, iguales a los de la v44; sin Suno.
+- **Prueba v50** (08/11, 18:53), con la misma convención:
+  - sale de `rebelum-alpha` @ `36502e9` (`e630b02` más los `.uid`), compilada dos veces: la segunda, con el árbol
+    limpio («TODO CORRECTO»);
+  - la fila del `README.md` va en el commit `6a6f27c`, y la release `exp-20261108-36502e9` está etiquetada sobre él;
+  - el archivo `Aethelgard_Exp_2026-11-08_v50.apk` tiene 256 637 578 bytes, y su `digest` coincide con el SHA-256 local
+    (`a374a858…`);
+  - certificado `3413edcd…`, el mismo de siempre; sin Suno (sus canciones no están en el proyecto del encargo);
+  - el repositorio sigue privado, con el dueño como único colaborador y sin invitaciones;
+  - la petición de los 4 primeros bytes devuelve `50 4b 03 04` (HTTP 206);
+  - el orden es v50 («Latest»), v47, v44, v41, v39 y la original.
 - **Pendiente de verificar:** la descarga completa y la instalación en el móvil, que hace el usuario.

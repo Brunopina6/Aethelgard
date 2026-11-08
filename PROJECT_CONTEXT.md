@@ -2,7 +2,8 @@
 
 **Verificado el 2026-11-07** sobre `desarollo` @ `2d1adc4`. El código del juego es idéntico en `rebelum-3d` @ `ce84422`.
 La rama `rebelum-alpha` @ `03b960a` añade la región 3D de Pastos Verdes (ver §5). El 08/11 se añadió el repositorio
-privado de APK de prueba (§9).
+privado de APK de prueba (§9). Las novedades de `rebelum-alpha` hasta `e630b02` (08/11, 19:00) están en §3 a §6 y
+§10.
 
 Cómo leer las etiquetas:
 - **[código]**: observado en el código.
@@ -98,6 +99,14 @@ La etiqueta local `recuperacion-antes-fase2.0` apunta a `2d1adc4`.
   - claves nuevas `hitos`, `pos_3d`, `pos_3d_ok` y `pos_3d_lugar`;
   - funciones `volcar()` y `restaurar()`;
   - si la escena guardada no existe en esta versión, se vuelve al mapa.
+- **Desde `e670a5d`** ([D-060](DECISIONS.md#d-060)), también en `rebelum-alpha`:
+  - la clave `grupo_activo` (quién está en el grupo ahora); `restaurar()` saca el grupo de los hitos en las partidas de
+    antes con la misión empezada;
+  - avisos al jugador (`Recursos.avisar`): no se pudo guardar, se recuperó una copia o no se pudo leer nada;
+  - con la partida y su `.bak` dañadas se apartan las dos (`.danada` y `.bak.danada`) y empieza una partida nueva;
+  - la ranura de prueba `partida_exp_prueba.save` (opción de desarrollo de `carga.gd`, solo en la versión
+    experimental).
+  - **Alcance:** reduce el riesgo de perder la partida, no lo elimina ([D-056](DECISIONS.md#d-056)).
 
 ## 4. Combate, magia, estados y progresión [código]
 
@@ -108,6 +117,10 @@ La etiqueta local `recuperacion-antes-fase2.0` apunta a `2d1adc4`.
   - personalidades: agresivo, bruto, cobarde, apoyo y jefe;
   - entran en furia por debajo del 30 % de vida.
 - **Grupos de enemigos** (`GRUPOS`, `:210`): los 5 primeros salen al azar.
+  - En `rebelum-alpha` (`e670a5d`, [D-060](DECISIONS.md#d-060)), los grupos al azar dependen de cuántos héroes hay
+    (`AL_AZAR_POR_TAMANO`): con uno, un slime, dos slimes o un Grimfang; con dos, tres slimes, Grimfang y slime, dos
+    slimes o un Grimfang; con tres, como siempre.
+  - Solo luchan los del grupo activo (`grupo.gd`, `activos()`); los ausentes no actúan ni cambian.
 - **Combates fijos:** se piden con `grupo_combate` y `combate_fijo`.
 - **Experiencia y oro:** al ganar.
 - **Derrota:** se vuelve con la vida llena.
@@ -198,14 +211,30 @@ objetos.
     - Las pruebas son `prueba_grupo3d_rutas.gd` (rutas al azar, ruta válida) y `prueba_centinela.gd` (combate real con
       `-- auto`).
   - **Medición en el PC:** `pruebas/medir_ruta.gd`, el mismo recorrido con y sin grupo (T-022).
+  - **Grupo activo** (`e670a5d`, [D-060](DECISIONS.md#d-060)): en la versión experimental la misión empieza con Kael
+    solo; Lya se une en PV-03 y Garon en PV-05 (`grupo.gd`, `unir()`). Es la misma fuente para la exploración, el
+    combate, los menús, la tienda y el guardado.
+  - **Sin tirones de la primera vez** (`e630b02`, [D-061](DECISIONS.md#d-061)), en `prototipos/vista3d.gd`:
+    - lo que tapa a Kael usa una copia transparente de su material, hecha una vez y guardada (`_material_transparente`;
+      `sendero_puente.gd` la hace para las copas con sombreado propio);
+    - al entrar, con la pantalla en negro, una «vitrina» dibuja dos fotogramas una miniatura de cada material de la
+      escena delante de la cámara (`_preparar_sombreados`), para que Godot compile o lea de su caché los sombreados
+      ahí y no al andar.
+    - Se mide con `pruebas/medir_primeras_veces.gd`.
 
 ## 6. Diálogos y narrativa
 
 - **Dialogic** [código]:
   - Timelines: `prologo`, `npc_aldric`, `npc_pip`, `npc_rosa` y `npc_selene`.
   - Personajes: aldric, kael, lya, pip, rosa y selene.
-  - En `rebelum-alpha` (`f039c72`), todavía sin usar: `pv_02`, `pv_03`, `pv_05`, `pv_06`, `pv_07`, `pv_14`, `pv_tilo`
-    y `pv_tilo_fin`, más garon y tilo, sin retrato.
+  - En `rebelum-alpha`: `pv_02`, `pv_03`, `pv_05`, `pv_06`, `pv_07`, `pv_14`, `pv_tilo` y `pv_tilo_fin` (la misión de
+    Pastos Verdes 3D desde `e212400`), más garon y tilo, sin retrato.
+  - **Interfaz reutilizada** (`rebelum-alpha`, `e630b02`, [D-061](DECISIONS.md#d-061)):
+    - `dialogic/layout/end_behaviour` = 1: al acabar un diálogo la interfaz se oculta en vez de borrarse;
+    - `carga.gd` lee el estilo en segundo plano y la crea oculta (`Recursos.precalentar_dialogos`), con el estilo de la
+      biblia de arte (`BotonDialogo.estilar`);
+    - al acabar cada diálogo, `Recursos._al_acabar_dialogo` limpia el texto, el nombre y los retratos.
+    - La prueba es `pruebas/prueba_dialogo_interfaz.gd`.
 - **Biblia:** [docs/biblia/rebelum_biblia_narrativa_v3.md](docs/biblia/rebelum_biblia_narrativa_v3.md), en propuesta.
   También la v2 y `rebelum_propuesta.md`.
 - **La conversación original del director:** en `C:\Users\G513\Downloads\Telegram Desktop\`, fuera del repositorio.
@@ -281,6 +310,11 @@ objetos.
       0 no seguras.
     - `rebelum-alpha` (2026-11-08 17:27, batería `2026-11-08_172719`): **25 superadas, 0 fallidas**, 12 manuales y
       0 no seguras.
+    - `rebelum-alpha` (2026-11-08 18:45, `e630b02`, batería `2026-11-08_184433`): **28 superadas, 0 fallidas**,
+      16 manuales y 0 no seguras.
+  - **Nuevas desde el 08/11 por la tarde:** `prueba_grupos_combate`, `prueba_ranura_prueba` y
+    `prueba_dialogo_interfaz` (automáticas); `medir_primeras_veces`, `sonda_dialogic_carga` y
+    `sonda_oclusion_repetida` (manuales, para medir y atribuir).
 - **Utilidades de arte** (`pruebas/herramientas/`): `hojas_a_geometria.gd`, `impostores.gd`, `preparar_meshy.gd`,
   `textura_hojas.gd` y `hoja.ps1`.
 - **Compilación local:** `compilar_apk_experimental.ps1`, en la raíz (`rebelum-3d` y `rebelum-alpha`).

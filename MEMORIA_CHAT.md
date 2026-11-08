@@ -1,6 +1,6 @@
 # MEMORIA_CHAT: lo aprendido en las conversaciones sobre AETHELGARD / REBELUM
 
-> **Actualizado el 2026-11-08 a las 17:40** (hora local, UTC+1), en la rama `rebelum-3d` @ `ce84422`. Se publica en la
+> **Actualizado el 2026-11-08 a las 19:05** (hora local, UTC+1), en la rama `rebelum-3d` @ `ce84422`. Se publica en la
 > rama `memoria-desarrollo` de GitHub.
 >
 > Es un **resumen**, no una transcripción. El chat legible está en
@@ -69,8 +69,18 @@
     - la «Prueba v47».
   - **Corrección aprendida:** la mediana sin tope no es margen garantizado; cuentan el p95, los picos, la memoria y las
     cargas.
-- **Siguiente:** los costes identificados (el primer diálogo de Dialogic y los sombreados) y después el encargo único
-  por dependencias ([SESSION_HANDOFF.md](SESSION_HANDOFF.md)).
+- **Orden del 08/11, hacia las 17:45** (respuesta a mi pregunta sobre los combates antes de PV-03): Kael solo hasta
+  PV-03, Lya desde PV-03 y Garon desde PV-05, con el grupo activo como fuente común; encuentros que Kael pueda ganar
+  solo; pruebas de grupos de 1, 2 y 3; después, los tirones del primer diálogo y de los primeros efectos, midiendo por
+  separado el arranque en frío y los recorridos posteriores y lo que crecen las cargas; completar las pruebas del
+  guardado sin prometer garantías absolutas; una partida de prueba aislada. «Mantén pendientes la escucha y la
+  validación de la v47 en el Redmi.»
+  - **Hecho:** el grupo activo, los encuentros, los avisos del guardado y la ranura de prueba (`e670a5d`,
+    [D-060](DECISIONS.md#d-060)); los tirones (`e630b02`, [D-061](DECISIONS.md#d-061)); la «Prueba v50».
+  - **Medido en el PC:** el primer diálogo pasa de 184 a unos 10 ms, los siguientes de 55 a 7 ms, y el primer paseo de
+    picos de 41 ms a 4-5 ms. La entrada en la región, en negro, crece 0,1-0,2 s.
+- **Siguiente:** el encargo único por dependencias; del perfil bajo, la medición en el Redmi y la sombra precalculada
+  ([SESSION_HANDOFF.md](SESSION_HANDOFF.md)).
 - **Vigente:**
   - el Redmi está reservado;
   - la partida del PC se conserva tal cual;
@@ -447,6 +457,18 @@ El inventario completo, con las condiciones oficiales de Meshy y Suno leídas el
 - **adb desde Git Bash:** las rutas necesitan `MSYS_NO_PATHCONV=1`.
 - **Xiaomi** bloquea `adb install`.
 
+**Tirones de la primera vez (08/11, `e630b02`)** [comprobado en el PC]
+- **Dialogic** borra su interfaz al acabar cada diálogo si no se le dice lo contrario, y la rehace en el siguiente:
+  unos 185 ms el primero y 55 ms cada uno de los demás. Leer su estilo arrastra todas las escenas de la interfaz (unos
+  145 ms). Si se oculta en vez de borrarse, hay que limpiar al acabar el texto, el nombre y los retratos: Dialogic solo
+  lo hacía al crear una interfaz nueva.
+- **`end_timeline()` no corta en seco:** primero reproduce un final («[clear]») que dura un segundo o dos.
+- **Godot suelta el sombreado de un material** cuando nadie más lo usa, y al salir de una escena: lo que aparece por
+  primera vez en cada visita se vuelve a preparar al dibujarse (compilado tras instalar o leído de la caché después).
+- **El tirón de cada oclusión** no estaba en `vista3d.gd` sino en `sendero_puente.gd`, que sobrescribe
+  `_transparente` y creaba un material nuevo en cada oclusión. Se encontró quitando partes una a una
+  (`medir_primeras_veces.gd` con `vaiven`, `oclusion=no` y variantes temporales).
+
 ## 9. Trabajo terminado, en curso y pendiente
 
 Todo, con su evidencia, en [TASKS.md](TASKS.md). En breve:
@@ -455,12 +477,17 @@ Todo, con su evidencia, en [TASKS.md](TASKS.md). En breve:
   - T-010: la Fase 2.0;
   - T-011 y T-012: las dos APK compiladas;
   - T-020: la Fase 0 del encargo.
-- **Terminado por la tarde:** T-021, Pastos Verdes 3D desde el mapa, en el PC. Falta probarlo en el Redmi.
-- **Siguiente:** T-022.
-- **Pendiente:**
-  - la región completa, el perfil bajo, la entrada, el audio, la magia, las invocaciones y la optimización;
-  - el riesgo de guardado (T-076).
-- **Bloqueado por el usuario:** licencias, decisiones, el bloque B, el Redmi y la publicación de la memoria.
+- **Terminado el 07/11 por la tarde:** T-021, Pastos Verdes 3D desde el mapa, en el PC. Falta probarlo en el Redmi.
+- **Terminado el 08/11:** T-076 y T-077 (guardado, en `rebelum-alpha`) y T-079 (repositorio de pruebas; última, la
+  v50).
+- **En curso:**
+  - T-022, la región completa: hecha en el PC (misión, grupo activo, cofre, mirador, objetivo y combate real); faltan
+    escuchar los sonidos y el Redmi;
+  - T-023, el perfil bajo: los tirones de diálogos y de la primera vez, arreglados en el PC; faltan el Redmi y la
+    sombra precalculada.
+- **Siguiente:** el encargo único por dependencias: la entrada (T-025), el audio (T-030), la magia y los estados
+  (T-040), las invocaciones y la optimización.
+- **Bloqueado por el usuario:** licencias, decisiones, el bloque B y el Redmi.
 
 ## 10. Rutas
 

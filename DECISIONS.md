@@ -1,7 +1,7 @@
 # DECISIONS: decisiones de AETHELGARD / REBELUM
 
-**Actualizado el 2026-11-08** sobre la copia del usuario (`rebelum-3d` @ `ce84422`) y el árbol del encargo
-(`rebelum-alpha` @ `3976565`). Las horas son locales (UTC+1).
+**Actualizado el 2026-11-08 a las 19:05** sobre la copia del usuario (`rebelum-3d` @ `ce84422`) y el árbol del
+encargo (`rebelum-alpha` @ `36502e9`). Las horas son locales (UTC+1).
 
 **Estados**
 - **Aprobada:** la tomó o la aprobó el usuario.
@@ -71,6 +71,8 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 | [D-057](#d-057) | El cofre del árbol mágico de Pastos Verdes 3D | Aprobada en el encargo |
 | [D-058](#d-058) | La cinemática del mirador (PV-07) | Aprobada en el encargo |
 | [D-059](#d-059) | El grupo se une con la misión; objetivo y marcador en pantalla | Aprobada en el encargo |
+| [D-060](#d-060) | El grupo activo manda: exploración, combate, menús y guardado; encuentros para Kael solo | Aprobada |
+| [D-061](#d-061) | Sin tirones al abrir diálogos ni al ver algo por primera vez: se prepara en las cargas | Aprobada en el encargo |
 | [D-H01 a D-H15](#6-diseño-ya-implementado-del-3010-al-0511) | Diseño ya implementado antes de Git | Aprobada (historial) |
 
 ## 1. Reglas de trabajo, Git y versiones
@@ -763,6 +765,13 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
     `partida_exp.save`.
   - El formato no cambia: las partidas antiguas cargan igual y una versión antigua lee las nuevas.
   - `inventario.gd` completa con el inventario inicial lo que falte en una partida antigua.
+- **Ampliado en `e670a5d`** ([D-060](#d-060)): el jugador recibe un aviso si no se pudo guardar, si se recuperó una
+  copia o si no se pudo leer nada; con las dos copias dañadas se apartan las dos (`.danada` y `.bak.danada`) y empieza
+  una partida nueva.
+- **Alcance, según lo comprobado** (`prueba_partida`, casos 1-8, con partidas sintéticas en un archivo propio): sesión
+  sin cargar, guardar y cargar, partida antigua, partida dañada con copia buena, escritura fallida, corte a medias, las
+  dos copias dañadas y partida nueva. **Reduce el riesgo de perder la partida; no lo elimina.** Sin comprobar: un fallo
+  real del almacenamiento del móvil o quedarse sin espacio en Android.
 - **Alternativas descartadas:**
   - **Mezclar la sesión con la partida guardada:** no evita el daño, porque la sesión ya trae datos por defecto (el
     grupo a nivel 1) que pisarían los buenos.
@@ -842,9 +851,81 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
     - antes, `D:\REBELUM_diagnostico\pruebas\2026-11-08_171143\prueba_region3d_fotos\bajo_cofre_1_desde_el_camino.png`;
     - después, la misma captura en `...\2026-11-08_172633\...`, con el objetivo y el rombo sobre Tilo.
     - El rombo del centinela se bajó de 4,4 a 3,6 m porque se salía por arriba.
-- **Pendiente:**
-  - Los combates por pasos antes de PV-03 meten a Lya y Garon en el combate, porque `combate.gd` usa el grupo de la
-    partida. Es anterior a este cambio y se apunta para decidirlo.
+- **Pendiente (resuelto en [D-060](#d-060)):** los combates por pasos antes de PV-03 metían a Lya y Garon en el
+  combate, porque `combate.gd` usaba el grupo de la partida.
+
+### D-060
+**El grupo activo manda: exploración, combate, menús y guardado; encuentros para Kael solo**
+- **Fecha y estado:** 2026-11-08, hacia las 17:50. Aprobada [usuario]: «Antes de que Lya se una en PV-03, los combates
+  aleatorios deben ser solo de Kael. Desde PV-03 participarán Kael y Lya, y desde PV-05 se incorporará Garon». Lo
+  implementé yo [asistente].
+- **Decisión** (`grupo.gd`, `combate.gd`, `menus.gd`, `tienda.gd`, `progreso.gd`, `recursos.gd`, `carga.gd` y
+  `zonas3d/pastos_verdes_3d.gd`; `e670a5d`):
+  - **Fuente común:** el grupo activo (`grupo_activo`, que se guarda). Lo usan la exploración, el combate, los menús, la
+    tienda, el nivel del grupo y el guardado.
+  - **En la versión experimental,** la misión empieza con Kael solo; Lya se une en PV-03 y Garon en PV-05. Quien se une
+    llega al nivel del más alto y descansado.
+  - **Los ausentes** conservan sus datos, no actúan, no son objetivo y no cambian (curar tras una derrota solo cura a
+    los presentes).
+  - **Partidas de antes:** sin la clave y con la misión empezada, el grupo sale de los hitos; sin la misión, siguen con
+    todos. La versión estable no cambia.
+  - **Encuentros al azar según cuántos son:**
+    - con uno: un slime, dos slimes o un Grimfang;
+    - con dos: tres slimes, Grimfang y slime, dos slimes o un Grimfang;
+    - con tres, como siempre.
+    - Los combates fijos y las magias no cambian, y ningún enemigo aturde ni duerme: Kael solo no puede quedar
+      bloqueado.
+  - **Guardado:** avisos al jugador ([D-056](#d-056)).
+  - **Opción de desarrollo** (solo en la versión experimental): «Probar la misión desde el principio», en la pantalla de
+    carga. Juega en otra ranura (`partida_exp_prueba.save`), desde cero y entrando en Pastos Verdes. La partida de
+    siempre no se toca, y una etiqueta avisa de que es una partida de prueba.
+- **Comprobado** (batería `2026-11-08_175301`: 27 superadas, 0 fallidas y 13 manuales; la partida real no cambió):
+  - `prueba_grupos_combate`, nueva, con grupos de 1, 2 y 3:
+    - gana todos sus grupos al azar solo atacando (Kael solo: 21, 39 y 47 s de juego);
+    - huir y perder;
+    - los ausentes ni actúan ni cambian;
+    - guardar y cargar, partidas de antes, partida nueva y el menú del grupo.
+  - `prueba_partida` (casos 7 y 8, nuevos) y `prueba_ranura_prueba`, nueva.
+- **Alcance:** los combates se ganan con ataques automáticos, sin magias ni objetos; no prueba la estrategia de un
+  jugador.
+
+### D-061
+**Sin tirones al abrir diálogos ni al ver algo por primera vez: se prepara en las cargas**
+- **Fecha y estado:** 2026-11-08, hacia las 19:00. Aprobada en el encargo [asistente], por la petición del usuario:
+  «Continúa después con los tirones del primer diálogo y de los primeros efectos visuales. Mide arranque en frío y
+  recorridos posteriores por separado».
+- **Decisión** (rama `rebelum-alpha`):
+  - **Diálogos** (`recursos.gd`, `carga.gd`, `boton_dialogo.gd` y `project.godot`):
+    - Dialogic borraba su interfaz al acabar cada diálogo y la rehacía en el siguiente.
+    - Ahora se oculta (`dialogic/layout/end_behaviour` = 1).
+    - La pantalla de carga lee su estilo en segundo plano y, en un paso propio, la crea oculta y le pone el estilo de la
+      biblia de arte.
+    - Al acabar cada diálogo, Recursos limpia el texto, el nombre y los retratos: el siguiente no enseña nada del
+      anterior.
+  - **Oclusión** (`prototipos/vista3d.gd` y `prototipos/sendero_puente.gd`):
+    - lo que tapa a Kael usa una copia transparente de su material, hecha una vez y guardada mientras dura la escena;
+    - antes, las copas creaban un material nuevo en cada oclusión y Godot preparaba otra vez su sombreado.
+    - Se ve igual: los mismos parámetros, que solo se ponen al construir los árboles.
+  - **Vitrina** (`vista3d.gd`, `_preparar_sombreados`): al entrar en la región, con la pantalla aún en negro, se dibuja
+    dos fotogramas, en miniatura delante de la cámara, una copia de cada material de la escena y de las copias
+    transparentes.
+- **Medido en el PC** (`pruebas/medir_primeras_veces.gd`; datos y tabla en
+  `D:\REBELUM_diagnostico\primeras_veces\comparacion.md`):
+
+  | | Antes | Después |
+  |---|---|---|
+  | Primer diálogo | 184 ms | 9-11 ms |
+  | Cada diálogo siguiente | 54-56 ms | 6-7 ms |
+  | Primer paseo tras instalar (fotograma más lento) | 41 ms, y otros de 37, 25 y 23 ms | 4,0 ms |
+  | Primer paseo con caché / al volver a entrar | 18-20 ms | 4-5 ms |
+  | Cada vez que un árbol tapa a Kael | unos 11 ms (normal: 3,3) | 3-4,7 ms |
+
+- **Lo que se lleva a las cargas** (PC):
+  - la pantalla de carga gana un fotograma de unos 30 ms (leer el estilo va en segundo plano);
+  - la entrada en la región, en negro, pasa de 1,21 a 1,43 s tras instalar, de 1,03 a 1,10-1,13 s con caché y de
+    0,87-0,89 a 0,94-1,01 s al volver a entrar.
+- **Sin comprobar:** el Redmi (tiempos de carga, tirones que queden y si la caché de sombreados de Godot funciona en el
+  Mali-G57).
 
 ## 6. Diseño ya implementado del 30/10 al 05/11
 
