@@ -1,6 +1,7 @@
 # TASKS: tareas de AETHELGARD / REBELUM
 
-**Actualizado el 2026-11-08 a las 23:05 (hora local, UTC+1).**
+**Actualizado el 2026-11-09 a las 00:20 (hora local, UTC+1).** La integración va por `integracion-experimental` @
+`713fe8d`.
 - Copia del usuario: `rebelum-3d` @ `b8e042d` (la protección del guardado, [D-066](DECISIONS.md#d-066)).
 - Árbol del encargo: `rebelum-alpha` @ `375cc8c` (el prólogo, T-081).
 - Desde las 22:00, organización por especialistas: [T-082](#t-082) a [T-088](#t-088).
@@ -55,10 +56,10 @@
 | [T-078](#t-078) | Validar las APK en el Redmi | Bloqueada (usuario): la v54 ya está en sus Descargas ([D-065](DECISIONS.md#d-065)); falta instalarla y probarla | Media |
 | [T-079](#t-079) | Repositorio privado para descargar las APK de prueba en el móvil | Terminada | — |
 | [T-080](#t-080) | Decidir la nivelación automática de quien se une al grupo (D-062) | Bloqueada (usuario) | Baja |
-| [T-081](#t-081) | El primer diálogo: presentación, cámara, texto y gestos (encargo del 08/11 por la noche) | En curso (prólogo hecho, `375cc8c`) | Alta |
+| [T-081](#t-081) | El primer diálogo: presentación, cámara, texto y gestos (encargo del 08/11 por la noche) | En curso (prólogo y botón hechos; falta el Redmi) | Alta |
 | [T-082](#t-082) | Organización por especialistas: coordinador y cinco subagentes (encargo del 08/11, 22:00) | En curso | Alta |
-| [T-083](#t-083) | Sonido: primera tanda de efectos de la biblioteca del usuario en eventos reales | En curso (tanda 1) | Alta |
-| [T-084](#t-084) | Animaciones: la mano de Kael en el diálogo inicial y gestos naturales | En curso (tanda 1) | Alta |
+| [T-083](#t-083) | Sonido: primera tanda de efectos de la biblioteca del usuario en eventos reales | Tanda 1 integrada; falta escucharla | Alta |
+| [T-084](#t-084) | Animaciones: la mano de Kael en el diálogo inicial y gestos naturales | Tanda 1 integrada; tanda 2 pendiente | Alta |
 | [T-085](#t-085) | Gráficos: el mapamundi (costas, agua, relieve, biomas, lugares y rótulos) | Pendiente | Alta |
 | [T-086](#t-086) | Narrativa: el diálogo inicial y la misión de Pastos Verdes | Pendiente | Media |
 | [T-087](#t-087) | Combate: estabilidad con uno, dos y tres héroes y eventos sonoros de ataque e impacto | Pendiente | Media |
@@ -536,9 +537,12 @@
 
 ### T-081
 **El primer diálogo: presentación, cámara, texto y gestos (encargo del 08/11 por la noche)**
-- **Estado:** en curso. El prólogo está hecho y probado (`375cc8c`, [D-068](DECISIONS.md#d-068)). Falta poder verlo
-  en el Redmi (el botón de desarrollo «Probar el prólogo», diseñado en [SESSION_HANDOFF.md](SESSION_HANDOFF.md)) y
-  revisarlo en el teléfono. Sigue en [T-084](#t-084) y [T-086](#t-086). **Prioridad:** alta.
+- **Estado:** en curso.
+  - Hechos y probados: el prólogo (`375cc8c`, [D-068](DECISIONS.md#d-068)) y el botón de desarrollo «Probar el
+    prólogo (partida nueva)» de la carga (`713fe8d`, `prueba_boton_prologo`).
+  - Falta revisarlo en el Redmi.
+  - Sigue en [T-084](#t-084) y [T-086](#t-086).
+- **Prioridad:** alta.
 - **Petición** [usuario]: «El diálogo que aparece al abrir el juego me parece pobre. Quiero mejorar su presentación y
   las animaciones de los personajes.» Primero localizarlo arrancando con una partida aislada (partida nueva y
   existente), observarlo con ventana y guardar capturas o vídeo de referencia; después mejorar esa conversación
@@ -575,8 +579,19 @@
 
 ### T-083
 **Sonido: primera tanda de efectos de la biblioteca del usuario en eventos reales**
-- **Estado:** en curso desde las 22:27 (tanda 1), en `D:\Aethelgard_sonido`, rama `area-sonido`. **Prioridad:** alta.
-  **Responsable:** especialista de sonido.
+- **Estado:** tanda 1 terminada e integrada (`091bcfb`, 09/11 a las 00:00). Falta que el usuario la escuche, y la
+  tanda 2. **Prioridad:** alta. **Responsable:** especialista de sonido (rama `area-sonido`).
+- **Evidencia, tanda 1** (comprobado ejecutando y aislado):
+  - 100 derivados de 61 originales: CC0 «500 GAME SOUND EFFECTS» y Sonniss GDC 2016-2024, con la licencia de cada
+    paquete comprobada; quedan fuera GDC 2015 (sin PDF), TomMusic y Suno;
+  - `sonido.gd` con 55 efectos, voces 10/4/4, prioridades (la victoria baja 8 dB lo demás), variantes, esperas, cortes
+    al cambiar de escena, pausa y silencio;
+  - pasos en 3D según el esqueleto de Kael y el suelo; río y cascada en 3D;
+  - `prueba_efectos` (muda) y `prueba_efectos_senal` (señal real, 62 grabaciones);
+  - batería de la integración: 39 superadas y 0 fallidas;
+  - `prueba_efectos` hecha estable (`713fe8d`);
+  - muestras en `D:\REBELUM_diagnostico\sonido_muestras\2026-11-08\` (`indice.md`);
+  - informe: `docs/memory/agents/sonido.md`.
 - **Petición** [usuario]: aprovechar `D:\qtorrent\sound effect` para que las acciones del juego tengan respuesta
   sonora. Pasos e interacción; ataques físicos, impactos y defensas; cofres, puertas, objetos y recompensas; victoria,
   derrota y menús; río, cascada, viento y naturaleza; habilidades nuevas y eventos narrativos autorizados.
@@ -593,8 +608,20 @@
 
 ### T-084
 **Animaciones: la mano de Kael en el diálogo inicial y gestos naturales**
-- **Estado:** en curso desde las 22:27 (tanda 1), en `D:\Aethelgard_animaciones`, rama `area-animaciones`.
-  **Prioridad:** alta. **Responsable:** especialista de animaciones.
+- **Estado:** tanda 1 terminada e integrada (`e84cf32`, 09/11 a las 00:05). La tanda 2 queda pendiente: pies que
+  patinan en 3D, Lya y Garon presentes cuando hablan en PV-03 y PV-05, retratos vivos en Pastos Verdes, poses de Lya y
+  la señal `pisada`. **Prioridad:** alta. **Responsable:** especialista de animaciones (rama `area-animaciones`).
+- **Evidencia, tanda 1** (comprobado ejecutando y aislado):
+  - **Causa:** `kael.png` es un render del modelo en el fotograma 5 del reposo `_01a19b86` (el sable al hombro), sin
+    el sable. La silueta coincide en un 98,9 % (Blender).
+  - **Retratos y prólogo:** cinco retratos nuevos con el mismo modelo, cámara y luz (fuentes en
+    `dialogos/retratos/fuentes_blender/`); fundido entre poses; Kael escucha en reposo y hace cuatro gestos distintos
+    en sus frases.
+  - **Pastos Verdes:** quien escucha se vuelve hacia quien habla; Garon llega en calma.
+  - **Pruebas:** `prueba_prologo` ampliada (avance rápido y diálogo reabierto), `prueba_prologo_video` y
+    `prueba_anim_pv_fotos`.
+  - **Evidencias:** antes y después, láminas y vídeos en `D:\REBELUM_diagnostico\animaciones\2026-11-08\`.
+  - **Informe:** `docs/memory/agents/animaciones.md`.
 - **Petición** [usuario]: revisar la pose de Kael «con la mano junto a la cabeza mientras habla Lya». Encontrar la
   causa (clip, duración, transición, mezcla, esqueleto o pose procedural) y corregirla.
   - Gestos naturales: reposo cómodo, miradas a quien habla, reacciones breves, transiciones suaves, pies apoyados y

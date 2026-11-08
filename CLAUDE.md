@@ -144,7 +144,8 @@ pida la tarea.
 - **Idioma:** español en los documentos, los commits, los comentarios y los textos del juego.
 - **Commits:** terminan con `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 - **Pruebas:** sin ventana, con `--fixed-fps 30`, mediante `aethelgard/pruebas/ejecutar_pruebas.ps1`. Da 4 resultados
-  (SUPERADA, FALLIDA, MANUAL y NO SEGURA) y devuelve un código de salida.
+  (SUPERADA, FALLIDA, MANUAL y NO SEGURA) y devuelve un código de salida. Lánzalo desde PowerShell: desde Bash, el
+  `*` de `*>` se expande y le llegan parámetros falsos (pasó el 08/11). Solo se niega si hay un Godot en su misma copia.
 - **Compilación local:** `compilar_apk_experimental.ps1 [-Preset "…"]` se niega a compilar la app estable, exporta en
   un entorno aislado y comprueba licencias, firma y paquete.
 - **Pruebas en GitHub** (`Brunopina6/Aethelgard-pruebas`, [D-054](DECISIONS.md#d-054)), ordenadas por fecha y versión:

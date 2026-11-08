@@ -1,143 +1,88 @@
 # SESSION_HANDOFF: punto de control
 
-**Último punto de control:** 2026-11-08 a las 23:05 (hora local, UTC+1). **La tanda 1 está en marcha:** sonido y
-animaciones trabajan desde las 22:27, cada uno en su copia.
-- **Encargo vigente (22:40, pegado):** sesión prolongada y autónoma para mejorar REBELUM, con prioridades de 1 a 7
-  ([MEMORIA_CHAT.md](MEMORIA_CHAT.md)). **El usuario (22:50):** «acepto todo no me preguntes mas solo hazlo»: no se
-  para a preguntar dentro del alcance; las normas de [CLAUDE.md](CLAUDE.md) siguen.
-- **Añadido (23:05):** después de lo anterior, toda la noche:
-  - mejorar todas las ciudades ([T-089](TASKS.md#t-089));
-  - muchos sitios nuevos que explorar ([T-090](TASKS.md#t-090));
-  - magias nuevas sin cambiar las existentes ([T-091](TASKS.md#t-091));
-  - pulido y rendimiento ([D-071](DECISIONS.md#d-071)).
-- **Comprobado a las 22:45:**
-  - la protección del guardado está en todas las copias de prueba;
-  - la partida real no ha cambiado (`A3F3C402…`, de las 19:37);
-  - inventario de programas en `docs/herramientas/programas_pc.md` (`integracion-experimental` @ `dddbddb`).
-- **Nuevo encargo (22:00, pegado, 10 puntos):** organizar el desarrollo con **un coordinador y cinco especialistas**
-  (gráficos, sonido, narrativa, combate y animaciones). Prioridades: los **efectos de sonido de la biblioteca** del
-  usuario, **la mano de Kael** en el diálogo inicial y **el mapamundi**. Amplía la autorización de GitHub
-  ([D-070](DECISIONS.md#d-070)). Resumen en [MEMORIA_CHAT.md](MEMORIA_CHAT.md); reparto en [D-069](DECISIONS.md#d-069);
-  tareas [T-082](TASKS.md#t-082) a [T-088](TASKS.md#t-088).
-- **Hecho antes en esta sesión** (encargo de las 20:20, 9 puntos):
-  - la v54 y la v57 en las Descargas del Redmi; la protección del guardado en la copia habitual (`b8e042d`);
-  - el ejecutor de pruebas solo cierra lo suyo (`d5fd793`); los encuentros con los niveles reales (`9bfd288`);
-  - el gestor de música con ambientes CC0 (`40fb5b8`, v57);
-  - **el prólogo con puesta en escena y retratos vivos** (`375cc8c`, [T-081](TASKS.md#t-081),
-    [D-068](DECISIONS.md#d-068)).
-- **Relevo anterior:** [docs/memory/archive/2026-11-08_relevo_anterior.md](docs/memory/archive/2026-11-08_relevo_anterior.md).
+**Último punto de control:** 2026-11-09 a las 00:20 (hora local, UTC+1). Noche de trabajo autónomo: el usuario duerme y
+pidió no preguntar ([MEMORIA_CHAT.md](MEMORIA_CHAT.md)). **La memoria describe `integracion-experimental` @ `713fe8d`.**
+
+- **Encargos vigentes, de más antiguo a más nuevo** (todos en [MEMORIA_CHAT.md](MEMORIA_CHAT.md)):
+  1. Organización por especialistas ([D-069](DECISIONS.md#d-069)) y GitHub por ramas de trabajo
+     ([D-070](DECISIONS.md#d-070)).
+  2. Sesión larga y autónoma, con prioridades 1-7 (22:40). El usuario: «acepto todo… no me preguntes más».
+  3. Ciudades, sitios nuevos y magias nuevas ([D-071](DECISIONS.md#d-071)).
+  4. Equipo, enemigos, compañeros, secretos, grutas y posadas ([D-072](DECISIONS.md#d-072)). Puede usar cualquier
+     programa del PC y debe centrarse mucho en lo visual y el lore.
+- **Decisiones de la noche, para que el usuario las revise:** [D-073](DECISIONS.md#d-073).
+
+## Hecho y comprobado esta noche
+
+| Qué | Commit | Comprobación |
+|---|---|---|
+| Sonido, tanda 1 ([T-083](TASKS.md#t-083)): 100 efectos de la biblioteca (CC0 y Sonniss 2016-2024, licencias comprobadas), API con voces, prioridades y variantes, enganches en eventos reales | `091bcfb` (rama `area-sonido`) | Batería de la integración: 39 superadas, 0 fallidas. **Sin escuchar:** muestras en `D:\REBELUM_diagnostico\sonido_muestras\2026-11-08\` |
+| Animaciones, tanda 1 ([T-084](TASKS.md#t-084)): la mano de Kael venía de la ilustración (render del reposo con sable, sin sable). Cinco retratos nuevos desde el modelo; Kael escucha en reposo; en 3D quien escucha mira a quien habla | `e84cf32` (rama `area-animaciones`) | Batería del especialista: 37 superadas, 0 fallidas. Antes y después y vídeos en `D:\REBELUM_diagnostico\animaciones\2026-11-08\` |
+| El ejecutor solo se niega si hay un Godot en su misma copia (los demás, aviso y vigilancia) | `d2df536` | Batería con 8 Godot ajenos abiertos: limpia |
+| Botón «Probar el prólogo (partida nueva)» en la carga ([T-081](TASKS.md#t-081)) | `713fe8d` | `prueba_boton_prologo` (nueva) y regresiones de mando, teclado, foco, prólogo, ranura y precalentado: superadas |
+| `prueba_efectos` estable (comparaba con −6 dB fijos) | `713fe8d` | 5 de 5 pasadas |
 
 ## Dónde está todo
 
 | Qué | Valor |
 |---|---|
-| Raíz del repositorio | `D:\Aethelgard`; el proyecto de Godot está en `D:\Aethelgard\aethelgard\` |
-| Copia del usuario | Rama `rebelum-3d` @ `b8e042d`, local. Aquí se editan los documentos de memoria. **El usuario tiene abierto su editor de Godot sobre esta copia** (desde las 21:52): aquí no se lanza otro Godot |
-| Integración | `D:\Aethelgard_alpha`, rama `integracion-experimental` @ `1c17763`, en GitHub. `rebelum-alpha` se queda en `375cc8c`, como estaba |
-| Especialistas (tanda 1) | Sonido: `D:\Aethelgard_sonido`, rama `area-sonido`. Animaciones: `D:\Aethelgard_animaciones`, rama `area-animaciones`. Las dos parten de `1c17763` y están en GitHub. **Gráficos (fase 1 del mapamundi, desde las 23:12):** `D:Aethelgard_graficos`, rama `area-graficos` @ `dddbddb` (aún sin subir); en esta fase no toca `mapa.gd` ni `mapa.tscn`, que son de sonido hasta integrar. Configuración: `.claude/agents/especialista-*.md` (en `D:\Aethelgard` y en la rama de integración). Cada uno deja su informe en `docs/memory/agents/` de su rama |
-| Respaldo de lo local | `D:\REBELUM_respaldos\2026-11-08_rebelum-alpha_375cc8c\rebelum-alpha.bundle`: los commits de `rebelum-alpha` y `rebelum-3d` que no están en GitHub (`git bundle verify`: correcto) |
-| Copias temporales | `D:\Aethelgard_guardado` (validación del guardado) y `D:\Aethelgard_antes` (medidas «antes» del prólogo, en `40fb5b8`), unos 1,4 GB cada una. Se pueden quitar con permiso |
-| Copia de la memoria | `D:\Aethelgard_memoria`, rama `memoria-desarrollo` |
-| GitHub (`Brunopina6/Aethelgard`) | `main` @ `d4b2d16`, `desarollo` @ `2d1adc4`, `v0.1.0` y `memoria-desarrollo`. Desde las 22:20, también `integracion-experimental`, `area-sonido` y `area-animaciones` (@ `1c17763`), que llevan dentro el contenido de `rebelum-alpha`. `rebelum-3d` no está subida |
-| APK de prueba | `Brunopina6/Aethelgard-pruebas`: v57 («Latest»), v54, v52… y la original. En el Redmi: `Download/Aethelgard_Exp_2026-11-08_v54.apk` y `…_v57.apk` |
-| Redmi | REDMI A7 Pro, Android 16, por USB con el ADB del SDK (`%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe`) |
-| Última batería | 22:00, `rebelum-alpha` con el prólogo: 37 superadas, 0 fallidas, 19 manuales, 0 no seguras. Código 254 solo porque el editor del usuario cambió un archivo de la caché de sombreadores de la carpeta real; `partida.save`, sin cambios. `D:\REBELUM_diagnostico\pruebas\2026-11-08_214904\resumen.md` |
-| Procesos en marcha | Desde las 22:27, los especialistas de sonido y animaciones, y desde las 23:12 el de gráficos (subagentes en segundo plano), cada uno en su copia. El editor del usuario se cerró antes de las 23:10. El PC tiene 15,4 GB de memoria (5,3 GB libres a las 23:10, CPU al 48 %): hasta tres especialistas si uno solo analiza; las medidas, sin otra carga |
+| Integración | `D:\Aethelgard_alpha`, rama `integracion-experimental` @ `713fe8d`. En GitHub, `1c17763` hasta el próximo push |
+| Especialistas | Copias `D:\Aethelgard_<área>`, ramas `area-<área>`: sonido (terminada, integrada), animaciones (terminada, integrada), gráficos (fase 1 del mapamundi, en marcha desde las 23:12), combate y narrativa (fase 0, solo diseño, en marcha desde las 23:45). Todas son ya carpetas de trabajo de la sesión |
+| Configuración de los especialistas | `.claude/agents/especialista-*.md`. Esta sesión no los reconoce por nombre: se lanzan como `general-purpose` que leen su archivo |
+| Copia del usuario | `D:\Aethelgard`, rama `rebelum-3d` @ `b8e042d` con el bloque B sin tocar. Su editor se cerró antes de las 23:10 |
+| Memoria | `D:\Aethelgard_memoria`, rama `memoria-desarrollo` |
+| Respaldo | `D:\REBELUM_respaldos\2026-11-08_rebelum-alpha_375cc8c\rebelum-alpha.bundle`; los `.uid` generados que se apartaron al integrar, en `D:\REBELUM_respaldos\2026-11-09_uid_generados_integracion\` |
+| Redmi | No conectado a las 23:20. La copia de las APK de la noche queda para mañana; las APK irán a `Aethelgard-pruebas` |
+| Programas | `docs/herramientas/programas_pc.md`. Cascadeur pide la sesión del usuario; las herramientas de Arm en el teléfono necesitan permiso |
+| Inventario para ciudades, lugares y magias | `docs/memory/inventario_lugares_magias_2026-11-08.md` |
+| Partida real | `A3F3C402…` (19:37 del 08/11), sin cambios en todas las pasadas |
 
-## Encargo en curso (22:00)
+## Próximo paso concreto (por dependencias)
 
-| Punto | Estado |
-|---|---|
-| 1. Guardar la continuidad | **Hecho** (22:05): `375cc8c`, respaldo, memoria publicada y `CONTINUAR_EN_NUEVO_CHAT.txt` para coordinar |
-| 2. Comprobar los subagentes y configurarlos | **Hecho** (22:25), con un límite (abajo) |
-| 3. Coordinación e integración | Siempre; reglas en [D-069](DECISIONS.md#d-069) |
-| 5. Sonido: primera tanda de efectos ([T-083](TASKS.md#t-083)) | **En curso** (tanda 1, desde las 22:27) |
-| 6. Animaciones: la mano de Kael ([T-084](TASKS.md#t-084)) | **En curso** (tanda 1, desde las 22:27) |
-| 4. Gráficos: el mapamundi ([T-085](TASKS.md#t-085)) | Tanda 2 |
-| 7. Narrativa ([T-086](TASKS.md#t-086)) | Tanda 2, con animaciones |
-| 8. Combate ([T-087](TASKS.md#t-087)) | Tanda 3, con sonido |
-| 9. GitHub: ramas por área e integración ([T-088](TASKS.md#t-088)) | **Hecho para la tanda 1** (22:20): tres ramas subidas tras revisarlas |
-| 10. Validación final, APK y Redmi | Tras integrar |
-
-## Subagentes: lo comprobado (22:25)
-
-- **Subagentes reales:** sí. Se lanzan en segundo plano y avisan al terminar; la documentación permite hasta 20 a la
-  vez, y aquí se usan dos por la memoria del PC.
-- **Tipos propios** (`.claude/agents/especialista-*.md`): el formato se comprobó con la documentación oficial (`name`,
-  `description`, `disallowedTools`, `model`, `color`…). Pero **esta sesión no los reconoce**, porque la carpeta no
-  existía cuando empezó; la documentación avisa de que entonces hace falta reiniciar. Probado: «Agent type
-  'especialista-sonido' not found». En esta sesión se lanzan como subagentes `general-purpose` que leen su archivo como
-  instrucciones (mismas reglas y área; ejecución real). En una sesión nueva se pueden llamar por su nombre.
-- **Aislamiento:** el `isolation: worktree` de los subagentes parte de `main`, no de nuestra rama, así que no se usa.
-  Cada especialista tiene una copia de trabajo manual desde `integracion-experimental`, con la caché `.godot`
-  copiada (2087 archivos, 501 MB) para no reimportar.
-
-## Hallazgo para animaciones (22:00, observado en el archivo)
-
-- En el prólogo, Kael tiene **la mano junto a la cabeza en la propia ilustración** (`dialogos/retratos/kael.png`, la
-  única que tiene). Sale igual en las 9 frases, también mientras habla Lya. No es un clip ni una mezcla: el arreglo es
-  otra pose del retrato (por ejemplo, renderizada desde su modelo 3D), no un ajuste de animación.
-- Los diálogos 3D de Pastos Verdes (PV-02…) son otra cosa: allí se revisan clips, miradas, pies y armas.
-- Las capturas que menciona el encargo no llegaron con el mensaje: se trabaja con reproducciones propias.
-
-## Trabajo a medio hacer y cómo retomarlo
-
-- **Botón de desarrollo «Probar el prólogo (partida nueva)»** en la pantalla de carga (`carga.gd`), sin empezar. Hace
-  falta para ver el prólogo en el Redmi: con una partida existente no sale, y «Probar la misión desde el principio» lo
-  salta.
-  - **Diseño:** abajo a la izquierda, simétrico al botón actual (860, 652; 400×56). Usa la misma ranura aislada
-    (`P.empezar_ranura_prueba()`, `P.cargar()`, `Recursos.marcar_partida_prueba()`), **sin** marcar
-    `prologo_visto`, y va a `res://mapa.tscn`.
-  - **Teclado y mando:** ↓ sigue eligiendo el botón actual (lo esperan `prueba_mando` y `prueba_teclado`); ← y → pasan
-    de uno a otro; ↑ y Esc sueltan el foco.
-  - **Prueba:** ampliar `prueba_ranura_prueba.gd`.
-  - **Cuándo:** al integrar la tanda 1, porque `carga.gd` es de sonido mientras dure (un solo responsable por archivo).
-
-## Cambios sin confirmar
-
-- **`D:\Aethelgard`:** los documentos de memoria y los cambios del usuario (bloque B), sin tocar.
-- **`D:\Aethelgard_alpha`:** solo el `CLAUDE.md` puntero.
+1. **Batería completa de `713fe8d`** (en marcha a las 00:15). Si sale limpia: push de `integracion-experimental`,
+   `area-sonido` y `area-animaciones`. La revisión ya está hecha: 264 archivos y 18,9 MB, sobre todo efectos con
+   licencia comprobada, y ningún `.blend`.
+2. **APK de prueba** con `compilar_apk_experimental.ps1` (el versionCode se numera solo), su release en
+   `Aethelgard-pruebas` (primero la fila del README) y las notas: qué probar.
+3. **Gráficos, fase 2:** cuando entregue la fase 1, se integra `integracion-experimental` en `area-graficos` y pasan a
+   gráficos `mapa.gd` y `mapa.tscn`.
+4. **Animaciones, tanda 2:**
+   - que los pies no patinen (Kael anda a 4,2 m/s con un clip pensado para 1,2-1,5 m/s);
+   - Lya y Garon presentes cuando hablan en PV-03 y PV-05 (`pastos_verdes_3d.gd`, ya libre);
+   - retratos vivos en Pastos Verdes, poses de Lya y la señal `pisada` para los pasos.
+5. **Sonido, tanda 2:** voces de enemigos, agua en los ríos 2D, pasos de Lya, Garon y los enemigos, y la puerta de
+   la Garganta. Las magias, como propuesta (están protegidas).
+6. **Combate y narrativa:** revisar sus diseños e implementarlos por incrementos (magias, equipo, enemigos, ciudades,
+   lugares y compañeros).
 
 ## Límites de lo comprobado
 
-- **Redmi:** v54 y v57 copiadas y comprobadas (tamaño y SHA-256); el usuario aún no las ha probado.
-- **T-025, sin hardware:** ni mando ni teclado reales; el táctil, solo simulado. No es una validación completa.
-- **Escucha:** nadie ha escuchado todavía los ambientes, el cofre, las campanas ni los volúmenes. Las pruebas de señal
-  miden, no escuchan.
-- **Combates:** se ganan con ataques automáticos; no prueban la estrategia de un jugador.
-- **Guardado:** lo comprobado reduce el riesgo, no lo elimina ([D-056](DECISIONS.md#d-056)).
-- **La copia habitual** sigue con el ejecutor de pruebas antiguo.
+- **Escucha:** nada escuchado por una persona. Las pruebas miden la señal, no la calidad.
+- **Redmi:** nada de esta noche probado en el teléfono. La v57 sigue sin probar por el usuario.
+- **T-025:** ni mando ni teclado reales; el táctil, solo simulado.
+- **Combates:** se ganan con ataques automáticos.
+- **Rendimiento:** lo nuevo de esta noche (efectos, retratos y el botón) no está medido.
 
-## Próximo paso concreto
+## Pendiente del usuario (mañana)
 
-1. **Recibir las entregas de la tanda 1** (llegan como aviso al terminar cada especialista). Revisar cada una:
-   diferencias, pruebas, evidencias y licencias.
-2. **Integrarlas en `integracion-experimental`** con un merge normal, resolviendo a mano `pruebas/lista_pruebas.txt` y
-   `docs/recursos.md`, que tocan los dos. Después, la batería completa y el push de las ramas.
-3. **El botón «Probar el prólogo»** (lo hace el coordinador, tras integrar sonido).
-4. **Tanda 2:** gráficos (el mapamundi) y narrativa con animaciones. **Tanda 3:** combate con sonido.
-5. **Recorrido real con ventana**, APK nueva al Redmi y memoria.
-
-## Pendiente del usuario
-
-- **Instalar y probar la v57** (en Descargas; incluye la v54): con el dedo, que todo funcione y no salga ningún marco
-  dorado al tocar; que Lya, al unirse, deje ganar los combates; **escuchar** los ambientes, su vuelta tras el combate
-  y los volúmenes de «Ajustes».
-- **Opcional:** las capturas del mapamundi y de la mano de Kael que menciona el encargo; un mando o teclado Bluetooth.
-- **Decidir** la nivelación al unirse ([D-062](DECISIONS.md#d-062)); no hace falta para seguir.
-- Licencias ([T-070](TASKS.md#t-070)): qué sustituye a la música de Suno en una APK entregable; créditos de Meshy.
+- Instalar la APK de la noche cuando esté en Descargas (el Redmi no estaba conectado), y la v57 si no la ha probado.
+- **Escuchar las muestras** y elegir la victoria, los golpes, el cofre y el tesoro (el especialista duda de ellos).
+- Revisar las decisiones de la noche ([D-073](DECISIONS.md#d-073)) y las propuestas de historia que dejen narrativa y
+  combate.
+- Sigue pendiente de decidir la nivelación al unirse ([D-062](DECISIONS.md#d-062)).
 
 ## Restricciones y autorizaciones vigentes
 
 Las normas completas están en [CLAUDE.md](CLAUDE.md). Lo esencial:
-- **Push:** la memoria, en `memoria-desarrollo`; las APK de prueba, en `Aethelgard-pruebas`; y desde las 22:00,
-  código, configuraciones de agentes y documentación revisados, en **ramas de trabajo** de `Brunopina6/Aethelgard`
-  ([D-070](DECISIONS.md#d-070)). Nunca en `main` ni en `desarollo`; nunca force push; nunca APK, bibliotecas
-  completas, partidas, cachés, secretos ni la exportación del chat. Publica el coordinador.
-- **Redmi:** solo copiar APK de prueba a Descargas por USB y comprobarlas; instala el usuario
-  ([D-065](DECISIONS.md#d-065)).
-- **Copia habitual:** solo la protección del guardado ([D-066](DECISIONS.md#d-066)); el bloque B no se toca.
-- **Licencias:** las APK siguen siendo `NO_DISTRIBUIR`; ninguna lleva música de Suno, y Suno nunca va a GitHub.
-- **Datos:** la partida del PC se conserva tal cual; las pruebas, siempre aisladas.
-- **Magias:** las existentes no cambian ([D-048](DECISIONS.md#d-048)). Si sonorizar una exige cambiar su
-  presentación, se deja para una decisión aparte.
+- **Push:** memoria en `memoria-desarrollo`; APK de prueba en `Aethelgard-pruebas`; código revisado en ramas de
+  trabajo de `Brunopina6/Aethelgard` ([D-070](DECISIONS.md#d-070)). Nunca en `main` ni en `desarollo`; nunca force
+  push; nunca APK, bibliotecas completas, partidas, cachés, secretos ni la exportación del chat.
+- **Redmi:** solo copiar APK de prueba a Descargas por USB y comprobarlas; instala el usuario.
+- **Copia habitual:** solo la protección del guardado; el bloque B no se toca.
+- **Licencias:** nada de Suno en APK ni en GitHub; Sonniss solo dentro del juego (no se revende ni sirve para entrenar
+  IA).
+- **Magias:** las 12 existentes no cambian ([D-048](DECISIONS.md#d-048)); las nuevas se añaden ([D-071](DECISIONS.md#d-071)).
+- **Narrativa:** biblia v2 como canon; nada sobre Érebo y los corazones antes del acto III; un compañero nuevo en el
+  grupo es una propuesta.
+- **Pruebas:** el ejecutor se lanza desde PowerShell, no desde Bash, porque Bash expande el `*` de `*>` y le pasa
+  parámetros falsos.

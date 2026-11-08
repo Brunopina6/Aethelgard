@@ -1,6 +1,6 @@
 # DECISIONS: decisiones de AETHELGARD / REBELUM
 
-**Actualizado el 2026-11-08 a las 23:05** sobre la copia del usuario (`rebelum-3d` @ `b8e042d`) y la rama de
+**Actualizado el 2026-11-09 a las 00:20** sobre la copia del usuario (`rebelum-3d` @ `b8e042d`) y la rama de
 integración (`integracion-experimental` @ `1c17763`). Las horas son locales (UTC+1).
 
 **Estados**
@@ -84,6 +84,7 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 | [D-070](#d-070) | GitHub: código, configuraciones de agentes y documentación revisados en ramas de trabajo | Aprobada |
 | [D-071](#d-071) | Ambición: todas las ciudades mejoradas, muchos sitios nuevos y magias nuevas | Aprobada |
 | [D-072](#d-072) | Más contenido: equipo, enemigos, compañeros, secretos, grutas y posadas, con inspiración solo de principios | Aprobada |
+| [D-073](#d-073) | Decisiones de la noche del 08 al 09/11, para que el usuario las revise | Aprobada en el encargo |
 | [D-H01 a D-H15](#6-diseño-ya-implementado-del-3010-al-0511) | Diseño ya implementado antes de Git | Aprobada (historial) |
 
 ## 1. Reglas de trabajo, Git y versiones
@@ -1274,6 +1275,18 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
   `docs/memory/inventario_lugares_magias_2026-11-08.md`.
 - **Al cargo de todo:** el coordinador ordena estas tareas por dependencias, después de lo ya encargado, y deja
   registradas las decisiones importantes para que el usuario las revise.
+
+### D-073
+**Decisiones de la noche del 08 al 09/11, para revisar**
+- **Estado:** aprobadas en el encargo. El usuario duerme y pidió no preguntar. Todas se pueden deshacer; esta lista
+  crece durante la noche.
+- **Ejecutor de pruebas** (`d2df536`): solo se niega a empezar si hay un Godot sobre su misma copia; los de otras
+  copias se avisan y se vigilan. Así pueden probar varios especialistas a la vez. Amplía [D-010](#d-010).
+- **Kael en los diálogos** (`e84cf32`): los retratos «normal» y «vivo» pasan a la pose de reposo (renders del modelo);
+  `kael.png` se conserva. La mano junto a la cabeza era la pose del sable sin el sable.
+- **Botón «Probar el prólogo (partida nueva)»** (`713fe8d`): solo en la versión experimental y en la ranura de prueba.
+- **Efectos de sonido:** los eligió el especialista sin oírlos; el usuario los confirma o los cambia con las muestras.
+- **Cofre de Pastos Verdes:** suena con efectos de la biblioteca; el sonido hecho por código se queda para comparar.
 
 ## 6. Diseño ya implementado del 30/10 al 05/11
 
