@@ -202,6 +202,19 @@
     - Va después del trabajo en curso y de lo ya encargado.
     - Tareas [T-089](TASKS.md#t-089) (ciudades), [T-090](TASKS.md#t-090) (sitios nuevos) y
       [T-091](TASKS.md#t-091) (magias nuevas, sin cambiar las existentes); decisión [D-071](DECISIONS.md#d-071).
+  - **Hacia las 23:20** (pegado): «ME VOY A DORMIR. CONTINÚA AUTÓNOMAMENTE CON REBELUM.» Regla para su ausencia:
+    - nada de preguntas rutinarias;
+    - decisiones reversibles según el código, el lore aprobado y las pruebas, registrando las importantes;
+    - si falta una preferencia estética, una solución coherente con antes/después;
+    - si falta una decisión importante de historia o diseño, se conserva la vigente y se deja una propuesta;
+    - lo que pida permiso, compra, credenciales, instalación, licencia sin acreditar o una acción física queda
+      bloqueado solo en esa operación, con su diagnóstico, y se sigue con otra tarea;
+    - TASKS.md, SESSION_HANDOFF.md y la memoria después de cada hito;
+    - mañana, un informe: qué se mejoró, qué se comprobó, qué se publicó, qué APK instalar, qué necesita su decisión o
+      prueba, y el siguiente paso.
+
+    El Redmi no estaba conectado a las 23:20 (`adb devices` vacío): las APK de la noche quedan en `Aethelgard-pruebas`
+    y la copia al teléfono, para mañana.
 
 ## Índice
 
