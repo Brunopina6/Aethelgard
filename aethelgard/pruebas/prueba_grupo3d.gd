@@ -36,7 +36,7 @@ func _initialize() -> void:
 		_fallo("la exploración 3D no está activa (falta «-- 3d»)")
 		return
 	Engine.set_meta("pos_3d_ok", false)
-	Engine.set_meta("hitos", {"pv_02": true, "pv_03": true})   # sin las escenas de la misión (prueba_ruta_alpha)
+	Engine.set_meta("hitos", {"pv_02": true, "pv_03": true, "pv_05": true})   # Lya y Garon ya se han unido; sin escenas
 	if Engine.has_meta("calidad_extra"):
 		Engine.remove_meta("calidad_extra")
 	change_scene_to_file(REGION)

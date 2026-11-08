@@ -11,8 +11,10 @@ prueba_escenas    | auto     | sin_prologo          | 150 | user://     | mapa �
 prueba_zona3d     | auto     | 3d sin_prologo       | 240 | user://     | región 3D de Pastos Verdes: entrada, encuentro → combate → vuelta, salida al mapa y guardado (con la exploración 3D activa)
 prueba_ruta_alpha | auto     | 3d sin_prologo       | 300 | user://     | misión del corte alfa en Pastos Verdes 3D: PV-02 → PV-14 con Tilo, la estela y el combate fijo del centinela
 prueba_grupo3d    | auto     | 3d sin_prologo       | 240 | user://     | Lya y Garon siguen a Kael en Pastos Verdes 3D: camino, puente, media vuelta, reaparecer tras un combate y sin grupo
+prueba_grupo3d_rutas | auto  | 3d sin_prologo       | 300 | user://     | el grupo en 3 series de destinos al azar (semilla fija) y sitios difíciles: ruta válida, sin pisar, flotar ni quedarse atrás
 prueba_cofre3d    | auto     | 3d sin_prologo       | 240 | user://     | cofre de Pastos Verdes 3D: llegar andando, premio una sola vez, sonido, y abierto tras guardar, combate, volver a entrar y cargar
 prueba_mirador    | auto     | 3d sin_prologo       | 240 | user://     | cinemática del mirador (PV-07): primera vez, sin control, vuelta de cámara y control, visita posterior y saltarla
+prueba_centinela  | auto     | 3d sin_prologo auto  | 300 | user://     | final de la misión con el combate del centinela jugado de verdad (ataques automáticos), recompensa, guardado, Tilo, salir, volver y cargar
 prueba_huir       | auto     |                      | 150 | user://     | huir de un combate
 prueba_garon      | auto     | grupo=1 auto         | 240 | user://     | combate con Garon (ejemplo de pruebas/LEEME.md)
 prueba_dpad       | auto     | escena=zona dpad     | 150 | user://     | cruceta táctil

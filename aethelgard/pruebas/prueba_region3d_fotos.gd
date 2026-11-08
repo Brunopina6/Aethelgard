@@ -83,6 +83,11 @@ func _process(_d: float) -> bool:
 		5:                                          # la cinemática del mirador (PV-07)
 			if current_scene != null and current_scene.scene_file_path == REGION and frames - f_fase >= 30:
 				v = current_scene
+				v._colocar_kael(Vector3(1.5, v.altura(1.5, -3.5), -3.5))
+				_fase(51)
+		51:                                         # antes: el objetivo y el rombo sobre el centinela
+			if frames - f_fase == 30:
+				_foto("mirador_0_objetivo_y_marcador")
 				v._colocar_kael(Vector3(1.5, v.altura(1.5, -7.8), -7.8))
 				_fase(6)
 		6:

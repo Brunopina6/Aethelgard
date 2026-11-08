@@ -75,6 +75,9 @@ var grupo: Node3D                        # zonas3d/grupo_3d.gd (null si no sale 
 var cofre: Node3D
 var tapa_cofre: Node3D
 var brillo_cofre: MeshInstance3D         # destello que llama la atención mientras está cerrado
+var objetivo: Label                      # arriba a la izquierda: qué toca ahora en la misión
+var _objetivo_texto := "-"
+var marcador: Node3D                     # rombo dorado sobre quien la misión necesita ahora (Tilo o el centinela)
 var cinematica := false                  # mientras dura, la cámara es de la cinemática y no hay control
 var cinematicas_vistas := 0              # cuántas veces ha empezado en esta escena (las pruebas miran que no se repita)
 var _cine_t := 0.0
@@ -164,6 +167,7 @@ func _process(delta: float) -> void:
 		if is_inside_tree():             # al acabar cada caso, el banco recarga la escena dentro de super()
 			_ultima = kael.global_position
 		return
+	_actualizar_objetivo()
 	if cinematica:                       # la cinemática mueve la cámara; Kael, quieto y sin pasos
 		_paso_cinematica(delta)
 		return
@@ -314,12 +318,89 @@ func _tras_dialogo(id: String) -> void:
 		"pv_06":
 			_encuentro(COMBATE_CENTINELA, GRUPO_CENTINELA)
 			return
+		"pv_03":                         # Lya llega corriendo por el camino, por detrás
+			_unir("Lya", kael.global_position + _atras_en_camino(kael.global_position) * 4.0)
+		"pv_05":                         # Garon esperaba junto a Tilo
+			_unir("Garon", tilo.global_position)
 		"pv_14":
 			P.poner_hito("mecha_tilo")
 			_mostrar_aviso("Tilo te da una mecha de su farol.")
 	if id.begins_with("pv_"):
 		guardar_posicion()
 		P.guardar(scene_file_path)       # la misión avanza: se guarda (no hace nada en las pruebas)
+
+
+# ================================================================= objetivo y marcador
+# En la pantalla del móvil, la misión se entiende mejor si se ve qué toca ahora: una línea arriba a la izquierda y un
+# rombo dorado sobre quien la misión necesita. Los textos salen de los diálogos de la misión (Tilo: «saludar antes al
+# viejo», «el centinela del mirador»; Lya: «el bosque está al noreste»), sin contar nada nuevo.
+
+func texto_objetivo() -> String:
+	var P = load("res://progreso.gd")
+	if not P.hito("pv_02"):
+		return ""
+	if not P.hito("pv_03"):
+		return "Sigue el camino."
+	if not P.hito("pv_05"):
+		return "Sigue el camino hasta el puente."
+	if not P.ganado(COMBATE_CENTINELA):
+		return "Saluda al centinela del mirador."
+	if not P.hito("pv_07"):
+		return "Vuelve junto al centinela."
+	if not P.hito("pv_14"):
+		return "Vuelve a hablar con Tilo."
+	return "Sigue el camino hacia el noreste."
+
+
+func _actualizar_objetivo() -> void:
+	if objetivo == null:
+		return
+	objetivo.visible = not (cinematica or ocupado() or saliendo or en_banco()) and _objetivo_texto != ""
+	var t := texto_objetivo()
+	if t == _objetivo_texto:
+		return
+	_objetivo_texto = t
+	objetivo.text = "Objetivo: " + t
+	if t != "":                                       # objetivo nuevo: un destello suave para que se note
+		objetivo.modulate = Color(1.6, 1.4, 0.8)
+		create_tween().tween_property(objetivo, "modulate", Color.WHITE, 1.2)
+	_poner_marcador()
+
+
+# El rombo va sobre Tilo cuando toca hablar con él y sobre el centinela cuando toca ir al mirador.
+func _poner_marcador() -> void:
+	var P = load("res://progreso.gd")
+	var donde = null
+	if tilo != null and P.hito("pv_03") and (not P.hito("pv_05") or (P.hito("pv_07") and not P.hito("pv_14"))):
+		donde = tilo.global_position + Vector3(0, 2.5, 0)
+	elif P.hito("pv_05") and not P.hito("pv_07"):
+		donde = Vector3(CENTINELA.x, altura(CENTINELA.x, CENTINELA.z) + 3.6, CENTINELA.z)   # a 4,4 m se salía por arriba
+	if donde == null:
+		if marcador != null:
+			marcador.visible = false
+		return
+	if marcador == null:
+		marcador = Node3D.new()
+		marcador.name = "Marcador"
+		add_child(marcador)
+		var rombo := SphereMesh.new()                 # 4 lados y 2 anillos: un rombo
+		rombo.radius = 0.16
+		rombo.height = 0.42
+		rombo.radial_segments = 4
+		rombo.rings = 2
+		var oro := StandardMaterial3D.new()
+		oro.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		oro.albedo_color = Color(1.0, 0.82, 0.32)
+		var pieza := _pieza(marcador, rombo, oro, Vector3.ZERO)
+		pieza.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		_destello(marcador, Vector3.ZERO, 0.7)
+		var giro := pieza.create_tween().set_loops()
+		giro.tween_property(pieza, "rotation:y", TAU, 2.4).from(0.0)
+		var sube := marcador.create_tween().set_loops()
+		sube.tween_property(pieza, "position:y", 0.15, 0.8).set_trans(Tween.TRANS_SINE)
+		sube.tween_property(pieza, "position:y", 0.0, 0.8).set_trans(Tween.TRANS_SINE)
+	marcador.position = donde
+	marcador.visible = true
 
 
 # ================================================================= cinemática del mirador (PV-07)
@@ -526,7 +607,16 @@ func _crear_personajes() -> void:
 	cofre = _crear_cofre(_sitio_cofre())
 
 
-# Lya y Garon, si están en el grupo de la partida, detrás de Kael mirando camino adelante.
+# Lya y Garon, si están en el grupo de la partida y ya se han unido en la misión, detrás de Kael mirando camino
+# adelante. Lya llega en PV-03 («¡Kael! ¿De verdad pensabas irte sin mí?») y Garon en PV-05, junto a Tilo («Os
+# acompaño»): antes, Kael va solo. En los bancos salen siempre los dos (miden lo que cuestan).
+const SE_UNE := {"Lya": "pv_03", "Garon": "pv_05"}
+
+
+func _se_ha_unido(n: String) -> bool:
+	return en_banco() or not SE_UNE.has(n) or load("res://progreso.gd").hito(SE_UNE[n])
+
+
 func _crear_grupo() -> void:
 	if not perfil.get("grupo", true):
 		return
@@ -534,15 +624,18 @@ func _crear_grupo() -> void:
 	var en_grupo: Array = G.miembros()
 	var nombres: Array = []
 	for n in G.EN_EL_GRUPO:
-		if n != "Kael" and n in en_grupo:
+		if n != "Kael" and n in en_grupo and _se_ha_unido(n):
 			nombres.append(n)
-	if nombres.is_empty():
-		return
 	grupo = load("res://zonas3d/grupo_3d.gd").new()
 	grupo.name = "Grupo"
 	add_child(grupo)
 	grupo.preparar(self, kael, nombres)
 	grupo.colocar(_atras_en_camino(kael.global_position))
+
+
+func _unir(n: String, desde: Vector3) -> void:
+	if grupo != null and n in load("res://grupo.gd").miembros():
+		grupo.unir(n, desde)
 
 
 # Hacia dónde queda «atrás» en el camino desde «p»: hacia el principio del tramo de SENDERO más cercano.
@@ -996,6 +1089,15 @@ func _crear_interfaz() -> void:
 	aviso.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	aviso.modulate.a = 0.0
 	capa.add_child(aviso)
+	objetivo = Label.new()                           # arriba a la izquierda (CAL, RND y los bancos van a la derecha)
+	objetivo.position = Vector2(24, 18)
+	objetivo.add_theme_font_size_override("font_size", 26)
+	objetivo.add_theme_color_override("font_color", Color(1.0, 0.96, 0.85))
+	objetivo.add_theme_color_override("font_outline_color", Color(0.2, 0.15, 0.08, 0.9))
+	objetivo.add_theme_constant_override("outline_size", 8)
+	objetivo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	objetivo.visible = false
+	capa.add_child(objetivo)
 	fundido = ColorRect.new()            # el último: tapa también el botón y el aviso al fundir a negro
 	fundido.color = Color(0, 0, 0, 0)
 	fundido.size = Vector2(1280, 720)

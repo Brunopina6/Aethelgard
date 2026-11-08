@@ -92,6 +92,35 @@ func _cerrar(id: String, hito := "") -> bool:
 	return true
 
 
+# El objetivo que se ve arriba a la izquierda y si hay rombo dorado sobre Tilo o el centinela.
+func _objetivo_es(r, texto: String, con_marcador: bool) -> bool:
+	if not r.objetivo.visible or r.objetivo.text != "Objetivo: " + texto:
+		_fallo("el objetivo es «%s» (visible=%s) y no «%s»" % [r.objetivo.text, r.objetivo.visible, texto])
+		return false
+	var hay: bool = r.marcador != null and r.marcador.visible
+	if hay != con_marcador:
+		_fallo("con el objetivo «%s», marcador=%s y se esperaba %s" % [texto, hay, con_marcador])
+		return false
+	print("OK objetivo: «%s»%s" % [texto, " con marcador" if hay else ""])
+	return true
+
+
+# Quién acompaña a Kael en este momento de la misión, y que esté en un sitio válido no muy lejos de él.
+func _grupo_es(r, esperado: Array) -> bool:
+	var nodos: Array = r.grupo.nodos() if r.grupo != null else []
+	var nombres: Array = nodos.map(func(n): return String(n.name))
+	if nombres != esperado:
+		_fallo("el grupo es %s y no %s" % [nombres, esperado])
+		return false
+	for n in nodos:
+		var d := Vector2(n.global_position.x - r.kael.global_position.x, n.global_position.z - r.kael.global_position.z).length()
+		if r._prohibido(n.global_position) or d > 8.0:
+			_fallo("%s está a %.1f m de Kael o en una zona prohibida (%s)" % [n.name, d, n.global_position])
+			return false
+	print("OK grupo: %s" % (str(nombres) if not nombres.is_empty() else "Kael solo"))
+	return true
+
+
 func _junto_a(p: Vector3, desvio := Vector3(1.0, 0, 0.6)) -> void:
 	var r = current_scene
 	var q: Vector3 = p + desvio
@@ -109,12 +138,20 @@ func _process(_d: float) -> bool:
 			_cerrar("pv_02", "pv_02")
 		2:                               # PV-03 en el camino
 			if _listo(REGION):
+				if not _grupo_es(r, []):           # Kael llega solo: Lya se une en PV-03 y Garon en PV-05
+					return false
+				if not _objetivo_es(r, "Sigue el camino.", false):
+					return false
 				_junto_a(r.SENDERO[2], Vector3.ZERO)
 				_siguiente()
 		3:
 			_cerrar("pv_03", "pv_03")
 		4:                               # Tilo: PV-05
 			if _listo(REGION):
+				if not _grupo_es(r, ["Lya"]):
+					return false
+				if not _objetivo_es(r, "Sigue el camino hasta el puente.", true):
+					return false
 				_junto_a(r.tilo.global_position)
 				_siguiente()
 		5:
@@ -130,6 +167,10 @@ func _process(_d: float) -> bool:
 			_cerrar("pv_05", "pv_05")
 		7:                               # Tilo otra vez: el recordatorio, sin hito
 			if _listo(REGION):
+				if not _grupo_es(r, ["Lya", "Garon"]):
+					return false
+				if not _objetivo_es(r, "Saluda al centinela del mirador.", true):
+					return false
 				r._accion()
 				_siguiente()
 		8:
@@ -176,6 +217,8 @@ func _process(_d: float) -> bool:
 			_cerrar("pv_07", "pv_07")
 		16:                              # Tilo: PV-14 y la mecha
 			if _listo(REGION):
+				if not _objetivo_es(r, "Vuelve a hablar con Tilo.", true):
+					return false
 				_junto_a(r.tilo.global_position)
 				_siguiente()
 		17:
@@ -195,6 +238,8 @@ func _process(_d: float) -> bool:
 			_cerrar("pv_tilo_fin")
 		21:
 			if _listo(REGION, 5):
+				if not _objetivo_es(r, "Sigue el camino hacia el noreste.", false):
+					return false
 				return _comprobar_guardado()
 	return false
 

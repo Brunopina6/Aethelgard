@@ -44,29 +44,47 @@ var _vel := {}                   # velocidad de cada uno en el suelo (m/s)
 func preparar(region: Node3D, lider: Node3D, nombres: Array) -> void:
 	escena = region
 	kael = lider
-	var delante: Node3D = lider
 	for n in nombres:
-		if not RUTAS.has(n) or not ResourceLoader.exists(RUTAS[n]):
-			continue
-		var nodo = load(RUTAS[n]).new()
-		nodo.name = n
-		add_child(nodo)
-		if nodo.get("anim") == null or nodo.get("skel") == null:   # sin modelo no sale (como en el combate)
-			nodo.queue_free()
-			continue
-		nodo.scale = Vector3.ONE * ESCALA.get(n, 1.0)
-		var m := {"nombre": n, "nodo": nodo, "lider": delante, "cola": [], "ultimo": delante.global_position,
-			"estado": "", "apartar": null, "t_apartar": 0.0, "dir": Vector3.ZERO, "t_quieto": 0.0, "mira": false,
-			"reposo": ""}
-		# Garon, quieto, se queda en guardia de combate con las dos espadas apuntando adelante (a Lya). Al explorar
-		# usa la guardia tranquila de garon_3d.gd (el principio de «Juicio», con las espadas bajas).
-		if nodo.has_method("_guardia_viva") and nodo.anim.has_animation("Juicio"):
-			var lib: AnimationLibrary = nodo.anim.get_animation_library("")
-			if not lib.has_animation("Calma"):
-				lib.add_animation("Calma", nodo._guardia_viva("Juicio"))
-			m["reposo"] = "Calma"
-		miembros.append(m)
-		delante = nodo
+		_anadir(n)
+
+
+# Se une alguien en mitad de la escena (la misión): aparece en un sitio libre cerca de «desde», va el último de la fila
+# y anda hasta su sitio detrás del de delante.
+func unir(n: String, desde: Vector3) -> void:
+	for m in miembros:
+		if m["nombre"] == n:
+			return
+	if not _anadir(n):
+		return
+	var m: Dictionary = miembros[miembros.size() - 1]
+	var p := _sitio_libre(desde, Vector3.BACK, 0.9, _ocupados(m["nodo"]))
+	_reiniciar(m, p, m["lider"].global_position - p)
+	_previa.erase(m["nodo"])
+
+
+func _anadir(n: String) -> bool:
+	if not RUTAS.has(n) or not ResourceLoader.exists(RUTAS[n]):
+		return false
+	var delante: Node3D = miembros[miembros.size() - 1]["nodo"] if not miembros.is_empty() else kael
+	var nodo = load(RUTAS[n]).new()
+	nodo.name = n
+	add_child(nodo)
+	if nodo.get("anim") == null or nodo.get("skel") == null:   # sin modelo no sale (como en el combate)
+		nodo.queue_free()
+		return false
+	nodo.scale = Vector3.ONE * ESCALA.get(n, 1.0)
+	var m := {"nombre": n, "nodo": nodo, "lider": delante, "cola": [], "ultimo": delante.global_position,
+		"estado": "", "apartar": null, "t_apartar": 0.0, "dir": Vector3.ZERO, "t_quieto": 0.0, "mira": false,
+		"reposo": ""}
+	# Garon, quieto, se queda en guardia de combate con las dos espadas apuntando adelante (a Lya). Al explorar
+	# usa la guardia tranquila de garon_3d.gd (el principio de «Juicio», con las espadas bajas).
+	if nodo.has_method("_guardia_viva") and nodo.anim.has_animation("Juicio"):
+		var lib: AnimationLibrary = nodo.anim.get_animation_library("")
+		if not lib.has_animation("Calma"):
+			lib.add_animation("Calma", nodo._guardia_viva("Juicio"))
+		m["reposo"] = "Calma"
+	miembros.append(m)
+	return true
 
 
 func nodos() -> Array:

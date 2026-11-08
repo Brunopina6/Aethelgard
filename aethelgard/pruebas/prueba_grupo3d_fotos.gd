@@ -22,7 +22,7 @@ var tramo := 0
 func _initialize() -> void:
 	salida = OS.get_cmdline_user_args()[0]
 	Engine.set_meta("pos_3d_ok", false)
-	Engine.set_meta("hitos", {"pv_02": true, "pv_03": true})   # sin las escenas de la misión
+	Engine.set_meta("hitos", {"pv_02": true, "pv_03": true, "pv_05": true})   # Lya y Garon ya se han unido; sin escenas
 	_cargar()
 
 
