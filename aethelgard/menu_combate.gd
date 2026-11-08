@@ -352,6 +352,8 @@ func _construir(items: Array, alto: float, pestanas: Array = [], pestana := 0) -
 		hijo.queue_free()
 	filas.clear()
 	sel = -1
+	_pestanas = pestanas
+	_pestana = pestana
 	var y := Y_FILAS
 	if not pestanas.is_empty():                     # pestañas I · II · III de las magias
 		for i in pestanas.size():
@@ -619,8 +621,20 @@ func _toque_cabecera(ev: InputEvent) -> void:
 		atras.emit()
 
 
+# Pestañas del submenú (I · II · III de las magias): las del último _construir y la activa. Con teclado o mando se
+# cambian con Q / E, RePág / AvPág o L1 / R1 (antes solo tocándolas).
+var _pestanas: Array = []
+var _pestana := 0
+
+
 func _unhandled_input(ev: InputEvent) -> void:
 	if not activo or not bloque.visible or filas.is_empty():
+		return
+	if (ev.is_action_pressed("pestana_anterior") or ev.is_action_pressed("pestana_siguiente")) and _pestanas.size() > 1:
+		var paso := -1 if ev.is_action_pressed("pestana_anterior") else 1
+		get_viewport().set_input_as_handled()
+		sonar("tic")
+		_pestanas[posmod(_pestana + paso, _pestanas.size())]["accion"].call()
 		return
 	if ev.is_action_pressed("ui_down") or ev.is_action_pressed("ui_up"):
 		var paso := 1 if ev.is_action_pressed("ui_down") else -1

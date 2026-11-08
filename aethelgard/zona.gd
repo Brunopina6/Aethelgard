@@ -288,6 +288,9 @@ var altar: Node2D
 
 var ui: CanvasLayer
 var boton_examinar: Button
+var botones_hud: Array = []         # MAPA DEL MUNDO, TIENDA y POSADA: el foco solo entra con teclado o mando
+var barra_activa := false           # el foco está en esos botones: el jugador no se mueve
+var ultimo_de_barra := "MAPA DEL MUNDO"
 var npcs: Array = []                # [sprite, datos, frase siguiente]
 var npc_cerca = null
 var tienda_abierta := false
@@ -2095,18 +2098,27 @@ func _crear_ui() -> void:
 	salir.custom_minimum_size = Vector2(200, 50)
 	salir.add_theme_font_size_override("font_size", 20)
 	salir.pressed.connect(_salir)
+	salir.focus_mode = Control.FOCUS_NONE              # tocarlo no le da el foco (las flechas siguen moviendo)
+	salir.set_meta("clave", "MAPA DEL MUNDO")
+	botones_hud.append(salir)
 	ui.add_child(salir)
 	if es_ciudad:                                   # tienda y posada
 		var fila := HBoxContainer.new()
 		fila.position = Vector2(18, 98)
 		fila.add_theme_constant_override("separation", 10)
 		ui.add_child(fila)
-		for d in [["TIENDA", _abrir_tienda], ["POSADA (%d)" % PRECIO_POSADA, _posada]]:
+		for d in [["TIENDA", _abrir_tienda, "TIENDA"], ["POSADA (%d)" % PRECIO_POSADA, _posada, "POSADA"]]:
 			var b := Button.new()
 			b.text = d[0]
 			b.custom_minimum_size = Vector2(170, 48)
 			b.add_theme_font_size_override("font_size", 20)
-			b.pressed.connect(d[1])
+			b.pressed.connect(func():
+				if barra_activa:
+					ultimo_de_barra = d[2]
+				d[1].call())
+			b.focus_mode = Control.FOCUS_NONE
+			b.set_meta("clave", d[2])
+			botones_hud.append(b)
 			fila.add_child(b)
 		lbl_oro = Label.new()
 		lbl_oro.add_theme_font_size_override("font_size", 20)
@@ -2115,6 +2127,7 @@ func _crear_ui() -> void:
 		ui.add_child(lbl_oro)
 		_poner_oro()
 
+	Entrada.encadenar(botones_hud)                   # MAPA DEL MUNDO y la fila TIENDA / POSADA no comparten contenedor
 	boton_examinar = Button.new()
 	boton_examinar.text = "Examinar"
 	boton_examinar.position = Vector2(520, 600)
@@ -2122,6 +2135,7 @@ func _crear_ui() -> void:
 	boton_examinar.add_theme_font_size_override("font_size", 22)
 	boton_examinar.visible = false
 	boton_examinar.pressed.connect(_accion)
+	boton_examinar.focus_mode = Control.FOCUS_NONE   # con teclado o mando, Intro / A (ui_accept)
 	ui.add_child(boton_examinar)
 
 	aviso = Label.new()
@@ -2307,7 +2321,9 @@ func _abrir_tienda(pestana := "Objetos") -> void:
 	t.cerrado.connect(func():
 		tienda_abierta = false
 		capa.queue_free()
-		_poner_oro())
+		_poner_oro()
+		if barra_activa:                             # abierta desde los botones: el foco vuelve a TIENDA
+			Entrada.enfocar(_boton_hud(ultimo_de_barra)))
 	capa.add_child(t)
 
 
@@ -2348,8 +2364,46 @@ func _mostrar_aviso(texto: String) -> void:
 
 # ================================================================= entrada y movimiento
 
+# Teclado y mando (entrada.gd): Intro / A examina, habla o abre el cofre cercano; Tab, Esc o Start ponen el foco en
+# los botones (MAPA DEL MUNDO, TIENDA y POSADA) y paran al jugador; Esc / B, o un toque, lo quitan.
+func activar_barra(si: bool) -> void:
+	barra_activa = si
+	tiene_destino = false
+	for b in botones_hud:
+		b.focus_mode = Control.FOCUS_ALL if si else Control.FOCUS_NONE
+	if si:
+		Entrada.enfocar(_boton_hud(ultimo_de_barra))
+	else:
+		var f := get_viewport().gui_get_focus_owner()
+		if f != null and f in botones_hud:
+			f.release_focus()
+
+
+func _boton_hud(nombre: String) -> Button:
+	for b in botones_hud:
+		if b.get_meta("clave") == nombre:
+			return b
+	return botones_hud[0]
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if saliendo or _en_dialogo():
+		return
+	if barra_activa:
+		if event.is_action_pressed("ui_cancel") or event.is_action_pressed("menu_juego"):
+			activar_barra(false)
+			get_viewport().set_input_as_handled()
+			return
+		if not (event is InputEventMouseButton or event is InputEventScreenTouch):
+			return
+		activar_barra(false)                       # un toque (o clic) vuelve a andar
+	elif event.is_action_pressed("menu_juego"):
+		activar_barra(true)
+		get_viewport().set_input_as_handled()
+		return
+	elif event.is_action_pressed("ui_accept") and boton_examinar.visible:
+		get_viewport().set_input_as_handled()
+		_accion()
 		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		destino = get_global_mouse_position()
@@ -2369,7 +2423,7 @@ func _process(delta: float) -> void:
 
 
 func _physics_process(delta: float) -> void:
-	if saliendo or _en_dialogo():
+	if saliendo or _en_dialogo() or barra_activa:
 		return
 	var dir := Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
 	if dir != Vector2.ZERO:

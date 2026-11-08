@@ -57,6 +57,18 @@ static func _boton(fondo: float, linea: float, borde := 1) -> StyleBoxFlat:
 	return e
 
 
+# Foco: un marco dorado fino alrededor del botón. Godot 4.7 solo lo dibuja al moverse con teclado o mando
+# («gui/common/show_focus_state_on_pointer_event» = 1): al tocar o hacer clic, el botón se ve como siempre.
+static func _foco() -> StyleBoxFlat:
+	var e := StyleBoxFlat.new()
+	e.draw_center = false
+	e.border_color = ORO
+	e.set_border_width_all(2)
+	e.set_corner_radius_all(4)
+	e.set_expand_margin_all(3)
+	return e
+
+
 static func tema() -> Theme:
 	if _tema != null:
 		return _tema
@@ -77,7 +89,7 @@ static func tema() -> Theme:
 	t.set_stylebox("hover", "Button", _boton(0.8, 0.95, 2))
 	t.set_stylebox("pressed", "Button", _boton(0.9, 1.0, 2))
 	t.set_stylebox("hover_pressed", "Button", _boton(0.9, 1.0, 2))
-	t.set_stylebox("focus", "Button", StyleBoxEmpty.new())
+	t.set_stylebox("focus", "Button", _foco())         # solo con teclado o mando (Godot no lo enseña al tocar)
 	t.set_stylebox("disabled", "Button", _boton(0.35, 0.12))
 	t.set_color("font_color", "Button", LUZ_CLARA)
 	t.set_color("font_hover_color", "Button", Color.WHITE)

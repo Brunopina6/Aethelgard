@@ -81,24 +81,14 @@ static func empezar_solo() -> void:
 	Engine.set_meta("grupo_activo", ["Kael"])
 
 
-# Alguien se une al grupo activo. Si se había quedado atrás, llega al nivel del más alto del grupo, con la vida llena y
-# los puntos de esos niveles para repartir (como los que se añadían a partidas antiguas en datos()).
+# Alguien se une al grupo activo (en la misión: Lya en PV-03 y Garon en PV-05). Conserva sus datos tal cual (nivel,
+# experiencia, atributos, vida y PM) y sube como siempre en el juego: con la experiencia de los combates en que lucha
+# (progreso.gd da más a quien va por debajo del nivel de la zona). Subirlo al nivel del grupo al unirse es una
+# propuesta pendiente del usuario (DECISIONS.md, D-062).
 static func unir(n: String) -> void:
 	if not Engine.has_meta("grupo_activo") or n in Engine.get_meta("grupo_activo") or not n in EN_EL_GRUPO:
 		return
 	var a: Array = Engine.get_meta("grupo_activo").duplicate()
-	var g := datos()
-	var nivel := 1
-	for otro in a:
-		if g.has(otro):
-			nivel = maxi(nivel, int(g[otro]["nivel"]))
-	var h: Dictionary = g[n]
-	if int(h["nivel"]) < nivel:
-		h["puntos"] = int(h["puntos"]) + (nivel - int(h["nivel"])) * PUNTOS_POR_NIVEL
-		h["nivel"] = nivel
-		h["exp"] = 0
-	h["pv"] = -1                                     # llega descansado: con la vida y los PM llenos
-	h["pm"] = -1
 	a.append(n)
 	Engine.set_meta("grupo_activo", EN_EL_GRUPO.filter(func(x): return x in a))
 

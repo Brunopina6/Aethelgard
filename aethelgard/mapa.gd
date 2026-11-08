@@ -1,6 +1,9 @@
 extends Node2D
 # Mapa mundi de Aethelgard con exploración libre y encuentros aleatorios (Godot 4.x)
 # Toca o haz clic para caminar (o arrastra). En PC también valen las flechas.
+# Teclado y mando (entrada.gd): flechas / cruceta / stick para andar; Intro / A para entrar en el lugar cercano;
+# Tab, Esc o Start ponen el foco en la barra de abajo (el personaje se para) y Esc / B lo quitan. Un toque también
+# lo quita y vuelve a andar.
 # Tecla E = provocar un encuentro (solo para pruebas).
 
 const MAPA_TAM := Vector2(2400, 1350)
@@ -87,6 +90,9 @@ var en_encuentro := false
 var tiempo := 0.0
 var zona_actual := ""
 var menu_abierto: Control = null
+var botones_barra: Array = []     # la barra de abajo y «Misiones»: el foco solo entra con teclado o mando
+var barra_activa := false         # el foco está en la barra: el personaje no se mueve
+var ultimo_de_barra := "Grupo"    # al cerrar una ventana abierta desde la barra, el foco vuelve a su botón
 var portal_tex: Texture2D
 var lugares: Array = LUGARES      # LUGARES y, con la exploración 3D activa, Pastos Verdes (índice 10)
 
@@ -320,6 +326,9 @@ func _crear_ui() -> void:
 		if n == "Mapa":
 			b.add_theme_color_override("font_color", load("res://estilo.gd").ORO)
 		b.pressed.connect(_boton_menu.bind(n))
+		b.focus_mode = Control.FOCUS_NONE         # tocarlo no le da el foco (las flechas siguen moviendo a Kael)
+		b.set_meta("clave", n)
+		botones_barra.append(b)
 		fila.add_child(b)
 
 	# registro de misiones
@@ -329,6 +338,9 @@ func _crear_ui() -> void:
 	mis.custom_minimum_size = Vector2(120, 48)
 	mis.add_theme_font_size_override("font_size", 20)
 	mis.pressed.connect(_boton_menu.bind("Misiones"))
+	mis.focus_mode = Control.FOCUS_NONE
+	mis.set_meta("clave", "Misiones")
+	botones_barra.append(mis)
 	ui.add_child(mis)
 
 	# brújula
@@ -354,6 +366,7 @@ func _crear_ui() -> void:
 	boton_entrar.add_theme_font_size_override("font_size", 22)
 	boton_entrar.visible = false
 	boton_entrar.pressed.connect(_entrar)
+	boton_entrar.focus_mode = Control.FOCUS_NONE     # con teclado o mando, Intro / A (ui_accept)
 	ui.add_child(boton_entrar)
 
 	# mensajes
@@ -373,6 +386,7 @@ func _crear_ui() -> void:
 		var dpad = load("res://dpad.gd").new()
 		dpad.position = Vector2(30, 440)
 		ui.add_child(dpad)
+	Entrada.encadenar(botones_barra)                 # «Misiones» está fuera de la barra: así también se llega
 
 
 func _dibujar_brujula(c: Control) -> void:
@@ -393,6 +407,22 @@ func _dibujar_brujula(c: Control) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if en_encuentro or menu_abierto != null or _en_dialogo():
 		return
+	if barra_activa:
+		if event.is_action_pressed("ui_cancel") or event.is_action_pressed("menu_juego"):
+			activar_barra(false)
+			get_viewport().set_input_as_handled()
+			return
+		if not (event is InputEventMouseButton or event is InputEventScreenTouch):
+			return
+		activar_barra(false)                       # un toque (o clic) vuelve a andar
+	elif event.is_action_pressed("menu_juego"):
+		activar_barra(true)
+		get_viewport().set_input_as_handled()
+		return
+	elif event.is_action_pressed("ui_accept") and boton_entrar.visible:
+		get_viewport().set_input_as_handled()
+		_entrar()
+		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		destino = get_global_mouse_position()
 		tiene_destino = true
@@ -406,7 +436,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _process(delta: float) -> void:
 	tiempo += delta
 	ui.visible = not _en_dialogo()                # los menús no tapan el cuadro de diálogo
-	if en_encuentro or menu_abierto != null or _en_dialogo():
+	if en_encuentro or menu_abierto != null or _en_dialogo() or barra_activa:
 		return
 	var dir := Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
 	if dir != Vector2.ZERO:
@@ -527,7 +557,31 @@ func _encuentro() -> void:
 
 # ---------------------------------------------------------------- menús y mensajes
 
+# El foco entra en la barra (teclado o mando): sus botones se pueden recorrer y Kael se para. Al salir, vuelven a no
+# coger el foco al tocarlos.
+func activar_barra(si: bool) -> void:
+	barra_activa = si
+	tiene_destino = false
+	for b in botones_barra:
+		b.focus_mode = Control.FOCUS_ALL if si else Control.FOCUS_NONE
+	if si:
+		Entrada.enfocar(_boton_barra(ultimo_de_barra))
+	else:
+		var f := get_viewport().gui_get_focus_owner()
+		if f != null and f in botones_barra:
+			f.release_focus()
+
+
+func _boton_barra(nombre: String) -> Button:
+	for b in botones_barra:
+		if b.get_meta("clave") == nombre:
+			return b
+	return botones_barra[1]
+
+
 func _boton_menu(nombre: String) -> void:
+	if barra_activa:
+		ultimo_de_barra = nombre
 	match nombre:
 		"Mapa":
 			_mostrar_aviso("Estás en el mapa del mundo.")
@@ -553,7 +607,10 @@ func _abrir_menu(pestana: String) -> void:
 	else:
 		menu_abierto = load("res://menus.gd").new()
 		menu_abierto.pestana = pestana
-	menu_abierto.cerrado.connect(func(): menu_abierto = null)
+	menu_abierto.cerrado.connect(func():
+		menu_abierto = null
+		if barra_activa:                             # abierta desde la barra: el foco vuelve a su botón
+			Entrada.enfocar(_boton_barra(ultimo_de_barra)))
 	ui.add_child(menu_abierto)
 
 

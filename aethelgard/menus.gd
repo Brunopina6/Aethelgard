@@ -2,6 +2,9 @@ extends Control
 # Menús del grupo (Godot 4.x): Grupo (nivel, atributos y equipo), Objetos y Habilidades.
 # Se crea por código desde el mapa:  var m = load("res://menus.gd").new(); m.pestana = "Grupo"; ui.add_child(m)
 # Al cerrarse emite "cerrado" y se borra solo.
+# Con teclado o mando (entrada.gd): el foco empieza en la pestaña activa y vuelve al mismo botón tras cada cambio;
+# Esc / B cierran, Q / E (L1 / R1) cambian de pestaña y la lista se desplaza siguiendo el foco (o con ↑ ↓ si solo hay
+# texto). Con el dedo, todo sigue igual.
 
 signal cerrado
 
@@ -12,11 +15,15 @@ const COLOR_TEXTO := Estilo.LUZ_CLARA
 const COLOR_SUAVE := Estilo.GRIS
 const COLOR_BIEN := Estilo.CURA
 
+const PESTANAS := ["Grupo", "Objetos", "Habilidades"]
+
 var pestana := "Grupo"
 var heroe := ""
 var Grupo
 var Inv
 var cuerpo: VBoxContainer
+var marco: ScrollContainer
+var botones_pestana: Array = []
 
 
 func _ready() -> void:
@@ -40,41 +47,79 @@ func _ready() -> void:
 	var arriba := HBoxContainer.new()
 	arriba.add_theme_constant_override("separation", 10)
 	todo.add_child(arriba)
-	var pestanas: Array = []
-	for p in ["Grupo", "Objetos", "Habilidades"]:
-		var b := _boton(p, 22, Vector2(170, 44))
+	for p in PESTANAS:
+		var b := _boton(p, 22, Vector2(170, 44), "pestana:" + p)
 		b.set_meta("nombre", p)
-		pestanas.append(b)
-		b.pressed.connect(func():
-			pestana = p
-			for x in pestanas:
-				x.add_theme_color_override("font_color", COLOR_TITULO if x.get_meta("nombre") == pestana else COLOR_TEXTO)
-			_pintar_de_nuevo())
+		botones_pestana.append(b)
+		b.pressed.connect(_ir_a_pestana.bind(p))
 		arriba.add_child(b)
-	for x in pestanas:
-		x.add_theme_color_override("font_color", COLOR_TITULO if x.get_meta("nombre") == pestana else COLOR_TEXTO)
+	_colorear_pestanas()
 	var hueco := Control.new()
 	hueco.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	arriba.add_child(hueco)
-	var cerrar := _boton("Cerrar", 22, Vector2(150, 44))
-	cerrar.pressed.connect(func():
-		cerrado.emit()
-		queue_free())
+	var cerrar := _boton("Cerrar", 22, Vector2(150, 44), "cerrar")
+	cerrar.pressed.connect(_cerrar)
 	arriba.add_child(cerrar)
-	var marco := ScrollContainer.new()
+	marco = ScrollContainer.new()
 	marco.custom_minimum_size = Vector2(1080, 520)
+	marco.follow_focus = true                      # con teclado o mando, la lista sigue al botón con el foco
 	todo.add_child(marco)
 	cuerpo = VBoxContainer.new()
 	cuerpo.add_theme_constant_override("separation", 8)
 	cuerpo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	marco.add_child(cuerpo)
 	_pintar()
+	Entrada.enfocar(botones_pestana[PESTANAS.find(pestana)])
 
 
+func _colorear_pestanas() -> void:
+	for x in botones_pestana:
+		x.add_theme_color_override("font_color", COLOR_TITULO if x.get_meta("nombre") == pestana else COLOR_TEXTO)
+
+
+func _ir_a_pestana(p: String) -> void:
+	pestana = p
+	_colorear_pestanas()
+	marco.scroll_vertical = 0
+	_pintar_de_nuevo()
+
+
+func _cerrar() -> void:
+	if is_queued_for_deletion():
+		return
+	cerrado.emit()
+	queue_free()
+
+
+# Teclado y mando (lo que los botones con el foco no usan): cerrar, cambiar de pestaña y, si no hay botones más abajo,
+# desplazar el texto.
+func _unhandled_input(ev: InputEvent) -> void:
+	if ev.is_action_pressed("ui_cancel"):
+		_cerrar()
+	elif ev.is_action_pressed("pestana_anterior") or ev.is_action_pressed("pestana_siguiente"):
+		var paso := -1 if ev.is_action_pressed("pestana_anterior") else 1
+		var p: String = PESTANAS[posmod(PESTANAS.find(pestana) + paso, PESTANAS.size())]
+		_ir_a_pestana(p)
+		botones_pestana[PESTANAS.find(p)].grab_focus(not Entrada.con_foco())
+	elif ev.is_action_pressed("ui_down") or ev.is_action_pressed("ui_up"):
+		marco.scroll_vertical += 80 if ev.is_action_pressed("ui_down") else -80
+	else:
+		return
+	get_viewport().set_input_as_handled()
+
+
+# Rehace el cuerpo. Los botones viejos salen del árbol al momento (y se borran después) y el foco, si estaba en esta
+# ventana, vuelve al botón de la misma clave.
 func _pintar_de_nuevo() -> void:
+	var clave := Entrada.clave_enfocada(self)
 	for c in cuerpo.get_children():
+		cuerpo.remove_child(c)
 		c.queue_free()
 	_pintar()
+	var defecto := Entrada.primero(cuerpo)          # si ese botón ya no sirve (p. ej. sin puntos), el más cercano
+	if defecto == null:
+		defecto = botones_pestana[PESTANAS.find(pestana)]
+	Entrada.restaurar(self, clave, defecto)
 
 
 func _pintar() -> void:
@@ -94,7 +139,7 @@ func _pintar_grupo() -> void:
 	fila_heroes.add_theme_constant_override("separation", 8)
 	cuerpo.add_child(fila_heroes)
 	for n in Grupo.activos():
-		var b := _boton(n, 22, Vector2(140, 40))
+		var b := _boton(n, 22, Vector2(140, 40), "heroe:" + n)
 		if n == heroe:
 			b.add_theme_color_override("font_color", COLOR_TITULO)
 		b.pressed.connect(func():
@@ -135,7 +180,7 @@ func _pintar_grupo() -> void:
 		var valor := _texto("%d" % total + ("  (%+d)" % (total - base) if total != base else ""), 20, COLOR_TEXTO)
 		valor.custom_minimum_size = Vector2(90, 0)
 		f.add_child(valor)
-		var mas := _boton("+", 20, Vector2(40, 34))
+		var mas := _boton("+", 20, Vector2(40, 34), "mas:" + k)
 		mas.disabled = h["puntos"] <= 0
 		var atr: String = k
 		mas.pressed.connect(func():
@@ -158,14 +203,14 @@ func _pintar_grupo() -> void:
 		nr.custom_minimum_size = Vector2(90, 0)
 		f.add_child(nr)
 		var ranura: String = r
-		var atras := _boton("◀", 18, Vector2(36, 34))
+		var atras := _boton("◀", 18, Vector2(36, 34), "ranura:%s:-1" % r)
 		atras.pressed.connect(func(): _cambiar(ranura, -1))
 		f.add_child(atras)
 		var id: String = lleva.get(r, "")
 		var nombre := _texto(Inv.objeto(id)["nombre"] if id != "" else "—", 20, COLOR_TEXTO)
 		nombre.custom_minimum_size = Vector2(220, 0)
 		f.add_child(nombre)
-		var adelante := _boton("▶", 18, Vector2(36, 34))
+		var adelante := _boton("▶", 18, Vector2(36, 34), "ranura:%s:1" % r)
 		adelante.pressed.connect(func(): _cambiar(ranura, 1))
 		f.add_child(adelante)
 		der.add_child(f)
@@ -209,7 +254,7 @@ func _pintar_objetos() -> void:
 		var Progreso = load("res://progreso.gd")
 		if o == Progreso.INCIENSO:                   # quita los encuentros un rato
 			f.add_child(_texto("Sin encuentros durante %d pasos" % Progreso.PASOS_INCIENSO, 18, COLOR_BIEN))
-			var usar := _boton("Usar", 16, Vector2(110, 32))
+			var usar := _boton("Usar", 16, Vector2(110, 32), "usar:" + o)
 			usar.disabled = Inv.cantidad(o) <= 0 or Progreso.incienso_activo()
 			if Progreso.incienso_activo():
 				usar.text = "Encendido"
@@ -223,7 +268,7 @@ func _pintar_objetos() -> void:
 			f.add_child(_texto("Recupera %d %s" % [usos[o]["cura"], usos[o]["que"]], 18, COLOR_BIEN))
 			var objeto: String = o
 			for n in Grupo.activos():               # usarlo fuera del combate
-				var b := _boton("Dar a %s" % n, 16, Vector2(110, 32))
+				var b := _boton("Dar a %s" % n, 16, Vector2(110, 32), "dar:%s:%s" % [o, n])
 				var heroe_n: String = n
 				b.disabled = Inv.cantidad(o) <= 0
 				b.pressed.connect(func(): _usar_fuera(objeto, heroe_n))
@@ -305,9 +350,11 @@ func _texto(t: String, tam: int, color: Color) -> Label:
 	return l
 
 
-func _boton(t: String, tam: int, minimo: Vector2) -> Button:
+func _boton(t: String, tam: int, minimo: Vector2, clave := "") -> Button:
 	var b := Button.new()
 	b.text = t
 	b.custom_minimum_size = minimo
 	b.add_theme_font_size_override("font_size", tam)
+	if clave != "":
+		b.set_meta("clave", clave)                  # para devolverle el foco tras repintar (entrada.gd)
 	return b

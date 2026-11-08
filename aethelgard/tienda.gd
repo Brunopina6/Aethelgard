@@ -2,6 +2,8 @@ extends Control
 # Tienda de las ciudades (Godot 4.x): objetos, equipo (escudos...) y libros de magia, con monedas.
 # Se crea por código desde la zona:  var t = load("res://tienda.gd").new(); ui.add_child(t)
 # Al cerrarse emite "cerrado" y se borra sola.
+# Con teclado o mando (entrada.gd): el foco empieza en la pestaña activa y vuelve al mismo botón tras comprar; Esc / B
+# vuelven atrás (de «¿Quién aprende la magia?» a la lista) o cierran; Q / E (L1 / R1) cambian de pestaña.
 
 signal cerrado
 
@@ -22,6 +24,8 @@ const COLOR_SUAVE := Estilo.GRIS
 const COLOR_BIEN := Estilo.CURA
 const COLOR_MAL := Estilo.BRASA
 
+const PESTANAS := ["Objetos", "Equipo", "Magias"]
+
 var pestana := "Objetos"
 var Inv
 var Grupo
@@ -29,6 +33,7 @@ var cuerpo: VBoxContainer
 var lbl_oro: Label
 var lbl_aviso: Label
 var botones: Array = []
+var eligiendo := false                             # «¿Quién aprende la magia?» en pantalla
 
 
 func _ready() -> void:
@@ -52,12 +57,10 @@ func _ready() -> void:
 	arriba.add_theme_constant_override("separation", 10)
 	todo.add_child(arriba)
 	arriba.add_child(_texto("Tienda", 28, COLOR_TITULO))
-	for p in ["Objetos", "Equipo", "Magias"]:
-		var b := _boton(p, 22, Vector2(150, 44))
+	for p in PESTANAS:
+		var b := _boton(p, 22, Vector2(150, 44), "pestana:" + p)
 		b.set_meta("p", p)
-		b.pressed.connect(func():
-			pestana = p
-			_pintar())
+		b.pressed.connect(_ir_a_pestana.bind(p))
 		arriba.add_child(b)
 		botones.append(b)
 	var hueco := Control.new()
@@ -65,26 +68,71 @@ func _ready() -> void:
 	arriba.add_child(hueco)
 	lbl_oro = _texto("", 24, COLOR_TITULO)
 	arriba.add_child(lbl_oro)
-	var cerrar := _boton("Salir", 22, Vector2(130, 44))
-	cerrar.pressed.connect(func():
-		cerrado.emit()
-		queue_free())
+	var cerrar := _boton("Salir", 22, Vector2(130, 44), "cerrar")
+	cerrar.pressed.connect(_cerrar)
 	arriba.add_child(cerrar)
 	lbl_aviso = _texto("", 20, COLOR_BIEN)
 	todo.add_child(lbl_aviso)
 	var marco := ScrollContainer.new()
 	marco.custom_minimum_size = Vector2(1080, 490)
+	marco.follow_focus = true                      # con teclado o mando, la lista sigue al botón con el foco
 	todo.add_child(marco)
 	cuerpo = VBoxContainer.new()
 	cuerpo.add_theme_constant_override("separation", 8)
 	cuerpo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	marco.add_child(cuerpo)
 	_pintar()
+	Entrada.enfocar(botones[PESTANAS.find(pestana)])
+
+
+func _ir_a_pestana(p: String) -> void:
+	pestana = p
+	_pintar()
+
+
+func _cerrar() -> void:
+	if is_queued_for_deletion():
+		return
+	cerrado.emit()
+	queue_free()
+
+
+# Teclado y mando (lo que los botones con el foco no usan): atrás o cerrar, y cambiar de pestaña.
+func _unhandled_input(ev: InputEvent) -> void:
+	if ev.is_action_pressed("ui_cancel"):
+		if eligiendo:
+			_pintar()
+		else:
+			_cerrar()
+	elif ev.is_action_pressed("pestana_anterior") or ev.is_action_pressed("pestana_siguiente"):
+		var paso := -1 if ev.is_action_pressed("pestana_anterior") else 1
+		var p: String = PESTANAS[posmod(PESTANAS.find(pestana) + paso, PESTANAS.size())]
+		_ir_a_pestana(p)
+		botones[PESTANAS.find(p)].grab_focus(not Entrada.con_foco())
+	else:
+		return
+	get_viewport().set_input_as_handled()
+
+
+# Saca del árbol (y borra) lo que hay en el cuerpo, y devuelve la clave del botón con el foco, si estaba aquí.
+func _vaciar() -> String:
+	var clave := Entrada.clave_enfocada(self)
+	for c in cuerpo.get_children():
+		cuerpo.remove_child(c)
+		c.queue_free()
+	return clave
+
+
+func _devolver_foco(clave: String) -> void:
+	var defecto := Entrada.primero(cuerpo)
+	if defecto == null:
+		defecto = botones[PESTANAS.find(pestana)]
+	Entrada.restaurar(self, clave, defecto)
 
 
 func _pintar() -> void:
-	for c in cuerpo.get_children():
-		c.queue_free()
+	var clave := _vaciar()
+	eligiendo = false
 	for b in botones:
 		b.add_theme_color_override("font_color", COLOR_TITULO if b.get_meta("p") == pestana else COLOR_TEXTO)
 	lbl_oro.text = "%d monedas" % Inv.oro()
@@ -121,6 +169,7 @@ func _pintar() -> void:
 					info = "Ya la sabe todo el grupo" if la_usan > 0 else "Nadie del grupo usa esta magia"
 				_fila("Libro de %s (%s %s)" % [nombre, l[0], romano[l[1]]], info, "", l[2],
 					func(): _comprar_libro(l), quienes.is_empty())
+	_devolver_foco(clave)
 
 
 func _fila(nombre: String, desc: String, nota: String, precio: int, al_comprar: Callable, agotado := false) -> void:
@@ -138,7 +187,7 @@ func _fila(nombre: String, desc: String, nota: String, precio: int, al_comprar: 
 	var p := _texto("%d" % precio, 21, COLOR_TITULO if Inv.oro() >= precio else COLOR_MAL)
 	p.custom_minimum_size = Vector2(70, 0)
 	f.add_child(p)
-	var b := _boton("Comprar", 18, Vector2(120, 36))
+	var b := _boton("Comprar", 18, Vector2(120, 36), "comprar:" + nombre)
 	b.disabled = agotado or Inv.oro() < precio
 	b.pressed.connect(al_comprar)
 	f.add_child(b)
@@ -168,17 +217,18 @@ func _comprar_libro(l: Array) -> void:
 	if quienes.size() == 1:
 		_dar_libro(l, quienes[0])
 		return
-	for c in cuerpo.get_children():                  # elegir quién lo aprende
-		c.queue_free()
+	var clave := _vaciar()                           # elegir quién lo aprende
+	eligiendo = true
 	cuerpo.add_child(_texto("¿Quién aprende la magia?", 24, COLOR_TITULO))
 	for h in quienes:
-		var b := _boton(h, 22, Vector2(200, 46))
+		var b := _boton(h, 22, Vector2(200, 46), "libro:" + h)
 		var heroe: String = h
 		b.pressed.connect(func(): _dar_libro(l, heroe))
 		cuerpo.add_child(b)
-	var atras := _boton("Atrás", 20, Vector2(200, 40))
+	var atras := _boton("Atrás", 20, Vector2(200, 40), "atras")
 	atras.pressed.connect(_pintar)
 	cuerpo.add_child(atras)
+	_devolver_foco(clave)
 
 
 func _dar_libro(l: Array, heroe: String) -> void:
@@ -204,9 +254,11 @@ func _texto(t: String, tam: int, color: Color) -> Label:
 	return l
 
 
-func _boton(t: String, tam: int, minimo: Vector2) -> Button:
+func _boton(t: String, tam: int, minimo: Vector2, clave := "") -> Button:
 	var b := Button.new()
 	b.text = t
 	b.custom_minimum_size = minimo
 	b.add_theme_font_size_override("font_size", tam)
+	if clave != "":
+		b.set_meta("clave", clave)                  # para devolverle el foco tras repintar (entrada.gd)
 	return b

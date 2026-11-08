@@ -446,6 +446,9 @@ func _process(delta: float) -> void:
 	elif movimiento != "":
 		movimiento = ""
 		kael.reposo()
+	var zoom := Input.get_axis("camara_acercar", "camara_alejar") if InputMap.has_action("camara_acercar") else 0.0
+	if zoom != 0.0:                                     # + / - o el stick derecho (la rueda y el pellizco, como siempre)
+		distancia = clampf(distancia + zoom * 12.0 * delta, DIST_MIN, DIST_MAX)
 	_colocar_camara(1.0 - exp(-suavizado * delta))
 	_oclusion()
 	if _banco.is_empty() and Engine.max_fps != perfil_fps:

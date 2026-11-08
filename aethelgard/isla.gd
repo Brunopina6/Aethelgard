@@ -350,6 +350,7 @@ func _crear_ui() -> void:
 	boton.add_theme_font_size_override("font_size", 22)
 	boton.visible = false
 	boton.pressed.connect(_accion)
+	boton.focus_mode = Control.FOCUS_NONE              # con teclado o mando, Intro / A (ui_accept)
 	ui.add_child(boton)
 	aviso = Label.new()
 	aviso.position = Vector2(190, 110)
@@ -410,7 +411,11 @@ func _poner_z() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if saliendo:
+	if saliendo or _en_dialogo():                  # con un diálogo abierto, el personaje no recibe órdenes
+		return
+	if event.is_action_pressed("ui_accept") and boton.visible:
+		get_viewport().set_input_as_handled()     # teclado y mando: hablar o bajar al mundo
+		_accion()
 		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		destino = get_global_mouse_position()

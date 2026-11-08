@@ -5,6 +5,8 @@ extends Control
 #   Combate: una ficha corta de cada mecánica, para quien la olvide.
 # Se crea por código desde el mapa:  var d = load("res://diario.gd").new(); ui.add_child(d)
 # Al cerrarse emite "cerrado" y se borra solo.
+# Con teclado o mando (entrada.gd): el foco empieza en la pestaña activa; ↑ ↓ desplazan el texto, Q / E (L1 / R1)
+# cambian de pestaña y Esc / B cierran.
 
 signal cerrado
 
@@ -19,8 +21,11 @@ const FICHAS := [
 	["Objetos", "Poción: PV. Éter: PM. Incienso de Ceniza: un rato sin encuentros."],
 ]
 
+const PESTANAS := ["Detalles", "Combate"]
+
 var pestana := "Detalles"
 var cuerpo: VBoxContainer
+var marco: ScrollContainer
 var botones: Array = []
 
 
@@ -43,14 +48,13 @@ func _ready() -> void:
 	arriba.add_theme_constant_override("separation", 10)
 	todo.add_child(arriba)
 	arriba.add_child(_texto("Diario", 38, Estilo.ORO, true))
-	for p in ["Detalles", "Combate"]:
+	for p in PESTANAS:
 		var b := Button.new()
 		b.text = p
 		b.custom_minimum_size = Vector2(170, 44)
 		b.set_meta("p", p)
-		b.pressed.connect(func():
-			pestana = p
-			_pintar())
+		b.set_meta("clave", "pestana:" + p)
+		b.pressed.connect(_ir_a_pestana.bind(p))
 		arriba.add_child(b)
 		botones.append(b)
 	var hueco := Control.new()
@@ -59,11 +63,10 @@ func _ready() -> void:
 	var cerrar := Button.new()
 	cerrar.text = "Cerrar"
 	cerrar.custom_minimum_size = Vector2(150, 44)
-	cerrar.pressed.connect(func():
-		cerrado.emit()
-		queue_free())
+	cerrar.set_meta("clave", "cerrar")
+	cerrar.pressed.connect(_cerrar)
 	arriba.add_child(cerrar)
-	var marco := ScrollContainer.new()
+	marco = ScrollContainer.new()
 	marco.custom_minimum_size = Vector2(1080, 520)
 	todo.add_child(marco)
 	cuerpo = VBoxContainer.new()
@@ -71,10 +74,41 @@ func _ready() -> void:
 	cuerpo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	marco.add_child(cuerpo)
 	_pintar()
+	Entrada.enfocar(botones[PESTANAS.find(pestana)])
+
+
+func _ir_a_pestana(p: String) -> void:
+	pestana = p
+	marco.scroll_vertical = 0
+	_pintar()
+
+
+func _cerrar() -> void:
+	if is_queued_for_deletion():
+		return
+	cerrado.emit()
+	queue_free()
+
+
+# Teclado y mando: el diario es texto, así que ↑ ↓ lo desplazan; Q / E (L1 / R1) cambian de pestaña; Esc / B cierran.
+func _unhandled_input(ev: InputEvent) -> void:
+	if ev.is_action_pressed("ui_cancel"):
+		_cerrar()
+	elif ev.is_action_pressed("pestana_anterior") or ev.is_action_pressed("pestana_siguiente"):
+		var paso := -1 if ev.is_action_pressed("pestana_anterior") else 1
+		var p: String = PESTANAS[posmod(PESTANAS.find(pestana) + paso, PESTANAS.size())]
+		_ir_a_pestana(p)
+		botones[PESTANAS.find(p)].grab_focus(not Entrada.con_foco())
+	elif ev.is_action_pressed("ui_down") or ev.is_action_pressed("ui_up"):
+		marco.scroll_vertical += 80 if ev.is_action_pressed("ui_down") else -80
+	else:
+		return
+	get_viewport().set_input_as_handled()
 
 
 func _pintar() -> void:
 	for c in cuerpo.get_children():
+		cuerpo.remove_child(c)
 		c.queue_free()
 	for b in botones:
 		b.add_theme_color_override("font_color", Estilo.ORO if b.get_meta("p") == pestana else Estilo.LUZ_CLARA)

@@ -155,10 +155,12 @@ func _crear_pantalla() -> void:
 		boton_prueba.position = Vector2(860, 652)
 		boton_prueba.custom_minimum_size = Vector2(400, 56)
 		boton_prueba.add_theme_font_size_override("font_size", 20)
-		boton_prueba.focus_mode = Control.FOCUS_NONE
+		boton_prueba.focus_mode = Control.FOCUS_ALL      # con teclado o mando: ↓ lo elige, Intro / A lo pulsa, ↑ / Esc vuelve
 		boton_prueba.visible = false
 		boton_prueba.pressed.connect(func(): _empezar(true))
 		capa.add_child(boton_prueba)
+	_texto_empezar(Entrada.modo)
+	Entrada.modo_cambiado.connect(_texto_empezar)
 
 	sonidos = M.sonidos_ui()
 	reproductor = AudioStreamPlayer.new()
@@ -376,12 +378,27 @@ func _paso_zonas() -> void:
 
 # ================================================================= empezar
 
+# Qué se pulsa para empezar, según con qué se juega ahora (entrada.gd).
+func _texto_empezar(modo: String) -> void:
+	toca.text = {"teclado": "PULSA INTRO PARA EMPEZAR", "mando": "PULSA A PARA EMPEZAR"}.get(modo, "TOCA PARA EMPEZAR")
+
+
 func _input(ev: InputEvent) -> void:
 	if not listo or saliendo:
 		return
 	if boton_prueba != null and boton_prueba.visible and (ev is InputEventMouseButton or ev is InputEventScreenTouch) \
 			and boton_prueba.get_global_rect().has_point(ev.position):
 		return                                       # el toque es para el botón de la partida de prueba
+	if boton_prueba != null and boton_prueba.visible and not (ev is InputEventMouse or ev is InputEventScreenTouch):
+		if boton_prueba.has_focus():                 # teclado o mando con el foco en el botón de la partida de prueba
+			if ev.is_action_pressed("ui_up") or ev.is_action_pressed("ui_cancel"):
+				boton_prueba.release_focus()
+				get_viewport().set_input_as_handled()
+			return                                   # Intro / A los recibe el botón (una sola acción)
+		if ev.is_action_pressed("ui_down") or ev.is_action_pressed("ui_left") or ev.is_action_pressed("ui_right"):
+			boton_prueba.grab_focus()
+			get_viewport().set_input_as_handled()
+			return
 	if (ev is InputEventMouseButton and ev.pressed) or (ev is InputEventScreenTouch and ev.pressed) \
 			or ev.is_action_pressed("ui_accept"):
 		_empezar()

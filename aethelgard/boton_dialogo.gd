@@ -35,8 +35,31 @@ func _ready() -> void:
 	for s in ["normal", "hover", "pressed", "focus"]:
 		boton.add_theme_stylebox_override(s, e)
 	boton.pressed.connect(_seguir)
+	boton.focus_mode = Control.FOCUS_NONE            # es para el dedo; con teclado o mando, Intro / Espacio / A
 	add_child(boton)
 	visible = false
+
+
+# Una pulsación, una sola acción. Dialogic (subsystem_input.gd) toma por buena cualquier evento que no sea de ratón
+# mientras su acción esté «recién pulsada» (Input.is_action_just_pressed): otro evento en el mismo fotograma (p. ej.
+# el temblor del stick al pulsar A, o la misma A que acaba de abrir el diálogo) hacía que una pulsación pasara la
+# frase y, además, enseñara de golpe la siguiente. Este nodo recibe _unhandled_input antes que Dialogic (el árbol se
+# recorre del final al principio) y se queda con esos eventos de más. Toques y ratón no cambian.
+var _fotograma_pulsado := -1
+
+
+func _unhandled_input(ev: InputEvent) -> void:
+	var d = get_node_or_null("/root/Dialogic")
+	if d == null or d.current_timeline == null or ev is InputEventMouse or ev is InputEventScreenTouch:
+		return
+	var accion: String = ProjectSettings.get_setting("dialogic/text/input_action", "dialogic_default_action")
+	if ev.is_action_pressed(accion, false, true):
+		var f := Engine.get_process_frames()
+		if f == _fotograma_pulsado:                  # otra tecla de la misma acción en el mismo fotograma
+			get_viewport().set_input_as_handled()
+		_fotograma_pulsado = f
+	elif Input.is_action_just_pressed(accion, true):
+		get_viewport().set_input_as_handled()
 
 
 func _process(_d: float) -> void:

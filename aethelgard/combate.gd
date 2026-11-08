@@ -1378,6 +1378,13 @@ func _atras() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if estado == "accion" and fuera.visible:          # la invocación en marcha: Intro / A o Esc / B la saltan
+		if event.is_action_pressed("ui_accept") or event.is_action_pressed("ui_cancel"):
+			get_viewport().set_input_as_handled()     # (como al tocar la pantalla, _toque_fuera)
+			saltar_invocacion = true
+			if inv_erebo != null:
+				inv_erebo.saltar()
+		return
 	if event.is_action_pressed("ui_cancel"):
 		get_viewport().set_input_as_handled()
 		_atras()

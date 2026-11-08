@@ -13,7 +13,13 @@
   - Antes de nada se ejecuta la sonda (sonda_datos.gd). Si user:// no cae dentro de la carpeta aislada, NO se
     ejecuta ninguna prueba: todas salen como NO SEGURA.
   - Se toma la huella SHA-256 de toda la carpeta real de datos del juego
-    (%APPDATA%\Godot\app_userdata\Aethelgard, partida.save incluida) antes y después. Si cambia algo, se avisa.
+    (%APPDATA%\Godot\app_userdata\Aethelgard, partida.save incluida) antes y después. Si cambia algo, se avisa con
+    la hora de cada archivo.
+  - Esa carpeta es la misma para todas las copias del proyecto (D:\Aethelgard y D:\Aethelgard_alpha): un editor o
+    un juego abiertos en cualquiera de ellas escriben ahí. Por eso no se empieza con un Godot abierto y, entre prueba
+    y prueba, se mira si alguien ha abierto otro: si aparece, el resumen lo apunta con su línea de órdenes.
+  - Al pasarse de tiempo una prueba, solo se cierra lo que lanzó esta pasada (el proceso y sus hijos), nunca otro
+    Godot.
   - También se compara «git status» antes y después, para detectar cambios en archivos del proyecto.
 
   RESULTADOS
@@ -53,6 +59,24 @@ $PATRONES = @('SCRIPT ERROR', 'Parse Error', 'Failed to load script', 'Invalid c
 
 $datosReales = Join-Path $env:APPDATA "Godot\app_userdata\Aethelgard"
 $partida     = Join-Path $datosReales "partida.save"
+$propios     = New-Object 'System.Collections.Generic.HashSet[int]'   # procesos que lanza esta pasada
+$ajenos      = [ordered]@{}                                           # Godot abiertos por otros durante la pasada
+
+# Apunta cada Godot abierto que no lanzó esta pasada (ni es hijo de uno suyo).
+function Vigilar([string]$momento) {
+    foreach ($q in @(Get-CimInstance Win32_Process -Filter "Name LIKE 'Godot%'" -ErrorAction SilentlyContinue)) {
+        if ($propios.Contains([int]$q.ProcessId) -or $propios.Contains([int]$q.ParentProcessId)) { continue }
+        $clave = "pid$($q.ProcessId)"                   # clave de texto: con un número, [ordered] indexa por posición
+        if (-not $ajenos.Contains($clave)) {
+            $ajenos[$clave] = "PID $($q.ProcessId), visto $($momento): $($q.CommandLine)"
+            Write-Host "AVISO: hay un Godot que no lanzó esta pasada (PID $($q.ProcessId)); puede escribir en la carpeta real de datos." -ForegroundColor Yellow
+        }
+    }
+}
+function Hora([string]$relativa) {
+    $f = Join-Path $datosReales $relativa.TrimStart("\")
+    if (Test-Path $f) { return (Get-Item $f -Force).LastWriteTime.ToString("HH:mm:ss") } else { return "?" }
+}
 
 function Huellas([string]$carpeta) {
     $h = @{}
@@ -71,6 +95,7 @@ function Lanzar([string]$argumentos, [string]$log, [string]$err) {
         $p = Start-Process -FilePath $Godot -ArgumentList $argumentos -NoNewWindow -PassThru `
             -RedirectStandardOutput $log -RedirectStandardError $err
         $null = $p.Handle                               # para poder leer ExitCode después (PowerShell 5.1)
+        $null = $propios.Add($p.Id)
         return $p
     } finally { $env:APPDATA = $orig.A; $env:LOCALAPPDATA = $orig.L; $env:TEMP = $orig.T; $env:TMP = $orig.M }
 }
@@ -121,14 +146,16 @@ foreach ($linea in (Get-Content -Encoding UTF8 $lista)) {
     if ($argTxt -ne "") { $argumentos += " -- $argTxt" }
     $log = Join-Path $dir "$nombre.log"; $err = Join-Path $dir "$nombre.err.log"
 
+    Vigilar "antes de $nombre"
     Write-Host ("{0,-20} " -f $nombre) -NoNewline
     $inicio = Get-Date
     $p = Lanzar $argumentos $log $err
     $resultado = ""; $detalle = ""
     if (-not $p.WaitForExit($seg * 1000)) {
+        # El Godot «_console» abre el Godot de verdad como hijo: se cierran los dos, y nada más.
+        $hijos = @(Get-CimInstance Win32_Process -Filter "ParentProcessId = $($p.Id)" -ErrorAction SilentlyContinue)
         try { $p.Kill() } catch {}
-        Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -like "Godot*" -and $_.StartTime -ge $inicio } |
-            Stop-Process -Force -ErrorAction SilentlyContinue
+        foreach ($h in $hijos) { Stop-Process -Id ([int]$h.ProcessId) -Force -ErrorAction SilentlyContinue }
         $resultado = "FALLIDA"; $detalle = "TIEMPO: más de $seg s"
         Start-Sleep -Milliseconds 300                   # deja que se cierren los registros
         $texto = ""
@@ -160,12 +187,13 @@ foreach ($linea in (Get-Content -Encoding UTF8 $lista)) {
 }
 
 # ------------------------------------------------------------------ comprobaciones finales
+Vigilar "al terminar"
 $huellasDespues = Huellas $datosReales
 $partidaDespues = if (Test-Path $partida) { (Get-FileHash $partida -Algorithm SHA256).Hash } else { "(no existe)" }
 $gitDespues     = (& git --no-optional-locks -C $raizRepo status --porcelain 2>$null | Out-String)
 $cambiados = @()
-foreach ($k in $huellasAntes.Keys)   { if (-not $huellasDespues.ContainsKey($k)) { $cambiados += "borrado: $k" } elseif ($huellasDespues[$k] -ne $huellasAntes[$k]) { $cambiados += "cambiado: $k" } }
-foreach ($k in $huellasDespues.Keys) { if (-not $huellasAntes.ContainsKey($k)) { $cambiados += "nuevo: $k" } }
+foreach ($k in $huellasAntes.Keys)   { if (-not $huellasDespues.ContainsKey($k)) { $cambiados += "borrado: $k" } elseif ($huellasDespues[$k] -ne $huellasAntes[$k]) { $cambiados += "cambiado: $k ($(Hora $k))" } }
+foreach ($k in $huellasDespues.Keys) { if (-not $huellasAntes.ContainsKey($k)) { $cambiados += "nuevo: $k ($(Hora $k))" } }
 
 $filas | Export-Csv -Path (Join-Path $dir "resumen.csv") -NoTypeInformation -Encoding UTF8 -Delimiter ";"
 $cuenta = @{}
@@ -176,6 +204,7 @@ $md.Add("")
 $md.Add("- Aislamiento: " + $(if ($aislamientoOk) { "comprobado (user:// = ``$userDir``)" } else { "NO garantizado: no se ejecutó nada" }))
 $md.Add("- partida.save real: antes ``$partidaAntes``, después ``$partidaDespues`` → " + $(if ($partidaAntes -eq $partidaDespues) { "**sin cambios**" } else { "**CAMBIADA**" }))
 $md.Add("- Carpeta real de datos del juego ($($huellasAntes.Count) archivos): " + $(if ($cambiados.Count -eq 0) { "**sin cambios**" } else { "**CAMBIOS:** " + ($cambiados -join "; ") }))
+$md.Add("- Otros Godot abiertos durante la pasada: " + $(if ($ajenos.Count -eq 0) { "ninguno" } else { "**" + $ajenos.Count + "** (los cambios de la carpeta real pueden venir de ellos): " + (@($ajenos.Values) -join "; ") }))
 $md.Add("- Archivos del proyecto (git status): " + $(if ($gitAntes -eq $gitDespues) { "**sin cambios**" } else { "**han cambiado** (revisar)" }))
 $md.Add("- Totales: SUPERADAS $($cuenta['SUPERADA']) · FALLIDAS $($cuenta['FALLIDA']) · MANUALES $($cuenta['MANUAL']) · NO SEGURAS $($cuenta['NO SEGURA'])")
 $md.Add("")
@@ -186,7 +215,7 @@ $md | Set-Content -Path (Join-Path $dir "resumen.md") -Encoding UTF8
 
 Write-Host ""
 Write-Host "SUPERADAS $($cuenta['SUPERADA']) · FALLIDAS $($cuenta['FALLIDA']) · MANUALES $($cuenta['MANUAL']) · NO SEGURAS $($cuenta['NO SEGURA'])"
-Write-Host "partida.save real: $(if ($partidaAntes -eq $partidaDespues) { 'sin cambios' } else { 'CAMBIADA' }) · carpeta real de datos: $(if ($cambiados.Count -eq 0) { 'sin cambios' } else { 'CAMBIADA' }) · proyecto: $(if ($gitAntes -eq $gitDespues) { 'sin cambios' } else { 'CAMBIADO' })"
+Write-Host "partida.save real: $(if ($partidaAntes -eq $partidaDespues) { 'sin cambios' } else { 'CAMBIADA' }) · carpeta real de datos: $(if ($cambiados.Count -eq 0) { 'sin cambios' } else { 'CAMBIADA' }) · proyecto: $(if ($gitAntes -eq $gitDespues) { 'sin cambios' } else { 'CAMBIADO' }) · otros Godot: $($ajenos.Count)"
 Write-Host "Resumen: $(Join-Path $dir 'resumen.md')"
 if (-not $aislamientoOk) { exit 255 }
 if ($cambiados.Count -gt 0 -or $partidaAntes -ne $partidaDespues) { exit 254 }

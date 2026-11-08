@@ -8,10 +8,16 @@ extends SceneTree
 #      comprobaría nada);
 #   5. el diálogo siguiente usa la misma interfaz y no enseña nada del anterior;
 #   6. con el final normal (end_timeline(): el «[clear]» de Dialogic) también acaba oculta, viva y limpia;
-#   7. sigue viva tras cambiar de escena.
-# Sin ventana. Usa los diálogos reales npc_rosa (con retrato) y pv_tilo.
+#   7. sigue viva tras cambiar de escena, y las conexiones a las señales de Dialogic no se acumulan entre
+#      conversaciones ni al cambiar de escena;
+#   8. una pulsación, una acción (boton_dialogo.gd): la Intro que abre un diálogo (como en la región) no pasa además
+#      la primera frase aunque llegue otro evento en el mismo fotograma;
+#   9. opciones: un diálogo con preguntas cortado a medias no deja botones de opción para el siguiente.
+# Sin ventana. Usa los diálogos reales npc_rosa (con retrato) y pv_tilo, y uno de prueba con dos opciones. Teclas
+# simuladas (Input.parse_input_event).
 
 const ESPERA_FINAL := 150                        # fotogramas para el final normal de Dialogic (anima y tarda ~1-2 s)
+const CON_OPCIONES := "Una pregunta de prueba.\n- Sí\n\tBien.\n- No\n\tVale."
 
 var R
 var D
@@ -20,6 +26,43 @@ var paso := 0
 var f_paso := 0
 var interfaz
 var fallos: Array = []
+var conexiones := {}                             # señal -> conexiones al empezar
+var acciones := 0                                # veces que Dialogic toma una pulsación (dialogic_action_priority)
+var lanzador: Node
+
+
+# Abre un diálogo con Intro y se queda con la pulsación, como la región 3D (_unhandled_input → _accion).
+class Lanzador extends Node:
+	func _unhandled_input(ev: InputEvent) -> void:
+		if ev.is_action_pressed("ui_accept"):
+			get_viewport().set_input_as_handled()
+			get_node("/root/Dialogic").start("pv_tilo")
+
+
+func _senales() -> Dictionary:
+	var r := {}
+	for s in ["timeline_started", "timeline_ended", "signal_event", "text_signal", "event_handled", "state_changed"]:
+		r[s] = D.get(s).get_connections().size()
+	r["Inputs.dialogic_action"] = D.Inputs.dialogic_action.get_connections().size()
+	r["Inputs.dialogic_action_priority"] = D.Inputs.dialogic_action_priority.get_connections().size()
+	r["Text.text_finished"] = D.Text.text_finished.get_connections().size()
+	return r
+
+
+func _tecla(codigo: Key, pulsada: bool) -> void:
+	var e := InputEventKey.new()
+	e.keycode = codigo
+	e.physical_keycode = codigo
+	e.pressed = pulsada
+	Input.parse_input_event(e)
+
+
+func _contar() -> void:
+	acciones += 1
+
+
+func _opciones_visibles() -> int:
+	return get_nodes_in_group("dialogic_choice_button").filter(func(b): return b.is_visible_in_tree()).size()
 
 
 func _initialize() -> void:
@@ -83,6 +126,7 @@ func _process(_d: float) -> bool:
 				_fallo("2: la interfaz preparada se ve")
 			if R.precalentar_dialogos() != 0 or D.Styles.get_layout_node() != interfaz:
 				_fallo("2: precalentar_dialogos() la ha creado otra vez")
+			conexiones = _senales()
 			D.timeline_ended.disconnect(R._al_acabar_dialogo)   # para el control
 			_siguiente()
 		1:                                          # control, sin la limpieza de Recursos: algo queda
@@ -124,13 +168,57 @@ func _process(_d: float) -> bool:
 				D.end_timeline()
 			elif f == 20 + ESPERA_FINAL:
 				_limpia("6 (final normal)")
+				_siguiente()
+		4:                                          # 8. una pulsación, una acción
+			if f == 2:
+				lanzador = Lanzador.new()
+				root.add_child(lanzador)
+				D.Inputs.dialogic_action_priority.connect(_contar)
+			elif f == 4:
+				acciones = 0
+				_tecla(KEY_ENTER, true)             # la abre el lanzador...
+				_tecla(KEY_SHIFT, false)            # ...y en el mismo fotograma llega otro evento
+			elif f == 6:
+				_tecla(KEY_ENTER, false)
+				if D.current_timeline == null:
+					_fallo("8: Intro no abre el diálogo de prueba")
+				elif D.current_state == D.States.IDLE:     # (al abrirse anima la caja y luego escribe: ANIMATING o REVEALING)
+					_fallo("8: la Intro que abre el diálogo deja ya la primera frase entera (estado %d)" % D.current_state)
+				if acciones != 0:
+					_fallo("8: la Intro que abre el diálogo cuenta %d veces en Dialogic" % acciones)
+			elif f == 8:
+				D.end_timeline(true)
+				D.Inputs.dialogic_action_priority.disconnect(_contar)
+				lanzador.queue_free()
+			elif f == 14:
+				var t := DialogicTimeline.new()     # 9. opciones
+				t.from_text(CON_OPCIONES)
+				D.start(t)
+			elif f == 70:
+				if _opciones_visibles() == 0:
+					_fallo("9: el diálogo de prueba no enseña sus opciones (la prueba no comprueba nada)")
+				D.end_timeline(true)                # cortado con las opciones en pantalla
+			elif f == 76:
+				if _opciones_visibles() != 0:
+					_fallo("9: al cortar el diálogo quedan %d opciones a la vista" % _opciones_visibles())
+				D.start("pv_tilo")
+			elif f == 80:
+				if _opciones_visibles() != 0:
+					_fallo("9: el diálogo siguiente enseña opciones del anterior")
+				D.end_timeline(true)
+			elif f == 86:
 				change_scene_to_packed(_escena_vacia())
 				_siguiente()
-		4:
+		5:
 			if f == 5:
 				if not is_instance_valid(interfaz) or D.Styles.get_layout_node() != interfaz:
 					_fallo("7: la interfaz no sigue viva tras cambiar de escena")
-				print("OK interfaz de los diálogos: preparada una vez, oculta entre diálogos, limpia y viva tras cambiar de escena")
+				var ahora := _senales()
+				for s in conexiones:
+					if ahora[s] != conexiones[s]:
+						_fallo("7: las conexiones a %s pasan de %d a %d tras varias conversaciones" % [s, conexiones[s], ahora[s]])
+				print("OK interfaz de los diálogos: preparada una vez, oculta entre diálogos, limpia (texto, retratos y opciones), " +
+					"sin conexiones de más, una pulsación una acción, y viva tras cambiar de escena")
 				for t in fallos:
 					print("FALLO: ", t)
 				print("FALLOS: %d" % fallos.size())
