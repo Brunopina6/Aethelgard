@@ -1,6 +1,6 @@
 # MEMORIA_CHAT: lo aprendido en las conversaciones sobre AETHELGARD / REBELUM
 
-> **Actualizado el 2026-11-08 a las 15:00** (hora local, UTC+1), en la rama `rebelum-3d` @ `ce84422`. Se publica en la
+> **Actualizado el 2026-11-08 a las 15:55** (hora local, UTC+1), en la rama `rebelum-3d` @ `ce84422`. Se publica en la
 > rama `memoria-desarrollo` de GitHub.
 >
 > Es un **resumen**, no una transcripción. El chat legible está en
@@ -49,6 +49,7 @@
   - Después pidió ordenar las pruebas **por fecha y versión** y conservarlas todas, junto con la original (`v0.1.0`).
     El resto sigue como se configuró.
   - Ese mismo mensaje: «la música de suno no son libres». Una APK con esa música no se sube.
+  - Con «Sí, cópiala», la original (`v0.1.0`) también está en el repositorio de pruebas, al final de la lista.
 - **Siguiente:** T-022: Lya y Garon siguiendo a Kael (hay unos 12 ms de margen), el cofre y la cinemática del mirador.
 - **Vigente:**
   - el Redmi está reservado;
@@ -223,6 +224,7 @@ Las normas vigentes están en [CLAUDE.md](CLAUDE.md) y su historia, en [DECISION
 | Licencias: recursos autorizados o sustitutos; el entregable, sin lo no acreditado | 07/11, 16:30 | **Vigente** ([D-050](DECISIONS.md#d-050)) |
 | «Haz una cosa cra en GitHub un lugar donde subir las pruebas y súbela allí…» | 08/11, hacia las 14:40 | **Vigente:** repositorio privado `Aethelgard-pruebas` ([D-054](DECISIONS.md#d-054)) |
 | «a partir de ahora ordena las relese de pruebas por fecha y versión…» | 08/11, hacia las 14:55 | **Vigente:** convención de [D-054](DECISIONS.md#d-054); ninguna prueba se borra |
+| «Sí, cópiala» (la APK original al repositorio de pruebas) | 08/11, hacia las 15:50 | Hecho: «05/11/2026 · Original v0.1.0» ([T-079](TASKS.md#t-079)) |
 
 **Restricciones del usuario, con sus palabras**
 - «La autorización de push se limita a la documentación de memoria» (07/11, 16:30).

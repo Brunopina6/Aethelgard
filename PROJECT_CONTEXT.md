@@ -251,6 +251,7 @@ objetos.
   `Brunopina6/Aethelgard-pruebas`, una versión por APK ([D-054](DECISIONS.md#d-054) y [T-079](TASKS.md#t-079)).
   - No es el repositorio del juego y no lleva código.
   - Se ordenan por fecha y versión, y ninguna se borra. La convención está en [CLAUDE.md](CLAUDE.md) §4.
+  - También guarda una copia idéntica de la original, `v0.1.0`, al final de la lista.
 
 ## 10. Pruebas y herramientas [código + ejecutado]
 

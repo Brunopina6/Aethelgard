@@ -1,7 +1,7 @@
 # SESSION_HANDOFF: punto de control
 
-**Último punto de control:** 2026-11-08 a las 15:00 (hora local, UTC+1), tras ordenar por fecha y versión las
-pruebas del repositorio privado para el móvil.
+**Último punto de control:** 2026-11-08 a las 15:55 (hora local, UTC+1), tras copiar la versión original al
+repositorio privado de pruebas para el móvil.
 
 ## Dónde está todo
 
@@ -101,6 +101,10 @@ pruebas del repositorio privado para el móvil.
   - El `README.md` del repositorio (commit `d82abaa`) lista las pruebas de la más nueva a la más antigua.
   - También enlaza la original, `v0.1.0`, que sigue en el repositorio principal.
 - **Suno:** el usuario dijo «la música de suno no son libres». Una APK con esa música no se sube.
+- **La original, copiada** (15:53, «Sí, cópiala»):
+  - la release se llama «05/11/2026 · Original v0.1.0» y el archivo, `Aethelgard_2026-11-05_v0.1.0.apk`;
+  - es idéntica a la `v0.1.0` del repositorio principal;
+  - queda la última de la lista y sin «Latest» ([T-079](TASKS.md#t-079)).
 - **Lo instala el usuario.** No se ha tocado el móvil.
 
 ## Próximo paso concreto

@@ -136,6 +136,8 @@ pida la tarea.
   - el archivo se llama `Aethelgard_Exp_AAAA-MM-DD_vNN.apk`, y la etiqueta, `exp-AAAAMMDD-sha7`;
   - antes de crearla se añade su fila arriba en la tabla del `README.md`, y la release se etiqueta sobre ese commit;
   - ninguna se borra ni se sustituye.
+  - **La original** también está ahí: «05/11/2026 · Original v0.1.0», copia idéntica de la `v0.1.0` del repositorio
+    principal. Va etiquetada sobre el primer commit, para que quede la última de la lista, y nunca lleva «Latest».
 - **Carpetas fuera del proyecto:**
   - `D:\REBELUM_diagnostico`: registros;
   - `D:\REBELUM_compilaciones`: APK;

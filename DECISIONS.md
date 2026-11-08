@@ -699,7 +699,13 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
     commit etiquetado, y así quedan en orden aunque se suban varias el mismo día.
   - **No se borra ni se sustituye ninguna.** La más nueva lleva la marca «Latest».
   - **«La original»** [asistente]: entiendo que es la app estable, «Aethelgard v0.1.0 - Android», que sigue en el
-    repositorio principal. El `README.md` la enlaza, pero su APK no se copia al repositorio de pruebas.
+    repositorio principal.
+  - **Copia de la original** (08/11, hacia las 15:50). Aprobada [usuario]: «Sí, cópiala».
+    - Release «05/11/2026 · Original v0.1.0» (etiqueta `v0.1.0`), con el archivo `Aethelgard_2026-11-05_v0.1.0.apk`.
+      Es el mismo archivo que la release del repositorio principal, sin cambios.
+    - Va etiquetada sobre el primer commit del repositorio (`8ece9e3`). Así queda la última de la lista, por debajo
+      de todas las pruebas, y nunca lleva «Latest».
+    - No lleva música de Suno: ningún archivo del APK coincide con las pistas.
 - **Primera subida:** `exp-20261108-aabe5ad` ([T-079](TASKS.md#t-079)).
 - **Enlace estable a la última:** `https://github.com/Brunopina6/Aethelgard-pruebas/releases/latest`.
 - **Alternativas descartadas:**

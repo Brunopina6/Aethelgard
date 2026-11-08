@@ -1,6 +1,6 @@
 # TASKS: tareas de AETHELGARD / REBELUM
 
-**Actualizado el 2026-11-08 a las 15:00 (hora local, UTC+1).**
+**Actualizado el 2026-11-08 a las 15:55 (hora local, UTC+1).**
 - Copia del usuario: `rebelum-3d` @ `ce84422`.
 - Árbol del encargo: `rebelum-alpha` @ `aabe5ad`.
 
@@ -471,4 +471,16 @@
     principal. El texto publicado es idéntico al local.
 - **Evidencia de la descarga** (14:59): una petición de los 4 primeros bytes del archivo de GitHub devuelve `50 4b 03 04`,
   igual que la APK local.
+- **Copia de la original** (08/11, 15:53), como pidió el usuario («Sí, cópiala»):
+  - se descargó de la release `v0.1.0` del repositorio principal y su SHA-256 coincide con el `digest` de allí:
+    `8d4f3107816f9b5a0dd5074e40bb3aafd230b391d2a46aef0c9f7b50a87cb67b`;
+  - es la app estable: `com.aethelgard.juego`, versionCode 1 y versionName `0.1`;
+  - ninguno de sus 1731 archivos es una pista de Suno;
+  - en el repositorio de pruebas, la release se titula «05/11/2026 · Original v0.1.0», con el archivo
+    `Aethelgard_2026-11-05_v0.1.0.apk` y el mismo `digest`;
+  - va etiquetada sobre el primer commit (`8ece9e3`). `gh release list`, que ordena por fecha como GitHub, la muestra
+    la última, debajo de la Prueba v39. «Latest» sigue en la Prueba v39;
+  - el `README.md` (commit `d0eb7fa`) la añade al final de la tabla;
+  - la petición de los 4 primeros bytes devuelve `50 4b 03 04`.
+- **Sin ver:** la página web de releases. El orden se comprobó con `gh release list`.
 - **Pendiente de verificar:** la descarga completa y la instalación en el móvil, que hace el usuario.
