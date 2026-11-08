@@ -1292,6 +1292,35 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
   sin registrar, en el repositorio desde el primer commit), igual que la v57 y anteriores; no lleva Suno.
 - **Pies que patinan en 3D:** a la velocidad de exploración se usará el clip de correr, que encaja con 4,2 m/s, y el
   de andar solo a poca velocidad. La velocidad de juego no cambia. Lo implementa animaciones en su tanda 2.
+- **Combate: lo adoptado del diseño** (`docs/diseno/combate_ampliaciones.md`, rama `area-combate`):
+  - pestañas por familia en el menú de magia;
+  - la ranura se llama «Accesorio»; nada de «Quiebrasello»;
+  - las magias nuevas se aprenden por nivel y con libros;
+  - las familias nuevas no hacen daño y no pasan por el código de las 12 protegidas.
+- **Narrativa: lo adoptado del diseño** (`docs/diseno/ciudades_y_lugares.md`, rama `area-narrativa`):
+  - los lugares nuevos, desde el 11 (Pastos Verdes sigue siendo el 10);
+  - el mapa colorea sus regiones solo con los 10 lugares originales;
+  - las notas nuevas del Diario, en una lista aparte guardada en `lore_visto`;
+  - los cofres hechos a mano, con identificador escrito;
+  - el texto de T-086: 6 cambios de lectura en el móvil sin tocar hechos (entre ellos, partir dos globos del
+    prólogo).
+- **Pendiente del usuario** (no se implementa hasta que decida):
+  - **Combate:**
+    - que las debilidades de los enemigos nuevos multipliquen también el daño de las 12 magias protegidas;
+    - P1, «Guardia a tiempo» (pulsar justo antes de un golpe quita un 40 %), y si va activada por defecto;
+    - P2, la familia ofensiva «Eclipse»;
+    - aspectos provisionales para los enemigos, o esperar al arte de Meshy;
+    - si las Fauces de Gorthor se ganan se le perdone o no.
+  - **Historia:**
+    - Olvido, la tabernera que crió a Kael, como posadera de Oakhaven;
+    - la Cripta de las Urnas bajo el crematorio;
+    - Aldea Rocío y la misión «El nombre borroso»;
+    - compañeros: Brea, piloto de la Astraea; Nyx, cuarto héroe en el acto III; Nerea, acompañante;
+    - Pip y Lucero como acompañantes ligeros;
+    - precios por posada o 30 monedas en todas;
+    - la abuela de Lumi;
+    - los centinelas que se apartan ante Kael;
+    - «El Costillar» como apodo de Sunken City.
 
 ## 6. Diseño ya implementado del 30/10 al 05/11
 

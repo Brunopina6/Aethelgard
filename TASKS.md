@@ -60,16 +60,16 @@
 | [T-082](#t-082) | Organización por especialistas: coordinador y cinco subagentes (encargo del 08/11, 22:00) | En curso | Alta |
 | [T-083](#t-083) | Sonido: primera tanda de efectos de la biblioteca del usuario en eventos reales | Tanda 1 integrada; falta escucharla | Alta |
 | [T-084](#t-084) | Animaciones: la mano de Kael en el diálogo inicial y gestos naturales | Tanda 1 integrada; tanda 2 pendiente | Alta |
-| [T-085](#t-085) | Gráficos: el mapamundi (costas, agua, relieve, biomas, lugares y rótulos) | Pendiente | Alta |
-| [T-086](#t-086) | Narrativa: el diálogo inicial y la misión de Pastos Verdes | Pendiente | Media |
+| [T-085](#t-085) | Gráficos: el mapamundi (costas, agua, relieve, biomas, lugares y rótulos) | En curso (fase 1, desde las 23:12) | Alta |
+| [T-086](#t-086) | Narrativa: el diálogo inicial y la misión de Pastos Verdes | Revisión hecha; falta aplicarla | Media |
 | [T-087](#t-087) | Combate: estabilidad con uno, dos y tres héroes y eventos sonoros de ataque e impacto | Pendiente | Media |
 | [T-088](#t-088) | GitHub: rama de integración y ramas por área, con revisión antes de cada push | En curso (tanda 1 subida) | Alta |
-| [T-089](#t-089) | Mejorar todas las ciudades del juego (encargo del 08/11, 23:05) | Pendiente | Alta |
-| [T-090](#t-090) | Muchos sitios nuevos que explorar, coherentes con el canon y el mapamundi | Pendiente | Alta |
-| [T-091](#t-091) | Magias nuevas, sin cambiar las existentes | Pendiente | Alta |
-| [T-092](#t-092) | Equipo nuevo: accesorios y armas especiales (encargo del 08/11, 23:35) | Pendiente | Alta |
-| [T-093](#t-093) | Enemigos nuevos, con identidad táctica | Pendiente | Alta |
-| [T-094](#t-094) | Compañeros de viaje: propuesta y versión que no cambie el canon | Pendiente | Media |
+| [T-089](#t-089) | Mejorar todas las ciudades del juego (encargo del 08/11, 23:05) | Diseño hecho (fase 0) | Alta |
+| [T-090](#t-090) | Muchos sitios nuevos que explorar, coherentes con el canon y el mapamundi | Diseño hecho (fase 0) | Alta |
+| [T-091](#t-091) | Magias nuevas, sin cambiar las existentes | En curso (fase 1: datos y red de seguridad) | Alta |
+| [T-092](#t-092) | Equipo nuevo: accesorios y armas especiales (encargo del 08/11, 23:35) | En curso (fase 1: datos) | Alta |
+| [T-093](#t-093) | Enemigos nuevos, con identidad táctica | Diseño hecho; espera decisiones del usuario | Alta |
+| [T-094](#t-094) | Compañeros de viaje: propuesta y versión que no cambie el canon | Propuesta hecha; decide el usuario | Media |
 
 ## Continuidad
 
@@ -636,7 +636,8 @@
 
 ### T-085
 **Gráficos: el mapamundi**
-- **Estado:** pendiente (tanda 2). **Prioridad:** alta. **Responsable:** especialista de gráficos.
+- **Estado:** en curso: la fase 1 (análisis, propuesta y prototipo en archivos nuevos) va desde las 23:12, en
+  `D:\Aethelgard_graficos`, rama `area-graficos`. **Prioridad:** alta. **Responsable:** especialista de gráficos.
 - **Petición** [usuario]: «La captura muestra costas escalonadas, grandes manchas planas y poco detalle geográfico.»
   - Analizar cómo se genera y se dibuja antes de elegir la técnica. No basta con ampliar la imagen.
   - Lo que pide: costas cuidadas, agua con profundidad, relieve, montañas, bosques y biomas; ciudades, caminos y lugares
@@ -651,7 +652,10 @@
 
 ### T-086
 **Narrativa: el diálogo inicial y la misión de Pastos Verdes**
-- **Estado:** pendiente (tanda 2, con animaciones). **Prioridad:** media. **Responsable:** especialista de narrativa.
+- **Estado:** revisión hecha (09/11 a las 00:40): la tabla de antes y después de las 44 frases, con 6 cambios que no
+  tocan hechos ni canon, está en `docs/diseno/ciudades_y_lugares.md` §5.2 (rama `area-narrativa`). Se aplica cuando
+  animaciones suelte los `.dtl`; adoptada por el coordinador ([D-073](DECISIONS.md#d-073)). **Prioridad:** media.
+  **Responsable:** especialista de narrativa.
 - **Petición** [usuario]: más ritmo, claridad y personalidad.
   - Quitar repeticiones y frases difíciles de leer en el móvil.
   - Las personalidades guían reacciones y gestos; la intención de cada intervención se coordina con animaciones.
@@ -694,7 +698,12 @@
 
 ### T-089
 **Mejorar todas las ciudades del juego**
-- **Estado:** pendiente: va después de las tandas 1 a 3. **Prioridad:** alta. Decisión: [D-071](DECISIONS.md#d-071).
+- **Estado:** diseño hecho (fase 0, 09/11 a las 00:40), en `docs/diseno/ciudades_y_lugares.md` §2 (rama
+  `area-narrativa`). **Prioridad:** alta. Decisión: [D-071](DECISIONS.md#d-071).
+  - Oakhaven, «la ciudadela de los faroles»: la Taberna del Cuervo Oxidado, el crematorio, el Árbol Milenario y 8 NPC.
+  - Sunken City, «la ciudad en las costillas»: un buque varado, la posada El Ancla Seca y el Casco como mazmorra.
+  - La Arboleda Mítica, ampliada.
+  - Las historias que hay que decidir están en [D-073](DECISIONS.md#d-073).
 - **Petición** [usuario, 08/11, 23:05]: «quiero que mejores todas ciudades del juego quiero un juego ambicioso».
 - **Criterio de aceptación:**
   - inventario de las ciudades que existen (2D y 3D) y de lo que tiene cada una;
@@ -704,7 +713,9 @@
 
 ### T-090
 **Muchos sitios nuevos que explorar**
-- **Estado:** pendiente: va después de las tandas 1 a 3. **Prioridad:** alta. Decisión: [D-071](DECISIONS.md#d-071).
+- **Estado:** diseño hecho (fase 0), en `docs/diseno/ciudades_y_lugares.md` §3: 8 sitios, primero los de canon
+  (crematorio y Cripta, Templo del Cristal del Cielo, Cala de los Mástiles y Gruta de la Marea, Abismo Quebrado).
+  **Prioridad:** alta. Decisión: [D-071](DECISIONS.md#d-071).
 - **Petición** [usuario, 08/11, 23:05]: «con muchos sitios para explorar».
 - **Criterio de aceptación:**
   - lugares nuevos coherentes con el canon (biblia v2) y con el mapamundi, cada uno con algo que hacer: secretos,
@@ -715,8 +726,13 @@
 
 ### T-091
 **Magias nuevas, sin cambiar las existentes**
-- **Estado:** pendiente: va con la tanda de combate o después. **Prioridad:** alta. Decisión:
-  [D-071](DECISIONS.md#d-071).
+- **Estado:** en curso.
+  - Diseño hecho, en `docs/diseno/combate_ampliaciones.md` (rama `area-combate`): tres familias que no hacen daño.
+    - Alba (Kael): el ritmo del ATB.
+    - Escarcha (Kael): barreras.
+    - Lumbre (Lya): revivir y aguantar.
+  - Fase 1 desde la 01:00: la red de seguridad y los datos.
+- **Prioridad:** alta. Decisión: [D-071](DECISIONS.md#d-071).
 - **Petición** [usuario, 08/11, 23:05]: «crea más magias».
 - **Criterio de aceptación:**
   - cada magia nueva, con una función táctica clara, acceso desde el juego (quién la aprende y cuándo), coste,
@@ -728,8 +744,11 @@
 
 ### T-092
 **Equipo nuevo: accesorios y armas especiales**
-- **Estado:** pendiente: va con la tanda de combate o después. **Prioridad:** alta. Decisión:
-  [D-072](DECISIONS.md#d-072).
+- **Estado:** en curso.
+  - Diseño hecho: una ranura «Accesorio» al final (las otras 7 ya existen), con 8 accesorios, y 6 armas especiales.
+  - Los efectos son aditivos: sin ese equipo, el combate da lo mismo que hoy.
+  - Fase 1: los datos.
+- **Prioridad:** alta. Decisión: [D-072](DECISIONS.md#d-072).
 - **Petición** [usuario, 08/11, 23:35]: «AÑADE TAMBIEN ACESORIOS CREA ARMA ESPECIALES».
 - **Criterio de aceptación:**
   - accesorios y armas especiales con efectos claros, que se consigan en el juego (cofres, tiendas o secretos) y se
@@ -740,8 +759,9 @@
 
 ### T-093
 **Enemigos nuevos, con identidad táctica**
-- **Estado:** pendiente: va con la tanda de combate o después. **Prioridad:** alta. Decisión:
-  [D-072](DECISIONS.md#d-072).
+- **Estado:** diseño hecho: 10 enemigos, 8 posibles con lo que ya hay. Esperan dos decisiones del usuario
+  ([D-073](DECISIONS.md#d-073)): las debilidades frente a las magias protegidas y los aspectos provisionales.
+  **Prioridad:** alta. Decisión: [D-072](DECISIONS.md#d-072).
 - **Petición** [usuario, 08/11, 23:35]: «ENEMIGOS».
 - **Criterio de aceptación:**
   - cada enemigo nuevo, con un patrón y una debilidad que se puedan leer en combate;
@@ -752,7 +772,9 @@
 
 ### T-094
 **Compañeros de viaje**
-- **Estado:** pendiente. **Prioridad:** media. Decisión: [D-072](DECISIONS.md#d-072).
+- **Estado:** propuesta hecha (`docs/diseno/ciudades_y_lugares.md` §4): Nyx (ya está en `grupo.gd`), Brea y Nerea, y en
+  versión ligera Pip como guía y Lucero, el perro de Aldea Rocío. Decide el usuario ([D-073](DECISIONS.md#d-073)).
+  **Prioridad:** media. Decisión: [D-072](DECISIONS.md#d-072).
 - **Petición** [usuario, 08/11, 23:35]: «AMIGOS DE VIAJE».
 - **Criterio de aceptación:**
   - una propuesta de compañeros (quiénes son, de dónde salen, qué aportan), marcada como propuesta para la biblia;
