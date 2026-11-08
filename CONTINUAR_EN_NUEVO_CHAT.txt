@@ -1,37 +1,31 @@
 MENSAJE PARA EMPEZAR UNA CONVERSACIÓN NUEVA SOBRE AETHELGARD / REBELUM
-Preparado el 2026-11-07.
+Preparado el 2026-11-08 a las 22:05. Sirve para que otro chat asuma la coordinación de los especialistas.
 
 Cómo usarlo:
-1. Abre la conversación nueva en la carpeta D:\Aethelgard (o D:\Aethelgard\aethelgard).
+1. Abre la conversación nueva en la carpeta D:\Aethelgard\aethelgard (o D:\Aethelgard).
 2. Copia y pega todo lo que hay entre las dos líneas de guiones.
 
 ------------------------------------------------------------------------
-Proyecto: AETHELGARD / REBELUM, un JRPG hecho con Godot 4.7.2.
-- Repositorio: D:\Aethelgard. El proyecto de Godot está en D:\Aethelgard\aethelgard.
-- GitHub privado: Brunopina6/Aethelgard.
+Proyecto: AETHELGARD / REBELUM, un JRPG hecho con Godot 4.7.2 (Compatibility), Android primero.
+- Repositorio: D:\Aethelgard (rama rebelum-3d, la copia del usuario). El proyecto de Godot está en D:\Aethelgard\aethelgard.
+- Trabajo del encargo: D:\Aethelgard_alpha (rama rebelum-alpha), base de la integración.
+- GitHub privado: Brunopina6/Aethelgard. La memoria se publica en la rama memoria-desarrollo.
 
-Abre este repositorio y lee CLAUDE.md, SESSION_HANDOFF.md, TASKS.md, el resumen e índice de MEMORIA_CHAT.md y los apartados pertinentes de PROJECT_CONTEXT.md y DECISIONS.md. Comprueba la rama, el commit y los cambios locales. Recupera las restricciones y autorizaciones vigentes, identifica el siguiente paso pendiente y continúa dentro del alcance autorizado. Contrasta los documentos con el estado real antes de modificar archivos.
+Tu papel: eres el AGENTE COORDINADOR. Organizas el desarrollo con cinco especialistas (gráficos, sonido, narrativa, combate y animaciones), cada uno en su copia de trabajo y su rama. Repartes tareas acotadas (archivos asignados, dependencias y criterios de aceptación), revisas sus entregas, integras, ejecutas las comprobaciones finales, mantienes la memoria central y publicas lo autorizado. El reparto está en DECISIONS.md (D-069) y la autorización de GitHub en D-070.
 
-CONSULTA OBLIGATORIA DE MEMORIA ANTES DE RESPONDER O ACTUAR
+Antes de responder o actuar:
+1. Comprueba el último commit de memoria-desarrollo, solo leyendo: git ls-remote origin refs/heads/memoria-desarrollo. Si la copia D:\Aethelgard_memoria está limpia y le falta, tráelo con git -C D:\Aethelgard_memoria pull --ff-only.
+2. Lee CLAUDE.md, SESSION_HANDOFF.md, TASKS.md (T-081 a T-088), el resumen de MEMORIA_CHAT.md y D-069 y D-070 de DECISIONS.md. Los informes de cada especialista están en docs/memory/agents/.
+3. Contrasta con Git: git status, git branch -vv, git worktree list, el commit de cada rama y los cambios sin confirmar. Mira si hay algún Godot abierto: puedo tener mi editor sobre D:\Aethelgard\aethelgard, y ahí no se lanza otro.
+4. Comprueba qué especialistas hay en .claude/agents/ y si esta sesión puede usarlos como subagentes.
+5. Sigue el «Próximo paso concreto» de SESSION_HANDOFF.md. Mis instrucciones actuales prevalecen sobre los encargos antiguos.
 
-Antes de responder a cualquier petición sobre el proyecto o de modificar archivos:
-1. Comprueba el último commit de la rama memoria-desarrollo del repositorio de GitHub Brunopina6/Aethelgard, solo leyendo:
-   git ls-remote origin refs/heads/memoria-desarrollo
-   El 2026-11-07 esa rama todavía no existía.
-2. Consulta el índice de memoria, SESSION_HANDOFF.md y TASKS.md. Lee los apartados de MEMORIA_CHAT.md, PROJECT_CONTEXT.md y DECISIONS.md que pida la petición.
-3. Compara esa información con la rama local, el commit actual y los cambios sin confirmar. Comprueba también qué versión del código describe la memoria.
-4. Basa tu respuesta y tus acciones en ese estado contrastado y en mis instrucciones actuales.
+Prioridades actuales: los efectos de sonido de mi biblioteca (D:\qtorrent\sound effect), la mano de Kael en el diálogo inicial y la calidad del mapamundi. Orden: sonido, animaciones, mapamundi, narrativa con animaciones y combate con sonido. Concurrencia moderada: tandas de dos especialistas como mucho, sin compilaciones, importaciones ni medidas que compitan.
 
-Además:
-- Si ya leíste la memoria en esta sesión, comprueba si el commit remoto ha cambiado. Relee solo los documentos modificados y lo que pida la petición.
-- Consulta GitHub sin sobrescribir archivos locales y sin cambiar de rama en una copia con trabajo pendiente.
-- Si encuentras discrepancias, averigua su origen antes de cambiar nada y conserva los avances locales.
-- Si GitHub no está disponible, usa la última memoria local verificada, di brevemente que no has podido comprobar novedades remotas y sigue con lo que se pueda hacer con seguridad. No afirmes haber consultado GitHub si el acceso falló.
-- Mis instrucciones actuales prevalecen sobre los encargos antiguos. Trata la memoria como documentación histórica y contrástala con el código y con lo que puedas comprobar.
-- Después de una decisión importante o de un cambio verificado, actualiza la memoria correspondiente. Publícala según la autorización y las reglas de revisión establecidas. Hoy eso significa publicar solo con mi autorización expresa.
+Reglas que no cambian: nada en main ni en desarollo; nunca force push ni nada destructivo; nunca git add .; la partida del PC se conserva tal cual; todas las pruebas con datos aislados (pruebas/ejecutar_pruebas.ps1); el Redmi solo recibe APK de prueba copiadas a Descargas por USB y comprobadas (yo las instalo); nada de Suno en APK ni en GitHub; se conservan las magias, Esgrima, Embuir, Érebo, la Armonía y el ATB; calidad visual primero, con antes y después. Respóndeme en español.
 ------------------------------------------------------------------------
 
 FRASE CORTA
 Úsala si la conversación ya está abierta en D:\Aethelgard, porque Claude carga CLAUDE.md solo:
 
-Lee CLAUDE.md y sigue su protocolo de inicio: comprueba memoria-desarrollo, lee SESSION_HANDOFF.md, TASKS.md y el resumen de MEMORIA_CHAT.md, contrasta con Git y dime el estado y el siguiente paso antes de tocar nada.
+Lee CLAUDE.md y sigue su protocolo de inicio: comprueba memoria-desarrollo, lee SESSION_HANDOFF.md, TASKS.md y el resumen de MEMORIA_CHAT.md, contrasta con Git y continúa como coordinador de los especialistas desde el «Próximo paso concreto».

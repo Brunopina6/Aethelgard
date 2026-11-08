@@ -1,8 +1,9 @@
 # TASKS: tareas de AETHELGARD / REBELUM
 
-**Actualizado el 2026-11-08 a las 21:20 (hora local, UTC+1).**
+**Actualizado el 2026-11-08 a las 22:05 (hora local, UTC+1).**
 - Copia del usuario: `rebelum-3d` @ `b8e042d` (la protección del guardado, [D-066](DECISIONS.md#d-066)).
-- Árbol del encargo: `rebelum-alpha` @ `40fb5b8`.
+- Árbol del encargo: `rebelum-alpha` @ `375cc8c` (el prólogo, T-081).
+- Desde las 22:00, organización por especialistas: [T-082](#t-082) a [T-088](#t-088).
 
 **Estados**
 - **Pendiente:** sin empezar.
@@ -54,7 +55,14 @@
 | [T-078](#t-078) | Validar las APK en el Redmi | Bloqueada (usuario): la v54 ya está en sus Descargas ([D-065](DECISIONS.md#d-065)); falta instalarla y probarla | Media |
 | [T-079](#t-079) | Repositorio privado para descargar las APK de prueba en el móvil | Terminada | — |
 | [T-080](#t-080) | Decidir la nivelación automática de quien se une al grupo (D-062) | Bloqueada (usuario) | Baja |
-| [T-081](#t-081) | El primer diálogo: presentación, cámara, texto y gestos (encargo del 08/11 por la noche) | Pendiente | Alta |
+| [T-081](#t-081) | El primer diálogo: presentación, cámara, texto y gestos (encargo del 08/11 por la noche) | En curso (prólogo hecho, `375cc8c`) | Alta |
+| [T-082](#t-082) | Organización por especialistas: coordinador y cinco subagentes (encargo del 08/11, 22:00) | En curso | Alta |
+| [T-083](#t-083) | Sonido: primera tanda de efectos de la biblioteca del usuario en eventos reales | Pendiente | Alta |
+| [T-084](#t-084) | Animaciones: la mano de Kael en el diálogo inicial y gestos naturales | Pendiente | Alta |
+| [T-085](#t-085) | Gráficos: el mapamundi (costas, agua, relieve, biomas, lugares y rótulos) | Pendiente | Alta |
+| [T-086](#t-086) | Narrativa: el diálogo inicial y la misión de Pastos Verdes | Pendiente | Media |
+| [T-087](#t-087) | Combate: estabilidad con uno, dos y tres héroes y eventos sonoros de ataque e impacto | Pendiente | Media |
+| [T-088](#t-088) | GitHub: rama de integración y ramas por área, con revisión antes de cada push | Pendiente | Alta |
 
 ## Continuidad
 
@@ -752,7 +760,9 @@
 
 ### T-081
 **El primer diálogo: presentación, cámara, texto y gestos (encargo del 08/11 por la noche)**
-- **Estado:** pendiente. **Prioridad:** alta.
+- **Estado:** en curso. El prólogo está hecho y probado (`375cc8c`, [D-068](DECISIONS.md#d-068)). Falta poder verlo
+  en el Redmi (el botón de desarrollo «Probar el prólogo», diseñado en [SESSION_HANDOFF.md](SESSION_HANDOFF.md)) y
+  revisarlo en el teléfono. Sigue en [T-084](#t-084) y [T-086](#t-086). **Prioridad:** alta.
 - **Petición** [usuario]: «El diálogo que aparece al abrir el juego me parece pobre. Quiero mejorar su presentación y
   las animaciones de los personajes.» Primero localizarlo arrancando con una partida aislada (partida nueva y
   existente), observarlo con ventana y guardar capturas o vídeo de referencia; después mejorar esa conversación
@@ -763,3 +773,101 @@
 - **Reglas:** conservar los hechos del argumento, hitos, recompensas y canon (se pueden pulir frases manteniendo su
   sentido y la voz de cada personaje); una pulsación por acción (una completa la frase, la siguiente avanza); misión
   separada de las animaciones; medir antes y después; capturas antes/después.
+- **Evidencia** (22:00, `375cc8c`, comprobado ejecutando y aislado): `prueba_prologo` (entero, saltar en el diálogo y
+  saltar en la entrada) y la batería completa: 37 superadas, 0 fallidas, 19 manuales y 0 no seguras
+  (`D:\REBELUM_diagnostico\pruebas\2026-11-08_214904\resumen.md`). Capturas antes y después y medidas en
+  `D:\REBELUM_diagnostico\prologo_antes_despues\` ([D-068](DECISIONS.md#d-068)). Sin probar en el Redmi.
+
+### T-082
+**Organización por especialistas: coordinador y cinco subagentes (encargo del 08/11, 22:00)**
+- **Estado:** en curso. **Prioridad:** alta. **Responsable:** el coordinador.
+- **Petición** [usuario]: «Organiza el desarrollo de AETHELGARD mediante subagentes especializados, con un agente
+  principal que coordine, revise e integre su trabajo.» Áreas: gráficos, sonido, narrativa, combate y animaciones.
+- **Criterio de aceptación:**
+  - comprobado qué subagentes admite la versión instalada y con qué aislamiento;
+  - los cinco especialistas, configurados en `.claude/agents/` con el formato admitido y usados de verdad al delegar;
+  - cada uno con su copia de trabajo, su rama y su informe en `docs/memory/agents/`;
+  - sin compilaciones, importaciones ni medidas que compitan.
+- **Reglas:** [D-069](DECISIONS.md#d-069).
+
+### T-083
+**Sonido: primera tanda de efectos de la biblioteca del usuario en eventos reales**
+- **Estado:** pendiente (tanda 1). **Prioridad:** alta. **Responsable:** especialista de sonido.
+- **Petición** [usuario]: aprovechar `D:\qtorrent\sound effect` para que las acciones del juego tengan respuesta
+  sonora. Pasos e interacción; ataques físicos, impactos y defensas; cofres, puertas, objetos y recompensas; victoria,
+  derrota y menús; río, cascada, viento y naturaleza; habilidades nuevas y eventos narrativos autorizados.
+- **Criterio de aceptación:**
+  - inventario y candidatos revisados, y licencia comprobable de cada efecto;
+  - una primera tanda integrada desde eventos reales (no toda la biblioteca), con derivados optimizados y los
+    originales intactos;
+  - los buses actuales; volúmenes, límites de sonidos simultáneos y prioridades;
+  - probadas las repeticiones, cancelaciones, pausa, cambio de escena y silencio;
+  - una tabla por efecto: fuente, recurso, evento, licencia y evidencia;
+  - si no se puede escuchar, se dice y se preparan muestras.
+- **Reglas:** el catálogo mágico no cambia; si sonorizar una magia exige cambiar su presentación, se deja para una
+  decisión aparte. Nada de Suno en APK ni en GitHub.
+
+### T-084
+**Animaciones: la mano de Kael en el diálogo inicial y gestos naturales**
+- **Estado:** pendiente (tanda 1). **Prioridad:** alta. **Responsable:** especialista de animaciones.
+- **Petición** [usuario]: revisar la pose de Kael «con la mano junto a la cabeza mientras habla Lya». Encontrar la
+  causa (clip, duración, transición, mezcla, esqueleto o pose procedural) y corregirla.
+  - Gestos naturales: reposo cómodo, miradas a quien habla, reacciones breves, transiciones suaves, pies apoyados y
+    armas en su sitio, sin movimiento constante.
+  - Conservar el resaltado de quien habla.
+- **Hallazgo previo** (22:00, observado en el archivo): en el prólogo, la mano está en la propia ilustración
+  `dialogos/retratos/kael.png`, la única de Kael.
+- **Criterio de aceptación:**
+  - la causa, demostrada, y la secuencia completa, comprobada en movimiento;
+  - comprobado avanzar rápido, saltar, reabrir el diálogo y volver al juego;
+  - capturas comparables y, si se puede, un vídeo corto antes/después.
+
+### T-085
+**Gráficos: el mapamundi**
+- **Estado:** pendiente (tanda 2). **Prioridad:** alta. **Responsable:** especialista de gráficos.
+- **Petición** [usuario]: «La captura muestra costas escalonadas, grandes manchas planas y poco detalle geográfico.»
+  - Analizar cómo se genera y se dibuja antes de elegir la técnica. No basta con ampliar la imagen.
+  - Lo que pide: costas cuidadas, agua con profundidad, relieve, montañas, bosques y biomas; ciudades, caminos y lugares
+    legibles; iconos y rótulos coherentes; composición y paleta para el móvil.
+- **Criterio de aceptación:**
+  - destinos, identificadores, conexiones, posiciones funcionales, encuentros y progreso, iguales;
+  - una comparación visual que oriente la implementación;
+  - comprobado a la resolución del juego y al tamaño de la pantalla del Redmi;
+  - memoria, carga y tiempos por fotograma, medidos;
+  - la procedencia de cada recurso, registrada;
+  - el mapa actual se conserva como alternativa hasta que el nuevo supere las pruebas.
+
+### T-086
+**Narrativa: el diálogo inicial y la misión de Pastos Verdes**
+- **Estado:** pendiente (tanda 2, con animaciones). **Prioridad:** media. **Responsable:** especialista de narrativa.
+- **Petición** [usuario]: más ritmo, claridad y personalidad.
+  - Quitar repeticiones y frases difíciles de leer en el móvil.
+  - Las personalidades guían reacciones y gestos; la intención de cada intervención se coordina con animaciones.
+- **Criterio de aceptación:**
+  - canon, hitos, recompensas y restricciones de revelación, intactos; los cambios grandes, como propuestas;
+  - continuidad comprobada con Kael solo, la incorporación de Lya y la llegada de Garon: el texto, los personajes
+    presentes y el estado de la misión coinciden.
+
+### T-087
+**Combate: estabilidad y respuesta**
+- **Estado:** pendiente (tanda 3, con sonido). **Prioridad:** media. **Responsable:** especialista de combate.
+- **Petición** [usuario]:
+  - encuentros con uno, dos y tres héroes, niveles reales de incorporación y controles;
+  - objetivos válidos, personajes ausentes, victoria, huida, derrota, recompensas y vuelta a la exploración;
+  - con sonido: que el ataque y el impacto suenen una sola vez y a la vez que la resolución real.
+- **Reglas:**
+  - no cambian las magias, Esgrima, Embuir, Érebo, la Armonía ni la progresión autorizada;
+  - la nivelación automática sigue retirada ([T-080](#t-080));
+  - no se tocan fórmulas para acomodar animaciones.
+
+### T-088
+**GitHub: rama de integración y ramas por área**
+- **Estado:** pendiente (antes de la tanda 1). **Prioridad:** alta. **Responsable:** el coordinador.
+- **Petición** [usuario]: [D-070](DECISIONS.md#d-070).
+- **Criterio de aceptación:**
+  - antes de cada push, el repositorio privado comprobado y los archivos y diferencias, revisados;
+  - nada de secretos, partidas, cachés, exportaciones del chat, archivos ajenos, APK, bibliotecas completas ni
+    binarios grandes;
+  - los permisos de publicación de los recursos, comprobados; lo que no se pueda publicar, documentado con ruta local,
+    procedencia y requisitos;
+  - sin force push ni pushes simultáneos.

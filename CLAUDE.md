@@ -55,8 +55,9 @@ pida la tarea.
 - **Tamaño de la memoria:**
   - si un documento crece demasiado, archiva el detalle en `docs/memory/archive/AAAA-MM-DD_tema.md` y enlázalo;
   - mantén el relevo centrado en el presente.
-- **Publicar la memoria:** el usuario lo autorizó el 2026-11-07 para cada hito. **El push solo vale para la
-  documentación de memoria:** nunca código, recursos ni la exportación privada del chat.
+- **Publicar la memoria:** el usuario lo autorizó el 2026-11-07 para cada hito. **El push a `memoria-desarrollo` solo
+  vale para la documentación de memoria:** nunca código, recursos ni la exportación privada del chat. El código va por
+  las ramas de trabajo ([D-070](DECISIONS.md#d-070)).
   1. Edita los documentos en `D:\Aethelgard`.
   2. Cópialos a `D:\Aethelgard_memoria` (rama `memoria-desarrollo`): los siete de la raíz y `docs/memory/`.
   3. Revisa `git status` y `git diff`, busca datos sensibles y confirma nombrando cada archivo.
@@ -66,10 +67,15 @@ pida la tarea.
 
 **Git**
 - No escribas en `main` (estable) ni en `desarollo` (desarrollo; se escribe **con una sola r**) sin autorización.
-- Nada de push, merge a ramas compartidas, release, despliegue ni publicación sin autorización expresa. Las únicas
-  autorizaciones vigentes son estas dos:
+- Nada de push, merge a ramas compartidas, release, despliegue ni publicación sin autorización expresa. Las
+  autorizaciones vigentes son estas tres:
   - el push de la memoria (§2);
-  - las APK de prueba en el repositorio privado `Brunopina6/Aethelgard-pruebas` ([D-054](DECISIONS.md#d-054)).
+  - las APK de prueba en el repositorio privado `Brunopina6/Aethelgard-pruebas` ([D-054](DECISIONS.md#d-054));
+  - desde el 08/11 a las 22:00, código, configuraciones de agentes y documentación **revisados**, en ramas de trabajo
+    de `Brunopina6/Aethelgard`: una por área y una de integración ([D-070](DECISIONS.md#d-070)). Publica el
+    coordinador, tras comprobar la privacidad, los archivos, las diferencias y los permisos de los recursos. Nunca en
+    `main` ni en `desarollo`, nunca force push, y nunca APK, bibliotecas completas, binarios grandes, partidas,
+    cachés, secretos ni la exportación del chat.
 - Nada destructivo: ni `reset --hard`, ni `push --force`, ni reescribir historial, ni borrados o limpiezas masivas.
   No borres la rama `respaldo-d155a36` ni las etiquetas.
 - Nunca `git add .`: commits locales pequeños, nombrando cada archivo, y revisando `git status` y `git diff` antes.
@@ -167,6 +173,7 @@ pida la tarea.
 | [DECISIONS.md](DECISIONS.md) | Decisiones aprobadas, propuestas y sustituidas, con sus motivos |
 | [CONTINUAR_EN_NUEVO_CHAT.txt](CONTINUAR_EN_NUEVO_CHAT.txt) | Mensaje para pegar en una conversación nueva |
 | [docs/memory/](docs/memory/) | Historial detallado y archivo de la memoria |
+| [docs/memory/agents/](docs/memory/agents/) | El informe de cada especialista: sonido, animaciones, gráficos, narrativa y combate |
 | [docs/plan_migracion_3d.md](docs/plan_migracion_3d.md) | Hoja de ruta 3D aprobada (fases 2.0 a 2.8) |
 | [docs/fase1_resumen_departamentos.md](docs/fase1_resumen_departamentos.md) | Auditorías de la Fase 1 |
 | `D:\Aethelgard_alpha\docs\fase2\registro_encargo.md` | Registro del encargo de implementación (rama `rebelum-alpha`) |
@@ -178,3 +185,12 @@ pida la tarea.
 
 En la rama `memoria-desarrollo` solo están estos documentos. Sus enlaces a otros archivos de `docs/` funcionan en
 `D:\Aethelgard`, pero no en GitHub.
+
+## 6. Organización por especialistas
+
+Desde el 08/11 a las 22:00 ([D-069](DECISIONS.md#d-069)), un coordinador y cinco especialistas: gráficos, sonido,
+narrativa, combate y animaciones.
+- Configuración en `.claude/agents/`; informes en `docs/memory/agents/`; reparto y estado en [TASKS.md](TASKS.md)
+  (T-082 a T-088).
+- Cada especialista trabaja en su copia de trabajo y su rama. Un archivo compartido tiene un solo responsable a la vez.
+- Concurrencia moderada, por tandas: nunca dos compilaciones, importaciones o medidas que compitan.

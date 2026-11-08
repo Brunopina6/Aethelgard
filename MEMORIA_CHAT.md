@@ -1,6 +1,6 @@
 # MEMORIA_CHAT: lo aprendido en las conversaciones sobre AETHELGARD / REBELUM
 
-> **Actualizado el 2026-11-08 a las 21:20** (hora local, UTC+1), en la rama `rebelum-3d` @ `b8e042d`. Se publica en la
+> **Actualizado el 2026-11-08 a las 22:05** (hora local, UTC+1), en la rama `rebelum-3d` @ `b8e042d`. Se publica en la
 > rama `memoria-desarrollo` de GitHub.
 >
 > Es un **resumen**, no una transcripción. El chat legible está en
@@ -143,6 +143,29 @@
     se sabe que no es libre (08/11): falta decidir qué la sustituye en una APK entregable;
   - decisiones de narrativa, de Érebo (D1-D12), de las Skills y de GitHub.
 - **Siguiente paso:** el de [SESSION_HANDOFF.md](SESSION_HANDOFF.md).
+- **Encargo del 08/11, hacia las 22:00** (pegado, 10 puntos): «Organiza el desarrollo de AETHELGARD mediante
+  subagentes especializados, con un agente principal que coordine, revise e integre su trabajo.»
+  - **Cinco áreas:** gráficos, sonido, narrativa, combate y animaciones. **Prioridades:** los efectos de sonido de su
+    biblioteca, la mano de Kael en el diálogo inicial y la calidad del mapamundi ([D-069](DECISIONS.md#d-069)).
+  - **Primero, la continuidad:** «La conversación está cerca del límite de contexto». Guardar el trabajo en un punto
+    recuperable, publicar la memoria y dejar `CONTINUAR_EN_NUEVO_CHAT.txt` listo para que otro chat coordine.
+  - **Subagentes reales:** comprobar qué admite la sesión y configurarlos en `.claude/agents/`. «Crear sus archivos de
+    configuración debe ir acompañado de su ejecución real cuando delegues una tarea.» Si algo no está disponible,
+    explicarlo y trabajar por turnos.
+  - **GitHub:** «Amplío expresamente la autorización anterior»: código, configuraciones de agentes y documentación
+    revisados, en ramas de trabajo de `Brunopina6/Aethelgard`; nunca en `main` ni en `desarollo`
+    ([D-070](DECISIONS.md#d-070)). Cada especialista lleva su informe en `docs/memory/agents/`.
+  - **Matices:**
+    - el resaltado de quien habla es intencionado y se conserva;
+    - nada de movimientos constantes ni gestos repetidos en cada frase;
+    - el mapa nuevo no cambia destinos, conexiones ni progreso, y el actual se conserva hasta que el nuevo supere las
+      pruebas;
+    - las pruebas simuladas se separan de las hechas con hardware real;
+    - cada APK copiada al Redmi se avisa con su nombre exacto.
+  - **Las capturas** que menciona (el mapamundi y la mano de Kael) no llegaron con el mensaje.
+  - **Del encargo de las 20:20** quedó hecho también el prólogo (`375cc8c`).
+  - **Hallazgo** [comprobado, 22:00]: en el prólogo, la mano de Kael junto a la cabeza está en la propia ilustración de
+    su retrato (`dialogos/retratos/kael.png`).
 
 ## Índice
 

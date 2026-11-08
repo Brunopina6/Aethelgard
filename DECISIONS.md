@@ -1,7 +1,7 @@
 # DECISIONS: decisiones de AETHELGARD / REBELUM
 
-**Actualizado el 2026-11-08 a las 21:20** sobre la copia del usuario (`rebelum-3d` @ `b8e042d`) y el árbol del
-encargo (`rebelum-alpha` @ `40fb5b8`). Las horas son locales (UTC+1).
+**Actualizado el 2026-11-08 a las 22:05** sobre la copia del usuario (`rebelum-3d` @ `b8e042d`) y el árbol del
+encargo (`rebelum-alpha` @ `375cc8c`). Las horas son locales (UTC+1).
 
 **Estados**
 - **Aprobada:** la tomó o la aprobó el usuario.
@@ -60,7 +60,7 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 | [D-046](#d-046) | Encargo único de implementación | Aprobada; reanudada el 07/11 |
 | [D-047](#d-047) | Sistema de memoria y continuidad | Aprobada |
 | [D-048](#d-048) | Las magias existentes no cambian; las ampliaciones son futuras | Aprobada |
-| [D-049](#d-049) | La memoria se publica en `memoria-desarrollo`, y solo la memoria | Aprobada |
+| [D-049](#d-049) | La memoria se publica en `memoria-desarrollo`, y solo la memoria | Aprobada; ampliada por [D-070](#d-070) |
 | [D-050](#d-050) | Licencias: recursos autorizados o sustitutos; el entregable excluye lo no acreditado | Aprobada |
 | [D-051](#d-051) | Primera versión de la región 3D de Pastos Verdes | Aprobada en el encargo |
 | [D-052](#d-052) | La misión del corte alfa dentro de la región | Aprobada en el encargo |
@@ -79,6 +79,9 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 | [D-065](#d-065) | El Redmi recibe por USB las APK de prueba en Descargas; instalar es cosa del usuario | Aprobada |
 | [D-066](#d-066) | La protección del guardado, traída a la copia habitual (`rebelum-3d`) | Aprobada |
 | [D-067](#d-067) | Gestor de música y ambiente por contexto, con ambientes CC0 (T-030) | Aprobada en el encargo |
+| [D-068](#d-068) | El prólogo con puesta en escena, retratos vivos y caja de texto legible (T-081) | Aprobada en el encargo |
+| [D-069](#d-069) | Organización por especialistas: un coordinador y cinco subagentes | Aprobada |
+| [D-070](#d-070) | GitHub: código, configuraciones de agentes y documentación revisados en ramas de trabajo | Aprobada |
 | [D-H01 a D-H15](#6-diseño-ya-implementado-del-3010-al-0511) | Diseño ya implementado antes de Git | Aprobada (historial) |
 
 ## 1. Reglas de trabajo, Git y versiones
@@ -1131,6 +1134,92 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
   - escucha real: **pendiente** (la hace el usuario; Prueba v57).
 - **Candidatos sin usar:** el resto de la colección CC0 y los paquetes GDC de Sonniss («ROYALTY-FREE»). El paquete de
   TomMusic no dice su licencia: no se usa.
+
+### D-068
+**El prólogo con puesta en escena, retratos vivos y caja de texto legible (T-081)**
+- **Fecha y estado:** 2026-11-08 por la noche. Aprobada en el encargo [usuario]: «El diálogo que aparece al abrir el
+  juego me parece pobre. Quiero mejorar su presentación y las animaciones de los personajes.»
+- **Cuál es:** con el arranque normal y una partida nueva, el prólogo de Kael y Lya (`dialogos/prologo.dtl`, 9
+  frases) en el mapa del mundo (`mapa.gd`). Con una partida existente no sale ningún diálogo al abrir. Con «Probar la
+  misión desde el principio», lo primero es PV-02 (Kael solo, en la región 3D).
+- **Antes** (capturas en `D:\REBELUM_diagnostico\prologo_antes_despues\antes\`): retratos 2D de cuerpo entero sobre el
+  mapa sin atenuar, con sus rótulos y el muñeco de Kael detrás; nada indica quién habla salvo el nombre; caja de 550 px
+  (la frase 5 en tres líneas); sin entrada; la caja salía a los 2,3 s.
+- **Decisión** (`rebelum-alpha`):
+  - **Puesta en escena** (`escena_dialogo.gd`, solo para el prólogo): el mapa se oscurece con una viñeta, bajan dos
+    franjas de cine, la cámara se acerca un 15 % y aparece el título «Prólogo»; el muñeco del mapa se oculta. «Saltar
+    ▸▸» (o Esc / B) termina la escena; al acabar o saltar, cámara, capas y control vuelven como estaban.
+  - **El diálogo arranca en el fotograma de llegada, aún en negro, en pausa y transparente**, y aparece con un fundido
+    tras la entrada: lo que Dialogic hace la primera vez (unos 60-70 ms en el PC, casi todo fuera del dibujo) se sigue
+    pagando donde no se ve, como antes.
+  - **Retrato vivo** (`dialogos/retrato_vivo.gd`, retrato «vivo» de Kael y Lya; el «normal» no cambia): respiración
+    desde los pies, foco (quien habla se ilumina y se adelanta; quien escucha se atenúa un poco), y gestos breves en 6
+    de las 9 frases (inquieta, ligero, duda, sorpresa, decidido, preocupada) que vuelven al reposo.
+  - **Texto:** el mismo, con pausas breves en los puntos suspensivos (`[pause]`). Hechos, hitos y canon, iguales.
+  - **Caja de texto, para todos los diálogos** (`boton_dialogo.gd`): 880 px de ancho, letra de 28 px con más
+    interlínea y márgenes, indicador de «sigue» en dorado y opciones más grandes. «SEGUIR» no se ve mientras Dialogic
+    está en pausa.
+- **Reutilizado:** las ilustraciones de los retratos, los ganchos de Dialogic (`_highlight`, `extra_data`), la cámara del
+  mapa, las letras y colores de `estilo.gd`. **Creado:** el retrato vivo (gestos por código), la capa de escena y su
+  prueba. **No posible en 2D:** miradas o expresiones nuevas (una sola ilustración por personaje).
+- **Medido en el PC** (con ventana, `--fixed-fps 30`; misma prueba en las dos versiones, `prueba_prologo_fotos medir`):
+  peor fotograma desde que se llega al mapa 9,6-11,4 ms antes y 9,9-10,8 ms después (una pasada de cinco, 101 ms); p95
+  y mediana iguales (7,5 y 6,9 ms); memoria estática al terminar, unos 2 MB más (137,0 frente a 135,1 MB). Una
+  versión intermedia, que arrancaba Dialogic tras la entrada, daba un tirón de 61-95 ms y se descartó.
+- **Comprobado:** `prueba_prologo` (sin ventana: entero, saltado a mitad y durante la entrada; todo vuelve; sin
+  hitos) y `prueba_prologo_fotos` (con ventana: una pulsación completa la frase que se escribe y la siguiente avanza;
+  Dialogic ignora a propósito las pulsaciones en los 0,1 s tras escribir una frase, para no saltarse dos).
+- **Pendiente:** verlo en el Redmi; extender el estilo a los demás diálogos; en los diálogos 3D (PV-02 y siguientes),
+  gestos con clips (Lya no tiene reposo; Blender 5.2 está instalado).
+- **Commit:** `375cc8c` en `rebelum-alpha` (08/11, 21:57), con la batería completa en verde.
+
+### D-069
+**Organización por especialistas: un coordinador y cinco subagentes**
+- **Fecha y estado:** 2026-11-08, 22:00. Aprobada [usuario]: «Organiza el desarrollo de AETHELGARD mediante subagentes
+  especializados, con un agente principal que coordine, revise e integre su trabajo. Quiero cinco áreas: gráficos,
+  sonido, narrativa, combate y animaciones.»
+- **Coordinador:**
+  - contrasta la memoria con el repositorio;
+  - reparte tareas acotadas, con archivos asignados, dependencias y criterios de aceptación;
+  - decide quién edita cada archivo compartido;
+  - revisa, integra y hace las comprobaciones finales;
+  - mantiene la memoria central y publica lo autorizado.
+- **Especialistas:** cada uno recibe el contexto, las restricciones y la versión de partida, y trabaja en su copia de
+  trabajo y su rama. Entrega un informe en `docs/memory/agents/<área>.md`: archivos modificados, pruebas, resultados,
+  límites y siguiente paso.
+- **Archivos compartidos:** un solo responsable de edición a la vez; los demás le piden los cambios.
+- **Concurrencia:** moderada, por tandas. Nunca dos compilaciones, importaciones o medidas que compitan: una medida se
+  hace sin otra carga en el PC.
+- **Orden:**
+  1. tanda 1: sonido y animaciones;
+  2. tanda 2: el mapamundi, y narrativa con animaciones;
+  3. tanda 3: combate con sonido;
+  4. integración y recorrido completo.
+- **Si una capacidad no está disponible** (por ejemplo, un tipo de subagente propio), se dice y se mantiene el reparto
+  trabajando por turnos.
+
+### D-070
+**Ampliación de la autorización de GitHub: ramas de trabajo con código revisado**
+- **Fecha y estado:** 2026-11-08, 22:00. Aprobada [usuario]: «Amplío expresamente la autorización anterior. Autorizo
+  subir código, configuraciones de agentes y documentación revisados a ramas de trabajo del repositorio privado
+  Brunopina6/Aethelgard.»
+- **Qué permite:** ramas por área y una rama experimental de integración, para respaldar y revisar el trabajo de los
+  especialistas. Amplía [D-049](#d-049); la memoria sigue en `memoria-desarrollo`.
+- **Qué no:**
+  - cambios directos en `main` o `desarollo`;
+  - force push;
+  - pushes simultáneos a una misma rama o que pisen el trabajo de otro.
+- **Quién:** publica y verifica el coordinador.
+- **Antes de cada push:**
+  - comprobar que el repositorio sigue privado;
+  - revisar los archivos y sus diferencias;
+  - dejar fuera secretos, credenciales, partidas, cachés, exportaciones privadas del chat y archivos ajenos;
+  - comprobar los permisos de publicación de los recursos;
+  - nada de bibliotecas completas, APK ni binarios grandes en el historial.
+- **Lo que no pueda publicarse** se documenta con ruta local, procedencia y requisitos.
+- **Git LFS:** solo si ya está disponible y bien configurado, o si su configuración queda autorizada.
+- **Releases:** las APK siguen en `Aethelgard-pruebas`, por fecha y versión; una entrega nueva supera antes la
+  integración, las pruebas y la revisión de recursos.
 
 ## 6. Diseño ya implementado del 30/10 al 05/11
 

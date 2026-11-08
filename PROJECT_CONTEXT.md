@@ -71,6 +71,8 @@ La etiqueta local `recuperacion-antes-fase2.0` apunta a `2d1adc4`.
      - 8: Abismo de Ceniza;
      - 9: Portal del Vacío (lleva a `isla.tscn`).
    - El prólogo de Dialogic sale la primera vez (`mapa.gd:103-105`).
+   - En `rebelum-alpha` (`375cc8c`), con puesta en escena (`escena_dialogo.gd`) y retratos vivos
+     (`dialogos/retrato_vivo.gd`): [D-068](DECISIONS.md#d-068).
    - Encuentros por pasos (`_paso`, `_encuentro`).
    - Menús: Grupo, Objetos y Habilidades (`menus.gd`) y el Diario (`diario.gd`).
 4. **`zona.tscn`** (`zona.gd`): zona 2D generada a partir de `Engine.get_meta("lugar")`.
