@@ -1,6 +1,7 @@
 # SESSION_HANDOFF: punto de control
 
-**Último punto de control:** 2026-11-08 a las 22:05 (hora local, UTC+1).
+**Último punto de control:** 2026-11-08 a las 22:30 (hora local, UTC+1). **La tanda 1 está en marcha:** sonido y
+animaciones trabajan desde las 22:27, cada uno en su copia.
 - **Nuevo encargo (22:00, pegado, 10 puntos):** organizar el desarrollo con **un coordinador y cinco especialistas**
   (gráficos, sonido, narrativa, combate y animaciones). Prioridades: los **efectos de sonido de la biblioteca** del
   usuario, **la mano de Kael** en el diálogo inicial y **el mapamundi**. Amplía la autorización de GitHub
@@ -20,30 +21,44 @@
 |---|---|
 | Raíz del repositorio | `D:\Aethelgard`; el proyecto de Godot está en `D:\Aethelgard\aethelgard\` |
 | Copia del usuario | Rama `rebelum-3d` @ `b8e042d`, local. Aquí se editan los documentos de memoria. **El usuario tiene abierto su editor de Godot sobre esta copia** (desde las 21:52): aquí no se lanza otro Godot |
-| Árbol del encargo | `D:\Aethelgard_alpha`, rama `rebelum-alpha` @ `375cc8c`, local (42 commits que no están en GitHub). Base de la rama de integración |
+| Integración | `D:\Aethelgard_alpha`, rama `integracion-experimental` @ `1c17763`, en GitHub. `rebelum-alpha` se queda en `375cc8c`, como estaba |
+| Especialistas (tanda 1) | Sonido: `D:\Aethelgard_sonido`, rama `area-sonido`. Animaciones: `D:\Aethelgard_animaciones`, rama `area-animaciones`. Las dos parten de `1c17763` y están en GitHub. Configuración: `.claude/agents/especialista-*.md` (en `D:\Aethelgard` y en la rama de integración). Cada uno deja su informe en `docs/memory/agents/` de su rama |
 | Respaldo de lo local | `D:\REBELUM_respaldos\2026-11-08_rebelum-alpha_375cc8c\rebelum-alpha.bundle`: los commits de `rebelum-alpha` y `rebelum-3d` que no están en GitHub (`git bundle verify`: correcto) |
 | Copias temporales | `D:\Aethelgard_guardado` (validación del guardado) y `D:\Aethelgard_antes` (medidas «antes» del prólogo, en `40fb5b8`), unos 1,4 GB cada una. Se pueden quitar con permiso |
 | Copia de la memoria | `D:\Aethelgard_memoria`, rama `memoria-desarrollo` |
-| GitHub (`Brunopina6/Aethelgard`) | `main` @ `d4b2d16`, `desarollo` @ `2d1adc4`, `v0.1.0` y `memoria-desarrollo`. `rebelum-3d` y `rebelum-alpha` no están subidas |
+| GitHub (`Brunopina6/Aethelgard`) | `main` @ `d4b2d16`, `desarollo` @ `2d1adc4`, `v0.1.0` y `memoria-desarrollo`. Desde las 22:20, también `integracion-experimental`, `area-sonido` y `area-animaciones` (@ `1c17763`), que llevan dentro el contenido de `rebelum-alpha`. `rebelum-3d` no está subida |
 | APK de prueba | `Brunopina6/Aethelgard-pruebas`: v57 («Latest»), v54, v52… y la original. En el Redmi: `Download/Aethelgard_Exp_2026-11-08_v54.apk` y `…_v57.apk` |
 | Redmi | REDMI A7 Pro, Android 16, por USB con el ADB del SDK (`%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe`) |
 | Última batería | 22:00, `rebelum-alpha` con el prólogo: 37 superadas, 0 fallidas, 19 manuales, 0 no seguras. Código 254 solo porque el editor del usuario cambió un archivo de la caché de sombreadores de la carpeta real; `partida.save`, sin cambios. `D:\REBELUM_diagnostico\pruebas\2026-11-08_214904\resumen.md` |
-| Procesos en marcha | Solo el editor del usuario (22:05). Ninguna prueba ni compilación mía |
+| Procesos en marcha | El editor del usuario y, desde las 22:27, los especialistas de sonido y animaciones (subagentes en segundo plano), cada uno en su copia. El PC tiene 15,4 GB de memoria y quedaban unos 2,5 GB libres con el editor abierto: como mucho, dos especialistas a la vez |
 
 ## Encargo en curso (22:00)
 
 | Punto | Estado |
 |---|---|
 | 1. Guardar la continuidad | **Hecho** (22:05): `375cc8c`, respaldo, memoria publicada y `CONTINUAR_EN_NUEVO_CHAT.txt` para coordinar |
-| 2. Comprobar los subagentes y configurarlos | **Siguiente** |
+| 2. Comprobar los subagentes y configurarlos | **Hecho** (22:25), con un límite (abajo) |
 | 3. Coordinación e integración | Siempre; reglas en [D-069](DECISIONS.md#d-069) |
-| 5. Sonido: primera tanda de efectos ([T-083](TASKS.md#t-083)) | Tanda 1 |
-| 6. Animaciones: la mano de Kael ([T-084](TASKS.md#t-084)) | Tanda 1 |
+| 5. Sonido: primera tanda de efectos ([T-083](TASKS.md#t-083)) | **En curso** (tanda 1, desde las 22:27) |
+| 6. Animaciones: la mano de Kael ([T-084](TASKS.md#t-084)) | **En curso** (tanda 1, desde las 22:27) |
 | 4. Gráficos: el mapamundi ([T-085](TASKS.md#t-085)) | Tanda 2 |
 | 7. Narrativa ([T-086](TASKS.md#t-086)) | Tanda 2, con animaciones |
 | 8. Combate ([T-087](TASKS.md#t-087)) | Tanda 3, con sonido |
-| 9. GitHub: ramas por área e integración ([T-088](TASKS.md#t-088)) | Antes de la tanda 1 |
+| 9. GitHub: ramas por área e integración ([T-088](TASKS.md#t-088)) | **Hecho para la tanda 1** (22:20): tres ramas subidas tras revisarlas |
 | 10. Validación final, APK y Redmi | Tras integrar |
+
+## Subagentes: lo comprobado (22:25)
+
+- **Subagentes reales:** sí. Se lanzan en segundo plano y avisan al terminar; la documentación permite hasta 20 a la
+  vez, y aquí se usan dos por la memoria del PC.
+- **Tipos propios** (`.claude/agents/especialista-*.md`): el formato se comprobó con la documentación oficial (`name`,
+  `description`, `disallowedTools`, `model`, `color`…). Pero **esta sesión no los reconoce**, porque la carpeta no
+  existía cuando empezó; la documentación avisa de que entonces hace falta reiniciar. Probado: «Agent type
+  'especialista-sonido' not found». En esta sesión se lanzan como subagentes `general-purpose` que leen su archivo como
+  instrucciones (mismas reglas y área; ejecución real). En una sesión nueva se pueden llamar por su nombre.
+- **Aislamiento:** el `isolation: worktree` de los subagentes parte de `main`, no de nuestra rama, así que no se usa.
+  Cada especialista tiene una copia de trabajo manual desde `integracion-experimental`, con la caché `.godot`
+  copiada (2087 archivos, 501 MB) para no reimportar.
 
 ## Hallazgo para animaciones (22:00, observado en el archivo)
 
@@ -63,7 +78,8 @@
     `prologo_visto`, y va a `res://mapa.tscn`.
   - **Teclado y mando:** ↓ sigue eligiendo el botón actual (lo esperan `prueba_mando` y `prueba_teclado`); ← y → pasan
     de uno a otro; ↑ y Esc sueltan el foco.
-  - **Prueba:** ampliar `prueba_ranura_prueba.gd`. Encaja con la tanda de narrativa y animaciones.
+  - **Prueba:** ampliar `prueba_ranura_prueba.gd`.
+  - **Cuándo:** al integrar la tanda 1, porque `carga.gd` es de sonido mientras dure (un solo responsable por archivo).
 
 ## Cambios sin confirmar
 
@@ -82,13 +98,13 @@
 
 ## Próximo paso concreto
 
-1. Comprobar qué subagentes admite esta versión de Claude Code (formato de `.claude/agents/` y aislamiento) y crear
-   los cinco especialistas. Si alguno no se puede usar, trabajar por turnos con el mismo reparto.
-2. Rama de integración desde `rebelum-alpha` (`375cc8c`) y ramas por área; revisar su contenido y subirlas
-   ([D-070](DECISIONS.md#d-070)).
-3. Tanda 1, en copias de trabajo separadas: sonido (primera tanda de efectos) y animaciones (la mano de Kael).
-4. Tanda 2: el mapamundi; después, narrativa con animaciones. Tanda 3: combate con sonido.
-5. Integrar, batería completa, recorrido real con ventana, APK nueva al Redmi y memoria.
+1. **Recibir las entregas de la tanda 1** (llegan como aviso al terminar cada especialista). Revisar cada una:
+   diferencias, pruebas, evidencias y licencias.
+2. **Integrarlas en `integracion-experimental`** con un merge normal, resolviendo a mano `pruebas/lista_pruebas.txt` y
+   `docs/recursos.md`, que tocan los dos. Después, la batería completa y el push de las ramas.
+3. **El botón «Probar el prólogo»** (lo hace el coordinador, tras integrar sonido).
+4. **Tanda 2:** gráficos (el mapamundi) y narrativa con animaciones. **Tanda 3:** combate con sonido.
+5. **Recorrido real con ventana**, APK nueva al Redmi y memoria.
 
 ## Pendiente del usuario
 

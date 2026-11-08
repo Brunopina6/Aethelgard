@@ -1,6 +1,6 @@
 # TASKS: tareas de AETHELGARD / REBELUM
 
-**Actualizado el 2026-11-08 a las 22:05 (hora local, UTC+1).**
+**Actualizado el 2026-11-08 a las 22:30 (hora local, UTC+1).**
 - Copia del usuario: `rebelum-3d` @ `b8e042d` (la protección del guardado, [D-066](DECISIONS.md#d-066)).
 - Árbol del encargo: `rebelum-alpha` @ `375cc8c` (el prólogo, T-081).
 - Desde las 22:00, organización por especialistas: [T-082](#t-082) a [T-088](#t-088).
@@ -57,12 +57,12 @@
 | [T-080](#t-080) | Decidir la nivelación automática de quien se une al grupo (D-062) | Bloqueada (usuario) | Baja |
 | [T-081](#t-081) | El primer diálogo: presentación, cámara, texto y gestos (encargo del 08/11 por la noche) | En curso (prólogo hecho, `375cc8c`) | Alta |
 | [T-082](#t-082) | Organización por especialistas: coordinador y cinco subagentes (encargo del 08/11, 22:00) | En curso | Alta |
-| [T-083](#t-083) | Sonido: primera tanda de efectos de la biblioteca del usuario en eventos reales | Pendiente | Alta |
-| [T-084](#t-084) | Animaciones: la mano de Kael en el diálogo inicial y gestos naturales | Pendiente | Alta |
+| [T-083](#t-083) | Sonido: primera tanda de efectos de la biblioteca del usuario en eventos reales | En curso (tanda 1) | Alta |
+| [T-084](#t-084) | Animaciones: la mano de Kael en el diálogo inicial y gestos naturales | En curso (tanda 1) | Alta |
 | [T-085](#t-085) | Gráficos: el mapamundi (costas, agua, relieve, biomas, lugares y rótulos) | Pendiente | Alta |
 | [T-086](#t-086) | Narrativa: el diálogo inicial y la misión de Pastos Verdes | Pendiente | Media |
 | [T-087](#t-087) | Combate: estabilidad con uno, dos y tres héroes y eventos sonoros de ataque e impacto | Pendiente | Media |
-| [T-088](#t-088) | GitHub: rama de integración y ramas por área, con revisión antes de cada push | Pendiente | Alta |
+| [T-088](#t-088) | GitHub: rama de integración y ramas por área, con revisión antes de cada push | En curso (tanda 1 subida) | Alta |
 
 ## Continuidad
 
@@ -789,10 +789,18 @@
   - cada uno con su copia de trabajo, su rama y su informe en `docs/memory/agents/`;
   - sin compilaciones, importaciones ni medidas que compitan.
 - **Reglas:** [D-069](DECISIONS.md#d-069).
+- **Evidencia** (22:25, comprobado ejecutando):
+  - subagentes reales, en segundo plano, con aviso al terminar;
+  - los cinco especialistas en `.claude/agents/especialista-*.md` (commit `1c17763` en `integracion-experimental`);
+  - **límite:** esta sesión no reconoce los tipos propios porque la carpeta no existía al empezar («Agent type
+    'especialista-sonido' not found»). Se usan subagentes `general-purpose` que leen su archivo como instrucciones;
+  - el `isolation: worktree` parte de `main`: en su lugar, copias de trabajo manuales con la caché `.godot` copiada;
+  - tanda 1 lanzada a las 22:27 (sonido y animaciones).
 
 ### T-083
 **Sonido: primera tanda de efectos de la biblioteca del usuario en eventos reales**
-- **Estado:** pendiente (tanda 1). **Prioridad:** alta. **Responsable:** especialista de sonido.
+- **Estado:** en curso desde las 22:27 (tanda 1), en `D:\Aethelgard_sonido`, rama `area-sonido`. **Prioridad:** alta.
+  **Responsable:** especialista de sonido.
 - **Petición** [usuario]: aprovechar `D:\qtorrent\sound effect` para que las acciones del juego tengan respuesta
   sonora. Pasos e interacción; ataques físicos, impactos y defensas; cofres, puertas, objetos y recompensas; victoria,
   derrota y menús; río, cascada, viento y naturaleza; habilidades nuevas y eventos narrativos autorizados.
@@ -809,7 +817,8 @@
 
 ### T-084
 **Animaciones: la mano de Kael en el diálogo inicial y gestos naturales**
-- **Estado:** pendiente (tanda 1). **Prioridad:** alta. **Responsable:** especialista de animaciones.
+- **Estado:** en curso desde las 22:27 (tanda 1), en `D:\Aethelgard_animaciones`, rama `area-animaciones`.
+  **Prioridad:** alta. **Responsable:** especialista de animaciones.
 - **Petición** [usuario]: revisar la pose de Kael «con la mano junto a la cabeza mientras habla Lya». Encontrar la
   causa (clip, duración, transición, mezcla, esqueleto o pose procedural) y corregirla.
   - Gestos naturales: reposo cómodo, miradas a quien habla, reacciones breves, transiciones suaves, pies apoyados y
@@ -862,7 +871,7 @@
 
 ### T-088
 **GitHub: rama de integración y ramas por área**
-- **Estado:** pendiente (antes de la tanda 1). **Prioridad:** alta. **Responsable:** el coordinador.
+- **Estado:** en curso: primera publicación hecha (22:20). **Prioridad:** alta. **Responsable:** el coordinador.
 - **Petición** [usuario]: [D-070](DECISIONS.md#d-070).
 - **Criterio de aceptación:**
   - antes de cada push, el repositorio privado comprobado y los archivos y diferencias, revisados;
@@ -871,3 +880,11 @@
   - los permisos de publicación de los recursos, comprobados; lo que no se pueda publicar, documentado con ruta local,
     procedencia y requisitos;
   - sin force push ni pushes simultáneos.
+- **Evidencia, primera publicación** (22:20, comprobado ejecutando):
+  - subidas `integracion-experimental`, `area-sonido` y `area-animaciones` @ `1c17763`, comprobadas con
+    `git ls-remote`;
+  - lo nuevo para GitHub: 220 archivos y 30,3 MB, casi todo código y textos. Los únicos binarios son los cinco
+    ambientes CC0 de 5-6 MB ([D-067](DECISIONS.md#d-067));
+  - sin secretos, partidas, APK ni Suno;
+  - el repositorio sigue privado, con un solo usuario y sin invitaciones;
+  - Git LFS está instalado, pero el repositorio no lo usa, así que no se activa.

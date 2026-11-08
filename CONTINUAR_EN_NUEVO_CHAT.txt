@@ -1,5 +1,5 @@
 MENSAJE PARA EMPEZAR UNA CONVERSACIÓN NUEVA SOBRE AETHELGARD / REBELUM
-Preparado el 2026-11-08 a las 22:05. Sirve para que otro chat asuma la coordinación de los especialistas.
+Preparado el 2026-11-08 a las 22:30. Sirve para que otro chat asuma la coordinación de los especialistas.
 
 Cómo usarlo:
 1. Abre la conversación nueva en la carpeta D:\Aethelgard\aethelgard (o D:\Aethelgard).
@@ -17,7 +17,7 @@ Antes de responder o actuar:
 1. Comprueba el último commit de memoria-desarrollo, solo leyendo: git ls-remote origin refs/heads/memoria-desarrollo. Si la copia D:\Aethelgard_memoria está limpia y le falta, tráelo con git -C D:\Aethelgard_memoria pull --ff-only.
 2. Lee CLAUDE.md, SESSION_HANDOFF.md, TASKS.md (T-081 a T-088), el resumen de MEMORIA_CHAT.md y D-069 y D-070 de DECISIONS.md. Los informes de cada especialista están en docs/memory/agents/.
 3. Contrasta con Git: git status, git branch -vv, git worktree list, el commit de cada rama y los cambios sin confirmar. Mira si hay algún Godot abierto: puedo tener mi editor sobre D:\Aethelgard\aethelgard, y ahí no se lanza otro.
-4. Comprueba qué especialistas hay en .claude/agents/ y si esta sesión puede usarlos como subagentes.
+4. Comprueba qué especialistas hay en .claude/agents/ y si esta sesión los reconoce por su nombre (especialista-sonido, especialista-animaciones, especialista-graficos, especialista-narrativa y especialista-combate). Si no, lánzalos como subagentes general-purpose que lean su archivo como instrucciones. Cada uno trabaja en su copia (D:\Aethelgard_<área>, rama area-<área>) y deja su informe en docs/memory/agents/; tú integras en integracion-experimental (D:\Aethelgard_alpha).
 5. Sigue el «Próximo paso concreto» de SESSION_HANDOFF.md. Mis instrucciones actuales prevalecen sobre los encargos antiguos.
 
 Prioridades actuales: los efectos de sonido de mi biblioteca (D:\qtorrent\sound effect), la mano de Kael en el diálogo inicial y la calidad del mapamundi. Orden: sonido, animaciones, mapamundi, narrativa con animaciones y combate con sonido. Concurrencia moderada: tandas de dos especialistas como mucho, sin compilaciones, importaciones ni medidas que compitan.

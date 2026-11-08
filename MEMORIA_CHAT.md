@@ -1,6 +1,6 @@
 # MEMORIA_CHAT: lo aprendido en las conversaciones sobre AETHELGARD / REBELUM
 
-> **Actualizado el 2026-11-08 a las 22:05** (hora local, UTC+1), en la rama `rebelum-3d` @ `b8e042d`. Se publica en la
+> **Actualizado el 2026-11-08 a las 22:30** (hora local, UTC+1), en la rama `rebelum-3d` @ `b8e042d`. Se publica en la
 > rama `memoria-desarrollo` de GitHub.
 >
 > Es un **resumen**, no una transcripción. El chat legible está en
@@ -166,6 +166,14 @@
   - **Del encargo de las 20:20** quedó hecho también el prólogo (`375cc8c`).
   - **Hallazgo** [comprobado, 22:00]: en el prólogo, la mano de Kael junto a la cabeza está en la propia ilustración de
     su retrato (`dialogos/retratos/kael.png`).
+  - **Hecho a las 22:30:**
+    - continuidad guardada (`375cc8c`, respaldo y memoria `20dec6d`);
+    - especialistas configurados;
+    - ramas `integracion-experimental` y `area-*` subidas;
+    - tanda 1 (sonido y animaciones) en marcha.
+
+    Límite: esta sesión no reconoce los tipos propios (la carpeta no existía al empezar), así que se lanzan como
+    subagentes generales que leen su archivo.
 
 ## Índice
 

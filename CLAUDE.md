@@ -192,5 +192,8 @@ Desde el 08/11 a las 22:00 ([D-069](DECISIONS.md#d-069)), un coordinador y cinco
 narrativa, combate y animaciones.
 - Configuración en `.claude/agents/`; informes en `docs/memory/agents/`; reparto y estado en [TASKS.md](TASKS.md)
   (T-082 a T-088).
-- Cada especialista trabaja en su copia de trabajo y su rama. Un archivo compartido tiene un solo responsable a la vez.
+- Cada especialista trabaja en su copia de trabajo y su rama: `D:\Aethelgard_<área>`, rama `area-<área>`. Se integra en
+  `integracion-experimental` (en `D:\Aethelgard_alpha`). Un archivo compartido tiene un solo responsable a la vez.
+- Si la sesión empezó sin la carpeta `.claude/agents/`, no reconoce los tipos propios. Lanza `general-purpose`
+  indicándole que lea su archivo como instrucciones.
 - Concurrencia moderada, por tandas: nunca dos compilaciones, importaciones o medidas que compitan.

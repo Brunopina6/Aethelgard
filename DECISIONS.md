@@ -1,7 +1,7 @@
 # DECISIONS: decisiones de AETHELGARD / REBELUM
 
-**Actualizado el 2026-11-08 a las 22:05** sobre la copia del usuario (`rebelum-3d` @ `b8e042d`) y el árbol del
-encargo (`rebelum-alpha` @ `375cc8c`). Las horas son locales (UTC+1).
+**Actualizado el 2026-11-08 a las 22:30** sobre la copia del usuario (`rebelum-3d` @ `b8e042d`) y la rama de
+integración (`integracion-experimental` @ `1c17763`). Las horas son locales (UTC+1).
 
 **Estados**
 - **Aprobada:** la tomó o la aprobó el usuario.
@@ -1197,6 +1197,14 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
   4. integración y recorrido completo.
 - **Si una capacidad no está disponible** (por ejemplo, un tipo de subagente propio), se dice y se mantiene el reparto
   trabajando por turnos.
+- **Comprobado (22:25):**
+  - los subagentes son reales y trabajan en segundo plano;
+  - los tipos propios de `.claude/agents/` no se cargan en una sesión que empezó sin esa carpeta; mientras tanto, se
+    lanzan como `general-purpose` que leen su archivo;
+  - el aislamiento automático parte de `main`, así que cada especialista usa una copia de trabajo manual en
+    `D:\Aethelgard_<área>`, rama `area-<área>`, que parte de `integracion-experimental`;
+  - la rama de integración es `integracion-experimental`, en `D:\Aethelgard_alpha`; `rebelum-alpha` se queda en
+    `375cc8c`.
 
 ### D-070
 **Ampliación de la autorización de GitHub: ramas de trabajo con código revisado**
@@ -1220,6 +1228,8 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 - **Git LFS:** solo si ya está disponible y bien configurado, o si su configuración queda autorizada.
 - **Releases:** las APK siguen en `Aethelgard-pruebas`, por fecha y versión; una entrega nueva supera antes la
   integración, las pruebas y la revisión de recursos.
+- **Primera publicación** (22:20): `integracion-experimental`, `area-sonido` y `area-animaciones`, con la revisión
+  anotada en [T-088](TASKS.md#t-088).
 
 ## 6. Diseño ya implementado del 30/10 al 05/11
 
