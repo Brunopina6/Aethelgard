@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT: arquitectura real de AETHELGARD / REBELUM
 
-**Verificado el 2026-11-07** sobre `desarollo` @ `2d1adc4`. El código del juego es idéntico en `rebelum-3d` @ `ce84422`.
+**Verificado el 2026-11-07** sobre `desarollo` @ `2d1adc4`. El código del juego es idéntico en `rebelum-3d` @ `ce84422`; desde `b8e042d` (08/11), su `progreso.gd` lleva además la protección del guardado ([D-066](DECISIONS.md#d-066)).
 La rama `rebelum-alpha` @ `03b960a` añade la región 3D de Pastos Verdes (ver §5). El 08/11 se añadió el repositorio
 privado de APK de prueba (§9). Las novedades de `rebelum-alpha` hasta `2776729` (08/11, 20:20; entrada por teclado y
 mando, T-025, y la base del audio, T-030) están en §3 a §6 y §10.
@@ -99,7 +99,7 @@ La etiqueta local `recuperacion-antes-fase2.0` apunta a `2d1adc4`.
 
 ## 3. Guardado [código]
 
-- **`progreso.gd`:** guarda en `user://partida.save` las metas de `Engine` que hay en `CLAVES` (`var_to_str`).
+- **`progreso.gd`:** guarda en `user://partida.save` las metas de `Engine` que hay en `CLAVES` (`var_to_str`). En `rebelum-alpha` (`86a58af`) y en `rebelum-3d` (`b8e042d`) no guarda si la sesión no cargó la partida, escribe en `.tmp` y deja la anterior en `.bak`, y recupera una partida dañada (T-076).
   - Guardado automático: al entrar en una zona, al volver al mapa, tras cada combate y al pausar o cerrar.
   - Las pruebas no guardan: `guardar()` no hace nada con `--script` o con argumentos de usuario.
 - **Riesgo encontrado (2026-11-07):**

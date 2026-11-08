@@ -1,7 +1,7 @@
 # DECISIONS: decisiones de AETHELGARD / REBELUM
 
-**Actualizado el 2026-11-08 a las 20:20** sobre la copia del usuario (`rebelum-3d` @ `ce84422`) y el árbol del
-encargo (`rebelum-alpha` @ `2776729`). Las horas son locales (UTC+1).
+**Actualizado el 2026-11-08 a las 20:45** sobre la copia del usuario (`rebelum-3d` @ `b8e042d`) y el árbol del
+encargo (`rebelum-alpha` @ `d5fd793`). Las horas son locales (UTC+1).
 
 **Estados**
 - **Aprobada:** la tomó o la aprobó el usuario.
@@ -29,7 +29,7 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 | [D-010](#d-010) | Pruebas con datos aislados | Aprobada |
 | [D-011](#d-011) | La partida del PC se conserva tal cual | Aprobada |
 | [D-012](#d-012) | Versión experimental con paquete y partida propios | Aprobada (hecha en `rebelum-alpha`) |
-| [D-013](#d-013) | El Redmi queda reservado | Aprobada |
+| [D-013](#d-013) | El Redmi queda reservado | Sustituida en parte por D-065 (copias de APK por USB) |
 | [D-014](#d-014) | Usar el Redmi por ADB para instalar y medir | Sustituida por D-013 |
 | [D-015](#d-015) | PM infinitos solo con `-- pm_infinitos` | Aprobada en el encargo |
 | [D-016](#d-016) | `MODO_PRUEBAS` siempre activo | Sustituida por D-015 (en `rebelum-alpha`) |
@@ -76,6 +76,8 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 | [D-062](#d-062) | Nivelación automática de quien se une al grupo | Propuesta (pendiente del usuario) |
 | [D-063](#d-063) | Teclado y mando: acciones, foco visible y una pulsación, una acción (T-025) | Aprobada en el encargo |
 | [D-064](#d-064) | Base del audio: buses, volúmenes guardados y pestaña «Ajustes» (T-030) | Aprobada en el encargo |
+| [D-065](#d-065) | El Redmi recibe por USB las APK de prueba en Descargas; instalar es cosa del usuario | Aprobada |
+| [D-066](#d-066) | La protección del guardado, traída a la copia habitual (`rebelum-3d`) | Aprobada |
 | [D-H01 a D-H15](#6-diseño-ya-implementado-del-3010-al-0511) | Diseño ya implementado antes de Git | Aprobada (historial) |
 
 ## 1. Reglas de trabajo, Git y versiones
@@ -203,6 +205,11 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
     lo apunta en el resumen con su línea de órdenes; de cada archivo cambiado de la carpeta real da la hora.
   - Al pasarse de tiempo una prueba, solo cierra su proceso y los hijos de este. Antes cerraba cualquier Godot abierto
     después de empezar la prueba: también un editor del usuario.
+  - **Verificado** (08/11, 20:38, `d5fd793`, `pruebas/verificar_ejecutor.ps1`): con una prueba que no termina nunca
+    (`sonda_tiempo.gd`) y otro Godot abierto mientras tanto, con datos aislados, el ejecutor cierra la sonda a los
+    8,5 s, deja vivo el otro Godot y lo apunta en el resumen. Dos pasadas; ningún Godot queda abierto.
+  - **La copia habitual** (`rebelum-3d`) sigue con el ejecutor antiguo, que sí podría cerrar un editor abierto
+    después de empezar una prueba que se pasa de tiempo. Traer el nuevo necesita una autorización aparte.
 - **Archivos:** el ejecutor, `lista_pruebas.txt` y `sonda_datos.gd`.
 
 ### D-011
@@ -229,6 +236,12 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
   - la batería de las 19:35 terminó a las 19:37:28 con la partida intacta. Avisó (código 254) por el registro de
     Godot y los ajustes de Dialogic que escribió ese editor en la carpeta real.
   - Se conserva tal cual.
+  - **Comprobado después** (08/11, 20:30, leyendo; [D-066](#d-066)): el editor de esa copia tenía abierta, como escena
+    actual, `res://mapa.tscn`; su versión guarda al cerrar la ventana con la escena en curso (`recursos.gd`). La
+    partida quedó con `escena_guardada = zona.tscn` y sin `grupo` ni `inventario`, lo mismo que deja una sesión
+    abierta con F6 que entra en Oakhaven y se cierra. Reproducido en una copia aislada: así se pierden `grupo` e
+    `inventario`. **No se puede demostrar** quién lanzó la sesión, si fue F6 ni qué claves tenía antes la partida.
+  - Desde `b8e042d` (D-066), la copia habitual ya no guarda en una sesión que no cargó la partida.
 
 ### D-012
 **Versión experimental con paquete y partida propios**
@@ -249,6 +262,8 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
   - La APK antigua que hay en las Descargas del teléfono se deja intacta.
   - Cuando haga falta validar algo, se le pide al usuario que conecte el móvil.
 - **Sustituye a:** [D-014](#d-014).
+- **Sustituida en parte por [D-065](#d-065)** (08/11): ya se pueden copiar por USB las APK de prueba a Descargas, sin
+  borrar las anteriores. Lo demás sigue igual: instalar, borrar o cambiar algo en el teléfono lo hace el usuario.
 
 ### D-014
 **Usar el Redmi por ADB para instalar y medir: SUSTITUIDA por [D-013](#d-013)**
@@ -1050,6 +1065,46 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 - **Comprobado** (aislado, sin ventana; prueba **muda**: adónde va cada sonido y con qué volumen, no cómo suena):
   `prueba_audio`. Captura de la pestaña revisada a ojo (`prueba_foco_fotos`, captura 8).
 - **Sin comprobar:** cómo suena (en el PC y en el Redmi) y si el 50 % se oye como «la mitad».
+
+### D-065
+**El Redmi recibe por USB las APK de prueba en Descargas; instalar es cosa del usuario**
+- **Fecha y estado:** 2026-11-08, hacia las 20:20. Aprobada [usuario]: «Autorizo expresamente el acceso al Redmi
+  conectado por USB para comprobar la conexión y copiar las APK de prueba nuevas a su carpeta Descargas. Esta
+  autorización sustituye la restricción anterior de móvil reservado únicamente para estas operaciones. Yo instalaré
+  las APK manualmente.»
+- **Decisión:**
+  - por USB (ADB o transferencia de archivos): comprobar la conexión y copiar a Descargas las APK de prueba nuevas,
+    exactas y verificadas, con su nombre de fecha y versión, sin borrar las anteriores;
+  - comprobar la copia con el tamaño y el SHA-256 en el propio teléfono, y decir al usuario el archivo y qué probar;
+  - si hay varios dispositivos, identificar el Redmi antes de copiar; si falta el cable, la transferencia de archivos
+    o la autorización de depuración, decir qué seleccionar y seguir con el trabajo local;
+  - instalar, desinstalar, borrar datos, ejecutar pruebas en el teléfono y cambiar ajustes, solo el usuario (salvo
+    autorización posterior). La app estable y sus datos no se tocan. Las releases privadas siguen con D-054.
+- **Sustituye en parte** a la reserva del Redmi ([D-013](#d-013)): solo para estas operaciones.
+- **Primera entrega** (08/11, 20:24): la Prueba v54 en `Download/Aethelgard_Exp_2026-11-08_v54.apk`, con el mismo
+  tamaño (256 658 545 bytes) y SHA-256 (`c00f0ff6…`) en el teléfono. ADB del SDK ya instalado; un único dispositivo,
+  el REDMI A7 Pro (Android 16), autorizado. Nada más en el teléfono se ha tocado.
+
+### D-066
+**La protección del guardado, traída a la copia habitual (`rebelum-3d`)**
+- **Fecha y estado:** 2026-11-08, 20:36. Aprobada [usuario]: «Autorizo trasladar únicamente la corrección de
+  protección del guardado a la copia habitual si puedes hacerlo de forma pequeña, reversible y compatible con sus
+  cambios locales. Prepara antes un respaldo […] Valídala en una copia aislada antes de aplicarla.»
+- **Decisión:** solo `progreso.gd` (la protección de `86a58af`, sin la partida experimental 3D) e `inventario.gd` (3
+  líneas), en un commit local de `rebelum-3d` (`b8e042d`) que se deshace con `git revert`. Nada del bloque B se toca.
+- **Respaldo previo:** `D:\REBELUM_respaldos\2026-11-08_antes_guardado_copia_habitual` (los dos scripts, una copia
+  leída de la partida actual, el diff del bloque B con su huella y el estado de Git).
+- **Validación en una copia aislada** (árbol de trabajo `D:\Aethelgard_guardado`, con el mismo estado que la copia
+  habitual, bloque B incluido; con datos aislados):
+  - batería sin el arreglo: 15 superadas y 2 fallidas (`prueba_escenas` y `prueba_menu_magia`, que ya fallaban en
+    `rebelum-3d`); con el arreglo y `prueba_guardado_protegido`: 16 superadas y las mismas 2 fallidas;
+  - **de punta a punta**, como una sesión normal: con una partida completa guardada, abrir `mapa.tscn` suelto (como
+    F6) y cerrar la ventana. **Sin el arreglo**, la partida se reescribe y pierde `grupo` e `inventario` (queda con
+    `escena_guardada`, `pos_mapa`, `pos_mapa_ok` y `prologo_visto`); **con el arreglo**, no cambia y sale el aviso
+    «Esta sesión no cargó la partida».
+- **Comprobado después:** el bloque B es idéntico al del respaldo, byte a byte en su diff.
+- **Lo que no cambia:** la partida actual del PC se conserva tal cual ([D-011](#d-011)); el ejecutor de pruebas de
+  `rebelum-3d` sigue siendo el antiguo (ver [D-010](#d-010)): traer el nuevo necesitaría otra autorización.
 
 ## 6. Diseño ya implementado del 30/10 al 05/11
 

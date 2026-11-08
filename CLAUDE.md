@@ -76,6 +76,8 @@ pida la tarea.
 - No cambies de rama en la copia del usuario (`D:\Aethelgard`): para otra rama, usa un **árbol de trabajo
   aparte** (`git worktree`).
 - Los cambios sin confirmar del usuario (el llamado «bloque B») no se tocan ni se confirman sin su permiso.
+- En `rebelum-3d` solo se ha confirmado, con permiso, la protección del guardado (`b8e042d`,
+  [D-066](DECISIONS.md#d-066)). Cualquier otro cambio en esa rama necesita una autorización nueva.
 
 **Partidas y datos**
 - La partida actual del PC (`%APPDATA%\Godot\app_userdata\Aethelgard\partida.save`) **se conserva tal cual**, aunque le
@@ -87,8 +89,14 @@ pida la tarea.
   - no ejecutes el juego de forma que pueda escribir en la partida real.
 
 **Móvil, licencias e instalaciones**
-- **El Redmi está reservado.** Nada de ADB, USB, MTP, conexión inalámbrica ni escritorio remoto. No copies, instales,
-  actualices ni borres APK en el móvil. Pide al usuario que lo conecte cuando haga falta validar algo en él.
+- **El Redmi (REDMI A7 Pro) solo recibe APK de prueba** ([D-065](DECISIONS.md#d-065), desde el 08/11):
+  - por USB (ADB o transferencia de archivos) se puede comprobar la conexión y copiar las APK de prueba nuevas a
+    Descargas, con su nombre de fecha y versión, sin borrar las anteriores y comprobando tamaño y SHA-256;
+  - si hay varios dispositivos, identifica el Redmi antes de copiar. Si falta el cable, la transferencia de archivos o
+    la autorización de depuración, di al usuario qué seleccionar y sigue con el trabajo local;
+  - instalar, desinstalar, borrar datos, ejecutar pruebas en el teléfono y cambiar ajustes lo hace el usuario, salvo
+    autorización posterior. La app estable y sus datos no se tocan;
+  - nada de conexión inalámbrica ni escritorio remoto.
 - No distribuyas ningún APK que lleve recursos de licencia pendiente (lista en
   [docs/versiones/licencias_pendientes.txt](docs/versiones/licencias_pendientes.txt)). Eso incluye GitHub.
   - Las compilaciones locales para pruebas sí están permitidas.

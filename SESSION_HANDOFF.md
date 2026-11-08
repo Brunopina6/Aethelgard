@@ -1,14 +1,15 @@
 # SESSION_HANDOFF: punto de control
 
-**Último punto de control:** 2026-11-08 a las 20:20 (hora local, UTC+1).
-- **Hecho y comprobado en el PC:**
-  - quien se une al grupo conserva sus datos: la nivelación al unirse la había puesto yo y queda como propuesta
-    ([D-062](DECISIONS.md#d-062), [T-080](TASKS.md#t-080));
-  - **T-025:** teclado y mando sin ratón, foco visible, una pulsación una acción y el mando desconectado deja seguir
-    ([D-063](DECISIONS.md#d-063)). Comprobado con eventos **simulados**: aquí no hay mando.
-  - **T-030, la base del audio:** buses, volúmenes guardados aparte de la partida y la pestaña «Ajustes» del menú del
-    grupo ([D-064](DECISIONS.md#d-064)). Comprobado con una prueba **muda**: falta escucharlo.
-- **Subida:** la Prueba v54 (la v52 más los ajustes de sonido), para la prueba en el Redmi.
+**Último punto de control:** 2026-11-08 a las 20:45 (hora local, UTC+1).
+- **Hecho y comprobado** (hito de seguridad del encargo de las 20:20):
+  - la Prueba v54 está en las Descargas del Redmi, copiada por USB y comprobada en el teléfono
+    ([D-065](DECISIONS.md#d-065));
+  - la copia habitual (`rebelum-3d`) ya no pisa la partida en una sesión que no la cargó (`b8e042d`,
+    [D-066](DECISIONS.md#d-066)), validado antes en una copia aislada;
+  - el ejecutor de pruebas solo cierra lo suyo, verificado con otro Godot abierto (`d5fd793`,
+    [D-010](DECISIONS.md#d-010)).
+- **Antes, en la misma noche:** T-025 (teclado, mando y foco, simulado), la base del audio (T-030) y las Pruebas v52 y
+  v54. Detalle en [TASKS.md](TASKS.md).
 - **Relevo anterior** (del 07/11 por la tarde hasta las 16:40 del 08/11, con las tablas del Redmi): en
   [docs/memory/archive/2026-11-08_relevo_anterior.md](docs/memory/archive/2026-11-08_relevo_anterior.md).
 
@@ -17,96 +18,79 @@
 | Qué | Valor |
 |---|---|
 | Raíz del repositorio | `D:\Aethelgard`; el proyecto de Godot está en `D:\Aethelgard\aethelgard\` |
-| Copia del usuario | Rama `rebelum-3d` @ `ce84422`, local. Aquí se editan los documentos de memoria |
-| Árbol del encargo | `D:\Aethelgard_alpha`, rama `rebelum-alpha` @ `2776729`, local y nunca subida |
+| Copia del usuario | Rama `rebelum-3d` @ `b8e042d` (la protección del guardado encima de `ce84422`), local. Aquí se editan los documentos de memoria |
+| Árbol del encargo | `D:\Aethelgard_alpha`, rama `rebelum-alpha` @ `d5fd793`, local y nunca subida |
+| Copia de validación | `D:\Aethelgard_guardado` (árbol de trabajo sin rama sobre `ce84422`, con el estado de la copia habitual y el arreglo). Solo para validar; se puede quitar con permiso |
 | Copia de la memoria | `D:\Aethelgard_memoria`, rama `memoria-desarrollo`. Las publicaciones se ven con `git log origin/memoria-desarrollo` |
 | GitHub (`Brunopina6/Aethelgard`) | `main` @ `d4b2d16`, `desarollo` @ `2d1adc4`, `v0.1.0` y `memoria-desarrollo` (solo memoria) |
-| APK de prueba para el móvil | `Brunopina6/Aethelgard-pruebas`, privado: v54 («Latest»), v52, v50, v47, v44, v41, v39 y la original ([D-054](DECISIONS.md#d-054)) |
-| Capturas del foco | `D:\REBELUM_diagnostico\pruebas\2026-11-08_195003\prueba_foco_fotos\` (`lamina_foco.png` y 7 sueltas); con la pestaña «Ajustes» (captura 8), `…\2026-11-08_201002\prueba_foco_fotos\` |
-| Procesos en marcha | Ninguno a las 20:20. Compruébalo antes de lanzar Godot: dos Godot sobre el mismo proyecto se pisan |
+| APK de prueba | Repositorio privado `Brunopina6/Aethelgard-pruebas`: v54 («Latest»), v52, v50, v47, v44, v41, v39 y la original ([D-054](DECISIONS.md#d-054)). En el Redmi: `Download/Aethelgard_Exp_2026-11-08_v54.apk` |
+| Redmi | REDMI A7 Pro, Android 16, por USB con ADB del SDK (`%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe`) |
+| Respaldo del guardado | `D:\REBELUM_respaldos\2026-11-08_antes_guardado_copia_habitual` |
+| Procesos en marcha | Ninguno a las 20:45. Compruébalo antes de lanzar Godot: dos Godot sobre el mismo proyecto se pisan |
 
 ## Encargo en curso
 
-- **Petición** (08/11, hacia las 16:55): «Continúa el desarrollo de AETHELGARD desde la Prueba v41…». Detalle en
-  [MEMORIA_CHAT.md](MEMORIA_CHAT.md#5-autorizaciones-y-restricciones-vigentes-y-sustituidas).
-- **Última orden** (08/11, hacia las 19:00): «continúa con estabilidad y controles, T-025 […] No necesitas volver a
-  pedirme permiso para cada tarea rutinaria ya incluida». Antes, comprobar la nivelación al unirse. Prioridad, Android y
-  PC; distinguir lo simulado de lo probado con hardware; avisar cuando haga falta su prueba en el móvil; después,
-  seguir con el siguiente trabajo autorizado que se pueda hacer en local.
+- **Petición** (08/11, hacia las 20:20; pegada): «Continúa desde la Prueba v54 y la memoria publicada en 11d5469. Este
+  encargo reúne la entrega al Redmi, el cierre de seguridad y audio y la mejora del diálogo inicial y las
+  animaciones.» Sin preguntas rutinarias dentro del alcance. Resumen de los 9 puntos en
+  [MEMORIA_CHAT.md](MEMORIA_CHAT.md).
 
-| Hito | Commit (`rebelum-alpha`) | Comprobado | Estado |
-|---|---|---|---|
-| Grupo activo, encuentros para Kael solo, avisos del guardado y partida de prueba | `e670a5d` | Batería `2026-11-08_175301`: 27 superadas y 0 fallidas | Hecho ([D-060](DECISIONS.md#d-060)) |
-| Sin tirones de diálogos ni de la primera vez | `e630b02` | Batería `2026-11-08_184433`: 28 superadas y 0 fallidas | Hecho en el PC ([D-061](DECISIONS.md#d-061)) |
-| Quien se une conserva sus datos; T-025 (teclado, mando y foco) | `e6e52c4` | Batería `2026-11-08_195103`: **32 superadas, 0 fallidas**, 17 manuales y 0 no seguras; capturas del foco revisadas | Hecho en el PC, simulado ([D-063](DECISIONS.md#d-063)) |
-| Prueba v52 en GitHub | `edf52cd` (los `.uid`) | `digest` igual, cabecera `50 4b 03 04`, repositorio privado | Subida ([T-079](TASKS.md#t-079)) |
-| Base del audio: buses, volúmenes guardados y pestaña «Ajustes» | `e44fb9e` | Batería `2026-11-08_201034`: 33 superadas y 0 fallidas; `prueba_audio` (muda); captura revisada | Hecho en el PC, sin escuchar ([D-064](DECISIONS.md#d-064)) |
-| Prueba v54 en GitHub (la v52 más los ajustes de sonido) | `2776729` (los `.uid`) | `digest` igual, cabecera `50 4b 03 04`, repositorio privado | Subida ([T-079](TASKS.md#t-079)) |
-
-## Hecho en este hito, además
-
-- **La partida del PC se reescribió a las 19:37:34**, pero no fue la batería. Fue un juego lanzado desde un editor
-  abierto en la copia del usuario, que aún no tiene el arreglo de T-076. Se conserva tal cual
-  ([D-011](DECISIONS.md#d-011)).
-- **El ejecutor de pruebas** apunta cualquier Godot que no haya lanzado y, al pasarse de tiempo una prueba, solo cierra
-  lo suyo. Antes podía cerrar un editor del usuario ([D-010](DECISIONS.md#d-010)).
-- **`prueba_grupos_combate`** ya no falla al azar: si el único Slime huye, se gana sin experiencia, como manda el juego.
+| Punto | Estado |
+|---|---|
+| 1. La v54 al Redmi por USB | **Hecho** (20:24): en Descargas, tamaño y SHA-256 comprobados en el teléfono |
+| 2. La copia habitual y el ejecutor | **Hecho**: protección del guardado en `rebelum-3d` (`b8e042d`) y ejecutor verificado (`d5fd793`) |
+| 3. Progresión original y encuentros con los niveles reales de incorporación | Siguiente |
+| 4. Gestor de música (T-030) | Pendiente |
+| 5-7. Primer diálogo: presentación, gestos, cámara y texto ([T-081](TASKS.md#t-081)) | Pendiente |
+| 8-9. Integración, medidas, APK al Redmi y memoria por hitos | En cada hito |
 
 ## Cambios sin confirmar
 
-- **`D:\Aethelgard`:** los documentos de memoria (se publican en `memoria-desarrollo`) y los cambios del usuario, sin
-  tocar.
+- **`D:\Aethelgard`:** los documentos de memoria (se publican en `memoria-desarrollo`) y los cambios del usuario
+  (bloque B), sin tocar.
 - **`D:\Aethelgard_alpha`:** solo el `CLAUDE.md` puntero.
 
 ## Límites de lo comprobado
 
-- **Nada probado en el Redmi:** ni la v41, ni la v44, ni la v47, ni la v50, ni la v52, ni la v54. Falta el banco GRUPO.
-- **T-025, sin hardware:** ningún mando real ni teclado real; el táctil, solo con las pruebas simuladas
-  (`prueba_toque`, `prueba_dpad`, las de la región y la captura con el dedo). Lista de pruebas manuales abiertas en
-  [T-025](TASKS.md#t-025).
-- **Sonidos sin escuchar:** el del cofre
-  (`D:\REBELUM_diagnostico\pruebas\2026-11-08_184646\prueba_region3d_fotos\sonido_cofre.wav`) y las campanas.
+- **Nada probado en el Redmi todavía:** la v54 está copiada, pero sin instalar. Falta el banco GRUPO.
+- **T-025, sin hardware:** ningún mando real ni teclado real; el táctil, solo con las pruebas simuladas. No es una
+  validación completa de las plataformas. Pruebas manuales abiertas en [T-025](TASKS.md#t-025).
+- **Sonidos sin escuchar:** el cofre, las campanas y los volúmenes de los ajustes.
 - **Combates:** se ganan con ataques automáticos; no prueban la estrategia de un jugador.
 - **Guardado:** lo comprobado reduce el riesgo de perder la partida, no lo elimina ([D-056](DECISIONS.md#d-056)).
-- **Revisión visual:** solo con mis capturas. Falta la opinión del usuario.
+- **La copia habitual** sigue con el ejecutor de pruebas antiguo (traer el nuevo necesita autorización).
 
 ## Próximo paso concreto (por dependencias)
 
-1. **Audio (T-030), lo siguiente:** el gestor de música con fundidos (el combate ya baja su música a mano) y el
-   inventario de cada sonido (original, evento, licencia y evidencia), que pide el criterio de T-030. Sin canciones
-   de Suno; el reparto de pistas de D-043 sigue sin decidir y se decide escuchando.
-2. **Después:** integración, y solo entonces las magias, estados y habilidades nuevas (T-040). Las magias existentes
-   no cambian.
-3. **Del perfil bajo (T-023), cuando haya Redmi:** medir las cargas y los tirones con la v54, y después la sombra
-   precalculada.
+1. **Encuentros con los niveles reales** de incorporación de Lya y Garon (sin nivelación automática): medir y, si las
+   pruebas lo justifican, ajustar los encuentros iniciales sin tocar las magias.
+2. **Gestor de música (T-030):** música por contexto, transiciones y vuelta del combate; sin duplicados ni cortes;
+   candidatos con licencia de `D:\qtorrent\sound effect`, registrando procedencia; sin Suno.
+3. **El primer diálogo ([T-081](TASKS.md#t-081)):** localizarlo con una partida aislada, capturas de referencia y
+   mejorarlo entero (texto, cámara, gestos), con antes/después.
+4. Cuando haya una mejora jugable comprobada: APK nueva, release privada y copia al Redmi.
 
 ## Pendiente del usuario
 
-- **Probar la v54 en el móvil** (la v52 más los ajustes de sonido; sustituye a la v50), con el dedo:
-  - que todo funcione como antes: andar, la barra, «Entrar», la acción, los diálogos con «SEGUIR», el combate, los
-    menús, la tienda y el diario;
-  - que no salga ningún marco dorado al tocar ni se quede marcado un botón;
+- **Instalar y probar la v54** (está en Descargas):
+  - con el dedo, que todo funcione como antes y que no salga ningún marco dorado al tocar;
   - que Lya, al unirse con su propio nivel, deje ganar los combates siguientes;
-  - y lo pendiente de la v50: Kael solo hasta Lya, diálogos y paseos sin parones, cargas, el cofre y la cinemática.
-- **Opcional:** un mando o un teclado Bluetooth en el móvil o en el PC.
-- **Escuchar los volúmenes en la v54** (menú del grupo → «Ajustes»): que cada barra se note, que «Sin sonido» calle,
-  que se conserven al cerrar y abrir la app, y que al 100 % todo suene como antes.
-- **Decidir** la nivelación al unirse ([D-062](DECISIONS.md#d-062)).
-- **Ver** la lámina del foco.
+  - en «Ajustes», que cada volumen se note, que «Sin sonido» calle y que se conserven al reabrir.
+- **Opcional:** un mando o un teclado Bluetooth.
+- **Decidir** la nivelación al unirse ([D-062](DECISIONS.md#d-062)); no hace falta para seguir.
 - Licencias ([T-070](TASKS.md#t-070)): qué sustituye a la música de Suno en una APK entregable; los créditos de
   Meshy.
 
 ## Restricciones y autorizaciones vigentes
 
 Las normas completas están en [CLAUDE.md](CLAUDE.md). Lo esencial:
-- **Encargo único:** reanudado ([D-046](DECISIONS.md#d-046)). Cambios pequeños, reversibles y comprobados; se puede
-  compilar y probar en local.
+- **Encargo:** cambios pequeños, reversibles y comprobados en `rebelum-alpha`; se puede compilar y probar en local.
 - **Push:** solo la memoria, en `memoria-desarrollo` ([D-049](DECISIONS.md#d-049)), y las APK de prueba, en el
   repositorio privado `Aethelgard-pruebas` ([D-054](DECISIONS.md#d-054)). Nada de push de `rebelum-alpha`.
-- **Privacidad y licencias:** que el repositorio sea privado no cambia los permisos de los recursos.
-  - Las APK siguen siendo `NO_DISTRIBUIR`.
-  - Ninguna lleva música de Suno.
-- **Git:** nada en `main` ni en `desarollo`; nada destructivo; no tocar el bloque B.
+- **Redmi:** solo copiar APK de prueba a Descargas por USB y comprobarlas ([D-065](DECISIONS.md#d-065)). Instalar y lo
+  demás, el usuario.
+- **Copia habitual:** solo la protección del guardado ([D-066](DECISIONS.md#d-066)); el bloque B no se toca.
+- **Privacidad y licencias:** las APK siguen siendo `NO_DISTRIBUIR`; ninguna lleva música de Suno.
+- **Git:** nada en `main` ni en `desarollo`; nada destructivo.
 - **Datos:** la partida del PC se conserva tal cual; las pruebas, siempre aisladas.
-- **Redmi:** reservado.
 - **Magias:** las existentes no cambian ([D-048](DECISIONS.md#d-048)).

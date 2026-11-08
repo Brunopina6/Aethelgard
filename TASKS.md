@@ -1,8 +1,8 @@
 # TASKS: tareas de AETHELGARD / REBELUM
 
-**Actualizado el 2026-11-08 a las 20:20 (hora local, UTC+1).**
-- Copia del usuario: `rebelum-3d` @ `ce84422`.
-- Árbol del encargo: `rebelum-alpha` @ `2776729`.
+**Actualizado el 2026-11-08 a las 20:45 (hora local, UTC+1).**
+- Copia del usuario: `rebelum-3d` @ `b8e042d` (la protección del guardado, [D-066](DECISIONS.md#d-066)).
+- Árbol del encargo: `rebelum-alpha` @ `d5fd793`.
 
 **Estados**
 - **Pendiente:** sin empezar.
@@ -49,11 +49,12 @@
 | [T-073](#t-073) | Decisiones D1-D7 sobre las Skills | Bloqueada (usuario) | Baja |
 | [T-074](#t-074) | Preguntas de GitHub y pre-releases | Bloqueada (usuario) | Baja |
 | [T-075](#t-075) | Commit del bloque B | Bloqueada (usuario) | Media |
-| [T-076](#t-076) | Que una sesión sin partida cargada no pise la partida completa | Terminada en alpha (`86a58af`) | — |
+| [T-076](#t-076) | Que una sesión sin partida cargada no pise la partida completa | Terminada en alpha (`86a58af`) y en la copia habitual (`b8e042d`) | — |
 | [T-077](#t-077) | `prueba_guardado` con un archivo propio | Terminada en alpha (`86a58af`) | — |
-| [T-078](#t-078) | Validar las APK en el Redmi | Bloqueada (dispositivo) | Media |
+| [T-078](#t-078) | Validar las APK en el Redmi | Bloqueada (usuario): la v54 ya está en sus Descargas ([D-065](DECISIONS.md#d-065)); falta instalarla y probarla | Media |
 | [T-079](#t-079) | Repositorio privado para descargar las APK de prueba en el móvil | Terminada | — |
 | [T-080](#t-080) | Decidir la nivelación automática de quien se une al grupo (D-062) | Bloqueada (usuario) | Baja |
+| [T-081](#t-081) | El primer diálogo: presentación, cámara, texto y gestos (encargo del 08/11 por la noche) | Pendiente | Alta |
 
 ## Continuidad
 
@@ -601,8 +602,13 @@
   reduce el riesgo de perder la partida, no lo elimina ([D-056](DECISIONS.md#d-056)).
 - **Restricción:** la partida del PC no se restaura ([D-011](DECISIONS.md#d-011)).
 - **08/11, 19:37:34:** volvió a pasar en la copia del usuario (`rebelum-3d`, sin este arreglo). Un juego lanzado desde
-  su editor reescribió la partida del PC ([D-011](DECISIONS.md#d-011)). El arreglo llegará a esa copia cuando el
-  usuario decida integrar `rebelum-alpha`.
+  su editor reescribió la partida del PC ([D-011](DECISIONS.md#d-011)).
+- **Traído a la copia habitual** (08/11, 20:36, `b8e042d`, [D-066](DECISIONS.md#d-066)), con permiso del usuario: solo
+  la protección (`progreso.gd`) y las 3 líneas de `inventario.gd`.
+  - **Evidencia** (ejecutado aislado en `D:\Aethelgard_guardado`, copia del mismo estado): batería 15 → 16 superadas
+    con las mismas 2 fallidas de antes; `prueba_guardado_protegido`; y de punta a punta, abrir `mapa.tscn` suelto y
+    cerrar la ventana ya no reescribe una partida completa (sin el arreglo, perdía `grupo` e `inventario`).
+  - Respaldo: `D:\REBELUM_respaldos\2026-11-08_antes_guardado_copia_habitual`. El bloque B, idéntico.
 
 ### T-077
 **`prueba_guardado` con un archivo propio**
@@ -711,7 +717,9 @@
   - el repositorio sigue privado, con el dueño como único colaborador y sin invitaciones;
   - la petición de los 4 primeros bytes devuelve `50 4b 03 04` (HTTP 206);
   - el orden es v54 («Latest»), v52, v50, v47, v44, v41, v39 y la original.
-- **Pendiente de verificar:** la descarga completa y la instalación en el móvil, que hace el usuario.
+- **Copiada al Redmi por USB** (08/11, 20:24, [D-065](DECISIONS.md#d-065)): la v54, como
+  `Download/Aethelgard_Exp_2026-11-08_v54.apk`; en el teléfono, 256 658 545 bytes y el mismo SHA-256. No se borró nada.
+- **Pendiente de verificar:** la instalación y la prueba en el móvil, que hace el usuario.
 
 ### T-080
 **Decidir la nivelación automática de quien se une al grupo**
@@ -722,3 +730,17 @@
 - **Comprobado:** `prueba_grupos_combate` comprueba que unirse no cambia ningún dato y que los combates de dos y tres
   héroes se ganan con todos en el nivel 1.
 - **Para cerrarla:** que el usuario decida si la quiere (y si también «llegar descansado»).
+
+### T-081
+**El primer diálogo: presentación, cámara, texto y gestos (encargo del 08/11 por la noche)**
+- **Estado:** pendiente. **Prioridad:** alta.
+- **Petición** [usuario]: «El diálogo que aparece al abrir el juego me parece pobre. Quiero mejorar su presentación y
+  las animaciones de los personajes.» Primero localizarlo arrancando con una partida aislada (partida nueva y
+  existente), observarlo con ventana y guardar capturas o vídeo de referencia; después mejorar esa conversación
+  completa antes de extender el estilo.
+- **Alcance:** entrada que sitúe al jugador, encuadres y pausas con intención; respiración, miradas, gestos breves y
+  reacciones sin que todos se muevan siempre; texto de Dialogic legible en móvil (tipografía, contraste, márgenes,
+  interlocutor, indicador de continuar, opciones); saltar la secuencia y recuperar cámara y control.
+- **Reglas:** conservar los hechos del argumento, hitos, recompensas y canon (se pueden pulir frases manteniendo su
+  sentido y la voz de cada personaje); una pulsación por acción (una completa la frase, la siguiente avanza); misión
+  separada de las animaciones; medir antes y después; capturas antes/después.

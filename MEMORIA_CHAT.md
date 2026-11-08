@@ -1,6 +1,6 @@
 # MEMORIA_CHAT: lo aprendido en las conversaciones sobre AETHELGARD / REBELUM
 
-> **Actualizado el 2026-11-08 a las 20:20** (hora local, UTC+1), en la rama `rebelum-3d` @ `ce84422`. Se publica en la
+> **Actualizado el 2026-11-08 a las 20:45** (hora local, UTC+1), en la rama `rebelum-3d` @ `b8e042d`. Se publica en la
 > rama `memoria-desarrollo` de GitHub.
 >
 > Es un **resumen**, no una transcripción. El chat legible está en
@@ -100,10 +100,36 @@
   - **Después, el siguiente paso autorizado:** la base del audio (T-030, [D-064](DECISIONS.md#d-064)): buses,
     volúmenes guardados y la pestaña «Ajustes» (`e44fb9e`), y la «Prueba v54» con ellos. Sin escuchar todavía: la
     prueba es muda.
-- **Siguiente:** el encargo único por dependencias; del perfil bajo, la medición en el Redmi y la sombra precalculada
-  ([SESSION_HANDOFF.md](SESSION_HANDOFF.md)).
+- **Encargo del 08/11, hacia las 20:20** (pegado; «continúa sin preguntas rutinarias dentro de este alcance»), en 9
+  puntos:
+  1. **Redmi por USB** ([D-065](DECISIONS.md#d-065)): comprobar la conexión y copiar las APK de prueba a Descargas,
+     verificadas por tamaño y SHA-256, sin borrar las anteriores; el usuario las instala. **Hecho con la v54.**
+  2. **Copia habitual:** documentar la escritura de las 19:37:34; traer **solo** la protección del guardado si es
+     pequeña, reversible y compatible, con respaldo y validación aislada antes; verificar que el ejecutor solo cierra
+     lo suyo. **Hecho** (`b8e042d` en `rebelum-3d`, [D-066](DECISIONS.md#d-066); `d5fd793`).
+  3. **Progresión original:** sin la nivelación de `e670a5d`; D-062 sigue como propuesta; comprobar con los niveles
+     reales de incorporación que los encuentros posteriores se pueden superar y ajustar los iniciales si las pruebas lo
+     justifican, sin tocar las magias.
+  4. **Gestor de música (T-030):** música por contexto, transiciones, vuelta del combate, pausa, cambio de escena,
+     derrota, carga y reentrada sin duplicados ni cortes; volúmenes y silencio respetados; candidatos con permisos de
+     `D:\qtorrent\sound effect` con procedencia y licencia; sin Suno; si falta un recurso, sustituto adecuado o
+     silencio controlado; registrar aparte asignación, reproducción iniciada y escucha real.
+  5. **El primer diálogo** ([T-081](TASKS.md#t-081)): «me parece pobre»; localizarlo con una partida aislada (nueva y
+     existente), capturas o vídeo de referencia, y mejorarlo entero antes de extender el estilo; conservar hechos,
+     hitos, recompensas y canon, puliendo frases sin cambiar su sentido ni la voz.
+  6. **Gestos y reacciones:** reutilizar modelos, esqueletos y clips; crear los que falten con herramientas
+     disponibles (Blender instalado, sin servicios con créditos ni cargas a terceros); respiración, miradas, gestos
+     breves, escucha, transiciones; sin que todos se muevan siempre; pies, manos, armas, cuello y sin deslizamiento.
+  7. **Cámara, texto y controles:** entrada que sitúe, encuadres para leer reacciones, saltar y recuperar control;
+     Dialogic legible en móvil (tipografía, contraste, márgenes, interlocutor, indicador, opciones); una pulsación
+     completa la frase y la siguiente avanza.
+  8. **Integración y medidas:** misión separada de las animaciones; medir antes/después; lo no comprobado con
+     hardware o escucha, pendiente; T-025 no es validación completa.
+  9. **Por hitos:** la v54 al Redmi primero; luego guardado, música y diálogo; memoria tras cada hito; APK nueva cuando
+     haya una mejora jugable comprobada, con antes/después del diálogo.
+- **Siguiente:** el punto 3 y después el 4 ([SESSION_HANDOFF.md](SESSION_HANDOFF.md)).
 - **Vigente:**
-  - el Redmi está reservado;
+  - el Redmi solo recibe por USB las APK de prueba en Descargas ([D-065](DECISIONS.md#d-065));
   - la partida del PC se conserva tal cual;
   - ni push ni publicaciones, salvo dos:
     - la memoria en `memoria-desarrollo`, tras cada hito;
