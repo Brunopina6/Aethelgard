@@ -64,7 +64,7 @@ func _unhandled_input(ev: InputEvent) -> void:
 
 func _process(_d: float) -> void:
 	var d = get_node_or_null("/root/Dialogic")
-	visible = d != null and d.current_timeline != null
+	visible = d != null and d.current_timeline != null and not d.paused   # en pausa (p. ej. la entrada del prólogo), no
 	if visible:
 		estilar()
 
@@ -88,11 +88,33 @@ func estilar() -> void:
 		if not n.has_meta("estilo"):                   # caja oscura transparente con la línea dorada fina
 			n.set_meta("estilo", true)
 			n.add_theme_font_override("normal_font", Estilo.normal())
-			n.add_theme_font_size_override("normal_font_size", 26)
+			# legible en el móvil (T-081): letra de 28, algo más de aire entre líneas y la caja más ancha
+			n.add_theme_font_size_override("normal_font_size", 28)
+			n.add_theme_constant_override("line_separation", 6)
 			n.add_theme_color_override("default_color", Estilo.LUZ_CLARA)
 			var caja := _caja_de(n)
 			if caja != null:
-				caja.add_theme_stylebox_override("panel", Estilo.ventana(0.8))
+				var fondo: StyleBoxFlat = Estilo.ventana(0.8)
+				fondo.content_margin_left = 28
+				fondo.content_margin_right = 28
+				fondo.content_margin_top = 18
+				fondo.content_margin_bottom = 16
+				caja.add_theme_stylebox_override("panel", fondo)
+				var medida := caja.get_parent()            # «Sizer»: 880 de ancho (antes 550), centrado abajo
+				if medida is Control and medida.name == "Sizer":
+					medida.offset_left = -440
+					medida.offset_right = 440
+					medida.offset_top = -172
+					medida.offset_bottom = -14
+	for n in get_tree().get_nodes_in_group("dialogic_next_indicator"):
+		if not n.has_meta("estilo"):                   # el indicador de «sigue», en dorado
+			n.set_meta("estilo", true)
+			n.modulate = Estilo.ORO
+	for n in get_tree().get_nodes_in_group("dialogic_choice_button"):
+		if not n.has_meta("estilo"):                   # opciones grandes y fáciles de tocar
+			n.set_meta("estilo", true)
+			n.custom_minimum_size = Vector2(560, 54)
+			n.add_theme_font_size_override("font_size", 26)
 
 
 # Primer panel que envuelve a un nodo del diálogo (la caja que se ve detrás).

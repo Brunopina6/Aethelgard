@@ -76,6 +76,7 @@ var jugador: Node2D
 var sprite                # muñeco animado de Kael (muneco.gd)
 var camara: Camera2D
 var ui: CanvasLayer
+var escena_dialogo: Node = null   # la puesta en escena del prólogo (escena_dialogo.gd), mientras dura
 var boton_entrar: Button
 var aviso: Label
 var etiqueta_zona: Label
@@ -112,10 +113,11 @@ func _ready() -> void:
 	_crear_ui()
 	zona_actual = _zona_en(jugador.position)
 	etiqueta_zona.text = "Zona: %s" % NOMBRES_ZONA.get(zona_actual, zona_actual)
-	# escena de historia: el prólogo sale la primera vez que se abre el mapa (Dialogic)
+	# escena de historia: el prólogo sale la primera vez que se abre el mapa (Dialogic), con su puesta en escena
+	# (escena_dialogo.gd: velo, franjas, cámara, título y «Saltar»; T-081)
 	if not Engine.get_meta("prologo_visto", false) and has_node("/root/Dialogic") and not "sin_prologo" in OS.get_cmdline_user_args():
 		Engine.set_meta("prologo_visto", true)
-		get_node("/root/Dialogic").start.call_deferred("prologo")
+		_empezar_prologo.call_deferred()
 	for a in OS.get_cmdline_user_args():          # pruebas: godot ... -- menu=Grupo
 		if a.begins_with("menu="):
 			_abrir_menu(a.substr(5))
@@ -669,5 +671,14 @@ func _mostrar_aviso(texto: String) -> void:
 	tween_aviso.tween_property(aviso, "modulate:a", 0.0, 0.5)
 
 
+func _empezar_prologo() -> void:
+	escena_dialogo = load("res://escena_dialogo.gd").new()
+	add_child(escena_dialogo)
+	escena_dialogo.terminada.connect(func(): escena_dialogo = null)
+	escena_dialogo.empezar("prologo", camara, "Prólogo", [jugador])  # el muñeco del mapa y su sombra no compiten con
+																		# los retratos (la cámara, su hija, sigue igual)
+
+
+# También durante la entrada y la salida de la puesta en escena: Kael no anda y la interfaz no tapa la escena.
 func _en_dialogo() -> bool:
-	return has_node("/root/Dialogic") and get_node("/root/Dialogic").current_timeline != null
+	return escena_dialogo != null or (has_node("/root/Dialogic") and get_node("/root/Dialogic").current_timeline != null)

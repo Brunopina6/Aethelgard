@@ -1,0 +1,15 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://dialogos/retrato_vivo.gd" id="1_vivo"]
+
+[node name="RetratoVivo" type="Node2D"]
+script = ExtResource("1_vivo")
+
+[node name="Foco" type="Node2D" parent="."]
+
+[node name="Gesto" type="Node2D" parent="Foco"]
+
+[node name="Respira" type="Node2D" parent="Foco/Gesto"]
+
+[node name="Portrait" type="Sprite2D" parent="Foco/Gesto/Respira"]
+centered = false
