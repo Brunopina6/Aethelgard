@@ -1,7 +1,11 @@
 # SESSION_HANDOFF: punto de control
 
-**Último punto de control:** 2026-11-08 a las 17:20 (hora local, UTC+1).
-- **Hecho:** el guardado protegido, el cofre y la cinemática del mirador. La Prueba v44 está subida.
+**Último punto de control:** 2026-11-08 a las 17:40 (hora local, UTC+1).
+- **Hecho y comprobado en el PC:** la región de Pastos Verdes queda cerrada:
+  - guardado protegido, cofre y cinemática del mirador;
+  - el grupo se une con la misión, con objetivo y marcador en pantalla;
+  - combate real del centinela y medición con y sin grupo.
+- **Subida:** la Prueba v47.
 - **Relevo anterior** (del 07/11 por la tarde hasta las 16:40 del 08/11, con las tablas del Redmi): en
   [docs/memory/archive/2026-11-08_relevo_anterior.md](docs/memory/archive/2026-11-08_relevo_anterior.md).
 
@@ -11,11 +15,11 @@
 |---|---|
 | Raíz del repositorio | `D:\Aethelgard`; el proyecto de Godot está en `D:\Aethelgard\aethelgard\` |
 | Copia del usuario | Rama `rebelum-3d` @ `ce84422`, local. Aquí se editan los documentos de memoria |
-| Árbol del encargo | `D:\Aethelgard_alpha`, rama `rebelum-alpha` @ `21d2e21`, local y nunca subida |
+| Árbol del encargo | `D:\Aethelgard_alpha`, rama `rebelum-alpha` @ `091d1d1`, local y nunca subida |
 | Copia de la memoria | `D:\Aethelgard_memoria`, rama `memoria-desarrollo`. Las publicaciones se ven con `git log origin/memoria-desarrollo` |
 | GitHub (`Brunopina6/Aethelgard`) | `main` @ `d4b2d16`, `desarollo` @ `2d1adc4`, `v0.1.0` y `memoria-desarrollo` (solo memoria) |
-| APK de prueba para el móvil | `Brunopina6/Aethelgard-pruebas`, privado: v44 («Latest»), v41, v39 y la original ([D-054](DECISIONS.md#d-054)) |
-| Procesos en marcha | Ninguno a las 17:17. Compruébalo antes de lanzar Godot: dos Godot sobre el mismo proyecto se pisan |
+| APK de prueba para el móvil | `Brunopina6/Aethelgard-pruebas`, privado: v47 («Latest»), v44, v41, v39 y la original ([D-054](DECISIONS.md#d-054)) |
+| Procesos en marcha | Ninguno a las 17:36. Compruébalo antes de lanzar Godot: dos Godot sobre el mismo proyecto se pisan |
 
 ## Encargo en curso
 
@@ -31,6 +35,10 @@
 | Cofre del árbol mágico | `d4db508` | `prueba_cofre3d` y capturas | Hecho; **sonido sin escuchar** ([D-057](DECISIONS.md#d-057)) |
 | Cinemática del mirador (PV-07) | `d4db508` | `prueba_mirador` y capturas | Hecho; **campanas sin escuchar** ([D-058](DECISIONS.md#d-058)) |
 | Prueba v44 en GitHub | `21d2e21` (los `.uid`) | Batería `2026-11-08_171230`: 23 superadas, 0 fallidas y 12 manuales; `digest` igual | Subida ([T-079](TASKS.md#t-079)) |
+| El grupo se une con la misión; objetivo y marcador | `3d5f63d` | `prueba_ruta_alpha`, `prueba_grupo3d_rutas` (181 m, ruta válida) y capturas | Hecho ([D-059](DECISIONS.md#d-059)) |
+| Combate real del centinela y recorrido final | `3d5f63d` | `prueba_centinela`: ganado en 64 s con ataques automáticos | Hecho; el alcance está en [T-022](TASKS.md#t-022) |
+| Medición en el PC con y sin grupo | `ce2094b` | `medir_ruta.gd`: +0,4–0,6 ms y +46 MB de vídeo con el grupo | Hecho; tirón del cofre arreglado |
+| Prueba v47 en GitHub | `091d1d1` (los `.uid`) | Batería `2026-11-08_172719`: 25 superadas y 0 fallidas; después, 4 pruebas de la región; `digest` igual | Subida ([T-079](TASKS.md#t-079)) |
 
 ## Cambios sin confirmar
 
@@ -43,23 +51,27 @@
 - **Sonidos sin escuchar:**
   - el del cofre está en `D:\REBELUM_diagnostico\pruebas\2026-11-08_171143\prueba_region3d_fotos\sonido_cofre.wav`;
   - las campanas solo se han comprobado en cifras.
-- **Nada probado en el Redmi:** ni la v41 ni la v44. Falta el banco GRUPO.
-- **Combate del centinela:** en `prueba_ruta_alpha` la victoria es simulada. Falta una prueba con el combate real.
+- **Nada probado en el Redmi:** ni la v41, ni la v44, ni la v47. Falta el banco GRUPO.
+- **Combate del centinela:** se gana de verdad con ataques automáticos (`prueba_centinela`); no prueba la estrategia de
+  un jugador.
 - **Revisión visual:** solo con mis capturas. Falta la opinión del usuario.
+- **La medición es del PC:** solo orienta para el Redmi.
 
 ## Próximo paso concreto (por dependencias)
 
-1. **Recorrido, grupo y pantalla pequeña** (encargo §3 y §4):
-   - el grupo en varias rutas, en posiciones difíciles y con distintas distancias de cámara;
-   - indicadores de objetivo y de interacción legibles en el móvil.
-2. **Combate real del centinela**, con el combate automático si es viable, y el recorrido completo.
-3. **Medir en el PC con y sin grupo** con el mismo recorrido (andar, puente, interacción, entrada al combate y
-   vuelta), apuntando equipo, commit, tiempos por fotograma y memoria.
-4. **APK nueva y memoria publicada.**
+1. **Costes identificados y sin tocar** (T-023):
+   - preparar al cargar el primer diálogo de Dialogic (unos 180 ms en el PC);
+   - precalentar los sombreados (picos de 50 ms al empezar a andar).
+   - Medir antes y después con `medir_ruta.gd`.
+2. **Decidir con el usuario:** si los combates por pasos antes de PV-03 deben llevar solo a Kael
+   ([D-059](DECISIONS.md#d-059)).
+3. **Después, el encargo único por dependencias:** estabilidad, controles (T-025), audio (T-030) e integración, antes
+   de las magias, estados y habilidades nuevas (T-040). Las magias existentes no cambian.
 
 ## Pendiente del usuario
 
-- Probar la v44 en el móvil:
+- Probar la v47 en el móvil, a ser posible empezando la misión desde el principio:
+  - si se entiende qué hacer (el objetivo y el rombo dorado);
   - el cofre: si se ve y se oye bien;
   - la cinemática;
   - el grupo.

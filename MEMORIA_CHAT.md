@@ -1,6 +1,6 @@
 # MEMORIA_CHAT: lo aprendido en las conversaciones sobre AETHELGARD / REBELUM
 
-> **Actualizado el 2026-11-08 a las 17:20** (hora local, UTC+1), en la rama `rebelum-3d` @ `ce84422`. Se publica en la
+> **Actualizado el 2026-11-08 a las 17:40** (hora local, UTC+1), en la rama `rebelum-3d` @ `ce84422`. Se publica en la
 > rama `memoria-desarrollo` de GitHub.
 >
 > Es un **resumen**, no una transcripción. El chat legible está en
@@ -59,10 +59,18 @@
     exploración.
   - **Método:** medir antes de optimizar; verificar por hitos con evidencia; distinguir compilación, recorrido,
     revisión visual, escucha y rendimiento.
-  - **Hecho ya:** el guardado protegido (T-076 y T-077, `86a58af`), el cofre y la cinemática del mirador (`d4db508`), y
-    la «Prueba v44».
-- **Siguiente:** recorrido y grupo en pantalla pequeña, combate real del centinela y medición en el PC con y sin grupo
-  ([SESSION_HANDOFF.md](SESSION_HANDOFF.md)).
+  - **Hecho:**
+    - el guardado protegido (T-076 y T-077, `86a58af`);
+    - el cofre y la cinemática del mirador (`d4db508`, v44);
+    - el grupo unido con la misión (Kael llega solo, Lya en PV-03, Garon en PV-05), el objetivo en pantalla y el
+      marcador (`3d5f63d`);
+    - el combate real del centinela, ganado con ataques automáticos;
+    - la medición en el PC con y sin grupo, que encontró y arregló el tirón del cofre (`ce2094b`);
+    - la «Prueba v47».
+  - **Corrección aprendida:** la mediana sin tope no es margen garantizado; cuentan el p95, los picos, la memoria y las
+    cargas.
+- **Siguiente:** los costes identificados (el primer diálogo de Dialogic y los sombreados) y después el encargo único
+  por dependencias ([SESSION_HANDOFF.md](SESSION_HANDOFF.md)).
 - **Vigente:**
   - el Redmi está reservado;
   - la partida del PC se conserva tal cual;

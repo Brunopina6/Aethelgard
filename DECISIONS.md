@@ -70,6 +70,7 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 | [D-056](#d-056) | Guardado protegido: no pisar sin cargar, escritura segura y copia de seguridad | Aprobada en el encargo |
 | [D-057](#d-057) | El cofre del árbol mágico de Pastos Verdes 3D | Aprobada en el encargo |
 | [D-058](#d-058) | La cinemática del mirador (PV-07) | Aprobada en el encargo |
+| [D-059](#d-059) | El grupo se une con la misión; objetivo y marcador en pantalla | Aprobada en el encargo |
 | [D-H01 a D-H15](#6-diseño-ya-implementado-del-3010-al-0511) | Diseño ya implementado antes de Git | Aprobada (historial) |
 
 ## 1. Reglas de trabajo, Git y versiones
@@ -816,6 +817,34 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 - **Pendiente:**
   - el latido del ojo del centinela, que la biblia también propone;
   - escuchar las campanas.
+
+### D-059
+**El grupo se une con la misión; objetivo y marcador en pantalla**
+- **Fecha y estado:** 2026-11-08, hacia las 17:25. Aprobada en el encargo [asistente] (encargo §3 y §4: seguir el lore
+  existente, y que el recorrido se entienda en pantalla pequeña).
+- **Decisión** (`zonas3d/pastos_verdes_3d.gd` y `zonas3d/grupo_3d.gd`, `3d5f63d`):
+  - **Quién acompaña a Kael:** en los diálogos de la misión, Lya llega en PV-03 («¡Kael! ¿De verdad pensabas irte sin
+    mí?») y Garon en PV-05, junto a Tilo («Os acompaño»).
+    - En la v41 y la v44 los dos seguían a Kael desde la entrada, y eso contradecía la escena. Ahora Kael llega solo.
+    - Lya aparece por el camino, detrás, al cerrarse PV-03. Garon aparece junto a Tilo al cerrarse PV-05.
+    - En los bancos salen siempre los dos.
+  - **Objetivo:** una línea arriba a la izquierda. Se oculta en diálogos, en la cinemática y en los bancos. Los textos
+    salen de los diálogos, sin contar nada nuevo:
+    - «Sigue el camino»;
+    - «Sigue el camino hasta el puente»;
+    - «Saluda al centinela del mirador»;
+    - «Vuelve junto al centinela»;
+    - «Vuelve a hablar con Tilo»;
+    - «Sigue el camino hacia el noreste».
+  - **Marcador:** un rombo dorado que gira, del mismo dorado que las salidas. Va sobre Tilo cuando toca hablar con él y
+    sobre el centinela cuando toca ir al mirador.
+  - **Antes y después:**
+    - antes, `D:\REBELUM_diagnostico\pruebas\2026-11-08_171143\prueba_region3d_fotos\bajo_cofre_1_desde_el_camino.png`;
+    - después, la misma captura en `...\2026-11-08_172633\...`, con el objetivo y el rombo sobre Tilo.
+    - El rombo del centinela se bajó de 4,4 a 3,6 m porque se salía por arriba.
+- **Pendiente:**
+  - Los combates por pasos antes de PV-03 meten a Lya y Garon en el combate, porque `combate.gd` usa el grupo de la
+    partida. Es anterior a este cambio y se apunta para decidirlo.
 
 ## 6. Diseño ya implementado del 30/10 al 05/11
 

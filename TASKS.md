@@ -1,8 +1,8 @@
 # TASKS: tareas de AETHELGARD / REBELUM
 
-**Actualizado el 2026-11-08 a las 17:20 (hora local, UTC+1).**
+**Actualizado el 2026-11-08 a las 17:45 (hora local, UTC+1).**
 - Copia del usuario: `rebelum-3d` @ `ce84422`.
-- Árbol del encargo: `rebelum-alpha` @ `21d2e21`.
+- Árbol del encargo: `rebelum-alpha` @ `091d1d1`.
 
 **Estados**
 - **Pendiente:** sin empezar.
@@ -29,7 +29,7 @@
 | [T-012](#t-012) | APK «Prueba 3D» de Pastos Verdes | Terminada (compilada) | — |
 | [T-020](#t-020) | Encargo, Fase 0: línea base, respaldo y diagnóstico | Terminada | — |
 | [T-021](#t-021) | Pastos Verdes 3D desde el mapa (encargo 2.1-2.2; plan 2.3-2.4) | Terminada en PC; falta el móvil | Alta |
-| [T-022](#t-022) | Región 3D completa (encargo 2.3-2.5; plan 2.4-2.5) | En curso: misión, grupo, cofre y mirador hechos; faltan el combate real y la revisión en pantalla pequeña | Alta |
+| [T-022](#t-022) | Región 3D completa (encargo 2.3-2.5; plan 2.4-2.5) | Hecha en el PC (misión, grupo, cofre, mirador, objetivo y combate real); faltan escuchar y el Redmi | Alta |
 | [T-023](#t-023) | Cierre del perfil bajo: precalentado y sombra precalculada (plan 2.1) | Pendiente | Media |
 | [T-024](#t-024) | Métricas de referencia y matriz de cobertura | Pendiente | Media |
 | [T-025](#t-025) | Entrada: mando, teclado y foco; Android TV (plan 2.2) | Pendiente | Media |
@@ -253,11 +253,49 @@
     bajo y alto, revisadas a ojo. Por ellas se giró el cofre y se subieron los planos de la cinemática.
   - **Batería `2026-11-08_171230`: 23 superadas, 0 fallidas**, 12 manuales y 0 no seguras. La partida real no cambió.
   - **APK:** subida como «08/11/2026 · Prueba v44» (`exp-20261108-21d2e21`) ([T-079](#t-079)).
+- **Hecho después** (`3d5f63d`, [D-059](DECISIONS.md#d-059)):
+  - el grupo se une con la misión;
+  - el objetivo en pantalla y el rombo dorado.
+  - **`prueba_grupo3d_rutas`**, nueva: 3 series de destinos al azar, alcanzables y con semilla fija, más sitios
+    difíciles, medias vueltas y la cámara a 9, 20 y 34 m.
+    - Kael anda 181 m y llega a todos los destinos.
+    - En cada fotograma: 0 zonas prohibidas, 0 fuera del suelo, 0 obstáculos atravesados y 0 rezagados; dos
+      fotogramas juntos.
+    - Comprueba también que en el juego normal se cuentan los pasos: los encuentros siguen activos. Solo las pruebas
+      los ponen a 0.
+  - **`prueba_centinela`**, nueva: el combate del centinela **jugado de verdad** (ataques automáticos, `-- auto`).
+    - El grupo inicial lo gana en 64 s de juego y pasa de 150 a 186 monedas; se guarda.
+    - Después: cinemática, PV-07, PV-14, salir al mapa, volver y cargar, sin repetir nada.
+    - **Alcance:** ataques automáticos, sin magias ni objetos. No prueba la estrategia de un jugador.
+  - `prueba_ruta_alpha` comprueba quién acompaña a Kael y el objetivo en cada paso de la misión.
+  - **Batería `2026-11-08_172719`: 25 superadas, 0 fallidas** y 12 manuales.
+- **Medido en el PC** (08/11, 17:30; `pruebas/medir_ruta.gd`, commit `3d5f63d`):
+  - **Condiciones:** el mismo recorrido para todas (andar, puente ida y vuelta, cofre, Tilo, entrada al combate,
+    combate y vuelta), los mismos fotogramas (`--fixed-fps 30`), sin tope, a 1280×720 y con un proceso por condición.
+  - **Equipo:** Ryzen 7 4800H, RTX 3050 Laptop, 16 GB, Godot 4.7.2.
+  - **Datos:** `D:\REBELUM_diagnostico\mediciones\2026-11-08_ruta_grupo\` (`comparacion.md` y los JSON).
+
+  | Fase | Bajo, mediana (p95) | Alto, mediana (p95) |
+  |---|---|---|
+  | andar | 2,93 → 3,42 ms (17,7 → 19,1) | 3,27 → 3,68 ms (20,4 → 19,0) |
+  | puente | 2,92 → 3,56 ms (3,5 → 4,7) | 3,24 → 3,85 ms (3,7 → 4,5) |
+  | interacción | 2,91 → 3,33 ms (3,5 → 4,1) | 3,21 → 3,73 ms (3,9 → 4,5) |
+  | combate | 4,07 → 3,97 ms (el grupo no está) | 3,87 → 3,93 ms |
+
+  - **Con el grupo:** +46 MB de memoria de vídeo (texturas de los dos modelos) y +6 dibujos y +43k triángulos en bajo
+    (+12 y +86k en alto). La carga de la región pasa de 1,7 a 2,2 s.
+  - **Coste identificado y arreglado** (`ce2094b`): generar el sonido del cofre al abrirlo daba un tirón de unos 180 ms.
+    Ahora se prepara al cargar, y el p99 de la interacción baja de 33 a 6 ms.
+  - **Costes identificados y sin tocar:**
+    - la primera vez que se abre un diálogo de Dialogic, unos 180 ms (con y sin grupo);
+    - al empezar a andar, el p95 sube a unos 18 ms con picos de 50 ms, con y sin grupo. Probablemente son sombreados
+      que se compilan (T-023).
+  - **Solo orienta:** el PC no es el Redmi. Lo que cuesta el grupo allí se mide con el banco GRUPO.
+- **APK:** «08/11/2026 · Prueba v47» (`exp-20261108-091d1d1`) ([T-079](#t-079)).
 - **Falta:**
   - **escuchar** el sonido del cofre y las campanas;
   - la opinión visual del usuario y medir el grupo en el Redmi (botón GRUPO);
-  - una prueba con el combate real del centinela (en `prueba_ruta_alpha` la victoria es simulada);
-  - revisar el recorrido en pantalla pequeña: objetivo, indicadores e interacción.
+  - decidir si los combates por pasos antes de PV-03 deben llevar solo a Kael ([D-059](DECISIONS.md#d-059)).
   - Revisar con ventana el aspecto de Tilo, la estela y las salidas.
   - El combate del centinela se ha probado cargando de verdad; la victoria se simuló.
 - **Objetivo:**
@@ -281,10 +319,16 @@
   - **PRUEBA** (sin tope), bajo a 20 m: mediana de **21,5 ms** (cumple ≤ 31) y p95 de **38,4 ms** (se pasa de ≤ 38 por
     0,4 ms). A 34 m: 27,1 y 49,6 ms.
   - **Sin medir:** los picos de más de 100 ms y el tiempo de carga.
-  - **Registros:** `D:\REBELUM_diagnostico\redmi_2026-11-08_region\`. Las tablas completas están en
-    [SESSION_HANDOFF.md](SESSION_HANDOFF.md).
+  - **Registros:** `D:\REBELUM_diagnostico\redmi_2026-11-08_region\`. Las tablas completas están en el relevo
+    archivado ([docs/memory/archive/2026-11-08_relevo_anterior.md](docs/memory/archive/2026-11-08_relevo_anterior.md)).
+  - **Cuidado al leerlo** (corrección del 08/11): que la mediana sin tope sea 21,5 ms no garantiza unos 12 ms libres
+    dentro de los 33,3 ms de 30 FPS. Cuentan el p95 (38,4 ms), los picos, la memoria y las cargas. Lo que cueste el
+    grupo hay que medirlo en el Redmi (banco GRUPO).
   - **Siguiente:** precalentar los sombreados y precalcular la sombra para bajar el p95 sin tope; y medir los picos y la
     carga.
+  - **Candidatos medidos en el PC el 08/11** (`medir_ruta.gd`; ver [T-022](#t-022)):
+    - picos de unos 50 ms al empezar a andar (sombreados que se compilan);
+    - unos 180 ms la primera vez que se abre un diálogo de Dialogic (se podría preparar al cargar).
 - **Criterio de aceptación** (plan 3D, punto 2.1), medido en el Redmi con el escenario y Kael en bajo:
   - mediana ≤ 31 ms y p95 ≤ 38 ms;
   - ningún pico > 100 ms después del precalentado;
@@ -544,4 +588,7 @@
   - el certificado es el mismo y los grupos de licencia, iguales a los de la v41; no lleva Suno;
   - el orden es v44 («Latest»), v41, v39 y la original;
   - el `README.md` ya separa la privacidad del repositorio de los permisos de los recursos.
+- **Prueba v47** (08/11, hacia las 17:40), con la misma convención:
+  - la release `exp-20261108-091d1d1` contiene el archivo `Aethelgard_Exp_2026-11-08_v47.apk`, de 256 629 386 bytes;
+  - SHA-256 `988f9a8e…`; certificado y grupos de licencia, iguales a los de la v44; sin Suno.
 - **Pendiente de verificar:** la descarga completa y la instalación en el móvil, que hace el usuario.

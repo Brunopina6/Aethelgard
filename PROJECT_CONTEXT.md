@@ -192,7 +192,12 @@ objetos.
     - no guarda encima de una partida que la sesión no cargó;
     - escribe en `.tmp`, lo comprueba y deja la anterior en `.bak`;
     - recupera una partida dañada.
-  - Falta una prueba con el combate real del centinela (T-022).
+  - Desde `3d5f63d` ([D-059](DECISIONS.md#d-059)):
+    - Lya y Garon se unen con la misión (PV-03 y PV-05);
+    - hay objetivo en pantalla y un rombo dorado sobre Tilo o el centinela.
+    - Las pruebas son `prueba_grupo3d_rutas.gd` (rutas al azar, ruta válida) y `prueba_centinela.gd` (combate real con
+      `-- auto`).
+  - **Medición en el PC:** `pruebas/medir_ruta.gd`, el mismo recorrido con y sin grupo (T-022).
 
 ## 6. Diálogos y narrativa
 
@@ -273,6 +278,8 @@ objetos.
     - `rebelum-3d`: 15 superadas, 2 fallidas, 10 manuales y 0 no seguras.
     - `rebelum-alpha` (2026-11-07 15:27): **17 superadas, 0 fallidas**, 10 manuales y 0 no seguras.
     - `rebelum-alpha` (2026-11-08 16:35, batería `2026-11-08_163510`): **20 superadas, 0 fallidas**, 11 manuales y
+      0 no seguras.
+    - `rebelum-alpha` (2026-11-08 17:27, batería `2026-11-08_172719`): **25 superadas, 0 fallidas**, 12 manuales y
       0 no seguras.
 - **Utilidades de arte** (`pruebas/herramientas/`): `hojas_a_geometria.gd`, `impostores.gd`, `preparar_meshy.gd`,
   `textura_hojas.gd` y `hoja.ps1`.
