@@ -1,6 +1,6 @@
 # MEMORIA_CHAT: lo aprendido en las conversaciones sobre AETHELGARD / REBELUM
 
-> **Actualizado el 2026-11-08 a las 15:55** (hora local, UTC+1), en la rama `rebelum-3d` @ `ce84422`. Se publica en la
+> **Actualizado el 2026-11-08 a las 16:40** (hora local, UTC+1), en la rama `rebelum-3d` @ `ce84422`. Se publica en la
 > rama `memoria-desarrollo` de GitHub.
 >
 > Es un **resumen**, no una transcripción. El chat legible está en
@@ -50,7 +50,12 @@
     El resto sigue como se configuró.
   - Ese mismo mensaje: «la música de suno no son libres». Una APK con esa música no se sube.
   - Con «Sí, cópiala», la original (`v0.1.0`) también está en el repositorio de pruebas, al final de la lista.
-- **Siguiente:** T-022: Lya y Garon siguiendo a Kael (hay unos 12 ms de margen), el cofre y la cinemática del mirador.
+- **Lya y Garon siguen a Kael (08/11, «Sí, empieza»):** `zonas3d/grupo_3d.gd` ([D-055](DECISIONS.md#d-055)).
+  - Pruebas en verde.
+  - Cuestan +0,4 ms en el PC.
+  - Subido como «08/11/2026 · Prueba v41».
+- **Siguiente:** el cofre y la cinemática del mirador (T-022). Antes conviene la opinión visual del usuario sobre el
+  grupo.
 - **Vigente:**
   - el Redmi está reservado;
   - la partida del PC se conserva tal cual;

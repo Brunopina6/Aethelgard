@@ -1,7 +1,7 @@
 # DECISIONS: decisiones de AETHELGARD / REBELUM
 
 **Actualizado el 2026-11-08** sobre la copia del usuario (`rebelum-3d` @ `ce84422`) y el árbol del encargo
-(`rebelum-alpha` @ `aabe5ad`). Las horas son locales (UTC+1).
+(`rebelum-alpha` @ `3976565`). Las horas son locales (UTC+1).
 
 **Estados**
 - **Aprobada:** la tomó o la aprobó el usuario.
@@ -66,6 +66,7 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 | [D-052](#d-052) | La misión del corte alfa dentro de la región | Aprobada en el encargo |
 | [D-053](#d-053) | Validación de la región en el Redmi, pedida por el usuario | Aprobada (hecha) |
 | [D-054](#d-054) | Repositorio privado `Aethelgard-pruebas` para descargar las APK de prueba en el móvil | Aprobada |
+| [D-055](#d-055) | Lya y Garon siguen a Kael en la exploración 3D | Aprobada en el encargo |
 | [D-H01 a D-H15](#6-diseño-ya-implementado-del-3010-al-0511) | Diseño ya implementado antes de Git | Aprobada (historial) |
 
 ## 1. Reglas de trabajo, Git y versiones
@@ -712,6 +713,36 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
   - **Una versión en `Brunopina6/Aethelgard`:** obliga a crear etiquetas en el repositorio del juego. Además, la APK
     sale de commits que no están publicados.
   - **Subir la APK al repositorio como archivo:** GitHub no admite archivos de más de 100 MB fuera de las versiones.
+
+### D-055
+**Lya y Garon siguen a Kael en la exploración 3D**
+- **Fecha y estado:** 2026-11-08, hacia las 16:10. Aprobada en el encargo [asistente], después de que el usuario
+  dijera «Sí, empieza» (T-022).
+- **Decisión** (`zonas3d/grupo_3d.gd`, rama `rebelum-alpha`):
+  - **Quién sale:** los que estén en el grupo de la partida (`grupo.gd`, `EN_EL_GRUPO`), menos Kael, y tengan modelo 3D.
+    Son los mismos scripts del combate (`maga_3d.gd` y `garon_3d.gd`).
+  - **Cómo siguen:**
+    - cada uno sigue al de delante: Lya a Kael y Garon a Lya;
+    - recorren el rastro de puntos que deja el de delante, así que pasan por donde pasó él (el puente, la orilla, los
+      rodeos) y no pisan el río;
+    - se paran a 1,8 m del de delante; con 1,5 m, el sable de Kael casi rozaba a Lya en las capturas;
+    - van a su paso y aceleran si se quedan atrás. Andan o corren según la velocidad, con las animaciones al ritmo.
+  - **Media vuelta:** si el de delante viene hacia uno y está a menos de 0,9 m, se aparta a un lado. En el puente,
+    el sitio para apartarse es más estrecho.
+  - **Reaparecer:** si el de delante aparece en otro sitio (vuelta de un combate) o se aleja más de 8 m, se colocan
+    detrás de él. Al entrar en la región, se colocan en V detrás de Kael.
+  - **Sin colisión:** no estorban a Kael ni a los toques en el suelo. El suelo se comprueba con las reglas de Kael
+    (escalón, pendiente, rodillas y zonas prohibidas).
+  - **Tamaños:** los del combate. Lya mide un 10 % menos que Kael y Garon.
+  - **Garon quieto:** usa la guardia tranquila de `garon_3d.gd`, con las espadas bajas. La guardia de combate le
+    hacía apuntar a Lya con las dos espadas.
+  - **Medir:** con «grupo»: false en el perfil no salen. El botón GRUPO compara sin grupo y con grupo en los tres
+    perfiles.
+- **Alternativas descartadas:**
+  - **«Serpiente»** (cada uno a una distancia fija sobre el rastro de Kael): al dar media vuelta, atraviesan a Kael.
+  - **Navegación con NavigationAgent3D:** cuesta más y necesita una malla de navegación de cada región.
+  - **Darles colisión:** en el puente, que es estrecho, encerrarían a Kael.
+- **Pendiente:** la opinión visual del usuario y la medición en el Redmi con el botón GRUPO.
 
 ## 6. Diseño ya implementado del 30/10 al 05/11
 

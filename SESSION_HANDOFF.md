@@ -1,7 +1,7 @@
 # SESSION_HANDOFF: punto de control
 
-**Último punto de control:** 2026-11-08 a las 15:55 (hora local, UTC+1), tras copiar la versión original al
-repositorio privado de pruebas para el móvil.
+**Último punto de control:** 2026-11-08 a las 16:40 (hora local, UTC+1). Lya y Garon ya siguen a Kael en
+Pastos Verdes 3D, y la Prueba v41 está subida al repositorio privado para el móvil.
 
 ## Dónde está todo
 
@@ -9,11 +9,11 @@ repositorio privado de pruebas para el móvil.
 |---|---|
 | Raíz del repositorio | `D:\Aethelgard`; el proyecto de Godot está en `D:\Aethelgard\aethelgard\` |
 | Copia del usuario | Rama `rebelum-3d` @ `ce84422`, local. Aquí se editan los documentos de memoria |
-| Árbol del encargo | `D:\Aethelgard_alpha`, rama `rebelum-alpha` @ `aabe5ad`, local y nunca subida |
+| Árbol del encargo | `D:\Aethelgard_alpha`, rama `rebelum-alpha` @ `3976565`, local y nunca subida |
 | Copia de la memoria | `D:\Aethelgard_memoria`, rama `memoria-desarrollo`. Las publicaciones se ven con `git log origin/memoria-desarrollo` |
 | GitHub (`Brunopina6/Aethelgard`) | `main` @ `d4b2d16`, `desarollo` @ `2d1adc4`, `v0.1.0` y `memoria-desarrollo` (solo memoria) |
 | APK de prueba para el móvil | `Brunopina6/Aethelgard-pruebas`, privado: una versión por APK. La última está en `releases/latest` ([D-054](DECISIONS.md#d-054)) |
-| Procesos en marcha | Ninguno a las 14:46 del 08/11. Compruébalo antes de lanzar Godot: dos Godot sobre el mismo proyecto se pisan |
+| Procesos en marcha | Ninguno a las 16:40 del 08/11. Compruébalo antes de lanzar Godot: dos Godot sobre el mismo proyecto se pisan |
 
 ## Lo que se hizo desde las 16:30
 
@@ -107,17 +107,28 @@ repositorio privado de pruebas para el móvil.
   - queda la última de la lista y sin «Latest» ([T-079](TASKS.md#t-079)).
 - **Lo instala el usuario.** No se ha tocado el móvil.
 
+## Lya y Garon siguen a Kael (08/11, por la tarde)
+
+- **Petición:** «Sí, empieza», tras recomendar T-022.
+- **Hecho:** `zonas3d/grupo_3d.gd` y el botón GRUPO (`65fda8b`), y sus `.uid` (`3976565`) ([D-055](DECISIONS.md#d-055)).
+- **Comprobado** (detalle en [T-022](TASKS.md#t-022)):
+  - batería `2026-11-08_163510`: 20 superadas, 0 fallidas y 11 manuales;
+  - `prueba_grupo3d`, nueva;
+  - capturas revisadas a ojo;
+  - coste en el PC: +0,4 ms en bajo.
+- **Subido:** «08/11/2026 · Prueba v41» (`exp-20261108-3976565`), comprobada con su `digest` ([T-079](TASKS.md#t-079)).
+- **Sin comprobar:** cómo se ve en el móvil y lo que cuesta en el Redmi.
+
 ## Próximo paso concreto
 
 **T-022**, en `D:\Aethelgard_alpha\aethelgard\zonas3d\pastos_verdes_3d.gd`:
-- Lya y Garon siguen a Kael en el 3D (`maga_3d.gd` y `garon_3d.gd`);
-- un cofre (`cofres_abiertos`);
+- un cofre (`cofres_abiertos`), con su prueba;
 - la cinemática del mirador.
 
-**Éxito:**
-- las pruebas aisladas pasan;
-- el coste del grupo se mide en el PC con RND;
-- en el Redmi, cuando el usuario lo conecte: perfil bajo con el grupo, mediana ≤ 33,3 ms (plan 3D, 2.4).
+**Pendiente del usuario:**
+- la opinión visual del grupo con la Prueba v41;
+- si quiere medir, el banco GRUPO en el Redmi y una captura de la tabla.
+- Plan 3D, punto 2.4, en el perfil bajo con el grupo: mediana ≤ 33,3 ms y p95 ≤ 40 ms.
 
 ## Restricciones y autorizaciones vigentes
 

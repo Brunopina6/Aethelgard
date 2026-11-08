@@ -180,7 +180,11 @@ objetos.
     - la prueba es `pruebas/prueba_zona3d.gd`.
   - Tiene la misión del corte alfa PV-02 → PV-14 con Tilo, la estela y el centinela (`e212400`,
     [D-052](DECISIONS.md#d-052)). La prueba es `pruebas/prueba_ruta_alpha.gd`.
-  - Faltan los seguidores, el cofre y la cinemática del mirador (T-022).
+  - Desde el 2026-11-08 (`65fda8b`, [D-055](DECISIONS.md#d-055)), Lya y Garon siguen a Kael:
+    - `zonas3d/grupo_3d.gd`, con los scripts del combate (`maga_3d.gd` y `garon_3d.gd`);
+    - el botón GRUPO mide lo que cuestan;
+    - las pruebas son `pruebas/prueba_grupo3d.gd` y `pruebas/prueba_grupo3d_fotos.gd`.
+  - Faltan el cofre y la cinemática del mirador (T-022).
 
 ## 6. Diálogos y narrativa
 
@@ -260,6 +264,8 @@ objetos.
   - **Línea base:**
     - `rebelum-3d`: 15 superadas, 2 fallidas, 10 manuales y 0 no seguras.
     - `rebelum-alpha` (2026-11-07 15:27): **17 superadas, 0 fallidas**, 10 manuales y 0 no seguras.
+    - `rebelum-alpha` (2026-11-08 16:35, batería `2026-11-08_163510`): **20 superadas, 0 fallidas**, 11 manuales y
+      0 no seguras.
 - **Utilidades de arte** (`pruebas/herramientas/`): `hojas_a_geometria.gd`, `impostores.gd`, `preparar_meshy.gd`,
   `textura_hojas.gd` y `hoja.ps1`.
 - **Compilación local:** `compilar_apk_experimental.ps1`, en la raíz (`rebelum-3d` y `rebelum-alpha`).

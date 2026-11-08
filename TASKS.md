@@ -1,8 +1,8 @@
 # TASKS: tareas de AETHELGARD / REBELUM
 
-**Actualizado el 2026-11-08 a las 15:55 (hora local, UTC+1).**
+**Actualizado el 2026-11-08 a las 16:40 (hora local, UTC+1).**
 - Copia del usuario: `rebelum-3d` @ `ce84422`.
-- Árbol del encargo: `rebelum-alpha` @ `aabe5ad`.
+- Árbol del encargo: `rebelum-alpha` @ `3976565`.
 
 **Estados**
 - **Pendiente:** sin empezar.
@@ -29,7 +29,7 @@
 | [T-012](#t-012) | APK «Prueba 3D» de Pastos Verdes | Terminada (compilada) | — |
 | [T-020](#t-020) | Encargo, Fase 0: línea base, respaldo y diagnóstico | Terminada | — |
 | [T-021](#t-021) | Pastos Verdes 3D desde el mapa (encargo 2.1-2.2; plan 2.3-2.4) | Terminada en PC; falta el móvil | Alta |
-| [T-022](#t-022) | Región 3D completa (encargo 2.3-2.5; plan 2.4-2.5) | En curso: misión hecha; faltan el grupo y el cofre | Alta |
+| [T-022](#t-022) | Región 3D completa (encargo 2.3-2.5; plan 2.4-2.5) | En curso: misión y grupo hechos; faltan el cofre y el mirador | Alta |
 | [T-023](#t-023) | Cierre del perfil bajo: precalentado y sombra precalculada (plan 2.1) | Pendiente | Media |
 | [T-024](#t-024) | Métricas de referencia y matriz de cobertura | Pendiente | Media |
 | [T-025](#t-025) | Entrada: mando, teclado y foco; Android TV (plan 2.2) | Pendiente | Media |
@@ -212,8 +212,34 @@
   - **APK:** `D:\REBELUM_compilaciones\Aethelgard_exp-20261107-07ac036.apk`, de 244,7 MB.
     - SHA-256 `f63e99b18f5172705454d12ec25e693ae35beacd2e29848925f018cb6cf444b9`.
     - Es de prueba privada, con el aviso `NO_DISTRIBUIR`.
+- **Hecho el 2026-11-08** (`65fda8b` y `3976565`, rama `rebelum-alpha`): **Lya y Garon siguen a Kael**
+  ([D-055](DECISIONS.md#d-055)).
+  - `zonas3d/grupo_3d.gd`, que la región crea si los dos están en el grupo de la partida.
+  - El botón GRUPO mide lo que cuestan.
+  - **Pruebas** (batería `2026-11-08_163510`): **20 superadas, 0 fallidas**, 11 manuales y 0 no seguras. La partida
+    real no cambió.
+    - `prueba_grupo3d`, nueva, recorre el camino, cruza el puente y da media vuelta sobre él: Lya queda a 1,80 m como
+      mucho de Kael y Garon a 1,93 m de Lya; nadie pisa zonas prohibidas, flota ni atraviesa a otro. También comprueba
+      que reaparecen detrás de Kael y que con «grupo»: false no salen.
+    - `prueba_grupo3d_fotos`, nueva, saca 14 capturas en los perfiles bajo y alto. Revisadas a ojo
+      (`D:\REBELUM_diagnostico\pruebas\2026-11-08_163228\prueba_grupo3d_fotos`): siguen en fila por el puente y se
+      apartan en la media vuelta.
+    - Con las capturas se corrigieron dos cosas: la separación pasó de 1,5 a 1,8 m, y Garon, quieto, ya no apunta a
+      Lya con las espadas.
+  - **Coste medido en el PC** (banco GRUPO, sin tope, a 20 m; `D:\REBELUM_diagnostico\sondas\2026-11-08_163317`):
+
+    | Perfil | Sin grupo | Con grupo | Diferencia |
+    |---|---|---|---|
+    | bajo | 2,8 ms | 3,2 ms | +0,4 ms, +6 dibujos, +44k triángulos y +46 MB de vídeo |
+    | medio | 3,0 ms | 3,4 ms | +0,4 ms |
+    | alto | 3,1 ms | 3,6 ms | +0,5 ms |
+
+    Con el tope de 30 FPS, el bajo con grupo da 30,1 FPS sin tirones. Son datos del PC; falta medir en el Redmi.
+  - **APK:** `Aethelgard_exp-20261108-3976565.apk` (versionCode 41), subida como «08/11/2026 · Prueba v41»
+    ([T-079](#t-079)).
+    - SHA-256 `8f3f52ef4275c85c20672e3aa0e44236a5e1068e460c71238e4180d636392188`.
 - **Falta:**
-  - Lya y Garon siguiendo a Kael;
+  - la opinión visual del usuario sobre el grupo y medirlo en el Redmi (botón GRUPO);
   - el cofre;
   - la cinemática del mirador.
   - Revisar con ventana el aspecto de Tilo, la estela y las salidas.
@@ -483,4 +509,9 @@
   - el `README.md` (commit `d0eb7fa`) la añade al final de la tabla;
   - la petición de los 4 primeros bytes devuelve `50 4b 03 04`.
 - **Sin ver:** la página web de releases. El orden se comprobó con `gh release list`.
+- **Prueba v41** (08/11, 16:39), con la convención de [D-054](DECISIONS.md#d-054):
+  - la fila del `README.md` va en el commit `4b929d9`, y la release `exp-20261108-3976565` está etiquetada sobre él;
+  - el archivo `Aethelgard_Exp_2026-11-08_v41.apk` tiene 256 608 906 bytes, y su `digest` coincide con el SHA-256 local
+    (`8f3f52ef…`);
+  - `gh release list` da el orden v41 («Latest»), v39 y la original.
 - **Pendiente de verificar:** la descarga completa y la instalación en el móvil, que hace el usuario.
