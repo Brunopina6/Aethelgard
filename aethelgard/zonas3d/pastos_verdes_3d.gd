@@ -113,7 +113,8 @@ func _process(delta: float) -> void:
 	if en_banco():
 		boton_accion.visible = false
 		super(delta)
-		_ultima = kael.global_position
+		if is_inside_tree():             # al acabar cada caso, el banco recarga la escena dentro de super()
+			_ultima = kael.global_position
 		return
 	if ocupado():                        # diálogo abierto: Kael quieto y sin pasos
 		_parar_kael()
