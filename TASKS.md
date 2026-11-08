@@ -1,8 +1,8 @@
 # TASKS: tareas de AETHELGARD / REBELUM
 
-**Actualizado el 2026-11-08 a las 20:45 (hora local, UTC+1).**
+**Actualizado el 2026-11-08 a las 21:20 (hora local, UTC+1).**
 - Copia del usuario: `rebelum-3d` @ `b8e042d` (la protección del guardado, [D-066](DECISIONS.md#d-066)).
-- Árbol del encargo: `rebelum-alpha` @ `d5fd793`.
+- Árbol del encargo: `rebelum-alpha` @ `40fb5b8`.
 
 **Estados**
 - **Pendiente:** sin empezar.
@@ -35,7 +35,7 @@
 | [T-025](#t-025) | Entrada: mando, teclado y foco; Android TV (plan 2.2) | En curso: hecha en el PC con eventos simulados (`e6e52c4`); faltan el Redmi, un teclado y un mando reales, los ajustes y la TV | Media |
 | [T-026](#t-026) | Combate híbrido: coste de las ventanas 3D | Pendiente | Baja |
 | [T-027](#t-027) | Preset de exportación para PC | Pendiente | Baja |
-| [T-030](#t-030) | Audio unificado (Fase 2.6) | En curso: buses, volúmenes y pestaña «Ajustes» hechos (`e44fb9e`); faltan el gestor de música, el ambiente, el inventario y la escucha | Media |
+| [T-030](#t-030) | Audio unificado (Fase 2.6) | En curso: buses, volúmenes, ajustes y gestor con ambientes CC0 hechos (`40fb5b8`); faltan música con permiso, efectos y la escucha | Media |
 | [T-040](#t-040) | Magia aditiva, estados, tablero, habilidades e IA | Pendiente | Media |
 | [T-050](#t-050) | Invocaciones nuevas, cinemáticas y VFX | Pendiente | Baja |
 | [T-051](#t-051) | Nueva invocación de Érebo (Fase 2.7) | Bloqueada (decisiones) | Media |
@@ -440,8 +440,20 @@
 
 ### T-030
 **Audio unificado (Fase 2.6; Fase 4 del encargo)**
-- **Estado:** **en curso.** La base técnica está hecha en `rebelum-alpha` (`e44fb9e`, [D-064](DECISIONS.md#d-064)).
-  Faltan el gestor de música, el ambiente, el inventario de cada sonido y la escucha. **Prioridad:** media.
+- **Estado:** **en curso.** Hechos en `rebelum-alpha` la base técnica (`e44fb9e`, [D-064](DECISIONS.md#d-064)) y el
+  gestor de música y ambiente con ambientes CC0 (`40fb5b8`, [D-067](DECISIONS.md#d-067)). Faltan música con permiso
+  para la exploración, efectos nuevos y la escucha. **Prioridad:** media.
+- **Hecho después, el gestor** ([D-067](DECISIONS.md#d-067), `40fb5b8`): contexto por escena y lugar, fundidos, la
+  misma pista sin reiniciar al volver, el combate con su música y la exploración siguiendo donde iba, pausa de la app y
+  silencio controlado donde no hay pista con permiso. Inventario de cada sonido: `docs/audio/inventario_sonidos.md`
+  (en `rebelum-alpha`), con asignación, señal y escucha por separado.
+  - **Evidencia:** `prueba_musica` (muda, con el recorrido real mapa → Oakhaven → combate → mapa); `prueba_musica_senal`
+    (con ventana: ambientes de −29 a −39 dBFS, combate −20 dBFS, carga en silencio; WAV para escuchar en
+    `D:\REBELUM_diagnostico\pruebas\2026-11-08_210056\prueba_musica_senal\`); batería `2026-11-08_210443`: 35
+    superadas y 1 fallida (`prueba_choque`, un encuentro al azar ajeno al cambio; corregida y en verde tres veces).
+  - **APK:** «08/11/2026 · Prueba v57» (`exp-20261108-40fb5b8`), también en las Descargas del Redmi.
+  - **Pendiente de verificar:** la escucha, en el PC y en el Redmi (cortes del bucle, volumen frente a la música,
+    siseo del bosque).
 - **Hecho el 2026-11-08 por la noche** ([D-064](DECISIONS.md#d-064)):
   - buses Musica, Efectos, Interfaz y Ambiente (`default_bus_layout.tres`); cada sonido en el suyo, y el sonido al
     escribir de Dialogic, en Interfaz;
@@ -719,6 +731,13 @@
   - el orden es v54 («Latest»), v52, v50, v47, v44, v41, v39 y la original.
 - **Copiada al Redmi por USB** (08/11, 20:24, [D-065](DECISIONS.md#d-065)): la v54, como
   `Download/Aethelgard_Exp_2026-11-08_v54.apk`; en el teléfono, 256 658 545 bytes y el mismo SHA-256. No se borró nada.
+- **Prueba v57** (08/11, 21:13), con la misma convención: de `40fb5b8` (el gestor de música y los ambientes), compilada
+  una vez con el árbol limpio («TODO CORRECTO»; el script le dio el versionCode 57). Fila del `README.md` en
+  `a2b4562`, release `exp-20261108-40fb5b8` etiquetada sobre él; `Aethelgard_Exp_2026-11-08_v57.apk`, 261 751 034
+  bytes, `digest` igual al SHA-256 local (`ae82484d…`); certificado `3413edcd…`; sin Suno (el audio nuevo son los cinco
+  ambientes CC0); cabecera `50 4b 03 04` (HTTP 206); orden v57 («Latest»), v54, v52…; repositorio privado.
+  - **Copiada al Redmi** (21:15): `Download/Aethelgard_Exp_2026-11-08_v57.apk`, mismo tamaño y SHA-256 en el
+    teléfono; la v54 sigue allí.
 - **Pendiente de verificar:** la instalación y la prueba en el móvil, que hace el usuario.
 
 ### T-080

@@ -1,7 +1,7 @@
 # DECISIONS: decisiones de AETHELGARD / REBELUM
 
-**Actualizado el 2026-11-08 a las 20:45** sobre la copia del usuario (`rebelum-3d` @ `b8e042d`) y el árbol del
-encargo (`rebelum-alpha` @ `d5fd793`). Las horas son locales (UTC+1).
+**Actualizado el 2026-11-08 a las 21:20** sobre la copia del usuario (`rebelum-3d` @ `b8e042d`) y el árbol del
+encargo (`rebelum-alpha` @ `40fb5b8`). Las horas son locales (UTC+1).
 
 **Estados**
 - **Aprobada:** la tomó o la aprobó el usuario.
@@ -78,6 +78,7 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 | [D-064](#d-064) | Base del audio: buses, volúmenes guardados y pestaña «Ajustes» (T-030) | Aprobada en el encargo |
 | [D-065](#d-065) | El Redmi recibe por USB las APK de prueba en Descargas; instalar es cosa del usuario | Aprobada |
 | [D-066](#d-066) | La protección del guardado, traída a la copia habitual (`rebelum-3d`) | Aprobada |
+| [D-067](#d-067) | Gestor de música y ambiente por contexto, con ambientes CC0 (T-030) | Aprobada en el encargo |
 | [D-H01 a D-H15](#6-diseño-ya-implementado-del-3010-al-0511) | Diseño ya implementado antes de Git | Aprobada (historial) |
 
 ## 1. Reglas de trabajo, Git y versiones
@@ -1105,6 +1106,31 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 - **Comprobado después:** el bloque B es idéntico al del respaldo, byte a byte en su diff.
 - **Lo que no cambia:** la partida actual del PC se conserva tal cual ([D-011](#d-011)); el ejecutor de pruebas de
   `rebelum-3d` sigue siendo el antiguo (ver [D-010](#d-010)): traer el nuevo necesitaría otra autorización.
+
+### D-067
+**Gestor de música y ambiente por contexto, con ambientes CC0 (T-030)**
+- **Fecha y estado:** 2026-11-08 por la noche. Aprobada en el encargo [usuario]: «Sí, continúa T-030 aprovechando los
+  buses y ajustes ya implementados. Integra música por contexto, transiciones y retorno del combate […] Cuando falte un
+  recurso autorizado, continúa con un sustituto adecuado o una transición silenciosa controlada.»
+- **Decisión** (`rebelum-alpha`, `40fb5b8`):
+  - autoload `Musica` (`musica.gd`): dos capas (música y ambiente) con dos reproductores cada una para fundir; mira la
+    escena cada fotograma y pide su contexto; la misma pista sigue sin cortes; sin pista con permiso, silencio
+    controlado; al pausar la app, pausa;
+  - el combate conserva su música (`combate.gd`); la exploración se calla con un fundido, recuerda por dónde iba y
+    sigue al volver (gane, huya o pierda);
+  - **ambientes CC0** de la biblioteca del usuario (`D:\qtorrent\sound effect`, colección de 500 con la fuente de cada
+    archivo): pradera (pájaros y viento), bosque, viento, mazmorra y desierto. CC0 comprobado en cada página de
+    OpenGameArt el 08/11. Bucles de 32 s como mucho, sonoridad pareja, QOA: 5,6 MB en la APK;
+  - **no hay música con permiso** para la exploración (las canciones de Suno no son libres y no están en el
+    proyecto): esa capa queda en silencio controlado. La de combate (`musica_combate_normal`) sigue con su licencia
+    pendiente, como antes.
+- **Evidencia, por separado** ([docs/audio/inventario_sonidos.md] en `rebelum-alpha`):
+  - asignación: `prueba_musica` (muda), con el recorrido real mapa → Oakhaven → combate → mapa;
+  - señal: `prueba_musica_senal` (con ventana y el driver real): ambientes de −29 a −39 dBFS, combate −20 dBFS, carga
+    −120 dBFS (silencio); deja los WAV para escucharlos;
+  - escucha real: **pendiente** (la hace el usuario; Prueba v57).
+- **Candidatos sin usar:** el resto de la colección CC0 y los paquetes GDC de Sonniss («ROYALTY-FREE»). El paquete de
+  TomMusic no dice su licencia: no se usa.
 
 ## 6. Diseño ya implementado del 30/10 al 05/11
 

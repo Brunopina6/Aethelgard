@@ -81,7 +81,8 @@ La etiqueta local `recuperacion-antes-fase2.0` apunta a `2d1adc4`.
 6. **`isla.tscn`**: la Arboleda Mítica, la ciudad flotante.
 7. **`combate.tscn`** (`combate.gd`): al terminar guarda y vuelve a `escena_retorno` (`combate.gd:3758-3764`).
 8. **Autoloads:** `Dialogic`, `BotonDialogo` (`boton_dialogo.gd`) y `Recursos` (`recursos.gd`). En `rebelum-alpha`,
-   también `Entrada` (`entrada.gd`) y `Sonido` (`sonido.gd`).
+   también `Entrada` (`entrada.gd`), `Sonido` (`sonido.gd`) y `Musica` (`musica.gd`, el gestor de música y ambiente,
+   [D-067](DECISIONS.md#d-067)).
    - **Sonido en `rebelum-alpha`** (T-030, [D-064](DECISIONS.md#d-064)): buses Musica, Efectos, Interfaz y Ambiente
      (`default_bus_layout.tres`); volúmenes guardados en `user://ajustes.cfg`, aparte de la partida; pestaña
      «Ajustes» del menú del grupo (`menus.gd`). Cada `AudioStreamPlayer` elige su bus (lo vigila `prueba_audio`).

@@ -1,6 +1,6 @@
 # MEMORIA_CHAT: lo aprendido en las conversaciones sobre AETHELGARD / REBELUM
 
-> **Actualizado el 2026-11-08 a las 20:45** (hora local, UTC+1), en la rama `rebelum-3d` @ `b8e042d`. Se publica en la
+> **Actualizado el 2026-11-08 a las 21:20** (hora local, UTC+1), en la rama `rebelum-3d` @ `b8e042d`. Se publica en la
 > rama `memoria-desarrollo` de GitHub.
 >
 > Es un **resumen**, no una transcripción. El chat legible está en
@@ -109,11 +109,12 @@
      lo suyo. **Hecho** (`b8e042d` en `rebelum-3d`, [D-066](DECISIONS.md#d-066); `d5fd793`).
   3. **Progresión original:** sin la nivelación de `e670a5d`; D-062 sigue como propuesta; comprobar con los niveles
      reales de incorporación que los encuentros posteriores se pueden superar y ajustar los iniciales si las pruebas lo
-     justifican, sin tocar las magias.
+     justifican, sin tocar las magias. **Hecho** (`9bfd288`): 80 combates de 80; no hace falta tocarlos.
   4. **Gestor de música (T-030):** música por contexto, transiciones, vuelta del combate, pausa, cambio de escena,
      derrota, carga y reentrada sin duplicados ni cortes; volúmenes y silencio respetados; candidatos con permisos de
      `D:\qtorrent\sound effect` con procedencia y licencia; sin Suno; si falta un recurso, sustituto adecuado o
-     silencio controlado; registrar aparte asignación, reproducción iniciada y escucha real.
+     silencio controlado; registrar aparte asignación, reproducción iniciada y escucha real. **Hecho** (`40fb5b8`,
+     [D-067](DECISIONS.md#d-067)): ambientes CC0 y Prueba v57; falta la escucha.
   5. **El primer diálogo** ([T-081](TASKS.md#t-081)): «me parece pobre»; localizarlo con una partida aislada (nueva y
      existente), capturas o vídeo de referencia, y mejorarlo entero antes de extender el estilo; conservar hechos,
      hitos, recompensas y canon, puliendo frases sin cambiar su sentido ni la voz.
@@ -127,7 +128,7 @@
      hardware o escucha, pendiente; T-025 no es validación completa.
   9. **Por hitos:** la v54 al Redmi primero; luego guardado, música y diálogo; memoria tras cada hito; APK nueva cuando
      haya una mejora jugable comprobada, con antes/después del diálogo.
-- **Siguiente:** el punto 3 y después el 4 ([SESSION_HANDOFF.md](SESSION_HANDOFF.md)).
+- **Siguiente:** los puntos 5 a 7, el prólogo ([SESSION_HANDOFF.md](SESSION_HANDOFF.md)).
 - **Vigente:**
   - el Redmi solo recibe por USB las APK de prueba en Descargas ([D-065](DECISIONS.md#d-065));
   - la partida del PC se conserva tal cual;
