@@ -70,6 +70,7 @@ func _ready() -> void:
 	marco.add_child(cuerpo)
 	_pintar()
 	Entrada.enfocar(botones_pestana[PESTANAS.find(pestana)])
+	Sonido.efecto("ui_abrir")                      # sonido.gd (T-083)
 
 
 func _colorear_pestanas() -> void:
@@ -79,6 +80,7 @@ func _colorear_pestanas() -> void:
 
 func _ir_a_pestana(p: String) -> void:
 	pestana = p
+	Sonido.efecto("ui_tic")
 	_colorear_pestanas()
 	marco.scroll_vertical = 0
 	_pintar_de_nuevo()
@@ -87,6 +89,7 @@ func _ir_a_pestana(p: String) -> void:
 func _cerrar() -> void:
 	if is_queued_for_deletion():
 		return
+	Sonido.efecto("ui_cerrar")
 	cerrado.emit()
 	queue_free()
 
@@ -146,6 +149,7 @@ func _pintar_grupo() -> void:
 			b.add_theme_color_override("font_color", COLOR_TITULO)
 		b.pressed.connect(func():
 			heroe = n
+			Sonido.efecto("ui_tic")
 			_pintar_de_nuevo())
 		fila_heroes.add_child(b)
 
@@ -187,6 +191,7 @@ func _pintar_grupo() -> void:
 		var atr: String = k
 		mas.pressed.connect(func():
 			if Grupo.subir_atributo(heroe, atr):
+				Sonido.efecto("ui_mejora")
 				_pintar_de_nuevo())
 		f.add_child(mas)
 		f.add_child(_texto(Grupo.AYUDA[k], 16, COLOR_SUAVE))
@@ -231,6 +236,7 @@ func _cambiar(ranura: String, paso: int) -> void:
 	var i := lista.find(actual)
 	var nuevo: String = lista[posmod(i + paso, lista.size())]
 	Inv.equipar(heroe, ranura, nuevo)
+	Sonido.efecto("ui_equipar_arma" if ranura == "arma" else "ui_equipar")
 	_pintar_de_nuevo()
 
 
@@ -264,6 +270,7 @@ func _pintar_objetos() -> void:
 				if Inv.cantidad(Progreso.INCIENSO) > 0:
 					Inv.gastar(Progreso.INCIENSO)
 					Progreso.usar_incienso()
+					Sonido.efecto("ui_confirmar")
 					_pintar_de_nuevo())
 			f.add_child(usar)
 		if usos.has(o):
@@ -315,6 +322,7 @@ func _usar_fuera(objeto: String, heroe_n: String) -> void:
 		pm = mini(e["pm_max"], pm + u["cura"])
 	Inv.gastar(objeto)
 	Grupo.guardar_vida(heroe_n, pv, pm)
+	Sonido.efecto("pocion", {"tono": 1.0 if u["que"] == "PV" else 1.12})
 	_pintar_de_nuevo()
 
 
