@@ -64,8 +64,13 @@ const CLAVES := ["grupo", "inventario", "cofres_abiertos", "prologo_visto", "lug
 const MAPA := "res://mapa.tscn"
 
 
-# Archivo de la partida: el de la versión experimental si la exploración 3D está activa.
+# Archivo de la partida: el de la versión experimental si la exploración 3D está activa. Las pruebas pueden pedir
+# uno propio con Engine «archivo_partida_prueba» (siempre en user:// y nunca el de una partida de verdad).
 static func archivo() -> String:
+	if Engine.has_meta("archivo_partida_prueba"):
+		var a: String = Engine.get_meta("archivo_partida_prueba")
+		if a.begins_with("user://") and a != GUARDADO and a != GUARDADO_EXP:
+			return a
 	return GUARDADO_EXP if load("res://modo3d.gd").activo() else GUARDADO
 
 
@@ -199,9 +204,58 @@ static func poner_hito(id: String) -> void:
 
 
 # ================================================================= guardado
+# Protecciones (TASKS.md, T-076 y T-077):
+#   - Solo se guarda encima de una partida si en esta sesión se cargó o no había ninguna (Engine «partida_lista», que
+#     no se guarda). Una escena abierta directamente (F6 en el editor) tiene solo parte de los datos y algunos por
+#     defecto (grupo.gd crea el grupo a nivel 1): guardar ahí pisaría la partida completa con datos a medias.
+#   - La partida se escribe primero en «<archivo>.tmp», se comprueba leyéndola y solo entonces sustituye a la anterior.
+#     La anterior, si se podía leer, queda en «<archivo>.bak».
+#   - Al cargar, si la partida no se puede leer, se usa «.tmp» (escrito y comprobado, pero sin llegar a sustituirla)
+#     o «.bak». La que no se podía leer se aparta en «<archivo>.danada»: no se borra nada.
+#   - Las pruebas no guardan, salvo en su propio archivo (archivo()).
 
 static func hay_partida() -> bool:
-	return FileAccess.file_exists(archivo())
+	var a := archivo()
+	return FileAccess.file_exists(a) or FileAccess.file_exists(a + ".bak") or FileAccess.file_exists(a + ".tmp")
+
+
+static func _en_prueba() -> bool:
+	return "--script" in OS.get_cmdline_args() or not OS.get_cmdline_user_args().is_empty()
+
+
+# Lee una partida: el diccionario, o null si no existe o no se puede leer.
+static func leer(ruta: String):
+	if not FileAccess.file_exists(ruta):
+		return null
+	var d = str_to_var(FileAccess.get_file_as_string(ruta))
+	return d if d is Dictionary else null
+
+
+# Escribe la partida sin dejarla nunca a medias. Devuelve false si no se pudo (la partida anterior queda intacta).
+static func escribir(d: Dictionary, ruta: String) -> bool:
+	var texto := var_to_str(d)
+	var tmp := ruta + ".tmp"
+	var f := FileAccess.open(tmp, FileAccess.WRITE)
+	if f == null:
+		push_warning("No se pudo guardar la partida (%s)" % error_string(FileAccess.get_open_error()))
+		return false
+	f.store_string(texto)
+	f.close()
+	if FileAccess.get_file_as_string(tmp) != texto:
+		push_warning("No se pudo guardar la partida: lo escrito no coincide")
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(tmp))
+		return false
+	var real := ProjectSettings.globalize_path(ruta)
+	if leer(ruta) != null:
+		DirAccess.copy_absolute(real, real + ".bak")
+	var err := DirAccess.rename_absolute(ProjectSettings.globalize_path(tmp), real)
+	if err != OK:                                  # (en Windows no se puede renombrar encima de un archivo)
+		DirAccess.remove_absolute(real)
+		err = DirAccess.rename_absolute(ProjectSettings.globalize_path(tmp), real)
+	if err != OK:
+		push_warning("No se pudo guardar la partida (%s)" % error_string(err))
+		return false
+	return true
 
 
 # Lo que se guarda: las CLAVES que haya en Engine. Lo usan guardar() y las pruebas (que no escriben archivos).
@@ -215,21 +269,20 @@ static func volcar(escena := "") -> Dictionary:
 	return d
 
 
-# Guarda la partida. "escena" = dónde se vuelve al abrir el juego (el mapa o la zona).
-static func guardar(escena := "") -> void:
-	if "--script" in OS.get_cmdline_args() or not OS.get_cmdline_user_args().is_empty():
-		return                                     # las pruebas no tocan la partida de verdad
-	var d := volcar(escena)
-	var f := FileAccess.open(archivo(), FileAccess.WRITE)
-	if f == null:
-		push_warning("No se pudo guardar la partida")
-		return
-	f.store_string(var_to_str(d))
+# Guarda la partida. "escena" = dónde se vuelve al abrir el juego (el mapa o la zona). Devuelve si se guardó.
+static func guardar(escena := "") -> bool:
+	if _en_prueba() and not Engine.has_meta("archivo_partida_prueba"):
+		return false                               # las pruebas no tocan la partida de verdad
+	if not Engine.get_meta("partida_lista", false) and hay_partida():
+		push_warning("Esta sesión no cargó la partida: no se guarda para no pisarla con datos a medias")
+		return false
+	return escribir(volcar(escena), archivo())
 
 
 # Pone en Engine una partida ya leída y devuelve la escena a la que volver. Si esa escena no existe en esta
 # versión (por ejemplo, una región 3D en una versión sin exploración 3D), se vuelve al mapa sin error.
 static func restaurar(d: Dictionary) -> String:
+	Engine.set_meta("partida_lista", true)
 	for k in d:
 		Engine.set_meta(k, d[k])
 	var escena: String = d.get("escena_guardada", MAPA)
@@ -240,12 +293,21 @@ static func restaurar(d: Dictionary) -> String:
 	return escena
 
 
-# Carga la partida guardada. Devuelve la escena donde estabas ("" si no hay partida).
+# Carga la partida guardada. Devuelve la escena donde estabas ("" si no hay partida). Después ya se puede guardar.
 static func cargar() -> String:
-	if not hay_partida():
-		return ""
-	var d = str_to_var(FileAccess.get_file_as_string(archivo()))
-	if not d is Dictionary:
-		push_warning("La partida guardada no se pudo leer")
+	var ruta := archivo()
+	var d = leer(ruta)
+	if d == null:
+		var copia = leer(ruta + ".tmp")
+		if copia == null:
+			copia = leer(ruta + ".bak")
+		if FileAccess.file_exists(ruta):           # no se podía leer: se aparta, no se borra
+			DirAccess.copy_absolute(ProjectSettings.globalize_path(ruta), ProjectSettings.globalize_path(ruta + ".danada"))
+			push_warning("La partida guardada no se pudo leer: se aparta en %s" % (ruta + ".danada"))
+		if copia != null:
+			push_warning("Se recupera la última copia buena de la partida")
+			d = copia
+	Engine.set_meta("partida_lista", true)
+	if d == null:
 		return ""
 	return restaurar(d)

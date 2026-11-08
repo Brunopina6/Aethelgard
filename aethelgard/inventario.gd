@@ -83,6 +83,9 @@ static func datos() -> Dictionary:
 	if not Engine.has_meta("inventario"):
 		Engine.set_meta("inventario", INICIAL.duplicate(true))
 	var d: Dictionary = Engine.get_meta("inventario")
+	for k in INICIAL:                               # partidas antiguas o incompletas: lo que falte, como al empezar
+		if not d.has(k):
+			d[k] = INICIAL[k].duplicate(true) if INICIAL[k] is Dictionary or INICIAL[k] is Array else INICIAL[k]
 	if not "hoja_infernal" in d["equipables"]:      # partidas de antes de que llegara Garon
 		d["equipables"].append("hoja_infernal")
 	if not d["equipo"].has("Garon"):
