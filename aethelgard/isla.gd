@@ -230,6 +230,7 @@ func _crear_jugador() -> void:
 	sprite = load("res://muneco.gd").new()
 	sprite.scale = Vector2.ONE * ESCALA_KAEL
 	jugador.add_child(sprite)
+	Sonido.pasos_2d(sprite, func(): return "piedra")   # las calles de piedra de la ciudad (sonido.gd, T-083)
 	camara = Camera2D.new()
 	camara.limit_left = 0
 	camara.limit_top = 0
@@ -490,6 +491,7 @@ func _bajar() -> void:
 		return
 	saliendo = true
 	Engine.set_meta("pos_isla_ok", false)
+	Sonido.efecto("portal")                            # sonido.gd
 	var t := create_tween()
 	t.tween_property(fundido, "color", Color("8E5BD8", 1.0), 0.35)
 	t.tween_property(fundido, "color", Color(0, 0, 0, 1), 0.3)

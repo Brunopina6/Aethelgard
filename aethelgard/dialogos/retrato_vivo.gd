@@ -1,24 +1,41 @@
 @tool
 extends DialogicPortrait
-# Retrato «vivo» para Dialogic (T-081): la misma ilustración de siempre, con vida.
+# Retrato «vivo» para Dialogic (T-081, T-084): las ilustraciones del personaje, con vida.
 # - Respira: una escala vertical muy pequeña desde los pies (no se despegan del suelo), con su propio ritmo.
 # - Foco: quien habla se ilumina y se adelanta un poco; quien escucha se atenúa y se queda un paso atrás
 #   (_highlight y _unhighlight, que Dialogic llama al cambiar de interlocutor).
 # - Gestos breves, pedidos desde la línea de tiempo con [extra_data="…"]: ligero, firme, duda, sorpresa, decidido,
 #   inquieta y preocupada. Cada uno dura menos de dos segundos y vuelve al reposo: nadie se mueve todo el rato.
-# Se usa con el retrato «vivo» de los personajes (kael.dch y lya.dch); el retrato «normal» sigue siendo el de siempre.
+# - Poses (T-084): si el personaje tiene una ilustración para ese gesto («poses» en su .dch: gesto → imagen), pasa a
+#   ella con un fundido corto mientras dice su frase, y vuelve a la de reposo («image») al dejar de hablar o pasados
+#   unos segundos. Quien escucha está siempre en reposo, y cada frase lleva su gesto sin repetirse.
+#   El fundido no deja ver el fondo a través del cuerpo: la pose nueva aparece ENCIMA de la anterior y solo después se
+#   retira la de debajo (que ya solo se ve donde la nueva no tapa: el brazo que cambia de sitio).
+# Se usa con el retrato «vivo» de los personajes (kael.dch y lya.dch).
 
 @export_group('Main')
 @export_file var image := ""
+@export var poses := {}                            # gesto → ilustración, p. ej. {"decidido": "res://…/kael_puno.png"}
 
 const ATENUADO := Color(0.7, 0.72, 0.8)            # quien escucha: un paso atrás, sin parecer un fantasma
 const RESPIRO := 0.006                             # cuánto sube el pecho: apenas un 0,6 %
+const ENTRA := 0.18                                # segundos: la pose nueva aparece encima…
+const SALE := 0.14                                 # …y después se retira la anterior
+const MANTENER := 3.2                              # segundos con la pose del gesto si sigue hablando
+const MANTENER_GESTO := {"sorpresa": 1.8}          # las reacciones más breves
 
 var _t := 0.0
 var _fase := 0.0
 var _periodo := 3.4
 var _gesto: Tween
 var _foco: Tween
+var _fundido: Tween
+var _espera: Tween
+var _reposo: Texture2D
+var _texturas := {}                                # gesto → textura (cargadas al unirse el personaje)
+var _pose := "reposo"
+var _pose_t := -10.0                               # cuándo se pidió la pose del último gesto (en segundos de _t)
+var _hablo_tras_pose := false                      # si ha empezado a hablar después de pedirla
 
 
 func _ready() -> void:
@@ -30,8 +47,23 @@ func _ready() -> void:
 
 
 func _update_portrait(passed_character: DialogicCharacter, passed_portrait: String) -> void:
+	for tw in [_fundido, _espera]:                  # (Dialogic crea un nodo nuevo en cada cambio de retrato; por si acaso)
+		if tw != null and tw.is_valid():
+			tw.kill()
+	$Foco/Gesto/Respira/Siguiente.visible = false
+	$Foco/Gesto/Respira/Portrait.modulate.a = 1.0
 	apply_character_and_portrait(passed_character, passed_portrait)
 	apply_texture($Foco/Gesto/Respira/Portrait, image)
+	_reposo = $Foco/Gesto/Respira/Portrait.texture
+	_texturas.clear()
+	_pose = "reposo"
+	set_meta("pose", _pose)                         # lo miran las pruebas
+	if Engine.is_editor_hint():
+		return
+	for g in poses:                                 # ya están en memoria: la pantalla de carga lee dialogos/retratos/
+		var ruta := String(poses[g])
+		if ResourceLoader.exists(ruta):
+			_texturas[g] = load(ruta)
 
 
 func _process(delta: float) -> void:
@@ -44,10 +76,15 @@ func _process(delta: float) -> void:
 
 func _highlight() -> void:
 	_cambiar_foco(true)
+	_hablo_tras_pose = true
 
 
 func _unhighlight() -> void:
 	_cambiar_foco(false)
+	# Quien escucha, en reposo. Salvo si la pose se acaba de pedir sin que haya hablado después: entonces es una
+	# reacción a lo que va a decir el otro (la etiqueta va justo antes de su frase) y vuelve sola, con su tiempo.
+	if _hablo_tras_pose or _t - _pose_t > 0.25:
+		_volver_al_reposo()
 
 
 func _cambiar_foco(habla: bool) -> void:
@@ -111,9 +148,62 @@ func _set_extra_data(data: String) -> void:
 			t.tween_interval(0.8)
 			t.tween_property(g, "position:y", 0.0, 0.6)
 			t.parallel().tween_property(g, "scale", Vector2.ONE, 0.6)
-		_:
+		_:                                         # solo pose (p. ej. «brazalete»), o nada
 			t.kill()
 	set_meta("ultimo_gesto", data)                  # lo miran las pruebas
+	if _texturas.has(data):                         # la ilustración del gesto, mientras dice su frase
+		_cambiar_pose(data)
+		_pose_t = _t
+		_hablo_tras_pose = false
+		if _espera != null and _espera.is_valid():
+			_espera.kill()
+		_espera = create_tween()
+		_espera.tween_interval(MANTENER_GESTO.get(data, MANTENER))
+		_espera.tween_callback(_volver_al_reposo)
+
+
+func _volver_al_reposo() -> void:
+	if _espera != null and _espera.is_valid():
+		_espera.kill()
+	if _pose != "reposo":
+		_cambiar_pose("reposo")
+
+
+# Pasa a otra ilustración del personaje con un fundido corto (ENTRA + SALE). Si había otro a medias, lo termina antes.
+func _cambiar_pose(nombre: String) -> void:
+	var tex: Texture2D = _reposo if nombre == "reposo" else _texturas.get(nombre)
+	if tex == null:
+		return
+	_terminar_fundido()
+	_pose = nombre
+	set_meta("pose", nombre)
+	var base: Sprite2D = $Foco/Gesto/Respira/Portrait
+	var encima: Sprite2D = $Foco/Gesto/Respira/Siguiente
+	if base.texture == tex:
+		return
+	encima.texture = tex
+	encima.position = base.position
+	encima.scale = base.scale
+	encima.flip_h = base.flip_h
+	encima.modulate.a = 0.0
+	encima.visible = true
+	_fundido = create_tween()
+	_fundido.tween_property(encima, "modulate:a", 1.0, ENTRA).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	_fundido.tween_property(base, "modulate:a", 0.0, SALE)
+	_fundido.tween_callback(_terminar_fundido)
+
+
+func _terminar_fundido() -> void:
+	if _fundido != null and _fundido.is_valid():
+		_fundido.kill()
+	_fundido = null
+	var base: Sprite2D = $Foco/Gesto/Respira/Portrait
+	var encima: Sprite2D = $Foco/Gesto/Respira/Siguiente
+	if encima.visible and encima.texture != null:
+		base.texture = encima.texture
+	base.modulate.a = 1.0
+	encima.visible = false
+	encima.modulate.a = 0.0
 
 
 func _get_covered_rect() -> Rect2:
@@ -125,3 +215,4 @@ func _get_covered_rect() -> Rect2:
 
 func _set_mirror(mirror: bool) -> void:
 	$Foco/Gesto/Respira/Portrait.flip_h = mirror
+	$Foco/Gesto/Respira/Siguiente.flip_h = mirror

@@ -1264,6 +1264,7 @@ func _turno_enemigo(f: Dictionary) -> void:
 	# el jefe carga su golpe más fuerte (un turno de aviso); en la segunda fase, más a menudo
 	if p == "jefe" and not f.get("cargando", false) and randf() < (0.45 if f.get("fase2", false) else 0.35):
 		f["cargando"] = true
+		Sonido.efecto("carga_jefe")                 # sonido.gd
 		registro.text = "¡%s se prepara para un golpe devastador!" % f["nombre"]
 		_numero_flotante(f, "⚠ ¡Cuidado!", Color(1.0, 0.8, 0.2), 34)
 		_particulas(_centro(f) + Vector2(0, 100), Color(1.0, 0.7, 0.2, 0.9), Color(1.0, 0.3, 0.0, 0.0), 40, 1.0,
@@ -1285,6 +1286,7 @@ func _turno_enemigo(f: Dictionary) -> void:
 				var d2: int = maxi(1, fuerte - int(h.get("def", 0) / 2.0))
 				h["hp"] = maxi(0, h["hp"] - d2)
 				_golpe_visual(h, d2, "")
+		Sonido.golpe(true)                           # la onda del golpe alcanza a los demás (sonido.gd)
 		_temblor(14.0)
 	else:
 		var dano: int = int(f["atk"] * mult) + randi_range(-2, 3)
@@ -1318,6 +1320,7 @@ func _fin_turno_enemigo(f: Dictionary) -> void:
 # Un enemigo cobarde sale corriendo del combate (no da experiencia ni oro).
 func _huir(f: Dictionary) -> void:
 	registro.text = "¡%s huye!" % f["nombre"]
+	Sonido.efecto("huida", {"db": -4.0})           # sonido.gd
 	f["huido"] = true
 	var rig: Node2D = f["rig"]
 	var t := create_tween()
@@ -1644,6 +1647,7 @@ func _embuir(el: String) -> void:
 	quien["embuir"] = el
 	quien["embuir_turnos"] = EMBUIR["turnos"]
 	quien["embuir_nuevo"] = true                    # este turno no cuenta
+	Sonido.efecto("embuir")                         # sonido.gd
 	registro.text = "Garon imbuye sus espadas: %s" % el
 	var col: Color = menu.COLOR_ELEMENTO.get(el, Color.WHITE)
 	var p = _p3d(quien)
@@ -1682,6 +1686,7 @@ func _tecnica_garon(n: String, obj: Dictionary) -> void:
 	if not t["todos"]:
 		var d := _dano_fisico(quien, t["mult"])
 		var impacto := func():
+			Sonido.golpe(true)                       # el tajo de Juicio (sonido.gd)
 			_quitar_pv(obj, d)
 			_destello(_centro(obj), menu.COLOR_HEROE.get("Garon", Color.WHITE).lightened(0.4), 1.8)
 			_golpe_visual(obj, d, _efecto_embuir(quien, obj))
@@ -1692,6 +1697,7 @@ func _tecnica_garon(n: String, obj: Dictionary) -> void:
 	else:
 		var objs := enemigos.filter(func(e): return e["hp"] > 0)
 		var impacto := func():
+			Sonido.golpe()                           # una vez por vuelta del Giro (sonido.gd)
 			for e in objs:
 				if e["hp"] <= 0:
 					continue
@@ -1948,6 +1954,7 @@ func _usar_objeto(nombre: String, quien: Dictionary) -> void:
 	var campo := "hp" if o["que"] == "PV" else "mp"
 	var cura: int = min(o["cura"], quien[campo + "_max"] - quien[campo])
 	quien[campo] += cura
+	Sonido.efecto("pocion", {"tono": 1.0 if campo == "hp" else 1.12})   # el frasco (sonido.gd)
 	if quien == actor:
 		registro.text = "%s usa %s (+%d %s)" % [quien["nombre"], nombre, cura, o["que"]]
 	else:
@@ -2001,6 +2008,7 @@ func _defender() -> void:
 	estado = "accion"
 	var quien = actor
 	quien["defendiendo"] = true
+	Sonido.efecto("defensa")                       # sonido.gd
 	registro.text = "%s se pone en guardia" % quien["nombre"]
 	quien["rig"].modulate = COLOR_DEFENSA
 	_numero_flotante(quien, "Defensa", Color(0.7, 0.85, 1.0))
@@ -2012,6 +2020,7 @@ func _defender() -> void:
 func _escapar() -> void:
 	_ocultar_menu()
 	estado = "fin"
+	Sonido.efecto("huida")                         # sonido.gd
 	registro.text = "¡El grupo huye!"
 	for h in heroes:
 		if h["hp"] <= 0:
@@ -2078,6 +2087,7 @@ func _presentar(f: Dictionary) -> void:
 	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	titulo.modulate.a = 0.0
 	capa.add_child(titulo)
+	Sonido.efecto("jefe")                          # sonido.gd
 	_temblor(6.0)
 	var t := create_tween()
 	t.tween_property(titulo, "modulate:a", 1.0, 0.35)
@@ -2094,6 +2104,7 @@ func _presentar(f: Dictionary) -> void:
 func _cambio_fase(f: Dictionary) -> void:
 	estado = "accion"
 	registro.text = "¡%s se enfurece!" % f["nombre"]
+	Sonido.efecto("fase2")                         # sonido.gd
 	_fogonazo(Color(1.0, 0.3, 0.2), 0.55, 0.7)
 	_temblor(14.0)
 	menu.vibrar(60)
@@ -2181,6 +2192,7 @@ func _perdonar(f: Dictionary) -> void:
 func _acabar(f: Dictionary) -> void:
 	_apuntar_decision(f, "muerto")
 	registro.text = "Kael acaba con %s." % f["nombre"].get_slice(" ", 0)
+	Sonido.golpe(true)                             # sonido.gd
 	_destello(_centro(f), Color(1.0, 0.9, 0.7), 2.0)
 	_temblor(10.0)
 	f["hp"] = 0
@@ -2468,6 +2480,8 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 	if embuido:
 		dano = int(dano * (1.0 + EMBUIR["extra"]))
 	var impacto: Callable = func():
+		if magia == "":                                # golpe físico resuelto: su sonido, una vez (sonido.gd, T-083)
+			Sonido.golpe(critico, objetivo.get("defendiendo", false))
 		_quitar_pv(objetivo, dano)
 		if embuido:
 			_golpe_visual(objetivo, dano, _efecto_embuir(origen, objetivo), critico)
@@ -2638,6 +2652,7 @@ func _anim_salto_3d(o: Dictionary, obj: Dictionary, impacto: Callable) -> void:
 	k.mirar(Vector3(-1, 0, 0.3), 0.1)
 	k.ataque_salto(_impacto_fuerte.bind(impacto))
 	await get_tree().create_timer(SALTO_T[0]).timeout
+	Sonido.efecto("salto")                         # el sable sube con el salto (sonido.gd)
 	o["suelo_salto"] = despegue.y                  # la sombra se queda en el suelo mientras salta
 	var t2 := create_tween()
 	t2.tween_property(rig, "position", despegue + Vector2(-40, -130), SALTO_T[1]).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
@@ -3696,6 +3711,7 @@ func _comprobar_fin() -> bool:
 	if ganan or pierden:
 		estado = "fin"
 		_ocultar_menu()
+		Sonido.efecto("victoria" if ganan else "derrota")   # sonido.gd
 		registro.text = "¡Victoria!" if ganan else "Derrota..."
 		if ganan:
 			for h in heroes:
@@ -3741,6 +3757,8 @@ func _repartir_exp(ganan: bool) -> void:
 	var mult: float = load("res://progreso.gd").mult_exp(Engine.get_meta("zona", "llanura"),
 		Engine.get_meta("tipo_combate", "normal"), load("res://progreso.gd").nivel_grupo())
 	registro.text = "+%d EXP   +%d monedas" % [int(round(total * mult)), oro]
+	if oro > 0:
+		Sonido.efecto("monedas")                   # sonido.gd
 	if ResourceLoader.exists("res://inventario.gd"):
 		load("res://inventario.gd").ganar_oro(oro)
 	# progreso.gd: más experiencia si van por debajo del nivel de la zona, muy poca si van 5 por encima;
@@ -3766,6 +3784,7 @@ func _repartir_exp(ganan: bool) -> void:
 			h["mp"] = e["pm"]
 			_actualizar()
 			registro.text = "¡%s sube al nivel %d!" % [h["nombre"], nivel]
+			Sonido.efecto("nivel")                     # sonido.gd
 			_numero_flotante(h, "¡Nivel %d!" % nivel, Color(1.0, 0.9, 0.3), 40)
 			_particulas(_centro(h) + Vector2(0, 80), Color(1.0, 0.95, 0.5, 1.0), Color(1.0, 0.8, 0.2, 0.0), 50, 1.2,
 				Vector2(60, 160), 70.0, Vector2(0, -1), 25.0, Vector2(0, -60), 0.08)

@@ -83,16 +83,19 @@ func _ready() -> void:
 	marco.add_child(cuerpo)
 	_pintar()
 	Entrada.enfocar(botones[PESTANAS.find(pestana)])
+	Sonido.efecto("ui_abrir")                      # sonido.gd (T-083)
 
 
 func _ir_a_pestana(p: String) -> void:
 	pestana = p
+	Sonido.efecto("ui_tic")
 	_pintar()
 
 
 func _cerrar() -> void:
 	if is_queued_for_deletion():
 		return
+	Sonido.efecto("ui_cerrar")
 	cerrado.emit()
 	queue_free()
 
@@ -101,6 +104,7 @@ func _cerrar() -> void:
 func _unhandled_input(ev: InputEvent) -> void:
 	if ev.is_action_pressed("ui_cancel"):
 		if eligiendo:
+			Sonido.efecto("ui_atras")
 			_pintar()
 		else:
 			_cerrar()
@@ -197,14 +201,20 @@ func _fila(nombre: String, desc: String, nota: String, precio: int, al_comprar: 
 func _comprar_objeto(o: String) -> void:
 	if Inv.gastar_oro(OBJETOS[o]):
 		Inv.agregar_objeto(o)
+		Sonido.efecto("monedas")
 		_avisar("Has comprado %s." % o)
+	else:
+		Sonido.efecto("ui_error")
 	_pintar()
 
 
 func _comprar_equipo(id: String) -> void:
 	if Inv.gastar_oro(EQUIPO[id]):
 		Inv.agregar(id)
+		Sonido.efecto("monedas")
 		_avisar("Has comprado %s. Equípalo en el menú Grupo." % Inv.objeto(id)["nombre"])
+	else:
+		Sonido.efecto("ui_error")
 	_pintar()
 
 
@@ -226,7 +236,9 @@ func _comprar_libro(l: Array) -> void:
 		b.pressed.connect(func(): _dar_libro(l, heroe))
 		cuerpo.add_child(b)
 	var atras := _boton("Atrás", 20, Vector2(200, 40), "atras")
-	atras.pressed.connect(_pintar)
+	atras.pressed.connect(func():
+		Sonido.efecto("ui_atras")
+		_pintar())
 	cuerpo.add_child(atras)
 	_devolver_foco(clave)
 
@@ -234,8 +246,11 @@ func _comprar_libro(l: Array) -> void:
 func _dar_libro(l: Array, heroe: String) -> void:
 	if Inv.gastar_oro(l[2]):
 		Grupo.aprender(heroe, l[0], l[1])
+		Sonido.efecto("monedas")
 		var nombre: String = load("res://combate.gd").NIVELES_MAGIA[l[0]][l[1] - 1]["nombre"]
 		_avisar("%s aprende %s." % [heroe, nombre])
+	else:
+		Sonido.efecto("ui_error")
 	_pintar()
 
 

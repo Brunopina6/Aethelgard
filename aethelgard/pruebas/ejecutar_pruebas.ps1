@@ -104,9 +104,19 @@ function Lanzar([string]$argumentos, [string]$log, [string]$err) {
 
 # ------------------------------------------------------------------ preparación
 if (-not (Test-Path $Godot)) { Write-Host "No encuentro Godot en $Godot" -ForegroundColor Red; exit 255 }
-if (Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -like "Godot*" }) {
-    Write-Host "Hay un Godot abierto: ciérralo antes (dos Godot sobre el mismo proyecto se pisan)." -ForegroundColor Red
+# Solo impide empezar un Godot abierto sobre ESTE proyecto: dos Godot sobre el mismo proyecto se pisan. Los de otras
+# copias (otro especialista, el editor del usuario en la suya) no estorban: se avisa y se vigilan durante la pasada,
+# y si cambia la carpeta real de datos, el resumen los nombra (T-082; propuesto por el especialista de sonido).
+$rutaEste = (($proyecto -replace '\\', '/').TrimEnd('/')).ToLowerInvariant()
+$godotsAntes = @(Get-CimInstance Win32_Process -Filter "Name LIKE 'Godot%'" -ErrorAction SilentlyContinue)
+$enEste = @($godotsAntes | Where-Object {
+    (("$($_.CommandLine)" -replace '\\', '/').ToLowerInvariant()) -match ([regex]::Escape($rutaEste) + '(/|"|\s|$)') })
+if ($enEste.Count -gt 0) {
+    Write-Host "Hay un Godot abierto sobre este proyecto ($proyecto): ciérralo antes (dos Godot sobre el mismo proyecto se pisan)." -ForegroundColor Red
     exit 255
+}
+if ($godotsAntes.Count -gt 0) {
+    Write-Host ("AVISO: hay {0} Godot abiertos sobre otras copias; no estorban, pero se vigilan." -f $godotsAntes.Count) -ForegroundColor Yellow
 }
 $huellasAntes  = Huellas $datosReales
 $partidaAntes  = if (Test-Path $partida) { (Get-FileHash $partida -Algorithm SHA256).Hash } else { "(no existe)" }

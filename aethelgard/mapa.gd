@@ -541,6 +541,7 @@ func _encuentro() -> void:
 	Engine.set_meta("desde_mapa", true)
 	Engine.set_meta("tipo_combate", "normal")   # los jefes usarán "jefe" o "superjefe"
 	Engine.set_meta("escena_retorno", "res://mapa.tscn")
+	Sonido.efecto("emboscada")                     # sonido.gd (T-083)
 	_mostrar_aviso("¡Emboscada!")
 
 	var flash := ColorRect.new()
@@ -584,6 +585,8 @@ func _boton_barra(nombre: String) -> Button:
 func _boton_menu(nombre: String) -> void:
 	if barra_activa:
 		ultimo_de_barra = nombre
+	if not nombre in ["Grupo", "Objetos", "Habilidades", "Diario"]:
+		Sonido.efecto("ui_tic")                    # los que abren ventana ya suenan al abrirla (sonido.gd)
 	match nombre:
 		"Mapa":
 			_mostrar_aviso("Estás en el mapa del mundo.")
@@ -605,6 +608,7 @@ func _abrir_menu(pestana: String) -> void:
 		return
 	tiene_destino = false
 	if pestana == "Diario":                       # detalles descubiertos y fichas de combate (diario.gd)
+		Sonido.efecto("pagina")                   # sonido.gd
 		menu_abierto = load("res://diario.gd").new()
 	else:
 		menu_abierto = load("res://menus.gd").new()
@@ -623,6 +627,7 @@ func _entrar() -> void:
 	en_encuentro = true
 	tiene_destino = false
 	var i := lugares.find(cerca)
+	Sonido.efecto("portal" if cerca["tipo"] == "portal" else "entrar")   # sonido.gd
 	if cerca["tipo"] == "portal":                     # sube a la ciudad flotante; al bajar se vuelve aquí
 		Engine.set_meta("pos_mapa", jugador.position)
 		Engine.set_meta("pos_mapa_ok", true)
