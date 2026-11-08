@@ -6,6 +6,7 @@
     powershell -ExecutionPolicy Bypass -File .\aethelgard\pruebas\ejecutar_pruebas.ps1 -Manual
     powershell -ExecutionPolicy Bypass -File .\aethelgard\pruebas\ejecutar_pruebas.ps1 -Solo prueba_garon,prueba_huir
   -Manual ejecuta también, con ventana, las pruebas que sacan capturas. Una persona tiene que revisarlas.
+  -Lista <archivo> usa otra lista con el mismo formato (lo usa verificar_ejecutor.ps1).
 
   AISLAMIENTO
   - Cada pasada crea sus propias carpetas de datos (Roaming, Local y Temp) y lanza Godot con APPDATA,
@@ -39,14 +40,15 @@ param(
     [switch]$Manual,
     [string[]]$Solo = @(),
     [string]$Godot  = "C:\Users\G513\Desktop\jueo personal\Godot_v4.7.2-stable_win64_console.exe",
-    [string]$Salida = "D:\REBELUM_diagnostico\pruebas"
+    [string]$Salida = "D:\REBELUM_diagnostico\pruebas",
+    [string]$Lista  = ""
 )
 
 $ErrorActionPreference = "Continue"
 $Solo = @($Solo | ForEach-Object { $_ -split "," } | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne "" })
 $proyecto = Split-Path $PSScriptRoot -Parent
 $raizRepo = Split-Path $proyecto -Parent
-$lista    = Join-Path $PSScriptRoot "lista_pruebas.txt"
+$lista    = if ($Lista -ne "") { $Lista } else { Join-Path $PSScriptRoot "lista_pruebas.txt" }
 $dir      = Join-Path $Salida (Get-Date -Format "yyyy-MM-dd_HHmmss")
 $aislado  = Join-Path $dir "datos_aislados"
 New-Item -ItemType Directory -Force -Path (Join-Path $aislado "Roaming"), (Join-Path $aislado "Local"),
