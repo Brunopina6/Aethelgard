@@ -114,8 +114,19 @@ func _ready() -> void:
 	if dg != null:
 		dg.timeline_ended.connect(_al_terminar_dialogo)
 	Engine.set_meta("zona", ZONA)
+	_preparar_sonidos()
 	if not en_banco():
 		load("res://progreso.gd").guardar(scene_file_path)   # guardado automático al entrar (como zona.gd)
+
+
+# Los sonidos hechos por código se generan al cargar (detrás del fundido), no al usarlos: generarlos en el momento
+# daba un tirón al abrir el cofre. Solo los que pueden sonar en esta visita.
+func _preparar_sonidos() -> void:
+	var P = load("res://progreso.gd")
+	if not cofre_abierto():
+		sonido_cofre()
+	if P.hito("pv_05") and not P.hito("pv_07"):
+		campana()
 
 
 # Banco de medida en marcha (botones PRUEBA y TOPE de vista3d.gd): la escena se recarga en cada caso y Kael recorre
@@ -982,8 +993,18 @@ func _animar_cofre() -> void:
 
 
 # Sonido del cofre, hecho por código como los del menú (menu_combate.gd, sonidos_ui): el golpe seco de la tapa de
-# madera y, encima, un arpegio brillante que sube (do, mi, sol, do). Dura 0,9 s.
+# madera y, encima, un arpegio brillante que sube (do, mi, sol, do). Dura 0,9 s. Se genera una vez y se guarda: hacerlo
+# al abrir el cofre daba un tirón de unos 180 ms (medido en el PC el 08/11), así que _ready lo prepara al cargar.
+static var _sonido_cofre: AudioStreamWAV
+
+
 static func sonido_cofre() -> AudioStreamWAV:
+	if _sonido_cofre == null:
+		_sonido_cofre = _generar_sonido_cofre()
+	return _sonido_cofre
+
+
+static func _generar_sonido_cofre() -> AudioStreamWAV:
 	var hz := 22050
 	var m := PackedFloat32Array()
 	m.resize(int(hz * 0.9))

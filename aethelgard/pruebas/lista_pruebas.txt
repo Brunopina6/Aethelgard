@@ -44,3 +44,4 @@ prueba_lore       | ventana  | {salida}\lore.png    | 150 | {salida}    | captur
 prueba_tapa       | ventana  | {salida}\tapa.png    | 150 | {salida}    | captura de la portada
 prueba_material   | manual   |                      | 0   | {salida}    | hay que elegir la base: -- <res://base sin extensión> <salida.png>
 prueba_banco      | manual   |                      | 0   | user://     | banco de rendimiento: se usa en el móvil (Fase 2.1); no es una prueba de regresión
+medir_ruta        | manual   |                      | 0   | {salida}    | medición en el PC del mismo recorrido (andar, puente, cofre, Tilo, combate y vuelta): -- <carpeta> 3d sin_prologo auto perfil=bajo grupo=si; un proceso por condición
