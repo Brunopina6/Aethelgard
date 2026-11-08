@@ -39,8 +39,10 @@
 - **Hecho después** (`e212400`):
   - la misión del corte alfa, de PV-02 a PV-14, con Tilo, la estela y el centinela;
   - la APK `Aethelgard_exp-20261107-07ac036.apk`.
-- **Siguiente:** T-022 (Lya y Garon siguiendo a Kael, el cofre y la cinemática del mirador). Después, la prueba en el
-  Redmi.
+- **Medido en el Redmi el 08/11** (D-053): en el perfil bajo, la región va a **30 FPS sostenidos y sin tirones** con
+  el tope de 30, a 20 m. Sin tope, la mediana es de 21,5 ms y el p95 de 38,4 ms. Las tablas están en
+  [SESSION_HANDOFF.md](SESSION_HANDOFF.md).
+- **Siguiente:** T-022: Lya y Garon siguiendo a Kael (hay unos 12 ms de margen), el cofre y la cinemática del mirador.
 - **Vigente:**
   - el Redmi está reservado;
   - la partida del PC se conserva tal cual;

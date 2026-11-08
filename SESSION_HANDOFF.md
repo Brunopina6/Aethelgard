@@ -1,6 +1,6 @@
 # SESSION_HANDOFF: punto de control
 
-**Último punto de control:** 2026-11-07 a las 17:10 (hora local, UTC+1), con la misión del corte alfa hecha en el PC.
+**Último punto de control:** 2026-11-08 a las 10:45 (hora local, UTC+1), tras medir la región en el Redmi.
 
 ## Dónde está todo
 
@@ -8,7 +8,7 @@
 |---|---|
 | Raíz del repositorio | `D:\Aethelgard`; el proyecto de Godot está en `D:\Aethelgard\aethelgard\` |
 | Copia del usuario | Rama `rebelum-3d` @ `ce84422`, local. Aquí se editan los documentos de memoria |
-| Árbol del encargo | `D:\Aethelgard_alpha`, rama `rebelum-alpha` @ `549e3d8`, local y nunca subida |
+| Árbol del encargo | `D:\Aethelgard_alpha`, rama `rebelum-alpha` @ `aabe5ad`, local y nunca subida |
 | Copia de la memoria | `D:\Aethelgard_memoria`, rama `memoria-desarrollo`. Las publicaciones se ven con `git log origin/memoria-desarrollo` |
 | GitHub (`Brunopina6/Aethelgard`) | `main` @ `d4b2d16`, `desarollo` @ `2d1adc4`, `v0.1.0` y `memoria-desarrollo` (solo memoria) |
 | Procesos en marcha | Ninguno a las 17:07. Compruébalo antes de lanzar Godot: dos Godot sobre el mismo proyecto se pisan |
@@ -42,6 +42,47 @@
 - Las pruebas van sin ventana. **Falta ver con ventana** a Tilo, la estela y las marcas de salida.
 - **El combate del centinela** carga de verdad, pero la victoria se simuló en la prueba.
 - **No se ha probado en el Redmi** (T-078).
+
+## En marcha: validación en el Redmi, pedida por el usuario («Probemos en el Redmi», 07/11)
+
+- **APK:** `Aethelgard_exp-20261107-989d35e.apk` (commit `989d35e`), instalada en el Redmi por el usuario desde
+  Descargas el 08/11. `adb install` falló dos veces con `INSTALL_FAILED_USER_RESTRICTED`, porque Xiaomi pide
+  confirmarla en la pantalla.
+- **No se ha tocado nada más del móvil:** la app estable, «Aethelgard Prueba 3D» y las APK antiguas siguen igual.
+- **Banco PRUEBA** (08/11, hacia las 10:30), sin tope de FPS y con la región tal como está, sin seguidores:
+
+  | Perfil | Distancia | FPS | Mediana | p95 | CPU de dibujo | Llamadas | Memoria de vídeo |
+  |---|---|---|---|---|---|---|---|
+  | bajo | 20 m | 42,5 | 21,5 ms | 38,4 ms | 7,1 ms | 80 | 414 MB |
+  | bajo | 34 m | 35,6 | 27,1 ms | 49,6 ms | 6,0 ms | 113 | 414 MB |
+  | medio | 20 m | 28,0 | 35,5 ms | 41,5 ms | 7,8 ms | 163 | 416 MB |
+  | medio | 34 m | 23,0 | 44,0 ms | 48,2 ms | 7,2 ms | 143 | 416 MB |
+  | alto | 20 m | 10,5 | 93,0 ms | 133,7 ms | 18,0 ms | 173 | 421 MB |
+  | alto | 34 m | 8,7 | 116,8 ms | 125,5 ms | 10,0 ms | 221 | 421 MB |
+
+  - Tiempo de GPU: «—», porque el temporizador de Mali no da datos.
+  - **Frente al plan 3D, punto 2.1** (bajo a 20 m):
+    - mediana ≤ 31 ms: **se cumple** (21,5 ms);
+    - p95 ≤ 38 ms: **no se cumple por 0,4 ms** (38,4 ms);
+    - picos > 100 ms y carga ≤ 4 s: sin medir.
+  - **Registros:** `D:\REBELUM_diagnostico\redmi_2026-11-08_region\` (`logcat_godot.txt`). El CSV del banco está en
+    el móvil, en `files/banco_pastos_verdes_3d.csv`.
+- **Banco TOPE** (08/11, hacia las 10:43), con el tope de FPS de cada perfil, «como se jugará»:
+
+  | Perfil | Distancia | FPS | Mediana | p95 | Tirones |
+  |---|---|---|---|---|---|
+  | bajo, tope 30 | 20 m | 30,1 | 33,4 ms | 34,0 ms | 0,0 % |
+  | medio, tope 30 | 20 m | 28,2 | 35,2 ms | 40,8 ms | 0,0 % |
+  | medio, tope 30 | 34 m | 23,1 | 44,0 ms | 48,0 ms | 0,5 % |
+  | alto, tope 60 | 20 m | 10,8 | 93,2 ms | 101,1 ms | 100 % |
+
+  - **El perfil bajo cumple la meta del encargo:** 30 FPS sostenidos en el Redmi, sin tirones, a la distancia de juego
+    (20 m).
+  - **Margen:** sin tope, la mediana es de 21,5 ms; quedan unos 12 ms por fotograma para Lya, Garon y lo que venga.
+  - **Registros:** `logcat_tope.txt` y `banco_tope.csv`, en la misma carpeta.
+- **Error corregido:** `!is_inside_tree()` al recargar la escena entre casos del banco (commit `aabe5ad`). Volvió a
+  salir con esta APK, que es anterior al arreglo; entrará en la próxima.
+- **Validación terminada:** el Redmi vuelve a quedar reservado. Falta la opinión visual del usuario.
 
 ## Próximo paso concreto
 

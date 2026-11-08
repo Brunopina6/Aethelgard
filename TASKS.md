@@ -1,6 +1,6 @@
 # TASKS: tareas de AETHELGARD / REBELUM
 
-**Actualizado el 2026-11-07 a las 17:10 (hora local, UTC+1).**
+**Actualizado el 2026-11-08 a las 10:45 (hora local, UTC+1).**
 - Copia del usuario: `rebelum-3d` @ `ce84422`.
 - Árbol del encargo: `rebelum-alpha` @ `c2a524c`.
 
@@ -233,6 +233,15 @@
 - **Estado:** pendiente. **Prioridad:** media.
 - **Dependencias:** necesita el Redmi para medir (T-078).
 - **Contexto [historial]:** el perfil bajo daba unos 34,5 ms de mediana en el Redmi, todavía sin 30 FPS estables.
+- **Medido en el Redmi el 2026-11-08** (región 3D, APK `989d35e`, sin seguidores):
+  - **TOPE** (con el tope de 30 FPS), bajo a 20 m: **30,1 FPS**, p95 de 34,0 ms y 0 % de tirones.
+  - **PRUEBA** (sin tope), bajo a 20 m: mediana de **21,5 ms** (cumple ≤ 31) y p95 de **38,4 ms** (se pasa de ≤ 38 por
+    0,4 ms). A 34 m: 27,1 y 49,6 ms.
+  - **Sin medir:** los picos de más de 100 ms y el tiempo de carga.
+  - **Registros:** `D:\REBELUM_diagnostico\redmi_2026-11-08_region\`. Las tablas completas están en
+    [SESSION_HANDOFF.md](SESSION_HANDOFF.md).
+  - **Siguiente:** precalentar los sombreados y precalcular la sombra para bajar el p95 sin tope; y medir los picos y la
+    carga.
 - **Criterio de aceptación** (plan 3D, punto 2.1), medido en el Redmi con el escenario y Kael en bajo:
   - mediana ≤ 31 ms y p95 ≤ 38 ms;
   - ningún pico > 100 ms después del precalentado;
@@ -420,6 +429,11 @@
 ### T-078
 **Validar las APK en el Redmi**
 - **Estado:** bloqueada: el usuario conecta el móvil cuando lo decida ([D-013](DECISIONS.md#d-013)).
+- **Primera validación hecha el 2026-11-08** ([D-053](DECISIONS.md#d-053)):
+  - la APK experimental `989d35e`, instalada por el usuario desde Descargas, se instala aparte de la app estable;
+  - Pastos Verdes 3D funciona;
+  - los bancos PRUEBA y TOPE dan los resultados de [T-023](#t-023).
+  - **Faltan** la opinión visual del usuario y validar el control táctil a fondo.
 - **Qué validar:**
   - que se instala junto a la app estable sin tocar sus datos;
   - el arranque;

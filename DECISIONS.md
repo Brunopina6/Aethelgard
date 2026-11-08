@@ -64,6 +64,7 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 | [D-050](#d-050) | Licencias: recursos autorizados o sustitutos; el entregable excluye lo no acreditado | Aprobada |
 | [D-051](#d-051) | Primera versión de la región 3D de Pastos Verdes | Aprobada en el encargo |
 | [D-052](#d-052) | La misión del corte alfa dentro de la región | Aprobada en el encargo |
+| [D-053](#d-053) | Validación de la región en el Redmi, pedida por el usuario | Aprobada (hecha) |
 | [D-H01 a D-H15](#6-diseño-ya-implementado-del-3010-al-0511) | Diseño ya implementado antes de Git | Aprobada (historial) |
 
 ## 1. Reglas de trabajo, Git y versiones
@@ -649,6 +650,20 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
   - poner la mecha en el inventario: habría que tocar `inventario.gd` y sus menús;
   - usar un sprite 2D de NPC para Tilo: desentona en el 3D.
 - **Archivos:** `zonas3d/pastos_verdes_3d.gd`, `pruebas/prueba_ruta_alpha.gd` y `dialogos/pv_*.dtl` (commit `e212400`).
+
+### D-053
+**Validación de la región en el Redmi, pedida por el usuario**
+- **Fecha y estado:** del 2026-11-07, 17:20, al 2026-11-08, 10:45. Aprobada [usuario]: «Probemos en el Redmi»,
+  «Reintenta por USB» y «La instalo yo».
+- **Decisión:** es una excepción puntual a [D-013](#d-013), pedida por el usuario y solo para esta validación.
+  - Por ADB solo se hizo lo necesario: intentar `adb install`, copiar la APK a Descargas y leer el registro de Godot y
+    el CSV del banco de la propia app (`run-as`).
+  - No se tocó nada más del móvil.
+- **Consecuencias:**
+  - Al terminar, el Redmi **vuelve a quedar reservado**.
+  - Con Xiaomi, `adb install` necesita que el usuario confirme en la pantalla. Lo más fiable es copiar la APK a
+    Descargas y que la instale el usuario.
+  - El número de serie no se anota en ningún documento.
 
 ## 6. Diseño ya implementado del 30/10 al 05/11
 
