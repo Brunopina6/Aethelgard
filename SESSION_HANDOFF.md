@@ -1,6 +1,6 @@
 # SESSION_HANDOFF: punto de control
 
-**Último punto de control:** 2026-11-09 a las 00:35 (hora local, UTC+1). Noche de trabajo autónomo: el usuario duerme y
+**Último punto de control:** 2026-11-09 a la 01:15 (hora local, UTC+1). Noche de trabajo autónomo: el usuario duerme y
 pidió no preguntar ([MEMORIA_CHAT.md](MEMORIA_CHAT.md)). **La memoria describe `integracion-experimental` @ `c74b872`, que está en GitHub.**
 
 - **Encargos vigentes, de más antiguo a más nuevo** (todos en [MEMORIA_CHAT.md](MEMORIA_CHAT.md)):
@@ -11,6 +11,21 @@ pidió no preguntar ([MEMORIA_CHAT.md](MEMORIA_CHAT.md)). **La memoria describe 
   4. Equipo, enemigos, compañeros, secretos, grutas y posadas ([D-072](DECISIONS.md#d-072)). Puede usar cualquier
      programa del PC y debe centrarse mucho en lo visual y el lore.
 - **Decisiones de la noche, para que el usuario las revise:** [D-073](DECISIONS.md#d-073).
+
+## Relevo por límite de uso (09/11, hacia la 01:15)
+
+- Se alcanzó el límite de uso de la sesión. Se pararon los cinco especialistas en marcha. Lo que hicieran quedó en
+  sus copias, **sin revisar ni integrar**: puede haber cambios sin confirmar. Hay que revisar `git status` y `git log` en
+  cada una antes de seguir:
+  - animaciones, tanda 2 (`D:Aethelgard_animaciones`): estaba empezando la medida del deslizamiento de los pies;
+  - sonido, tanda 2 (`D:Aethelgard_sonido`): voces de enemigos, ríos 2D, Garganta y propuesta de sonido de magias;
+  - combate, fase 1 (`D:Aethelgard_combate`, desde `2cb8221`): red de seguridad (huella) y datos de magias y equipo;
+  - narrativa, fase 1 (`D:Aethelgard_narrativa`, desde `1977bff`): Oakhaven en archivos nuevos;
+  - gráficos, fase 2 (`D:Aethelgard_graficos`, desde `e11a882`): integrar el mapamundi pintado. La fase 1 está
+    revisada y aprobada (comparaciones en `D:REBELUM_diagnosticomapamundi�6-11-08mparacion`).
+- Lo publicado y comprobado sigue igual: `integracion-experimental` @ `c74b872` y la Prueba v77.
+- **Para retomar:** revisar cada copia y relanzar cada especialista con su tarea (los encargos están en este relevo, en
+  TASKS.md y en el informe de cada uno, en `docs/memory/agents/`).
 
 ## Hecho y comprobado esta noche
 
