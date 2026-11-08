@@ -1,7 +1,7 @@
 # DECISIONS: decisiones de AETHELGARD / REBELUM
 
-**Actualizado el 2026-11-08 a las 19:05** sobre la copia del usuario (`rebelum-3d` @ `ce84422`) y el árbol del
-encargo (`rebelum-alpha` @ `36502e9`). Las horas son locales (UTC+1).
+**Actualizado el 2026-11-08 a las 20:05** sobre la copia del usuario (`rebelum-3d` @ `ce84422`) y el árbol del
+encargo (`rebelum-alpha` @ `edf52cd`). Las horas son locales (UTC+1).
 
 **Estados**
 - **Aprobada:** la tomó o la aprobó el usuario.
@@ -73,6 +73,8 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 | [D-059](#d-059) | El grupo se une con la misión; objetivo y marcador en pantalla | Aprobada en el encargo |
 | [D-060](#d-060) | El grupo activo manda: exploración, combate, menús y guardado; encuentros para Kael solo | Aprobada |
 | [D-061](#d-061) | Sin tirones al abrir diálogos ni al ver algo por primera vez: se prepara en las cargas | Aprobada en el encargo |
+| [D-062](#d-062) | Nivelación automática de quien se une al grupo | Propuesta (pendiente del usuario) |
+| [D-063](#d-063) | Teclado y mando: acciones, foco visible y una pulsación, una acción (T-025) | Aprobada en el encargo |
 | [D-H01 a D-H15](#6-diseño-ya-implementado-del-3010-al-0511) | Diseño ya implementado antes de Git | Aprobada (historial) |
 
 ## 1. Reglas de trabajo, Git y versiones
@@ -195,6 +197,11 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
   - compara los hashes de los datos reales y el `git status`;
   - da 4 resultados: SUPERADA, FALLIDA, MANUAL y NO SEGURA.
 - **Motivo:** la primera ejecución sin aislar escribió 5 registros de Godot en la carpeta real. La partida no cambió.
+- **Ampliado el 08/11** ([D-011](DECISIONS.md#d-011)): la carpeta real es la misma para todas las copias del proyecto.
+  - El ejecutor ya no empezaba con un Godot abierto. Ahora, además, mira entre prueba y prueba si alguien abre otro y
+    lo apunta en el resumen con su línea de órdenes; de cada archivo cambiado de la carpeta real da la hora.
+  - Al pasarse de tiempo una prueba, solo cierra su proceso y los hijos de este. Antes cerraba cualquier Godot abierto
+    después de empezar la prueba: también un editor del usuario.
 - **Archivos:** el ejecutor, `lista_pruebas.txt` y `sonda_datos.gd`.
 
 ### D-011
@@ -209,6 +216,18 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
   - La copia histórica queda intacta.
   - Si faltan datos, el cargador usa sus valores por defecto.
 - **Consecuencias:** el fallo que lo permitió queda como tarea (T-076).
+- **Se repitió el 08/11 a las 19:37:34** (comprobado leyendo fechas y huellas, sin tocar nada):
+  - un juego lanzado desde el editor abierto en la copia del usuario (`D:\Aethelgard\aethelgard`, rama `rebelum-3d`,
+    que aún no tiene el arreglo de T-076) reescribió `partida.save`;
+  - ahora tiene la huella `A3F3C402…` y 371 bytes, con `escena_guardada` en `zona.tscn` y sin `grupo` ni
+    `inventario`. No se sabe qué claves tenía antes: las baterías solo guardaban su huella (`B0A2AA40…`, la misma
+    desde el 07/11);
+  - **pistas:** en esa copia, el editor guardó su caché a las 19:37:04, los metadatos de ejecución a las 19:37:11 y su
+    disposición a las 19:37:38. El juego dejó su registro en la carpeta real a las 19:37:12, con la tarjeta gráfica:
+    ningún proceso de la batería abre ventana ni usa esa carpeta, y ninguna orden del asistente abrió Godot entonces;
+  - la batería de las 19:35 terminó a las 19:37:28 con la partida intacta. Avisó (código 254) por el registro de
+    Godot y los ajustes de Dialogic que escribió ese editor en la carpeta real.
+  - Se conserva tal cual.
 
 ### D-012
 **Versión experimental con paquete y partida propios**
@@ -863,8 +882,12 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
   `zonas3d/pastos_verdes_3d.gd`; `e670a5d`):
   - **Fuente común:** el grupo activo (`grupo_activo`, que se guarda). Lo usan la exploración, el combate, los menús, la
     tienda, el nivel del grupo y el guardado.
-  - **En la versión experimental,** la misión empieza con Kael solo; Lya se une en PV-03 y Garon en PV-05. Quien se une
-    llega al nivel del más alto y descansado.
+  - **En la versión experimental,** la misión empieza con Kael solo; Lya se une en PV-03 y Garon en PV-05.
+  - **Quien se une conserva sus datos** (nivel, experiencia, atributos, vida y PM) y sube como siempre: con la
+    experiencia de los combates en que lucha (`progreso.gd` da más a quien va por debajo del nivel de la zona).
+    - **Corregido el 2026-11-08 por la noche**, a petición del usuario: en `e670a5d` puse que quien se unía llegaba al
+      nivel del más alto y descansado. Esa regla no existía; la introduje yo. Se quitó, y queda como propuesta
+      ([D-062](#d-062)).
   - **Los ausentes** conservan sus datos, no actúan, no son objetivo y no cambian (curar tras una derrota solo cura a
     los presentes).
   - **Partidas de antes:** sin la clave y con la misión empezada, el grupo sale de los hitos; sin la misión, siguen con
@@ -926,6 +949,76 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
     0,87-0,89 a 0,94-1,01 s al volver a entrar.
 - **Sin comprobar:** el Redmi (tiempos de carga, tirones que queden y si la caché de sombreados de Godot funciona en el
   Mali-G57).
+
+### D-062
+**Nivelación automática de quien se une al grupo**
+- **Fecha y estado:** 2026-11-08 por la noche. **Propuesta, pendiente de la decisión del usuario** [asistente]. El
+  usuario pidió registrarla así: «Registra la nivelación automática como propuesta pendiente de mi decisión».
+- **Qué se propone:** que quien se une al grupo activo (Lya en PV-03, Garon en PV-05) llegue al nivel del más alto del
+  grupo, con los puntos de atributo de esos niveles para repartir, y con la vida y los PM llenos.
+- **Historia:** lo puse en `e670a5d` sin que existiera esa regla en el juego. Se quitó el mismo día ([D-060](#d-060)):
+  ahora quien se une conserva sus datos.
+- **Lo que ya existía** (desde `fd71d6a`, `grupo.gd`, `datos()`): si a una partida antigua le falta un héroe, se crea
+  al nivel más alto del grupo (el comentario dice «medio», pero el código toma el más alto). Solo crea datos que faltan;
+  no cambia a nadie que ya los tenga.
+- **A favor:** nadie llega muy por debajo del grupo, y los combates de dos y tres héroes se equilibran mejor.
+- **En contra:** cambia la progresión del juego. Además, el juego ya tiene su forma de compensar: más experiencia para
+  quien va por debajo del nivel de la zona.
+- **Comprobado:** los encuentros al azar de dos y tres héroes se ganan con todos en el nivel 1, el peor caso
+  (`prueba_grupos_combate`).
+
+### D-063
+**Teclado y mando: acciones, foco visible y una pulsación, una acción (T-025)**
+- **Fecha y estado:** 2026-11-08 por la noche. Aprobada en el encargo [asistente], por la orden del usuario: «continúa
+  con estabilidad y controles, T-025 […] prioriza los controles de Android y PC». Sigue el plan de
+  [docs/entrada/android_tv_dualshock4_plan.md](docs/entrada/android_tv_dualshock4_plan.md) (fases 2A, 2B y parte de
+  2C y 2E), sin la parte de Android TV.
+- **Decisión** (rama `rebelum-alpha`):
+  - **Acciones** (`project.godot`). Ya existían `ui_accept` (Intro, Espacio, A/✕) y `ui_cancel` (Esc, B/○). Nuevas:
+    - `menu_juego`: Tab, Esc y Start/Options;
+    - `pestana_anterior` y `pestana_siguiente`: Q y E, RePág y AvPág, L1 y R1;
+    - `camara_acercar` y `camara_alejar`: + y -, y el stick derecho.
+    - Andar sigue con las `ui_*` de Godot (flechas, cruceta y stick izquierdo), y WASD en 3D.
+  - **Autoload `Entrada`** (`entrada.gd`):
+    - sabe si se juega con el dedo o el ratón, con el teclado o con el mando (mira cada evento al llegar a la
+      ventana);
+    - da el foco y lo devuelve al mismo botón cuando una ventana se repinta;
+    - encadena los botones sueltos para las flechas;
+    - si se desconecta un mando, suelta lo que tuviera pulsado y avisa de que se puede seguir con la pantalla o el
+      teclado.
+  - **Foco visible:** un marco dorado (`estilo.gd`). Godot 4.7 solo lo dibuja al navegar con teclado o mando; al tocar
+    o hacer clic, los botones se ven como siempre.
+  - **Exploración** (mapa, ciudad e isla; la región 3D ya lo tenía):
+    - los botones de la pantalla ya no cogen el foco al tocarlos;
+    - Intro / A pulsa el botón de acción que se ve (Entrar, Examinar, Hablar, Abrir cofre, Bajar al mundo);
+    - Tab, Esc o Start ponen el foco en la barra del mapa o en los botones de la ciudad, y el personaje se para;
+    - Esc / B, o un toque, lo quitan.
+  - **Ventanas** (grupo, objetos, habilidades, tienda y diario):
+    - el foco empieza en la pestaña y se conserva al comprar, equipar o subir atributos;
+    - Esc / B cierran (o vuelven atrás en la tienda);
+    - Q / E (L1 / R1) cambian de pestaña;
+    - ↑ ↓ desplazan el texto.
+  - **Combate:** L1 / R1 (Q / E) cambian las pestañas de magia I · II · III, e Intro / A o Esc / B saltan la
+    invocación. Antes, las dos cosas solo iban tocando.
+  - **Diálogos:**
+    - **una pulsación, una acción.** Dialogic contaba cualquier otro evento del mismo fotograma (el temblor del stick,
+      la misma tecla que abría el diálogo). `BotonDialogo` se queda con esos eventos de más;
+    - el botón «SEGUIR» no coge el foco.
+  - **Pantalla de carga:** el texto dice qué pulsar («PULSA INTRO» o «PULSA A»). ↓ elige «Probar la misión desde el
+    principio» e Intro / A lo pulsa; el botón se conserva.
+  - **Región 3D:** zoom con + / - o el stick derecho.
+- **Lo que no se hace aún:**
+  - no hay pantalla de ajustes;
+  - los textos del combate siguen diciendo «TOCA UN ENEMIGO»;
+  - no hay iconos de los botones de cada mando;
+  - fuera del combate, Atrás de Android no hace nada (no hay pausa ni salir);
+  - Android TV queda para después.
+- **Commit:** `e6e52c4` (`rebelum-alpha`).
+- **Comprobado con eventos simulados en el PC** (teclas y botones de mando de verdad, inyectados en Godot; no hay
+  ningún mando conectado a este PC): `prueba_foco`, `prueba_mando`, `prueba_teclado`, `prueba_dialogo_interfaz` y
+  `prueba_precalentado`. Las pruebas táctiles anteriores siguen en verde. Batería `2026-11-08_195103`: 32 superadas y
+  0 fallidas. Las capturas del foco, revisadas a ojo.
+- **Sin comprobar con hardware:** el Redmi (táctil), un mando real y un teclado real.
 
 ## 6. Diseño ya implementado del 30/10 al 05/11
 

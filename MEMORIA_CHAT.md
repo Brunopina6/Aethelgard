@@ -1,6 +1,6 @@
 # MEMORIA_CHAT: lo aprendido en las conversaciones sobre AETHELGARD / REBELUM
 
-> **Actualizado el 2026-11-08 a las 19:05** (hora local, UTC+1), en la rama `rebelum-3d` @ `ce84422`. Se publica en la
+> **Actualizado el 2026-11-08 a las 20:05** (hora local, UTC+1), en la rama `rebelum-3d` @ `ce84422`. Se publica en la
 > rama `memoria-desarrollo` de GitHub.
 >
 > Es un **resumen**, no una transcripción. El chat legible está en
@@ -79,6 +79,24 @@
     [D-060](DECISIONS.md#d-060)); los tirones (`e630b02`, [D-061](DECISIONS.md#d-061)); la «Prueba v50».
   - **Medido en el PC:** el primer diálogo pasa de 184 a unos 10 ms, los siguientes de 55 a 7 ms, y el primer paseo de
     picos de 41 ms a 4-5 ms. La entrada en la región, en negro, crece 0,1-0,2 s.
+- **Orden del 08/11 por la noche** (pegada): «continúa con estabilidad y controles, T-025 […] No necesitas volver a
+  pedirme permiso para cada tarea rutinaria ya incluida».
+  - **Antes, una comprobación:** la regla de que quien se une al grupo llega al nivel del más alto la había puesto yo en
+    `e670a5d`; no existía. Se quitó (quien se une conserva sus datos) y queda como propuesta pendiente
+    ([D-062](DECISIONS.md#d-062), [T-080](TASKS.md#t-080)).
+  - **T-025** ([D-063](DECISIONS.md#d-063)): teclado y mando sin ratón en Android y PC, foco visible, una pulsación una
+    acción, el mando desconectado deja seguir, el botón de la partida de prueba se conserva.
+    - Probado con eventos **simulados**: aquí no hay mando, y no se ha probado ningún hardware.
+    - Pruebas manuales abiertas en [T-025](TASKS.md#t-025).
+    - **Hecho:** `e6e52c4` y los `.uid` en `edf52cd`; batería `2026-11-08_195103` con 32 superadas y 0 fallidas;
+      capturas del foco revisadas; la «Prueba v52», subida para la prueba táctil en el Redmi.
+  - Pide que avise cuando haga falta su prueba en el móvil.
+  - **Diagnósticos de este hito** [comprobado, 08/11]:
+    - la batería avisó de cambios en la carpeta real de datos: venían de un editor abierto en la copia del usuario, que
+      además reescribió `partida.save` a las 19:37:34 (sin el arreglo de T-076). Se conserva tal cual
+      ([D-011](DECISIONS.md#d-011)). El ejecutor ahora apunta los Godot ajenos y ya no cierra ninguno que no sea suyo;
+    - `prueba_grupos_combate` fallaba al azar porque el Slime cobarde del grupo 7 puede huir y entonces se gana sin
+      experiencia, como manda el juego. La prueba ahora exige la cantidad exacta.
 - **Siguiente:** el encargo único por dependencias; del perfil bajo, la medición en el Redmi y la sombra precalculada
   ([SESSION_HANDOFF.md](SESSION_HANDOFF.md)).
 - **Vigente:**
@@ -225,6 +243,7 @@ Estas son las **correcciones**, que conviene no repetir:
 | 07/11 | «¿Qué veré en el Redmi?»: la APK experimental arranca en 2D | Se compiló la APK «Prueba 3D» para ver Pastos Verdes ya |
 | 07/11 | La partida del PC perdió la clave `grupo` | «No, déjala así» ([D-011](DECISIONS.md#d-011)) |
 | 07/11 | Diagnostiqué mal que la carga de `zona.tscn` no terminaba | Lo deshice: era un fallo de la prueba (decisión 0.10 del registro del encargo) |
+| 08/11 | «Verifica […] que los personajes ausentes alcancen el nivel más alto del grupo»: la regla la había puesto yo | Quien se une conserva sus datos; la nivelación es una propuesta ([D-062](DECISIONS.md#d-062)) |
 
 **Matices que importan**
 - **Lo que el usuario no ha concedido:** «No lo interpretes como aprobado automáticamente» (el bloque B). Una

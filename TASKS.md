@@ -1,8 +1,8 @@
 # TASKS: tareas de AETHELGARD / REBELUM
 
-**Actualizado el 2026-11-08 a las 19:05 (hora local, UTC+1).**
+**Actualizado el 2026-11-08 a las 20:05 (hora local, UTC+1).**
 - Copia del usuario: `rebelum-3d` @ `ce84422`.
-- Árbol del encargo: `rebelum-alpha` @ `36502e9`.
+- Árbol del encargo: `rebelum-alpha` @ `edf52cd`.
 
 **Estados**
 - **Pendiente:** sin empezar.
@@ -32,7 +32,7 @@
 | [T-022](#t-022) | Región 3D completa (encargo 2.3-2.5; plan 2.4-2.5) | Hecha en el PC (misión, grupo activo, cofre, mirador, objetivo y combate real); faltan escuchar y el Redmi | Alta |
 | [T-023](#t-023) | Cierre del perfil bajo: precalentado y sombra precalculada (plan 2.1) | En curso: tirones de diálogos y de la primera vez, arreglados en el PC; faltan el Redmi y la sombra | Media |
 | [T-024](#t-024) | Métricas de referencia y matriz de cobertura | Pendiente | Media |
-| [T-025](#t-025) | Entrada: mando, teclado y foco; Android TV (plan 2.2) | Pendiente | Media |
+| [T-025](#t-025) | Entrada: mando, teclado y foco; Android TV (plan 2.2) | En curso: hecha en el PC con eventos simulados (`e6e52c4`); faltan el Redmi, un teclado y un mando reales, los ajustes y la TV | Media |
 | [T-026](#t-026) | Combate híbrido: coste de las ventanas 3D | Pendiente | Baja |
 | [T-027](#t-027) | Preset de exportación para PC | Pendiente | Baja |
 | [T-030](#t-030) | Audio unificado (Fase 2.6) | Pendiente | Media |
@@ -53,6 +53,7 @@
 | [T-077](#t-077) | `prueba_guardado` con un archivo propio | Terminada en alpha (`86a58af`) | — |
 | [T-078](#t-078) | Validar las APK en el Redmi | Bloqueada (dispositivo) | Media |
 | [T-079](#t-079) | Repositorio privado para descargar las APK de prueba en el móvil | Terminada | — |
+| [T-080](#t-080) | Decidir la nivelación automática de quien se une al grupo (D-062) | Bloqueada (usuario) | Baja |
 
 ## Continuidad
 
@@ -368,15 +369,61 @@
 
 ### T-025
 **Entrada: mando, teclado y foco; Android TV (plan 3D: 2.2)**
-- **Estado:** pendiente. **Prioridad:** media.
+- **Estado:** **hecha en el PC con eventos simulados** (`rebelum-alpha` @ `e6e52c4`, 08/11 a las 19:55). Falta
+  validarla con hardware: el Redmi, un teclado y un mando reales. Android TV, después. **Prioridad:** media.
 - **Criterio de aceptación** (plan 3D, punto 2.2):
   - el juego 2D se juega entero solo con un DS4: inicio, mapa, zona, combate, menús y diálogos;
   - el táctil sigue funcionando como hoy;
   - `prueba_mando`, `prueba_foco` y las pruebas táctiles salen en verde.
 - **Objetivo:** jugar con DualShock 4, teclado o pantalla táctil, con menús navegables por foco. Después, Android TV
   (Ugoos SK1).
-- **Hecho a medias:** las acciones `ui_accept` y `ui_cancel` con mando, en el `project.godot` de `rebelum-alpha`
-  (sin confirmar).
+- **Hecho el 2026-11-08 por la noche** (rama `rebelum-alpha`, [D-063](DECISIONS.md#d-063)), con prioridad para
+  Android y PC:
+  - acciones de teclado y mando, el autoload `Entrada` y el foco visible;
+  - exploración, ventanas, combate, diálogos y pantalla de carga sin ratón;
+  - una pulsación, una acción; el mando desconectado deja seguir.
+  - **Pruebas nuevas** (todas con eventos **simulados**: teclas y botones de mando de verdad inyectados en Godot):
+    - `prueba_foco`: menús, tienda, diario, barra del mapa, ciudad y mando desconectado;
+    - `prueba_mando` y `prueba_teclado`: el recorrido sin ratón, desde la pantalla de carga (partida de prueba) hasta
+      el mapa, con PV-02, andar, la cámara, hablar con Tilo y un combate;
+    - `prueba_precalentado`: lo que se prepara antes de jugar no provoca nada de juego;
+    - `prueba_dialogo_interfaz`, ampliada: opciones, señales y una pulsación, una acción (con control: sin el filtro,
+      falla).
+  - **Táctil:** `prueba_toque`, `prueba_dpad` y las de la región siguen en verde; la prueba de las capturas con el dedo
+    enseña el menú sin el marco del foco.
+  - `prueba_grupos_combate` exige la experiencia exacta que reparte `combate.gd`, y que huir o perder no den
+    ninguna. Fallaba al azar: si el único enemigo del grupo 7 (un Slime cobarde) huye, se gana sin experiencia, como
+    manda el juego.
+  - **El ejecutor** apunta cualquier Godot que no haya lanzado y da la hora de cada cambio de la carpeta real. Al
+    pasarse de tiempo una prueba, solo cierra lo suyo ([D-010](DECISIONS.md#d-010)).
+- **Evidencia** (ejecutado aislado; batería `2026-11-08_195103`, sobre lo que es `e6e52c4`): **32 superadas, 0
+  fallidas**, 17 manuales y 0 no seguras. La partida real, la carpeta real de datos y el proyecto, sin cambios; ningún
+  otro Godot.
+  - `prueba_foco_fotos` (con ventana, `2026-11-08_195003`): 7 capturas revisadas a ojo. El marco dorado se ve en la
+    carga, la barra del mapa, el menú del grupo, el «+» de un atributo, la ciudad y la tienda; con el dedo no sale.
+  - `prueba_grupos_combate`, tres pasadas sueltas en verde; en una se repitió el Slime huido del grupo 7.
+- **APK:** «08/11/2026 · Prueba v52» (`exp-20261108-edf52cd`, [T-079](#t-079)), para la prueba táctil en el Redmi.
+- **Pruebas manuales abiertas** (no las puedo hacer yo: aquí no hay mando, y el Redmi está reservado):
+  1. **Redmi, táctil:**
+     - andar tocando y con la cruceta;
+     - los botones de la barra, «Entrar» y la acción;
+     - diálogos con «SEGUIR»;
+     - el combate tocando (filas, deslizar ATACAR, pestañas de magia, objetivo, saltar la invocación);
+     - menús, tienda y diario.
+     - Comprobar que al tocar no sale el marco dorado y que la barra no se queda con el foco.
+  2. **Teclado real en el PC:** el recorrido sin ratón (Intro, Esc, Tab, flechas, WASD, Q / E y + / -).
+  3. **Mando real** (DS4 o de tipo Xbox), en el PC y en Android por Bluetooth:
+     - que cada botón haga lo que dice la tabla de D-063;
+     - una desconexión de verdad y su aviso.
+  4. **A ojo, tu opinión:** las capturas del foco las revisé yo (lámina en
+     `D:\REBELUM_diagnostico\pruebas\2026-11-08_195003\prueba_foco_fotos\lamina_foco.png`); falta la tuya.
+  5. **Android TV** (Ugoos SK1) y su mando a distancia: más adelante.
+- **Falta:**
+  - una pantalla de ajustes (no existe);
+  - los textos de combate en modo mando («TOCA UN ENEMIGO»);
+  - los iconos por mando;
+  - pausa y salir con Atrás fuera del combate;
+  - Android TV.
 - **Plan:** [docs/entrada/android_tv_dualshock4_plan.md](docs/entrada/android_tv_dualshock4_plan.md).
 
 ### T-026
@@ -538,6 +585,9 @@
   dañadas: se apartan las dos y empieza una nueva) y 8 (partida nueva sin archivos). **Alcance:** lo comprobado
   reduce el riesgo de perder la partida, no lo elimina ([D-056](DECISIONS.md#d-056)).
 - **Restricción:** la partida del PC no se restaura ([D-011](DECISIONS.md#d-011)).
+- **08/11, 19:37:34:** volvió a pasar en la copia del usuario (`rebelum-3d`, sin este arreglo). Un juego lanzado desde
+  su editor reescribió la partida del PC ([D-011](DECISIONS.md#d-011)). El arreglo llegará a esa copia cuando el
+  usuario decida integrar `rebelum-alpha`.
 
 ### T-077
 **`prueba_guardado` con un archivo propio**
@@ -624,4 +674,25 @@
   - el repositorio sigue privado, con el dueño como único colaborador y sin invitaciones;
   - la petición de los 4 primeros bytes devuelve `50 4b 03 04` (HTTP 206);
   - el orden es v50 («Latest»), v47, v44, v41, v39 y la original.
+- **Prueba v52** (08/11, 19:58), con la misma convención:
+  - sale de `rebelum-alpha` @ `edf52cd` (`e6e52c4`, T-025, más los `.uid`), compilada dos veces: la segunda, con el
+    árbol limpio («TODO CORRECTO»);
+  - la fila del `README.md` va en el commit `2bac6a9`, y la release `exp-20261108-edf52cd` está etiquetada sobre él;
+  - el archivo `Aethelgard_Exp_2026-11-08_v52.apk` tiene 256 649 999 bytes, y su `digest` coincide con el SHA-256 local
+    (`2788ed92…`);
+  - certificado `3413edcd…`, el mismo de siempre; los mismos grupos de licencia; sin Suno (el audio son los sonidos de
+    Érebo, `musica_combate_normal` y los tecleos de Dialogic);
+  - el repositorio sigue privado, con el dueño como único colaborador y sin invitaciones;
+  - la petición de los 4 primeros bytes devuelve `50 4b 03 04` (HTTP 206);
+  - el orden es v52 («Latest»), v50, v47, v44, v41, v39 y la original.
 - **Pendiente de verificar:** la descarga completa y la instalación en el móvil, que hace el usuario.
+
+### T-080
+**Decidir la nivelación automática de quien se une al grupo**
+- **Estado:** bloqueada: espera la decisión del usuario. **Prioridad:** baja.
+- **Contexto:** en `e670a5d` puse que Lya y Garon llegaran al nivel del más alto al unirse. El usuario pidió
+  comprobarlo, y esa regla no existía en el juego: se quitó el 08/11 por la noche y quien se une conserva sus datos
+  ([D-060](DECISIONS.md#d-060)). Queda como propuesta: [D-062](DECISIONS.md#d-062).
+- **Comprobado:** `prueba_grupos_combate` comprueba que unirse no cambia ningún dato y que los combates de dos y tres
+  héroes se ganan con todos en el nivel 1.
+- **Para cerrarla:** que el usuario decida si la quiere (y si también «llegar descansado»).

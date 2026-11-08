@@ -2,8 +2,8 @@
 
 **Verificado el 2026-11-07** sobre `desarollo` @ `2d1adc4`. El código del juego es idéntico en `rebelum-3d` @ `ce84422`.
 La rama `rebelum-alpha` @ `03b960a` añade la región 3D de Pastos Verdes (ver §5). El 08/11 se añadió el repositorio
-privado de APK de prueba (§9). Las novedades de `rebelum-alpha` hasta `e630b02` (08/11, 19:00) están en §3 a §6 y
-§10.
+privado de APK de prueba (§9). Las novedades de `rebelum-alpha` hasta `edf52cd` (08/11, 20:00; entrada por teclado y
+mando, T-025) están en §3 a §6 y §10.
 
 Cómo leer las etiquetas:
 - **[código]**: observado en el código.
@@ -80,7 +80,16 @@ La etiqueta local `recuperacion-antes-fase2.0` apunta a `2d1adc4`.
 5. **`garganta.tscn`**: mazmorra hecha a mano, con combates fijos y palancas (`Progreso.estado`).
 6. **`isla.tscn`**: la Arboleda Mítica, la ciudad flotante.
 7. **`combate.tscn`** (`combate.gd`): al terminar guarda y vuelve a `escena_retorno` (`combate.gd:3758-3764`).
-8. **Autoloads:** `Dialogic`, `BotonDialogo` (`boton_dialogo.gd`) y `Recursos` (`recursos.gd`).
+8. **Autoloads:** `Dialogic`, `BotonDialogo` (`boton_dialogo.gd`) y `Recursos` (`recursos.gd`). En `rebelum-alpha`,
+   también `Entrada` (`entrada.gd`).
+9. **Entrada en `rebelum-alpha`** (T-025, [D-063](DECISIONS.md#d-063)):
+   - acciones `ui_accept`, `ui_cancel`, `menu_juego`, `pestana_anterior`, `pestana_siguiente`, `camara_acercar` y
+     `camara_alejar` (`project.godot`), más las `ui_*` de dirección de Godot;
+   - `Entrada`: modo (dedo, teclado o mando), foco (`enfocar`, `restaurar`, `encadenar`) y mando desconectado;
+   - foco visible solo con teclado o mando (`estilo.gd`, `_foco()`);
+   - en exploración, los botones de la pantalla no cogen el foco al tocarlos: Tab, Esc o Start activan la barra
+     (`mapa.gd` y `zona.gd`, `activar_barra()`);
+   - `BotonDialogo` evita que una pulsación cuente dos veces en Dialogic.
    - `Recursos` cambia de escena con carga en segundo plano y un fundido, y fija los FPS: 60 en combate y 30 en el
      resto.
    - Al pausar o cerrar la app, `Recursos` guarda llamando a `guardar_posicion()` de la escena (`recursos.gd:173-178`).
@@ -301,8 +310,12 @@ objetos.
 
 ## 10. Pruebas y herramientas [código + ejecutado]
 
-- **Pruebas:** 27 en `aethelgard/pruebas/prueba_*.gd`, más `sonda_datos.gd`.
+- **Pruebas:** 45 en `aethelgard/pruebas/prueba_*.gd` de `rebelum-alpha` (la lista tiene 49 entradas: 32
+  automáticas, 11 con ventana y 6 manuales), más `sonda_datos.gd`.
   - **Ejecutor y lista** (en `rebelum-3d` y `rebelum-alpha`): `pruebas/ejecutar_pruebas.ps1` y `lista_pruebas.txt`.
+    - En `rebelum-alpha` (`e6e52c4`), el ejecutor también apunta cualquier Godot que no haya lanzado: la carpeta real
+      de datos es la misma para todas las copias del proyecto. Al pasarse de tiempo una prueba, solo cierra lo suyo
+      ([D-010](DECISIONS.md#d-010)).
   - **Línea base:**
     - `rebelum-3d`: 15 superadas, 2 fallidas, 10 manuales y 0 no seguras.
     - `rebelum-alpha` (2026-11-07 15:27): **17 superadas, 0 fallidas**, 10 manuales y 0 no seguras.
@@ -312,6 +325,10 @@ objetos.
       0 no seguras.
     - `rebelum-alpha` (2026-11-08 18:45, `e630b02`, batería `2026-11-08_184433`): **28 superadas, 0 fallidas**,
       16 manuales y 0 no seguras.
+    - `rebelum-alpha` (2026-11-08 19:51, `e6e52c4`, batería `2026-11-08_195103`): **32 superadas, 0 fallidas**,
+      17 manuales y 0 no seguras.
+  - **Nuevas el 08/11 por la noche (T-025):** `prueba_foco`, `prueba_mando`, `prueba_teclado` y
+    `prueba_precalentado` (automáticas, con teclas y botones de mando simulados); `prueba_foco_fotos` (con ventana).
   - **Nuevas desde el 08/11 por la tarde:** `prueba_grupos_combate`, `prueba_ranura_prueba` y
     `prueba_dialogo_interfaz` (automáticas); `medir_primeras_veces`, `sonda_dialogic_carga` y
     `sonda_oclusion_repetida` (manuales, para medir y atribuir).
