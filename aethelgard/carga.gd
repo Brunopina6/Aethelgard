@@ -47,6 +47,7 @@ var porcentaje: Label
 var frase: Label
 var toca: Label
 var boton_prueba: Button                 # solo en la versión experimental: la misión desde el principio, en otra ranura
+var boton_prologo: Button                # solo en la versión experimental: una partida nueva con el prólogo, en esa ranura
 var sonidos := {}
 var reproductor: AudioStreamPlayer
 
@@ -159,6 +160,18 @@ func _crear_pantalla() -> void:
 		boton_prueba.visible = false
 		boton_prueba.pressed.connect(func(): _empezar(true))
 		capa.add_child(boton_prueba)
+		# La otra opción de desarrollo: una partida nueva en la misma ranura de prueba, que empieza en el mapa con el
+		# prólogo (T-081). Así se ve el diálogo inicial sin tocar la partida de siempre. Abajo a la izquierda, simétrica
+		# a la de la derecha y sin tapar la frase de abajo (que empieza hacia x = 384).
+		boton_prologo = Button.new()
+		boton_prologo.text = "Probar el prólogo (partida nueva)"
+		boton_prologo.position = Vector2(20, 652)
+		boton_prologo.custom_minimum_size = Vector2(350, 56)
+		boton_prologo.add_theme_font_size_override("font_size", 20)
+		boton_prologo.focus_mode = Control.FOCUS_ALL     # ← lo elige; → vuelve al de la derecha; ↑ / Esc suelta el foco
+		boton_prologo.visible = false
+		boton_prologo.pressed.connect(func(): _empezar(true, true))
+		capa.add_child(boton_prologo)
 	_texto_empezar(Entrada.modo)
 	Entrada.modo_cambiado.connect(_texto_empezar)
 
@@ -220,6 +233,8 @@ func _process(delta: float) -> void:
 		brillo.modulate.a = 0.6 + 0.25 * sin(t * 3.0)
 		if boton_prueba != null and not saliendo:
 			boton_prueba.visible = true
+		if boton_prologo != null and not saliendo:
+			boton_prologo.visible = true
 
 
 func _paso_archivos() -> void:
@@ -387,17 +402,33 @@ func _texto_empezar(modo: String) -> void:
 func _input(ev: InputEvent) -> void:
 	if not listo or saliendo:
 		return
-	if boton_prueba != null and boton_prueba.visible and (ev is InputEventMouseButton or ev is InputEventScreenTouch) \
-			and boton_prueba.get_global_rect().has_point(ev.position):
-		return                                       # el toque es para el botón de la partida de prueba
-	if boton_prueba != null and boton_prueba.visible and not (ev is InputEventMouse or ev is InputEventScreenTouch):
-		if boton_prueba.has_focus():                 # teclado o mando con el foco en el botón de la partida de prueba
+	var botones: Array = [boton_prueba, boton_prologo].filter(func(b): return b != null and b.visible)
+	if not botones.is_empty() and (ev is InputEventMouseButton or ev is InputEventScreenTouch):
+		for b in botones:
+			if b.get_global_rect().has_point(ev.position):
+				return                               # el toque es para ese botón de prueba
+	if not botones.is_empty() and not (ev is InputEventMouse or ev is InputEventScreenTouch):
+		for b in botones:
+			if not b.has_focus():
+				continue                             # teclado o mando con el foco en un botón de prueba:
 			if ev.is_action_pressed("ui_up") or ev.is_action_pressed("ui_cancel"):
-				boton_prueba.release_focus()
+				b.release_focus()
+				get_viewport().set_input_as_handled()
+			elif ev.is_action_pressed("ui_left") and b == boton_prueba and boton_prologo in botones:
+				boton_prologo.grab_focus()
+				get_viewport().set_input_as_handled()
+			elif ev.is_action_pressed("ui_right") and b == boton_prologo and boton_prueba in botones:
+				boton_prueba.grab_focus()
 				get_viewport().set_input_as_handled()
 			return                                   # Intro / A los recibe el botón (una sola acción)
-		if ev.is_action_pressed("ui_down") or ev.is_action_pressed("ui_left") or ev.is_action_pressed("ui_right"):
-			boton_prueba.grab_focus()
+		# sin foco: ↓ y → eligen el de la derecha (como siempre); ← el de la izquierda
+		var elegido: Button = null
+		if ev.is_action_pressed("ui_down") or ev.is_action_pressed("ui_right"):
+			elegido = boton_prueba if boton_prueba in botones else botones[0]
+		elif ev.is_action_pressed("ui_left"):
+			elegido = boton_prologo if boton_prologo in botones else botones[0]
+		if elegido != null:
+			elegido.grab_focus()
 			get_viewport().set_input_as_handled()
 			return
 	if (ev is InputEventMouseButton and ev.pressed) or (ev is InputEventScreenTouch and ev.pressed) \
@@ -405,19 +436,22 @@ func _input(ev: InputEvent) -> void:
 		_empezar()
 
 
-# «prueba»: la opción de desarrollo. La misión empieza desde cero en su ranura y se entra directamente en Pastos Verdes
-# 3D, sin el prólogo 2D del mapa.
-func _empezar(prueba := false) -> void:
+# «prueba»: las opciones de desarrollo, con la partida en su propia ranura. Sin «prologo», la misión empieza desde
+# cero y se entra directamente en Pastos Verdes 3D, sin el prólogo 2D del mapa. Con «prologo», es una partida nueva
+# que empieza en el mapa con el prólogo, como la de verdad (T-081).
+func _empezar(prueba := false, prologo := false) -> void:
 	if saliendo:
 		return
 	saliendo = true
-	if boton_prueba != null:
-		boton_prueba.visible = false
+	for b in [boton_prueba, boton_prologo]:
+		if b != null:
+			b.visible = false
 	if prueba:
 		var P = load("res://progreso.gd")
 		P.empezar_ranura_prueba()
 		P.cargar()                                   # ranura vacía: partida nueva (Kael solo)
-		Engine.set_meta("prologo_visto", true)
+		if not prologo:
+			Engine.set_meta("prologo_visto", true)
 		Recursos.marcar_partida_prueba()
 	reproductor.stream = sonidos["confirmar"]
 	reproductor.play()
@@ -432,7 +466,7 @@ func _empezar(prueba := false) -> void:
 	t.tween_property(negro, "color:a", 1.0, 0.6)
 	await t.finished
 	if prueba:
-		Recursos.cambiar_escena(load("res://modo3d.gd").escena_de(10))
+		Recursos.cambiar_escena(SIGUIENTE if prologo else load("res://modo3d.gd").escena_de(10))
 		return
 	var guardada: String = load("res://progreso.gd").cargar()   # si hay partida, se vuelve donde estabas
 	Recursos.cambiar_escena(guardada if guardada != "" else SIGUIENTE)

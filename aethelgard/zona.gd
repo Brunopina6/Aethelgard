@@ -315,6 +315,7 @@ func _ready() -> void:
 	_crear_capas()
 	_crear_objetos()
 	_crear_jugador()
+	Sonido.pasos_zona(self)                       # pasos según el suelo, la hierba, el camino o un puente (sonido.gd)
 	_crear_iluminacion()
 	_crear_clima()
 	_crear_ui()
@@ -1772,6 +1773,8 @@ func _abrir_cofre(c: Array) -> void:
 	abiertos[c[1]] = true
 	Engine.set_meta("cofres_abiertos", abiertos)
 	c[2] = true
+	Sonido.efecto("cofre")                                 # la tapa y, después, el premio (sonido.gd)
+	Sonido.efecto("tesoro", {"retraso": 0.3})
 	var d := _objeto("cofre_abierto")
 	var s: Sprite2D = c[0]
 	s.texture = d["tex"]
@@ -2270,10 +2273,13 @@ func _accion() -> void:
 	if detalle_cerca != null:                      # una frase corta; con todos los del acto, página nueva
 		var d: Dictionary = detalle_cerca[1]
 		_mostrar_aviso(d["texto"])
+		Sonido.efecto("examinar")                          # sonido.gd
 		var acto: Dictionary = load("res://progreso.gd").ver_detalle(d["id"])
 		if not acto.is_empty():
 			get_tree().create_timer(4.0).timeout.connect(func():
 				if is_instance_valid(self):
+					Sonido.efecto("pagina")
+					Sonido.efecto("misterio", {"retraso": 0.2})
 					_mostrar_aviso("Nueva página en el Diario: «%s»" % acto["escena"]))
 		return
 	if npc_cerca != null and _empezar_dialogo(npc_cerca[1].get("dialogo", "")):
@@ -2331,8 +2337,10 @@ func _abrir_tienda(pestana := "Objetos") -> void:
 func _posada() -> void:
 	var inv = load("res://inventario.gd")
 	if not inv.gastar_oro(PRECIO_POSADA):
+		Sonido.efecto("ui_error")                          # sonido.gd
 		_mostrar_aviso("No tienes monedas suficientes (la posada cuesta %d)." % PRECIO_POSADA)
 		return
+	Sonido.efecto("posada")
 	load("res://grupo.gd").curar_todos()
 	_poner_oro()
 	var t := create_tween()                       # se hace de noche y amanece
@@ -2498,6 +2506,7 @@ func _encuentro() -> void:
 	Engine.set_meta("desde_mapa", true)
 	Engine.set_meta("tipo_combate", "normal")
 	Engine.set_meta("escena_retorno", scene_file_path)   # zona.tscn o una mazmorra (garganta.tscn)
+	Sonido.efecto("emboscada")                         # sonido.gd
 	_mostrar_aviso("¡Emboscada!")
 	fundido.color = Color(1, 1, 1, 0)
 	var t := create_tween()

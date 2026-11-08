@@ -115,18 +115,27 @@ func _ready() -> void:
 		dg.timeline_ended.connect(_al_terminar_dialogo)
 	Engine.set_meta("zona", ZONA)
 	_preparar_sonidos()
+	_sonido_3d()
 	if not en_banco():
 		load("res://progreso.gd").guardar(scene_file_path)   # guardado automático al entrar (como zona.gd)
 
 
 # Los sonidos hechos por código se generan al cargar (detrás del fundido), no al usarlos: generarlos en el momento
-# daba un tirón al abrir el cofre. Solo los que pueden sonar en esta visita.
+# daba un tirón. Solo los que pueden sonar en esta visita: las campanas del mirador. (El cofre suena ya con efectos de
+# la biblioteca, sonido.gd; sonido_cofre() se queda para comparar y para sus pruebas.)
 func _preparar_sonidos() -> void:
 	var P = load("res://progreso.gd")
-	if not cofre_abierto():
-		sonido_cofre()
 	if P.hito("pv_05") and not P.hito("pv_07"):
 		campana()
+
+
+# Sonido 3D de la región (sonido.gd, T-083): se escucha desde Kael, mirando como la cámara; sus pasos según el suelo
+# (las losas del camino y el puente son de piedra; lo demás, hierba); el río a lo largo del barranco y la cascada.
+func _sonido_3d() -> void:
+	Sonido.oyente_3d(kael, cam)
+	Sonido.pasos_3d(kael, func(p: Vector3) -> String: return "piedra" if _dist_sendero(p) < 1.15 else "hierba")
+	Sonido.fuente_linea(self, "rio", Vector3(RIO_X, AGUA_RIO + 0.4, CASCADA_Z + 1.5), Vector3(RIO_X, AGUA_RIO + 0.4, 30.0))
+	Sonido.fuente_3d(self, "cascada", Vector3(RIO_X, (AGUA_CANAL + AGUA_RIO) * 0.5, CASCADA_Z + 0.6))
 
 
 # Banco de medida en marcha (botones PRUEBA y TOPE de vista3d.gd): la escena se recarga en cada caso y Kael recorre
@@ -261,6 +270,7 @@ func _encuentro(fijo := "", grupo := -1) -> void:
 	if fijo != "":                       # combate fijo: ese grupo y, al ganarlo, no se repite (combate.gd)
 		Engine.set_meta("grupo_combate", grupo)
 		Engine.set_meta("combate_fijo", fijo)
+	Sonido.efecto("emboscada")           # sonido.gd
 	_mostrar_aviso("¡Emboscada!" if fijo == "" else "¡Al centinela!")
 	fundido.color = Color(1, 1, 1, 0)
 	var t := create_tween()
@@ -331,10 +341,13 @@ func _tras_dialogo(id: String) -> void:
 			return
 		"pv_03":                         # Lya llega corriendo por el camino, por detrás
 			_unir("Lya", kael.global_position + _atras_en_camino(kael.global_position) * 4.0)
+			Sonido.efecto("union")       # alguien se une al grupo (sonido.gd)
 		"pv_05":                         # Garon esperaba junto a Tilo
 			_unir("Garon", tilo.global_position)
+			Sonido.efecto("union")
 		"pv_14":
 			P.poner_hito("mecha_tilo")
+			Sonido.efecto("tesoro")      # un objeto recibido
 			_mostrar_aviso("Tilo te da una mecha de su farol.")
 	if id.begins_with("pv_"):
 		guardar_posicion()
@@ -583,10 +596,13 @@ func _accion() -> void:
 		"estela":
 			var d: Dictionary = P.detalles_de(INDICE)[0]
 			_mostrar_aviso(d["texto"], 4.0)
+			Sonido.efecto("examinar")    # sonido.gd
 			var acto: Dictionary = P.ver_detalle(ID_ESTELA)
 			if not acto.is_empty():
 				get_tree().create_timer(4.6).timeout.connect(func():
 					if is_instance_valid(self):
+						Sonido.efecto("pagina")
+						Sonido.efecto("misterio", {"retraso": 0.2})
 						_mostrar_aviso("Nueva página en el Diario: «%s»" % acto["escena"]))
 		"cofre":
 			_abrir_cofre()
@@ -985,18 +1001,14 @@ func _animar_cofre() -> void:
 	t2.tween_property(luz, "scale", Vector3.ONE * 1.9, 0.5).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	t2.parallel().tween_property(luz.material_override, "albedo_color:a", 0.0, 0.75)
 	t2.tween_callback(luz.queue_free)
-	var son := AudioStreamPlayer.new()
-	son.stream = sonido_cofre()
-	son.volume_db = -6.0                                    # como los sonidos del menú (menu_combate.gd)
-	son.bus = &"Efectos"                                    # buses y volúmenes: sonido.gd
-	add_child(son)
-	son.play()
-	son.finished.connect(son.queue_free)
+	Sonido.efecto("cofre", {"en": self})                    # la tapa y, después, el premio (sonido.gd, T-083)
+	Sonido.efecto("tesoro", {"en": self, "retraso": 0.3})
 
 
-# Sonido del cofre, hecho por código como los del menú (menu_combate.gd, sonidos_ui): el golpe seco de la tapa de
-# madera y, encima, un arpegio brillante que sube (do, mi, sol, do). Dura 0,9 s. Se genera una vez y se guarda: hacerlo
-# al abrir el cofre daba un tirón de unos 180 ms (medido en el PC el 08/11), así que _ready lo prepara al cargar.
+# Sonido del cofre de antes, hecho por código como los del menú (menu_combate.gd, sonidos_ui): el golpe seco de la tapa
+# de madera y, encima, un arpegio brillante que sube (do, mi, sol, do). Dura 0,9 s. Desde T-083 el cofre suena con
+# efectos de la biblioteca (sonido.gd: «cofre» y «tesoro»); este se queda para compararlo (prueba_region3d_fotos lo
+# guarda en .wav) y para prueba_cofre3d. Ya no se prepara al cargar: generarlo tarda unos 180 ms en el PC.
 static var _sonido_cofre: AudioStreamWAV
 
 

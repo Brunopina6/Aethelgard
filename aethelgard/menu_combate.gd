@@ -560,6 +560,8 @@ func _ejecutar(i: int) -> void:
 	var f: Dictionary = filas[i]
 	var it: Dictionary = f["item"]
 	if it.get("apagado", false) or not activo:
+		if activo and not it.get("aviso", false):
+			Sonido.efecto("ui_error")                # una opción apagada: no se puede (sonido.gd)
 		return
 	sonar("confirmar")
 	var accion: Callable = it["accion"]
