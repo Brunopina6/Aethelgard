@@ -32,6 +32,7 @@ const PENDIENTE_MAX := 40.0      # grados, como Kael
 const RODILLAS := 0.6            # altura de la comprobación de obstáculos, como Kael (SUBE_MAX + 0,1)
 const RUTAS := {"Lya": "res://maga_3d.gd", "Garon": "res://garon_3d.gd"}
 const ESCALA := {"Lya": 0.6 / 0.67, "Garon": 1.0}
+const UNIR_HOLGURA := 1.3        # al unirse alguien, metros libres a su alrededor (T-084)
 
 var escena: Node3D               # la región: _prohibido(p) y el mundo físico
 var kael: Node3D
@@ -57,7 +58,9 @@ func unir(n: String, desde: Vector3) -> void:
 	if not _anadir(n):
 		return
 	var m: Dictionary = miembros[miembros.size() - 1]
-	var p := _sitio_libre(desde, Vector3.BACK, 0.9, _ocupados(m["nodo"]))
+	# Aparece con algo de holgura: ni encima de quien estaba en «desde» (Tilo, al unirse Garon) ni pegado a Kael o al
+	# resto (con 0,75 m, Garon salía a 1 m de Kael con una espada cruzada a la altura de sus piernas; T-084).
+	var p := _sitio_libre(desde, Vector3.BACK, 1.4, _ocupados(m["nodo"]) + [desde], UNIR_HOLGURA)
 	_reiniciar(m, p, m["lider"].global_position - p)
 	_previa.erase(m["nodo"])
 
@@ -73,15 +76,20 @@ func _anadir(n: String) -> bool:
 		nodo.queue_free()
 		return false
 	nodo.scale = Vector3.ONE * ESCALA.get(n, 1.0)
+	# «estado» empieza en «?» (ninguno) para que el primer _poner_estado(m, "") ponga de verdad el reposo de
+	# exploración: con «» de partida no hacía nada y Garon se quedaba con la guardia de combate de garon_3d.gd (las
+	# dos espadas hacia delante) al aparecer y al empezar la región, hasta que andaba por primera vez (T-084).
 	var m := {"nombre": n, "nodo": nodo, "lider": delante, "cola": [], "ultimo": delante.global_position,
-		"estado": "", "apartar": null, "t_apartar": 0.0, "dir": Vector3.ZERO, "t_quieto": 0.0, "mira": false,
+		"estado": "?", "apartar": null, "t_apartar": 0.0, "dir": Vector3.ZERO, "t_quieto": 0.0, "mira": false,
 		"reposo": ""}
 	# Garon, quieto, se queda en guardia de combate con las dos espadas apuntando adelante (a Lya). Al explorar
 	# usa la guardia tranquila de garon_3d.gd (el principio de «Juicio», con las espadas bajas).
 	if nodo.has_method("_guardia_viva") and nodo.anim.has_animation("Juicio"):
 		var lib: AnimationLibrary = nodo.anim.get_animation_library("")
 		if not lib.has_animation("Calma"):
-			lib.add_animation("Calma", nodo._guardia_viva("Juicio"))
+			var calma: Animation = nodo._guardia_viva("Juicio")
+			calma.loop_mode = Animation.LOOP_LINEAR   # en bucle, como su guardia de combate (si no, a los 3,2 s se
+			lib.add_animation("Calma", calma)         # quedaba parado del todo: sin el vaivén del peso) (T-084)
 		m["reposo"] = "Calma"
 	miembros.append(m)
 	return true
@@ -107,7 +115,10 @@ func colocar(atras: Vector3) -> void:
 
 
 func _process(delta: float) -> void:
-	if kael == null or not is_instance_valid(kael) or miembros.is_empty():
+	if kael == null or not is_instance_valid(kael):
+		return
+	_mirar_al_que_habla()
+	if miembros.is_empty():
 		return
 	delta = maxf(delta, 0.0001)
 	for n in [kael] + nodos():
@@ -268,6 +279,64 @@ func _reiniciar(m: Dictionary, p: Vector3, mirada: Vector3) -> void:
 		m["dir"] = mirada.normalized()
 
 
+# ---------------------------------------------------------------- miradas en los diálogos (T-084)
+
+const MIRAR_HASTA := 12.0        # metros: más lejos, no se vuelve (no es una conversación con él)
+const GIRO_MIRADA := 0.45        # segundos que tarda en volverse
+var _hablante := ""              # quien hablaba la última vez que se miró (una vez por cambio de interlocutor)
+
+
+# Mientras dura un diálogo, quien escucha (Kael y los acompañantes que estén quietos) se vuelve hacia quien habla, si
+# está en la escena y cerca: una vez por cambio de interlocutor, despacio, y se queda así (nada de moverse todo el
+# rato). Quien habla no se mueve. Al acabar, cada uno sigue mirando a donde estaba hasta que vuelve a andar.
+func _mirar_al_que_habla() -> void:
+	var dg = get_node_or_null("/root/Dialogic")
+	if dg == null or dg.current_timeline == null:
+		_hablante = ""
+		return
+	var sp = dg.Text.get_current_speaker()
+	var quien: String = sp.display_name if sp != null else ""
+	if quien == _hablante:
+		return
+	_hablante = quien
+	var habla: Node3D = _nodo_de(quien)
+	if habla == null:
+		return
+	for n in [kael] + nodos():
+		if n == habla:
+			continue
+		var m = null
+		for mm in miembros:
+			if mm["nodo"] == n:
+				m = mm
+		if m != null and m["estado"] != "":
+			continue                                  # andando: mira por dónde va
+		var hacia: Vector3 = habla.global_position - n.global_position
+		hacia.y = 0.0
+		if hacia.length() < 0.3 or hacia.length() > MIRAR_HASTA:
+			continue
+		n.mirar(hacia, GIRO_MIRADA)
+		if m != null:
+			m["dir"] = hacia.normalized()
+			m["mira"] = true
+
+
+# El personaje 3D de la escena que corresponde a un nombre de Dialogic: Kael, un acompañante o alguien de la región
+# (p. ej. «Tilo» → escena.tilo). Null si no está.
+func _nodo_de(quien: String) -> Node3D:
+	if quien == "":
+		return null
+	if quien == "Kael":
+		return kael
+	for m in miembros:
+		if m["nombre"] == quien:
+			return m["nodo"]
+	var otro = escena.get(quien.to_lower()) if escena != null else null
+	if otro is Node3D and is_instance_valid(otro):
+		return otro
+	return null
+
+
 # ---------------------------------------------------------------- dejar paso
 
 # El de delante (Kael o un acompañante anterior) que viene andando hacia él y ya está muy cerca, o null.
@@ -329,7 +398,7 @@ func _ocupados(menos: Node3D) -> Array:
 
 # Un sitio a «dist» de «desde» hacia «dir» (o girando poco a poco a los lados) donde se pueda estar: suelo andable,
 # nada en medio y sin pisar a nadie. Si no hay ninguno, el mismo «desde».
-func _sitio_libre(desde: Vector3, dir: Vector3, dist: float, ocupados: Array) -> Vector3:
+func _sitio_libre(desde: Vector3, dir: Vector3, dist: float, ocupados: Array, holgura := 0.75) -> Vector3:
 	for giro in [0.0, 25.0, -25.0, 50.0, -50.0, 80.0, -80.0, 115.0, -115.0, 150.0, -150.0, 180.0]:
 		for f in [1.0, 0.7, 1.3]:
 			var q: Vector3 = desde + dir.rotated(Vector3.UP, deg_to_rad(giro)) * dist * f
@@ -341,11 +410,13 @@ func _sitio_libre(desde: Vector3, dir: Vector3, dist: float, ocupados: Array) ->
 				continue
 			var libre := true
 			for o in ocupados:
-				if _plana(o, q) < 0.75:
+				if _plana(o, q) < holgura:
 					libre = false
 					break
 			if libre:
 				return q
+	if holgura > 0.75:                                # sin sitio con tanta holgura: como antes
+		return _sitio_libre(desde, dir, dist, ocupados, 0.75)
 	return desde
 
 
