@@ -66,6 +66,9 @@
 | [T-089](#t-089) | Mejorar todas las ciudades del juego (encargo del 08/11, 23:05) | Pendiente | Alta |
 | [T-090](#t-090) | Muchos sitios nuevos que explorar, coherentes con el canon y el mapamundi | Pendiente | Alta |
 | [T-091](#t-091) | Magias nuevas, sin cambiar las existentes | Pendiente | Alta |
+| [T-092](#t-092) | Equipo nuevo: accesorios y armas especiales (encargo del 08/11, 23:35) | Pendiente | Alta |
+| [T-093](#t-093) | Enemigos nuevos, con identidad táctica | Pendiente | Alta |
+| [T-094](#t-094) | Compañeros de viaje: propuesta y versión que no cambie el canon | Pendiente | Media |
 
 ## Continuidad
 
@@ -693,3 +696,38 @@
     objetivos, animación y sonido coherentes;
   - las doce existentes, Esgrima, Embuir, Érebo, la Armonía y el ATB, sin cambios;
   - pruebas, y compatibilidad con las partidas antiguas.
+- **Ampliado (23:35):** «CRE DIREFERENTES MAGIAS INSPIRATE EN EXPEDITION 33 Y FINAL FANTASY Y OTROS JUEGOS RPG».
+  Solo principios, sin copiar nombres, diseños ni escenas ([D-072](DECISIONS.md#d-072)).
+
+### T-092
+**Equipo nuevo: accesorios y armas especiales**
+- **Estado:** pendiente: va con la tanda de combate o después. **Prioridad:** alta. Decisión:
+  [D-072](DECISIONS.md#d-072).
+- **Petición** [usuario, 08/11, 23:35]: «AÑADE TAMBIEN ACESORIOS CREA ARMA ESPECIALES».
+- **Criterio de aceptación:**
+  - accesorios y armas especiales con efectos claros, que se consigan en el juego (cofres, tiendas o secretos) y se
+    equipen desde un menú con teclado, mando y táctil;
+  - sin equipo, el combate da los mismos resultados que hoy, y las pruebas de equilibrio no cambian;
+  - partidas antiguas compatibles (claves nuevas al final y valores por defecto);
+  - pruebas.
+
+### T-093
+**Enemigos nuevos, con identidad táctica**
+- **Estado:** pendiente: va con la tanda de combate o después. **Prioridad:** alta. Decisión:
+  [D-072](DECISIONS.md#d-072).
+- **Petición** [usuario, 08/11, 23:35]: «ENEMIGOS».
+- **Criterio de aceptación:**
+  - cada enemigo nuevo, con un patrón y una debilidad que se puedan leer en combate;
+  - coherente con su lugar y con el mundo; modelo o figura y animación reutilizados o creados con las herramientas
+    locales, con su procedencia;
+  - los encuentros ya probados de Pastos Verdes no cambian sin pruebas;
+  - rendimiento medido.
+
+### T-094
+**Compañeros de viaje**
+- **Estado:** pendiente. **Prioridad:** media. Decisión: [D-072](DECISIONS.md#d-072).
+- **Petición** [usuario, 08/11, 23:35]: «AMIGOS DE VIAJE».
+- **Criterio de aceptación:**
+  - una propuesta de compañeros (quiénes son, de dónde salen, qué aportan), marcada como propuesta para la biblia;
+  - el grupo jugable (Kael, Lya y Garon) no cambia sin la decisión del usuario;
+  - mientras, solo acompañantes que no toquen el canon (un guía o un NPC que acompaña un tramo), si encajan.

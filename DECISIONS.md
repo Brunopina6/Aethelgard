@@ -83,6 +83,7 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 | [D-069](#d-069) | Organización por especialistas: un coordinador y cinco subagentes | Aprobada |
 | [D-070](#d-070) | GitHub: código, configuraciones de agentes y documentación revisados en ramas de trabajo | Aprobada |
 | [D-071](#d-071) | Ambición: todas las ciudades mejoradas, muchos sitios nuevos y magias nuevas | Aprobada |
+| [D-072](#d-072) | Más contenido: equipo, enemigos, compañeros, secretos, grutas y posadas, con inspiración solo de principios | Aprobada |
 | [D-H01 a D-H15](#6-diseño-ya-implementado-del-3010-al-0511) | Diseño ya implementado antes de Git | Aprobada (historial) |
 
 ## 1. Reglas de trabajo, Git y versiones
@@ -1248,6 +1249,31 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
   juego, pruebas, y un nombre y un efecto coherentes con el mundo. Sustituye a «las ampliaciones son plan futuro».
 - **Calidad y rendimiento:** medir antes y después; el perfil alto no se rebaja.
 - **Sin preguntas:** las decisiones rutinarias de diseño las toman el coordinador y los especialistas, y se registran.
+
+### D-072
+**Más contenido: equipo, enemigos, compañeros, secretos, grutas y posadas**
+- **Fecha y estado:** 2026-11-08, 23:35. Aprobada [usuario]: «AÑADE TAMBIEN ACESORIOS CREA ARMA ESPECIALES ENEMIGOS ,
+  AMIGOS DE VIAJE CREA CIUDADES CON MUCHOS SECRETO GRTUTAS,POSADAS ,CRE DIREFERENTES MAGIAS INSPIRATE EN EXPEDITION 33
+  Y FINAL FANTASY Y OTROS JUEGOS RPG ,TE DEJO AL CARGO DE TODO».
+- **Inspiración:** solo principios. Por ejemplo: un ritmo táctico con respuesta del jugador, sinergias entre
+  personajes, riesgo y recompensa, y secretos que premian explorar. Nada de copiar nombres, diseños, escenas ni
+  argumentos (norma vigente de CLAUDE.md), y ningún detalle de Final Fantasy X.
+- **Equipo** ([T-092](TASKS.md#t-092)): accesorios y armas especiales.
+  - Sus efectos se suman como modificadores nuevos y documentados. Las fórmulas base y las 12 magias protegidas no
+    cambian ([D-048](#d-048)): sin equipo, los resultados son los de hoy.
+  - Partidas antiguas compatibles.
+- **Enemigos** ([T-093](TASKS.md#t-093)): con patrón y debilidad legibles, coherentes con su lugar.
+- **Compañeros de viaje** ([T-094](TASKS.md#t-094)): un compañero nuevo en el grupo es una decisión importante de
+  historia. Por eso:
+  - va como propuesta, y el grupo jugable no cambia sin el usuario;
+  - mientras, solo acompañantes que no toquen el canon.
+- **Ciudades, secretos, grutas y posadas:** dentro de [T-089](TASKS.md#t-089) y [T-090](TASKS.md#t-090). Cada ciudad
+  con identidad propia y su posada, con secretos (pasadizos, cofres escondidos, pequeñas misiones y lore) y grutas
+  como lugares nuevos al final de `LUGARES`. Se empieza por el canon [C] de la biblia v2: Taberna del Cuervo Oxidado,
+  crematorio, Árbol Milenario y Templo del Cristal del Cielo. Inventario en
+  `docs/memory/inventario_lugares_magias_2026-11-08.md`.
+- **Al cargo de todo:** el coordinador ordena estas tareas por dependencias, después de lo ya encargado, y deja
+  registradas las decisiones importantes para que el usuario las revise.
 
 ## 6. Diseño ya implementado del 30/10 al 05/11
 

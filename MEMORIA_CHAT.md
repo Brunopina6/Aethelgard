@@ -215,6 +215,13 @@
 
     El Redmi no estaba conectado a las 23:20 (`adb devices` vacío): las APK de la noche quedan en `Aethelgard-pruebas`
     y la copia al teléfono, para mañana.
+  - **Hacia las 23:35** [usuario]: «AÑADE TAMBIEN ACESORIOS CREA ARMA ESPECIALES ENEMIGOS , AMIGOS DE VIAJE CREA
+    CIUDADES CON MUCHOS SECRETO GRTUTAS,POSADAS ,CRE DIREFERENTES MAGIAS INSPIRATE EN EXPEDITION 33 Y FINAL FANTASY Y
+    OTROS JUEGOS RPG ,TE DEJO AL CARGO DE TODO MAÑANA NOS VEMOS» (con la misma instrucción de la noche).
+    - Tareas [T-092](TASKS.md#t-092) (equipo), [T-093](TASKS.md#t-093) (enemigos) y [T-094](TASKS.md#t-094)
+      (compañeros); los secretos, grutas y posadas van en T-089 y T-090; decisión [D-072](DECISIONS.md#d-072).
+    - La inspiración, solo de principios.
+    - Un compañero nuevo en el grupo va como propuesta, porque es una decisión de historia.
 
 ## Índice
 
