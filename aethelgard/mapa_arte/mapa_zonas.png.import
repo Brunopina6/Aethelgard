@@ -1,0 +1,14 @@
+[remap]
+
+importer="image"
+type="Image"
+uid="uid://ddm327a41p3p8"
+path="res://.godot/imported/mapa_zonas.png-924597b27a5275d8c43d967f8d9be35a.image"
+
+[deps]
+
+source_file="res://mapa_arte/mapa_zonas.png"
+dest_files=["res://.godot/imported/mapa_zonas.png-924597b27a5275d8c43d967f8d9be35a.image"]
+
+[params]
+
