@@ -121,7 +121,9 @@ pida la tarea.
   El perfil alto nunca se rebaja para que quepan los demás.
 - **Conserva las magias existentes** y su comportamiento: ID, coste, daño, objetivos y animaciones (Fuego,
   Llamarada, Infierno, Agua, Torrente, Maremoto, Rayo, Tormenta, Cólera del Cielo, Cura, Bendición y Gracia Divina).
-  Conserva también Esgrima, Embuir, Érebo, la Armonía y el ATB. Las ampliaciones son plan futuro.
+  Conserva también Esgrima, Embuir, Érebo, la Armonía y el ATB. Desde el 08/11 a las 23:05, el usuario pide **magias
+  nuevas**. Se añaden sin cambiar las existentes, con una función táctica clara, acceso desde el juego, pruebas y
+  compatibilidad con las partidas antiguas ([D-071](DECISIONS.md#d-071)).
 - **Narrativa:**
   - las propuestas de la biblia v3 no son canon hasta que el usuario las apruebe;
   - no reveles antes del acto III que Érebo guarda corazones o recuerdos;

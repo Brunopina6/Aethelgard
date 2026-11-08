@@ -1,6 +1,6 @@
 # DECISIONS: decisiones de AETHELGARD / REBELUM
 
-**Actualizado el 2026-11-08 a las 22:30** sobre la copia del usuario (`rebelum-3d` @ `b8e042d`) y la rama de
+**Actualizado el 2026-11-08 a las 23:05** sobre la copia del usuario (`rebelum-3d` @ `b8e042d`) y la rama de
 integración (`integracion-experimental` @ `1c17763`). Las horas son locales (UTC+1).
 
 **Estados**
@@ -82,6 +82,7 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 | [D-068](#d-068) | El prólogo con puesta en escena, retratos vivos y caja de texto legible (T-081) | Aprobada en el encargo |
 | [D-069](#d-069) | Organización por especialistas: un coordinador y cinco subagentes | Aprobada |
 | [D-070](#d-070) | GitHub: código, configuraciones de agentes y documentación revisados en ramas de trabajo | Aprobada |
+| [D-071](#d-071) | Ambición: todas las ciudades mejoradas, muchos sitios nuevos y magias nuevas | Aprobada |
 | [D-H01 a D-H15](#6-diseño-ya-implementado-del-3010-al-0511) | Diseño ya implementado antes de Git | Aprobada (historial) |
 
 ## 1. Reglas de trabajo, Git y versiones
@@ -1230,6 +1231,23 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
   integración, las pruebas y la revisión de recursos.
 - **Primera publicación** (22:20): `integracion-experimental`, `area-sonido` y `area-animaciones`, con la revisión
   anotada en [T-088](TASKS.md#t-088).
+
+### D-071
+**Ambición: todas las ciudades mejoradas, muchos sitios nuevos y magias nuevas**
+- **Fecha y estado:** 2026-11-08, 23:05. Aprobada [usuario]: «quiero que mejores todas ciudades del juego quiero un
+  juego ambicioso, con muchos sitios para explorar, crea más magias … quiero que estes toda la noche mejorando el juego
+  puliendo, mejorando el rendimiento y no me preguntes nada partir de ahora solo hazlo tú ya sabes cómo lo quiero».
+- **Cuándo:** después del trabajo en curso (tanda 1) y de lo ya encargado (mapamundi, diálogo inicial, exploración y
+  combate).
+- **Ciudades** ([T-089](TASKS.md#t-089)): se mejoran todas las que existen (composición, vida, detalle y legibilidad en
+  el móvil). Se conservan sus funciones (tiendas, posadas, NPC, misiones, entradas y salidas) y se mide el rendimiento.
+- **Sitios para explorar** ([T-090](TASKS.md#t-090)): lugares nuevos coherentes con el canon (biblia v2) y con el
+  mapamundi, cada uno con algo que hacer. Lo que toque la historia va como propuesta.
+- **Magias nuevas** ([T-091](TASKS.md#t-091)): se añaden sin cambiar las existentes ([D-048](#d-048)), en
+  incrementos pequeños y compatibles con partidas antiguas. Cada una tiene una función táctica clara, acceso desde el
+  juego, pruebas, y un nombre y un efecto coherentes con el mundo. Sustituye a «las ampliaciones son plan futuro».
+- **Calidad y rendimiento:** medir antes y después; el perfil alto no se rebaja.
+- **Sin preguntas:** las decisiones rutinarias de diseño las toman el coordinador y los especialistas, y se registran.
 
 ## 6. Diseño ya implementado del 30/10 al 05/11
 

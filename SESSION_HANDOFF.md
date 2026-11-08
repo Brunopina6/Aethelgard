@@ -1,10 +1,15 @@
 # SESSION_HANDOFF: punto de control
 
-**Último punto de control:** 2026-11-08 a las 22:55 (hora local, UTC+1). **La tanda 1 está en marcha:** sonido y
+**Último punto de control:** 2026-11-08 a las 23:05 (hora local, UTC+1). **La tanda 1 está en marcha:** sonido y
 animaciones trabajan desde las 22:27, cada uno en su copia.
 - **Encargo vigente (22:40, pegado):** sesión prolongada y autónoma para mejorar REBELUM, con prioridades de 1 a 7
   ([MEMORIA_CHAT.md](MEMORIA_CHAT.md)). **El usuario (22:50):** «acepto todo no me preguntes mas solo hazlo»: no se
   para a preguntar dentro del alcance; las normas de [CLAUDE.md](CLAUDE.md) siguen.
+- **Añadido (23:05):** después de lo anterior, toda la noche:
+  - mejorar todas las ciudades ([T-089](TASKS.md#t-089));
+  - muchos sitios nuevos que explorar ([T-090](TASKS.md#t-090));
+  - magias nuevas sin cambiar las existentes ([T-091](TASKS.md#t-091));
+  - pulido y rendimiento ([D-071](DECISIONS.md#d-071)).
 - **Comprobado a las 22:45:**
   - la protección del guardado está en todas las copias de prueba;
   - la partida real no ha cambiado (`A3F3C402…`, de las 19:37);

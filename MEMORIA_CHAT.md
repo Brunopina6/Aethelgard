@@ -1,6 +1,6 @@
 # MEMORIA_CHAT: lo aprendido en las conversaciones sobre AETHELGARD / REBELUM
 
-> **Actualizado el 2026-11-08 a las 22:30** (hora local, UTC+1), en la rama `rebelum-3d` @ `b8e042d`. Se publica en la
+> **Actualizado el 2026-11-08 a las 23:05** (hora local, UTC+1), en la rama `rebelum-3d` @ `b8e042d`. Se publica en la
 > rama `memoria-desarrollo` de GitHub.
 >
 > Es un **resumen**, no una transcripción. El chat legible está en
@@ -196,6 +196,12 @@
     - Se aplica así: no parar a preguntar dentro del alcance autorizado.
     - Siguen las normas permanentes de CLAUDE.md, que son suyas: nada en `main` ni en `desarollo`, nada destructivo,
       la partida real intacta, y nada de credenciales, compras ni instalaciones.
+  - **Hacia las 23:05** [usuario]: «quiero que mejores todas ciudades del juego quiero un juego ambicioso, con muchos
+    sitios para explorar, crea más magias … quiero que estes toda la noche mejorando el juego puliendo, mejorando el
+    rendimiento y no me preguntes nada … tú ya sabes cómo lo quiero».
+    - Va después del trabajo en curso y de lo ya encargado.
+    - Tareas [T-089](TASKS.md#t-089) (ciudades), [T-090](TASKS.md#t-090) (sitios nuevos) y
+      [T-091](TASKS.md#t-091) (magias nuevas, sin cambiar las existentes); decisión [D-071](DECISIONS.md#d-071).
 
 ## Índice
 
