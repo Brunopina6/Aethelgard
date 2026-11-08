@@ -675,6 +675,7 @@ func _crear_sonidos() -> void:
 	for i in 3:
 		var r := AudioStreamPlayer.new()
 		r.volume_db = -6.0
+		r.bus = &"Interfaz"                          # buses y volúmenes: sonido.gd
 		add_child(r)
 		reproductores.append(r)
 

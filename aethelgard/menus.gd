@@ -1,5 +1,5 @@
 extends Control
-# Menús del grupo (Godot 4.x): Grupo (nivel, atributos y equipo), Objetos y Habilidades.
+# Menús del grupo (Godot 4.x): Grupo (nivel, atributos y equipo), Objetos, Habilidades y Ajustes (volumen, sonido.gd).
 # Se crea por código desde el mapa:  var m = load("res://menus.gd").new(); m.pestana = "Grupo"; ui.add_child(m)
 # Al cerrarse emite "cerrado" y se borra solo.
 # Con teclado o mando (entrada.gd): el foco empieza en la pestaña activa y vuelve al mismo botón tras cada cambio;
@@ -15,7 +15,7 @@ const COLOR_TEXTO := Estilo.LUZ_CLARA
 const COLOR_SUAVE := Estilo.GRIS
 const COLOR_BIEN := Estilo.CURA
 
-const PESTANAS := ["Grupo", "Objetos", "Habilidades"]
+const PESTANAS := ["Grupo", "Objetos", "Habilidades", "Ajustes"]
 
 var pestana := "Grupo"
 var heroe := ""
@@ -130,6 +130,8 @@ func _pintar() -> void:
 			_pintar_objetos()
 		"Habilidades":
 			_pintar_habilidades()
+		"Ajustes":
+			_pintar_ajustes()
 
 
 # ---------------------------------------------------------------- Grupo
@@ -334,6 +336,67 @@ func _pintar_habilidades() -> void:
 					cuerpo.add_child(_texto(texto + "   ✔", 18, COLOR_BIEN))
 				else:
 					cuerpo.add_child(_texto(texto + "   (se aprende al nivel %d)" % Grupo.NIVEL_MAGIA[i], 18, COLOR_SUAVE))
+
+
+# ---------------------------------------------------------------- Ajustes
+
+# El volumen de cada parte del sonido (sonido.gd): ◀ ▶ lo bajan o suben un 10 % y suena una muestra. Se guarda en
+# este aparato, aparte de la partida.
+func _pintar_ajustes() -> void:
+	cuerpo.add_child(_texto("Sonido", 26, COLOR_TITULO))
+	for bus in Sonido.VISIBLES:
+		var b: String = bus
+		var f := HBoxContainer.new()
+		f.add_theme_constant_override("separation", 8)
+		var nombre := _texto(Sonido.NOMBRES[b], 20, COLOR_TEXTO)
+		nombre.custom_minimum_size = Vector2(130, 0)
+		f.add_child(nombre)
+		var menos := _boton("◀", 18, Vector2(36, 34), "volumen:%s:-1" % b)
+		menos.pressed.connect(func(): _cambiar_volumen(b, -1))
+		f.add_child(menos)
+		var v: int = Sonido.volumen(b)
+		var cifra := _texto(("%d %%" % v) if v > 0 else "Sin sonido", 20, COLOR_TEXTO if v > 0 else COLOR_SUAVE)
+		cifra.custom_minimum_size = Vector2(130, 0)
+		cifra.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		f.add_child(cifra)
+		var mas := _boton("▶", 18, Vector2(36, 34), "volumen:%s:1" % b)
+		mas.pressed.connect(func(): _cambiar_volumen(b, 1))
+		f.add_child(mas)
+		f.add_child(_barra(v))
+		f.add_child(_texto("   " + Sonido.AYUDA[b], 16, COLOR_SUAVE))
+		cuerpo.add_child(f)
+	cuerpo.add_child(_texto("Se guarda en este aparato, aparte de la partida.", 16, COLOR_SUAVE))
+
+
+func _cambiar_volumen(bus: String, paso: int) -> void:
+	Sonido.fijar(bus, Sonido.volumen(bus) + paso * Sonido.PASO)
+	Sonido.probar(bus)
+	_pintar_de_nuevo()
+
+
+# Barra dorada fina con el volumen. Solo se mira: los toques van a ◀ ▶.
+func _barra(v: int) -> Control:
+	var pista := Panel.new()
+	pista.custom_minimum_size = Vector2(220, 12)
+	pista.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	pista.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var fondo := StyleBoxFlat.new()
+	fondo.bg_color = Color(Estilo.SOMBRA, 0.9)
+	fondo.border_color = Color(Estilo.ORO, 0.4)
+	fondo.set_border_width_all(1)
+	fondo.set_corner_radius_all(5)
+	pista.add_theme_stylebox_override("panel", fondo)
+	if v > 0:
+		var lleno := Panel.new()
+		lleno.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		lleno.position = Vector2(2, 2)
+		lleno.size = Vector2(maxf(8.0, 216.0 * v / 100.0), 8)
+		var oro := StyleBoxFlat.new()
+		oro.bg_color = Estilo.ORO
+		oro.set_corner_radius_all(4)
+		lleno.add_theme_stylebox_override("panel", oro)
+		pista.add_child(lleno)
+	return pista
 
 
 # ---------------------------------------------------------------- piezas

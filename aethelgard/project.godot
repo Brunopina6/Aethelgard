@@ -23,9 +23,11 @@ Dialogic="*uid://ds2q0uclmolvu"
 BotonDialogo="*res://boton_dialogo.gd"
 Recursos="*res://recursos.gd"
 Entrada="*res://entrada.gd"
+Sonido="*res://sonido.gd"
 
 [dialogic]
 
+audio/type_sound_bus="Interfaz"
 directories/dch_directory={
 "aldric": "res://dialogos/personajes/aldric.dch",
 "garon": "res://dialogos/personajes/garon.dch",

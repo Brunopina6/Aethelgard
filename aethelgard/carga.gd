@@ -165,6 +165,7 @@ func _crear_pantalla() -> void:
 	sonidos = M.sonidos_ui()
 	reproductor = AudioStreamPlayer.new()
 	reproductor.volume_db = -4.0
+	reproductor.bus = &"Interfaz"                    # buses y volúmenes: sonido.gd
 	add_child(reproductor)
 
 

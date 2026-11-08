@@ -438,7 +438,7 @@ func _paso_cinematica(delta: float) -> void:
 	_cine_t += delta
 	while _cine_notas < CINE_NOTAS.size() and _cine_t >= CINE_NOTAS[_cine_notas][0]:
 		var n: Array = CINE_NOTAS[_cine_notas]
-		_sonar(campana(), n[2], n[1])
+		_sonar(campana(), n[2], n[1], &"Musica")         # la melodía de campanas es música (sonido.gd)
 		_cine_notas += 1
 	var fin: float = CINE_TOMAS[CINE_TOMAS.size() - 1][0] + CINE_VUELTA
 	if _cine_t >= fin:
@@ -518,11 +518,12 @@ func _interfaz_cinematica(si: bool) -> void:
 		_cine_franjas[1].position.y = 720.0
 
 
-func _sonar(stream: AudioStream, vol_db: float, tono := 1.0) -> void:
+func _sonar(stream: AudioStream, vol_db: float, tono := 1.0, bus := &"Efectos") -> void:
 	var son := AudioStreamPlayer.new()
 	son.stream = stream
 	son.volume_db = vol_db
 	son.pitch_scale = tono
+	son.bus = bus                                           # buses y volúmenes: sonido.gd
 	add_child(son)
 	son.play()
 	son.finished.connect(son.queue_free)
@@ -987,6 +988,7 @@ func _animar_cofre() -> void:
 	var son := AudioStreamPlayer.new()
 	son.stream = sonido_cofre()
 	son.volume_db = -6.0                                    # como los sonidos del menú (menu_combate.gd)
+	son.bus = &"Efectos"                                    # buses y volúmenes: sonido.gd
 	add_child(son)
 	son.play()
 	son.finished.connect(son.queue_free)

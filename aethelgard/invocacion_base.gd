@@ -198,6 +198,7 @@ func sonar(ruta: String, vol_db := 0.0, tono := 1.0) -> void:
 	if p == null:
 		p = AudioStreamPlayer.new()
 		p.stream = load(ruta)
+		p.bus = &"Efectos"                           # buses y volúmenes: sonido.gd
 		add_child(p)
 		_sonidos[ruta] = p
 	p.volume_db = vol_db + ajustes.volumen_db

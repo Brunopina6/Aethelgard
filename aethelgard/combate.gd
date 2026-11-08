@@ -436,6 +436,7 @@ func _iniciar_musica() -> void:
 	musica = AudioStreamPlayer.new()
 	musica.stream = pista
 	musica.volume_db = -6.0
+	musica.bus = &"Musica"                           # buses y volúmenes: sonido.gd
 	add_child(musica)
 	musica.play()
 

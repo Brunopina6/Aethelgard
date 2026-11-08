@@ -2,7 +2,7 @@ extends SceneTree
 # Capturas del foco con teclado (marco dorado de estilo.gd) para revisarlas a ojo, y una con el dedo (sin marco).
 #   Godot --path aethelgard --script res://pruebas/prueba_foco_fotos.gd --fixed-fps 30 -- <carpeta> 3d sin_prologo
 # Teclas simuladas. Escribe en <carpeta>: 1_carga_boton_prueba, 2_mapa_barra, 3_menu_grupo, 4_menu_mas,
-# 5_ciudad_tienda, 6_tienda_comprar y 7_menu_con_el_dedo (.png).
+# 5_ciudad_tienda, 6_tienda_comprar, 7_menu_con_el_dedo y 8_menu_ajustes (.png).
 
 const CARGA := "res://carga.tscn"
 const MAPA := "res://mapa.tscn"
@@ -115,5 +115,21 @@ func _capturar() -> void:
 	var menu = load("res://menus.gd").new()
 	z.ui.add_child(menu)
 	await _foto("7_menu_con_el_dedo")
+	menu._cerrar()
+	await _esperar(2)
+	await _pulsar(KEY_SHIFT)                               # otra vez con el teclado: la pestaña Ajustes, con marco
+	var son = root.get_node("Sonido")
+	son.fijar("Musica", 70)                                # una barra a medias y otra sin sonido, para verlas
+	son.fijar("Efectos", 0)
+	var aj = load("res://menus.gd").new()
+	aj.pestana = "Ajustes"
+	z.ui.add_child(aj)
+	await _esperar(2)
+	var menos = Ent.buscar(aj, "volumen:Musica:-1")
+	if menos != null:
+		menos.grab_focus()
+	await _foto("8_menu_ajustes")
+	son.fijar("Musica", 100)
+	son.fijar("Efectos", 100)
 	print("CAPTURAS hechas en ", salida)
 	quit(0)

@@ -27,6 +27,7 @@ prueba_foco       | auto     | sin_prologo          | 240 | user://     | foco c
 prueba_mando      | auto     | 3d sin_prologo dispositivo=mando | 400 | user:// | recorrido sin ratón con mando simulado: carga (partida de prueba), PV-02, andar, desconectar, hablar con Tilo, combate (objetivo, atrás, pestañas de magia, huir) y barra del mapa
 prueba_teclado    | auto     | 3d sin_prologo       | 400 | user://     | el mismo recorrido sin ratón con el teclado (teclas simuladas)
 prueba_precalentado | auto   | 3d sin_prologo       | 300 | user://     | lo que se prepara en la carga y la vitrina de la región no provoca nada de juego (diálogos, partidas, estado, pasos, copias)
+prueba_audio      | auto     |                      | 150 | user://     | sonido (muda): buses, volúmenes guardados solo al cambiarlos, pestaña Ajustes con teclado y ningún reproductor por Master (código y combate)
 prueba_cofre      | auto     |                      | 150 | user://     | cofres
 prueba_choque     | auto     | estilo=bosque        | 150 | user://     | colisiones en una zona de bosque
 prueba_equilibrio | auto     |                      | 240 | user://     | equilibrio de combate
