@@ -71,9 +71,17 @@ $rama = GitTexto @("branch", "--show-current")
 if ($rama -eq "" -or $rama -eq "main" -or $rama -eq "desarollo") {
     Abortar "No se compila desde '$rama': usa la rama rebelum-3d."
 }
-if (Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -like "Godot*" }) {
-    Abortar "Hay un Godot abierto: ciérralo antes de exportar (dos Godot sobre el mismo proyecto se pisan)."
+# Solo estorba un Godot abierto sobre ESTE proyecto (dos Godot sobre el mismo proyecto se pisan). Los de otras copias
+# (otros especialistas, el editor del usuario en la suya) no tocan esta exportación, que además va en un entorno
+# aislado (T-082; como en pruebas/ejecutar_pruebas.ps1).
+$rutaEste = (($proyecto -replace '\\', '/').TrimEnd('/')).ToLowerInvariant()
+$godots = @(Get-CimInstance Win32_Process -Filter "Name LIKE 'Godot%'" -ErrorAction SilentlyContinue)
+$enEste = @($godots | Where-Object {
+    (("$($_.CommandLine)" -replace '\\', '/').ToLowerInvariant()) -match ([regex]::Escape($rutaEste) + '(/|"|\s|$)') })
+if ($enEste.Count -gt 0) {
+    Abortar "Hay un Godot abierto sobre este proyecto ($proyecto): ciérralo antes de exportar (dos Godot sobre el mismo proyecto se pisan)."
 }
+if ($godots.Count -gt 0) { Anotar ("Aviso: hay {0} Godot abiertos sobre otras copias; no tocan esta exportación." -f $godots.Count) }
 $antes = @{}
 foreach ($r in $PROTEGIDAS) { $antes[$r] = GitTexto @("rev-parse", $r) }
 
