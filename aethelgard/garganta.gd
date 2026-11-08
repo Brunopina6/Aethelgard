@@ -216,6 +216,7 @@ func _accion() -> void:
 		"guardado":
 			guardar_posicion()
 			Progreso.guardar(scene_file_path)
+			Sonido.efecto("guardado")                    # sonido.gd (T-083)
 			_destello(pieza_cerca["pos"] + Vector2(0, -56), Color(0.55, 1.0, 0.65))
 			_mostrar_aviso("Partida guardada.")
 		"palanca":
@@ -225,14 +226,18 @@ func _accion() -> void:
 			if palanca:
 				_viajar(pieza_cerca["otro"])
 			else:
+				Sonido.efecto("atascado")
 				_mostrar_aviso("El ascensor no se mueve. Algo, más abajo, debería darle fuerza.")
 		"puerta":
+			Sonido.efecto("cerrada")
 			_mostrar_aviso("Una puerta sellada con el anillo partido. No cede.")
 
 
 # La palanca abre la puerta de P3, baja el puente de P7 a P3 y enciende el ascensor.
 func _tirar_palanca() -> void:
 	Progreso.poner_estado(NOMBRE, "palanca")
+	Sonido.efecto("palanca")                           # y, poco después, el puente que baja a lo lejos (sonido.gd)
+	Sonido.efecto("puente_baja", {"retraso": 0.5})
 	for p in piezas:
 		match p["tipo"]:
 			"palanca":
@@ -264,6 +269,7 @@ func _tirar_palanca() -> void:
 
 func _viajar(destino: Vector2) -> void:
 	tiene_destino = false
+	Sonido.efecto("ascensor")                          # sonido.gd
 	var t := create_tween()
 	t.tween_property(fundido, "color", Color(0, 0, 0, 1), 0.3)
 	t.tween_callback(func():
@@ -302,6 +308,8 @@ func _abrir_cofre(c: Array) -> void:
 	abiertos[c[1]] = true
 	Engine.set_meta("cofres_abiertos", abiertos)
 	c[2] = true
+	Sonido.efecto("cofre")                             # sonido.gd
+	Sonido.efecto("tesoro", {"retraso": 0.3})
 	var d := _objeto("cofre_abierto")
 	c[0].texture = d["tex"]
 	c[0].offset = -d["origen"]
