@@ -1,7 +1,7 @@
 # SESSION_HANDOFF: punto de control
 
-**Último punto de control:** 2026-11-09 a las 00:20 (hora local, UTC+1). Noche de trabajo autónomo: el usuario duerme y
-pidió no preguntar ([MEMORIA_CHAT.md](MEMORIA_CHAT.md)). **La memoria describe `integracion-experimental` @ `713fe8d`.**
+**Último punto de control:** 2026-11-09 a las 00:35 (hora local, UTC+1). Noche de trabajo autónomo: el usuario duerme y
+pidió no preguntar ([MEMORIA_CHAT.md](MEMORIA_CHAT.md)). **La memoria describe `integracion-experimental` @ `c74b872`, que está en GitHub.**
 
 - **Encargos vigentes, de más antiguo a más nuevo** (todos en [MEMORIA_CHAT.md](MEMORIA_CHAT.md)):
   1. Organización por especialistas ([D-069](DECISIONS.md#d-069)) y GitHub por ramas de trabajo
@@ -21,12 +21,16 @@ pidió no preguntar ([MEMORIA_CHAT.md](MEMORIA_CHAT.md)). **La memoria describe 
 | El ejecutor solo se niega si hay un Godot en su misma copia (los demás, aviso y vigilancia) | `d2df536` | Batería con 8 Godot ajenos abiertos: limpia |
 | Botón «Probar el prólogo (partida nueva)» en la carga ([T-081](TASKS.md#t-081)) | `713fe8d` | `prueba_boton_prologo` (nueva) y regresiones de mando, teclado, foco, prólogo, ranura y precalentado: superadas |
 | `prueba_efectos` estable (comparaba con −6 dB fijos) | `713fe8d` | 5 de 5 pasadas |
+| Batería completa de todo lo integrado | `713fe8d` | 39 superadas, 0 fallidas, 0 no seguras; partida real, carpeta real y proyecto sin cambios (`D:\REBELUM_diagnostico\pruebas\2026-11-09_000605\`) |
+| Push revisado: `integracion-experimental`, `area-sonido` y `area-animaciones` | `713fe8d` | `git ls-remote`; repositorio privado, un solo usuario |
+| Script de compilación: solo se niega si hay un Godot sobre su proyecto | `c74b872` | Compilación de la v77 con otros Godot abiertos: «TODO CORRECTO» |
+| **Prueba v77** (versionCode 77, `com.aethelgard.experimental`, 254,1 MB, SHA-256 `ffffeb69…`) | `c74b872` | Firma verificada; sin partidas, claves ni Suno; release «09/11/2026 · Prueba v77» (Latest) con el resumen SHA-256 igual al local. **No copiada al Redmi: no estaba conectado** |
 
 ## Dónde está todo
 
 | Qué | Valor |
 |---|---|
-| Integración | `D:\Aethelgard_alpha`, rama `integracion-experimental` @ `713fe8d`. En GitHub, `1c17763` hasta el próximo push |
+| Integración | `D:\Aethelgard_alpha`, rama `integracion-experimental` @ `c74b872`, en GitHub |
 | Especialistas | Copias `D:\Aethelgard_<área>`, ramas `area-<área>`: sonido (terminada, integrada), animaciones (terminada, integrada), gráficos (fase 1 del mapamundi, en marcha desde las 23:12), combate y narrativa (fase 0, solo diseño, en marcha desde las 23:45). Todas son ya carpetas de trabajo de la sesión |
 | Configuración de los especialistas | `.claude/agents/especialista-*.md`. Esta sesión no los reconoce por nombre: se lanzan como `general-purpose` que leen su archivo |
 | Copia del usuario | `D:\Aethelgard`, rama `rebelum-3d` @ `b8e042d` con el bloque B sin tocar. Su editor se cerró antes de las 23:10 |
@@ -39,14 +43,11 @@ pidió no preguntar ([MEMORIA_CHAT.md](MEMORIA_CHAT.md)). **La memoria describe 
 
 ## Próximo paso concreto (por dependencias)
 
-1. **Batería completa de `713fe8d`** (en marcha a las 00:15). Si sale limpia: push de `integracion-experimental`,
-   `area-sonido` y `area-animaciones`. La revisión ya está hecha: 264 archivos y 18,9 MB, sobre todo efectos con
-   licencia comprobada, y ningún `.blend`.
-2. **APK de prueba** con `compilar_apk_experimental.ps1` (el versionCode se numera solo), su release en
-   `Aethelgard-pruebas` (primero la fila del README) y las notas: qué probar.
+1. **Hecho (00:35):** la batería, el push y la APK v77.
+2. **Copiar la v77 al Redmi** cuando esté conectado, y comprobar tamaño y SHA-256.
 3. **Gráficos, fase 2:** cuando entregue la fase 1, se integra `integracion-experimental` en `area-graficos` y pasan a
    gráficos `mapa.gd` y `mapa.tscn`.
-4. **Animaciones, tanda 2:**
+4. **Animaciones, tanda 2** (en marcha desde las 00:25):
    - que los pies no patinen (Kael anda a 4,2 m/s con un clip pensado para 1,2-1,5 m/s);
    - Lya y Garon presentes cuando hablan en PV-03 y PV-05 (`pastos_verdes_3d.gd`, ya libre);
    - retratos vivos en Pastos Verdes, poses de Lya y la señal `pisada` para los pasos.
@@ -65,7 +66,9 @@ pidió no preguntar ([MEMORIA_CHAT.md](MEMORIA_CHAT.md)). **La memoria describe 
 
 ## Pendiente del usuario (mañana)
 
-- Instalar la APK de la noche cuando esté en Descargas (el Redmi no estaba conectado), y la v57 si no la ha probado.
+- **Instalar la Prueba v77**: está en la release privada «09/11/2026 · Prueba v77» de `Aethelgard-pruebas` (el Redmi
+  no estaba conectado para copiarla a Descargas). Qué probar, en sus notas: el prólogo con el botón nuevo, escuchar los
+  efectos, Pastos Verdes y el táctil.
 - **Escuchar las muestras** y elegir la victoria, los golpes, el cofre y el tesoro (el especialista duda de ellos).
 - Revisar las decisiones de la noche ([D-073](DECISIONS.md#d-073)) y las propuestas de historia que dejen narrativa y
   combate.

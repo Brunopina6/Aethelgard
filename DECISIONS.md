@@ -1287,6 +1287,11 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 - **Botón «Probar el prólogo (partida nueva)»** (`713fe8d`): solo en la versión experimental y en la ranura de prueba.
 - **Efectos de sonido:** los eligió el especialista sin oírlos; el usuario los confirma o los cambia con las muestras.
 - **Cofre de Pastos Verdes:** suena con efectos de la biblioteca; el sonido hecho por código se queda para comparar.
+- **Script de compilación** (`c74b872`): como el ejecutor, solo se niega si hay un Godot sobre su proyecto.
+- **Prueba v77 publicada sin pasar por el Redmi**, que no estaba conectado. Lleva `musica_combate_normal.mp3` (origen
+  sin registrar, en el repositorio desde el primer commit), igual que la v57 y anteriores; no lleva Suno.
+- **Pies que patinan en 3D:** a la velocidad de exploración se usará el clip de correr, que encaja con 4,2 m/s, y el
+  de andar solo a poca velocidad. La velocidad de juego no cambia. Lo implementa animaciones en su tanda 2.
 
 ## 6. Diseño ya implementado del 30/10 al 05/11
 
