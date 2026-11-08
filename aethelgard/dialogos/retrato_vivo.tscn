@@ -13,3 +13,7 @@ script = ExtResource("1_vivo")
 
 [node name="Portrait" type="Sprite2D" parent="Foco/Gesto/Respira"]
 centered = false
+
+[node name="Siguiente" type="Sprite2D" parent="Foco/Gesto/Respira"]
+visible = false
+centered = false
