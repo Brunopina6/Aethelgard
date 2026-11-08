@@ -174,6 +174,28 @@
 
     Límite: esta sesión no reconoce los tipos propios (la carpeta no existía al empezar), así que se lanzan como
     subagentes generales que leen su archivo.
+- **Encargo del 08/11, hacia las 22:40** (pegado, con «cuando termines el trabajo que estás haciendo haz esto»): una
+  sesión prolongada y autónoma para mejorar REBELUM. REBELUM es el nombre oficial; Aethelgard, el técnico de carpetas y
+  repositorios.
+  - **Prioridades:**
+    1. estabilidad, guardado y continuidad;
+    2. efectos de sonido y la mano de Kael;
+    3. el mapamundi y la presentación del diálogo inicial;
+    4. animaciones, controles y exploración;
+    5. audio ambiental y música autorizada;
+    6. combate, progresión y ampliaciones aprobadas (magia, estados, talentos, habilidades e IA, en incrementos pequeños
+       y compatibles con partidas antiguas);
+    7. optimización y versiones.
+  - **Programas:** usar los del PC (Godot, Blender, Posador, Cascadeur si se puede, herramientas de Android y de Arm,
+    Git) comprobando antes versión y capacidad. Inventario en `docs/herramientas/programas_pc.md`
+    (`integracion-experimental`). Cascadeur pide la sesión del usuario, así que no se usa.
+  - **Entregas:** una APK cuando haya un hito integrado y verificado; copia al Redmi por USB. El informe final lleva
+    las mejoras perceptibles, los commits, las pruebas, las comparaciones, la APK y los pendientes. La memoria se
+    actualiza en cada hito, con el commit que describe; los documentos de inicio, breves.
+  - **Hacia las 22:50** [usuario]: «a partir de ahora acepto todo no me preguntes mas solo hazlo. continua con todo».
+    - Se aplica así: no parar a preguntar dentro del alcance autorizado.
+    - Siguen las normas permanentes de CLAUDE.md, que son suyas: nada en `main` ni en `desarollo`, nada destructivo,
+      la partida real intacta, y nada de credenciales, compras ni instalaciones.
 
 ## Índice
 
