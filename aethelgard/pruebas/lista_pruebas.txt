@@ -22,6 +22,7 @@ prueba_garon      | auto     | grupo=1 auto         | 240 | user://     | combat
 prueba_dpad       | auto     | escena=zona dpad     | 150 | user://     | cruceta táctil
 prueba_toque      | auto     |                      | 150 | user://     | toques en pantalla
 prueba_dialogo    | auto     |                      | 150 | user://     | diálogos
+prueba_dialogo_interfaz | auto |                    | 120 | user://     | interfaz de Dialogic reutilizada: preparada una vez y oculta, limpia al acabar (cortado en seco y final normal, con control), misma interfaz en el siguiente y viva tras cambiar de escena
 prueba_cofre      | auto     |                      | 150 | user://     | cofres
 prueba_choque     | auto     | estilo=bosque        | 150 | user://     | colisiones en una zona de bosque
 prueba_equilibrio | auto     |                      | 240 | user://     | equilibrio de combate
@@ -47,3 +48,6 @@ prueba_tapa       | ventana  | {salida}\tapa.png    | 150 | {salida}    | captur
 prueba_material   | manual   |                      | 0   | {salida}    | hay que elegir la base: -- <res://base sin extensión> <salida.png>
 prueba_banco      | manual   |                      | 0   | user://     | banco de rendimiento: se usa en el móvil (Fase 2.1); no es una prueba de regresión
 medir_ruta        | manual   |                      | 0   | {salida}    | medición en el PC del mismo recorrido (andar, puente, cofre, Tilo, combate y vuelta): -- <carpeta> 3d sin_prologo auto perfil=bajo grupo=si; un proceso por condición
+medir_primeras_veces | manual |                     | 0   | {salida}    | tirones de la primera vez (pantalla de carga real, dos pasadas, diálogos, oclusión): -- <carpeta> 3d sin_prologo perfil=bajo nombre=X [dialogos=antes] [vaiven=N]; frío = carpeta de datos nueva, con caché = repetir en la misma
+sonda_dialogic_carga | manual |                     | 0   | nada        | cuánto de preparar la interfaz de Dialogic es leer archivos y cuánto crearla
+sonda_oclusion_repetida | manual |                  | 0   | nada        | vuelve transparentes y opacas, a mano, las piezas que tapan a Kael en la ruta: ¿cuesta cada vez?

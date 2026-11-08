@@ -4,7 +4,8 @@ extends Node2D
 #   2) Shaders (20 %): dibuja una vez, fuera de la vista, a Kael y Lya en 3D, cada efecto de vfx/,
 #      la hierba y el agua de las zonas. En Android, la primera vez que se dibuja algo se compila su
 #      shader y da un tirón: así ese tirón pasa aquí y no en mitad de un combate.
-#   3) Texturas de las zonas (10 %): genera las que zona.gd guarda en caché (atlas de cada estilo,
+#   3) Diálogos (un fotograma): prepara, oculta, la interfaz de los diálogos (Recursos.precalentar_dialogos).
+#   4) Texturas de las zonas (10 %): genera las que zona.gd guarda en caché (atlas de cada estilo,
 #      objetos dibujados, matas), para que entrar en una zona sea instantáneo.
 # Al llegar al 100 %: «TOCA PARA EMPEZAR». La pantalla se ve al menos 2 segundos.
 # Si un archivo falla, lo apunta en la Salida de Godot y sigue con el resto.
@@ -54,6 +55,9 @@ func _ready() -> void:
 	Engine.max_fps = 60
 	_crear_pantalla()
 	pendientes = Recursos.listar()
+	var estilo: String = Recursos.ruta_estilo_dialogos()
+	if estilo != "" and ResourceLoader.exists(estilo):
+		pendientes.append(estilo)                   # la interfaz de los diálogos, en segundo plano (ver _paso_dialogos)
 	total = maxi(1, pendientes.size())
 	print("Carga: %d archivos comunes" % pendientes.size())
 
@@ -186,6 +190,9 @@ func _process(delta: float) -> void:
 		"shaders":
 			_paso_shaders()
 			progreso = 0.7 + 0.2 * float(frames_shader) / FRAMES_SHADERS
+		"dialogos":
+			_paso_dialogos()
+			progreso = 0.9
 		"zonas":
 			_paso_zonas()
 			progreso = 0.9 + 0.1 * (1.0 - float(tareas_zona.size()) / tareas_total)
@@ -328,7 +335,7 @@ func _paso_shaders() -> void:
 		return
 	vista_3d.queue_free()
 	vista_2d.queue_free()
-	fase = "zonas"
+	fase = "dialogos"
 	# una tarea por fotograma: atlas de cada estilo, objetos dibujados y matas
 	for s in zona_tmp.ESTILOS:
 		tareas_zona.append(_cache_atlas.bind(s))
@@ -337,6 +344,16 @@ func _paso_shaders() -> void:
 	if not ResourceLoader.exists(zona_tmp.TEXTURA_HIERBA):
 		tareas_zona.append(func(): zona_tmp._cargar_cache("matas", zona_tmp._dibujar_matas))
 	tareas_total = maxi(1, tareas_zona.size())
+
+
+# Sin esto, en el PC abrir el primer diálogo tardaba unos 185 ms y cada uno de los siguientes unos 55 ms, porque Dialogic
+# rehacía su interfaz en cada diálogo (pruebas/medir_primeras_veces.gd, 2026-11-08). Ahora se hace aquí una vez y, al
+# acabar cada diálogo, se oculta en vez de borrarse («dialogic/layout/end_behaviour» = 1 en project.godot).
+func _paso_dialogos() -> void:
+	var us: int = Recursos.precalentar_dialogos()
+	print("Carga: interfaz de los diálogos preparada en %.1f ms" % (us / 1000.0))
+	BotonDialogo.estilar.call_deferred()           # tras añadirse la interfaz al árbol (también diferido)
+	fase = "zonas"
 
 
 func _cache_atlas(s: String) -> void:

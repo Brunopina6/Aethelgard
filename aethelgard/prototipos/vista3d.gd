@@ -61,6 +61,7 @@ func _ready() -> void:
 	_crear_panel_rnd(capa)
 	seguro = kael.global_position
 	_aplicar_perfil()
+	_preparar_sombreados.call_deferred()            # cuando la escena hija ya ha puesto todo lo suyo
 	if Engine.has_meta("banco_proto"):
 		_seguir_banco.call_deferred()
 
@@ -272,14 +273,131 @@ func _oclusion() -> void:
 
 
 func _transparente(mi: MeshInstance3D, si: bool) -> void:
-	var m := mi.material_override as StandardMaterial3D
-	if m == null:
+	var t := _material_transparente(mi)
+	if t == null:
 		return
-	if si and not mi.has_meta("trans_original"):
-		mi.set_meta("trans_original", m.transparency)  # p. ej. alfa recortado de los árboles de tarjeta
-	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA if si else mi.get_meta("trans_original", BaseMaterial3D.TRANSPARENCY_DISABLED)
-	m.albedo_color.a = 0.3 if si else 1.0
+	mi.material_override = t if si else mi.get_meta("mat_opaco")
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+
+
+# Lo que tapa a Kael se dibuja con una copia medio transparente de su material, hecha una vez y guardada mientras dure
+# la escena. Antes se cambiaba la transparencia del propio material, y Godot tenía que preparar su sombreado de nuevo (y
+# lo soltaba al volver a opaco si nadie más lo usaba). Con las dos versiones vivas, cambiar es solo cambiar de material
+# (medido en el PC: pruebas/medir_primeras_veces.gd y sonda_oclusion_repetida.gd, 2026-11-08).
+var _trans_de := {}                    # material opaco -> su copia medio transparente
+
+
+func _material_transparente(mi: MeshInstance3D) -> StandardMaterial3D:
+	if not mi.has_meta("mat_opaco"):
+		if not mi.material_override is StandardMaterial3D:
+			return null
+		mi.set_meta("mat_opaco", mi.material_override)   # el suyo, sin tocar (p. ej. alfa recortado en las tarjetas)
+	var m: StandardMaterial3D = mi.get_meta("mat_opaco")
+	if not _trans_de.has(m):
+		var t := m.duplicate() as StandardMaterial3D
+		t.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		t.albedo_color.a = 0.3
+		_trans_de[m] = t
+	return _trans_de[m]
+
+
+# Al entrar, con la pantalla aún en negro (Recursos.cambiar_escena), se dibuja dos fotogramas, en miniatura delante de
+# la cámara, una copia de cada cosa distinta de la escena (cada malla con sus materiales, la vegetación, las partículas)
+# y las copias transparentes de lo que puede tapar a Kael. Godot compila (o lee de su caché) el sombreado de cada
+# material la primera vez que lo dibuja, y al salir de la escena lo suelta: sin esto, cada cosa que aparecía en la vista
+# por primera vez al andar daba un tirón (en el PC, hasta 42 ms la primera vez tras instalar y hasta unos 19 ms después;
+# pruebas/medir_primeras_veces.gd, 2026-11-08). A cambio, la entrada en negro tarda algo más (unos 0,1-0,2 s en el PC).
+func _preparar_sombreados() -> void:
+	if not is_inside_tree() or cam == null:
+		return
+	var copias: Array = []
+	var hechas := {}
+	for n in get_tree().get_nodes_in_group("ocluye"):
+		var mi := n as MeshInstance3D
+		if mi == null or mi.mesh == null or not is_ancestor_of(mi):
+			continue
+		var t := _material_transparente(mi)
+		if t != null and not hechas.has(t):
+			hechas[t] = true
+			var c := MeshInstance3D.new()
+			c.mesh = mi.mesh
+			c.material_override = t
+			copias.append(c)
+	for g in find_children("*", "GeometryInstance3D", true, false):
+		var clave := _clave_dibujo(g)
+		if clave != "" and not hechas.has(clave):
+			hechas[clave] = true
+			copias.append(_copia_dibujo(g))
+	if copias.is_empty():
+		return
+	var vitrina := Node3D.new()
+	cam.add_child(vitrina)
+	vitrina.position = Vector3(0, 0, -1.0)
+	for i in copias.size():
+		var c: GeometryInstance3D = copias[i]
+		c.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		var aabb: AABB = c.get_aabb() if not c is CPUParticles3D else AABB(Vector3.ZERO, Vector3.ONE)
+		var s := 0.01 / maxf(aabb.get_longest_axis_size(), 0.01)          # un centímetro
+		c.scale = Vector3.ONE * s
+		c.position = Vector3(0.012 * (i % 12) - 0.07, 0.012 * (i / 12) - 0.05, 0) - aabb.get_center() * s
+		vitrina.add_child(c)
+	for i in 2:                                       # dos fotogramas dibujándolas, y fuera
+		await get_tree().process_frame
+		if not is_instance_valid(vitrina):
+			return
+	vitrina.queue_free()
+
+
+# Qué hace falta para dibujar algo como en la escena (los mismos materiales y el mismo tipo de dibujo); "" si no se
+# copia. Los personajes con esqueleto no: ya se ven al entrar.
+func _clave_dibujo(g: GeometryInstance3D) -> String:
+	if not is_ancestor_of(g):
+		return ""
+	var mats: Array = [g.material_override, g.material_overlay]
+	var tipo := ""
+	if g is MeshInstance3D:
+		var mi := g as MeshInstance3D
+		if mi.mesh == null or mi.skin != null or mi.get_parent() is Skeleton3D:
+			return ""
+		for i in mi.mesh.get_surface_count():
+			mats.append(mi.get_active_material(i))
+		tipo = "malla"
+	elif g is MultiMeshInstance3D:
+		var mm := (g as MultiMeshInstance3D).multimesh
+		if mm == null or mm.mesh == null:
+			return ""
+		for i in mm.mesh.get_surface_count():
+			mats.append(mm.mesh.surface_get_material(i))
+		tipo = "multi %d %s %s" % [mm.transform_format, mm.use_colors, mm.use_custom_data]
+	elif g is CPUParticles3D:
+		var cp := g as CPUParticles3D
+		if cp.mesh == null:
+			return ""
+		for i in cp.mesh.get_surface_count():
+			mats.append(cp.mesh.surface_get_material(i))
+		tipo = "particulas"
+	else:
+		return ""
+	var ids: Array = mats.map(func(m): return str(m.get_instance_id()) if m != null else "-")
+	return tipo + " " + ",".join(ids)
+
+
+func _copia_dibujo(g: GeometryInstance3D) -> GeometryInstance3D:
+	var c: GeometryInstance3D
+	if g is MeshInstance3D:
+		var mi := g as MeshInstance3D
+		c = MeshInstance3D.new()
+		c.mesh = mi.mesh
+		for i in mi.mesh.get_surface_count():
+			c.set_surface_override_material(i, mi.get_surface_override_material(i))
+	elif g is MultiMeshInstance3D:
+		c = MultiMeshInstance3D.new()
+		c.multimesh = (g as MultiMeshInstance3D).multimesh         # la misma: todas sus copias, en un centímetro
+	else:
+		c = g.duplicate(0) as GeometryInstance3D                   # partículas
+	c.material_override = g.material_override
+	c.material_overlay = g.material_overlay
+	return c
 
 
 # ---------------------------------------------------------------- moverse

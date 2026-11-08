@@ -50,6 +50,7 @@ directories/dtl_directory={
 "pv_tilo": "res://dialogos/pv_tilo.dtl",
 "pv_tilo_fin": "res://dialogos/pv_tilo_fin.dtl"
 }
+layout/end_behaviour=1
 layout/style_directory={}
 
 [display]

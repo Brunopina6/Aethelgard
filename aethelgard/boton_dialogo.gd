@@ -42,27 +42,34 @@ func _ready() -> void:
 func _process(_d: float) -> void:
 	var d = get_node_or_null("/root/Dialogic")
 	visible = d != null and d.current_timeline != null
-	if visible:                                     # Biblia de arte: estilo del menú de combate
-		var Estilo = load("res://estilo.gd")
-		for n in get_tree().get_nodes_in_group("dialogic_name_label"):
-			if not n.has_meta("cursiva"):              # nombre en cursiva (su color lo pone Dialogic) sin caja
-				n.set_meta("cursiva", true)
-				n.add_theme_font_override("font", Estilo.cursiva())
-				n.add_theme_font_size_override("font_size", 38)
-				n.add_theme_color_override("font_outline_color", Color(Estilo.SOMBRA, 0.95))
-				n.add_theme_constant_override("outline_size", 8)
-				var caja := _caja_de(n)
-				if caja != null:
-					caja.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
-		for n in get_tree().get_nodes_in_group("dialogic_dialog_text"):
-			if not n.has_meta("estilo"):               # caja oscura transparente con la línea dorada fina
-				n.set_meta("estilo", true)
-				n.add_theme_font_override("normal_font", Estilo.normal())
-				n.add_theme_font_size_override("normal_font_size", 26)
-				n.add_theme_color_override("default_color", Estilo.LUZ_CLARA)
-				var caja := _caja_de(n)
-				if caja != null:
-					caja.add_theme_stylebox_override("panel", Estilo.ventana(0.8))
+	if visible:
+		estilar()
+
+
+# Biblia de arte: el nombre y el cuadro de texto de Dialogic con el estilo del menú de combate. Se aplica una vez a cada
+# nodo. La interfaz de los diálogos se reutiliza (recursos.gd, precalentar_dialogos), así que carga.gd lo llama ya en la
+# pantalla de carga y el primer diálogo no tiene que hacerlo.
+func estilar() -> void:
+	var Estilo = load("res://estilo.gd")
+	for n in get_tree().get_nodes_in_group("dialogic_name_label"):
+		if not n.has_meta("cursiva"):                  # nombre en cursiva (su color lo pone Dialogic) sin caja
+			n.set_meta("cursiva", true)
+			n.add_theme_font_override("font", Estilo.cursiva())
+			n.add_theme_font_size_override("font_size", 38)
+			n.add_theme_color_override("font_outline_color", Color(Estilo.SOMBRA, 0.95))
+			n.add_theme_constant_override("outline_size", 8)
+			var caja := _caja_de(n)
+			if caja != null:
+				caja.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	for n in get_tree().get_nodes_in_group("dialogic_dialog_text"):
+		if not n.has_meta("estilo"):                   # caja oscura transparente con la línea dorada fina
+			n.set_meta("estilo", true)
+			n.add_theme_font_override("normal_font", Estilo.normal())
+			n.add_theme_font_size_override("normal_font_size", 26)
+			n.add_theme_color_override("default_color", Estilo.LUZ_CLARA)
+			var caja := _caja_de(n)
+			if caja != null:
+				caja.add_theme_stylebox_override("panel", Estilo.ventana(0.8))
 
 
 # Primer panel que envuelve a un nodo del diálogo (la caja que se ve detrás).

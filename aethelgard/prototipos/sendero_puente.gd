@@ -787,21 +787,32 @@ func _transparente(mi: MeshInstance3D, si: bool) -> void:
 		if si:
 			if not mi.has_meta("mat_original"):
 				mi.set_meta("mat_original", mi.material_override)
-			var col: Color = mi.get_meta("mat_original").get_shader_parameter("color")
-			var m := StandardMaterial3D.new()
-			m.albedo_color = Color(col, 0.3)
-			var atlas = mi.get_meta("mat_original").get_shader_parameter("atlas")
-			if atlas != null:                              # copas con textura de hojas: se ven las hojas, no un cuadrado
-				m.albedo_texture = atlas
-				m.vertex_color_use_as_albedo = true
-				m.cull_mode = BaseMaterial3D.CULL_DISABLED
-			m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-			mi.material_override = m
+			mi.material_override = _material_transparente(mi)
 		elif mi.has_meta("mat_original"):
 			mi.material_override = mi.get_meta("mat_original")
 			mi.remove_meta("mat_original")
 		return
 	super._transparente(mi, si)
+
+
+# Esa copia transparente se hace una vez por material y se guarda mientras dure la escena (_trans_de, vista3d.gd), y la
+# vitrina de la entrada la dibuja una vez. Antes se creaba un material nuevo cada vez que el árbol tapaba a Kael y Godot
+# preparaba otra vez su sombreado: unos 8 ms en el PC en cada oclusión (pruebas/medir_primeras_veces.gd, 2026-11-08).
+func _material_transparente(mi: MeshInstance3D) -> StandardMaterial3D:
+	var original = mi.get_meta("mat_original", mi.material_override)
+	if not original is ShaderMaterial:
+		return super._material_transparente(mi)
+	if not _trans_de.has(original):
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(original.get_shader_parameter("color"), 0.3)
+		var atlas = original.get_shader_parameter("atlas")
+		if atlas != null:                              # copas con textura de hojas: se ven las hojas, no un cuadrado
+			m.albedo_texture = atlas
+			m.vertex_color_use_as_albedo = true
+			m.cull_mode = BaseMaterial3D.CULL_DISABLED
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		_trans_de[original] = m
+	return _trans_de[original]
 
 
 func _libre(p: Vector3, margen_sendero := 1.4) -> bool:

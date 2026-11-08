@@ -71,6 +71,20 @@ func _ready() -> void:
 	if _aviso_pendiente != "":
 		avisar.call_deferred(_aviso_pendiente)
 		_aviso_pendiente = ""
+	var dg = get_node_or_null("/root/Dialogic")
+	if dg != null:
+		dg.timeline_ended.connect(_al_acabar_dialogo)
+
+
+# Con «dialogic/layout/end_behaviour» = 1 la interfaz de los diálogos se oculta al acabar en vez de borrarse, pero
+# Dialogic no limpia entonces el texto, el nombre ni los retratos (clear(TIMELINE_INFO_ONLY)): antes lo hacía la interfaz
+# nueva de cada diálogo al estar lista (clear(KEEP_VARIABLES)). Se limpia aquí, ya oculta, para que el diálogo siguiente
+# no enseñe nada del anterior. Recursos se conecta antes que las escenas: si una abre otro diálogo al acabar este, lo
+# abre ya limpio.
+func _al_acabar_dialogo() -> void:
+	var dg = get_node_or_null("/root/Dialogic")
+	if dg != null and dg.current_timeline == null:
+		dg.clear(DialogicGameHandler.ClearFlags.KEEP_VARIABLES)
 
 
 # Aviso al jugador de algo que debe saber, como que no se pudo guardar la partida (progreso.gd). Sale abajo, encima de
@@ -80,6 +94,30 @@ var lbl_aviso: Label
 
 var _aviso_pendiente := ""
 var lbl_prueba: Label
+
+
+# Prepara la interfaz de los diálogos de Dialogic durante la pantalla de carga (carga.gd), oculta. Sin esto, en el PC
+# abrir el primer diálogo tardaba unos 185 ms y cada uno de los siguientes unos 55 ms, porque Dialogic la rehacía en
+# cada diálogo (pruebas/medir_primeras_veces.gd, 2026-11-08). Con «dialogic/layout/end_behaviour» = 1 (project.godot),
+# al acabar un diálogo la interfaz se oculta en vez de borrarse. Devuelve los microsegundos que ha costado.
+func precalentar_dialogos() -> int:
+	var dg = get_node_or_null("/root/Dialogic")
+	if dg == null or not dg.has_subsystem("Styles") or dg.Styles.has_active_layout_node():
+		return 0
+	var t := Time.get_ticks_usec()
+	var interfaz = dg.Styles.load_style()
+	if interfaz != null:
+		interfaz.hide()
+	return Time.get_ticks_usec() - t
+
+
+# El estilo de los diálogos arrastra todas las escenas de su interfaz: leerlo era casi todo el coste de prepararla
+# (unos 145 de 173 ms en el PC, pruebas/sonda_dialogic_carga.gd). carga.gd lo lee en segundo plano con lo común, y
+# así precalentar_dialogos() solo tiene que crearla.
+func ruta_estilo_dialogos() -> String:
+	if get_node_or_null("/root/Dialogic") == null:
+		return ""
+	return DialogicStylesUtil.get_style_path("")
 
 
 # Partida de prueba (opción de desarrollo de carga.gd): una etiqueta fija arriba, para no confundirla con la de verdad.
