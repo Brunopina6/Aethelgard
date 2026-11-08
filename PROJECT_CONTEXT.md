@@ -250,6 +250,7 @@ objetos.
 - **APK de prueba para el móvil** (desde el 2026-11-08): se suben al repositorio privado
   `Brunopina6/Aethelgard-pruebas`, una versión por APK ([D-054](DECISIONS.md#d-054) y [T-079](TASKS.md#t-079)).
   - No es el repositorio del juego y no lleva código.
+  - Se ordenan por fecha y versión, y ninguna se borra. La convención está en [CLAUDE.md](CLAUDE.md) §4.
 
 ## 10. Pruebas y herramientas [código + ejecutado]
 
@@ -276,7 +277,7 @@ objetos.
 | EmacE Stylized Grass (`vegetacion_prueba/emace`, en `.gitignore`) | **Prohibido redistribuir** sus archivos |
 | Pack «Dual-Blade Combat Essentials» (`garon_espadas.res`) | Uso comercial permitido, sin redistribuir el original |
 | `sonidos/erebo_*.wav` y `musica_combate_normal.mp3` | **Origen sin registrar** |
-| Las 4 pistas de Suno (`sunlit_paths`, `morning_waltz`, `promised_horizon` y `waltz_starlit_path`, OGG a 48 kHz, sin bucle continuo) | El plan de Suno está **sin confirmar**. ZIP en `C:\Users\G513\Downloads\Telegram Desktop\Aethelgard_Musica_Pastos_Verdes_Godot.zip`. Solo para pruebas privadas locales |
+| Las 4 pistas de Suno (`sunlit_paths`, `morning_waltz`, `promised_horizon` y `waltz_starlit_path`, OGG a 48 kHz, sin bucle continuo) | **No son libres** (lo dijo el usuario el 08/11). ZIP en `C:\Users\G513\Downloads\Telegram Desktop\Aethelgard_Musica_Pastos_Verdes_Godot.zip`. Solo para pruebas privadas locales |
 | «The Last Encounter» | CC-BY-SA 3.0, según el informe de audio [historial] |
 | Sonniss GDC | Uso comercial, sin redistribuir y sin uso para IA |
 | TomMusic | Sin regalías, sin redistribuir |

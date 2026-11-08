@@ -1,6 +1,6 @@
 # TASKS: tareas de AETHELGARD / REBELUM
 
-**Actualizado el 2026-11-08 a las 14:50 (hora local, UTC+1).**
+**Actualizado el 2026-11-08 a las 15:00 (hora local, UTC+1).**
 - Copia del usuario: `rebelum-3d` @ `ce84422`.
 - Árbol del encargo: `rebelum-alpha` @ `aabe5ad`.
 
@@ -369,10 +369,14 @@
   - **Falta que el usuario confirme** que las imágenes que subió a Meshy eran suyas o libres.
 - **Suno:**
   - Con el plan gratuito, solo uso personal no comercial. Suscribirse después no da derechos retroactivos.
-  - **Falta saber** con qué plan se generó y descargó cada pista.
+  - **El 08/11 el usuario dijo:** «la música de suno no son libres».
+    - Las cuatro pistas se tratan como no libres: solo en pruebas privadas locales, nunca en commits ni en APK que salgan
+      del PC, tampoco en el repositorio de pruebas.
+    - Para el juego publicado harían falta pistas generadas y descargadas con un plan de pago durante la suscripción,
+      o sustitutas.
 - **Falta confirmar:**
   - el plan de Meshy (personajes, armas, árboles y guardián);
-  - el plan de Suno de las cuatro pistas;
+  - con qué se sustituyen las cuatro pistas de Suno en una APK entregable, o si se generan de nuevo con plan de pago;
   - «The Last Encounter» (CC-BY-SA 3.0) y la recopilación «500 Game Sound Effects»;
   - el origen de `sonidos/erebo_*.wav` y `musica_combate_normal.mp3`;
   - el origen de `espada2.obj`, `hacha.obj`, `hoja_infernal.obj`, `vara.obj`, `averno.obj` y `diamante_azul.obj`, que
@@ -460,4 +464,11 @@
   - el `digest` de GitHub coincide con el SHA-256 local;
   - `releases/latest` apunta a esta versión;
   - el repositorio es privado.
-- **Pendiente de verificar:** la descarga y la instalación en el móvil, que hace el usuario.
+- **Ordenada por fecha y versión** (08/11, 14:58), como pidió el usuario ([D-054](DECISIONS.md#d-054)):
+  - la release se titula «08/11/2026 · Prueba v39»;
+  - el archivo se llama ahora `Aethelgard_Exp_2026-11-08_v39.apk`, con el mismo tamaño y el mismo `digest`;
+  - el `README.md` (commit `d82abaa`) lleva la tabla de pruebas y el enlace a la original, `v0.1.0`, en el repositorio
+    principal. El texto publicado es idéntico al local.
+- **Evidencia de la descarga** (14:59): una petición de los 4 primeros bytes del archivo de GitHub devuelve `50 4b 03 04`,
+  igual que la APK local.
+- **Pendiente de verificar:** la descarga completa y la instalación en el móvil, que hace el usuario.

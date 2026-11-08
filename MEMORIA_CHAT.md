@@ -1,6 +1,6 @@
 # MEMORIA_CHAT: lo aprendido en las conversaciones sobre AETHELGARD / REBELUM
 
-> **Actualizado el 2026-11-08 a las 14:50** (hora local, UTC+1), en la rama `rebelum-3d` @ `ce84422`. Se publica en la
+> **Actualizado el 2026-11-08 a las 15:00** (hora local, UTC+1), en la rama `rebelum-3d` @ `ce84422`. Se publica en la
 > rama `memoria-desarrollo` de GitHub.
 >
 > Es un **resumen**, no una transcripción. El chat legible está en
@@ -46,6 +46,9 @@
   descargar las pruebas.
   - Se creó el repositorio privado `Brunopina6/Aethelgard-pruebas` ([D-054](DECISIONS.md#d-054)).
   - Lleva la APK `exp-20261108-aabe5ad`, que incluye el arreglo del banco ([T-079](TASKS.md#t-079)).
+  - Después pidió ordenar las pruebas **por fecha y versión** y conservarlas todas, junto con la original (`v0.1.0`).
+    El resto sigue como se configuró.
+  - Ese mismo mensaje: «la música de suno no son libres». Una APK con esa música no se sube.
 - **Siguiente:** T-022: Lya y Garon siguiendo a Kael (hay unos 12 ms de margen), el cofre y la cinemática del mirador.
 - **Vigente:**
   - el Redmi está reservado;
@@ -57,8 +60,8 @@
   - las pruebas, siempre aisladas;
   - calidad visual primero.
 - **Pendiente del usuario:**
-  - licencias: el origen de las imágenes que subió a Meshy, el plan de Suno de cada pista y el origen de los recursos
-    sin registrar;
+  - licencias: el origen de las imágenes que subió a Meshy y el de los recursos sin registrar. La música de Suno ya
+    se sabe que no es libre (08/11): falta decidir qué la sustituye en una APK entregable;
   - decisiones de narrativa, de Érebo (D1-D12), de las Skills y de GitHub.
 - **Siguiente paso:** el de [SESSION_HANDOFF.md](SESSION_HANDOFF.md).
 
@@ -219,6 +222,7 @@ Las normas vigentes están en [CLAUDE.md](CLAUDE.md) y su historia, en [DECISION
 | Publicar la memoria en `memoria-desarrollo` | 07/11, 16:30 | **Vigente**, tras cada hito. El push solo vale para la memoria ([D-049](DECISIONS.md#d-049)) |
 | Licencias: recursos autorizados o sustitutos; el entregable, sin lo no acreditado | 07/11, 16:30 | **Vigente** ([D-050](DECISIONS.md#d-050)) |
 | «Haz una cosa cra en GitHub un lugar donde subir las pruebas y súbela allí…» | 08/11, hacia las 14:40 | **Vigente:** repositorio privado `Aethelgard-pruebas` ([D-054](DECISIONS.md#d-054)) |
+| «a partir de ahora ordena las relese de pruebas por fecha y versión…» | 08/11, hacia las 14:55 | **Vigente:** convención de [D-054](DECISIONS.md#d-054); ninguna prueba se borra |
 
 **Restricciones del usuario, con sus palabras**
 - «La autorización de push se limita a la documentación de memoria» (07/11, 16:30).
@@ -359,6 +363,9 @@ El inventario completo, con las condiciones oficiales de Meshy y Suno leídas el
 `D:\Aethelgard_alpha\docs\versiones\inventario_licencias.md`. En resumen:
 - **Meshy:** CC BY 4.0 con el plan gratuito y propiedad del usuario con el de pago. Con créditos se puede distribuir.
 - **Suno:** con el plan gratuito, solo uso personal; suscribirse después no da derechos retroactivos.
+  - El 08/11 el usuario dijo «la música de suno no son libres» [usuario].
+  - Las cuatro pistas solo van en pruebas privadas locales: ni en commits ni en APK que salgan del PC, tampoco en el
+    repositorio de pruebas.
 
 ## 8. Diagnósticos, errores y soluciones
 

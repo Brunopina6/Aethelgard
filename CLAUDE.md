@@ -95,7 +95,7 @@ pida la tarea.
   - **Excepción, desde el 2026-11-08 ([D-054](DECISIONS.md#d-054)):** las APK de prueba pueden ir a
     `Brunopina6/Aethelgard-pruebas` para que el usuario las descargue en su móvil.
     - No cuenta como distribución si el repositorio sigue privado, sin colaboradores y sin enlaces compartidos.
-    - Una APK con música de Suno no se sube sin preguntar antes.
+    - Una APK con música de Suno no se sube: esa música no es libre (lo dijo el usuario el 08/11).
   - La música de Suno, solo en pruebas privadas locales, fuera de los commits y de cualquier APK entregable.
 - No instales herramientas ni compres recursos.
 - No cambies ajustes globales, permisos, credenciales ni claves de firma.
@@ -131,6 +131,11 @@ pida la tarea.
   (SUPERADA, FALLIDA, MANUAL y NO SEGURA) y devuelve un código de salida.
 - **Compilación local:** `compilar_apk_experimental.ps1 [-Preset "…"]` se niega a compilar la app estable, exporta en
   un entorno aislado y comprueba licencias, firma y paquete.
+- **Pruebas en GitHub** (`Brunopina6/Aethelgard-pruebas`, [D-054](DECISIONS.md#d-054)), ordenadas por fecha y versión:
+  - cada APK es una release nueva, titulada «DD/MM/AAAA · Prueba vNN», donde NN es el versionCode;
+  - el archivo se llama `Aethelgard_Exp_AAAA-MM-DD_vNN.apk`, y la etiqueta, `exp-AAAAMMDD-sha7`;
+  - antes de crearla se añade su fila arriba en la tabla del `README.md`, y la release se etiqueta sobre ese commit;
+  - ninguna se borra ni se sustituye.
 - **Carpetas fuera del proyecto:**
   - `D:\REBELUM_diagnostico`: registros;
   - `D:\REBELUM_compilaciones`: APK;

@@ -172,6 +172,8 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
     entregable.
 - **Alternativas:** recursos de licencia verificada o silencio controlado.
 - **Ampliada por:** [D-050](#d-050).
+- **Excepción:** [D-054](#d-054), el repositorio privado `Aethelgard-pruebas`, del que el usuario descarga las APK de
+  prueba en su móvil.
 - **Archivos:** `compilar_apk_experimental.ps1`, `docs/versiones/licencias_pendientes.txt` y `docs/recursos.md`.
 
 ## 2. Datos, pruebas y móvil
@@ -683,7 +685,21 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
     GitHub;
   - no es un paquete entregable mientras el repositorio siga privado, sin colaboradores y sin enlaces compartidos;
   - la primera APK (`aabe5ad`) lleva los mismos recursos pendientes que las anteriores, y ninguno es de Suno;
-  - una APK con música de Suno no se sube sin preguntar antes.
+  - **una APK con música de Suno no se sube.** El 08/11, hacia las 14:55, el usuario dijo: «la música de suno no son
+    libres». Hasta entonces la regla era preguntar antes.
+- **Orden por fecha y versión** (08/11, hacia las 14:55). Aprobada [usuario]: «a partir de ahora ordena las relese de
+  pruebas por fecha y versión así siempre tendré las relese de pruebas y la original,con lo demás que configuramos
+  sigue igual».
+  - **Título:** «DD/MM/AAAA · Prueba vNN», donde NN es el versionCode, que sale de `git rev-list --count HEAD` y
+    siempre sube.
+  - **Archivo:** `Aethelgard_Exp_AAAA-MM-DD_vNN.apk`. En la carpeta de descargas, el nombre los ordena por fecha.
+  - **Etiqueta:** `exp-AAAAMMDD-sha7`, igual que el versionName que muestra el móvil.
+  - **`README.md`:** tabla de pruebas de la más nueva a la más antigua, y enlace a la original.
+  - **Cada release se etiqueta sobre su propio commit del `README.md`.** GitHub ordena las releases por la fecha del
+    commit etiquetado, y así quedan en orden aunque se suban varias el mismo día.
+  - **No se borra ni se sustituye ninguna.** La más nueva lleva la marca «Latest».
+  - **«La original»** [asistente]: entiendo que es la app estable, «Aethelgard v0.1.0 - Android», que sigue en el
+    repositorio principal. El `README.md` la enlaza, pero su APK no se copia al repositorio de pruebas.
 - **Primera subida:** `exp-20261108-aabe5ad` ([T-079](TASKS.md#t-079)).
 - **Enlace estable a la última:** `https://github.com/Brunopina6/Aethelgard-pruebas/releases/latest`.
 - **Alternativas descartadas:**

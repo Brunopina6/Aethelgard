@@ -1,7 +1,7 @@
 # SESSION_HANDOFF: punto de control
 
-**Último punto de control:** 2026-11-08 a las 14:50 (hora local, UTC+1), tras subir la APK de prueba al repositorio
-privado para el móvil.
+**Último punto de control:** 2026-11-08 a las 15:00 (hora local, UTC+1), tras ordenar por fecha y versión las
+pruebas del repositorio privado para el móvil.
 
 ## Dónde está todo
 
@@ -91,10 +91,16 @@ privado para el móvil.
 - **Petición del usuario,** que está fuera de casa: un sitio en GitHub para descargar las pruebas en el móvil
   ([D-054](DECISIONS.md#d-054) y [T-079](TASKS.md#t-079)).
 - **Repositorio:** `https://github.com/Brunopina6/Aethelgard-pruebas`, privado y sin colaboradores.
-- **Versión `exp-20261108-aabe5ad`:**
+- **Release «08/11/2026 · Prueba v39»** (etiqueta `exp-20261108-aabe5ad`):
   - APK compilada a las 14:44 desde `rebelum-alpha` @ `aabe5ad`, con versionCode 39 y el mismo certificado: se
     instala encima de la anterior;
+  - el archivo se llama `Aethelgard_Exp_2026-11-08_v39.apk`;
   - SHA-256 `06bf212add337a3afda056bd7a79f3d354e84eb2698940e92ee66bee3cdd3b6c`, que coincide con el `digest` de GitHub.
+- **Orden por fecha y versión** (pedido por el usuario a las 14:55): la convención está en [CLAUDE.md](CLAUDE.md) §4 y
+  en [D-054](DECISIONS.md#d-054).
+  - El `README.md` del repositorio (commit `d82abaa`) lista las pruebas de la más nueva a la más antigua.
+  - También enlaza la original, `v0.1.0`, que sigue en el repositorio principal.
+- **Suno:** el usuario dijo «la música de suno no son libres». Una APK con esa música no se sube.
 - **Lo instala el usuario.** No se ha tocado el móvil.
 
 ## Próximo paso concreto
