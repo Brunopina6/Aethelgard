@@ -16,6 +16,7 @@ prueba_cofre3d    | auto     | 3d sin_prologo       | 240 | user://     | cofre 
 prueba_mirador    | auto     | 3d sin_prologo       | 240 | user://     | cinemática del mirador (PV-07): primera vez, sin control, vuelta de cámara y control, visita posterior y saltarla
 prueba_centinela  | auto     | 3d sin_prologo auto  | 300 | user://     | final de la misión con el combate del centinela jugado de verdad (ataques automáticos), recompensa, guardado, Tilo, salir, volver y cargar
 prueba_ranura_prueba | auto  | 3d sin_prologo       | 120 | user://     | opción de desarrollo «Probar la misión desde el principio»: ranura propia, desde cero con Kael solo y la partida de siempre intacta
+prueba_boton_prologo | auto  | 3d                   | 240 | user://     | botón de desarrollo «Probar el prólogo (partida nueva)» de la carga (T-081): dos botones sin taparse; ↓ elige el de la misión, ← y → cambian, ↑ suelta; Intro en el del prólogo: partida nueva en la ranura de prueba, en el mapa con el prólogo; la de siempre intacta (teclas simuladas)
 prueba_grupos_combate | auto | 3d sin_prologo auto  | 600 | user://     | grupo activo de 1, 2 y 3: combates (ganar, huir y perder), ausentes que no actúan ni cambian, guardar/cargar, partidas de antes y menú
 prueba_huir       | auto     |                      | 150 | user://     | huir de un combate
 prueba_garon      | auto     | grupo=1 auto         | 240 | user://     | combate con Garon (ejemplo de pruebas/LEEME.md)

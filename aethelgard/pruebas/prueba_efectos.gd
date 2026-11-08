@@ -228,7 +228,9 @@ func _api() -> void:
 		_fallo("3: hay %d voces sonando en Efectos (máximo %d)" % [Son.sonando("Efectos"), Son.VOCES["Efectos"]])
 	Son.cortar("puente_baja", 0.0)                       # deja un hueco
 	var g = Son.efecto("golpe")
-	if g == null or g.volume_db > -6.0 - Son.ATENUAR_DB + 1.0:
+	# su volumen del catálogo, menos lo que baja la prioridad, más la variación al azar de cada vez (±0,7 dB, sonido.gd):
+	# antes se comparaba con −6 dB fijos y el golpe está a −5, así que fallaba más o menos la mitad de las veces
+	if g == null or g.volume_db > Son.EFECTOS["golpe"]["db"] - Son.ATENUAR_DB + 0.75:
 		_fallo("3: mientras suena la victoria, un golpe no va más bajo (%s dB)" % (str(g.volume_db) if g else "no suena"))
 	hechos.append("voces y prioridades")
 
