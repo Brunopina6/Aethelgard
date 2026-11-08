@@ -10,6 +10,7 @@
 prueba_escenas    | auto     | sin_prologo          | 150 | user://     | mapa → zona → mapa con Recursos.cambiar_escena (sin prólogo: con él abierto, el mapa no deja entrar)
 prueba_zona3d     | auto     | 3d sin_prologo       | 240 | user://     | región 3D de Pastos Verdes: entrada, encuentro → combate → vuelta, salida al mapa y guardado (con la exploración 3D activa)
 prueba_ruta_alpha | auto     | 3d sin_prologo       | 300 | user://     | misión del corte alfa en Pastos Verdes 3D: PV-02 → PV-14 con Tilo, la estela y el combate fijo del centinela
+prueba_grupo3d    | auto     | 3d sin_prologo       | 240 | user://     | Lya y Garon siguen a Kael en Pastos Verdes 3D: camino, puente, media vuelta, reaparecer tras un combate y sin grupo
 prueba_huir       | auto     |                      | 150 | user://     | huir de un combate
 prueba_garon      | auto     | grupo=1 auto         | 240 | user://     | combate con Garon (ejemplo de pruebas/LEEME.md)
 prueba_dpad       | auto     | escena=zona dpad     | 150 | user://     | cruceta táctil
@@ -28,6 +29,7 @@ prueba_andar      | auto     |                      | 150 | user://     | andar 
 prueba_guardado   | auto     |                      | 150 | user://     | guardar y cargar. Escribe en user://partida.save: solo es segura AISLADA, y el ejecutor no la lanza sin la sonda
 prueba_sendero    | ventana  | {salida}             | 240 | {salida}    | capturas del sendero 3D del prototipo
 prueba_vista3d    | ventana  | {salida}             | 240 | {salida}    | capturas de la cámara 3D del prototipo
+prueba_grupo3d_fotos | ventana | {salida} 3d sin_prologo | 300 | {salida} | capturas de Lya y Garon siguiendo a Kael en Pastos Verdes 3D (perfiles bajo y alto)
 prueba_isla       | ventana  | {salida} sin_prologo | 240 | {salida}    | capturas de la ciudad flotante
 prueba_garganta   | ventana  | {salida}             | 300 | {salida}    | capturas de los combates fijos de la Garganta
 prueba_gorthor    | ventana  | {salida} grupo=5     | 240 | {salida}    | capturas del jefe de la Garganta

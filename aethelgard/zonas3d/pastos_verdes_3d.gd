@@ -12,7 +12,9 @@ extends "res://prototipos/sendero_puente.gd"
 # junto al puente (PV-05 y su recordatorio), la estela del camino (detalle de lore), el centinela del mirador
 # (PV-06 y combate fijo «pastos_centinela»), PV-07 tras ganarlo y la mecha de Tilo (PV-14). Los hitos se guardan en
 # la partida (progreso.gd, «hitos»).
-# Pendiente (TASKS.md, T-022): Lya y Garon siguiendo a Kael, el cofre y la cinemática del mirador.
+# El grupo: Lya y Garon siguen a Kael (zonas3d/grupo_3d.gd) si están en el grupo de la partida (grupo.gd). Con
+# «grupo»: false en el perfil de calidad no salen (lo usa el banco GRUPO para medir lo que cuestan).
+# Pendiente (TASKS.md, T-022): el cofre y la cinemática del mirador.
 
 const INDICE := 10                       # lugar del mapa (modo3d.PASTOS_VERDES y mapa.gd, LUGAR_PASTOS)
 const ZONA := "llanura"                  # para progreso.gd (zona limpia, incienso) y el fondo del combate
@@ -24,6 +26,12 @@ const ARMAR_SALIDA := 2.5                # una salida solo funciona después de 
 # Bancos del prototipo que no sirven en la región (experimentos de árboles y del perfil medio). PRUEBA y TOPE se
 # quedan: miden la región en el móvil igual que se midió el prototipo.
 const BOTONES_BANCO := ["DIAG", "ARB"]
+# Botón «GRUPO»: lo que cuestan Lya y Garon en cada perfil, sin tope de FPS (sin grupo y con grupo, a 20 m), y el
+# perfil bajo con el grupo y su tope de 30 FPS, como se jugará.
+const BANCO_GRUPO := [["bajo", 20.0, false, {"grupo": false}, "bajo sin grupo"], ["bajo", 20.0, false, {}, "bajo con grupo"],
+	["medio", 20.0, false, {"grupo": false}, "medio sin grupo"], ["medio", 20.0, false, {}, "medio con grupo"],
+	["alto", 20.0, false, {"grupo": false}, "alto sin grupo"], ["alto", 20.0, false, {}, "alto con grupo"],
+	["bajo", 20.0, false, {}, "bajo con grupo", true]]
 
 # misión
 const ESPERA_PV02 := 2.5                 # segundos tras entrar (deja ver el título de la zona)
@@ -43,6 +51,7 @@ var aviso: Label
 var boton_accion: Button
 var tilo: Node3D
 var estela: Node3D
+var grupo: Node3D                        # zonas3d/grupo_3d.gd (null si no sale nadie)
 var cerca := ""                          # "tilo", "estela" o ""
 var dialogo_actual := ""
 var _recorrido := 0.0                    # metros andados desde el último paso
@@ -61,6 +70,7 @@ func _ready() -> void:
 	var vuelve: bool = Engine.get_meta("pos_3d_ok", false) and Engine.get_meta("pos_3d_lugar", -1) == INDICE
 	if vuelve and not en_banco():
 		_colocar_kael(Engine.get_meta("pos_3d"))       # vuelve del combate o de una partida guardada aquí
+	_crear_grupo()
 	_ultima = kael.global_position
 	for s in salidas:
 		s["armada"] = _dist_plana(kael.global_position, s["pos"]) > ARMAR_SALIDA
@@ -99,6 +109,13 @@ func _crear_panel_rnd(capa: CanvasLayer) -> void:
 	for n in capa.get_children():
 		if n is Button and n.text in BOTONES_BANCO:
 			n.queue_free()
+	var bg := Button.new()                   # en el sitio que deja DIAG
+	bg.text = "GRUPO"
+	bg.position = Vector2(1160, 140)
+	bg.custom_minimum_size = Vector2(108, 56)
+	bg.focus_mode = Control.FOCUS_NONE
+	bg.pressed.connect(func(): _empezar_banco(BANCO_GRUPO))
+	capa.add_child(bg)
 
 
 # Al cambiar de perfil se recarga la escena: antes se apunta dónde está Kael para no volver al principio.
@@ -329,6 +346,41 @@ func _sitio_junto_al_camino(c: Vector3) -> Vector3:
 func _crear_personajes() -> void:
 	tilo = _crear_tilo(_sitio_junto_al_camino(Vector3(2.8, 0, -4.2)))
 	estela = _crear_estela(_sitio_junto_al_camino(Vector3(-6.5, 0, 6.0)))
+
+
+# Lya y Garon, si están en el grupo de la partida, detrás de Kael mirando camino adelante.
+func _crear_grupo() -> void:
+	if not perfil.get("grupo", true):
+		return
+	var G = load("res://grupo.gd")
+	var en_grupo: Array = G.miembros()
+	var nombres: Array = []
+	for n in G.EN_EL_GRUPO:
+		if n != "Kael" and n in en_grupo:
+			nombres.append(n)
+	if nombres.is_empty():
+		return
+	grupo = load("res://zonas3d/grupo_3d.gd").new()
+	grupo.name = "Grupo"
+	add_child(grupo)
+	grupo.preparar(self, kael, nombres)
+	grupo.colocar(_atras_en_camino(kael.global_position))
+
+
+# Hacia dónde queda «atrás» en el camino desde «p»: hacia el principio del tramo de SENDERO más cercano.
+func _atras_en_camino(p: Vector3) -> Vector3:
+	var mejor := INF
+	var atras: Vector3 = (SENDERO[0] - SENDERO[1]).normalized()
+	for i in SENDERO.size() - 1:
+		var a: Vector3 = SENDERO[i]
+		var b: Vector3 = SENDERO[i + 1]
+		var ab := Vector2(b.x - a.x, b.z - a.z)
+		var t := clampf(Vector2(p.x - a.x, p.z - a.z).dot(ab) / ab.length_squared(), 0.0, 1.0)
+		var dist := (Vector2(a.x, a.z) + ab * t).distance_to(Vector2(p.x, p.z))
+		if dist < mejor:
+			mejor = dist
+			atras = Vector3(-ab.x, 0.0, -ab.y).normalized()
+	return atras
 
 
 func _mat_simple(c: Color, brillo := false) -> StandardMaterial3D:
