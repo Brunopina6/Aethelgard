@@ -2,8 +2,8 @@
 
 **Verificado el 2026-11-07** sobre `desarollo` @ `2d1adc4`. El código del juego es idéntico en `rebelum-3d` @ `ce84422`.
 La rama `rebelum-alpha` @ `03b960a` añade la región 3D de Pastos Verdes (ver §5). El 08/11 se añadió el repositorio
-privado de APK de prueba (§9). Las novedades de `rebelum-alpha` hasta `edf52cd` (08/11, 20:00; entrada por teclado y
-mando, T-025) están en §3 a §6 y §10.
+privado de APK de prueba (§9). Las novedades de `rebelum-alpha` hasta `2776729` (08/11, 20:20; entrada por teclado y
+mando, T-025, y la base del audio, T-030) están en §3 a §6 y §10.
 
 Cómo leer las etiquetas:
 - **[código]**: observado en el código.
@@ -81,7 +81,10 @@ La etiqueta local `recuperacion-antes-fase2.0` apunta a `2d1adc4`.
 6. **`isla.tscn`**: la Arboleda Mítica, la ciudad flotante.
 7. **`combate.tscn`** (`combate.gd`): al terminar guarda y vuelve a `escena_retorno` (`combate.gd:3758-3764`).
 8. **Autoloads:** `Dialogic`, `BotonDialogo` (`boton_dialogo.gd`) y `Recursos` (`recursos.gd`). En `rebelum-alpha`,
-   también `Entrada` (`entrada.gd`).
+   también `Entrada` (`entrada.gd`) y `Sonido` (`sonido.gd`).
+   - **Sonido en `rebelum-alpha`** (T-030, [D-064](DECISIONS.md#d-064)): buses Musica, Efectos, Interfaz y Ambiente
+     (`default_bus_layout.tres`); volúmenes guardados en `user://ajustes.cfg`, aparte de la partida; pestaña
+     «Ajustes» del menú del grupo (`menus.gd`). Cada `AudioStreamPlayer` elige su bus (lo vigila `prueba_audio`).
 9. **Entrada en `rebelum-alpha`** (T-025, [D-063](DECISIONS.md#d-063)):
    - acciones `ui_accept`, `ui_cancel`, `menu_juego`, `pestana_anterior`, `pestana_siguiente`, `camara_acercar` y
      `camara_alejar` (`project.godot`), más las `ui_*` de dirección de Godot;

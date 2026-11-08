@@ -1,7 +1,7 @@
 # DECISIONS: decisiones de AETHELGARD / REBELUM
 
-**Actualizado el 2026-11-08 a las 20:05** sobre la copia del usuario (`rebelum-3d` @ `ce84422`) y el árbol del
-encargo (`rebelum-alpha` @ `edf52cd`). Las horas son locales (UTC+1).
+**Actualizado el 2026-11-08 a las 20:20** sobre la copia del usuario (`rebelum-3d` @ `ce84422`) y el árbol del
+encargo (`rebelum-alpha` @ `2776729`). Las horas son locales (UTC+1).
 
 **Estados**
 - **Aprobada:** la tomó o la aprobó el usuario.
@@ -75,6 +75,7 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 | [D-061](#d-061) | Sin tirones al abrir diálogos ni al ver algo por primera vez: se prepara en las cargas | Aprobada en el encargo |
 | [D-062](#d-062) | Nivelación automática de quien se une al grupo | Propuesta (pendiente del usuario) |
 | [D-063](#d-063) | Teclado y mando: acciones, foco visible y una pulsación, una acción (T-025) | Aprobada en el encargo |
+| [D-064](#d-064) | Base del audio: buses, volúmenes guardados y pestaña «Ajustes» (T-030) | Aprobada en el encargo |
 | [D-H01 a D-H15](#6-diseño-ya-implementado-del-3010-al-0511) | Diseño ya implementado antes de Git | Aprobada (historial) |
 
 ## 1. Reglas de trabajo, Git y versiones
@@ -1019,6 +1020,36 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
   `prueba_precalentado`. Las pruebas táctiles anteriores siguen en verde. Batería `2026-11-08_195103`: 32 superadas y
   0 fallidas. Las capturas del foco, revisadas a ojo.
 - **Sin comprobar con hardware:** el Redmi (táctil), un mando real y un teclado real.
+
+### D-064
+**Base del audio: buses, volúmenes guardados y pestaña «Ajustes» (T-030)**
+- **Fecha y estado:** 2026-11-08 por la noche. Aprobada en el encargo [asistente]: es el paso siguiente por
+  dependencias (estabilidad, controles, **audio** e integración), dentro de la orden «continúa después con el siguiente
+  trabajo autorizado que puedas realizar localmente». Hace la parte técnica de [D-043](#d-043); el reparto de las
+  pistas sigue sin decidir y las canciones de Suno no están en el proyecto.
+- **Decisión** (rama `rebelum-alpha`):
+  - **Buses** (`default_bus_layout.tres`): Musica, Efectos, Interfaz y Ambiente, todos hacia Master y a 0 dB. Con
+    todo al 100 %, todo suena igual que antes.
+  - **Cada sonido, a su bus:**
+    - Musica: la música del combate y las campanas de la cinemática del mirador (son una melodía);
+    - Efectos: Érebo y el cofre;
+    - Interfaz: los tonos de la carga y del menú del combate, y el sonido al escribir de Dialogic
+      (`dialogic/audio/type_sound_bus`);
+    - Ambiente: lista para los sonidos de ambiente, que aún no hay. Por eso no sale en los ajustes.
+  - **Volúmenes** (autoload `Sonido`, `sonido.gd`): de 0 a 100 % por bus; 0 silencia.
+    - Se guardan en `user://ajustes.cfg`, aparte de la partida, y solo cuando el jugador los cambia: abrir el juego no
+      escribe nada.
+    - Un valor que no es un número deja ese bus al 100 %.
+  - **Pestaña «Ajustes»** del menú del grupo: Música, Efectos e Interfaz con ◀ ▶ (un 10 % cada pulsación), la cifra y
+    una barra dorada, como las filas del equipo. Con teclado o mando, el foco se queda en el mismo botón.
+  - **Al cambiar un volumen suena una muestra corta** por ese bus, hecha por código a 11 025 Hz: dos notas de campana,
+    un destello o un «tic». Primero probé con la campana del mirador y el cofre, pero la primera pulsación tardaba unos
+    180 ms en el PC (un parón en el móvil). Con las muestras ligeras, unos 18 ms con 6 fotogramas incluidos.
+- **Lo que no se hace aún:** el gestor de música con fundidos, los sonidos de ambiente, el inventario de cada sonido
+  (criterio de T-030) y la escucha.
+- **Comprobado** (aislado, sin ventana; prueba **muda**: adónde va cada sonido y con qué volumen, no cómo suena):
+  `prueba_audio`. Captura de la pestaña revisada a ojo (`prueba_foco_fotos`, captura 8).
+- **Sin comprobar:** cómo suena (en el PC y en el Redmi) y si el 50 % se oye como «la mitad».
 
 ## 6. Diseño ya implementado del 30/10 al 05/11
 

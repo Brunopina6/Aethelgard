@@ -1,12 +1,14 @@
 # SESSION_HANDOFF: punto de control
 
-**Último punto de control:** 2026-11-08 a las 20:05 (hora local, UTC+1).
+**Último punto de control:** 2026-11-08 a las 20:20 (hora local, UTC+1).
 - **Hecho y comprobado en el PC:**
   - quien se une al grupo conserva sus datos: la nivelación al unirse la había puesto yo y queda como propuesta
     ([D-062](DECISIONS.md#d-062), [T-080](TASKS.md#t-080));
   - **T-025:** teclado y mando sin ratón, foco visible, una pulsación una acción y el mando desconectado deja seguir
     ([D-063](DECISIONS.md#d-063)). Comprobado con eventos **simulados**: aquí no hay mando.
-- **Subida:** la Prueba v52, para la prueba táctil en el Redmi.
+  - **T-030, la base del audio:** buses, volúmenes guardados aparte de la partida y la pestaña «Ajustes» del menú del
+    grupo ([D-064](DECISIONS.md#d-064)). Comprobado con una prueba **muda**: falta escucharlo.
+- **Subida:** la Prueba v54 (la v52 más los ajustes de sonido), para la prueba en el Redmi.
 - **Relevo anterior** (del 07/11 por la tarde hasta las 16:40 del 08/11, con las tablas del Redmi): en
   [docs/memory/archive/2026-11-08_relevo_anterior.md](docs/memory/archive/2026-11-08_relevo_anterior.md).
 
@@ -16,12 +18,12 @@
 |---|---|
 | Raíz del repositorio | `D:\Aethelgard`; el proyecto de Godot está en `D:\Aethelgard\aethelgard\` |
 | Copia del usuario | Rama `rebelum-3d` @ `ce84422`, local. Aquí se editan los documentos de memoria |
-| Árbol del encargo | `D:\Aethelgard_alpha`, rama `rebelum-alpha` @ `edf52cd`, local y nunca subida |
+| Árbol del encargo | `D:\Aethelgard_alpha`, rama `rebelum-alpha` @ `2776729`, local y nunca subida |
 | Copia de la memoria | `D:\Aethelgard_memoria`, rama `memoria-desarrollo`. Las publicaciones se ven con `git log origin/memoria-desarrollo` |
 | GitHub (`Brunopina6/Aethelgard`) | `main` @ `d4b2d16`, `desarollo` @ `2d1adc4`, `v0.1.0` y `memoria-desarrollo` (solo memoria) |
-| APK de prueba para el móvil | `Brunopina6/Aethelgard-pruebas`, privado: v52 («Latest»), v50, v47, v44, v41, v39 y la original ([D-054](DECISIONS.md#d-054)) |
-| Capturas del foco | `D:\REBELUM_diagnostico\pruebas\2026-11-08_195003\prueba_foco_fotos\` (`lamina_foco.png` y las 7 sueltas) |
-| Procesos en marcha | Ninguno a las 20:05. Compruébalo antes de lanzar Godot: dos Godot sobre el mismo proyecto se pisan |
+| APK de prueba para el móvil | `Brunopina6/Aethelgard-pruebas`, privado: v54 («Latest»), v52, v50, v47, v44, v41, v39 y la original ([D-054](DECISIONS.md#d-054)) |
+| Capturas del foco | `D:\REBELUM_diagnostico\pruebas\2026-11-08_195003\prueba_foco_fotos\` (`lamina_foco.png` y 7 sueltas); con la pestaña «Ajustes» (captura 8), `…\2026-11-08_201002\prueba_foco_fotos\` |
+| Procesos en marcha | Ninguno a las 20:20. Compruébalo antes de lanzar Godot: dos Godot sobre el mismo proyecto se pisan |
 
 ## Encargo en curso
 
@@ -38,6 +40,8 @@
 | Sin tirones de diálogos ni de la primera vez | `e630b02` | Batería `2026-11-08_184433`: 28 superadas y 0 fallidas | Hecho en el PC ([D-061](DECISIONS.md#d-061)) |
 | Quien se une conserva sus datos; T-025 (teclado, mando y foco) | `e6e52c4` | Batería `2026-11-08_195103`: **32 superadas, 0 fallidas**, 17 manuales y 0 no seguras; capturas del foco revisadas | Hecho en el PC, simulado ([D-063](DECISIONS.md#d-063)) |
 | Prueba v52 en GitHub | `edf52cd` (los `.uid`) | `digest` igual, cabecera `50 4b 03 04`, repositorio privado | Subida ([T-079](TASKS.md#t-079)) |
+| Base del audio: buses, volúmenes guardados y pestaña «Ajustes» | `e44fb9e` | Batería `2026-11-08_201034`: 33 superadas y 0 fallidas; `prueba_audio` (muda); captura revisada | Hecho en el PC, sin escuchar ([D-064](DECISIONS.md#d-064)) |
+| Prueba v54 en GitHub (la v52 más los ajustes de sonido) | `2776729` (los `.uid`) | `digest` igual, cabecera `50 4b 03 04`, repositorio privado | Subida ([T-079](TASKS.md#t-079)) |
 
 ## Hecho en este hito, además
 
@@ -56,7 +60,7 @@
 
 ## Límites de lo comprobado
 
-- **Nada probado en el Redmi:** ni la v41, ni la v44, ni la v47, ni la v50, ni la v52. Falta el banco GRUPO.
+- **Nada probado en el Redmi:** ni la v41, ni la v44, ni la v47, ni la v50, ni la v52, ni la v54. Falta el banco GRUPO.
 - **T-025, sin hardware:** ningún mando real ni teclado real; el táctil, solo con las pruebas simuladas
   (`prueba_toque`, `prueba_dpad`, las de la región y la captura con el dedo). Lista de pruebas manuales abiertas en
   [T-025](TASKS.md#t-025).
@@ -68,23 +72,25 @@
 
 ## Próximo paso concreto (por dependencias)
 
-1. **Audio (T-030), la base técnica:** buses Música, Efectos, Interfaz y Ambiente; volúmenes guardados como
-   preferencias; una ventana de ajustes mínima navegable con el foco (cubre también los «ajustes» que faltan en
-   T-025). Sin canciones de Suno; el reparto de pistas de D-043 sigue sin decidir.
+1. **Audio (T-030), lo siguiente:** el gestor de música con fundidos (el combate ya baja su música a mano) y el
+   inventario de cada sonido (original, evento, licencia y evidencia), que pide el criterio de T-030. Sin canciones
+   de Suno; el reparto de pistas de D-043 sigue sin decidir y se decide escuchando.
 2. **Después:** integración, y solo entonces las magias, estados y habilidades nuevas (T-040). Las magias existentes
    no cambian.
-3. **Del perfil bajo (T-023), cuando haya Redmi:** medir las cargas y los tirones con la v52, y después la sombra
+3. **Del perfil bajo (T-023), cuando haya Redmi:** medir las cargas y los tirones con la v54, y después la sombra
    precalculada.
 
 ## Pendiente del usuario
 
-- **Probar la v52 en el móvil** (sustituye a la v50), con el dedo:
+- **Probar la v54 en el móvil** (la v52 más los ajustes de sonido; sustituye a la v50), con el dedo:
   - que todo funcione como antes: andar, la barra, «Entrar», la acción, los diálogos con «SEGUIR», el combate, los
     menús, la tienda y el diario;
   - que no salga ningún marco dorado al tocar ni se quede marcado un botón;
   - que Lya, al unirse con su propio nivel, deje ganar los combates siguientes;
   - y lo pendiente de la v50: Kael solo hasta Lya, diálogos y paseos sin parones, cargas, el cofre y la cinemática.
 - **Opcional:** un mando o un teclado Bluetooth en el móvil o en el PC.
+- **Escuchar los volúmenes en la v54** (menú del grupo → «Ajustes»): que cada barra se note, que «Sin sonido» calle,
+  que se conserven al cerrar y abrir la app, y que al 100 % todo suene como antes.
 - **Decidir** la nivelación al unirse ([D-062](DECISIONS.md#d-062)).
 - **Ver** la lámina del foco.
 - Licencias ([T-070](TASKS.md#t-070)): qué sustituye a la música de Suno en una APK entregable; los créditos de

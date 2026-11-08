@@ -1,6 +1,6 @@
 # MEMORIA_CHAT: lo aprendido en las conversaciones sobre AETHELGARD / REBELUM
 
-> **Actualizado el 2026-11-08 a las 20:05** (hora local, UTC+1), en la rama `rebelum-3d` @ `ce84422`. Se publica en la
+> **Actualizado el 2026-11-08 a las 20:20** (hora local, UTC+1), en la rama `rebelum-3d` @ `ce84422`. Se publica en la
 > rama `memoria-desarrollo` de GitHub.
 >
 > Es un **resumen**, no una transcripción. El chat legible está en
@@ -97,6 +97,9 @@
       ([D-011](DECISIONS.md#d-011)). El ejecutor ahora apunta los Godot ajenos y ya no cierra ninguno que no sea suyo;
     - `prueba_grupos_combate` fallaba al azar porque el Slime cobarde del grupo 7 puede huir y entonces se gana sin
       experiencia, como manda el juego. La prueba ahora exige la cantidad exacta.
+  - **Después, el siguiente paso autorizado:** la base del audio (T-030, [D-064](DECISIONS.md#d-064)): buses,
+    volúmenes guardados y la pestaña «Ajustes» (`e44fb9e`), y la «Prueba v54» con ellos. Sin escuchar todavía: la
+    prueba es muda.
 - **Siguiente:** el encargo único por dependencias; del perfil bajo, la medición en el Redmi y la sombra precalculada
   ([SESSION_HANDOFF.md](SESSION_HANDOFF.md)).
 - **Vigente:**
