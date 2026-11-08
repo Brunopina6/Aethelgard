@@ -2,8 +2,8 @@ extends Node
 # Sonido (autoload): buses y volúmenes del jugador (T-030, D-064).
 # - Los buses están en default_bus_layout.tres: Musica, Efectos, Interfaz y Ambiente, todos hacia Master. Cada
 #   reproductor elige el suyo: la música del combate y las campanas de la cinemática del mirador, Musica; Érebo y el
-#   cofre, Efectos; los tonos de los menús y el sonido al escribir de los diálogos, Interfaz. Ambiente queda lista
-#   para los sonidos de ambiente, que aún no hay.
+#   cofre, Efectos; los tonos de los menús y el sonido al escribir de los diálogos, Interfaz; los ambientes de cada
+#   lugar (musica.gd), Ambiente.
 # - El volumen de cada bus (de 0 a 100 %) se guarda en user://ajustes.cfg, aparte de la partida, y solo cuando el
 #   jugador lo cambia: abrir el juego no escribe nada.
 # - Con todo al 100 %, todo suena igual que antes de los buses (0 dB en cada uno).
@@ -11,10 +11,10 @@ extends Node
 
 const ARCHIVO := "user://ajustes.cfg"
 const BUSES := ["Musica", "Efectos", "Interfaz", "Ambiente"]
-const VISIBLES := ["Musica", "Efectos", "Interfaz"]       # Ambiente saldrá cuando haya algo que suene ahí
+const VISIBLES := ["Musica", "Efectos", "Interfaz", "Ambiente"]
 const NOMBRES := {"Musica": "Música", "Efectos": "Efectos", "Interfaz": "Interfaz", "Ambiente": "Ambiente"}
 const AYUDA := {"Musica": "combates y cinemáticas", "Efectos": "magia, invocaciones y cofres",
-	"Interfaz": "botones, menús y diálogos", "Ambiente": "el sonido de los lugares"}
+	"Interfaz": "botones, menús y diálogos", "Ambiente": "pájaros, viento y lugares"}
 const PASO := 10                                           # lo que sube o baja cada pulsación, en %
 const HZ := 11025                                          # las muestras de los ajustes: cortas y ligeras
 
@@ -74,7 +74,8 @@ func _guardar() -> void:
 
 
 # Una muestra corta por ese bus, para oír el volumen nuevo al cambiarlo en los ajustes: dos notas de campana
-# (música), un destello de tres notas (efectos) o un «tic» (interfaz). Cada pulsación vuelve a empezar la muestra: no
+# (música), un destello de tres notas (efectos), un «tic» (interfaz) o una brisa (ambiente). Cada pulsación vuelve a
+# empezar la muestra: no
 # se amontonan. Son sonidos hechos por código, cortos y a 11 025 Hz, para que la primera pulsación no dé un parón
 # (la campana del mirador, de 2,5 s, tardaba unos 180 ms en el PC la primera vez).
 func probar(bus: String) -> void:
@@ -123,6 +124,15 @@ static func _muestra(bus: String) -> PackedFloat32Array:
 			for i in m.size():
 				var t := float(i) / HZ
 				m[i] = (sin(TAU * 2600.0 * t) + 0.5 * sin(TAU * 3900.0 * t)) * exp(-t * 85.0) * 0.22
+		"Ambiente":                                        # una brisa: ruido suave que sube y baja
+			var rng := RandomNumberGenerator.new()
+			rng.seed = 11
+			var suave := 0.0
+			m.resize(int(HZ * 0.9))
+			for i in m.size():
+				var t := float(i) / m.size()
+				suave += (rng.randf_range(-1.0, 1.0) - suave) * 0.08     # filtro paso bajo de un polo
+				m[i] = suave * sin(t * PI) * 0.55
 	return m
 
 

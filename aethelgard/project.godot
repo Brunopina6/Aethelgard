@@ -24,6 +24,7 @@ BotonDialogo="*res://boton_dialogo.gd"
 Recursos="*res://recursos.gd"
 Entrada="*res://entrada.gd"
 Sonido="*res://sonido.gd"
+Musica="*res://musica.gd"
 
 [dialogic]
 

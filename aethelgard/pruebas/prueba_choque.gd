@@ -14,6 +14,9 @@ var minimo := 9999.0
 
 
 func _initialize() -> void:
+	# Sin encuentros al azar (el Incienso de Ceniza: probabilidad 0). Kael anda bastante en esta prueba y, sin esto, a
+	# veces salía un combate que se quedaba cargando al terminar («Parse Error» de combate.tscn, 08/11).
+	Engine.set_meta("incienso", 1000000)
 	zona = load("res://zona.tscn").instantiate()
 	root.add_child(zona)
 
