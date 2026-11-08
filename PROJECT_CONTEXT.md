@@ -184,7 +184,15 @@ objetos.
     - `zonas3d/grupo_3d.gd`, con los scripts del combate (`maga_3d.gd` y `garon_3d.gd`);
     - el botón GRUPO mide lo que cuestan;
     - las pruebas son `pruebas/prueba_grupo3d.gd` y `pruebas/prueba_grupo3d_fotos.gd`.
-  - Faltan el cofre y la cinemática del mirador (T-022).
+  - Desde el 2026-11-08 (`d4db508`), también tiene:
+    - el cofre del árbol mágico ([D-057](DECISIONS.md#d-057)), que se guarda en `cofres_abiertos`;
+    - la cinemática del mirador, PV-07 ([D-058](DECISIONS.md#d-058)), que se puede saltar.
+    - Las pruebas son `prueba_cofre3d.gd`, `prueba_mirador.gd` y `prueba_region3d_fotos.gd`.
+  - **Guardado** (`progreso.gd`, `86a58af`, [D-056](DECISIONS.md#d-056)):
+    - no guarda encima de una partida que la sesión no cargó;
+    - escribe en `.tmp`, lo comprueba y deja la anterior en `.bak`;
+    - recupera una partida dañada.
+  - Falta una prueba con el combate real del centinela (T-022).
 
 ## 6. Diálogos y narrativa
 

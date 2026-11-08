@@ -1,6 +1,6 @@
 # MEMORIA_CHAT: lo aprendido en las conversaciones sobre AETHELGARD / REBELUM
 
-> **Actualizado el 2026-11-08 a las 16:40** (hora local, UTC+1), en la rama `rebelum-3d` @ `ce84422`. Se publica en la
+> **Actualizado el 2026-11-08 a las 17:20** (hora local, UTC+1), en la rama `rebelum-3d` @ `ce84422`. Se publica en la
 > rama `memoria-desarrollo` de GitHub.
 >
 > Es un **resumen**, no una transcripción. El chat legible está en
@@ -54,8 +54,15 @@
   - Pruebas en verde.
   - Cuestan +0,4 ms en el PC.
   - Subido como «08/11/2026 · Prueba v41».
-- **Siguiente:** el cofre y la cinemática del mirador (T-022). Antes conviene la opinión visual del usuario sobre el
-  grupo.
+- **Encargo del 08/11, hacia las 16:55** (pegado): «Continúa el desarrollo de AETHELGARD desde la Prueba v41…».
+  - **Orden:** cerrar la región de Pastos Verdes (antes, el guardado; después, el cofre y la cinemática) y mejorar la
+    exploración.
+  - **Método:** medir antes de optimizar; verificar por hitos con evidencia; distinguir compilación, recorrido,
+    revisión visual, escucha y rendimiento.
+  - **Hecho ya:** el guardado protegido (T-076 y T-077, `86a58af`), el cofre y la cinemática del mirador (`d4db508`), y
+    la «Prueba v44».
+- **Siguiente:** recorrido y grupo en pantalla pequeña, combate real del centinela y medición en el PC con y sin grupo
+  ([SESSION_HANDOFF.md](SESSION_HANDOFF.md)).
 - **Vigente:**
   - el Redmi está reservado;
   - la partida del PC se conserva tal cual;
@@ -230,6 +237,7 @@ Las normas vigentes están en [CLAUDE.md](CLAUDE.md) y su historia, en [DECISION
 | «Haz una cosa cra en GitHub un lugar donde subir las pruebas y súbela allí…» | 08/11, hacia las 14:40 | **Vigente:** repositorio privado `Aethelgard-pruebas` ([D-054](DECISIONS.md#d-054)) |
 | «a partir de ahora ordena las relese de pruebas por fecha y versión…» | 08/11, hacia las 14:55 | **Vigente:** convención de [D-054](DECISIONS.md#d-054); ninguna prueba se borra |
 | «Sí, cópiala» (la APK original al repositorio de pruebas) | 08/11, hacia las 15:50 | Hecho: «05/11/2026 · Original v0.1.0» ([T-079](TASKS.md#t-079)) |
+| «Continúa el desarrollo de AETHELGARD desde la Prueba v41…» (encargo pegado: región, exploración, guardado, medir, hitos y memoria) | 08/11, hacia las 16:55 | **Vigente**: trabajo autónomo dentro del encargo único; push solo de la memoria y de las APK de prueba |
 
 **Restricciones del usuario, con sus palabras**
 - «La autorización de push se limita a la documentación de memoria» (07/11, 16:30).

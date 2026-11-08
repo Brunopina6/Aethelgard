@@ -1,8 +1,8 @@
 # TASKS: tareas de AETHELGARD / REBELUM
 
-**Actualizado el 2026-11-08 a las 16:40 (hora local, UTC+1).**
+**Actualizado el 2026-11-08 a las 17:20 (hora local, UTC+1).**
 - Copia del usuario: `rebelum-3d` @ `ce84422`.
-- Árbol del encargo: `rebelum-alpha` @ `3976565`.
+- Árbol del encargo: `rebelum-alpha` @ `21d2e21`.
 
 **Estados**
 - **Pendiente:** sin empezar.
@@ -29,7 +29,7 @@
 | [T-012](#t-012) | APK «Prueba 3D» de Pastos Verdes | Terminada (compilada) | — |
 | [T-020](#t-020) | Encargo, Fase 0: línea base, respaldo y diagnóstico | Terminada | — |
 | [T-021](#t-021) | Pastos Verdes 3D desde el mapa (encargo 2.1-2.2; plan 2.3-2.4) | Terminada en PC; falta el móvil | Alta |
-| [T-022](#t-022) | Región 3D completa (encargo 2.3-2.5; plan 2.4-2.5) | En curso: misión y grupo hechos; faltan el cofre y el mirador | Alta |
+| [T-022](#t-022) | Región 3D completa (encargo 2.3-2.5; plan 2.4-2.5) | En curso: misión, grupo, cofre y mirador hechos; faltan el combate real y la revisión en pantalla pequeña | Alta |
 | [T-023](#t-023) | Cierre del perfil bajo: precalentado y sombra precalculada (plan 2.1) | Pendiente | Media |
 | [T-024](#t-024) | Métricas de referencia y matriz de cobertura | Pendiente | Media |
 | [T-025](#t-025) | Entrada: mando, teclado y foco; Android TV (plan 2.2) | Pendiente | Media |
@@ -49,8 +49,8 @@
 | [T-073](#t-073) | Decisiones D1-D7 sobre las Skills | Bloqueada (usuario) | Baja |
 | [T-074](#t-074) | Preguntas de GitHub y pre-releases | Bloqueada (usuario) | Baja |
 | [T-075](#t-075) | Commit del bloque B | Bloqueada (usuario) | Media |
-| [T-076](#t-076) | Que una sesión sin partida cargada no pise la partida completa | Pendiente | Alta |
-| [T-077](#t-077) | `prueba_guardado` con un archivo propio | Pendiente | Media |
+| [T-076](#t-076) | Que una sesión sin partida cargada no pise la partida completa | Terminada en alpha (`86a58af`) | — |
+| [T-077](#t-077) | `prueba_guardado` con un archivo propio | Terminada en alpha (`86a58af`) | — |
 | [T-078](#t-078) | Validar las APK en el Redmi | Bloqueada (dispositivo) | Media |
 | [T-079](#t-079) | Repositorio privado para descargar las APK de prueba en el móvil | Terminada | — |
 
@@ -238,10 +238,26 @@
   - **APK:** `Aethelgard_exp-20261108-3976565.apk` (versionCode 41), subida como «08/11/2026 · Prueba v41»
     ([T-079](#t-079)).
     - SHA-256 `8f3f52ef4275c85c20672e3aa0e44236a5e1068e460c71238e4180d636392188`.
+- **Hecho el 2026-11-08 por la tarde** (`d4db508` y `21d2e21`, rama `rebelum-alpha`):
+  - **El cofre del árbol mágico** ([D-057](DECISIONS.md#d-057)). `prueba_cofre3d` comprueba:
+    - que Kael llega andando desde el puente;
+    - el premio una sola vez (50 monedas) y el sonido sin saturar;
+    - que sigue abierto tras guardar (en el archivo de verdad de la prueba), un combate real con vuelta, volver a
+      entrar y cargar la partida.
+  - **La cinemática del mirador** ([D-058](DECISIONS.md#d-058)). `prueba_mirador` comprueba:
+    - la primera vez, con el hito guardado antes de terminar;
+    - que no hay control y que vuelven la cámara y el control;
+    - que no se repite en una visita posterior;
+    - saltarla con Escape, tras lo que no suena nada más.
+  - **Capturas** (`prueba_region3d_fotos`, `D:\REBELUM_diagnostico\pruebas\2026-11-08_171143`): cofre y cinemática en
+    bajo y alto, revisadas a ojo. Por ellas se giró el cofre y se subieron los planos de la cinemática.
+  - **Batería `2026-11-08_171230`: 23 superadas, 0 fallidas**, 12 manuales y 0 no seguras. La partida real no cambió.
+  - **APK:** subida como «08/11/2026 · Prueba v44» (`exp-20261108-21d2e21`) ([T-079](#t-079)).
 - **Falta:**
-  - la opinión visual del usuario sobre el grupo y medirlo en el Redmi (botón GRUPO);
-  - el cofre;
-  - la cinemática del mirador.
+  - **escuchar** el sonido del cofre y las campanas;
+  - la opinión visual del usuario y medir el grupo en el Redmi (botón GRUPO);
+  - una prueba con el combate real del centinela (en `prueba_ruta_alpha` la victoria es simulada);
+  - revisar el recorrido en pantalla pequeña: objetivo, indicadores e interacción.
   - Revisar con ventana el aspecto de Tilo, la estela y las salidas.
   - El combate del centinela se ha probado cargando de verdad; la victoria se simuló.
 - **Objetivo:**
@@ -439,23 +455,30 @@
 
 ### T-076
 **Que una sesión sin partida cargada no pise la partida completa**
-- **Estado:** pendiente. **Prioridad:** alta, por el riesgo de perder datos.
-- **Hecho observado en el código** (`aethelgard/progreso.gd:181-194`):
+- **Estado:** **terminada en `rebelum-alpha`** el 2026-11-08 (`86a58af`, [D-056](DECISIONS.md#d-056)). En `desarollo`
+  sigue el problema.
+- **Hecho observado en el código** (antes del arreglo, `aethelgard/progreso.gd:181-194`):
   - `guardar()` solo escribe las metas que existen en ese momento.
   - Una sesión que no cargó la partida, por ejemplo con F6 desde el editor, la sustituye por una parcial.
   - Así perdió la partida del PC la clave `grupo` el 07/11 a las 03:50.
-- **Criterio de aceptación:**
-  - Con partidas sintéticas y en el ejecutor aislado, una sesión que no cargó la partida no reduce las claves guardadas.
-  - Las pruebas de guardado pasan.
+- **Arreglo:**
+  - Solo se guarda encima de una partida si la sesión la cargó (o no había ninguna).
+  - Se escribe en `.tmp`, se comprueba y se sustituye; la anterior queda en `.bak`.
+  - Una partida dañada se recupera de `.tmp` o `.bak`, y la dañada se aparta en `.danada`.
+- **Evidencia** (ejecutado aislado; batería `2026-11-08_170008`: **21 superadas, 0 fallidas**, 11 manuales):
+  - `prueba_partida`, nueva, con partidas sintéticas: sesión sin cargar (no guarda y la partida no cambia), cofre,
+    misión y posición tras un combate, partida antigua sin claves ni lista de objetos, dañada, escritura fallida y
+    corte al guardar.
+  - La partida real del PC no cambió.
 - **Restricción:** la partida del PC no se restaura ([D-011](DECISIONS.md#d-011)).
 
 ### T-077
 **`prueba_guardado` con un archivo propio**
-- **Estado:** pendiente. **Prioridad:** media.
-- **Hecho observado en el código:**
-  - `aethelgard/pruebas/prueba_guardado.gd` escribe en `user://partida.save` (`P.GUARDADO`) y luego lo restaura.
-  - Solo es segura con el ejecutor aislado (`lista_pruebas.txt:26`).
-- **Objetivo:** que use una ruta de pruebas propia, para que sea segura también fuera del ejecutor.
+- **Estado:** **terminada en `rebelum-alpha`** el 2026-11-08 (`86a58af`).
+- **Antes:** `aethelgard/pruebas/prueba_guardado.gd` escribía en `user://partida.save` (`P.GUARDADO`) y luego lo
+  restauraba. Solo era segura con el ejecutor aislado.
+- **Ahora:** usa `user://prueba_guardado.save` con Engine `archivo_partida_prueba`. `progreso.gd` nunca acepta ahí la
+  ruta de una partida de verdad.
 
 ### T-078
 **Validar las APK en el Redmi**
@@ -514,4 +537,11 @@
   - el archivo `Aethelgard_Exp_2026-11-08_v41.apk` tiene 256 608 906 bytes, y su `digest` coincide con el SHA-256 local
     (`8f3f52ef…`);
   - `gh release list` da el orden v41 («Latest»), v39 y la original.
+- **Prueba v44** (08/11, 17:17), con la misma convención:
+  - la fila del `README.md` va en el commit `71931ae`;
+  - la release `exp-20261108-21d2e21` contiene el archivo `Aethelgard_Exp_2026-11-08_v44.apk`, de 256 625 290 bytes;
+  - su `digest` coincide con el SHA-256 local (`09b3c0f0…`);
+  - el certificado es el mismo y los grupos de licencia, iguales a los de la v41; no lleva Suno;
+  - el orden es v44 («Latest»), v41, v39 y la original;
+  - el `README.md` ya separa la privacidad del repositorio de los permisos de los recursos.
 - **Pendiente de verificar:** la descarga completa y la instalación en el móvil, que hace el usuario.

@@ -67,6 +67,9 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 | [D-053](#d-053) | Validación de la región en el Redmi, pedida por el usuario | Aprobada (hecha) |
 | [D-054](#d-054) | Repositorio privado `Aethelgard-pruebas` para descargar las APK de prueba en el móvil | Aprobada |
 | [D-055](#d-055) | Lya y Garon siguen a Kael en la exploración 3D | Aprobada en el encargo |
+| [D-056](#d-056) | Guardado protegido: no pisar sin cargar, escritura segura y copia de seguridad | Aprobada en el encargo |
+| [D-057](#d-057) | El cofre del árbol mágico de Pastos Verdes 3D | Aprobada en el encargo |
+| [D-058](#d-058) | La cinemática del mirador (PV-07) | Aprobada en el encargo |
 | [D-H01 a D-H15](#6-diseño-ya-implementado-del-3010-al-0511) | Diseño ya implementado antes de Git | Aprobada (historial) |
 
 ## 1. Reglas de trabajo, Git y versiones
@@ -743,6 +746,76 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
   - **Navegación con NavigationAgent3D:** cuesta más y necesita una malla de navegación de cada región.
   - **Darles colisión:** en el puente, que es estrecho, encerrarían a Kael.
 - **Pendiente:** la opinión visual del usuario y la medición en el Redmi con el botón GRUPO.
+
+### D-056
+**Guardado protegido: no pisar sin cargar, escritura segura y copia de seguridad**
+- **Fecha y estado:** 2026-11-08, hacia las 17:00. Aprobada en el encargo [asistente]. El usuario pidió proteger el
+  guardado antes de ampliar el autoguardado (T-076 y T-077).
+- **Decisión** (`progreso.gd`, rama `rebelum-alpha`, `86a58af`):
+  - Solo se guarda encima de una partida si la sesión la cargó o no había ninguna (Engine `partida_lista`, que no se
+    guarda). Lo ponen `cargar()` y `restaurar()`.
+  - Escritura en tres pasos: `.tmp`, comprobación leyéndolo, y sustitución. La anterior, si se podía leer, queda en
+    `.bak`.
+  - Al cargar: la partida, o si no se puede leer, `.tmp` y después `.bak`. La que no se podía leer se copia a
+    `.danada`: no se borra nada.
+  - Las pruebas guardan solo en su propio archivo (`archivo_partida_prueba`), nunca en `partida.save` ni en
+    `partida_exp.save`.
+  - El formato no cambia: las partidas antiguas cargan igual y una versión antigua lee las nuevas.
+  - `inventario.gd` completa con el inventario inicial lo que falte en una partida antigua.
+- **Alternativas descartadas:**
+  - **Mezclar la sesión con la partida guardada:** no evita el daño, porque la sesión ya trae datos por defecto (el
+    grupo a nivel 1) que pisarían los buenos.
+  - **No guardar nunca si no se cargó:** impediría la primera partida en una instalación nueva.
+
+### D-057
+**El cofre del árbol mágico de Pastos Verdes 3D**
+- **Fecha y estado:** 2026-11-08, hacia las 17:05. Aprobada en el encargo [asistente]. El usuario pidió integrar el
+  cofre con un identificador persistente, el premio una sola vez y respuesta visual y sonora.
+- **Decisión** (`zonas3d/pastos_verdes_3d.gd`, `d4db508`):
+  - **Dónde:** junto al árbol mágico de la salida del puente (16, 2). Queda del lado de la cámara para que la copa no
+    lo tape, fuera del camino y en un hueco sin troncos ni rocas: (14,8, 0, 3,6). Es un premio por cruzar el puente y
+    se ve desde él.
+  - **Aspecto:** formas sencillas hechas por código (madera, herrajes dorados y tapa curva), sin modelos de terceros.
+    La cerradura mira a la cámara, que nunca gira; de espaldas parecía un barril.
+  - **Respuesta:**
+    - cerrado, un destello que late;
+    - al abrirlo, la tapa gira, hay un destello dorado, salen las monedas del fondo y el aviso «¡Has encontrado…!»;
+    - un sonido hecho por código, como los del menú: un golpe de madera y un arpegio. Dura 0,9 s, con un pico de
+      0,48.
+  - **Persistencia:** `cofres_abiertos["pastos3d_arbol_magico"]`, la misma estructura que los cofres 2D. Se apunta
+    antes de dar el premio y después se guarda la partida.
+  - **Premio:** la tabla de los cofres 2D (monedas, pociones o éter), con la semilla del identificador. Este da 50
+    monedas.
+  - **Si el guardado falla,** el cofre y el premio se pierden juntos, porque van en el mismo archivo: nunca se repite el
+    premio.
+  - **El inventario no tiene límites de cantidad.** Una partida antigua sin lista de objetos ya no rompe el premio
+    ([D-056](#d-056)).
+- **Alternativas descartadas:**
+  - **Un modelo de cofre de un paquete:** no hay ninguno acreditado en el proyecto.
+  - **Ponerlo en el mirador:** se mezclaba con el combate del centinela y con la cinemática.
+
+### D-058
+**La cinemática del mirador (PV-07)**
+- **Fecha y estado:** 2026-11-08, hacia las 17:10. Aprobada en el encargo [asistente]. Sigue la biblia v3 §6.2
+  (PV-07), aprobada como alfa y no como canon.
+- **Decisión** (`zonas3d/pastos_verdes_3d.gd`, `d4db508`):
+  - **Cuándo:** al volver al mirador tras vencer al centinela, como antes la conversación PV-07.
+  - **Qué se ve:** 11 s de plano guiado, sin texto:
+    - baja hacia la cascada;
+    - la mira desde arriba;
+    - alza la vista hasta la ciudad flotante.
+    - Después hay 1,2 s de vuelta a la cámara de juego y empieza la conversación PV-07, que ya existía.
+  - **Planos revisados con capturas:** a menor altura se veían laderas peladas y las lomas del norte tapaban la ciudad.
+    El final va a 22 m y deja cielo bajo la ciudad.
+  - **Sonido:** campanas hechas por código. No hay música porque «Promised Horizon» es de Suno y no es libre.
+  - **Se salta** con el botón «Saltar», Intro o Escape. Mientras dura, no hay control, se ocultan los botones del panel
+    y salen franjas negras. Lya y Garon se quedan quietos.
+  - **El hito `pv_07` se pone y se guarda antes de la animación.** La animación solo enseña. Saltarla o cerrar la app a
+    medias no la repite ni duplica nada. En las visitas posteriores no vuelve a empezar.
+  - **Canon:** no revela nada de Érebo ni de los corazones o recuerdos. La ciudad y la cascada ya estaban en la escena.
+- **Pendiente:**
+  - el latido del ojo del centinela, que la biblia también propone;
+  - escuchar las campanas.
 
 ## 6. Diseño ya implementado del 30/10 al 05/11
 
