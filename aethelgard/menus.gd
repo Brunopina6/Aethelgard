@@ -23,7 +23,7 @@ func _ready() -> void:
 	add_to_group("menu_quieto")                  # Recursos activa el modo ahorro mientras está abierto
 	Grupo = load("res://grupo.gd")
 	Inv = load("res://inventario.gd")
-	heroe = Grupo.miembros()[0]
+	heroe = Grupo.activos()[0]
 	size = Vector2(1280, 720)
 	var oscuro := ColorRect.new()
 	oscuro.color = Color(Estilo.SOMBRA, 0.55)
@@ -93,7 +93,7 @@ func _pintar_grupo() -> void:
 	var fila_heroes := HBoxContainer.new()
 	fila_heroes.add_theme_constant_override("separation", 8)
 	cuerpo.add_child(fila_heroes)
-	for n in Grupo.miembros():
+	for n in Grupo.activos():
 		var b := _boton(n, 22, Vector2(140, 40))
 		if n == heroe:
 			b.add_theme_color_override("font_color", COLOR_TITULO)
@@ -222,7 +222,7 @@ func _pintar_objetos() -> void:
 		if usos.has(o):
 			f.add_child(_texto("Recupera %d %s" % [usos[o]["cura"], usos[o]["que"]], 18, COLOR_BIEN))
 			var objeto: String = o
-			for n in Grupo.miembros():               # usarlo fuera del combate
+			for n in Grupo.activos():               # usarlo fuera del combate
 				var b := _boton("Dar a %s" % n, 16, Vector2(110, 32))
 				var heroe_n: String = n
 				b.disabled = Inv.cantidad(o) <= 0
@@ -276,7 +276,7 @@ func _usar_fuera(objeto: String, heroe_n: String) -> void:
 func _pintar_habilidades() -> void:
 	var niveles: Dictionary = load("res://combate.gd").NIVELES_MAGIA
 	var romano := ["I", "II", "III"]
-	for n in Grupo.miembros():
+	for n in Grupo.activos():
 		cuerpo.add_child(_texto("%s (nivel %d)" % [n, Grupo.datos()[n]["nivel"]], 24, COLOR_TITULO))
 		if Grupo.HEROES[n]["magias"].is_empty():
 			cuerpo.add_child(_texto("   No usa magia.", 18, COLOR_SUAVE))

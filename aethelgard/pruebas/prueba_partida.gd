@@ -7,8 +7,12 @@ extends SceneTree
 #   3. Una partida antigua, sin las claves nuevas ni la lista de objetos, carga con los valores por defecto, y el
 #      premio de un cofre se puede dar.
 #   4. Si la partida está dañada, se recupera la última buena («.bak») y la dañada se aparta («.danada»).
-#   5. Si no se puede escribir, la partida anterior queda intacta.
+#   5. Si no se puede escribir, la partida anterior queda intacta y el jugador recibe un aviso.
 #   6. Un corte al guardar: un «.tmp» a medias no estropea la carga, y uno completo sin la partida se recupera.
+#   7. La partida y su copia «.bak», las dos dañadas: se apartan las dos («.danada» y «.bak.danada»), el jugador recibe
+#      un aviso y empieza una partida nueva (en la versión experimental, con Kael solo).
+#   8. Partida nueva (sin ningún archivo): carga sin avisos y el primer guardado crea la partida.
+# Lo comprobado reduce el riesgo de perder la partida; no lo elimina (p. ej., un fallo del disco en el peor momento).
 
 const ARCHIVO := "user://prueba_partida.save"
 const REGION := "res://zonas3d/pastos_verdes_3d.tscn"
@@ -38,6 +42,8 @@ func _initialize() -> void:
 	_partida_danada()
 	_escritura_fallida()
 	_corte_al_guardar()
+	_ambas_danadas()
+	_partida_nueva()
 	_borrar_archivos()
 	_limpiar_metas()
 	Engine.remove_meta("archivo_partida_prueba")
@@ -148,6 +154,8 @@ func _partida_danada() -> void:
 		fallos.append("4: con la partida dañada no se recupera la copia buena (escena «%s», oro %d)" % [escena, inv.oro()])
 	if not FileAccess.file_exists(ARCHIVO + ".danada"):
 		fallos.append("4: la partida dañada no se aparta en «.danada»")
+	if not Engine.get_meta("ultimo_aviso_partida", "").begins_with("La partida guardada estaba dañada"):
+		fallos.append("4: el jugador no recibe aviso de la copia recuperada («%s»)" % Engine.get_meta("ultimo_aviso_partida", ""))
 	if not P.guardar(REGION) or P.leer(ARCHIVO) == null:
 		fallos.append("4: tras recuperar la copia, no se puede guardar")
 	if var_to_str(P.leer(ARCHIVO + ".bak")) != var_to_str(completa):
@@ -163,10 +171,14 @@ func _escritura_fallida() -> void:
 	DirAccess.make_dir_absolute(ProjectSettings.globalize_path(ARCHIVO + ".tmp"))   # «.tmp» no se puede abrir
 	Engine.set_meta("partida_lista", true)
 	inv.ganar_oro(1)
+	if Engine.has_meta("ultimo_aviso_partida"):
+		Engine.remove_meta("ultimo_aviso_partida")
 	if P.guardar(REGION):
 		fallos.append("5: guardar() dice que ha guardado sin poder escribir")
 	if FileAccess.get_file_as_string(ARCHIVO) != antes:
 		fallos.append("5: tras fallar la escritura, la partida ha cambiado")
+	if Engine.get_meta("ultimo_aviso_partida", "") != P.AVISO_NO_GUARDA:
+		fallos.append("5: el jugador no recibe aviso de que no se pudo guardar")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(ARCHIVO + ".tmp"))
 	print("5. Escritura fallida: la partida anterior queda intacta")
 
@@ -191,6 +203,42 @@ func _corte_al_guardar() -> void:
 	print("6. Corte al guardar: «.tmp» a medias ignorado y «.tmp» completo recuperado")
 
 
+func _ambas_danadas() -> void:
+	_borrar_archivos()
+	var completa := _partida_completa()
+	P.escribir(completa, ARCHIVO)
+	P.escribir(completa, ARCHIVO)                     # ya hay «.bak»
+	for extra in ["", ".bak"]:
+		var f := FileAccess.open(ARCHIVO + extra, FileAccess.WRITE)
+		f.store_string("{\n\"grupo\": {\"Kael\"")    # las dos, cortadas
+		f.close()
+	_limpiar_metas()
+	if P.cargar() != "":
+		fallos.append("7: con las dos copias dañadas no empieza una partida nueva")
+	for extra in [".danada", ".bak.danada"]:
+		if not FileAccess.file_exists(ARCHIVO + extra):
+			fallos.append("7: no se aparta la copia dañada «%s»" % extra)
+	if not Engine.get_meta("ultimo_aviso_partida", "").begins_with("No se pudo leer la partida"):
+		fallos.append("7: el jugador no recibe aviso de que empieza una partida nueva")
+	if load("res://grupo.gd").activos() != ["Kael"]:
+		fallos.append("7: la partida nueva de la versión experimental no empieza con Kael solo")
+	print("7. Las dos dañadas: se apartan las dos, aviso y partida nueva con Kael solo")
+
+
+func _partida_nueva() -> void:
+	_borrar_archivos()
+	_limpiar_metas()
+	if Engine.has_meta("ultimo_aviso_partida"):
+		Engine.remove_meta("ultimo_aviso_partida")
+	if P.cargar() != "" or Engine.has_meta("ultimo_aviso_partida"):
+		fallos.append("8: sin archivos, la carga da una escena o un aviso")
+	if not P.guardar("res://mapa.tscn") or P.leer(ARCHIVO) == null:
+		fallos.append("8: el primer guardado de una partida nueva no crea la partida")
+	elif P.leer(ARCHIVO).get("grupo_activo", []) != ["Kael"]:
+		fallos.append("8: la partida nueva no guarda el grupo de Kael solo")
+	print("8. Partida nueva: sin avisos, y el primer guardado crea la partida con Kael solo")
+
+
 func _limpiar_metas() -> void:
 	for k in P.CLAVES:
 		if Engine.has_meta(k):
@@ -200,7 +248,7 @@ func _limpiar_metas() -> void:
 
 
 func _borrar_archivos() -> void:
-	for extra in ["", ".bak", ".tmp", ".danada"]:
+	for extra in ["", ".bak", ".tmp", ".danada", ".bak.danada"]:
 		var r := ProjectSettings.globalize_path(ARCHIVO + extra)
 		if FileAccess.file_exists(ARCHIVO + extra):
 			DirAccess.remove_absolute(r)

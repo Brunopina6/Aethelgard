@@ -68,6 +68,60 @@ func _ready() -> void:
 		lbl_fps.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		capa.add_child(lbl_fps)
 	_poner_fps.call_deferred()
+	if _aviso_pendiente != "":
+		avisar.call_deferred(_aviso_pendiente)
+		_aviso_pendiente = ""
+
+
+# Aviso al jugador de algo que debe saber, como que no se pudo guardar la partida (progreso.gd). Sale abajo, encima de
+# todo (también del fundido entre escenas) y se va solo.
+var lbl_aviso: Label
+
+
+var _aviso_pendiente := ""
+var lbl_prueba: Label
+
+
+# Partida de prueba (opción de desarrollo de carga.gd): una etiqueta fija arriba, para no confundirla con la de verdad.
+func marcar_partida_prueba() -> void:
+	if lbl_prueba != null or capa == null:
+		return
+	lbl_prueba = Label.new()
+	lbl_prueba.text = "PARTIDA DE PRUEBA · tu partida de siempre no cambia"
+	lbl_prueba.position = Vector2(340, 4)
+	lbl_prueba.size = Vector2(600, 24)
+	lbl_prueba.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl_prueba.add_theme_font_size_override("font_size", 16)
+	lbl_prueba.add_theme_color_override("font_color", Color(1.0, 0.85, 0.5, 0.85))
+	lbl_prueba.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
+	lbl_prueba.add_theme_constant_override("outline_size", 4)
+	lbl_prueba.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	capa.add_child(lbl_prueba)
+
+
+func avisar(texto: String, segundos := 5.0) -> void:
+	print("AVISO AL JUGADOR: ", texto)
+	if capa == null:                                 # aún no está lista (muy al principio): sale en cuanto lo esté
+		_aviso_pendiente = texto
+		return
+	if lbl_aviso == null:
+		lbl_aviso = Label.new()
+		lbl_aviso.position = Vector2(140, 600)
+		lbl_aviso.size = Vector2(1000, 90)
+		lbl_aviso.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl_aviso.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		lbl_aviso.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		lbl_aviso.add_theme_font_size_override("font_size", 24)
+		lbl_aviso.add_theme_color_override("font_color", Color(1.0, 0.9, 0.75))
+		lbl_aviso.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+		lbl_aviso.add_theme_constant_override("outline_size", 8)
+		lbl_aviso.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		capa.add_child(lbl_aviso)
+	lbl_aviso.text = texto
+	lbl_aviso.modulate.a = 1.0
+	var t := lbl_aviso.create_tween()
+	t.tween_interval(segundos)
+	t.tween_property(lbl_aviso, "modulate:a", 0.0, 0.8)
 
 
 # ================================================================= guardar y pedir

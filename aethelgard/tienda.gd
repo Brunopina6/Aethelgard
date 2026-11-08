@@ -110,10 +110,15 @@ func _pintar() -> void:
 			for l in LIBROS:
 				var nombre: String = load("res://combate.gd").NIVELES_MAGIA[l[0]][l[1] - 1]["nombre"]
 				var quienes := PackedStringArray()
-				for h in Grupo.miembros():
-					if l[0] in Grupo.HEROES[h]["magias"] and Grupo.nivel_magia(h, l[0]) < l[1]:
-						quienes.append(h)
-				var info := "Para: " + ", ".join(quienes) if not quienes.is_empty() else "Ya la sabe todo el grupo"
+				var la_usan := 0                          # los que están ahora en el grupo y usan esa magia
+				for h in Grupo.activos():
+					if l[0] in Grupo.HEROES[h]["magias"]:
+						la_usan += 1
+						if Grupo.nivel_magia(h, l[0]) < l[1]:
+							quienes.append(h)
+				var info := "Para: " + ", ".join(quienes)
+				if quienes.is_empty():
+					info = "Ya la sabe todo el grupo" if la_usan > 0 else "Nadie del grupo usa esta magia"
 				_fila("Libro de %s (%s %s)" % [nombre, l[0], romano[l[1]]], info, "", l[2],
 					func(): _comprar_libro(l), quienes.is_empty())
 
@@ -157,7 +162,7 @@ func _comprar_equipo(id: String) -> void:
 # El libro se lo queda el primer héroe que pueda aprenderlo (si hay varios, se elige).
 func _comprar_libro(l: Array) -> void:
 	var quienes: Array = []
-	for h in Grupo.miembros():
+	for h in Grupo.activos():
 		if l[0] in Grupo.HEROES[h]["magias"] and Grupo.nivel_magia(h, l[0]) < l[1]:
 			quienes.append(h)
 	if quienes.size() == 1:

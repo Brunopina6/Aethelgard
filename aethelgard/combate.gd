@@ -217,8 +217,16 @@ const GRUPOS := [
 	# combates fijos (Engine.set_meta("grupo_combate", n)); no salen al azar
 	[["gorthor", Vector2(260, 120)]],                                    # 5: jefe de la Garganta
 	[["golem_ambar", Vector2(150, 120)], ["grimfang", Vector2(420, 125)]],   # 6: nido de la Garganta
+	# para un grupo de uno o dos (versión experimental: Kael solo hasta PV-03, con Lya hasta PV-05)
+	[["slime", Vector2(250, 120)]],                                         # 7
+	[["slime", Vector2(140, 110)], ["slime", Vector2(380, 125)]],           # 8
+	[["grimfang", Vector2(300, 130)]],                                      # 9
 ]
-const GRUPOS_AL_AZAR := 5           # solo los primeros salen en encuentros aleatorios
+const GRUPOS_AL_AZAR := 5           # solo los primeros salen en encuentros aleatorios (con el grupo de tres)
+# Encuentros al azar según cuántos héroes hay ahora en el grupo (grupo.gd, activos). Kael solo no tiene cura ni a
+# nadie que le cubra: sus grupos se ganan solo con ataques (pruebas/prueba_grupos_combate.gd). Los combates fijos no
+# cambian, y ninguno de estos enemigos aturde, duerme ni congela.
+const AL_AZAR_POR_TAMANO := {1: [7, 8, 9], 2: [1, 3, 8, 9]}
 
 
 const ANIM := {
@@ -320,8 +328,8 @@ func _ready() -> void:
 		res_personajes = CALIDAD_MOVIL["res_personajes"]
 		max_efectos_3d = CALIDAD_MOVIL["max_efectos_3d"]
 	heroes = heroes.filter(func(h): return RESPALDO.has(h["modelo"]) or _ruta_3d(MODELOS[h["modelo"]]) != "")   # Garon sin modelo: no sale
-	if ResourceLoader.exists("res://grupo.gd"):    # solo los que están en el grupo
-		var en_grupo: Array = load("res://grupo.gd").miembros()
+	if ResourceLoader.exists("res://grupo.gd"):    # solo los que están ahora en el grupo (grupo.gd, activos)
+		var en_grupo: Array = load("res://grupo.gd").activos()
 		heroes = heroes.filter(func(h): return h["nombre"] in en_grupo)
 	for h in heroes:
 		if RESPALDO.has(h["modelo"]) and _ruta_3d(MODELOS[h["modelo"]]) == "":
@@ -368,10 +376,18 @@ func _ready() -> void:
 			_presentar(e)
 
 
+# Índice de un grupo al azar para un encuentro con «cuantos» héroes (los de tres, como siempre).
+static func grupo_al_azar(cuantos: int) -> int:
+	if AL_AZAR_POR_TAMANO.has(cuantos):
+		var opciones: Array = AL_AZAR_POR_TAMANO[cuantos]
+		return opciones[randi() % opciones.size()]
+	return randi() % GRUPOS_AL_AZAR
+
+
 # Elige un grupo al azar (o el índice de Engine.get_meta("grupo_combate") si se ha fijado).
 # Los repetidos se llaman "Slime A", "Slime B"...
 func _elegir_enemigos() -> void:
-	var grupo: Array = GRUPOS[randi() % GRUPOS_AL_AZAR]
+	var grupo: Array = GRUPOS[grupo_al_azar(heroes.size())]
 	if Engine.has_meta("grupo_combate"):          # combate fijo: vale para este combate y se borra
 		grupo = GRUPOS[clampi(Engine.get_meta("grupo_combate"), 0, GRUPOS.size() - 1)]
 		Engine.remove_meta("grupo_combate")

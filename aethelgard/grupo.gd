@@ -49,6 +49,60 @@ static func miembros() -> Array:
 	return datos().keys()
 
 
+# ---------------------------------------------------------------- quién está ahora en el grupo
+# El grupo ACTIVO es el que explora, combate y sale en los menús y en la tienda. Lo guarda la partida («grupo_activo»):
+# en la versión experimental, la misión de Pastos Verdes empieza con Kael solo, Lya se une en PV-03 y Garon en PV-05
+# (zonas3d/pastos_verdes_3d.gd). Sin esa clave (la versión estable y las partidas de antes de que existiera) están
+# todos, como siempre. Los datos de los ausentes (nivel, equipo, vida) se conservan: solo no participan.
+const SE_UNE_EN := {"Lya": "pv_03", "Garon": "pv_05"}
+
+
+static func activos() -> Array:
+	var todos := miembros()
+	if not Engine.has_meta("grupo_activo"):
+		return todos
+	var a: Array = Engine.get_meta("grupo_activo")
+	var r: Array = EN_EL_GRUPO.filter(func(n): return n in a and n in todos)
+	return r if not r.is_empty() else ["Kael"]       # nunca sin nadie
+
+
+# El grupo que corresponde a la misión de Pastos Verdes según sus hitos: Kael, Lya desde PV-03 y Garon desde PV-05.
+static func segun_mision() -> Array:
+	var P = load("res://progreso.gd")
+	var r: Array = ["Kael"]
+	for n in ["Lya", "Garon"]:
+		if P.hito(SE_UNE_EN[n]):
+			r.append(n)
+	return r
+
+
+# La misión empieza con Kael solo (partida nueva de la versión experimental, o una de antes que llega a la misión).
+static func empezar_solo() -> void:
+	Engine.set_meta("grupo_activo", ["Kael"])
+
+
+# Alguien se une al grupo activo. Si se había quedado atrás, llega al nivel del más alto del grupo, con la vida llena y
+# los puntos de esos niveles para repartir (como los que se añadían a partidas antiguas en datos()).
+static func unir(n: String) -> void:
+	if not Engine.has_meta("grupo_activo") or n in Engine.get_meta("grupo_activo") or not n in EN_EL_GRUPO:
+		return
+	var a: Array = Engine.get_meta("grupo_activo").duplicate()
+	var g := datos()
+	var nivel := 1
+	for otro in a:
+		if g.has(otro):
+			nivel = maxi(nivel, int(g[otro]["nivel"]))
+	var h: Dictionary = g[n]
+	if int(h["nivel"]) < nivel:
+		h["puntos"] = int(h["puntos"]) + (nivel - int(h["nivel"])) * PUNTOS_POR_NIVEL
+		h["nivel"] = nivel
+		h["exp"] = 0
+	h["pv"] = -1                                     # llega descansado: con la vida y los PM llenos
+	h["pm"] = -1
+	a.append(n)
+	Engine.set_meta("grupo_activo", EN_EL_GRUPO.filter(func(x): return x in a))
+
+
 # Experiencia que hace falta para pasar del nivel n al n + 1.
 static func exp_para(n: int) -> int:
 	return int(20.0 * pow(n, 1.5))
@@ -92,8 +146,8 @@ static func guardar_vida(heroe: String, pv: int, pm: int) -> void:
 	datos()[heroe]["pm"] = pm
 
 
-static func curar_todos() -> void:
-	for n in miembros():
+static func curar_todos() -> void:                # los que están ahora en el grupo (los ausentes no cambian)
+	for n in activos():
 		var e := estadisticas(n)
 		guardar_vida(n, e["pv_max"], e["pm_max"])
 

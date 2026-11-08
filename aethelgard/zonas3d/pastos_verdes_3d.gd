@@ -618,24 +618,21 @@ func _crear_personajes() -> void:
 	cofre = _crear_cofre(_sitio_cofre())
 
 
-# Lya y Garon, si están en el grupo de la partida y ya se han unido en la misión, detrás de Kael mirando camino
-# adelante. Lya llega en PV-03 («¡Kael! ¿De verdad pensabas irte sin mí?») y Garon en PV-05, junto a Tilo («Os
-# acompaño»): antes, Kael va solo. En los bancos salen siempre los dos (miden lo que cuestan).
-const SE_UNE := {"Lya": "pv_03", "Garon": "pv_05"}
-
-
-func _se_ha_unido(n: String) -> bool:
-	return en_banco() or not SE_UNE.has(n) or load("res://progreso.gd").hito(SE_UNE[n])
-
-
+# Los que están ahora en el grupo (grupo.gd, activos: la misma fuente que el combate, los menús y la partida) siguen a
+# Kael, detrás de él y mirando camino adelante. Con la misión, Lya llega en PV-03 («¡Kael! ¿De verdad pensabas irte
+# sin mí?») y Garon en PV-05, junto a Tilo («Os acompaño»): antes, Kael va solo. En los bancos salen siempre los dos
+# (miden lo que cuestan).
 func _crear_grupo() -> void:
 	if not perfil.get("grupo", true):
 		return
 	var G = load("res://grupo.gd")
-	var en_grupo: Array = G.miembros()
+	# una partida de antes de «grupo_activo» que llega a la misión por primera vez: la misión empieza con Kael solo
+	if not en_banco() and not Engine.has_meta("grupo_activo") and not load("res://progreso.gd").hito("pv_02"):
+		G.empezar_solo()
+	var activos: Array = G.EN_EL_GRUPO if en_banco() else G.activos()
 	var nombres: Array = []
 	for n in G.EN_EL_GRUPO:
-		if n != "Kael" and n in en_grupo and _se_ha_unido(n):
+		if n != "Kael" and n in activos:
 			nombres.append(n)
 	grupo = load("res://zonas3d/grupo_3d.gd").new()
 	grupo.name = "Grupo"
@@ -644,8 +641,11 @@ func _crear_grupo() -> void:
 	grupo.colocar(_atras_en_camino(kael.global_position))
 
 
+# La misión une a alguien: entra en el grupo de la partida (grupo.gd) y aparece siguiendo a Kael.
 func _unir(n: String, desde: Vector3) -> void:
-	if grupo != null and n in load("res://grupo.gd").miembros():
+	var G = load("res://grupo.gd")
+	G.unir(n)
+	if grupo != null and n in G.activos():
 		grupo.unir(n, desde)
 
 

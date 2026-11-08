@@ -45,6 +45,7 @@ var brillo: TextureRect
 var porcentaje: Label
 var frase: Label
 var toca: Label
+var boton_prueba: Button                 # solo en la versión experimental: la misión desde el principio, en otra ranura
 var sonidos := {}
 var reproductor: AudioStreamPlayer
 
@@ -142,6 +143,18 @@ func _crear_pantalla() -> void:
 	frase = _etiqueta(FRASES[0], M.fuente(M.FUENTE_NOMBRE, 0, 500), 28, Color(M.LUZ_CLARA, 0.75))
 	frase.position = Vector2(0, 630)
 	capa.add_child(frase)
+	# Opción de desarrollo, solo en la versión experimental: jugar la misión de Pastos Verdes desde el principio en otra
+	# ranura (progreso.gd, GUARDADO_EXP_PRUEBA), sin tocar la partida de siempre.
+	if load("res://modo3d.gd").activo():
+		boton_prueba = Button.new()
+		boton_prueba.text = "Probar la misión desde el principio"
+		boton_prueba.position = Vector2(860, 652)
+		boton_prueba.custom_minimum_size = Vector2(400, 56)
+		boton_prueba.add_theme_font_size_override("font_size", 20)
+		boton_prueba.focus_mode = Control.FOCUS_NONE
+		boton_prueba.visible = false
+		boton_prueba.pressed.connect(func(): _empezar(true))
+		capa.add_child(boton_prueba)
 
 	sonidos = M.sonidos_ui()
 	reproductor = AudioStreamPlayer.new()
@@ -195,6 +208,8 @@ func _process(delta: float) -> void:
 	if listo:
 		toca.modulate.a = 0.55 + 0.45 * sin(t * 3.0)  # late suavemente
 		brillo.modulate.a = 0.6 + 0.25 * sin(t * 3.0)
+		if boton_prueba != null and not saliendo:
+			boton_prueba.visible = true
 
 
 func _paso_archivos() -> void:
@@ -347,15 +362,28 @@ func _paso_zonas() -> void:
 func _input(ev: InputEvent) -> void:
 	if not listo or saliendo:
 		return
+	if boton_prueba != null and boton_prueba.visible and (ev is InputEventMouseButton or ev is InputEventScreenTouch) \
+			and boton_prueba.get_global_rect().has_point(ev.position):
+		return                                       # el toque es para el botón de la partida de prueba
 	if (ev is InputEventMouseButton and ev.pressed) or (ev is InputEventScreenTouch and ev.pressed) \
 			or ev.is_action_pressed("ui_accept"):
 		_empezar()
 
 
-func _empezar() -> void:
+# «prueba»: la opción de desarrollo. La misión empieza desde cero en su ranura y se entra directamente en Pastos Verdes
+# 3D, sin el prólogo 2D del mapa.
+func _empezar(prueba := false) -> void:
 	if saliendo:
 		return
 	saliendo = true
+	if boton_prueba != null:
+		boton_prueba.visible = false
+	if prueba:
+		var P = load("res://progreso.gd")
+		P.empezar_ranura_prueba()
+		P.cargar()                                   # ranura vacía: partida nueva (Kael solo)
+		Engine.set_meta("prologo_visto", true)
+		Recursos.marcar_partida_prueba()
 	reproductor.stream = sonidos["confirmar"]
 	reproductor.play()
 	var negro := ColorRect.new()
@@ -368,5 +396,8 @@ func _empezar() -> void:
 	var t := create_tween()
 	t.tween_property(negro, "color:a", 1.0, 0.6)
 	await t.finished
+	if prueba:
+		Recursos.cambiar_escena(load("res://modo3d.gd").escena_de(10))
+		return
 	var guardada: String = load("res://progreso.gd").cargar()   # si hay partida, se vuelve donde estabas
 	Recursos.cambiar_escena(guardada if guardada != "" else SIGUIENTE)

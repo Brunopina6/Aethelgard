@@ -60,28 +60,45 @@ const GUARDADO_EXP := "user://partida_exp.save"
 const CLAVES := ["grupo", "inventario", "cofres_abiertos", "prologo_visto", "lugar", "pos_mapa", "pos_mapa_ok",
 	"pos_zona", "pos_zona_ok", "pos_zona_lugar", "lore_visto", "incienso", "escena_guardada",
 	"mazmorras", "combates_ganados", "decisiones", "pos_isla", "pos_isla_ok",
-	"hitos", "pos_3d", "pos_3d_ok", "pos_3d_lugar"]
+	"hitos", "pos_3d", "pos_3d_ok", "pos_3d_lugar", "grupo_activo"]
 const MAPA := "res://mapa.tscn"
 
 
 # Archivo de la partida: el de la versión experimental si la exploración 3D está activa. Las pruebas pueden pedir
 # uno propio con Engine «archivo_partida_prueba» (siempre en user:// y nunca el de una partida de verdad).
+# Opción de desarrollo (solo en la versión experimental): «Probar la misión desde el principio» en la pantalla de
+# carga (carga.gd) juega en otra ranura, GUARDADO_EXP_PRUEBA, y deja intacta la partida experimental de siempre. Dura
+# lo que dure la sesión (Engine «ranura_prueba», que no se guarda).
+const GUARDADO_EXP_PRUEBA := "user://partida_exp_prueba.save"
+
+
 static func archivo() -> String:
 	if Engine.has_meta("archivo_partida_prueba"):
 		var a: String = Engine.get_meta("archivo_partida_prueba")
 		if a.begins_with("user://") and a != GUARDADO and a != GUARDADO_EXP:
 			return a
-	return GUARDADO_EXP if load("res://modo3d.gd").activo() else GUARDADO
+	if not load("res://modo3d.gd").activo():
+		return GUARDADO
+	return GUARDADO_EXP_PRUEBA if Engine.get_meta("ranura_prueba", false) else GUARDADO_EXP
+
+
+# Empieza la ranura de prueba desde cero (opción de desarrollo): borra solo los archivos de esa ranura.
+static func empezar_ranura_prueba() -> void:
+	Engine.set_meta("ranura_prueba", true)
+	for extra in ["", ".bak", ".tmp", ".danada", ".bak.danada"]:
+		if FileAccess.file_exists(GUARDADO_EXP_PRUEBA + extra):
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(GUARDADO_EXP_PRUEBA + extra))
 
 
 # ================================================================= ritmo
 
-static func nivel_grupo() -> int:
+static func nivel_grupo() -> int:                 # el de los que están ahora en el grupo (grupo.gd, activos)
 	var gr = load("res://grupo.gd")
 	var total := 0
-	for n in gr.miembros():
+	var activos: Array = gr.activos()
+	for n in activos:
 		total += int(gr.datos()[n]["nivel"])
-	return maxi(1, roundi(float(total) / maxi(1, gr.miembros().size())))
+	return maxi(1, roundi(float(total) / maxi(1, activos.size())))
 
 
 static func nivel_zona(zona: String) -> int:
@@ -211,8 +228,24 @@ static func poner_hito(id: String) -> void:
 #   - La partida se escribe primero en «<archivo>.tmp», se comprueba leyéndola y solo entonces sustituye a la anterior.
 #     La anterior, si se podía leer, queda en «<archivo>.bak».
 #   - Al cargar, si la partida no se puede leer, se usa «.tmp» (escrito y comprobado, pero sin llegar a sustituirla)
-#     o «.bak». La que no se podía leer se aparta en «<archivo>.danada»: no se borra nada.
+#     o «.bak». La que no se podía leer se aparta en «<archivo>.danada» (y una copia «.bak» dañada, en
+#     «<archivo>.bak.danada»): no se borra nada que pudiera recuperarse a mano.
+#   - Cualquier fallo se le dice al jugador (Recursos.avisar): no se pudo guardar, se recuperó una copia o no se pudo
+#     leer nada y empieza una partida nueva.
 #   - Las pruebas no guardan, salvo en su propio archivo (archivo()).
+# Lo comprobado (pruebas/prueba_partida.gd, en el PC y con datos aislados) reduce el riesgo de perder la partida; no es
+# una garantía: un fallo del disco o del sistema en el peor momento puede seguir costando el último guardado.
+
+
+# Le dice al jugador algo que tiene que saber de su partida (abajo, encima de todo, unos segundos).
+static func _avisar(texto: String) -> void:
+	Engine.set_meta("ultimo_aviso_partida", texto)   # no se guarda; lo leen las pruebas
+	var arbol := Engine.get_main_loop() as SceneTree
+	var r = arbol.root.get_node_or_null("Recursos") if arbol != null else null
+	if r != null and r.has_method("avisar"):
+		r.avisar(texto)
+	else:
+		push_warning(texto)
 
 static func hay_partida() -> bool:
 	var a := archivo()
@@ -231,19 +264,25 @@ static func leer(ruta: String):
 	return d if d is Dictionary else null
 
 
-# Escribe la partida sin dejarla nunca a medias. Devuelve false si no se pudo (la partida anterior queda intacta).
+# Escribe la partida en «.tmp», la comprueba y sustituye la anterior. Devuelve false si no se pudo: en las pruebas, la
+# partida anterior queda intacta y el jugador recibe un aviso.
+const AVISO_NO_GUARDA := "No se pudo guardar la partida. Se volverá a intentar en el próximo guardado."
+
+
 static func escribir(d: Dictionary, ruta: String) -> bool:
 	var texto := var_to_str(d)
 	var tmp := ruta + ".tmp"
 	var f := FileAccess.open(tmp, FileAccess.WRITE)
 	if f == null:
 		push_warning("No se pudo guardar la partida (%s)" % error_string(FileAccess.get_open_error()))
+		_avisar(AVISO_NO_GUARDA)
 		return false
 	f.store_string(texto)
 	f.close()
 	if FileAccess.get_file_as_string(tmp) != texto:
 		push_warning("No se pudo guardar la partida: lo escrito no coincide")
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(tmp))
+		_avisar(AVISO_NO_GUARDA)
 		return false
 	var real := ProjectSettings.globalize_path(ruta)
 	if leer(ruta) != null:
@@ -254,6 +293,7 @@ static func escribir(d: Dictionary, ruta: String) -> bool:
 		err = DirAccess.rename_absolute(ProjectSettings.globalize_path(tmp), real)
 	if err != OK:
 		push_warning("No se pudo guardar la partida (%s)" % error_string(err))
+		_avisar(AVISO_NO_GUARDA)
 		return false
 	return true
 
@@ -283,8 +323,15 @@ static func guardar(escena := "") -> bool:
 # versión (por ejemplo, una región 3D en una versión sin exploración 3D), se vuelve al mapa sin error.
 static func restaurar(d: Dictionary) -> String:
 	Engine.set_meta("partida_lista", true)
+	for k in CLAVES:                               # lo de la sesión que la partida no trae no se mezcla con ella
+		if not d.has(k) and Engine.has_meta(k):
+			Engine.remove_meta(k)
 	for k in d:
 		Engine.set_meta(k, d[k])
+	# Partidas experimentales de antes de «grupo_activo» que ya habían empezado la misión de Pastos Verdes: el grupo
+	# sale de sus hitos (grupo.gd). Las demás, sin la clave, siguen con todo el grupo, como antes.
+	if not d.has("grupo_activo") and load("res://modo3d.gd").activo() and hito("pv_02"):
+		Engine.set_meta("grupo_activo", load("res://grupo.gd").segun_mision())
 	var escena: String = d.get("escena_guardada", MAPA)
 	if not ResourceLoader.exists(escena) or (escena.begins_with("res://zonas3d/") and not load("res://modo3d.gd").activo()):
 		escena = MAPA
@@ -301,13 +348,23 @@ static func cargar() -> String:
 		var copia = leer(ruta + ".tmp")
 		if copia == null:
 			copia = leer(ruta + ".bak")
-		if FileAccess.file_exists(ruta):           # no se podía leer: se aparta, no se borra
-			DirAccess.copy_absolute(ProjectSettings.globalize_path(ruta), ProjectSettings.globalize_path(ruta + ".danada"))
-			push_warning("La partida guardada no se pudo leer: se aparta en %s" % (ruta + ".danada"))
+		var danada := false
+		for extra in ["", ".bak"]:                 # no se podían leer: se apartan, no se borran
+			if FileAccess.file_exists(ruta + extra) and leer(ruta + extra) == null:
+				DirAccess.copy_absolute(ProjectSettings.globalize_path(ruta + extra), ProjectSettings.globalize_path(ruta + extra + ".danada"))
+				push_warning("La partida %s no se pudo leer: se aparta en %s" % [ruta + extra, ruta + extra + ".danada"])
+				danada = true
 		if copia != null:
-			push_warning("Se recupera la última copia buena de la partida")
+			_avisar("La partida guardada estaba dañada. Se ha recuperado la última copia que se podía leer.")
 			d = copia
+		elif danada:
+			_avisar("No se pudo leer la partida guardada. Se ha apartado una copia y empieza una partida nueva.")
 	Engine.set_meta("partida_lista", true)
-	if d == null:
+	if d == null:                                  # partida nueva
+		for k in CLAVES:
+			if Engine.has_meta(k):
+				Engine.remove_meta(k)
+		if load("res://modo3d.gd").activo():        # la versión experimental empieza con la misión: Kael, solo
+			load("res://grupo.gd").empezar_solo()
 		return ""
 	return restaurar(d)
