@@ -28,6 +28,7 @@ prueba_mando      | auto     | 3d sin_prologo dispositivo=mando | 400 | user:// 
 prueba_teclado    | auto     | 3d sin_prologo       | 400 | user://     | el mismo recorrido sin ratón con el teclado (teclas simuladas)
 prueba_precalentado | auto   | 3d sin_prologo       | 300 | user://     | lo que se prepara en la carga y la vitrina de la región no provoca nada de juego (diálogos, partidas, estado, pasos, copias)
 prueba_guardado_protegido | auto |                 | 150 | user://     | protección del guardado en la partida normal (sin 3D): sin cargar no pisa, .bak, dañada, cortes, escritura fallida, partida nueva y partida como la del PC (es la que valida el arreglo traído a rebelum-3d)
+prueba_incorporacion | auto | 3d sin_prologo auto | 900 | user://     | encuentros con los niveles reales de incorporación (Lya y Garon llegan a nivel 1): grupos de dos tras PV-03, el centinela y los cinco grupos de tres; solo atacando y sin gastar puntos (caso pesimista)
 prueba_audio      | auto     |                      | 150 | user://     | sonido (muda): buses, volúmenes guardados solo al cambiarlos, pestaña Ajustes con teclado y ningún reproductor por Master (código y combate)
 prueba_cofre      | auto     |                      | 150 | user://     | cofres
 prueba_choque     | auto     | estilo=bosque        | 150 | user://     | colisiones en una zona de bosque

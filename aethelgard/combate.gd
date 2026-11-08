@@ -1532,6 +1532,13 @@ func _pruebas_menu() -> void:
 					if actor["mp"] >= h[2]["coste"]:
 						_elegir_hechizo.call_deferred(h[0], h[1], true)
 						return
+	# pruebas: con Engine «prueba_curar», quien sabe Cura la usa en el más herido si alguien baja del 50 % (un jugador
+	# que cura a tiempo; pruebas/prueba_incorporacion.gd). En el juego normal esa meta no existe.
+	if Engine.get_meta("prueba_curar", false) and heroes.any(func(h): return h["hp"] > 0 and float(h["hp"]) / h["hp_max"] < 0.5):
+		for h in _hechizos(actor):
+			if h[0] == "Cura" and actor["mp"] >= h[2]["coste"]:
+				_elegir_hechizo.call_deferred("Cura", h[1], true)
+				return
 	if "auto" in OS.get_cmdline_user_args():      # pruebas: -- auto (si no lanza magia, ataca)
 		accion = "atacar"
 		_aplicar.call_deferred(enemigos.filter(func(e): return e["hp"] > 0)[0])
