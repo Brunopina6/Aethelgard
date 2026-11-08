@@ -1,7 +1,7 @@
 # DECISIONS: decisiones de AETHELGARD / REBELUM
 
-**Actualizado el 2026-11-07** sobre la copia del usuario (`rebelum-3d` @ `ce84422`) y el árbol del encargo
-(`rebelum-alpha` @ `c2a524c`). Las horas son locales (UTC+1).
+**Actualizado el 2026-11-08** sobre la copia del usuario (`rebelum-3d` @ `ce84422`) y el árbol del encargo
+(`rebelum-alpha` @ `aabe5ad`). Las horas son locales (UTC+1).
 
 **Estados**
 - **Aprobada:** la tomó o la aprobó el usuario.
@@ -65,6 +65,7 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 | [D-051](#d-051) | Primera versión de la región 3D de Pastos Verdes | Aprobada en el encargo |
 | [D-052](#d-052) | La misión del corte alfa dentro de la región | Aprobada en el encargo |
 | [D-053](#d-053) | Validación de la región en el Redmi, pedida por el usuario | Aprobada (hecha) |
+| [D-054](#d-054) | Repositorio privado `Aethelgard-pruebas` para descargar las APK de prueba en el móvil | Aprobada |
 | [D-H01 a D-H15](#6-diseño-ya-implementado-del-3010-al-0511) | Diseño ya implementado antes de Git | Aprobada (historial) |
 
 ## 1. Reglas de trabajo, Git y versiones
@@ -664,6 +665,31 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
   - Con Xiaomi, `adb install` necesita que el usuario confirme en la pantalla. Lo más fiable es copiar la APK a
     Descargas y que la instale el usuario.
   - El número de serie no se anota en ningún documento.
+
+### D-054
+**Repositorio privado `Aethelgard-pruebas` para descargar las APK de prueba en el móvil**
+- **Fecha y estado:** 2026-11-08, hacia las 14:40. Aprobada [usuario], con sus palabras: «Haz una cosa cra en GitHub
+  un lugar donde subir las pruebas y súbela allí y las descargo en mi móvil por qué estoy fuera de mis casa».
+  - El nombre del repositorio y la forma de las versiones los elegí yo [asistente].
+- **Decisión:**
+  - **Repositorio:** `https://github.com/Brunopina6/Aethelgard-pruebas`, privado, sin colaboradores y sin incidencias
+    ni wiki. Solo contiene un `README.md` con las instrucciones.
+  - **Cada APK va como una versión (release)** con la etiqueta `exp-AAAAMMDD-sha7`. Las notas indican el commit de
+    origen, el versionCode, el tamaño y el SHA-256.
+  - El código del juego **no se sube**: `rebelum-alpha` sigue sin publicar.
+  - Tras subir una APK se comprueba que el `digest` de GitHub coincide con el SHA-256 local.
+- **Encaje con las licencias** ([D-050](#d-050)):
+  - una APK de prueba que solo descarga el usuario en su móvil sigue siendo una prueba privada, aunque viaje por
+    GitHub;
+  - no es un paquete entregable mientras el repositorio siga privado, sin colaboradores y sin enlaces compartidos;
+  - la primera APK (`aabe5ad`) lleva los mismos recursos pendientes que las anteriores, y ninguno es de Suno;
+  - una APK con música de Suno no se sube sin preguntar antes.
+- **Primera subida:** `exp-20261108-aabe5ad` ([T-079](TASKS.md#t-079)).
+- **Enlace estable a la última:** `https://github.com/Brunopina6/Aethelgard-pruebas/releases/latest`.
+- **Alternativas descartadas:**
+  - **Una versión en `Brunopina6/Aethelgard`:** obliga a crear etiquetas en el repositorio del juego. Además, la APK
+    sale de commits que no están publicados.
+  - **Subir la APK al repositorio como archivo:** GitHub no admite archivos de más de 100 MB fuera de las versiones.
 
 ## 6. Diseño ya implementado del 30/10 al 05/11
 

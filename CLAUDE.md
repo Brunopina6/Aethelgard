@@ -66,8 +66,10 @@ pida la tarea.
 
 **Git**
 - No escribas en `main` (estable) ni en `desarollo` (desarrollo; se escribe **con una sola r**) sin autorización.
-- Nada de push, merge a ramas compartidas, release, despliegue ni publicación sin autorización expresa. La única
-  autorización de push vigente es la de la memoria (§2).
+- Nada de push, merge a ramas compartidas, release, despliegue ni publicación sin autorización expresa. Las únicas
+  autorizaciones vigentes son estas dos:
+  - el push de la memoria (§2);
+  - las APK de prueba en el repositorio privado `Brunopina6/Aethelgard-pruebas` ([D-054](DECISIONS.md#d-054)).
 - Nada destructivo: ni `reset --hard`, ni `push --force`, ni reescribir historial, ni borrados o limpiezas masivas.
   No borres la rama `respaldo-d155a36` ni las etiquetas.
 - Nunca `git add .`: commits locales pequeños, nombrando cada archivo, y revisando `git status` y `git diff` antes.
@@ -90,6 +92,10 @@ pida la tarea.
 - No distribuyas ningún APK que lleve recursos de licencia pendiente (lista en
   [docs/versiones/licencias_pendientes.txt](docs/versiones/licencias_pendientes.txt)). Eso incluye GitHub.
   - Las compilaciones locales para pruebas sí están permitidas.
+  - **Excepción, desde el 2026-11-08 ([D-054](DECISIONS.md#d-054)):** las APK de prueba pueden ir a
+    `Brunopina6/Aethelgard-pruebas` para que el usuario las descargue en su móvil.
+    - No cuenta como distribución si el repositorio sigue privado, sin colaboradores y sin enlaces compartidos.
+    - Una APK con música de Suno no se sube sin preguntar antes.
   - La música de Suno, solo en pruebas privadas locales, fuera de los commits y de cualquier APK entregable.
 - No instales herramientas ni compres recursos.
 - No cambies ajustes globales, permisos, credenciales ni claves de firma.

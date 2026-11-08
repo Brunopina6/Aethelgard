@@ -1,6 +1,6 @@
 # MEMORIA_CHAT: lo aprendido en las conversaciones sobre AETHELGARD / REBELUM
 
-> **Actualizado el 2026-11-07 a las 16:35** (hora local, UTC+1), en la rama `rebelum-3d` @ `ce84422`. Se publica en la
+> **Actualizado el 2026-11-08 a las 14:50** (hora local, UTC+1), en la rama `rebelum-3d` @ `ce84422`. Se publica en la
 > rama `memoria-desarrollo` de GitHub.
 >
 > Es un **resumen**, no una transcripción. El chat legible está en
@@ -42,11 +42,17 @@
 - **Medido en el Redmi el 08/11** (D-053): en el perfil bajo, la región va a **30 FPS sostenidos y sin tirones** con
   el tope de 30, a 20 m. Sin tope, la mediana es de 21,5 ms y el p95 de 38,4 ms. Las tablas están en
   [SESSION_HANDOFF.md](SESSION_HANDOFF.md).
+- **APK en GitHub para el móvil (08/11, por la tarde):** el usuario, fuera de casa, pidió un sitio en GitHub para
+  descargar las pruebas.
+  - Se creó el repositorio privado `Brunopina6/Aethelgard-pruebas` ([D-054](DECISIONS.md#d-054)).
+  - Lleva la APK `exp-20261108-aabe5ad`, que incluye el arreglo del banco ([T-079](TASKS.md#t-079)).
 - **Siguiente:** T-022: Lya y Garon siguiendo a Kael (hay unos 12 ms de margen), el cofre y la cinemática del mirador.
 - **Vigente:**
   - el Redmi está reservado;
   - la partida del PC se conserva tal cual;
-  - ni push ni publicaciones, salvo la memoria en `memoria-desarrollo` tras cada hito;
+  - ni push ni publicaciones, salvo dos:
+    - la memoria en `memoria-desarrollo`, tras cada hito;
+    - las APK de prueba en el repositorio privado `Aethelgard-pruebas`;
   - no se toca `main`, `desarollo` ni el bloque B;
   - las pruebas, siempre aisladas;
   - calidad visual primero.
@@ -212,10 +218,12 @@ Las normas vigentes están en [CLAUDE.md](CLAUDE.md) y su historia, en [DECISION
 | Solo documentación de memoria y continuidad | 07/11, 15:40 | Terminó a las 16:30 |
 | Publicar la memoria en `memoria-desarrollo` | 07/11, 16:30 | **Vigente**, tras cada hito. El push solo vale para la memoria ([D-049](DECISIONS.md#d-049)) |
 | Licencias: recursos autorizados o sustitutos; el entregable, sin lo no acreditado | 07/11, 16:30 | **Vigente** ([D-050](DECISIONS.md#d-050)) |
+| «Haz una cosa cra en GitHub un lugar donde subir las pruebas y súbela allí…» | 08/11, hacia las 14:40 | **Vigente:** repositorio privado `Aethelgard-pruebas` ([D-054](DECISIONS.md#d-054)) |
 
 **Restricciones del usuario, con sus palabras**
-- «La autorización de push se limita a la documentación de memoria» (07/11, 16:30). Sustituye a «No hagas push ni
-  publiques archivos», de la tarea de memoria.
+- «La autorización de push se limita a la documentación de memoria» (07/11, 16:30).
+  - Sustituye a «No hagas push ni publiques archivos», de la tarea de memoria.
+  - El 08/11 se amplió con las APK de prueba en el repositorio privado ([D-054](DECISIONS.md#d-054)).
 - «No incluyas secretos, claves, credenciales, contenido privado ni registros sin revisar en la documentación.»
 - «El Redmi queda reservado para una validación posterior solicitada al usuario.»
 - «No cambies todavía el nombre técnico del repositorio o de las carpetas de Aethelgard a REBELUM.»

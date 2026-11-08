@@ -1,8 +1,8 @@
 # TASKS: tareas de AETHELGARD / REBELUM
 
-**Actualizado el 2026-11-08 a las 10:45 (hora local, UTC+1).**
+**Actualizado el 2026-11-08 a las 14:50 (hora local, UTC+1).**
 - Copia del usuario: `rebelum-3d` @ `ce84422`.
-- Árbol del encargo: `rebelum-alpha` @ `c2a524c`.
+- Árbol del encargo: `rebelum-alpha` @ `aabe5ad`.
 
 **Estados**
 - **Pendiente:** sin empezar.
@@ -52,6 +52,7 @@
 | [T-076](#t-076) | Que una sesión sin partida cargada no pise la partida completa | Pendiente | Alta |
 | [T-077](#t-077) | `prueba_guardado` con un archivo propio | Pendiente | Media |
 | [T-078](#t-078) | Validar las APK en el Redmi | Bloqueada (dispositivo) | Media |
+| [T-079](#t-079) | Repositorio privado para descargar las APK de prueba en el móvil | Terminada | — |
 
 ## Continuidad
 
@@ -440,3 +441,23 @@
   - Pastos Verdes 3D;
   - el rendimiento del perfil bajo;
   - el control táctil.
+
+### T-079
+**Repositorio privado para descargar las APK de prueba en el móvil**
+- **Estado:** terminada el 2026-11-08, a las 14:46 ([D-054](DECISIONS.md#d-054)).
+- **Repositorio:** `https://github.com/Brunopina6/Aethelgard-pruebas`, privado.
+  - Su único colaborador es el dueño, y no tiene incidencias ni wiki.
+  - El `README.md` (commit `9c83ac3`) explica cómo instalar una prueba en el móvil.
+- **Primera versión:** `exp-20261108-aabe5ad`.
+  - **APK:** `Aethelgard_exp-20261108-aabe5ad.apk`, compilada con `compilar_apk_experimental.ps1` («TODO CORRECTO»).
+  - Sale de `rebelum-alpha` @ `aabe5ad`, con versionCode 39 y el mismo certificado que las anteriores: se instala
+    encima y conserva la partida del móvil.
+  - **Tamaño:** 256 596 467 bytes (244,7 MB).
+  - **SHA-256:** `06bf212add337a3afda056bd7a79f3d354e84eb2698940e92ee66bee3cdd3b6c`.
+  - Lleva los mismos recursos pendientes que `989d35e`, y ninguno es de Suno.
+- **Evidencia** (comprobado con `gh api` a las 14:46):
+  - el recurso está en estado `uploaded`, con el mismo tamaño;
+  - el `digest` de GitHub coincide con el SHA-256 local;
+  - `releases/latest` apunta a esta versión;
+  - el repositorio es privado.
+- **Pendiente de verificar:** la descarga y la instalación en el móvil, que hace el usuario.

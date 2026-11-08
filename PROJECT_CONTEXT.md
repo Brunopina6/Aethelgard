@@ -1,7 +1,8 @@
 # PROJECT_CONTEXT: arquitectura real de AETHELGARD / REBELUM
 
 **Verificado el 2026-11-07** sobre `desarollo` @ `2d1adc4`. El código del juego es idéntico en `rebelum-3d` @ `ce84422`.
-La rama `rebelum-alpha` @ `03b960a` añade la región 3D de Pastos Verdes (ver §5).
+La rama `rebelum-alpha` @ `03b960a` añade la región 3D de Pastos Verdes (ver §5). El 08/11 se añadió el repositorio
+privado de APK de prueba (§9).
 
 Cómo leer las etiquetas:
 - **[código]**: observado en el código.
@@ -246,6 +247,9 @@ objetos.
   - Actions habilitado y sin workflows.
   - Plan: [docs/versiones/automatizacion_prereleases.md](docs/versiones/automatizacion_prereleases.md).
 - **APK locales** en `D:\REBELUM_compilaciones`: ver [TASKS.md](TASKS.md) (T-011 y T-012).
+- **APK de prueba para el móvil** (desde el 2026-11-08): se suben al repositorio privado
+  `Brunopina6/Aethelgard-pruebas`, una versión por APK ([D-054](DECISIONS.md#d-054) y [T-079](TASKS.md#t-079)).
+  - No es el repositorio del juego y no lleva código.
 
 ## 10. Pruebas y herramientas [código + ejecutado]
 

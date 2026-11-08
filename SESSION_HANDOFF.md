@@ -1,6 +1,7 @@
 # SESSION_HANDOFF: punto de control
 
-**Último punto de control:** 2026-11-08 a las 10:45 (hora local, UTC+1), tras medir la región en el Redmi.
+**Último punto de control:** 2026-11-08 a las 14:50 (hora local, UTC+1), tras subir la APK de prueba al repositorio
+privado para el móvil.
 
 ## Dónde está todo
 
@@ -11,7 +12,8 @@
 | Árbol del encargo | `D:\Aethelgard_alpha`, rama `rebelum-alpha` @ `aabe5ad`, local y nunca subida |
 | Copia de la memoria | `D:\Aethelgard_memoria`, rama `memoria-desarrollo`. Las publicaciones se ven con `git log origin/memoria-desarrollo` |
 | GitHub (`Brunopina6/Aethelgard`) | `main` @ `d4b2d16`, `desarollo` @ `2d1adc4`, `v0.1.0` y `memoria-desarrollo` (solo memoria) |
-| Procesos en marcha | Ninguno a las 17:07. Compruébalo antes de lanzar Godot: dos Godot sobre el mismo proyecto se pisan |
+| APK de prueba para el móvil | `Brunopina6/Aethelgard-pruebas`, privado: una versión por APK. La última está en `releases/latest` ([D-054](DECISIONS.md#d-054)) |
+| Procesos en marcha | Ninguno a las 14:46 del 08/11. Compruébalo antes de lanzar Godot: dos Godot sobre el mismo proyecto se pisan |
 
 ## Lo que se hizo desde las 16:30
 
@@ -81,8 +83,19 @@
   - **Margen:** sin tope, la mediana es de 21,5 ms; quedan unos 12 ms por fotograma para Lya, Garon y lo que venga.
   - **Registros:** `logcat_tope.txt` y `banco_tope.csv`, en la misma carpeta.
 - **Error corregido:** `!is_inside_tree()` al recargar la escena entre casos del banco (commit `aabe5ad`). Volvió a
-  salir con esta APK, que es anterior al arreglo; entrará en la próxima.
+  salir con esta APK, que es anterior al arreglo. Ya está en la APK `aabe5ad`.
 - **Validación terminada:** el Redmi vuelve a quedar reservado. Falta la opinión visual del usuario.
+
+## APK en GitHub para el móvil (08/11, 14:46)
+
+- **Petición del usuario,** que está fuera de casa: un sitio en GitHub para descargar las pruebas en el móvil
+  ([D-054](DECISIONS.md#d-054) y [T-079](TASKS.md#t-079)).
+- **Repositorio:** `https://github.com/Brunopina6/Aethelgard-pruebas`, privado y sin colaboradores.
+- **Versión `exp-20261108-aabe5ad`:**
+  - APK compilada a las 14:44 desde `rebelum-alpha` @ `aabe5ad`, con versionCode 39 y el mismo certificado: se
+    instala encima de la anterior;
+  - SHA-256 `06bf212add337a3afda056bd7a79f3d354e84eb2698940e92ee66bee3cdd3b6c`, que coincide con el `digest` de GitHub.
+- **Lo instala el usuario.** No se ha tocado el móvil.
 
 ## Próximo paso concreto
 
@@ -101,8 +114,8 @@
 Las normas completas están en [CLAUDE.md](CLAUDE.md). Lo esencial:
 - **Encargo único:** reanudado ([D-046](DECISIONS.md#d-046)). Cambios pequeños, reversibles y comprobados; se puede
   compilar y probar en local; al final, avisar para la prueba en el móvil.
-- **Push:** solo de la memoria, en `memoria-desarrollo` ([D-049](DECISIONS.md#d-049)). Nada de push de
-  `rebelum-alpha`.
+- **Push:** solo la memoria, en `memoria-desarrollo` ([D-049](DECISIONS.md#d-049)), y las APK de prueba, en el
+  repositorio privado `Aethelgard-pruebas` ([D-054](DECISIONS.md#d-054)). Nada de push de `rebelum-alpha`.
 - **Git:** nada en `main` ni en `desarollo`; nada destructivo; no tocar el bloque B.
 - **Datos:** la partida del PC se conserva tal cual; las pruebas, siempre aisladas.
 - **Redmi:** reservado.
