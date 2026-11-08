@@ -5,6 +5,7 @@ lya: Kael…[pause=0.4] ¿lo has visto? La niebla ha vuelto a tragarse otra alde
 update kael [extra_data="ligero"]
 kael: Lo he visto. Y como siempre, a mí ni me roza.[pause=0.3] Será que hasta la niebla tiene buen gusto.
 lya: No bromees. Nadie es inmune a la niebla.[pause=0.5] Nadie… salvo tú.
+update kael [extra_data="brazalete"]
 kael: Supongo que este brazalete sirve para algo más que para presumir.
 update lya [extra_data="duda"]
 lya: Ese brazalete…[pause=0.5] He visto ese símbolo en los libros prohibidos del templo. Lo llamaban la «Llave del Confino».
