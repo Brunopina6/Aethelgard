@@ -42,6 +42,26 @@ const COMBATE_CENTINELA := "pastos_centinela"
 const GRUPO_CENTINELA := 0               # combate.gd, GRUPOS[0]: dos Grimfang («Quietos. Dos.», PV-06)
 const RADIO_ACCION := 2.2                # metros para hablar o examinar
 const ID_ESTELA := "pastos_estela"       # progreso.gd, DETALLES[10]
+# cofre: junto al árbol mágico de la salida del puente (sendero_puente.gd, SITIOS_MAGICOS), del lado de la cámara para
+# que no lo tape la copa. Se abre una sola vez en toda la partida («cofres_abiertos», como los cofres de zona.gd).
+const COFRE_ARBOL := Vector3(16, 0, 2)
+const ID_COFRE := "pastos3d_arbol_magico"
+const COFRE_ANCHO := 0.9
+const COFRE_FONDO := 0.56
+const COFRE_ALTO := 0.42                 # la caja; la tapa curva sube otros COFRE_FONDO / 2
+const COFRE_ABIERTA := -105.0            # grados que gira la tapa sobre la bisagra de atrás
+# Cinemática del mirador (PV-07, biblia v3 §6.2, aprobada como alfa): plano guiado sin texto sobre la cascada que sube
+# hasta la ciudad flotante, y después la conversación. Tomas: [segundo, posición de la cámara, hacia dónde mira].
+# Las dos últimas van altas (grúa): más bajas enseñaban las laderas peladas del borde y las lomas del norte (que suben
+# a unos 18 m a z = −60) tapaban media ciudad (capturas de prueba_region3d_fotos del 08/11).
+# A 22 m, bajo la ciudad se ve cielo (más abajo parecía apoyada en las lomas).
+const CINE_TOMAS := [[3.5, Vector3(4.1, 3.4, -5.0), Vector3(9.0, -2.5, -16.0)],   # baja hacia la cascada
+	[7.0, Vector3(6.5, 8.0, -9.0), Vector3(9.0, -0.5, -18.0)],                    # sube y la mira desde arriba
+	[11.0, Vector3(4.0, 22.0, -4.0), Vector3(10.0, 34.0, -128.0)]]                # y alza la vista a la ciudad flotante
+const CINE_VUELTA := 1.2                 # segundos para volver a la cámara de juego
+# Campanas: [segundo, tono (respecto a do5), volumen]. Sin música: «Promised Horizon» es de Suno y no es libre.
+const CINE_NOTAS := [[0.6, 1.0, -10.0], [1.5, 1.498, -11.0], [2.4, 2.0, -12.0], [3.3, 2.52, -13.0],
+	[9.4, 1.0, -12.0], [9.4, 1.26, -13.0], [9.4, 1.498, -13.0], [9.9, 2.0, -15.0]]
 
 var pasos := 0
 var saliendo := false
@@ -52,6 +72,17 @@ var boton_accion: Button
 var tilo: Node3D
 var estela: Node3D
 var grupo: Node3D                        # zonas3d/grupo_3d.gd (null si no sale nadie)
+var cofre: Node3D
+var tapa_cofre: Node3D
+var brillo_cofre: MeshInstance3D         # destello que llama la atención mientras está cerrado
+var cinematica := false                  # mientras dura, la cámara es de la cinemática y no hay control
+var cinematicas_vistas := 0              # cuántas veces ha empezado en esta escena (las pruebas miran que no se repita)
+var _cine_t := 0.0
+var _cine_inicio: Transform3D
+var _cine_notas := 0                     # campanas que ya han sonado
+var _cine_capa: CanvasLayer
+var _cine_franjas: Array = []
+var _cine_saltar: Button
 var cerca := ""                          # "tilo", "estela" o ""
 var dialogo_actual := ""
 var _recorrido := 0.0                    # metros andados desde el último paso
@@ -133,6 +164,9 @@ func _process(delta: float) -> void:
 		if is_inside_tree():             # al acabar cada caso, el banco recarga la escena dentro de super()
 			_ultima = kael.global_position
 		return
+	if cinematica:                       # la cinemática mueve la cámara; Kael, quieto y sin pasos
+		_paso_cinematica(delta)
+		return
 	if ocupado():                        # diálogo abierto: Kael quieto y sin pasos
 		_parar_kael()
 		boton_accion.visible = false
@@ -162,6 +196,11 @@ func _process(delta: float) -> void:
 
 
 func _unhandled_input(ev: InputEvent) -> void:
+	if cinematica:                       # sin control: solo se puede saltar (botón, Intro o Escape)
+		if ev.is_action_pressed("ui_accept") or ev.is_action_pressed("ui_cancel"):
+			_saltar_cinematica()
+		get_viewport().set_input_as_handled()
+		return
 	if ocupado():
 		return
 	if ev.is_action_pressed("ui_accept") and boton_accion.visible:
@@ -241,7 +280,7 @@ func _comprobar_mision() -> void:
 			_centinela_armado = false
 			_escena_mision("pv_06")      # al terminar, el combate fijo (_al_terminar_dialogo)
 	elif not P.hito("pv_07"):
-		_escena_mision("pv_07")
+		_empezar_cinematica_mirador()
 
 
 # Pone el hito y abre su diálogo. Sin Dialogic, el hito se pone igual (la misión no se atasca).
@@ -283,6 +322,139 @@ func _tras_dialogo(id: String) -> void:
 		P.guardar(scene_file_path)       # la misión avanza: se guarda (no hace nada en las pruebas)
 
 
+# ================================================================= cinemática del mirador (PV-07)
+# El hito se pone y se guarda ANTES de la animación: si la cinemática se salta o la app se cierra a medias, no se
+# repite ni da nada dos veces. La animación solo enseña: al terminar (o al saltarla) vuelven la cámara de juego, el
+# control y la interfaz, y empieza la conversación PV-07. Lya y Garon se quedan quietos detrás de Kael.
+
+func _empezar_cinematica_mirador() -> void:
+	var P = load("res://progreso.gd")
+	P.poner_hito("pv_07")
+	guardar_posicion()
+	P.guardar(scene_file_path)
+	_parar_kael()
+	boton_accion.visible = false
+	cinematica = true
+	cinematicas_vistas += 1
+	_cine_t = 0.0
+	_cine_notas = 0
+	_cine_inicio = cam.global_transform
+	_interfaz_cinematica(true)
+
+
+func _paso_cinematica(delta: float) -> void:
+	_cine_t += delta
+	while _cine_notas < CINE_NOTAS.size() and _cine_t >= CINE_NOTAS[_cine_notas][0]:
+		var n: Array = CINE_NOTAS[_cine_notas]
+		_sonar(campana(), n[2], n[1])
+		_cine_notas += 1
+	var fin: float = CINE_TOMAS[CINE_TOMAS.size() - 1][0] + CINE_VUELTA
+	if _cine_t >= fin:
+		_terminar_cinematica()
+		return
+	cam.global_transform = _cine_camara(_cine_t)
+
+
+# La cámara en el segundo «t»: de la de juego a las tomas y vuelta a la de juego, suavizando cada tramo.
+func _cine_camara(t: float) -> Transform3D:
+	var claves: Array = [[0.0, _cine_inicio]]
+	for toma in CINE_TOMAS:
+		claves.append([toma[0], Transform3D(Basis(), toma[1]).looking_at(toma[2], Vector3.UP)])
+	claves.append([CINE_TOMAS[CINE_TOMAS.size() - 1][0] + CINE_VUELTA, _camara_juego()])
+	for i in claves.size() - 1:
+		if t <= claves[i + 1][0]:
+			var k := smoothstep(claves[i][0], claves[i + 1][0], t)
+			return (claves[i][1] as Transform3D).interpolate_with(claves[i + 1][1], k)
+	return claves[claves.size() - 1][1]
+
+
+# Dónde pone la cámara el juego con Kael parado (lo mismo que _colocar_camara de vista3d.gd).
+func _camara_juego() -> Transform3D:
+	var ang := deg_to_rad(inclinacion)
+	var atras := Vector3(sin(deg_to_rad(GIRO)), 0, cos(deg_to_rad(GIRO)))
+	var ojo := kael.global_position + Vector3(0, 0.9, 0)
+	var pos := ojo + atras * cos(ang) * distancia + Vector3.UP * sin(ang) * distancia
+	return Transform3D(Basis(), pos).looking_at(ojo, Vector3.UP)
+
+
+func _saltar_cinematica() -> void:
+	if cinematica:
+		_terminar_cinematica()
+
+
+func _terminar_cinematica() -> void:
+	cinematica = false
+	foco = kael.global_position
+	_colocar_camara(1.0)
+	_interfaz_cinematica(false)
+	if not _empezar_dialogo("pv_07"):
+		_tras_dialogo("pv_07")
+
+
+# Franjas negras arriba y abajo, el botón «Saltar» y, mientras, sin los botones del panel de pruebas.
+func _interfaz_cinematica(si: bool) -> void:
+	if _cine_capa == null:
+		_cine_capa = CanvasLayer.new()
+		_cine_capa.layer = 60
+		add_child(_cine_capa)
+		for arriba in [true, false]:
+			var f := ColorRect.new()
+			f.color = Color(0, 0, 0, 1)
+			f.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			f.size = Vector2(1280, 0)
+			f.position = Vector2(0, 0 if arriba else 720)
+			_cine_capa.add_child(f)
+			_cine_franjas.append(f)
+		_cine_saltar = Button.new()
+		_cine_saltar.text = "Saltar"
+		_cine_saltar.position = Vector2(1070, 652)
+		_cine_saltar.custom_minimum_size = Vector2(190, 62)
+		_cine_saltar.add_theme_font_size_override("font_size", 26)
+		_cine_saltar.focus_mode = Control.FOCUS_NONE
+		_cine_saltar.pressed.connect(_saltar_cinematica)
+		_cine_capa.add_child(_cine_saltar)
+	_cine_capa.visible = si
+	info.get_parent().visible = not si          # el panel del prototipo (CAL, RND y los bancos)
+	if si:
+		var t := create_tween().set_parallel(true)
+		t.tween_property(_cine_franjas[0], "size:y", 72.0, 0.5)
+		t.tween_property(_cine_franjas[1], "size:y", 72.0, 0.5)
+		t.tween_property(_cine_franjas[1], "position:y", 648.0, 0.5)
+	else:
+		for f in _cine_franjas:
+			f.size.y = 0.0
+		_cine_franjas[1].position.y = 720.0
+
+
+func _sonar(stream: AudioStream, vol_db: float, tono := 1.0) -> void:
+	var son := AudioStreamPlayer.new()
+	son.stream = stream
+	son.volume_db = vol_db
+	son.pitch_scale = tono
+	add_child(son)
+	son.play()
+	son.finished.connect(son.queue_free)
+
+
+# Una campana suave (do5, 2,5 s), hecha por código como los sonidos del menú. Las notas de la cinemática son esta misma
+# campana con otro tono (pitch_scale): así solo se genera una vez y no hay tirón al empezar.
+static var _campana: AudioStreamWAV
+
+
+static func campana() -> AudioStreamWAV:
+	if _campana == null:
+		var hz := 22050
+		var m := PackedFloat32Array()
+		m.resize(int(hz * 2.5))
+		for i in m.size():
+			var t := float(i) / hz
+			var env := minf(1.0, t * 300.0) * exp(-t * 2.2)
+			m[i] = (sin(TAU * 523.25 * t) + 0.35 * sin(TAU * 1046.5 * t) * exp(-t * 2.0)
+				+ 0.12 * sin(TAU * 1569.75 * t) * exp(-t * 4.0)) * env * 0.5
+		_campana = load("res://menu_combate.gd")._wav(m, hz)
+	return _campana
+
+
 # ================================================================= acción: hablar y examinar
 
 func _comprobar_cerca() -> void:
@@ -294,6 +466,9 @@ func _comprobar_cerca() -> void:
 	elif estela != null and _dist_plana(p, estela.global_position) < RADIO_ACCION:
 		cerca = "estela"
 		boton_accion.text = "Examinar"
+	elif cofre != null and not cofre_abierto() and _dist_plana(p, cofre.global_position) < RADIO_ACCION:
+		cerca = "cofre"
+		boton_accion.text = "Abrir cofre"
 	boton_accion.visible = cerca != ""
 
 
@@ -320,6 +495,8 @@ func _accion() -> void:
 				get_tree().create_timer(4.6).timeout.connect(func():
 					if is_instance_valid(self):
 						_mostrar_aviso("Nueva página en el Diario: «%s»" % acto["escena"]))
+		"cofre":
+			_abrir_cofre()
 
 
 func _mirar_a(n: Node3D, objetivo: Vector3) -> void:
@@ -346,6 +523,7 @@ func _sitio_junto_al_camino(c: Vector3) -> Vector3:
 func _crear_personajes() -> void:
 	tilo = _crear_tilo(_sitio_junto_al_camino(Vector3(2.8, 0, -4.2)))
 	estela = _crear_estela(_sitio_junto_al_camino(Vector3(-6.5, 0, 6.0)))
+	cofre = _crear_cofre(_sitio_cofre())
 
 
 # Lya y Garon, si están en el grupo de la partida, detrás de Kael mirando camino adelante.
@@ -474,6 +652,263 @@ func _crear_estela(p: Vector3) -> Node3D:
 	cuerpo.add_child(col)
 	_mirar_a(cuerpo, Vector3(SENDERO[2].x, p.y, SENDERO[2].z))
 	return cuerpo
+
+
+# ================================================================= cofre
+
+func cofre_abierto() -> bool:
+	return Engine.get_meta("cofres_abiertos", {}).has(ID_COFRE)
+
+
+# Junto al árbol mágico, del lado de la cámara y hacia el puente, en un sitio andable, fuera del camino y sin tronco,
+# roca ni nada a su alrededor. Siempre el mismo (la escena sale igual cada vez).
+func _sitio_cofre() -> Vector3:
+	var hacia := Vector3(-0.6, 0.0, 0.8).normalized()
+	for r in [2.0, 2.4, 1.7, 2.8]:
+		for giro in [0.0, 20.0, -20.0, 40.0, -40.0, 60.0, -60.0]:
+			var q: Vector3 = COFRE_ARBOL + hacia.rotated(Vector3.UP, deg_to_rad(giro)) * r
+			if _prohibido(q) or _dist_sendero(q) < 1.3:
+				continue
+			q.y = altura(q.x, q.z)
+			if _hueco_libre(q, 0.8):
+				return q
+	var p := COFRE_ARBOL + hacia * 2.0
+	return Vector3(p.x, altura(p.x, p.z), p.z)
+
+
+# Nada a la altura de las rodillas en un círculo de «radio» alrededor de «p», y el suelo es el del terreno.
+func _hueco_libre(p: Vector3, radio: float) -> bool:
+	var espacio := get_world_3d().direct_space_state
+	var centro := p + Vector3(0, 0.5, 0)
+	for k in 8:
+		var a := TAU * k / 8.0
+		var q := PhysicsRayQueryParameters3D.create(centro, centro + Vector3(cos(a), 0, sin(a)) * radio)
+		if not espacio.intersect_ray(q).is_empty():
+			return false
+	var abajo := espacio.intersect_ray(PhysicsRayQueryParameters3D.create(p + Vector3(0, 2.0, 0), p - Vector3(0, 1.0, 0)))
+	return not abajo.is_empty() and absf(abajo["position"].y - p.y) < 0.1
+
+
+# Cofre de madera con herrajes dorados y tapa curva, hecho con formas sencillas (sin modelos de terceros). Kael no lo
+# atraviesa. Cerrado, un destello le llama la atención; abierto, se ven las monedas del fondo.
+func _crear_cofre(p: Vector3) -> Node3D:
+	var cuerpo := StaticBody3D.new()
+	cuerpo.name = "Cofre"
+	cuerpo.position = p
+	add_child(cuerpo)
+	var madera := _mat_detalle(Color(0.52, 0.32, 0.17), 0.9, false, 0.8)
+	var dorado := StandardMaterial3D.new()
+	dorado.albedo_color = Color(0.95, 0.76, 0.3)
+	dorado.metallic = 0.6
+	dorado.roughness = 0.35
+	var caja := BoxMesh.new()
+	caja.size = Vector3(COFRE_ANCHO, COFRE_ALTO, COFRE_FONDO)
+	_pieza(cuerpo, caja, madera, Vector3(0, COFRE_ALTO * 0.5, 0))
+	var zocalo := BoxMesh.new()
+	zocalo.size = Vector3(COFRE_ANCHO + 0.03, 0.05, COFRE_FONDO + 0.03)
+	_pieza(cuerpo, zocalo, dorado, Vector3(0, 0.025, 0))
+	var r := COFRE_FONDO * 0.5
+	var bandas := [-COFRE_ANCHO * 0.5 + 0.1, COFRE_ANCHO * 0.5 - 0.1]
+	for x in bandas:
+		var banda := BoxMesh.new()
+		banda.size = Vector3(0.06, COFRE_ALTO + 0.01, COFRE_FONDO + 0.02)
+		_pieza(cuerpo, banda, dorado, Vector3(x, COFRE_ALTO * 0.5, 0))
+	var placa := BoxMesh.new()                              # cerradura
+	placa.size = Vector3(0.12, 0.14, 0.02)
+	_pieza(cuerpo, placa, dorado, Vector3(0, COFRE_ALTO - 0.07, r + 0.01))
+	var ojo := BoxMesh.new()
+	ojo.size = Vector3(0.025, 0.05, 0.01)
+	_pieza(cuerpo, ojo, _mat_simple(Color(0.12, 0.08, 0.05)), Vector3(0, COFRE_ALTO - 0.08, r + 0.022))
+	# el fondo, que solo se ve con la tapa abierta: madera oscura y monedas que brillan un poco
+	var fondo := PlaneMesh.new()
+	fondo.size = Vector2(COFRE_ANCHO - 0.08, COFRE_FONDO - 0.08)
+	_pieza(cuerpo, fondo, _mat_simple(Color(0.17, 0.1, 0.06)), Vector3(0, COFRE_ALTO + 0.003, 0))
+	var oro := StandardMaterial3D.new()
+	oro.albedo_color = Color(1.0, 0.82, 0.3)
+	oro.metallic = 0.7
+	oro.roughness = 0.3
+	oro.emission_enabled = true
+	oro.emission = Color(1.0, 0.75, 0.25)
+	oro.emission_energy_multiplier = 0.6
+	var moneda := CylinderMesh.new()
+	moneda.top_radius = 0.04
+	moneda.bottom_radius = 0.04
+	moneda.height = 0.012
+	moneda.radial_segments = 10
+	for k in 9:
+		var mp := Vector3(-0.3 + 0.075 * k, COFRE_ALTO + 0.01 + 0.006 * (k % 3), 0.11 * sin(k * 2.3))
+		_pieza(cuerpo, moneda, oro, mp, Vector3(0.25 * sin(k * 1.7), 0, 0.25 * cos(k * 1.3)))
+	# tapa: gira sobre la bisagra del borde de atrás
+	tapa_cofre = Node3D.new()
+	tapa_cofre.name = "Tapa"
+	tapa_cofre.position = Vector3(0, COFRE_ALTO, -r)
+	cuerpo.add_child(tapa_cofre)
+	_pieza(tapa_cofre, _malla_tapa(COFRE_ANCHO, r), madera, Vector3(0, 0, r))
+	for x in bandas:
+		_pieza(tapa_cofre, _malla_tapa(0.06, r + 0.012), dorado, Vector3(x, 0, r))
+	var col := CollisionShape3D.new()
+	var forma := BoxShape3D.new()
+	forma.size = Vector3(COFRE_ANCHO, COFRE_ALTO + r, COFRE_FONDO)
+	col.shape = forma
+	col.position.y = (COFRE_ALTO + r) * 0.5
+	cuerpo.add_child(col)
+	# La cerradura mira hacia la cámara (que nunca gira), un poco hacia el puente: con ella de espaldas, de cerca
+	# parecía un barril (capturas de prueba_region3d_fotos del 08/11).
+	_mirar_a(cuerpo, p + Vector3(-0.35, 0, 1.0))
+	if cofre_abierto():
+		tapa_cofre.rotation.x = deg_to_rad(COFRE_ABIERTA)
+	else:
+		brillo_cofre = _destello(cuerpo, Vector3(0, COFRE_ALTO + 0.05, r + 0.05), 0.25)
+		var t := brillo_cofre.create_tween().set_loops()
+		t.tween_property(brillo_cofre, "scale", Vector3.ONE * 0.42, 0.5).set_trans(Tween.TRANS_SINE)   # 0,55 tapaba la cerradura
+		t.tween_property(brillo_cofre, "scale", Vector3.ONE * 0.15, 0.6).set_trans(Tween.TRANS_SINE)
+		t.tween_interval(1.2)
+	return cuerpo
+
+
+# Medio cilindro tumbado a lo largo de X (la tapa curva): eje en y = 0, de z = -radio a z = +radio, con sus dos tapas
+# y la cara de abajo (se ve al abrir). Triángulos en el sentido de las agujas del reloj vistos desde fuera (Godot).
+func _malla_tapa(ancho: float, radio: float, lados := 14) -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var x0 := -ancho * 0.5
+	var x1 := ancho * 0.5
+	for i in lados:
+		var a0 := PI * i / lados
+		var a1 := PI * (i + 1) / lados
+		var n0 := Vector3(0, sin(a0), cos(a0))
+		var n1 := Vector3(0, sin(a1), cos(a1))
+		var a := Vector3(x0, n0.y * radio, n0.z * radio)
+		var b := Vector3(x1, n0.y * radio, n0.z * radio)
+		var c := Vector3(x1, n1.y * radio, n1.z * radio)
+		var d := Vector3(x0, n1.y * radio, n1.z * radio)
+		for v in [[a, n0], [d, n1], [c, n1], [a, n0], [c, n1], [b, n0]]:
+			st.set_normal(v[1])
+			st.add_vertex(v[0])
+		for lado in [-1.0, 1.0]:                            # tapas de los lados: medio disco
+			var x: float = x1 if lado > 0.0 else x0
+			var centro := Vector3(x, 0, 0)
+			var q0 := Vector3(x, n0.y * radio, n0.z * radio)
+			var q1 := Vector3(x, n1.y * radio, n1.z * radio)
+			var orden: Array = [centro, q0, q1] if lado > 0.0 else [centro, q1, q0]
+			for v in orden:
+				st.set_normal(Vector3(lado, 0, 0))
+				st.add_vertex(v)
+	for v in [Vector3(x1, 0, radio), Vector3(x1, 0, -radio), Vector3(x0, 0, -radio),
+			Vector3(x1, 0, radio), Vector3(x0, 0, -radio), Vector3(x0, 0, radio)]:
+		st.set_normal(Vector3.DOWN)
+		st.add_vertex(v)
+	return st.commit()
+
+
+# Destello dorado: un cuadrado que mira siempre a la cámara, con un degradado redondo y mezcla aditiva.
+func _destello(padre: Node3D, pos: Vector3, tam: float) -> MeshInstance3D:
+	var g := Gradient.new()
+	g.colors = PackedColorArray([Color(1.0, 0.96, 0.75, 1.0), Color(1.0, 0.78, 0.3, 0.0)])
+	var tex := GradientTexture2D.new()
+	tex.gradient = g
+	tex.fill = GradientTexture2D.FILL_RADIAL
+	tex.fill_from = Vector2(0.5, 0.5)
+	tex.fill_to = Vector2(0.5, 0.0)
+	tex.width = 64
+	tex.height = 64
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	m.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	m.albedo_texture = tex
+	var q := QuadMesh.new()
+	var mi := MeshInstance3D.new()
+	mi.mesh = q
+	mi.material_override = m
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mi.position = pos
+	mi.scale = Vector3.ONE * tam
+	padre.add_child(mi)
+	return mi
+
+
+# Abre el cofre: primero se apunta como abierto, luego se da el premio y se guarda. Así el premio sale una sola vez
+# aunque se pulse dos veces, y si el guardado fallara, el cofre y el premio se pierden juntos (van en el mismo archivo).
+func _abrir_cofre() -> void:
+	if cofre == null or cofre_abierto():
+		return
+	var abiertos: Dictionary = Engine.get_meta("cofres_abiertos", {})
+	abiertos[ID_COFRE] = true
+	Engine.set_meta("cofres_abiertos", abiertos)
+	var premio := _premio_cofre(ID_COFRE)
+	_parar_kael()
+	var hacia := cofre.global_position - kael.global_position
+	hacia.y = 0.0
+	if hacia.length() > 0.05:
+		kael.mirar(hacia, 0.2)
+	boton_accion.visible = false
+	_animar_cofre()
+	_mostrar_aviso("¡Has encontrado %s!" % premio, 2.2)
+	guardar_posicion()
+	load("res://progreso.gd").guardar(scene_file_path)
+
+
+# El premio, como en los cofres de las zonas 2D (zona.gd, _abrir_cofre): monedas, pociones o éter, siempre el mismo
+# para el mismo cofre.
+func _premio_cofre(id: String) -> String:
+	var inv = load("res://inventario.gd")
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(id)
+	match rng.randi() % 4:
+		0, 1:
+			var oro := rng.randi_range(40, 120)
+			inv.ganar_oro(oro)
+			return "%d monedas" % oro
+		2:
+			inv.agregar_objeto("Poción", 2)
+			return "2 Pociones"
+		_:
+			inv.agregar_objeto("Éter", 1)
+			return "1 Éter"
+
+
+func _animar_cofre() -> void:
+	if brillo_cofre != null:
+		brillo_cofre.queue_free()
+		brillo_cofre = null
+	var t := tapa_cofre.create_tween()
+	t.tween_property(tapa_cofre, "rotation:x", deg_to_rad(COFRE_ABIERTA), 0.55).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	var luz := _destello(cofre, Vector3(0, COFRE_ALTO + 0.25, 0), 0.3)
+	var t2 := luz.create_tween()
+	t2.tween_property(luz, "scale", Vector3.ONE * 1.9, 0.5).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	t2.parallel().tween_property(luz.material_override, "albedo_color:a", 0.0, 0.75)
+	t2.tween_callback(luz.queue_free)
+	var son := AudioStreamPlayer.new()
+	son.stream = sonido_cofre()
+	son.volume_db = -6.0                                    # como los sonidos del menú (menu_combate.gd)
+	add_child(son)
+	son.play()
+	son.finished.connect(son.queue_free)
+
+
+# Sonido del cofre, hecho por código como los del menú (menu_combate.gd, sonidos_ui): el golpe seco de la tapa de
+# madera y, encima, un arpegio brillante que sube (do, mi, sol, do). Dura 0,9 s.
+static func sonido_cofre() -> AudioStreamWAV:
+	var hz := 22050
+	var m := PackedFloat32Array()
+	m.resize(int(hz * 0.9))
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 11
+	var ruido := 0.0
+	var notas := [1046.5, 1318.5, 1568.0, 2093.0]
+	for i in m.size():
+		var t := float(i) / hz
+		ruido = lerpf(ruido, rng.randf_range(-1.0, 1.0), 0.25)          # ruido suavizado: madera, no siseo
+		var v := ruido * exp(-t * 38.0) * 0.5 + sin(TAU * 150.0 * t) * exp(-t * 30.0) * 0.4
+		for k in notas.size():
+			var t0 := t - 0.12 - 0.07 * k
+			if t0 > 0.0:
+				var env := minf(1.0, t0 * 200.0) * exp(-t0 * 5.5)
+				v += (sin(TAU * notas[k] * t0) + 0.3 * sin(TAU * notas[k] * 2.0 * t0)) * env * 0.11
+		m[i] = v
+	return load("res://menu_combate.gd")._wav(m, hz)
 
 
 # ================================================================= guardado y salidas
