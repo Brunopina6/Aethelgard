@@ -34,7 +34,7 @@ animaciones trabajan desde las 22:27, cada uno en su copia.
 | Raíz del repositorio | `D:\Aethelgard`; el proyecto de Godot está en `D:\Aethelgard\aethelgard\` |
 | Copia del usuario | Rama `rebelum-3d` @ `b8e042d`, local. Aquí se editan los documentos de memoria. **El usuario tiene abierto su editor de Godot sobre esta copia** (desde las 21:52): aquí no se lanza otro Godot |
 | Integración | `D:\Aethelgard_alpha`, rama `integracion-experimental` @ `1c17763`, en GitHub. `rebelum-alpha` se queda en `375cc8c`, como estaba |
-| Especialistas (tanda 1) | Sonido: `D:\Aethelgard_sonido`, rama `area-sonido`. Animaciones: `D:\Aethelgard_animaciones`, rama `area-animaciones`. Las dos parten de `1c17763` y están en GitHub. Configuración: `.claude/agents/especialista-*.md` (en `D:\Aethelgard` y en la rama de integración). Cada uno deja su informe en `docs/memory/agents/` de su rama |
+| Especialistas (tanda 1) | Sonido: `D:\Aethelgard_sonido`, rama `area-sonido`. Animaciones: `D:\Aethelgard_animaciones`, rama `area-animaciones`. Las dos parten de `1c17763` y están en GitHub. **Gráficos (fase 1 del mapamundi, desde las 23:12):** `D:Aethelgard_graficos`, rama `area-graficos` @ `dddbddb` (aún sin subir); en esta fase no toca `mapa.gd` ni `mapa.tscn`, que son de sonido hasta integrar. Configuración: `.claude/agents/especialista-*.md` (en `D:\Aethelgard` y en la rama de integración). Cada uno deja su informe en `docs/memory/agents/` de su rama |
 | Respaldo de lo local | `D:\REBELUM_respaldos\2026-11-08_rebelum-alpha_375cc8c\rebelum-alpha.bundle`: los commits de `rebelum-alpha` y `rebelum-3d` que no están en GitHub (`git bundle verify`: correcto) |
 | Copias temporales | `D:\Aethelgard_guardado` (validación del guardado) y `D:\Aethelgard_antes` (medidas «antes» del prólogo, en `40fb5b8`), unos 1,4 GB cada una. Se pueden quitar con permiso |
 | Copia de la memoria | `D:\Aethelgard_memoria`, rama `memoria-desarrollo` |
@@ -42,7 +42,7 @@ animaciones trabajan desde las 22:27, cada uno en su copia.
 | APK de prueba | `Brunopina6/Aethelgard-pruebas`: v57 («Latest»), v54, v52… y la original. En el Redmi: `Download/Aethelgard_Exp_2026-11-08_v54.apk` y `…_v57.apk` |
 | Redmi | REDMI A7 Pro, Android 16, por USB con el ADB del SDK (`%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe`) |
 | Última batería | 22:00, `rebelum-alpha` con el prólogo: 37 superadas, 0 fallidas, 19 manuales, 0 no seguras. Código 254 solo porque el editor del usuario cambió un archivo de la caché de sombreadores de la carpeta real; `partida.save`, sin cambios. `D:\REBELUM_diagnostico\pruebas\2026-11-08_214904\resumen.md` |
-| Procesos en marcha | El editor del usuario y, desde las 22:27, los especialistas de sonido y animaciones (subagentes en segundo plano), cada uno en su copia. El PC tiene 15,4 GB de memoria y quedaban unos 2,5 GB libres con el editor abierto: como mucho, dos especialistas a la vez |
+| Procesos en marcha | Desde las 22:27, los especialistas de sonido y animaciones, y desde las 23:12 el de gráficos (subagentes en segundo plano), cada uno en su copia. El editor del usuario se cerró antes de las 23:10. El PC tiene 15,4 GB de memoria (5,3 GB libres a las 23:10, CPU al 48 %): hasta tres especialistas si uno solo analiza; las medidas, sin otra carga |
 
 ## Encargo en curso (22:00)
 
