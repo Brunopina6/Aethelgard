@@ -58,7 +58,7 @@
 | [T-080](#t-080) | Decidir la nivelación automática de quien se une al grupo (D-062) | Bloqueada (usuario) | Baja |
 | [T-081](#t-081) | El primer diálogo: presentación, cámara, texto y gestos (encargo del 08/11 por la noche) | En curso (prólogo y botón hechos; falta el Redmi) | Alta |
 | [T-082](#t-082) | Organización por especialistas: coordinador y cinco subagentes (encargo del 08/11, 22:00) | En curso | Alta |
-| [T-083](#t-083) | Sonido: primera tanda de efectos de la biblioteca del usuario en eventos reales | Tanda 1 integrada; falta escucharla | Alta |
+| [T-083](#t-083) | Sonido: primera tanda de efectos de la biblioteca del usuario en eventos reales | Tandas 1 y 2 integradas; falta escucharlas | Alta |
 | [T-084](#t-084) | Animaciones: la mano de Kael en el diálogo inicial y gestos naturales | Tanda 1 integrada; tanda 2 pendiente | Alta |
 | [T-085](#t-085) | Gráficos: el mapamundi (costas, agua, relieve, biomas, lugares y rótulos) | En curso (fase 1, desde las 23:12) | Alta |
 | [T-086](#t-086) | Narrativa: el diálogo inicial y la misión de Pastos Verdes | Revisión hecha; falta aplicarla | Media |
@@ -593,6 +593,18 @@
   - `prueba_efectos` hecha estable (`713fe8d`);
   - muestras en `D:\REBELUM_diagnostico\sonido_muestras\2026-11-08\` (`indice.md`);
   - informe: `docs/memory/agents/sonido.md`.
+- **Evidencia, tanda 2** (integrada en `c74ee66` y subida en `4c6fafc`, 09/11, 07:50; comprobado ejecutando y aislado):
+  - voces de cinco familias de enemigos (limo, goblin, Gorthor, piedra y ámbar), una por evento real y como mucho dos
+    a la vez;
+  - el río de las zonas 2D, por cercanía y con fundido (−33 dBFS de RMS en la orilla);
+  - la puerta de la Garganta 2D al abrirse, el Diario, el brazalete, el altar y congelar;
+  - el segundo tajo del doble ataque, 6 dB más bajo;
+  - `sonido.gd` solo con su propio generador aleatorio;
+  - 37 derivados nuevos, con las licencias CC0 comprobadas en la página el 09/11;
+  - batería de la integración: 39 superadas, 0 fallidas (`D:\REBELUM_diagnostico\pruebas\2026-11-09_073823\`);
+  - muestras en `D:\REBELUM_diagnostico\sonido_muestras\2026-11-09\`;
+  - la propuesta de sonido de las 12 magias, en `…\magias\` y en `docs/audio/inventario_sonidos.md`, **sin
+    integrar**: decide el usuario.
 - **Petición** [usuario]: aprovechar `D:\qtorrent\sound effect` para que las acciones del juego tengan respuesta
   sonora. Pasos e interacción; ataques físicos, impactos y defensas; cofres, puertas, objetos y recompensas; victoria,
   derrota y menús; río, cascada, viento y naturaleza; habilidades nuevas y eventos narrativos autorizados.

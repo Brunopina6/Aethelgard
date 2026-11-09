@@ -1293,6 +1293,8 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
   sin registrar, en el repositorio desde el primer commit), igual que la v57 y anteriores; no lleva Suno.
 - **Pies que patinan en 3D:** a la velocidad de exploración se usará el clip de correr, que encaja con 4,2 m/s, y el
   de andar solo a poca velocidad. La velocidad de juego no cambia. Lo implementa animaciones en su tanda 2.
+- **Sonido, tanda 2:** el segundo tajo del doble ataque suena 6 dB más bajo. El sonido de las 12 magias
+  protegidas queda como propuesta, con muestras: decide el usuario.
 - **Combate: lo adoptado del diseño** (`docs/diseno/combate_ampliaciones.md`, rama `area-combate`):
   - pestañas por familia en el menú de magia;
   - la ranura se llama «Accesorio»; nada de «Quiebrasello»;
