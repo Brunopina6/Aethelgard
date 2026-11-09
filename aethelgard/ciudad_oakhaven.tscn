@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://ciudad_oakhaven.gd" id="1_ciudad"]
+
+[node name="ciudad_oakhaven" type="Node2D"]
+script = ExtResource("1_ciudad")

@@ -1,7 +1,7 @@
 extends Control
 # Diario (Godot 4.x): lo que el jugador ha descubierto mirando el escenario y un repaso del combate.
 #   Detalles: los detalles de lore de cada acto (progreso.gd). Los que faltan salen como «???».
-#     Con todos los de un acto se desbloquea su página extra.
+#     Con todos los de un acto se desbloquea su página extra. Debajo, las notas leídas en las ciudades (T-089).
 #   Combate: una ficha corta de cada mecánica, para quien la olvide.
 # Se crea por código desde el mapa:  var d = load("res://diario.gd").new(); ui.add_child(d)
 # Al cerrarse emite "cerrado" y se borra solo.
@@ -144,6 +144,27 @@ func _pintar() -> void:
 		else:
 			cuerpo.add_child(_texto("Página por descubrir (%d de %d detalles)" % [vistos, total], 18, Estilo.GRIS))
 		cuerpo.add_child(Control.new())
+	_pintar_notas(Progreso, lugares)
+
+
+# Notas de las ciudades (progreso.gd, CIUDADES): solo las leídas, con su lugar. No hay página que completar, así que las
+# que faltan no salen, y la sección no aparece hasta leer la primera.
+func _pintar_notas(Progreso, lugares: Array) -> void:
+	var leidas: Array = []
+	for l in Progreso.CIUDADES:
+		for n in Progreso.notas_de(l):
+			if Progreso.visto(n["id"]):
+				leidas.append([n, lugares[l]["nombre"]])
+	if leidas.is_empty():
+		return
+	cuerpo.add_child(_texto("Notas", 32, Estilo.ORO, true))
+	for x in leidas:
+		cuerpo.add_child(_texto("%s · %s" % [x[0]["nombre"], x[1]], 22, Estilo.LUZ_CLARA))
+		var t := _texto("      " + x[0]["texto"], 20, Estilo.GRIS, true)
+		t.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		t.custom_minimum_size = Vector2(1040, 0)
+		cuerpo.add_child(t)
+	cuerpo.add_child(Control.new())
 
 
 func _texto(t: String, tam: int, color: Color, cursiva := false) -> Label:

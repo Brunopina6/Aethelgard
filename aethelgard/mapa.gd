@@ -662,14 +662,15 @@ func _entrar() -> void:
 	var t := create_tween()
 	t.tween_property(negro, "color:a", 1.0, 0.5)
 	await t.finished
-	# la Garganta del Diablo es una mazmorra hecha a mano (garganta.gd); las regiones 3D (modo3d.gd) tienen su
-	# escena; el resto, zonas generadas
+	# la Garganta del Diablo es una mazmorra hecha a mano (garganta.gd) y Oakhaven (lugar 0), una ciudad hecha a mano
+	# (ciudad_oakhaven.gd, T-089); las regiones 3D (modo3d.gd) tienen su escena; el resto, zonas generadas
 	var region_3d: String = load("res://modo3d.gd").escena_de(i)
 	if region_3d != "":
 		Engine.set_meta("pos_3d_ok", false)          # entra por el principio del camino
 		Recursos.cambiar_escena(region_3d)
 		return
-	Recursos.cambiar_escena("res://garganta.tscn" if i == INDICE_GARGANTA else "res://zona.tscn")
+	Recursos.cambiar_escena("res://garganta.tscn" if i == INDICE_GARGANTA else
+		("res://ciudad_oakhaven.tscn" if i == 0 else "res://zona.tscn"))
 
 
 func _mostrar_aviso(texto: String) -> void:

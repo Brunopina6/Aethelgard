@@ -1,5 +1,6 @@
 extends SceneTree
-# Prueba: mapa -> zona -> mapa con Recursos.cambiar_escena (FPS, grupo «zona» y su liberación).
+# Prueba: mapa -> zona -> mapa con Recursos.cambiar_escena (FPS, grupo «zona» y su liberación). La zona es la del
+# lugar junto al que aparece el jugador, Oakhaven: desde T-089, su ciudad hecha a mano (ciudad_oakhaven.tscn).
 # Se ejecuta con «-- sin_prologo»: sin partida, el mapa lanza el prólogo (Dialogic) y, mientras hay un diálogo
 # abierto, no actualiza el lugar cercano (mapa.gd, _process). Por eso, con el prólogo, _entrar() no hacía nada.
 # Espera a que cada cambio de escena ocurra de verdad (con un tiempo real máximo) y termina con quit(1) y
@@ -58,7 +59,8 @@ func _process(_d: float) -> bool:
 				current_scene._entrar()
 				_siguiente()
 		1:
-			if _escena() == "res://zona.tscn" and not R.cambiando:
+			# junto a Oakhaven: desde T-089 es una ciudad hecha a mano (ciudad_oakhaven.tscn, hereda de zona.gd)
+			if _escena() in ["res://zona.tscn", "res://ciudad_oakhaven.tscn"] and not R.cambiando:
 				_info("zona")
 				current_scene._salir()
 				_siguiente()
