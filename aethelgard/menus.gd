@@ -443,6 +443,22 @@ func _pintar_ajustes() -> void:
 			fe.add_child(be)
 		cuerpo.add_child(fe)
 		cuerpo.add_child(_texto("Se nota la próxima vez que Lya invoca a Érebo.", 16, COLOR_SUAVE))
+		# Oakhaven en 3D (T-103), también en pruebas: la Puerta del Sur, la plaza y la posada por dentro.
+		var o3d: bool = m3d.elegida("oakhaven3d")
+		cuerpo.add_child(_texto("Oakhaven", 26, COLOR_TITULO))
+		var fo := HBoxContainer.new()
+		fo.add_theme_constant_override("separation", 8)
+		for op in [[false, "2D (la de siempre)"], [true, "3D (en pruebas)"]]:
+			var en_3d: bool = op[0]
+			var bo := _boton(("● " if en_3d == o3d else "○ ") + op[1], 18, Vector2(240, 34),
+				"oakhaven:%s" % ("3d" if en_3d else "2d"))
+			bo.pressed.connect(func():
+				m3d.elegir("oakhaven3d", en_3d)
+				Sonido.efecto("ui_tic")
+				_pintar_de_nuevo())
+			fo.add_child(bo)
+		cuerpo.add_child(fo)
+		cuerpo.add_child(_texto("Se nota la próxima vez que se entra en Oakhaven.", 16, COLOR_SUAVE))
 
 
 func _cambiar_volumen(bus: String, paso: int) -> void:

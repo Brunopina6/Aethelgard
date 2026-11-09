@@ -1,0 +1,2 @@
+Origen: https://github.com/DietrichGebert/ponytail (skills/ponytail-review/SKILL.md), revisión 96608e078b2d, licencia MIT.
+Instalada el 2026-11-09 solo como skill (sin los hooks del plugin, que escriben un registro tras cada turno y admiten un webhook). Texto revisado antes de instalarla.
