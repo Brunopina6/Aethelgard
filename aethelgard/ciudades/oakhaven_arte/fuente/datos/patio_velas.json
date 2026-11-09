@@ -1,0 +1,81 @@
+{
+ "id": "patio_velas",
+ "rect": [
+  19,
+  36,
+  9,
+  4
+ ],
+ "sprites": [
+  {
+   "capa": "altar",
+   "archivo": "patio_velas_altar.webp",
+   "pos": [
+    1548,
+    2303
+   ],
+   "tam": [
+    171,
+    153
+   ],
+   "orden": 2441.6,
+   "tipo": "objeto"
+  }
+ ],
+ "anclas": {
+  "velas": [
+   1632.0,
+   2342.399948120117
+  ],
+  "velas_suelo": [
+   1632.0,
+   2432.00004863739
+  ]
+ },
+ "efectos": [
+  {
+   "tipo": "halo",
+   "ancla": "velas",
+   "radio": 1.5,
+   "fuerza": 0.5,
+   "color": "vela"
+  },
+  {
+   "tipo": "halo",
+   "ancla": "velas_suelo",
+   "radio": 1.2,
+   "fuerza": 0.35,
+   "color": "vela"
+  }
+ ],
+ "choques": [
+  {
+   "centro": [
+    25.5,
+    37.6
+   ],
+   "tam": [
+    1.6,
+    0.9
+   ]
+  }
+ ],
+ "marco": [
+  1485,
+  2278,
+  1782,
+  2522
+ ],
+ "suelo": {
+  "archivo": "patio_velas_suelo.png",
+  "pos": [
+   1497,
+   2294
+  ],
+  "tam": [
+   276,
+   216
+  ],
+  "escala": 4
+ }
+}

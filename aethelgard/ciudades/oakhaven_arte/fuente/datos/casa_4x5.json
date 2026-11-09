@@ -1,0 +1,73 @@
+{
+ "id": "casa_4x5",
+ "rect": [
+  0,
+  0,
+  4,
+  5
+ ],
+ "sprites": [
+  {
+   "capa": "cuerpo",
+   "archivo": "casa_4x5_cuerpo.webp",
+   "pos": [
+    -24,
+    -500
+   ],
+   "tam": [
+    304,
+    840
+   ],
+   "orden": 320.0,
+   "tipo": "edificio"
+  }
+ ],
+ "anclas": {
+  "puerta": [
+   70.4000015258789,
+   352.0
+  ],
+  "farol": [
+   124.80000305175781,
+   206.08001708984372
+  ],
+  "humo0": [
+   195.30279541015625,
+   -438.4000244140626
+  ]
+ },
+ "efectos": [
+  {
+   "tipo": "halo",
+   "ancla": "farol",
+   "radio": 1.1,
+   "fuerza": 0.45
+  },
+  {
+   "tipo": "humo",
+   "ancla": "humo0",
+   "color": "calido",
+   "alto": 2.4,
+   "escala": 0.75
+  }
+ ],
+ "choques": [],
+ "marco": [
+  -147,
+  -528,
+  423,
+  474
+ ],
+ "suelo": {
+  "archivo": "casa_4x5_suelo.png",
+  "pos": [
+   -125,
+   -463
+  ],
+  "tam": [
+   544,
+   928
+  ],
+  "escala": 4
+ }
+}

@@ -1,0 +1,124 @@
+{
+ "id": "mercado",
+ "rect": [
+  48,
+  27,
+  12,
+  5
+ ],
+ "sprites": [
+  {
+   "capa": "puesto_1",
+   "archivo": "mercado_puesto_1.webp",
+   "pos": [
+    3071,
+    1562
+   ],
+   "tam": [
+    268,
+    286
+   ],
+   "orden": 1852.8,
+   "tipo": "objeto"
+  },
+  {
+   "capa": "puesto_2",
+   "archivo": "mercado_puesto_2.webp",
+   "pos": [
+    3346,
+    1562
+   ],
+   "tam": [
+    268,
+    286
+   ],
+   "orden": 1852.8,
+   "tipo": "objeto"
+  },
+  {
+   "capa": "puesto_3",
+   "archivo": "mercado_puesto_3.webp",
+   "pos": [
+    3621,
+    1562
+   ],
+   "tam": [
+    249,
+    286
+   ],
+   "orden": 1852.8,
+   "tipo": "objeto"
+  },
+  {
+   "capa": "guirnalda",
+   "archivo": "mercado_guirnalda.webp",
+   "pos": [
+    3110,
+    1675
+   ],
+   "tam": [
+    724,
+    31
+   ],
+   "orden": 1856.0,
+   "tipo": "objeto"
+  }
+ ],
+ "anclas": {
+  "tienda": [
+   3456.0,
+   1920.0
+  ]
+ },
+ "efectos": [],
+ "choques": [
+  {
+   "centro": [
+    50.1,
+    28.0
+   ],
+   "tam": [
+    3.4,
+    1.8
+   ]
+  },
+  {
+   "centro": [
+    54.4,
+    28.0
+   ],
+   "tam": [
+    3.4,
+    1.8
+   ]
+  },
+  {
+   "centro": [
+    58.55,
+    28.0
+   ],
+   "tam": [
+    3.0999999999999956,
+    1.8
+   ]
+  }
+ ],
+ "marco": [
+  2977,
+  1539,
+  3983,
+  1950
+ ],
+ "suelo": {
+  "archivo": "mercado_suelo.png",
+  "pos": [
+   2996,
+   1554
+  ],
+  "tam": [
+   980,
+   384
+  ],
+  "escala": 4
+ }
+}

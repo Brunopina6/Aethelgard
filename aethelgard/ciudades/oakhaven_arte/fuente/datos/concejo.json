@@ -1,0 +1,162 @@
+{
+ "id": "concejo",
+ "rect": [
+  43,
+  16,
+  9,
+  5
+ ],
+ "sprites": [
+  {
+   "capa": "cuerpo",
+   "archivo": "concejo_cuerpo.webp",
+   "pos": [
+    2729,
+    496
+   ],
+   "tam": [
+    622,
+    854
+   ],
+   "orden": 1344.0,
+   "tipo": "edificio"
+  },
+  {
+   "capa": "portico",
+   "archivo": "concejo_portico.webp",
+   "pos": [
+    2744,
+    1070
+   ],
+   "tam": [
+    592,
+    410
+   ],
+   "orden": 1475.2,
+   "tipo": "edificio"
+  }
+ ],
+ "anclas": {
+  "humo": [
+   2828.800048828125,
+   515.2000732421874
+  ],
+  "puerta": [
+   3008.0,
+   1382.4000244140625
+  ],
+  "tapiz": [
+   2912.0,
+   1248.0000228881836
+  ],
+  "farol_portico_1": [
+   2951.679931640625,
+   1283.199951171875
+  ],
+  "farol_portico_2": [
+   3180.800048828125,
+   1283.199951171875
+  ]
+ },
+ "efectos": [
+  {
+   "tipo": "humo",
+   "ancla": "humo",
+   "color": "calido",
+   "alto": 2.6,
+   "escala": 0.8
+  },
+  {
+   "tipo": "halo",
+   "ancla": "farol_portico_1",
+   "radio": 1.1,
+   "fuerza": 0.45
+  },
+  {
+   "tipo": "halo",
+   "ancla": "farol_portico_2",
+   "radio": 1.1,
+   "fuerza": 0.45
+  }
+ ],
+ "choques": [
+  {
+   "centro": [
+    43.35,
+    22.85
+   ],
+   "tam": [
+    0.5,
+    0.5
+   ]
+  },
+  {
+   "centro": [
+    45.25,
+    22.85
+   ],
+   "tam": [
+    0.5,
+    0.5
+   ]
+  },
+  {
+   "centro": [
+    47.0,
+    22.85
+   ],
+   "tam": [
+    0.5,
+    0.5
+   ]
+  },
+  {
+   "centro": [
+    48.75,
+    22.85
+   ],
+   "tam": [
+    0.5,
+    0.5
+   ]
+  },
+  {
+   "centro": [
+    50.65,
+    22.85
+   ],
+   "tam": [
+    0.5,
+    0.5
+   ]
+  },
+  {
+   "centro": [
+    51.65,
+    22.85
+   ],
+   "tam": [
+    0.5,
+    0.5
+   ]
+  }
+ ],
+ "marco": [
+  2585,
+  467,
+  3515,
+  1634
+ ],
+ "suelo": {
+  "archivo": "concejo_suelo.png",
+  "pos": [
+   2603,
+   486
+  ],
+  "tam": [
+   908,
+   1136
+  ],
+  "escala": 4
+ }
+}

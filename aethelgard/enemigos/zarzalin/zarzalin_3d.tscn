@@ -1,0 +1,9 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://enemigos/zarzalin/zarzalin_3d.gd" id="1_guion"]
+[ext_resource type="PackedScene" path="res://enemigos/zarzalin/zarzalin_completo.glb" id="2_modelo"]
+
+[node name="Zarzalin3D" type="Node3D"]
+script = ExtResource("1_guion")
+
+[node name="Modelo" parent="." instance=ExtResource("2_modelo")]
