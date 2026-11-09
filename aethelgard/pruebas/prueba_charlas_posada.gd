@@ -1,7 +1,8 @@
 extends SceneTree
 # Charlas de posada (narrativa, 09/11): conversaciones de los héroes al descansar en el Cuervo (ciudades/oakhaven.gd,
 # CHARLAS_POSADA; diálogos en dialogos/oakhaven/charlas/). Sin ventana, con «-- sin_prologo». Partida propia.
-#   1. Los datos: de 4 a 6 charlas, cada una con su diálogo, un hito que ya existe y un grupo de héroes.
+#   1. Los datos: de 4 a 9 charlas, cada una con su diálogo, un hito que ya existe (o una condición, como un combate fijo
+#      ganado de la Garganta) y un grupo de héroes.
 #   2. El texto: de 4 a 6 frases; solo hablan los del grupo y todos dicen algo; cada frase cabe en la caja (110 letras
 #      como mucho) y tiene su intención (CHARLAS_POSADA, «intenciones»); Kael y Lya, su gesto (extra_data de la lista); nada
 #      de Érebo ni de corazones o recuerdos guardados, ni nombres de Final Fantasy X.
@@ -19,6 +20,7 @@ const ARCHIVO := "user://prueba_charlas_posada.save"
 const HITOS := ["pv_02", "pv_03", "pv_05", "pv_06", "pv_07", "pv_14", "mecha_tilo", "oak_favores", "oak_faroles",
 	"oak_lavanda"]
 const HEROES := ["Kael", "Lya", "Garon"]
+const COMBATES := ["garganta_nido", "garganta_gorthor"]      # combates fijos de garganta.gd y garganta_3d.gd
 const GESTOS := {"kael": ["ligero", "brazalete", "sorpresa", "decidido", "duda"],
 	"lya": ["inquieta", "preocupada", "decidida", "duda", "firme"]}
 const PROHIBIDAS := ["érebo", "erebo", "corazón", "corazones", "recuerdo", "recuerdos", "memoria", "tidus", "yuna",
@@ -100,15 +102,21 @@ func _probar() -> void:
 # 1 y 2. Los datos y el texto.
 func _datos() -> void:
 	var n: int = Oak.CHARLAS_POSADA.size()
-	if n < 4 or n > 6:
-		_fallo("1: hay %d charlas (de 4 a 6)" % n)
+	if n < 4 or n > 9:
+		_fallo("1: hay %d charlas (de 4 a 9)" % n)
 	var ids := {}
 	for c in Oak.CHARLAS_POSADA:
 		if ids.has(c["id"]):
 			_fallo("1: charla repetida %s" % c["id"])
 		ids[c["id"]] = true
-		if not c["hito"] in HITOS:
+		if not c.has("hito") and not c.has("si"):
+			_fallo("1: %s no dice con qué se desbloquea" % c["id"])
+		if c.has("hito") and not c["hito"] in HITOS:
 			_fallo("1: %s se desbloquea con «%s», que no es un hito que exista" % [c["id"], c["hito"]])
+		if c.has("si") and Oak.error_condicion(c["si"]) != "":
+			_fallo("1: %s: %s" % [c["id"], Oak.error_condicion(c["si"])])
+		if c.has("si") and str(c["si"]).begins_with("ganado:") and not str(c["si"]).trim_prefix("ganado:") in COMBATES:
+			_fallo("1: %s depende del combate «%s», que no existe" % [c["id"], c["si"]])
 		if c["grupo"].is_empty() or not c["grupo"].all(func(q): return q in HEROES) or not "Kael" in c["grupo"]:
 			_fallo("1: el grupo de %s no vale (%s)" % [c["id"], c["grupo"]])
 		var ruta: String = Oak.ruta_charla(c["id"])
@@ -169,7 +177,7 @@ func _revisar_texto(c: Dictionary, texto: String) -> void:
 	for q in c["grupo"]:
 		if not hablan.has(q.to_lower()):
 			_fallo("2: %s: %s está en el grupo y no dice nada" % [c["id"], q])
-	print("CHARLA %s | %s | %d frases | %s" % [c["id"], c["hito"], frases, c["tema"]])
+	print("CHARLA %s | %s | %d frases | %s" % [c["id"], c.get("hito", c.get("si", "")), frases, c["tema"]])
 
 
 # 3. Recorrer cada charla con Dialogic.
@@ -245,6 +253,13 @@ func _cual_toca() -> void:
 	P.poner_hito("oak_faroles")
 	if Oak.charla_posada() != "charla_miedo_kael":
 		_fallo("4: con «Los faroles de la ronda» hecha no toca charla_miedo_kael (%s)" % Oak.charla_posada())
+	Oak.marcar_charla("charla_miedo_kael")
+	Engine.set_meta("combates_ganados", {"garganta_nido": true})
+	if Oak.charla_posada() != "charla_puentes":
+		_fallo("4: tras el nido de la Garganta no toca charla_puentes (%s)" % Oak.charla_posada())
+	Engine.set_meta("combates_ganados", {"garganta_nido": true, "garganta_gorthor": true})
+	if Oak.charla_posada() != "charla_gorthor":
+		_fallo("4: tras ganar a Gorthor no toca charla_gorthor (%s)" % Oak.charla_posada())
 	print("ORDEN ", vistas)
 
 
