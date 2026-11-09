@@ -2899,7 +2899,11 @@ func _teatro_erebo(obj: Dictionary, es_jefe: bool, al_resultado: Callable) -> vo
 		if a.begins_with("erebo="):
 			ctx["forzar"] = a.substr(6)
 	inv_erebo = inv
-	await inv.lanzar(ctx)
+	# Se espera a «terminada» (la emiten las dos: al acabar y al saltar, una vez) y no a que acabe lanzar(): al saltar en
+	# medio de una espera (el aplastamiento del orbe, Érebo surgiendo), limpiar() mata el tween que la coreografía
+	# esperaba y esa corrutina ya no vuelve; el combate no debe quedarse esperándola (prueba_erebo_saltar).
+	inv.lanzar(ctx)
+	await inv.terminada
 	inv_erebo = null
 	await get_tree().create_timer(0.3).timeout
 	# sale: fundido a negro y de vuelta al combate
@@ -2926,6 +2930,8 @@ func _evento_erebo(n: String, titulo: Label) -> void:
 # Al romperse el orbe (o al saltar): el resultado al enemigo de verdad y la reacción de su doble.
 func _resultado_erebo(r: Dictionary, doble: Node3D, al_resultado: Callable) -> void:
 	al_resultado.call(r)
+	if not is_instance_valid(doble) or ("anim" in doble and doble.get("anim") == null):
+		return                                       # el doble aún no tiene su modelo (se ha saltado muy pronto)
 	if r.get("muerte", false) and doble.has_method("morir"):
 		doble.morir()
 	elif doble.has_method("herida"):
