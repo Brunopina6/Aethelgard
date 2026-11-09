@@ -71,7 +71,7 @@
 | [T-093](#t-093) | Enemigos nuevos, con identidad táctica | Diseño hecho; espera decisiones del usuario | Alta |
 | [T-094](#t-094) | Compañeros de viaje: propuesta y versión que no cambie el canon | Propuesta hecha; decide el usuario | Media |
 | [T-095](#t-095) | La Garganta del Diablo en 3D, como mazmorra (petición del 09/11) | Maqueta integrada; se elige en Ajustes (v136) | Alta |
-| [T-096](#t-096) | Dos skills de Claude: Godot (Atlas Agent Teams) y Blender Animation (Dominations) | Pendiente | Alta |
+| [T-096](#t-096) | Dos skills de Claude: Godot (Atlas Agent Teams) y Blender Animation (Dominations) | Hecha (`129b517`) | Alta |
 | [T-097](#t-097) | El bestiario: Zarzalín y las otras cinco bestias como enemigos jugables | Pendiente | Alta |
 | [T-098](#t-098) | El nombre REBELUM en la pantalla de carga y el icono nuevo de la app | Pendiente | Alta |
 | [T-099](#t-099) | Barra de PM de cada personaje en el HUD de combate | Pendiente | Alta |
@@ -858,7 +858,17 @@
 
 ### T-096
 **Dos skills de Claude: Godot y Blender Animation**
-- **Estado:** pendiente. **Prioridad:** alta. Petición del 09/11, hacia las 12:00.
+- **Estado:** hecha (`129b517` en `integracion-experimental`, 09/11 a las 12:25; copiada también a `D:Aethelgard.claudeskills`).
+  **Prioridad:** alta. Petición del 09/11, hacia las 12:00.
+- **Evidencia:**
+  - `.claude/skills/godot/`: adaptada de Atlas Agent Teams (MIT, © 2026 Monumental Systems, revisión
+    `898df03641be`, con `LICENSE-ATLAS.txt`), más el proyecto real, la importación de modelos y el enganche de
+    ataques al ATB;
+  - `.claude/skills/blender-animation/`: ideas de la skill de terminal-skills (su cabecera declara Apache-2.0), vista
+    en `Andrew1326/dominations` en la revisión `e8c31141fdc7`. Ese repositorio no tiene archivo de licencia, así que
+    no se copió su texto (`NOTICE.txt`);
+  - para estas tareas sustituyen a las `aet-*` desfasadas, cuyos archivos no se tocan.
+- **Primer uso:** el especialista de animaciones prepara a Zarzalín con ellas (12:25).
 - **Fuentes:** la skill de Godot de Atlas Agent Teams (`MonumentalSystems/Atlas-Agent-Teams`,
   `teams/game-dev/skills/godot/SKILL.md`) y la de Blender Animation de Dominations (`Andrew1326/dominations`,
   `.claude/skills/blender-animation`).
