@@ -292,6 +292,13 @@ const EFECTOS := {
 	# rumor grave) y el viento del abismo a lo largo de su eje (garganta_3d.gd, _sonido_3d)
 	"cascada_grande": {"a": "ambiente/cascada_grande", "bus": "Ambiente", "db": 0.0, "tres_d": {"unidad": 10.0, "max": 120.0}},
 	"viento_abismo": {"a": "ambiente/viento_abismo", "bus": "Ambiente", "db": -2.5, "tres_d": {"unidad": 8.0, "max": 70.0}},
+	# la entrada, la cornisa y los puentes colgantes (tanda 5; los engancha quien lleva garganta_3d.gd): las cuerdas de los
+	# puentes crujen de vez en cuando y el viento silba en ellas, desde el punto de su línea más cercano a quien escucha
+	# («cada»: no son bucles; fuente_linea los hace sonar de vez en cuando)
+	"cuerda_cruje": {"a": "ambiente/cuerda_cruje_", "n": 3, "bus": "Ambiente", "db": -14.0, "tono": 0.07, "p": 0, "max": 2, "espera": 0.8,
+		"tres_d": {"unidad": 4.0, "max": 25.0, "filtro": -8.0, "cada": [3.0, 8.0]}},
+	"viento_cuerdas": {"a": "ambiente/viento_cuerdas_", "n": 2, "bus": "Ambiente", "db": -8.0, "tono": 0.05, "p": 0, "max": 1, "espera": 4.0,
+		"tres_d": {"unidad": 6.0, "max": 40.0, "filtro": -6.0, "cada": [9.0, 18.0]}},
 	# Oakhaven (tanda 3): el bullicio de la taberna (bucle) y el letrero del cuervo (de vez en cuando, «cada» s), por
 	# cercanía en la escena 2D (fuente_2d): a todo volumen a «cerca» casillas o menos, callado a «lejos»
 	# (medido el 09/11: a −6 dB, junto a la puerta apenas asomaba sobre el ambiente de la ciudad; a −2, unos 3 dB por encima)
@@ -1203,7 +1210,10 @@ func fuente_3d(padre: Node3D, nombre: String, pos: Vector3, db := 0.0) -> AudioS
 
 # Emisor a lo largo de un segmento (un río, la caída de una cascada, el eje de un abismo): cada fotograma se pone en el
 # punto del segmento más cercano a quien escucha.
-func fuente_linea(padre: Node3D, nombre: String, a: Vector3, b: Vector3, db := 0.0) -> AudioStreamPlayer3D:
+func fuente_linea(padre: Node3D, nombre: String, a: Vector3, b: Vector3, db := 0.0) -> Node3D:
+	var d: Dictionary = EFECTOS.get(nombre, {})
+	if d.get("tres_d", {}).has("cada"):                    # tanda 5: de vez en cuando, no un bucle (las cuerdas)
+		return _fuente_cada(padre, nombre, a, b, db)
 	var f := FuenteLineal.new()
 	f.a = a
 	f.b = b
@@ -1212,6 +1222,55 @@ func fuente_linea(padre: Node3D, nombre: String, a: Vector3, b: Vector3, db := 0
 	if e != null:
 		e.position = a.lerp(b, 0.5)
 	return e
+
+
+# Tanda 5: una fuente 3D que suena de vez en cuando («cada» de su «tres_d»: [mín, máx] s) en el punto del segmento más
+# cercano a quien escucha, si está a menos de «max» m: una de sus variantes, con efecto() (prioridad, voces, pausa,
+# silencio y cambio de escena de siempre). Es hija de «padre» y muere con él.
+func _fuente_cada(padre: Node3D, nombre: String, a: Vector3, b: Vector3, db := 0.0) -> Node3D:
+	if padre == null:
+		return null
+	var f := FuenteCada.new()
+	f.name = "Sonido_" + nombre
+	if padre.has_node(NodePath(f.name)):
+		f.name = "Sonido_%s_%d" % [nombre, padre.get_child_count()]
+	f.son = self
+	f.nombre = nombre
+	f.a = a
+	f.b = b
+	f.db = db
+	f.process_mode = Node.PROCESS_MODE_PAUSABLE
+	padre.add_child(f)
+	return f
+
+
+class FuenteCada extends Node3D:
+	var son
+	var nombre := ""
+	var a: Vector3
+	var b: Vector3
+	var db := 0.0
+	var veces := 0                             # cuántas veces ha sonado (para las pruebas)
+	var _t := 0.0
+
+	func _ready() -> void:
+		var c: Array = son.EFECTOS[nombre]["tres_d"]["cada"]
+		_t = son._rng.randf_range(0.5, float(c[0]))
+
+	func _process(delta: float) -> void:
+		_t -= delta
+		if _t > 0.0:
+			return
+		var t3: Dictionary = son.EFECTOS[nombre]["tres_d"]
+		_t = son._rng.randf_range(float(t3["cada"][0]), float(t3["cada"][1]))
+		var o: Vector3 = son.posicion_oyente()
+		var ab := b - a
+		var k := clampf((o - a).dot(ab) / maxf(ab.length_squared(), 0.0001), 0.0, 1.0)
+		var p := a + ab * k
+		if p.distance_to(o) > float(t3.get("max", 40.0)):
+			return
+		if son.efecto(nombre, {"pos": p, "en_3d": t3, "db": db}) != null:
+			veces += 1
 
 
 func _emisor(padre: Node3D, nombre: String, e: AudioStreamPlayer3D, db := 0.0) -> AudioStreamPlayer3D:
