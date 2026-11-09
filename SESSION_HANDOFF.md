@@ -19,6 +19,17 @@ pidió no preguntar ([MEMORIA_CHAT.md](MEMORIA_CHAT.md)). **La memoria describe 
   (desde `c74b872`): diseño y maqueta jugable, activable con `-- garganta3d`.
 - **Mapamundi pintado: integrado** (`a04a9d2`) con el selector en Ajustes (`14aea04`). Batería: 40 superadas, 0
   fallidas. Falta medirlo. La memoria describe `integracion-experimental` @ `14aea04`.
+- **09/11 ~17:50, sesión autónoma «calidad AAA, sin Redmi».** El usuario está fuera: **no se usa el Redmi** (ni ADB
+  ni copias); lo que lo necesite va a `docs/pruebas_redmi_pendientes.md` (en la integración). Subido
+  `integracion-experimental` @ `eef300c`, comprobado con `git ls-remote`; después, `cd2a405` (local):
+  - **T-098 hecha en el PC** (`96b2a37`): logotipo REBELUM en la pantalla de carga e icono nuevo; app «REBELUM Exp».
+  - Pruebas de mando y teclado arregladas (`9f94601`): esperaban el diálogo de Tilo al instante.
+  - El lanzador de pruebas vigila la carpeta real que da Windows aunque APPDATA venga desviada (`eef300c`).
+  - Prueba nueva `prueba_integridad` (`cd2a405`): 63 scripts, 17 escenas y 1 recurso cargan; sin fallos.
+  - **Batería** sobre `ad5d416`: 57 superadas, 0 fallidas (`D:\REBELUM_diagnostico\pruebas\2026-11-09_173627\`).
+  - **Trabajan:** combate (HUD de PM, luego Zarzalín en combate), sonido (tanda 4 y respiraciones de los héroes),
+    gráficos (T-102, Garganta 3D: entrada, cornisa y puente), animaciones (esperas con personalidad, gestos de
+    diálogo, luego T-101) y narrativa (arte de Oakhaven enganchado, guía de voz de los héroes, comentarios al explorar).
 - **09/11, punto de control por el límite de uso.** Subido y comprobado con `git ls-remote`:
   `integracion-experimental` @ `eb8bd94`, `area-narrativa` @ `01eca69`, `area-sonido` @ `778ea75`,
   `area-animaciones` @ `f6dc571` y `area-graficos` @ `9cc0cbd` (revisión previa sin alertas: nada grande, prohibido

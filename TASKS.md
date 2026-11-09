@@ -73,7 +73,7 @@
 | [T-095](#t-095) | La Garganta del Diablo en 3D, como mazmorra (petición del 09/11) | Maqueta integrada; se elige en Ajustes (v136) | Alta |
 | [T-096](#t-096) | Dos skills de Claude: Godot (Atlas Agent Teams) y Blender Animation (Dominations) | Hecha (`129b517`) | Alta |
 | [T-097](#t-097) | El bestiario: Zarzalín y las otras cinco bestias como enemigos jugables | Pendiente | Alta |
-| [T-098](#t-098) | El nombre REBELUM en la pantalla de carga y el icono nuevo de la app | Pendiente | Alta |
+| [T-098](#t-098) | El nombre REBELUM en la pantalla de carga y el icono nuevo de la app | Hecha en el PC (`96b2a37`); falta verla en el Redmi | Alta |
 | [T-099](#t-099) | Barra de PM de cada personaje en el HUD de combate | En curso (combate, desde las 13:05) | Alta |
 | [T-100](#t-100) | Artes jugables (continúa T-091) y la técnica de guardia de Garon | Pendiente | Alta |
 | [T-101](#t-101) | La invocación de Érebo, una cinemática que merezca verse | Pendiente | Alta |
@@ -916,7 +916,7 @@
 
 ### T-098
 **REBELUM en la pantalla de carga y el icono nuevo**
-- **Estado:** pendiente. **Prioridad:** alta.
+- **Estado:** hecha en el PC (`96b2a37`, 09/11); falta verla en el Redmi (L-05 de `docs/pruebas_redmi_pendientes.md`). **Prioridad:** alta.
 - **Petición** [usuario, 09/11]: «te adjunto el icono y tendrás que cambiar la pantalla de carga al nuevo nombre, y una
   foto del nuevo icono así quitamos el icono ese de godot».
   - Adjuntó el logotipo de REBELUM (estrella, cristal y castillo) y una ilustración de paisaje de fantasía.
@@ -925,6 +925,10 @@
   - la pantalla de carga muestra REBELUM (hoy, «Aethelgard» y «Cónclave de las Cenizas»), con antes y después;
   - el icono de la app es el nuevo, y no el de Godot, en todos los tamaños de Android;
   - la app estable no se toca.
+- **Evidencia** (comprobado ejecutando, aislado, 09/11): el título de texto pasa a ser el logotipo del usuario en modo
+  aditivo; captura en `D:\REBELUM_diagnostico\marca\2026-11-09\`. Icono del proyecto `marca/icono_rebelum.png`; la app
+  experimental se llama «REBELUM Exp» y lleva iconos adaptativos (frente y fondo de 432 px). La app estable no se
+  compila ni se instala (el icono del proyecto le afectaría solo si algún día se compilara).
 
 ### T-099
 **Barra de PM de cada personaje en el HUD de combate**
