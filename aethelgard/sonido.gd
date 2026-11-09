@@ -681,6 +681,7 @@ func _voz3d(bus: String, prioridad: int, pos: Vector3, t: Dictionary) -> AudioSt
 			break
 	if q == null and _voces3d.size() < VOCES_3D:
 		q = AudioStreamPlayer3D.new()
+		q.bus = StringName(bus)                            # nunca por Master (lo mira prueba_audio)
 		q.name = "Sonido3D_%d" % _voces3d.size()
 		q.attenuation_model = AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
 		q.doppler_tracking = AudioStreamPlayer3D.DOPPLER_TRACKING_DISABLED
