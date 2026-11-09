@@ -1,0 +1,8 @@
+join kael (normal) left
+join lya (normal) right
+posadera: Dos camas, sopa caliente y una norma: aquí dentro no se discute.
+lya: Nosotros no discutimos.
+kael: Debatimos. A gritos.
+posadera: Pues debatid bajito. Buenas noches.
+leave lya
+leave kael

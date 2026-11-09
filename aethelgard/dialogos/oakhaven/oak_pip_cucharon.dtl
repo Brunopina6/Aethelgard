@@ -1,0 +1,5 @@
+join pip (normal) center
+pip: ¿El cucharón del Cuervo? Me lo encontré. En su cocina.
+pip: Toma. Dile a la posadera que estaba sucio y lo he lavado. Más o menos.
+[signal arg="oak:favor_cucharon"]
+leave pip

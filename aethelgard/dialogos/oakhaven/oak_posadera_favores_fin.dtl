@@ -1,0 +1,5 @@
+join posadera (normal) center
+posadera: El barril, las flores… ¡y mi cucharón! Hasta brilla. Qué miedo.
+posadera: Esta noche duermes aquí sin pagar. Y llévate esto para el camino.
+[signal arg="oak:favores_hechos"]
+leave posadera

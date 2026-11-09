@@ -1,0 +1,5 @@
+join bastian (normal) center
+bastian: Los tres apagados están en la muralla del este. A mí no me dejan subir.
+bastian: Se sube por la Torre de la Campana. ¿Me los enciendes? Tú eres mayor.
+[signal arg="oak:faroles_aceptados"]
+leave bastian

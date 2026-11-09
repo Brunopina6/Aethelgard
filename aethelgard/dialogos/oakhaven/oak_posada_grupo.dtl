@@ -1,0 +1,8 @@
+join kael (normal) left
+join lya (normal) right
+posadera: Tres camas. La grande, para el grandullón.
+garon: Duermo en el suelo.
+kael: Siempre dice eso. Luego ronca en la grande.
+lya: Buenas noches, Garon. Buenas noches, cama grande.
+leave lya
+leave kael
