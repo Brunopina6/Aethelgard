@@ -116,7 +116,7 @@ func _pintar() -> void:
 	for b in botones:
 		b.add_theme_color_override("font_color", Estilo.ORO if b.get_meta("p") == pestana else Estilo.LUZ_CLARA)
 	if pestana == "Combate":
-		for f in FICHAS:
+		for f in FICHAS + load("res://artes.gd").fichas_activas():   # con las fichas de las artes nuevas (T-091)
 			cuerpo.add_child(_texto(f[0], 30, Estilo.ORO, true))
 			cuerpo.add_child(_texto(f[1], 20, Estilo.LUZ_CLARA))
 		return
