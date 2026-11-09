@@ -161,6 +161,9 @@ const EVENTOS_BESTIAS := {
 	"posadero_llave": "Impacto de la llave del umbral: barrido y cerrojo (0,87 s)",
 	"posadero_herido": "El Posadero recibe un golpe físico", "posadero_caida": "El Posadero se derrumba: vigas, llaves y la puerta",
 	"posadero_entrada": "El Posadero se presenta: la puerta de la posada se abre",
+	"quieto_kael": "Kael lleva un rato quieto en la exploración 3D: se recoloca el cuero y suelta el aire (muy bajo)",
+	"quieto_lya": "Lya lleva un rato quieta: sorbe por la nariz y se ajusta la tela (muy bajo, desde su sitio)",
+	"quieto_garon": "Garon lleva un rato quieto: mueve el equipo y respira hondo (muy bajo, desde su sitio)",
 }
 const DOS_D_CASILLA := 64.0                                # zona.gd, T
 

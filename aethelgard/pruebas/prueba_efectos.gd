@@ -47,6 +47,8 @@ extends SceneTree
 #      vez aunque se pida dos veces, por Efectos; los avisos acaban antes del impacto de su ficha y tienen prioridad 3;
 #      la voz sale de su familia (herido y caída con Sonido.recibe), no tienen «_ataque»; el Posadero suena por encima
 #      (más prioridad y, con dos voces sonando, la suya entra).
+#  17. Los héroes quietos (parte «quietos»): Kael, Lya y Garon parados suenan con su gesto (cada uno el suyo), nunca dos
+#      a la vez, por Efectos y con prioridad 0; andando, ninguno.
 
 const REGION := "res://zonas3d/pastos_verdes_3d.tscn"
 const GARGANTA3D := "res://zonas3d/garganta_3d.tscn"
@@ -173,6 +175,8 @@ func _probar() -> void:
 		await _oakhaven()
 	if _parte("bestias"):
 		await _bestias()
+	if _parte("quietos"):
+		await _quietos()
 	if _parte("garganta3d"):
 		await _garganta3d()
 	print("OK efectos: ", ", ".join(hechos))
@@ -1537,3 +1541,53 @@ func _bestias() -> void:
 		_fallo("16: una voz de herido quita la del Posadero")
 	_limpiar()
 	hechos.append("bestias (%d efectos de 6 bestias: cargan, una vez, avisos antes del impacto, voces por familia, el Posadero por encima)" % n)
+
+# 17. Los héroes quietos en la exploración 3D: un gesto discreto de cada uno al rato de pararse, uno a la vez.
+func _quietos() -> void:
+	await _escena_vacia()
+	_limpiar()
+	var sup := func(_p): return "hierba"
+	var cuerpos := {}
+	for nombre in ["Kael", "Lya", "Garon"]:
+		var n3 := Node3D.new()
+		n3.name = nombre
+		root.add_child(n3)
+		cuerpos[nombre] = Son.pasos_3d(n3, sup)
+	var a_la_vez := 0
+	var desde := -1                                           # sin ventana el driver es mudo y nada acaba solo: un
+	for i in int(45.0 * 30):                                  # gesto se da por acabado a los 2 s (duran 1,6 como mucho)
+		await process_frame
+		var ahora: int = Son.grupo_sonando("quieto")
+		a_la_vez = maxi(a_la_vez, ahora)
+		if ahora > 0 and desde < 0:
+			desde = i
+		elif ahora > 0 and i - desde >= 60:
+			for p in Son._todas():
+				if p.get_meta("grupo", "") == "quieto":
+					p.stop()
+			desde = -1
+	for nombre in cuerpos:
+		var g: int = cuerpos[nombre].gestos
+		var efecto: String = Son.QUIETO_DE[nombre]
+		if g < 1 or _n(efecto) < 1:
+			_fallo("17: %s parado 45 s no hace ningún gesto (%d; descartes %s)" % [nombre, g, str(Son.descartes)])
+		elif g > 3:
+			_fallo("17: %s hace %d gestos en 45 s (demasiados: no es discreto)" % [nombre, g])
+		var d: Dictionary = Son.EFECTOS[efecto]
+		if int(d.get("p", 1)) != 0 or String(d.get("bus", "Efectos")) != "Efectos":
+			_fallo("17: «%s» no va por Efectos con prioridad 0" % efecto)
+	if a_la_vez > 1:
+		_fallo("17: suenan %d gestos de quieto a la vez (uno como mucho)" % a_la_vez)
+	# andando, ninguno: Garon se mueve sin parar 30 s
+	var garon: Node3D = cuerpos["Garon"].cuerpo
+	var antes: int = cuerpos["Garon"].gestos
+	for i in int(30.0 * 30):
+		garon.position.x += 2.0 / 30.0
+		await process_frame
+	if cuerpos["Garon"].gestos != antes:
+		_fallo("17: Garon andando hace gestos de quieto")
+	var info := "%d/%d/%d gestos" % [cuerpos["Kael"].gestos, cuerpos["Lya"].gestos, antes]
+	for nombre in cuerpos:
+		cuerpos[nombre].cuerpo.queue_free()
+	_limpiar()
+	hechos.append("quietos (Kael, Lya y Garon: %s en 45 s, uno a la vez; andando, ninguno)" % info)
