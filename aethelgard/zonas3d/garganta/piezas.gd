@@ -378,12 +378,11 @@ func palanca(p: Vector3, bajada: bool) -> Dictionary:
 	var cuerpo := StaticBody3D.new()
 	cuerpo.position = p
 	region.add_child(cuerpo)
-	var piedra := mat.piedra()
-	var base := MeshInstance3D.new()
-	var bm := BoxMesh.new()
-	bm.size = Vector3(1.2, 0.7, 0.9)
-	base.mesh = bm
-	base.material_override = piedra
+	var base := MeshInstance3D.new()                 # T-102: el pedestal, en sillares con su tono
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7171
+	base.mesh = _sillares(Vector3(1.2, 0.7, 0.9), rng)
+	base.material_override = mat.sillar()
 	base.position.y = 0.35
 	cuerpo.add_child(base)
 	var eje := Node3D.new()                          # el brazo gira alrededor de x
@@ -581,10 +580,14 @@ func levadizo(bajado: bool) -> Dictionary:
 	var hierro := mat.hierro()
 	var piezas := Roca.Lotes.new()
 	var n := int(largo / 0.36)
+	var rng := RandomNumberGenerator.new()                # T-102: cada tabla con su tono (como los puentes colgantes)
+	rng.seed = 6611
+	var m_tabla := mat.madera_color()
 	for k in n:
 		var tabla := BoxMesh.new()
-		tabla.size = Vector3(0.32, 0.12, ancho - randf_range(0.0, 0.12))
-		piezas.poner(tabla, Transform3D(Basis(), Vector3((k + 0.5) * largo / n, 0.0, randf_range(-0.03, 0.03))), vieja if k % 4 == 0 else madera)
+		tabla.size = Vector3(0.32 - rng.randf_range(0.0, 0.04), 0.12, ancho - rng.randf_range(0.0, 0.12))
+		piezas.poner_color(tabla, Transform3D(Basis(Vector3.UP, rng.randf_range(-0.02, 0.02)),
+			Vector3((k + 0.5) * largo / n, 0.0, rng.randf_range(-0.03, 0.03))), m_tabla, Materiales.tono_madera(rng))
 	for lz in [-ancho * 0.5 + 0.1, ancho * 0.5 - 0.1]:
 		var viga := BoxMesh.new()
 		viga.size = Vector3(largo, 0.22, 0.2)
@@ -606,7 +609,13 @@ func levadizo(bajado: bool) -> Dictionary:
 	pivote.add_child(tablero)
 	piezas.cerrar(tablero)                               # (no se vuelve transparente: es el suelo por el que se anda)
 	# estribo de piedra en la cornisa baja, donde apoya la punta, y bisagra de hierro
-	Roca.caja(lotes, region, T.APOYO + Vector3(0.6, -0.35, 0), Vector3(2.2, 0.7, ancho + 0.6), mat.piedra(), Vector3.ZERO, false)
+	var ls := Roca.Lotes.new()                            # T-102: el estribo, en sillares con su tono
+	for i in 3:
+		var bm := BoxMesh.new()
+		bm.size = Vector3(2.2, 0.7, (ancho + 0.6) / 3.0 - 0.03)
+		ls.poner_color(bm, Transform3D(Basis(), T.APOYO + Vector3(0.6, -0.35, (i - 1) * (ancho + 0.6) / 3.0)), mat.sillar(),
+			Materiales.tono_piedra(Color(0.52, 0.50, 0.48), rng))
+	ls.cerrar(region)
 	Roca.caja(lotes, region, T.BISAGRA + Vector3(-0.3, -0.25, 0), Vector3(0.6, 0.5, ancho + 0.4), hierro, Vector3.ZERO, false)
 	# cadenas: de la punta a dos poleas en lo alto del muro del oeste
 	var cadenas: Array = []
@@ -690,7 +699,8 @@ func choque_levadizo(datos: Dictionary) -> void:
 
 func puerta(abierta: bool) -> Dictionary:
 	var p := T.PUERTA
-	var piedra := mat.detalle(Color(0.52, 0.49, 0.48), 0.5, 0.45)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 2020
 	var media := T.PUERTA_ANCHO * 0.5
 	var marco: Array = []
 	for datos in [[Vector3(-media - 0.55, 2.7, 0), Vector3(1.1, 5.4, 1.3)], [Vector3(media + 0.55, 2.7, 0), Vector3(1.1, 5.4, 1.3)],
@@ -699,10 +709,8 @@ func puerta(abierta: bool) -> Dictionary:
 		cuerpo.position = p + datos[0]
 		region.add_child(cuerpo)
 		var mi := MeshInstance3D.new()
-		var bm := BoxMesh.new()
-		bm.size = datos[1]
-		mi.mesh = bm
-		mi.material_override = piedra
+		mi.mesh = _sillares(datos[1], rng)                 # T-102: sillares con su tono (antes, una caja lisa)
+		mi.material_override = mat.sillar()
 		cuerpo.add_child(mi)
 		mi.add_to_group("ocluye")
 		var col := CollisionShape3D.new()
@@ -711,6 +719,9 @@ func puerta(abierta: bool) -> Dictionary:
 		col.shape = forma
 		cuerpo.add_child(col)
 		marco.append(cuerpo)
+	# dos braseros a los lados, contra los pilares (fuera de donde se anda): el fuego guía hasta la puerta
+	for lado in [-1.0, 1.0]:
+		brasero(p + Vector3(lado * (media + 0.45), 0, 0.95), lado * 1.3)
 	# el anillo partido grande, sobre el dintel
 	var sello := MeshInstance3D.new()
 	sello.mesh = anillo_partido(0.55, 0.07, 40.0, 28, 8)
@@ -1233,3 +1244,86 @@ func marca_salida(p: Vector3) -> void:
 	letrero.pixel_size = 0.01
 	letrero.position = p + Vector3(0, 2.2, 0)
 	region.add_child(letrero)
+
+
+# ================================================================= T-102: el resto del recorrido
+
+# Una caja de «tam» hecha de sillares: hiladas de unos 0,55 m, juntas alternas y cada piedra con su tono (en los
+# vértices; material sillar()). Para piezas que se vuelven medio transparentes al tapar a Kael: es una sola malla.
+static func _sillares(tam: Vector3, rng: RandomNumberGenerator) -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var hiladas := maxi(1, roundi(tam.y / 0.55))
+	var alto := tam.y / hiladas
+	var largo := maxf(tam.x, tam.z)
+	var en_x := tam.x >= tam.z
+	var junta := 0.025
+	for h in hiladas:
+		var piezas_h := maxi(1, roundi(largo / 0.95))
+		var paso := largo / piezas_h
+		var desfase := paso * 0.5 if h % 2 == 1 and piezas_h > 1 else 0.0
+		var cortes: Array = [0.0]
+		var c := desfase
+		while c < largo - 0.05:
+			if c > 0.05:
+				cortes.append(c)
+			c += paso
+		cortes.append(largo)
+		for i in cortes.size() - 1:
+			var a: float = cortes[i]
+			var b: float = cortes[i + 1]
+			var bm := BoxMesh.new()
+			var l := b - a - junta
+			var centro := -largo * 0.5 + (a + b) * 0.5
+			var y := -tam.y * 0.5 + alto * (h + 0.5)
+			var hondo := rng.randf_range(-0.02, 0.0)                 # unas piedras salen algo más que otras
+			if en_x:
+				bm.size = Vector3(l, alto - junta, tam.z + hondo * 2.0)
+			else:
+				bm.size = Vector3(tam.x + hondo * 2.0, alto - junta, l)
+			var pos := Vector3(centro, y, 0) if en_x else Vector3(0, y, centro)
+			var color := Materiales.tono_piedra(Color(0.54, 0.51, 0.49), rng)
+			var arr: Array = bm.surface_get_arrays(0)
+			var v: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+			var n: PackedVector3Array = arr[Mesh.ARRAY_NORMAL]
+			for k in arr[Mesh.ARRAY_INDEX]:
+				st.set_color(color)
+				st.set_normal(n[k])
+				st.add_vertex(v[k] + pos)
+	# el relleno de las juntas (oscuro), para que no se vea a través
+	var fondo := BoxMesh.new()
+	fondo.size = tam - Vector3(0.06, 0.02, 0.06)
+	var fa: Array = fondo.surface_get_arrays(0)
+	var fv: PackedVector3Array = fa[Mesh.ARRAY_VERTEX]
+	var fn: PackedVector3Array = fa[Mesh.ARRAY_NORMAL]
+	for k in fa[Mesh.ARRAY_INDEX]:
+		st.set_color(Color(0.2, 0.19, 0.19))
+		st.set_normal(fn[k])
+		st.add_vertex(fv[k])
+	return st.commit()
+
+
+# Brasero de piedra con su fuego: cuenco de hierro sobre un pie, brasas, llama, halo y su calor en la roca.
+func brasero(p: Vector3, fase: float) -> void:
+	p.y = T.altura(p.x, p.z) if p.y == T.ALTO else p.y
+	var pie := CylinderMesh.new()
+	pie.top_radius = 0.16
+	pie.bottom_radius = 0.24
+	pie.height = 0.9
+	pie.radial_segments = 8
+	lotes.poner(pie, Transform3D(Basis(), p + Vector3(0, 0.45, 0)), mat.piedra_tallada())
+	var cuenco := CylinderMesh.new()
+	cuenco.top_radius = 0.34
+	cuenco.bottom_radius = 0.18
+	cuenco.height = 0.22
+	cuenco.radial_segments = 10
+	lotes.poner(cuenco, Transform3D(Basis(), p + Vector3(0, 1.0, 0)), mat.hierro())
+	var brasas := CylinderMesh.new()
+	brasas.top_radius = 0.29
+	brasas.bottom_radius = 0.29
+	brasas.height = 0.04
+	brasas.radial_segments = 10
+	lotes.poner(brasas, Transform3D(Basis(), p + Vector3(0, 1.1, 0)), mat.brillo(Color(1.0, 0.45, 0.16), 1.3))
+	llama_en(p + Vector3(0, 1.42, 0), 0.62, fase, 1.1)
+	esc.halo(p, p + Vector3(0, 1.3, 0), Materiales.FUEGO, 4.4, 1.7, lotes)
+	mat.poner_fuego(p + Vector3(0, 1.3, 0), 5.0)
