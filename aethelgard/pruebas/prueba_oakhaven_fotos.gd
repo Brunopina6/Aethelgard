@@ -7,7 +7,7 @@ extends SceneTree
 # también sus rincones (6_barrio_cuervo a 14_mercado: el Cuervo, el callejón y la grieta, el Patio de las Velas, la colina
 # del crematorio, la ronda apagada y encendida, el Árbol y su copa translúcida, el mercado), el Diario con las notas
 # (15_diario_notas), la posada con la noche gratis y su escena (16_ y 17_), un comentario de los héroes al explorar
-# (19_comentario), una charla de posada con Lya (20_ y 21_) y, con «3d», el ramito de lavanda en Pastos Verdes 3D (18_lavanda_pastos).
+# (19_comentario), un vecino que habla al pasar (22_voz_vecino), una charla de posada con Lya (20_ y 21_) y, con «3d», el ramito de lavanda en Pastos Verdes 3D (18_lavanda_pastos).
 # Las de la ciudad hecha a mano usan partidas sintéticas (nada se guarda: las pruebas no escriben la partida).
 
 const MAPA := "res://mapa.tscn"
@@ -199,6 +199,17 @@ func _rincones(z) -> void:
 	Com.mostrar(z.ui, c)
 	await _esperar(20)
 	await _foto("19_comentario")
+	# un vecino que dice algo al pasar (ciudades/oakhaven_vida.gd): la posadera, sobre su cabeza
+	await _hasta(func(): return not z._comentario_en_pantalla(), 20.0)   # (y su respuesta)
+	var pos_n = _vecino(z, "posadera")
+	if pos_n != null:
+		z.jugador.position = pos_n[0].position + Vector2(90, 50)
+		z.camara.reset_smoothing()
+		z.voz_quien.clear()
+		z.voz_pausa = 0.0
+		await _hasta(func(): return is_instance_valid(z.voz_globo), 6.0)
+		await _esperar(12)
+		await _foto("22_voz_vecino")
 	# una charla de posada (CHARLAS_POSADA): con Lya en el grupo y PV-03, la primera noche sale «Cómo se conocieron»
 	if D != null:
 		var G = load("res://grupo.gd")

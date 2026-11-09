@@ -1,0 +1,15 @@
+join kael (vivo) left
+join lya (vivo) right
+update lya [extra_data="preocupada"]
+lya: Kael… cuando Gorthor rugió, no te moviste.
+update kael [extra_data="ligero"]
+kael: Me quedé helado. Pero con estilo.
+garon: Te quedaste delante de ella. Eso no es quedarse helado.
+update kael [extra_data="duda"]
+kael: …Bueno. Me pareció un buen sitio.
+update lya [extra_data="firme"]
+lya: Gracias. Y no lo vuelvas a hacer.
+update kael [extra_data="decidido"]
+kael: Lo segundo no lo prometo.
+leave lya
+leave kael

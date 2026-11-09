@@ -144,7 +144,7 @@ static func apuntar(c: Dictionary) -> void:
 static func mostrar(capa: Node, c: Dictionary) -> Control:
 	apuntar(c)
 	var caja := _caja(c)
-	capa.add_child(caja)
+	capa.add_child(caja, true)                     # nombre legible («comentario», «comentario2»…): así se reconocen
 	var t := caja.create_tween()
 	t.tween_property(caja, "modulate:a", 1.0, 0.25)
 	t.tween_interval(duracion(c["texto"]))
@@ -154,7 +154,7 @@ static func mostrar(capa: Node, c: Dictionary) -> Control:
 		t.tween_callback(func():
 			if is_instance_valid(capa):
 				var segunda := _caja(r)
-				capa.add_child(segunda)
+				capa.add_child(segunda, true)
 				var t2 := segunda.create_tween()
 				t2.tween_property(segunda, "modulate:a", 1.0, 0.25)
 				t2.tween_interval(duracion(r["texto"]))
