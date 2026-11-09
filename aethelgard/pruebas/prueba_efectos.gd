@@ -53,6 +53,8 @@ extends SceneTree
 #  18. Las voces de los héroes (parte «heroes»): Kael, Lya y Garon con su esfuerzo, herido, jadeo (una vez con poca
 #      vida, otra tras curarse), alivio y victoria; prioridad 1 (victoria 3), una a la vez; en un combate de verdad, el
 #      golpe de un enemigo hace quejarse al héroe y la magia sigue sin pedir voces.
+#  19. Las cuerdas y el viento de los puentes de la Garganta 3D (parte «cuerdas»): suenan de vez en cuando (no en bucle),
+#      desde el punto de su línea más cercano a quien escucha, por Ambiente; lejos (más de «max»), nada.
 
 const REGION := "res://zonas3d/pastos_verdes_3d.tscn"
 const GARGANTA3D := "res://zonas3d/garganta_3d.tscn"
@@ -183,6 +185,8 @@ func _probar() -> void:
 		await _quietos()
 	if _parte("heroes"):
 		await _heroes()
+	if _parte("cuerdas"):
+		await _cuerdas()
 	if _parte("garganta3d"):
 		await _garganta3d()
 	print("OK efectos: ", ", ".join(hechos))
@@ -217,7 +221,8 @@ func _catalogo() -> void:
 				_fallo("1: %s no es QOA mono a 48 kHz" % ruta)
 				continue
 			# bucles: los emisores 3D y las fuentes 2D, salvo las que suenan de vez en cuando («cada»: el cuervo)
-			var bucle: bool = (d.has("tres_d") or d.has("dos_d")) and not d.get("dos_d", {}).has("cada")
+			var bucle: bool = (d.has("tres_d") or d.has("dos_d")) and not d.get("dos_d", {}).has("cada") \
+				and not d.get("tres_d", {}).has("cada")
 			if (s.loop_mode == AudioStreamWAV.LOOP_FORWARD) != bucle:
 				_fallo("1: %s %s debería ser un bucle" % [ruta, "no" if bucle else "sí y no"])
 			var w := AudioStreamWAV.load_from_file(ProjectSettings.globalize_path(ruta))   # el derivado, sin comprimir
@@ -1686,3 +1691,37 @@ func _heroes() -> void:
 	await _esperar(3)
 	_limpiar()
 	hechos.append("voces de los héroes (Kael, Lya y Garon: esfuerzo, herido, jadeo, alivio y victoria; una a la vez; en combate, el golpe del limo hace quejarse a %s y su ataque físico da %d esfuerzo)" % [hk.get("nombre", "?"), esfuerzo])
+
+# 19. Fuentes 3D de vez en cuando (las cuerdas que crujen y el viento en ellas): una escena 3D con su cámara.
+func _cuerdas() -> void:
+	await _escena_3d()
+	_limpiar()
+	var a := Vector3(-3, 0, -10)
+	var b := Vector3(-3, 0, 10)
+	var f = Son.fuente_linea(current_scene, "cuerda_cruje", a, b)
+	var g = Son.fuente_linea(current_scene, "viento_cuerdas", a, b)
+	var lejos = Son.fuente_linea(current_scene, "cuerda_cruje", Vector3(80, 0, 0), Vector3(90, 0, 0), -3.0)
+	if not f is Node3D or f is AudioStreamPlayer3D or g == null or lejos == null:
+		_fallo("19: fuente_linea con «cada» no crea una fuente de vez en cuando (%s)" % str(f))
+		return
+	var puntos_bien := true
+	var vistos := 0
+	for i in int(40.0 * 30):
+		await process_frame
+		for x in Son._voces3d:
+			if is_instance_valid(x) and x.playing and x.get_meta("efecto", "") in ["cuerda_cruje", "viento_cuerdas"]:
+				var q: Vector3 = x.global_position
+				if absf(q.x + 3.0) > 0.01 or absf(q.z) > 10.01 or String(x.bus) != "Ambiente":
+					puntos_bien = false
+				x.stop()                                         # sin ventana nada acaba solo
+				vistos += 1
+	if f.veces < 3 or g.veces < 1:
+		_fallo("19: en 40 s las cuerdas suenan %d veces y el viento %d (esperaba 3 o más y 1 o más)" % [f.veces, g.veces])
+	if lejos.veces != 0:
+		_fallo("19: unas cuerdas a 80 m suenan %d veces (más allá de su «max»)" % lejos.veces)
+	if not puntos_bien:
+		_fallo("19: las cuerdas no suenan en el punto de su línea más cercano, por Ambiente")
+	var cruje: int = f.veces
+	var silba: int = g.veces
+	await _escena_vacia()
+	hechos.append("cuerdas (en 40 s: cuerdas %d, viento %d; lejos, 0)" % [cruje, silba])
