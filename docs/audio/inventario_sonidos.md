@@ -727,7 +727,7 @@ Sigue limitado a esa zona, como pide el usuario hasta que escuche las muestras. 
   (`addons/`, 0,1 MB).
 - **Ogg Vorbis en streaming: no se ha podido.** Ni Godot ni la biblioteca estándar de Python codifican Vorbis, y no
   puedo instalar un codificador. Si se autoriza uno (ffmpeg u oggenc) o se convierten fuera, los candidatos son:
-  - los 13 bucles largos, que ocupan 8,7 MB de los 19,5;
+  - los 13 bucles largos, que ocupan unos 7,1 MB de los 19,5 (3,9 los cinco ambientes estéreo y 3,2 los ocho de `efectos/ambiente`);
   - en Ogg a unos 96 kbit/s ocuparían unos 4,5 MB, en streaming (sin cargarlos enteros);
   - la clase de cada recurso cambiaría de `AudioStreamWAV` a `AudioStreamOggVorbis`, y `sonido.gd` ya los trata igual
     al reproducirlos.
