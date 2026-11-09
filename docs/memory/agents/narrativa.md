@@ -464,3 +464,186 @@ D-073 y largo de aviso)
 - **Siguiente paso de narrativa:** cuando gráficos publique su módulo, repasar las capturas con el arte de verdad y
   pasar `prueba_oakhaven`. Cuando el usuario decida n.º 1, 2, 3 y 5, adoptar la propuesta
   (`dialogos/oakhaven/propuesta/`, fase 1).
+
+## 2026-11-09, 13:20 — T-086: el texto del prólogo y de Pastos Verdes, aplicado
+
+**Encargo:** aplicar los 6 cambios de la tabla de `docs/diseno/ciudades_y_lugares.md` §5.2, adoptada por el
+coordinador en D-073 (incluido partir los dos globos del prólogo), sin mover las etiquetas de retrato y gesto de
+animaciones; ajustar las pruebas que cuentan frases; capturas con ventana antes y después; comprobar la continuidad.
+Copia `D:\Aethelgard_narrativa`, rama `area-narrativa`, desde `70ef723`.
+
+### 1. Archivos y commits
+| Commit | Qué |
+|---|---|
+| `453c794` | `pruebas/prueba_prologo_fotos.gd`: imprime cuántas líneas ocupa cada frase en la caja (solo informa) |
+| `6e3bc57` | Los 6 cambios en `dialogos/prologo.dtl`, `pv_02.dtl`, `pv_07.dtl`, `pv_tilo.dtl` y `pv_tilo_fin.dtl`; `pruebas/prueba_prologo.gd` y `prueba_prologo_video.gd`, al día |
+| (este) | Este informe |
+
+- **Las etiquetas de animaciones** no se mueven ni se quitan:
+  - al partir un globo, el gesto (`duda`, `preocupada`) se queda en el primero, que es la frase que lo pide;
+  - el segundo no lleva gesto propio, así que ninguno se repite seguido;
+  - los globos nuevos son de Lya (`lya: …`) y salen con su retrato «vivo». Ella conserva el foco porque sigue
+    hablando: Dialogic solo cambia el resaltado al cambiar de interlocutor (observado en
+    `addons/dialogic/Modules/Character/subsystem_portraits.gd`, final de `change_speaker`).
+- **`prueba_prologo.gd`**, qué cambia y por qué:
+  - espera 11 frases (`FRASES`, antes 9), en la pasada entera y en la deprisa: los dos globos partidos suman dos;
+  - Lya tiene siete frases. El segundo globo de cada frase partida admite la pose del primero o el reposo
+    (`duda|reposo` y `preocupada|reposo`). Sin etiqueta propia, sigue con la pose anterior hasta que
+    `retrato_vivo.gd` la devuelve sola al reposo, 3,2 s después de pedirla. A la velocidad de la prueba se ve la cola
+    (vio `duda, duda` y `preocupada, preocupada`); a ritmo de lectura ya está en reposo (§3, capturas del vídeo);
+  - **nuevo:** cada frase cabe en dos líneas de la caja (`LINEAS_MAX`), contadas con `RichTextLabel.get_line_count()`
+    en la caja de verdad. Imprime las poses de Lya y las líneas de cada frase.
+- **`prueba_prologo_video.gd`:** espera 11 frases.
+- **Repasadas, sin cambios:**
+  - `prueba_dialogo_interfaz`: el texto nuevo de `pv_tilo` no tiene «Rosa» ni «flores»;
+  - `prueba_ruta_alpha`: solo usa nombres de diálogos, objetivos y grupo;
+  - `prueba_anim_pv_fotos` y `prueba_boton_prologo`: no cuentan frases.
+
+### 2. Pruebas
+- **Importación aislada,** antes de empezar:
+  `D:\REBELUM_diagnostico\importaciones\narrativa_20261109_125053\importacion.log`. Salida 0, sin archivos nuevos.
+- **Antes** (comprobado ejecutando, aislado, 12:54, sobre `70ef723` con la impresión de líneas):
+  `D:\REBELUM_diagnostico\narrativa\2026-11-09\texto\2026-11-09_125422\`.
+  - Sonda de líneas, SUPERADA.
+  - `prueba_prologo_fotos`, con ventana: 9 frases, FALLOS 0.
+- **Después** (comprobado ejecutando, aislado, 12:58, sobre lo que luego fue `6e3bc57`; después solo cambiaron
+  comentarios): `...\texto\2026-11-09_125821\`.
+  - SUPERADAS: `prueba_prologo`, `prueba_dialogo_interfaz`, `prueba_dialogo`, `prueba_ruta_alpha` y
+    `prueba_boton_prologo`.
+  - Con ventana y sin errores (MANUAL): `prueba_anim_pv_fotos` y `prueba_prologo_video`.
+  - `prueba_prologo_fotos` salió FALLIDA en esa pasada **por el orden de mi lista**: `prueba_boton_prologo` deja una
+    partida en la carpeta aislada (`partida_exp.save`) y, con partida, el prólogo no sale. En una pasada propia
+    (`...\texto\2026-11-09_130120\`), sin errores y con 11 frases.
+- **Batería completa** (comprobado ejecutando, aislado, sobre `6e3bc57`, de 13:09 a 13:17):
+  **SUPERADAS 49 · FALLIDAS 0 · MANUALES 28 · NO SEGURAS 0**
+  (`D:\REBELUM_diagnostico\narrativa\2026-11-09\bateria\2026-11-09_130914\resumen.md`).
+  - Ninguna fallida, así que ningún fallo nuevo. Del historial: la última batería completa de la carpeta común
+    (`D:\REBELUM_diagnostico\pruebas\2026-11-09_123210`, de otra copia) dio los mismos totales.
+  - La partida real, su carpeta y el proyecto, sin cambios. Había otros Godot abiertos, de otras copias.
+  - Las MANUALES son las de ventana y las manuales, que la batería no ejecuta. Las de diálogos con ventana se pasaron
+    aparte (arriba).
+- **Sondas temporales,** que no se confirman; copia en
+  `C:\Users\G513\AppData\Local\Temp\claude\1e8b2791f134856b\01fe04af-8fa2-417a-a9ef-c72745be1c17\scratchpad\narrativa\t086\`.
+  Estuvieron en `pruebas/` solo mientras corrían.
+  - `sonda_narrativa_lineas.gd`: las líneas de cada frase del prólogo y de Pastos Verdes (44 antes y 46 después);
+  - `sonda_narrativa_tilo.gd`: la continuidad de §4.
+
+### 3. Evidencias
+**Antes y después de cada frase.** Largo: caracteres visibles. Líneas: medidas en la caja con `get_line_count`, sin
+ventana y con ventana (dan lo mismo).
+
+| N.º (§5.2) | Archivo | Quién | Antes | Después | Largo | Líneas |
+|---|---|---|---|---|---|---|
+| 5 | `prologo.dtl:11` → `11-12` | Lya | Ese brazalete…[pause=0.5] He visto ese símbolo en los libros prohibidos del templo. Lo llamaban la «Llave del Confino». | **1:** Ese brazalete…[pause=0.5] He visto ese símbolo en los libros prohibidos del templo. **2:** Lo llamaban la «Llave del Confino». | 108 → 72 + 35 | 2 → 1 + 1 |
+| 9 | `prologo.dtl:19` → `20-21` | Lya | Ten cuidado ahí fuera. Los Hollines ya no son solo sombras: ahora llevan hachas del Vacío. | **1:** Ten cuidado ahí fuera. **2:** Los Hollines ya no son solo sombras: ahora llevan hachas del Vacío. | 90 → 22 + 67 | 2 → 1 + 1 |
+| 11 | `pv_02.dtl:4` | Kael | Bien. Por una vez, algo sale bien. | Y nadie me ha seguido. Por una vez, algo sale bien. | 34 → 51 | 1 → 1 |
+| 39 | `pv_07.dtl:14` | Garon | Y esas huellas de hollín dan vueltas alrededor… sin pisarlas. | Huellas de hollín. Rodean las flores… sin pisarlas. | 61 → 51 | 1 → 1 |
+| 43 | `pv_tilo.dtl:1` | Tilo | El viejo centinela del mirador lleva cuarenta años mirando la cascada. Saludadlo antes de seguir. | ¿Todavía aquí? El viejo os espera en el mirador. Saludadlo antes de cruzar. | 97 → 75 | 2 → 1 |
+| 44 | `pv_tilo_fin.dtl:1` | Tilo | Buen camino, chicos. Y cuidad esa mecha: arde más que yo. | Buen camino, chicos. Y que no se os apague esa mecha. | 57 → 53 | 1 → 1 |
+
+Las otras 38 frases no cambian. Ninguna, antes ni después, pasa de dos líneas.
+
+**Lo que cabe en la caja** (medido el 2026-11-09):
+- el hueco del texto es de 824 × 124 px. Una línea ocupa 51 px y dos, 102: una tercera (153) ya no cabría;
+- en una línea caben unos 75 caracteres de este texto (70, 72 y 75 entran en una; 84 ya pasa a dos). Los 110
+  caracteres de `prueba_ciudad_datos` (dos de unos 55) dejan margen: valen como objetivo de lectura, no como límite
+  físico.
+
+**Corrección a mi diseño.** En §5.2 escribí que el globo 5 (108 caracteres) «lo normal es que ocupe tres líneas».
+Medido, ocupa dos (102 de 124 px). Lo que sí se ve en la captura de antes es el corte de línea: «… del templo. Lo /
+llamaban la «Llave del Confino»». Parte justo la frase del nombre. Partido el globo, el nombre sale entero y solo.
+El cambio se sostiene por eso, y porque el coordinador lo adoptó, pero ya no por espacio.
+
+**Intenciones para animaciones.** No he añadido ni quitado etiquetas; la columna de la derecha es solo propuesta.
+| Globo | Quién | Intención | Gesto o retrato que lleva hoy | Propuesta (decide animaciones con el coordinador) |
+|---|---|---|---|---|
+| Prólogo 5: «Ese brazalete… He visto ese símbolo…» | Lya | Lo reconoce y le cuesta decirlo | `duda` (ladea la cabeza; `lya_duda.png`) | = |
+| Prólogo 6: «Lo llamaban la «Llave del Confino».» | Lya | Seria: que el nombre pese | Ninguno: sigue la pose de `duda` hasta volver sola al reposo | `firme` (asentimiento seco; Lya no tiene ilustración para él, solo es el movimiento) |
+| Prólogo 10: «Ten cuidado ahí fuera.» | Lya | Preocupada, con cariño | `preocupada` (se encoge; `lya_preocupada.png`) | = |
+| Prólogo 11: «Los Hollines ya no son solo sombras…» | Lya | Advierte, grave | Ninguno: sigue la pose de `preocupada` o ya en reposo | `inquieta` (se acerca a Kael) o nada |
+| PV-02: «Y nadie me ha seguido. Por una vez, algo sale bien.» | Kael | Satisfecho; tienta a la suerte | `ligero` (mano en la cadera) | = |
+| PV-07: «Huellas de hollín. Rodean las flores… sin pisarlas.» | Garon | Mira el suelo; desconfía | Sin retrato (Garon no tiene) | En 3D, mirar al suelo si hay clip |
+| `pv_tilo`: «¿Todavía aquí? El viejo os espera…» | Tilo | Impaciente, con cariño | Sin retrato | = |
+| `pv_tilo_fin`: «Buen camino, chicos…» | Tilo | Despedida | Sin retrato | = |
+
+- Un globo corto deja ver la transición del que escucha: en la captura rápida de «Ten cuidado ahí fuera.» (22
+  caracteres) Kael aún vuelve del paso de `decidido` (dura 2 s). A ritmo de lectura ya está en reposo
+  (`despues_frase_10_a.png` del vídeo). No es un fallo.
+
+**Capturas** (con ventana, 1280 × 720, la misma resolución lógica que en el móvil):
+- `D:\REBELUM_diagnostico\narrativa\2026-11-09\texto\antes\`: las 9 frases (`antes_frase_NN.png`) y los registros;
+- `...\texto\despues\`: las 11 (`despues_frase_NN.png`) y los registros;
+- `...\texto\lamina_globos_partidos.png`: los dos globos, antes (uno) y después (dos), a tamaño real;
+- `...\texto\lamina_prologo_completo.png`: el prólogo entero, antes y después, alineado por frase;
+- a ritmo de lectura, 2,8 s por frase (`prueba_prologo_video`):
+  `...\texto\2026-11-09_125821\prueba_prologo_video\` (`despues_frase_NN_a` y `_b`);
+- PV-02, PV-03 y PV-05 en 3D con el texto nuevo: `...\texto\2026-11-09_125821\prueba_anim_pv_fotos\`.
+
+### 4. Continuidad
+**Lo que pide el encargo cuadra** (Kael solo hasta PV-03, Lya desde PV-03 y Garon desde PV-05):
+| Escena | Grupo en ese momento (`prueba_ruta_alpha`) | Quién sale en el diálogo | Texto |
+|---|---|---|---|
+| PV-02 | Kael solo | Kael | «Y nadie me ha seguido»: es lo que cree Kael, y en PV-03 llega Lya |
+| PV-03 | Lya se une al empezar la escena | Kael y Lya | = |
+| PV-05 | Kael y Lya; Garon espera junto a Tilo y se une | Kael y Lya con retrato; Garon y Tilo, sin él | = |
+| `pv_tilo` | Kael, Lya y Garon | Tilo | «os espera», «Saludadlo»: plural, cuadra |
+| PV-06 y PV-07 | Kael, Lya y Garon | Kael y Lya con retrato; Garon sin él | «Rodean las flores»: Lya acaba de verlas |
+| PV-14 y `pv_tilo_fin` | Kael, Lya y Garon | Tilo | «Tomad», «chicos», «se os apague»: plural |
+
+- Comprobado ejecutando (aislado, 2026-11-09):
+  - `prueba_ruta_alpha` SUPERADA: el grupo es nadie antes de PV-03, `["Lya"]` después y `["Lya", "Garon"]` desde
+    PV-05;
+  - `prueba_anim_pv_fotos` sin FALLO: quien habla en PV-02, PV-03 y PV-05 está en la escena 3D.
+- Los hitos, las recompensas y los objetivos no cambian: `prueba_ruta_alpha` y `prueba_centinela`.
+- **Canon** (leído en `D:\Aethelgard\docs\biblia\rebelum_biblia_narrativa_v2.md`, sin tocarlo; en esta copia no está):
+  - la biblia cita por separado «Lo llamaban la "Llave del Confino".» y «Los Hollines ya no son solo sombras: ahora
+    llevan hachas del Vacío.» (línea 121): ahora cada una es su propio globo, con las mismas palabras;
+  - su §8.5 (línea 144) dice que Lya alcanza a Kael al amanecer en Pastos Verdes, sin cambiar el prólogo. «Y nadie me
+    ha seguido» es lo que cree Kael justo antes, y cuadra;
+  - nada de Érebo, de corazones ni de recuerdos; nada de Final Fantasy X.
+
+**Hallazgo: se puede hablar con Tilo antes de PV-03.** Comprobado ejecutando (aislado, 13:07, sobre `70ef723`; no
+depende del texto): `D:\REBELUM_diagnostico\narrativa\2026-11-09\continuidad\2026-11-09_130717\`.
+- La sonda busca lo andable con las reglas de la región (`_altura_suelo`: paredes, pendientes, escalones y zonas
+  prohibidas) sin entrar en el círculo de PV-03. Después, Kael recorre ese camino de verdad, con un destino tocado.
+- Llega junto a Tilo pasando a 4,0 m del punto de PV-03 (el radio es 3,5). El camino va paralelo al sendero, un poco
+  al sur.
+- Sale «Hablar con Tilo» y, al pulsarlo, empieza **PV-05 sin PV-03**: Lya habla en el diálogo sin estar en el grupo
+  ni en la escena 3D, y Garon se une antes que ella. El objetivo sigue en «Sigue el camino.»; si se vuelve por el
+  sendero, PV-03 sale después, con Garon ya en el grupo.
+- La causa (observada en el código): en `zonas3d/pastos_verdes_3d.gd`, `_comprobar_cerca()` deja hablar con Tilo
+  siempre, y en `_accion()` la rama de Tilo no mira `pv_03`. El rombo sí lo exige.
+- Propuesta en §6. No he tocado `zonas3d/`.
+- **Menor, solo observado en el código:** en `_accion()`, PV-14 tampoco exige `pv_07`. En la práctica PV-07 salta al
+  volver del combate junto a la estatua (`prueba_ruta_alpha`, paso 15), así que no lo he visto pasar.
+
+### 5. Límites y propuestas pendientes de decisión
+- **El globo 5 cabía en dos líneas** (ver «Corrección», §3). Si el coordinador adoptó partirlo por el espacio, puede
+  revisarlo. Mi recomendación es dejarlo partido por el corte «Lo / llamaban» y por el peso del nombre.
+- **Gestos de los globos nuevos:** propuestos en la tabla de intenciones (`firme` en el 6 e `inquieta` en el 11). No
+  los he puesto: las etiquetas se acuerdan con el coordinador.
+- **Sin ver en el Redmi.** Las capturas son del PC a 1280 × 720, la resolución lógica del juego (`canvas_items`), así
+  que el corte de línea debería ser el mismo. Falta verlo en el teléfono.
+- Sin cambiar del diseño (§5.3), y lo decide el responsable de `progreso.gd`: el texto del detalle `pastos_estela`.
+
+### 6. Siguiente paso y cambios en archivos de otros
+- **`zonas3d/pastos_verdes_3d.gd`** (de quien lleve la región), para que PV-05 no salga antes que PV-03. En
+  `_accion()`, rama `"tilo"`, antes de `if not P.hito("pv_05"):`:
+  ```gdscript
+  if not P.hito("pv_03"):
+      _escena_mision("pv_03")          # Lya llega antes de hablar con Tilo: nunca PV-05 sin ella
+  elif not P.hito("pv_05"):
+  ```
+  - Con eso, al pulsar «Hablar con Tilo» sin PV-03, Lya llega corriendo como siempre y, al volver a pulsar, sale
+    PV-05.
+  - Opcional, por la misma razón: `elif not P.hito("pv_07"): _empezar_dialogo("pv_tilo")` antes de la rama de PV-14.
+  - Para probarlo, `prueba_ruta_alpha` podría hablar con Tilo antes de PV-03 y comprobar que sale PV-03.
+- **`pruebas/lista_pruebas.txt`** (del coordinador), en la nota de `prueba_prologo`: «entero (9 frases, una
+  pulsación por frase,» → «entero (11 frases, una pulsación por frase, cada una en dos líneas de la caja como
+  mucho,». Es solo la descripción; no cambia cómo se ejecuta.
+- **`docs/diseno/ciudades_y_lugares.md`** (mío, fuera de este encargo): corregir en §5.2 el motivo del n.º 5 y en
+  §5.1 la medida (unos 75 caracteres por línea). Lo hago cuando se me asigne.
+- **Prueba nueva, propuesta:** convertir `sonda_narrativa_lineas.gd` en `prueba_textos_caja`, que recorra todos los
+  `.dtl` y falle si una frase pasa de dos líneas. Necesitaría su línea en `lista_pruebas.txt`.
+- **Siguiente paso de narrativa:** con la decisión sobre los gestos, si animaciones los pone, repetir
+  `prueba_prologo` (espera `duda|reposo` y `preocupada|reposo` en los segundos globos: habría que ajustarla).
