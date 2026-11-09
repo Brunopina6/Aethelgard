@@ -99,6 +99,7 @@ func _init() -> void:
 	ruta_modelo = "res://garon.fbx"
 	rutas_extra = ["res://Meshy_AI_Crimson_Helm_Guardian_20261103_animated_mixamo_All_animation.fbx", "res://garon.glb"]
 	usa_vara = false        # lleva sus espadas, no el cetro de maga_3d.gd (si no, se queda colgando)
+	clave_esperas = "Garon"     # sus esperas de exploración (esperas_3d.gd)
 	vel_andar = 1.09        # sus clips sin patinar (marcha() de maga_3d.gd; prueba_anim_pies.gd)
 	vel_correr = 3.64
 
@@ -571,12 +572,14 @@ func andar() -> void:
 	_base_movimiento()
 	play("Andar")
 	_viento(1.0)
+	_porte("andar")
 
 
 func correr() -> void:
 	_base_movimiento()
 	play("Correr")
 	_viento(2.0)
+	_porte("correr")
 
 
 # En combate se acerca y se aleja en guardia, con los pasos de doble espada (si no están, corre).
