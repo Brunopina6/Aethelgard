@@ -64,7 +64,7 @@
 | [T-086](#t-086) | Narrativa: el diálogo inicial y la misión de Pastos Verdes | Revisión hecha; falta aplicarla | Media |
 | [T-087](#t-087) | Combate: estabilidad con uno, dos y tres héroes y eventos sonoros de ataque e impacto | Pendiente | Media |
 | [T-088](#t-088) | GitHub: rama de integración y ramas por área, con revisión antes de cada push | En curso (tanda 1 subida) | Alta |
-| [T-089](#t-089) | Mejorar todas las ciudades del juego (encargo del 08/11, 23:05) | Diseño hecho (fase 0) | Alta |
+| [T-089](#t-089) | Mejorar todas las ciudades del juego (encargo del 08/11, 23:05) | En curso: Oakhaven (datos integrados; enganche y arte en marcha) | Alta |
 | [T-090](#t-090) | Muchos sitios nuevos que explorar, coherentes con el canon y el mapamundi | Diseño hecho (fase 0) | Alta |
 | [T-091](#t-091) | Magias nuevas, sin cambiar las existentes | En curso (fase 1: datos y red de seguridad) | Alta |
 | [T-092](#t-092) | Equipo nuevo: accesorios y armas especiales (encargo del 08/11, 23:35) | En curso (fase 1: datos) | Alta |
@@ -752,6 +752,13 @@
   - Sunken City, «la ciudad en las costillas»: un buque varado, la posada El Ancla Seca y el Casco como mazmorra.
   - La Arboleda Mítica, ampliada.
   - Las historias que hay que decidir están en [D-073](DECISIONS.md#d-073).
+- **Fase 1 de Oakhaven, integrada** (`ab250c9`, 09/11 a las 08:55): 27 diálogos y 4 vecinos nuevos, el módulo
+  `ciudades/oakhaven.gd` (trazado, misiones, cofres con id escrito, secretos, piezas y notas) y `prueba_ciudad_datos`
+  (superada en la integración). Lo que depende del usuario va neutro; la propuesta, aparte, con `.gdignore`.
+- **Fase 2, en marcha desde las 09:00:**
+  - narrativa la engancha al juego (`ciudad_oakhaven.gd`, que hereda de `zona.gd`, la entrada desde el mapa y las notas
+    en el Diario);
+  - gráficos hace su arte en `ciudades/oakhaven_arte/` y lo da por `ciudades/oakhaven_piezas.gd` (`crear_pieza`).
 - **Petición** [usuario, 08/11, 23:05]: «quiero que mejores todas ciudades del juego quiero un juego ambicioso».
 - **Criterio de aceptación:**
   - inventario de las ciudades que existen (2D y 3D) y de lo que tiene cada una;

@@ -19,6 +19,9 @@ pidió no preguntar ([MEMORIA_CHAT.md](MEMORIA_CHAT.md)). **La memoria describe 
   (desde `c74b872`): diseño y maqueta jugable, activable con `-- garganta3d`.
 - **Mapamundi pintado: integrado** (`a04a9d2`) con el selector en Ajustes (`14aea04`). Batería: 40 superadas, 0
   fallidas. Falta medirlo. La memoria describe `integracion-experimental` @ `14aea04`.
+- **Oakhaven:** la fase 1 (datos y diálogos, en archivos nuevos) está integrada en `ab250c9`, que ya está en GitHub.
+  La fase 2 va en marcha desde las 09:00: narrativa la engancha en `D:\Aethelgard_narrativa` y gráficos hace el arte
+  en `D:\Aethelgard_graficos`. **Especialistas activos:** Garganta 3D, combate (fase 1), narrativa y gráficos.
 - **Animaciones, tanda 2: integrada** (`4414ebf`): pies sin patinar, presencia en PV-03 y PV-05, retratos vivos y
   poses de Lya. Batería: 41 superadas, 0 fallidas. La memoria describe `integracion-experimental` @ `4414ebf`.
 - **Reanudados con su contexto:** el mapamundi (fase 2), animaciones (tanda 2), combate (fase 1) y narrativa (fase 1).
@@ -96,8 +99,9 @@ pidió no preguntar ([MEMORIA_CHAT.md](MEMORIA_CHAT.md)). **La memoria describe 
 
 ## Pendiente del usuario (mañana)
 
-- **Instalar la Prueba v98** (la más reciente; incluye todo lo de la v77): está en la release privada «09/11/2026 ·
-  Prueba v98» de `Aethelgard-pruebas` (versionCode 98, commit `14aea04`, SHA-256 `003e5b77…`, comprobado). El Redmi no
+- **Instalar la Prueba v109** (la más reciente; incluye todo lo de la v98 y la v77): está en la release privada
+  «09/11/2026 · Prueba v109» de `Aethelgard-pruebas` (versionCode 109, commit `4414ebf`, SHA-256 `5ad69ae3…`,
+  comprobado). Qué probar, en las notas de la v109 y de la v98. El Redmi no
   estaba conectado para copiarla a Descargas. Qué probar, en sus notas: el mapamundi pintado (y compararlo con «De
   siempre» en Ajustes), el prólogo con el botón nuevo, las voces de los enemigos y el táctil.
 - **Escuchar las muestras** y elegir la victoria, los golpes, el cofre y el tesoro (el especialista duda de ellos).

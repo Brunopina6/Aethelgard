@@ -1303,6 +1303,12 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
   - el stick del mando es analógico en 3D, como en el mapa y en las zonas 2D;
   - en PV-03, Lya aparece a 4,5 m y llega corriendo (el usuario puede pedir que aparezca más lejos);
   - Lya y Garon entran en el grupo de la partida al ponerse el hito, para que la partida no los guarde separados.
+- **Prueba v109** (`4414ebf`): pies sin patinar, stick analógico, Lya y Garon presentes y poses de Lya. Publicada en
+  `Aethelgard-pruebas` y comprobada; no copiada al Redmi, que no estaba conectado.
+- **Regla técnica (narrativa, 09/11):** nunca se guarda un recurso (Resource) en los metadatos de `Engine`, porque Godot
+  se cae al cerrar (0xC0000005). Se guarda su ruta.
+- **Oakhaven:** el arte se entrega en un módulo aparte (`crear_pieza`). Así narrativa y gráficos trabajan en paralelo
+  sin tocar los mismos archivos.
 - **Combate: lo adoptado del diseño** (`docs/diseno/combate_ampliaciones.md`, rama `area-combate`):
   - pestañas por familia en el menú de magia;
   - la ranura se llama «Accesorio»; nada de «Quiebrasello»;

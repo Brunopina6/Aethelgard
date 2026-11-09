@@ -161,6 +161,8 @@ pida la tarea.
   - `D:\REBELUM_respaldos`: respaldos (nunca se sobrescriben: carpetas con fecha).
 - **Godot de consola:** `C:\Users\G513\Desktop\jueo personal\Godot_v4.7.2-stable_win64_console.exe`. Dos Godot sobre
   el mismo proyecto se pisan, así que comprueba que no haya otro abierto.
+- **Godot:** nunca guardes un recurso (Resource) en los metadatos de `Engine`, porque Godot se cae al cerrar; guarda
+  su ruta.
 - **Skills:**
   - `.claude/skills/aet-*` (26) están desfasadas: ver [docs/herramientas/propuesta_skills.md](docs/herramientas/propuesta_skills.md);
   - `.agents/skills/` es una copia para otro agente, sin seguimiento: no la toques.
