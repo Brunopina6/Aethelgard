@@ -717,3 +717,86 @@ tocado `combate.gd`, `ciudad_oakhaven.gd` ni `zonas3d/**`.
   `fijar_momento(self, "tarde")`).
 - **Oakhaven 3D (T-103)**: las mismas fuentes con `fuente_3d` y `oyente_3d`.
 - **Usuario**: escuchar el índice de la tanda 6, sobre todo las tres versiones del combate.
+
+## 2026-11-09, 23:50 · T-083, tanda 7: la mezcla del combate aplicada y la memoria del audio
+
+Rama `area-sonido`. Antes de empezar, uní `integracion-experimental` (`45a49e6`) con `merge --no-ff` (`b68d7ed`) e
+importé con datos aislados. **No he podido escuchar nada. No se ha usado el Redmi.** No he tocado `combate.gd`,
+`recursos.gd`, `ciudad_oakhaven.gd` ni `zonas3d/**`.
+
+### 1. Qué se ha hecho
+
+- **La mezcla del combate**, tal como lo decidió el coordinador (reversible), en `sonido.gd`:
+  - `APARTAR_MUSICA_EN_COMBATE`: solo en el contexto «combate», un compresor suave al final del bus Musica que escucha
+    a Efectos (umbral −30 dB, 2:1, ataque 30 ms, suelta 800 ms). Fuera del combate, se quita;
+  - `LIMITADOR_MASTER`: un `AudioEffectHardLimiter` a −1 dBFS al final del Master;
+  - con las dos constantes a `false`, todo como antes. La alternativa B (música −10 dB en `combate.gd`) queda
+    documentada y medida.
+  - Medido con el mismo combate: los efectos pasan de 8,4 dB por debajo de la música (mediana) a **1,6 dB por encima**.
+    El pico del Master queda en −4,4 dBFS (antes, de −0,3 a −2,9).
+- **El eco de la Garganta 3D** sigue limitado a esa zona: solo lo pide `garganta_3d.gd` y se quita al salir.
+- **Memoria del audio:**
+  - prueba nueva, `prueba_audio_memoria` (automática): cuánto ocupa cada sonido en la RAM y en el paquete. Comprueba
+    que todo esté en QOA, la frecuencia de los bucles bajados y un presupuesto de 21 MB;
+  - ocho bucles largos se importan a menos frecuencia (22 050 o 32 000 Hz): solo los que no tenían nada que se oiga por
+    encima de la nueva mitad. Lo que había allí quedaba entre 52 y 81 dB por debajo del total (FFT medida);
+  - **RAM y paquete del audio: 22,45 → 19,47 MB (−3 MB, −13 %).**
+  - No cambian los WAV, los volúmenes (medido: ±0,6 dB, lo que varía el punto de arranque del bucle) ni los cortes de
+    bucle.
+  - **Ogg Vorbis: no se ha podido.** No hay codificador sin instalar nada. Los candidatos y lo que se ganaría están en
+    el inventario.
+  - Lo más grande que queda es la música del combate (MP3, 6,6 MB), que `recursos.gd` carga al abrir el juego.
+    Propuesta: cargarla al entrar en combate.
+
+### 2. Commits (rama `area-sonido`)
+
+| Commit | Qué |
+|---|---|
+| `b68d7ed` | Merge de `integracion-experimental` (`45a49e6`) |
+| `aa87c32` | `sonido.gd`: la música se aparta en combate y el limitador del Master |
+| `c44ff59` | Pruebas: parte «mezcla» y la mezcla por buses antes, ahora y con la B |
+| `c494055` | Los `.import` de los ocho bucles (`force/max_rate`) |
+| `ecc15a7` | `pruebas/prueba_audio_memoria.gd` (+ `.uid`) y su línea en `lista_pruebas.txt` |
+| `f69b654` · `a0574fb` | Inventario: tanda 7 |
+| `a15c982` | `prueba_efectos`: acepta los bucles bajados y el compresor de la música en combate |
+| (este) | Este informe |
+
+### 3. Pruebas (todas con datos aislados)
+
+- `prueba_efectos` entera: **0 fallos**, también la parte «mezcla» (en combate, el compresor; fuera, no; el limitador
+  en el Master).
+- `prueba_audio_memoria`: antes de los cambios, 9 fallos; después, 0. Los fallos de antes eran los ocho bucles todavía
+  a 48 kHz y los 22,5 MB, que pasaban del presupuesto.
+- `prueba_efectos_senal` («mezclas=6») y `prueba_musica_senal`, con ventana: 0 fallos. Los ambientes salen igual que el
+  08/11 (pradera −28,5 frente a −29,1; mapa −38,7 frente a −38,7).
+- **Batería completa** (09/11, 23:35, con `a15c982`): **71 superadas, 1 fallida, 36 manuales, 0 no seguras**. Partida
+  real, carpeta real y proyecto, sin cambios. Resumen: `D:\REBELUM_diagnostico\pruebas\2026-11-09_233535\resumen.md`.
+  - La fallida, **`prueba_zona3d`** («sigue el botón de banco «DIAG»»), **no es de sonido**. Llega con el merge:
+    `45a49e6` añadió los botones DIAG y MEDIO al panel de medidas de Pastos Verdes, y la prueba no los espera.
+  - La pasada anterior (23:21) tuvo además `prueba_efectos` en rojo por dos comprobaciones mías que no contaban con esta
+    tanda (la frecuencia de los bucles y el compresor del bus Musica). Están arregladas en `a15c982`.
+
+### 4. Evidencias
+
+- La memoria antes y después (registros y una fila por sonido):
+  `D:\REBELUM_diagnostico\sonido_muestras\2026-11-09_tanda7\memoria\`.
+- La mezcla: `D:\REBELUM_diagnostico\sonido_muestras\2026-11-09_tanda7\indice.md` y `…\despues\`, con cada bus grabado
+  por separado.
+- Las tablas y las propuestas: `docs/audio/inventario_sonidos.md`, sección «Tanda 7».
+
+### 5. Límites
+
+- **Nadie lo ha oído.** Lo más dudoso: si la música que se aparta se nota subir y bajar. En la prueba los efectos
+  suenan el 67 % del tiempo y la música baja 5,5 dB de media; en un combate de verdad, menos.
+- Los bucles bajados, medidos por energía (FFT), no oídos.
+- **Pendiente en Redmi:** la memoria real en el teléfono y la mezcla en su altavoz. Lo que da la prueba es lo que ocupan
+  los datos y la memoria estática en el PC.
+- **Ogg en streaming:** necesita un codificador (instalarlo o convertir fuera, con permiso).
+
+### 6. Siguiente paso y cambios en archivos de otros
+
+- **`recursos.gd`**: no cargar la música del combate al abrir el juego (6,6 MB). Y, si se quiere ir más lejos, una
+  carpeta `audio/bucles/` que no se cargue al abrir y que `sonido.gd` cargue y suelte por lugar (~7 MB fuera de cada
+  lugar). Lo preparo cuando se apruebe.
+- **Quien lleve `prueba_zona3d`**: que espere los botones DIAG y MEDIO de `45a49e6`.
+- **Usuario**: escuchar la mezcla del combate (antes, ahora y la B) y decidir.
