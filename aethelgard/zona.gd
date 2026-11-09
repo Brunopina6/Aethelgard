@@ -306,6 +306,14 @@ var pasos := 0
 var tiempo := 0.0
 var saliendo := false
 
+# Comentarios de los héroes al explorar (dialogos/comentarios.gd, narrativa): al llegar a un lugar por primera vez en
+# la sesión y tras abrir un cofre. Solo se ven: no cambian la partida.
+const Comentarios := preload("res://dialogos/comentarios.gd")
+const LLEGADA_COMENTARIO := 2.8           # s tras entrar: después del fundido y del aviso del lugar
+var llegada_t := LLEGADA_COMENTARIO       # cuenta atrás del comentario al llegar (< 0: ya pasó)
+var comentario_pendiente := ""            # momento que espera su turno (el del cofre, tras el premio)
+var comentario_t := 0.0
+
 
 func _ready() -> void:
 	randomize()
@@ -1814,6 +1822,7 @@ func _abrir_cofre(c: Array) -> void:
 			premio = "1 Éter"
 	_mostrar_aviso("¡Has encontrado %s!" % premio)
 	_poner_oro()
+	_comentar_luego("cofre", 1.2)                          # alguien del grupo lo comenta, tras el premio
 	var brillo := Sprite2D.new()                           # destello dorado
 	brillo.texture = luz_tex
 	brillo.material = mat_aditivo
@@ -2470,8 +2479,67 @@ func _unhandled_input(event: InputEvent) -> void:
 func _process(delta: float) -> void:
 	tiempo += delta
 	ui.visible = not _en_dialogo()                # los menús no tapan el cuadro de diálogo
+	_atender_comentarios(delta)
 	for f in luces_fuego:                          # las llamas parpadean
 		f[0].energy = f[1] * (0.85 + 0.15 * sin(tiempo * 13.0 + f[2]) * sin(tiempo * 7.3 + f[2] * 2.0))
+
+
+# ================================================================= comentarios de los héroes
+
+# El momento del comentario al llegar: un lugar nuevo, o la Garganta (garganta.gd). Una ciudad hecha a mano pone el
+# suyo (ciudad_oakhaven.gd). "" si no toca. Solo la primera vez en la sesión que se entra en ese lugar.
+func _momento_llegada() -> String:
+	var clave := "@lugar:%s" % lugar.get("indice", -1)
+	if Comentarios.dichos().has(clave):
+		return ""
+	var d: Dictionary = Comentarios.dichos().duplicate(true)
+	d[clave] = true
+	Engine.set_meta(Comentarios.META, d)
+	return "llegar:garganta" if str(lugar.get("nombre", "")).begins_with("Garganta") else "llegar:lugar_nuevo"
+
+
+func _comentar_luego(momento: String, segundos: float) -> void:
+	comentario_pendiente = momento
+	comentario_t = segundos
+
+
+# Cuenta atrás de la llegada y del comentario pendiente; si empieza un diálogo, el que esté en pantalla se quita.
+func _atender_comentarios(delta: float) -> void:
+	if ui == null or jugador == null:
+		return
+	if _en_dialogo():
+		for n in ui.get_children():
+			if n.name.begins_with("comentario"):
+				n.queue_free()
+	if llegada_t >= 0.0:
+		llegada_t -= delta
+		if llegada_t < 0.0:
+			var m := _momento_llegada()
+			if m != "":
+				_comentar_luego(m, 0.0)
+	if comentario_pendiente != "":
+		comentario_t -= delta
+		if comentario_t <= 0.0 and not _ocupado_para_comentar():
+			_comentar(comentario_pendiente)
+			comentario_pendiente = ""
+
+
+func _ocupado_para_comentar() -> bool:
+	return saliendo or barra_activa or tienda_abierta or _en_dialogo()
+
+
+# Enseña un comentario si toca (y si no hay otro en pantalla). Devuelve si salió.
+func _comentar(momento: String) -> bool:
+	if _ocupado_para_comentar():
+		return false
+	for n in ui.get_children():
+		if n.name.begins_with("comentario"):
+			return false
+	var c := Comentarios.elegir(momento)
+	if c.is_empty():
+		return false
+	Comentarios.mostrar(ui, c)
+	return true
 
 
 func _physics_process(delta: float) -> void:
