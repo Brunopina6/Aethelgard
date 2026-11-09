@@ -562,7 +562,7 @@ func _chispas_elemento(col: Color) -> CPUParticles3D:
 func reposo() -> void:
 	play("Idle", 0.3)                 # la guardia viva
 	gestos.respirar = 1.0             # y respira
-	gestos.quitar_todos(0.3, ["cansada"])
+	gestos.quitar_todos(0.3, ["cansada", "g_cubrir"] if cubriendo else ["cansada"])   # cubriendo, sigue en guardia
 	anim.speed_scale = 1.0
 	cansada(_cansada)
 	_viento(0.5)
@@ -618,6 +618,7 @@ func _ataque(nombre: String, golpes: Array, fin: float, impacto: Callable) -> vo
 		return
 	gestos.respirar = 0.0
 	gestos.quitar_todos(0.1)
+	cubriendo = false                 # al atacar deja la Guardia (el gesto se va con los demás)
 	anim.speed_scale = 1.0
 	play(nombre, 0.12)
 	_viento(2.5)
@@ -639,6 +640,7 @@ func morir() -> void:
 		super.morir()
 		return
 	_muerta = true
+	cubriendo = false
 	gestos.respirar = 0.0
 	gestos.quitar_todos(0.3)
 	anim.speed_scale = 1.0
@@ -654,3 +656,36 @@ func revivir() -> void:
 		return
 	_muerta = false
 	reposo()
+
+
+# ---------------------------------------------------------------- la Guardia (T-100): cubrir a un aliado
+
+# Gesto de la Guardia (combate.gd, _guardia): se vuelve hacia el aliado que cubre y se planta delante de él: las rodillas
+# dobladas, el peso abajo y el cuerpo echado hacia el golpe, con las espadas en su guardia cruzada. Se queda así mientras
+# cubre: su reposo no lo quita. Lo deja al atacar, al moverse, al caer o con fin_cubrir() (cuando se acaba la Guardia).
+const GESTO_CUBRIR := {
+	"_cadera": Vector3(0.03, -0.08, 0.0),
+	"muslo_i": [Vector3(0.45, -0.9, -0.14), 55], "rodilla_i": [Vector3(-0.25, -1, 0), 55],
+	"muslo_d": [Vector3(0.45, -0.9, 0.14), 55], "rodilla_d": [Vector3(-0.25, -1, 0), 55],
+	"columna": [Vector3(0.35, 1, 0), 14], "cabeza": [Vector3(0.2, 1, 0), 10],
+}
+var cubriendo := false
+
+
+func cubrir(hacia: Vector3) -> void:
+	if _muerta:
+		return
+	cubriendo = true
+	if not gestos.gestos_def.has("g_cubrir"):
+		gestos.registrar("g_cubrir", GESTO_CUBRIR)
+	if hacia.length() > 0.01:
+		mirar(hacia, 0.2)
+	gestos.poner("g_cubrir", 1.0, 0.25)
+	_viento(1.2)
+
+
+func fin_cubrir() -> void:
+	if not cubriendo:
+		return
+	cubriendo = false
+	gestos.quitar("g_cubrir", 0.3)

@@ -7,7 +7,8 @@ extends SceneTree
 # también sus rincones (6_barrio_cuervo a 14_mercado: el Cuervo, el callejón y la grieta, el Patio de las Velas, la colina
 # del crematorio, la ronda apagada y encendida, el Árbol y su copa translúcida, el mercado), el Diario con las notas
 # (15_diario_notas), la posada con la noche gratis y su escena (16_ y 17_), un comentario de los héroes al explorar
-# (19_comentario), un vecino que habla al pasar (22_voz_vecino), una charla de posada con Lya (20_ y 21_) y, con «3d», el ramito de lavanda en Pastos Verdes 3D (18_lavanda_pastos).
+# (19_comentario), un vecino que habla al pasar (22_voz_vecino), una charla de posada con Lya (20_ y 21_) y, con «3d»,
+# el ramito de lavanda en Pastos Verdes 3D (18_lavanda_pastos) y una nota para encontrar, antes y al leerla (23_ y 24_).
 # Las de la ciudad hecha a mano usan partidas sintéticas (nada se guarda: las pruebas no escriben la partida).
 
 const MAPA := "res://mapa.tscn"
@@ -242,3 +243,16 @@ func _rincones(z) -> void:
 			await _esperar(40)
 			r._comprobar_cerca()
 			await _foto("18_lavanda_pastos")
+		# una nota para encontrar (dialogos/notas/pastos_verdes.gd): la libreta de Tilo, junto a su poste, y al leerla
+		# (con PV-03 dado por hecho mientras tanto, para que la llegada de Lya no se cruce con la foto)
+		var notas: Array = r.get("notas") if r.get("notas") != null else []
+		if not notas.is_empty():
+			P.poner_hito("pv_03")
+			var e: Array = notas[0]
+			r._colocar_kael(e[0].global_position + Vector3(1.2, 0, 0.9))
+			await _esperar(40)
+			r._comprobar_cerca()
+			await _foto("23_nota_pastos")
+			r._accion()
+			await _esperar(20)
+			await _foto("24_nota_pastos_leida")
