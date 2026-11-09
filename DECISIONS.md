@@ -86,6 +86,7 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 | [D-072](#d-072) | Más contenido: equipo, enemigos, compañeros, secretos, grutas y posadas, con inspiración solo de principios | Aprobada |
 | [D-073](#d-073) | Decisiones de la noche del 08 al 09/11, para que el usuario las revise | Aprobada en el encargo |
 | [D-074](#d-074) | La Garganta del Diablo pasa a 3D como mazmorra (cambia el plan 3D, que la dejaba en 2D) | Aprobada |
+| [D-075](#d-075) | Recursos que aporta el usuario el 09/11: el bestiario, el paquete de dos espadas y el logotipo | Aprobada |
 | [D-H01 a D-H15](#6-diseño-ya-implementado-del-3010-al-0511) | Diseño ya implementado antes de Git | Aprobada (historial) |
 
 ## 1. Reglas de trabajo, Git y versiones
@@ -1350,6 +1351,27 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
   - entra por `modo3d.gd` (`REGIONES`), sin tocar `mapa.gd`;
   - mientras sea una maqueta, solo con el argumento `-- garganta3d`; la 2D sigue en las APK hasta que la 3D supere
     las pruebas.
+
+### D-075
+**Recursos que aporta el usuario el 09/11**
+- **Fecha y estado:** 2026-11-09, hacia las 12:00. Aprobada [usuario], con los encargos T-096 a T-101.
+- **El bestiario** (`REBELUM_Bestiario_01_con_visor.zip`):
+  - contenido: seis GLB con texturas 2K de Meshy, esqueletos y animaciones hechos en Blender 5.2.3, sus `.blend`, un
+    visor y un MP4;
+  - procedencia: arte conceptual hecho para REBELUM; los ids de las tareas de Meshy están en
+    `Fichas_e_integracion.txt`;
+  - licencia: como los demás modelos de Meshy, el plan de la cuenta está **sin confirmar**. Pueden ir en las APK de
+    prueba privadas (D-054), no en una entregable.
+  - **en el repositorio,** solo los GLB que use el juego, de 6 a 9 MB cada uno. Los `.blend` se quedan fuera del
+    historial, en `D:\REBELUM_diagnostico\entradas\2026-11-09_bestiario\`, documentados.
+  - **el lore y el botín** de las fichas son propuestas que hay que validar con el canon.
+- **El paquete de dos espadas** (`Patreon_Drop38_DUAL-BLADE_COMBAT_ESSENTIALS_FIXED.zip`):
+  - contenido: cinco animaciones FBX y una espada corta;
+  - licencia: «Permitted: commercial games…; Prohibited: resale, redistribution, or sharing of the raw asset files»;
+  - uso: solo si hace falta, dentro del juego; los FBX originales no se suben a GitHub.
+- **El logotipo de REBELUM y una ilustración de paisaje:** son imágenes del usuario para la pantalla de carga y el
+  icono ([T-098](TASKS.md#t-098)). El logotipo pasa a ser el icono y el título; el paisaje, si encaja, el fondo de la
+  carga, con antes y después.
 
 ## 6. Diseño ya implementado del 30/10 al 05/11
 

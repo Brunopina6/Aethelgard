@@ -19,6 +19,16 @@ pidió no preguntar ([MEMORIA_CHAT.md](MEMORIA_CHAT.md)). **La memoria describe 
   (desde `c74b872`): diseño y maqueta jugable, activable con `-- garganta3d`.
 - **Mapamundi pintado: integrado** (`a04a9d2`) con el selector en Ajustes (`14aea04`). Batería: 40 superadas, 0
   fallidas. Falta medirlo. La memoria describe `integracion-experimental` @ `14aea04`.
+- **09/11, 12:05, encargos nuevos** (T-096 a T-101; recursos en [D-075](DECISIONS.md#d-075)). Van después de integrar lo que está en
+  marcha, en este orden:
+  1. las skills de Godot y Blender Animation;
+  2. el bestiario, con Zarzalín primero;
+  3. REBELUM en la carga y el icono;
+  4. la barra de PM;
+  5. las artes jugables y la guardia de Garon;
+  6. la cinemática de Érebo.
+
+  El Redmi está conectado por ADB.
 - **09/11, 11:50:**
   - integradas la Garganta 3D (`ea067b1`, elegible en Ajustes con `cff2323`) y la fase 1 de combate (`555fc29`, en
     GitHub). Batería de `555fc29`: 47 superadas, 0 fallidas (`D:REBELUM_diagnosticopruebas�6-11-09_084703`);
@@ -106,6 +116,8 @@ pidió no preguntar ([MEMORIA_CHAT.md](MEMORIA_CHAT.md)). **La memoria describe 
 
 ## Pendiente del usuario (mañana)
 
+- **La Prueba v136 ya está en el Redmi:** `Download/Aethelgard_Exp_2026-11-09_v136.apk`, copiada por USB el 09/11 a las
+  12:05 y comprobada (tamaño y SHA-256 iguales).
 - **Instalar la Prueba v136** (la más reciente; incluye todo lo de las v109, v98 y v77): está en la release privada
   «09/11/2026 · Prueba v136» de `Aethelgard-pruebas` (versionCode 136, commit `555fc29`, SHA-256 `e1f1bc5d…`,
   comprobado). Novedad: la Garganta del Diablo 3D, que se elige en Ajustes. Qué probar, en sus notas. El Redmi no

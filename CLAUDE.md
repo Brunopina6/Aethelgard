@@ -102,7 +102,9 @@ pida la tarea.
     la autorización de depuración, di al usuario qué seleccionar y sigue con el trabajo local;
   - instalar, desinstalar, borrar datos, ejecutar pruebas en el teléfono y cambiar ajustes lo hace el usuario, salvo
     autorización posterior. La app estable y sus datos no se tocan;
-  - nada de conexión inalámbrica ni escritorio remoto.
+  - nada de conexión inalámbrica ni escritorio remoto;
+  - desde Git Bash, `export MSYS_NO_PATHCONV=1` antes de usar `adb` con rutas `/sdcard/...`. Si no, Git Bash las
+    convierte en rutas de Windows y la copia no llega a Descargas (pasó el 09/11).
 - No distribuyas ningún APK que lleve recursos de licencia pendiente (lista en
   [docs/versiones/licencias_pendientes.txt](docs/versiones/licencias_pendientes.txt)). Eso incluye GitHub.
   - Las compilaciones locales para pruebas sí están permitidas.

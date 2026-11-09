@@ -70,7 +70,13 @@
 | [T-092](#t-092) | Equipo nuevo: accesorios y armas especiales (encargo del 08/11, 23:35) | En curso (fase 1: datos) | Alta |
 | [T-093](#t-093) | Enemigos nuevos, con identidad táctica | Diseño hecho; espera decisiones del usuario | Alta |
 | [T-094](#t-094) | Compañeros de viaje: propuesta y versión que no cambie el canon | Propuesta hecha; decide el usuario | Media |
-| [T-095](#t-095) | La Garganta del Diablo en 3D, como mazmorra (petición del 09/11) | En curso (diseño y maqueta) | Alta |
+| [T-095](#t-095) | La Garganta del Diablo en 3D, como mazmorra (petición del 09/11) | Maqueta integrada; se elige en Ajustes (v136) | Alta |
+| [T-096](#t-096) | Dos skills de Claude: Godot (Atlas Agent Teams) y Blender Animation (Dominations) | Pendiente | Alta |
+| [T-097](#t-097) | El bestiario: Zarzalín y las otras cinco bestias como enemigos jugables | Pendiente | Alta |
+| [T-098](#t-098) | El nombre REBELUM en la pantalla de carga y el icono nuevo de la app | Pendiente | Alta |
+| [T-099](#t-099) | Barra de PM de cada personaje en el HUD de combate | Pendiente | Alta |
+| [T-100](#t-100) | Artes jugables (continúa T-091) y la técnica de guardia de Garon | Pendiente | Alta |
+| [T-101](#t-101) | La invocación de Érebo, una cinemática que merezca verse | Pendiente | Alta |
 
 ## Continuidad
 
@@ -849,3 +855,108 @@
   - el perfil bajo a 30 FPS en el Mali-G57;
   - el recorrido completo probado (`prueba_garganta3d`);
   - la 2D como alternativa: la 3D entra por `modo3d.gd` y, mientras esté en maqueta, solo con `-- garganta3d`.
+
+### T-096
+**Dos skills de Claude: Godot y Blender Animation**
+- **Estado:** pendiente. **Prioridad:** alta. Petición del 09/11, hacia las 12:00.
+- **Fuentes:** la skill de Godot de Atlas Agent Teams (`MonumentalSystems/Atlas-Agent-Teams`,
+  `teams/game-dev/skills/godot/SKILL.md`) y la de Blender Animation de Dominations (`Andrew1326/dominations`,
+  `.claude/skills/blender-animation`).
+- **Criterio de aceptación:**
+  - antes, comprobar si el proyecto ya tiene una skill equivalente (las `aet-*` están desfasadas) y reutilizarla si
+    cubre la tarea;
+  - de las fuentes, solo lo que encaje, con su licencia revisada, su atribución y la revisión exacta registradas;
+  - limitado a las dos skills y sus referencias, bajo `.claude/skills/`;
+  - las normas del proyecto prevalecen sobre los ejemplos de cada guía.
+
+### T-097
+**El bestiario: seis bestias como enemigos jugables**
+- **Estado:** pendiente: va después de las dos skills. **Prioridad:** alta. Decisión: [D-075](DECISIONS.md#d-075).
+- **Petición** [usuario, 09/11]: integrar las seis bestias de `REBELUM_Bestiario_01_con_visor.zip`. Está descomprimido
+  en `D:\REBELUM_diagnostico\entradas\2026-11-09_bestiario\`, con `LEEME.txt`, `Fichas_e_integracion.txt`, `modelos/`
+  (GLB), `blender/`, el visor y un MP4 de los ataques.
+- **Zarzalín, primero:** el enemigo inicial de Pastos Verdes en la versión experimental.
+  - **Modelo:** escala, orientación, materiales y encuadre en la cámara de combate.
+  - **Clips:** `reposo`, `embestida_espinosa` (impacto a 0,57 s), `colmillo_lateral` (0,47 s) y `recibir_golpe`,
+    enganchados a eventos reales.
+  - **Embestida:** se anuncia al bajar el hocico; el daño se resuelve una sola vez y sin sumar un segundo avance.
+  - **En Blender:** los clips de derrota y de entrada a escena que haga falta.
+  - **Pruebas:** que Kael lo gane solo; el aviso, los dos ataques, la defensa, la victoria, la huida y la vuelta,
+    todo aislado.
+- **Después, las otras cinco**, con el mismo flujo: Cencerrante, Velaria, Custodio de Cal, Hilandera del Eco y El
+  Posadero Hueco (jefe opcional). Cada una en encuentros que encajen con el mapa y el lore aprobados; si su zona es
+  propuesta, en un encuentro de prueba.
+- **Criterio de aceptación:**
+  - cada una, comprobada en un combate real;
+  - un solo impacto por ataque y vuelta al reposo;
+  - grupos de 1, 2 y 3 sin cambios;
+  - texturas, huesos y coste de render revisados antes de ampliar los encuentros en Android;
+  - lo probado en el PC y lo que falta en el Redmi, por separado.
+
+### T-098
+**REBELUM en la pantalla de carga y el icono nuevo**
+- **Estado:** pendiente. **Prioridad:** alta.
+- **Petición** [usuario, 09/11]: «te adjunto el icono y tendrás que cambiar la pantalla de carga al nuevo nombre, y una
+  foto del nuevo icono así quitamos el icono ese de godot».
+  - Adjuntó el logotipo de REBELUM (estrella, cristal y castillo) y una ilustración de paisaje de fantasía.
+  - Copias: `D:\REBELUM_diagnostico\entradas\2026-11-09_imagenes\`.
+- **Criterio de aceptación:**
+  - la pantalla de carga muestra REBELUM (hoy, «Aethelgard» y «Cónclave de las Cenizas»), con antes y después;
+  - el icono de la app es el nuevo, y no el de Godot, en todos los tamaños de Android;
+  - la app estable no se toca.
+
+### T-099
+**Barra de PM de cada personaje en el HUD de combate**
+- **Estado:** pendiente. **Prioridad:** alta. Primera parte del encargo «Mejora del HUD, magia de los héroes e
+  invocación de Érebo» (09/11).
+- **Criterio de aceptación:**
+  - una barra azul de PM por miembro presente, con `actual/máximo`, visible todo el combate (también con el turno de un
+    enemigo y con el menú cerrado), también para Garon;
+  - PV, PM, ATB y Armonía, distintos por posición, color y etiqueta, legibles de un vistazo en el Redmi;
+  - se actualiza al lanzar magia, con Esgrima, Embuir y Éter, y si cambia el máximo;
+  - comprobado con 0 PM, un héroe caído y grupos de 1, 2 y 3;
+  - no tapa objetivos, estados, órdenes ni elementos táctiles;
+  - capturas comparables antes y después.
+
+### T-100
+**Artes jugables y la guardia de Garon**
+- **Estado:** pendiente. Continúa [T-091](#t-091): la fase 2 de combate (enganche de M1, M2 y C1) está en marcha.
+  **Prioridad:** alta.
+- **Kael, ritmo y protección:**
+  - Compás del Alba y Peso del Ocaso; Compás explica por qué está deshabilitado (Kael solo, o el aliado ya espera
+    turno);
+  - después, Coraza y Muralla de Escarcha; la coraza le sirve también en solitario.
+- **Lya, rescate y recuperación:** Lumbre de Retorno y Segundo Aliento, con el objetivo válido, el coste y la duración
+  visibles, sin turnos ni efectos duplicados.
+- **Garon:** Esgrima y Embuir se conservan. Cuando lo anterior esté comprobado, una técnica propia de guardia para
+  proteger a un compañero ante un ataque anunciado, con coste y duración claros. Se prueba con Garon caído, con el
+  aliado que deja de ser objetivo válido y con varios impactos.
+- **Cada arte:** una silueta de efecto, un gesto y un sonido reconocibles, sincronizados y legibles en el perfil bajo.
+  Por ejemplo, un anillo que gira para Alba, la barrera que se rompe en Escarcha y quién vuelve al combate en Lumbre.
+- **Criterio de aceptación:**
+  - las 12 magias actuales, sin cambios;
+  - comprobado cómo se aprende cada arte, qué pasa con PM insuficientes y contra un jefe, con partidas antiguas, con
+    varios aliados y el orden del ATB;
+  - los niveles superiores solo se muestran cuando funcionen de principio a fin.
+
+### T-101
+**La invocación de Érebo, una cinemática que merezca verse**
+- **Estado:** pendiente. **Prioridad:** alta.
+- **Antes de editar:**
+  - reproducir la secuencia actual en un combate real, con Lya en pie y la Armonía llena;
+  - comprobar que se lanza con el dedo y que la pulsación del objetivo no la salta;
+  - grabar un vídeo de referencia.
+- **Qué se busca:**
+  - se revisan T-051, T-072 y las decisiones D1-D12, aplicando las aprobadas;
+  - lo que siga abierto, como variante experimental que se pueda elegir; la secuencia actual se conserva como opción;
+  - las revelaciones, cada una en su acto;
+  - una entrada inquietante y un desenlace con peso: un plano que sitúe a Lya y al objetivo, una aparición clara, el
+    gesto de la mano que llega a su sitio y reacciones distintas para el éxito y el fallo;
+  - luz, sombras y audio con presencia también en Android;
+  - en el HUD, cuándo se puede invocar y, si no, por qué.
+- **Criterio de aceptación:**
+  - las reglas de la Armonía y de la resolución, sin cambios;
+  - probados el éxito, el fallo, contra un jefe y el salto temprano y tardío;
+  - el resultado se aplica una vez, y la cámara, el sonido, los controles y el turno se recuperan.
+- **Entrega:** una APK con una ruta corta para ver la barra de PM, lanzar las artes nuevas y reproducir Érebo con una
+  partida de prueba aislada.
