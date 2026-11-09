@@ -187,6 +187,31 @@ static func _ids_acto(a: Dictionary) -> Array:
 	return ids
 
 
+# ---------------------------------------------------------------- notas de las ciudades (T-089)
+# Las ciudades hechas a mano tienen notas que se leen al examinarlas (un bando, un letrero, un libro...). El Diario las
+# enseña aparte, en «Notas»: no son detalles, no cuentan para las páginas de los actos y no hay ninguna que completar.
+# Se apuntan en «lore_visto» con su id («nota_…»): ninguna clave nueva en la partida.
+const CIUDADES := {0: "res://ciudades/oakhaven.gd"}   # índice en LUGARES de mapa.gd → módulo de la ciudad (NOTAS)
+
+
+static func notas_de(lugar: int) -> Array:
+	return load(CIUDADES[lugar]).NOTAS if CIUDADES.has(lugar) else []
+
+
+# Apunta una nota. Devuelve true si es nueva. Nunca completa un acto.
+static func ver_nota(id: String) -> bool:
+	var es_nota := false
+	for l in CIUDADES:
+		for n in notas_de(l):
+			es_nota = es_nota or n["id"] == id
+	var v: Dictionary = Engine.get_meta("lore_visto", {})
+	if not es_nota or v.has(id):
+		return false
+	v[id] = true
+	Engine.set_meta("lore_visto", v)
+	return true
+
+
 # ================================================================= mazmorras y combates fijos
 
 # Estado de una mazmorra (palancas, puertas...): Engine.get_meta("mazmorras")[nombre][clave].
