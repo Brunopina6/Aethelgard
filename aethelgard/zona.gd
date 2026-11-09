@@ -316,6 +316,7 @@ func _ready() -> void:
 	_crear_objetos()
 	_crear_jugador()
 	Sonido.pasos_zona(self)                       # pasos según el suelo, la hierba, el camino o un puente (sonido.gd)
+	Sonido.agua_zona(self)                        # el río suena al acercarse (sonido.gd, T-083)
 	_crear_iluminacion()
 	_crear_clima()
 	_crear_ui()
@@ -997,6 +998,7 @@ func _brazalete() -> void:
 			brillados.erase(id)
 		elif dist < RADIO_BRAZALETE and not brillados.has(id) and not Progreso.visto(id):
 			brillados[id] = true
+			Sonido.efecto("brazalete")                   # un brillo que se oye, muy bajo (sonido.gd, T-083)
 			var b := Sprite2D.new()
 			b.texture = luz_tex
 			b.material = mat_aditivo
@@ -2289,6 +2291,7 @@ func _accion() -> void:
 		_mostrar_aviso("%s: «%s»" % [npc_cerca[1]["nombre"], frases[npc_cerca[2] % frases.size()]])
 		npc_cerca[2] += 1
 	else:
+		Sonido.efecto("examinar")                          # examinar el altar o monumento (sonido.gd, T-083)
 		_mostrar_aviso(lugar["texto"])
 
 
