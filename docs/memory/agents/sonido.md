@@ -619,3 +619,101 @@ Sin confirmar, porque no son míos: `aethelgard/dialogos/comentarios.gd.uid` y `
 - **Gráficos** (`garganta_3d.gd`): las tres líneas de `fuente_linea` del inventario (`puente_cruje` en cada puente y
   `viento_cuerdas` por el borde de la cornisa).
 - **Usuario:** escuchar el índice de hoy.
+
+## 2026-11-09, 22:55 · T-083, tanda 6: voces más claras, Oakhaven vivo y la mezcla por buses
+
+Rama `area-sonido`. Antes de empezar, uní `integracion-experimental` `6adc4d9` (`0c367bf`). Me paró un límite de uso
+del coordinador cuando la batería ya había empezado; al retomar, uní `dca4c1c` (`220d606`) y repetí la importación
+aislada (`D:\REBELUM_diagnostico\importaciones\sonido_20261109_224425`). Los `.uid` sueltos que la integración ya trae
+los aparté a mi carpeta temporal (eran idénticos). **No he podido escuchar nada. No se ha usado el Redmi.** No he
+tocado `combate.gd`, `ciudad_oakhaven.gd` ni `zonas3d/**`.
+
+### 1. Qué se ha hecho
+
+- **Las dos voces que había marcado como dudosas**:
+  - **esfuerzo de Kael**: tres esfuerzos cortos y enteros (The Chris Alan, «Little Fighter Guy - Vocalizations»,
+    GDC 2018), en vez del arranque recortado de un grito largo;
+  - **jadeo de Lya**: respiraciones de la misma actriz que sus esfuerzos (Pole Position, «Female 3», GDC 2023). Llevan
+    unos 8 dB de ganancia en lugar de 36; el suelo de ruido medido entre respiraciones baja de −30 a −53,5 dBFS.
+  - Las dos, con su volumen ajustado para que salgan como antes: −30 y −34,6 dBFS de RMS.
+- **Oakhaven vivo** (sirve para la 2D de hoy y está preparado para la 3D, T-103):
+  - murmullo de la Plaza del Tapiz (un pueblo con voces y caballos, con paso bajo para que no se entiendan las palabras),
+    murmullo del mercado y la fuente de la plaza. Son bucles por cercanía (`fuente_2d`) que también valen como emisores
+    3D (`fuente_3d`);
+  - la hora: `Sonido.fijar_momento(escena, "dia" | "tarde" | "noche")` cambia los detalles de la ciudad (pájaros de
+    día; un pájaro y el grillo al atardecer; el grillo y un mochuelo de noche). La campana lejana marca la hora de vez en
+    cuando. La hora se olvida al cambiar de escena;
+  - bus Ambiente, con sus límites;
+  - las líneas para `ciudad_oakhaven.gd` y para la 3D están en el inventario;
+  - los pasos sobre el empedrado siguen siendo `paso_piedra`: no hay pasos sobre adoquines en la biblioteca.
+- **La mezcla por buses** (`prueba_efectos_senal`, «mezclas=6»): se graban a la vez el Master y cada bus en un combate
+  con su música y en la plaza. Se mide el nivel de cada bus y cuánto quedan los efectos y la interfaz por encima del
+  fondo. Hay propuestas comparadas con el mismo combate:
+  - **hoy**: la música queda **9 dB por encima de los efectos** (mediana) y el Master llega a **−0,3 dBFS** de pico, a
+    punto de saturar;
+  - **B, la música a −10 dB** (en `combate.gd`): los efectos quedan 2 dB por debajo y el pico baja a −3 dBFS;
+  - **C, la música se aparta** (un compresor con sidechain «Efectos» en el bus Musica): los efectos quedan 7 dB por
+    encima;
+  - **la plaza, aplicado**: con el murmullo de −2 a −5 dB y la fuente de −8 a −10, los pasos pasan de 4 dB por debajo
+    del ambiente a quedar a la par.
+- **Licencias:** todo de los paquetes GDC de Sonniss 2017-2023 (PDF de cada paquete). Ninguna fuente CC0 nueva y nada
+  de Suno. La única música medida es `musica_combate_normal.mp3`, la que ya está en el proyecto (licencia pendiente);
+  solo se grabó en local.
+
+### 2. Commits (rama `area-sonido`)
+
+| Commit | Qué |
+|---|---|
+| `0c367bf` | Merge de `integracion-experimental` (`6adc4d9`) |
+| `1bd0b92` | Esfuerzo de Kael y jadeo de Lya nuevos y 8 derivados de Oakhaven (`audio/efectos/heroes`, `ambiente`), recetas y CSV |
+| `23dc700` | `sonido.gd`: Oakhaven vivo (`plaza_murmullo`, `mercado_murmullo`, `fuente_plaza`, `pajaro_ciudad`, `grillo`, `mochuelo`, `DETALLES` por hora, `fijar_momento`, campana de la hora) y los volúmenes nuevos |
+| `a30306c` | `prueba_efectos.gd` (parte «ciudad») y `prueba_efectos_senal.gd` («mezclas=6», la mezcla por buses) |
+| `a97c786` | `docs/audio/inventario_sonidos.md` (tanda 6: líneas para Oakhaven y la tabla de la mezcla con las propuestas), `docs/recursos.md` y `pruebas/lista_pruebas.txt` |
+| `220d606` | Merge de `integracion-experimental` (`dca4c1c`) |
+| (este) | Este informe |
+
+### 3. Pruebas (todas con datos aislados)
+
+- `prueba_efectos`: **SUPERADA** dentro de la batería. Tiene todas las partes, entre ellas «ciudad» (la plaza a −5 dB y
+  la fuente a −10 al lado, calladas lejos; de noche, grillo y mochuelo; una campana de la hora; la fuente en 3D),
+  «heroes», «bestias», «quietos» y «cuerdas».
+- `prueba_efectos_senal`, «mezclas=6» (con ventana, driver real y el ejecutor; 4 pasadas): 0 fallos. El pico del Master
+  del combate de hoy queda como **aviso** y no como fallo, porque es justo lo que se mide (−0,3 a −2,6 dBFS según la
+  pasada).
+- `comprobar`: **176 de 176 originales intactos**.
+- **Batería completa** (09/11, 22:44, después de unir `dca4c1c`): **67 superadas, 0 fallidas, 35 manuales, 0 no
+  seguras**. Partida real, carpeta real y proyecto, sin cambios. Resumen:
+  `D:\REBELUM_diagnostico\pruebas\2026-11-09_224448\resumen.md`. Pasan `prueba_efectos`, `prueba_audio`, `prueba_musica`,
+  `prueba_garganta3d` y `prueba_combate_huella`. Había 196 Godot de otras copias durante la pasada.
+- Antes del merge comprobé que todo lo que piden las escenas existe en el catálogo, también lo nuevo de la Garganta 3D
+  (`puente_cruje`, `viento_cuerdas`) y de Oakhaven (taberna, cuervo, campana).
+
+### 4. Evidencias
+
+- Muestras con índice y la tabla de la mezcla por buses: `D:\REBELUM_diagnostico\sonido_muestras\2026-11-09_tanda6\indice.md`.
+  Hay los cinco efectos nuevos solos y las mezclas «buses_*». Cada bus por separado está en
+  `D:\REBELUM_diagnostico\pruebas\2026-11-09_185932\prueba_efectos_senal\buses_*_<bus>.wav`.
+- La tabla completa y las propuestas numeradas: `docs/audio/inventario_sonidos.md`, sección «Tanda 6».
+
+### 5. Límites
+
+- **Nadie lo ha oído.** Lo más dudoso:
+  - si los esfuerzos de «Little Fighter Guy» suenan demasiado jóvenes o de dibujo para Kael;
+  - si el murmullo de la plaza (grabado en Jordania, con paso bajo) deja entender palabras;
+  - si la música que se aparta (C) «bombea».
+- **La mezcla está medida por nivel (RMS), no por bandas de frecuencia.** Un efecto agudo se oye sobre una música grave
+  aunque tengan el mismo RMS. Las propuestas 1 y 2 hay que escucharlas.
+- **Pendiente en Redmi:** la mezcla en el altavoz del móvil (los graves de la música apenas salen y la proporción
+  cambia).
+- **Oakhaven:** las fuentes y la hora no suenan hasta que se añadan las líneas a `ciudad_oakhaven.gd`. Las he probado con
+  una ciudad de mentira.
+
+### 6. Siguiente paso y cambios en archivos de otros
+
+- **Combate** (`combate.gd`): decidir al escucharlo entre la música a −10 dB (propuesta 1) o la música que se aparta
+  (propuesta 2, que puedo poner yo en `sonido.gd` solo durante el combate). Aplicar `_sonar("guardia")` y las líneas de
+  voces de la tanda 5 si aún faltan.
+- **Narrativa o quien lleve `ciudad_oakhaven.gd`**: las cuatro líneas del inventario (plaza, fuente, mercado y
+  `fijar_momento(self, "tarde")`).
+- **Oakhaven 3D (T-103)**: las mismas fuentes con `fuente_3d` y `oyente_3d`.
+- **Usuario**: escuchar el índice de la tanda 6, sobre todo las tres versiones del combate.
