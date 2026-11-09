@@ -22,7 +22,7 @@ const UMBRALES := {"Alba": [3, 9, 16], "Escarcha": [6, 12, 20], "Lumbre": [4, 10
 const COLOR := {"Alba": Color("F2B5A0"), "Escarcha": Color("BFE6FF"), "Lumbre": Color("FFE3A3")}
 # Niveles que ya tienen su enganche en el juego: los demás tienen datos y lógica (y sus pruebas), pero no salen en los
 # menús. M1: Alba I (y el II, mismo mecanismo); M2: Lumbre I y II; M3: Escarcha I y II; M4: los III.
-const ACTIVOS := {"Alba": 2, "Escarcha": 0, "Lumbre": 2}
+const ACTIVOS := {"Alba": 2, "Escarcha": 2, "Lumbre": 2}   # M3 (Escarcha I y II), enganchado el 09/11
 const ROMANOS := ["I", "II", "III"]
 
 # Cada nivel: «a» = a quién va; «todos» = a todos a la vez, sin elegir; «dano» 0, como pide la ruta propia (§3.1).
@@ -77,8 +77,9 @@ const FICHAS := [
 	["Brasa", "Si el aliado cae, se levanta una vez con algo de vida.", "Lumbre", 3],
 ]
 # Estados de los héroes, en el orden en que se dibujan sus iconos junto al nombre.
-const ESTADOS := ["barrera", "aliento", "brasa"]
-const COLOR_ESTADO := {"barrera": Color("BFE6FF"), "aliento": Color("B8E07A"), "brasa": Color("FF9A4A")}
+const ESTADOS := ["barrera", "aliento", "brasa", "guardia"]   # guardia: la de Garon (combate.gd, T-100)
+const COLOR_ESTADO := {"barrera": Color("BFE6FF"), "aliento": Color("B8E07A"), "brasa": Color("FF9A4A"),
+	"guardia": Color("C9D2E0")}
 
 
 # ================================================================= datos y aprendizaje
@@ -382,6 +383,8 @@ static func estados_de(f: Dictionary) -> Array:
 		r.append("aliento")
 	if float(f.get("brasa", 0.0)) > 0.0:
 		r.append("brasa")
+	if str(f.get("guardia_de", "")) != "":           # le cubre Garon (combate.gd, la Guardia)
+		r.append("guardia")
 	return r
 
 
@@ -389,6 +392,8 @@ static func estados_de(f: Dictionary) -> Array:
 static func texto_estado(f: Dictionary, estado: String) -> String:
 	if estado == "aliento" and int(f.get("aliento", 0)) > 0:
 		return str(int(f["aliento"]))
+	if estado == "barrera" and int(f.get("barrera", 0)) > 0:      # lo que aguanta aún la coraza (M3)
+		return str(int(f["barrera"]))
 	return ""
 
 
@@ -518,4 +523,11 @@ static func dibujar_estado(c: CanvasItem, estado: String, tam: Vector2) -> bool:
 				m + Vector2(0, r), m + Vector2(-r * 0.5, r * 0.7), m + Vector2(-r * 0.6, 0)])
 			c.draw_colored_polygon(pts, col)
 			c.draw_circle(m + Vector2(0, r * 0.45), r * 0.3, Color(1.0, 0.9, 0.55))
+		"guardia":                               # escudo (la Guardia de Garon)
+			var pts := PackedVector2Array([m + Vector2(-r * 0.75, -r * 0.8), m + Vector2(r * 0.75, -r * 0.8),
+				m + Vector2(r * 0.7, 0), m + Vector2(0, r), m + Vector2(-r * 0.7, 0)])
+			c.draw_colored_polygon(pts, Color(col, 0.55))
+			pts.append(pts[0])
+			c.draw_polyline(pts, col, 1.5)
+			c.draw_line(m + Vector2(0, -r * 0.6), m + Vector2(0, r * 0.7), Color(0.62, 0.17, 0.17), 2.0)
 	return true

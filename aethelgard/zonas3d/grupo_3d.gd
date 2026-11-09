@@ -161,6 +161,8 @@ func _crear(n: String) -> Dictionary:
 		nodo.queue_free()
 		return {}
 	nodo.scale = Vector3.ONE * ESCALA.get(n, 1.0)
+	if nodo.has_method("activar_esperas"):
+		nodo.activar_esperas()                     # quieto un rato, hace una de sus esperas (esperas_3d.gd)
 	# «estado» empieza en «?» (ninguno) para que el primer _poner_estado(m, "") ponga de verdad el reposo de
 	# exploración: con «» de partida no hacía nada y Garon se quedaba con la guardia de combate de garon_3d.gd (las
 	# dos espadas hacia delante) al aparecer y al empezar la región, hasta que andaba por primera vez (T-084).

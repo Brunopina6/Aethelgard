@@ -124,7 +124,14 @@ const F_PORTAZO := "S24/Rogue Waves - Creaking Door/DOORCreak_Wooden Door, Door 
 const F_VIGA_CAE := "S19/Rock The Speakerbox - Broken/BROKEN - CK - BEAM Wood Ceiling Drop On Concrete.wav"
 const F_CUERO_LENTO := "S20/Systematic-Sound - Sound Themes - Modern Cloth Foley 01/SFX CLOTH Foley Jacket Leather Rough Movement Slow Rustle.wav"
 const F_RESPIRA_H := "S20/Articulated Sounds - Human Male Breathe/HUMAN BREATH Male_Deep Opened Mouth Breath with S Formed Lips Long Exhale_F.wav"
-const F_EQUIPO_SOLDADO := "S18/Gamemaster Audio - Footstep and Foley Sounds/foley_soldier_gear_equipment_metal_cloth_heavy_movement_light_08.wav"
+const F_GRITO_H := "S23/Pole Position Production - The Grunts Library/Male 2 - Grunt - Battle Cry - Long - Ehrlund M1.wav"
+const F_JADEO_H := "S23/Pole Position Production - The Grunts Library/Male 1 - Breathing - Gasping - Ehrlund M1.wav"
+const F_SALTO_M := "S23/Pole Position Production - The Grunts Library/Female 3 - Grunt - Jumping and Landing - Long - Ehrlund M1.wav"
+const F_GOLPE_M := "S23/Pole Position Production - The Grunts Library/Female 1 - Grunt - Getting Hit - Medium Intensity - Ehrlund M1.wav"
+const F_JADEO_M := "S24/UberDuo - Inhale – Tanja – Character Playset/HMNBrth_Human, Adult, Female, Panting, Nose, Loop_UberDuo_INHL.wav"
+const F_CUERDAS_PUERTO := "S24/Rogue Waves - Yacht & Marina/AMBNaut_Atmos, EXT Marina, boats, rope creaking,_RogueWaves_YachtMarina_11.wav"
+const F_VIENTO_CABLES := "S18/Ivo Vicic - Bora wind - European local wind/38 Wind_hurricane_wires_whistle.wav"
+const F_EQUIPO_SOLDADO :=  "S18/Gamemaster Audio - Footstep and Foley Sounds/foley_soldier_gear_equipment_metal_cloth_heavy_movement_light_08.wav"
 
 # [derivado, fuente, desde (s), hasta (s, -1 = el final), opciones]
 # opciones: norm ("pico" o "rms"), db (objetivo en dBFS), techo (pico máximo con «rms»), fi / fo (fundidos en s),
@@ -480,6 +487,54 @@ const RECETAS := [
 		"capas": [[F_RESPIRA_H, 7.0, 8.2, 0.30, -10.0]]}],
 	["heroes/garon_quieto_2", F_EQUIPO_SOLDADO, 0.50, 1.05, {"norm": "pico", "db": -3.0, "fo": 0.25,
 		"capas": [[F_CUERO_LENTO, 14.05, 14.60, 0.0, -6.0]]}],
+	# ================================================================ tanda 5: las voces de los héroes en combate (no verbales)
+	# Kael, joven e impulsivo (un hombre joven, algo más agudo); Lya, cálida y ligera (una mujer); Garon, grave y veterano
+	# (otro hombre, más grave). Esfuerzo al atacar, quejido al recibir, jadeo con poca vida, alivio al curarse, victoria.
+	["heroes/kael_esfuerzo_1", F_GRITO_H, 1.70, 2.15, {"norm": "pico", "db": -2.0, "fo": 0.15, "tono": 1.04}],
+	["heroes/kael_esfuerzo_2", F_GRITO_H, 5.43, 5.88, {"norm": "pico", "db": -2.0, "fo": 0.15, "tono": 1.04}],
+	["heroes/kael_esfuerzo_3", F_GRITO_H, 12.90, 13.35, {"norm": "pico", "db": -2.0, "fo": 0.15, "tono": 1.04}],
+	["heroes/kael_herido_1", "S16/Bottle Rocket Fx - Scream/Grunt_Pain_Male_BB_10_SCREAM LIBRARY_BRFX-004.wav", 0.02, 0.32, {"norm": "pico", "db": -2.0, "fo": 0.08, "tono": 1.04}],
+	["heroes/kael_herido_2", "S20/344 Audio - British Soldier Voices/Grunts 16.wav", 0.0, 0.30, {"norm": "pico", "db": -2.0, "fo": 0.08, "tono": 1.04}],
+	["heroes/kael_jadeo_1", F_JADEO_H, 0.85, 2.60, {"norm": "pico", "db": -3.0, "fi": 0.03, "fo": 0.3, "tono": 1.03}],
+	["heroes/kael_jadeo_2", F_JADEO_H, 3.75, 5.80, {"norm": "pico", "db": -3.0, "fi": 0.03, "fo": 0.3, "tono": 1.03}],
+	["heroes/kael_alivio_1", "S23/344 Audio - The Burger Kitchen/Ahh, Relief, Drink, Soda, Exhale, Male.wav", 0.14, 0.95, {"norm": "pico", "db": -3.0, "fo": 0.3}],
+	["heroes/kael_alivio_2", F_JADEO_H, 6.98, 7.50, {"norm": "pico", "db": -3.0, "fi": 0.02, "fo": 0.2}],
+	["heroes/kael_victoria_1", "S16/SoundBits -  Screams & Shouts 2 - Humans/Male_Grunt-Shout_317.wav", 0.20, 0.82, {"norm": "pico", "db": -2.0, "fo": 0.2, "tono": 1.03}],
+	["heroes/kael_victoria_2", F_GRITO_H, 41.92, 42.55, {"norm": "rms", "db": -20.0, "techo": -2.0, "fo": 0.25, "tono": 1.04}],
+	["heroes/lya_esfuerzo_1", F_SALTO_M, 2.26, 2.58, {"norm": "pico", "db": -2.0, "fo": 0.1}],
+	["heroes/lya_esfuerzo_2", F_SALTO_M, 13.17, 13.40, {"norm": "pico", "db": -2.0, "fo": 0.08}],
+	["heroes/lya_esfuerzo_3", F_SALTO_M, 22.08, 22.33, {"norm": "pico", "db": -2.0, "fo": 0.08}],
+	["heroes/lya_herido_1", F_GOLPE_M, 3.88, 4.18, {"norm": "pico", "db": -2.0, "fo": 0.08}],
+	["heroes/lya_herido_2", F_GOLPE_M, 23.60, 23.88, {"norm": "pico", "db": -2.0, "fo": 0.08}],
+	["heroes/lya_herido_3", F_GOLPE_M, 25.35, 25.64, {"norm": "pico", "db": -2.0, "fo": 0.08}],
+	["heroes/lya_jadeo_1", F_JADEO_M, 2.80, 4.30, {"norm": "pico", "db": -4.0, "fi": 0.05, "fo": 0.3}],
+	["heroes/lya_jadeo_2", F_JADEO_M, 9.20, 10.40, {"norm": "pico", "db": -4.0, "fi": 0.05, "fo": 0.3}],
+	["heroes/lya_alivio_1", "S19/Eiravaein Works - Kieuk/Kieuk,laughter,female,30s,Charlotte,inhales,titter,lightsqueal.wav", 0.05, 0.68, {"norm": "pico", "db": -3.0, "fo": 0.2}],
+	["heroes/lya_victoria_1", "S19/AudioDesire - Voice Pack One - Emma/VO_001_Female_Laugh_03.wav", 0.07, 1.02, {"norm": "pico", "db": -2.0, "fo": 0.3}],
+	["heroes/garon_esfuerzo_1", "S19/Articulated Sounds - Fight Vocalizations/EMOTE David, Man, Anger Fight Grunt Special Power 03.wav", 0.03, 0.62, {"norm": "pico", "db": -2.0, "fo": 0.2, "tono": 0.9}],
+	["heroes/garon_esfuerzo_2", "S17/Gamemaster Audio -  Human Vocalizations/voice_male_b_battle_shout_short_09.wav", 0.01, 0.58, {"norm": "pico", "db": -2.0, "fo": 0.2, "tono": 0.88}],
+	["heroes/garon_esfuerzo_3", "S18/The Chris Alan - Hand-to-Hand Combat - Body Hits & Vocal Excursions/Hand-to-Hand Combat - Vocal Excursion - Male - Powering Up 14.wav", 0.03, 0.62, {"norm": "pico", "db": -2.0, "fo": 0.2, "tono": 0.92}],
+	["heroes/garon_herido_1", "S19/Articulated Sounds - Fight Vocalizations/EMOTE Joshua, Man, Pain Hurt Grunt Big 03.wav", 0.02, 0.36, {"norm": "pico", "db": -2.0, "fo": 0.1, "tono": 0.88}],
+	["heroes/garon_herido_2", "S17/Gamemaster Audio -  Human Vocalizations/voice_male_b_death_low_09.wav", 0.0, 0.48, {"norm": "pico", "db": -2.0, "fo": 0.15, "tono": 0.9}],
+	["heroes/garon_jadeo_1", F_JADEO_H, 12.00, 13.45, {"norm": "pico", "db": -3.0, "fi": 0.03, "fo": 0.3, "tono": 0.85}],
+	["heroes/garon_jadeo_2", F_JADEO_H, 18.00, 19.15, {"norm": "pico", "db": -3.0, "fi": 0.03, "fo": 0.3, "tono": 0.85}],
+	["heroes/garon_alivio_1", F_RESPIRA_H, 7.00, 8.60, {"norm": "pico", "db": -3.0, "fi": 0.05, "fo": 0.4, "tono": 0.9}],
+	["heroes/garon_victoria_1", "S19/Eiravaein Works - Kieuk/Kieuk,laughter,male,60s,OhioCarolina,heeing,restrained,chuckle,mouthclicks.wav", 0.95, 1.85, {"norm": "pico", "db": -3.0, "fi": 0.02, "fo": 0.25}],
+	# ================================================================ tanda 5 (si sobra margen): la entrada, la cornisa y los puentes de
+	# la Garganta 3D: los puentes colgantes crujen de vez en cuando (cuerdas: 1-3; tablas de madera: 4-5) y el viento silba en las cuerdas
+	["ambiente/puente_cruje_1", F_CUERDAS_PUERTO, 0.0, 0.50, {"norm": "pico", "db": -3.0, "fi": 0.02, "fo": 0.15}],
+	["ambiente/puente_cruje_2", F_CUERDAS_PUERTO, 1.20, 1.80, {"norm": "pico", "db": -3.0, "fi": 0.02, "fo": 0.15}],
+	["ambiente/puente_cruje_3", F_CUERDAS_PUERTO, 6.05, 6.90, {"norm": "pico", "db": -3.0, "fi": 0.02, "fo": 0.2,
+		"capas": [["S24/Jake Fielding - Squeaky Gates/DOORGate_Wooden Metal Hinge Creaks_Jake Fielding_Squeaky Gates.wav", 13.75, 14.15, 0.25, -12.0]]}],
+	["ambiente/puente_cruje_4", F_VIGA_CRUJE, 2.88, 3.60, {"norm": "pico", "db": -3.0, "fi": 0.03, "fo": 0.2}],
+	["ambiente/puente_cruje_5", "S19/Coll Anderson - House Library Add Ons/EFX CTM Floor Board Creak 03 A.wav", 3.57, 4.42, {"norm": "pico", "db": -3.0, "fi": 0.03, "fo": 0.2,
+		"capas": [[F_CUERDAS_PUERTO, 1.20, 1.60, 0.30, -8.0]]}],
+	# la Guardia de Garon (tanda 5, la pide combate por este nombre): se planta tras el escudo, metálico, firme y breve
+	["combate/guardia", "S17/Double Trouble Audio - Medieval Armor and Impacts/Plate_Impact_Hard_02.wav", 0.0, 0.60, {"norm": "pico", "db": -1.0, "fo": 0.2, "tono": 0.95,
+		"capas": [["S17/Double Trouble Audio - Medieval Armor and Impacts/Weapon_Impact_Parry_01.wav", 0.02, 0.60, 0.02, -8.0],
+			["S20/SmartSoundFX – Medieval/ARMOR Body Drop Chain Leather Short 02.wav", 0.55, 0.85, 0.0, -10.0]]}],
+	["ambiente/viento_cuerdas_1", F_VIENTO_CABLES, 9.0, 14.5, {"norm": "rms", "db": -24.0, "techo": -3.0, "fi": 1.2, "fo": 1.5}],
+	["ambiente/viento_cuerdas_2", F_VIENTO_CABLES, 26.0, 31.5, {"norm": "rms", "db": -24.0, "techo": -3.0, "fi": 1.2, "fo": 1.5}],
 ]
 
 # PROPUESTA de sonido para las 12 magias (T-083, tanda 2): NO se integran (D-048: su presentación está protegida). Solo

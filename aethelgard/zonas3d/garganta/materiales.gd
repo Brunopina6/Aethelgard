@@ -21,7 +21,9 @@ const ROCA := Color(0.40, 0.385, 0.39)
 const ROCA_OCRE := Color(0.53, 0.43, 0.33)
 const ROCA_VIOLETA := Color(0.36, 0.34, 0.42)
 const ROCA_OSCURA := Color(0.23, 0.225, 0.25)
-const MUSGO := Color(0.28, 0.34, 0.20)
+const MUSGO := Color(0.25, 0.34, 0.17)            # T-102: algo más verde (la referencia: musgo vivo sobre la roca)
+const MUSGO_CLARO := Color(0.42, 0.52, 0.22)
+const LUZ_CAIDA := Color(0.55, 0.75, 1.0)        # la luz fría de la caída de agua del primer puente
 const AMBAR := Color(1.0, 0.56, 0.20)
 const NIEBLA := Color(0.24, 0.24, 0.34)
 const LUZ_CIELO := Color(0.80, 0.86, 1.0)
@@ -39,6 +41,7 @@ uniform float fuerza_relieve = 0.55;
 uniform float escala = 0.21;
 uniform float escala_grietas = 0.075;
 uniform vec3 musgo : source_color = vec3(0.28, 0.34, 0.2);
+uniform vec3 musgo_claro : source_color = vec3(0.42, 0.52, 0.22);
 uniform vec3 brillo_abismo : source_color = vec3(1.0, 0.56, 0.2);
 uniform float y_brillo = -50.0;
 uniform float alcance_brillo = 40.0;
@@ -50,11 +53,37 @@ uniform float hondo_niebla = 30.0;
 // sombra). Es una suma barata en vez de una segunda luz (en Compatibility, cada luz más redibuja lo que toca).
 uniform vec3 rebote : source_color = vec3(0.50, 0.45, 0.40);
 uniform float fuerza_rebote = 0.9;
+// Estratos finos (T-102): una veta oscura cada «paso_veta» metros, con su labio claro encima y musgo en el labio. Los
+// estratos gruesos (cornisitas de 2,5-4 m) los hace la malla (roca.gd, hundido) y el color de los vértices.
+uniform float paso_veta = 0.85;
+uniform float fuerza_veta = 0.26;
+// La caída de agua junto al primer puente: la roca de alrededor, mojada (más oscura y verdosa) y teñida por su luz
+// fría. (x, y, z) de la cortina y su alcance.
+uniform vec4 caida = vec4(-15.6, -10.0, 15.0, 9.0);
+uniform vec3 luz_fria : source_color = vec3(0.55, 0.75, 1.0);
+uniform float fuerza_fria = 0.35;
+// Fuego de antorchas y faroles: un resplandor cálido pintado en la roca cercana (xyz y alcance), sin luces reales.
+uniform vec4 fuegos[8];
+uniform vec3 fuego : source_color = vec3(1.0, 0.62, 0.26);
+uniform float fuerza_fuego = 0.5;
 varying vec3 pm;
 varying vec3 nm;
+// Lo que cambia despacio se calcula en los vértices (la malla de roca tiene un vértice cada 0,65-1,15 m): el calor de los
+// fuegos, la humedad de la caída y la distancia a la cámara. Así el coste por píxel casi no crece (malioc, Mali-G57).
+varying vec4 extra;            // x = calor, y = mojado, z = cerca de la cámara (las vetas se apagan a lo lejos), w = estrato
 void vertex() {
 	pm = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	nm = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
+	float calor = 0.0;
+	for (int i = 0; i < 8; i++) {
+		vec4 fu = fuegos[i];
+		float d = clamp(1.0 - length(pm - fu.xyz) / max(fu.w, 0.001), 0.0, 1.0) * step(0.001, fu.w);
+		calor += d * d;
+	}
+	vec3 dc = (pm - caida.xyz) * vec3(1.3, 0.35, 0.6);
+	float mojado = 1.0 - smoothstep(0.0, caida.w, length(dc));
+	float cerca = 1.0 - smoothstep(25.0, 45.0, length((MODELVIEW_MATRIX * vec4(VERTEX, 1.0)).xyz));
+	extra = vec4(calor, mojado, cerca, pm.y / paso_veta + 0.4 * sin(pm.x * 0.13 + pm.z * 0.11));
 }
 void fragment() {
 	vec3 w = abs(nm);
@@ -65,11 +94,44 @@ void fragment() {
 	vec3 q = pm * escala_grietas;
 	float c = texture(grietas, q.zy).r * w.x + texture(grietas, q.xz).r * w.y + texture(grietas, q.xy).r * w.z;
 	float arriba = smoothstep(0.5, 0.9, nm.y);
+	float pared = 1.0 - arriba;
 	float grieta = (1.0 - smoothstep(0.012, 0.06, c)) * (1.0 - 0.75 * arriba);   // grietas finas, sobre todo en las paredes
 	float piedrecitas = texture(grano, pm.xz * escala * 4.5).r;                   // gravilla en lo que mira arriba
-	vec3 col = COLOR.rgb * (0.78 + 0.44 * g) * (1.0 - 0.5 * grieta);
+#ifdef DETALLE
+	// grano cercano (perfiles medio y alto): la roca no se ve lisa a 15 m
+	float g2 = texture(grano, p.zy * 5.0).r * (w.x + 0.5 * w.y) + texture(grano, p.xy * 5.0).r * (w.z + 0.5 * w.y);
+	g = g * 0.75 + g2 * 0.25;
+#endif
+	// vetas de los estratos: algo onduladas por el grano grande, solo en lo que es pared; suavizadas con fwidth (sin
+	// dientes de sierra) y apagadas a lo lejos (a más de 40 m, el color de los vértices basta)
+	float capa = extra.w + 0.3 * g;
+	float f = fract(capa);
+	float lejos = extra.z;
+#ifdef DETALLE
+	float aa = clamp(fwidth(capa) * 1.5, 0.0, 0.5);
+	float veta = (smoothstep(0.84 - aa, 0.93, f) - smoothstep(0.98 - aa * 0.5, 1.0, f) * 0.6) * pared * lejos;
+	float labio = (1.0 - smoothstep(0.0, 0.14 + aa, f)) * pared * lejos;
+#else
+	// perfil bajo: la misma veta, sin suavizado por píxel (en la pantalla del móvil apenas se nota) y sin labio claro
+	float veta = smoothstep(0.84, 0.95, f) * pared * lejos;
+	float labio = 0.0;
+#endif
+	vec3 col = COLOR.rgb * (0.74 + 0.52 * g) * (1.0 - 0.5 * grieta);
+	col *= 1.0 - fuerza_veta * veta;
+	col *= 1.0 + 0.10 * labio;
 	col *= mix(1.0, 0.8 + 0.4 * piedrecitas, arriba);
-	col = mix(col, musgo * (0.75 + 0.5 * g), arriba * COLOR.a);
+	// musgo: en lo que mira arriba (canal alfa de los vértices) y, en las paredes, en los labios de los estratos
+	float m_suelo = arriba * COLOR.a;
+	float m_labio = labio * smoothstep(0.45, 0.75, g) * COLOR.a * 1.6;
+#ifdef DETALLE
+	vec3 tono_musgo = mix(musgo, musgo_claro, smoothstep(0.35, 0.85, g));
+#else
+	vec3 tono_musgo = mix(musgo, musgo_claro, g * 0.6);
+#endif
+	col = mix(col, tono_musgo * (0.8 + 0.4 * g), clamp(m_suelo + m_labio, 0.0, 1.0));
+	// junto a la caída: roca mojada (más oscura y fría)
+	float mojado = extra.y;
+	col *= 1.0 - mojado * vec3(0.44, 0.35, 0.29);              // mojada: más oscura y algo más fría
 	float hondo = clamp((y_niebla - pm.y) / hondo_niebla, 0.0, 1.0);
 	col = mix(col, niebla, hondo * 0.75);
 	ALBEDO = col;
@@ -77,12 +139,16 @@ void fragment() {
 	float mira = clamp(0.6 - nm.y * 0.5, 0.0, 1.0);
 	EMISSION = brillo_abismo * cerca * cerca * mira * (0.55 + 0.45 * g) * (1.0 - 0.5 * grieta) * fuerza_brillo;
 	EMISSION += col * rebote * clamp(-nm.x, 0.0, 1.0) * (1.0 - hondo) * fuerza_rebote;
+	EMISSION += luz_fria * mojado * mojado * (0.5 + 0.5 * g) * fuerza_fria;
+	EMISSION += fuego * col * extra.x * fuerza_fuego * 3.0;
 	ROUGHNESS = 0.95;
 #ifdef RELIEVE
 	vec2 nx = (texture(relieve, p.zy).xy * 2.0 - 1.0) * fuerza_relieve;
 	vec2 ny = (texture(relieve, p.xz).xy * 2.0 - 1.0) * fuerza_relieve;
 	vec2 nz = (texture(relieve, p.xy).xy * 2.0 - 1.0) * fuerza_relieve;
 	vec3 n = normalize(nm + vec3(0.0, nx.y, nx.x) * w.x + vec3(ny.x, 0.0, ny.y) * w.y + vec3(nz.x, nz.y, 0.0) * w.z);
+	// la veta se hunde un poco: el labio recoge luz y la veta queda en sombra
+	n = normalize(n + vec3(0.0, (labio - veta) * 0.35, 0.0));
 	NORMAL = normalize((VIEW_MATRIX * vec4(n, 0.0)).xyz);
 #endif
 }
@@ -158,6 +224,8 @@ const SHADER_CASCADA := """
 shader_type spatial;
 render_mode unshaded, cull_disabled, shadows_disabled, depth_draw_never;
 uniform float largo = 30.0;
+uniform float brillo = 1.0;
+uniform float opacidad = 0.82;
 void fragment() {
 	float t = TIME * 1.1;
 	float ruido = sin(UV.x * 31.0 + sin(UV.x * 9.0) * 3.0) * 0.5 + 0.5;
@@ -165,8 +233,8 @@ void fragment() {
 	vec3 c = mix(vec3(0.44, 0.58, 0.72), vec3(0.93, 0.97, 1.0), smoothstep(0.45, 1.0, raya));
 	float borde = smoothstep(0.0, 0.14, UV.x) * (1.0 - smoothstep(0.86, 1.0, UV.x));
 	float abajo = 1.0 - smoothstep(0.7, 1.0, UV.y);
-	ALBEDO = c;
-	ALPHA = (0.82 - 0.3 * smoothstep(0.5, 1.0, UV.y)) * borde * abajo;
+	ALBEDO = c * brillo;
+	ALPHA = (opacidad - 0.3 * smoothstep(0.5, 1.0, UV.y)) * borde * abajo;
 }
 """
 
@@ -258,17 +326,39 @@ func roca(brillo := 1.0) -> ShaderMaterial:
 	if _cache.has(clave):
 		return _cache[clave]
 	var m := ShaderMaterial.new()
-	m.shader = _shader(SHADER_ROCA, ["RELIEVE"] if perfil.get("relieve", true) else [])
+	var defs: Array = []
+	if perfil.get("relieve", true):                         # medio y alto: relieve y grano cercano
+		defs = ["RELIEVE", "DETALLE"]
+	m.shader = _shader(SHADER_ROCA, defs)
 	m.set_shader_parameter("grano", tex_grano)
 	m.set_shader_parameter("grietas", tex_grietas)
 	if perfil.get("relieve", true):
 		m.set_shader_parameter("relieve", tex_relieve)
 	m.set_shader_parameter("musgo", MUSGO)
+	m.set_shader_parameter("musgo_claro", MUSGO_CLARO)
 	m.set_shader_parameter("brillo_abismo", AMBAR)
 	m.set_shader_parameter("niebla", NIEBLA)
 	m.set_shader_parameter("fuerza_brillo", 1.1 * brillo)
+	m.set_shader_parameter("luz_fria", LUZ_CAIDA)
+	m.set_shader_parameter("fuego", FUEGO)
+	m.set_shader_parameter("fuegos", _fuegos)
 	_cache[clave] = m
 	return m
+
+
+# Los fuegos (antorchas y faroles) que tiñen la roca cercana: hasta 8, los del tramo que más se ve. (x, y, z, alcance).
+var _fuegos := PackedVector4Array([Vector4.ZERO, Vector4.ZERO, Vector4.ZERO, Vector4.ZERO, Vector4.ZERO, Vector4.ZERO,
+	Vector4.ZERO, Vector4.ZERO])
+
+
+func poner_fuego(p: Vector3, alcance: float) -> void:
+	for i in _fuegos.size():
+		if _fuegos[i].w <= 0.0:
+			_fuegos[i] = Vector4(p.x, p.y, p.z, alcance)
+			break
+	for clave in _cache:
+		if str(clave).begins_with("roca_"):
+			(_cache[clave] as ShaderMaterial).set_shader_parameter("fuegos", _fuegos)
 
 
 # ---------------------------------------------------------------- materiales sencillos (también para lo que se vuelve
@@ -425,6 +515,20 @@ func hierba() -> ShaderMaterial:
 	return m
 
 
+# Hierba y helechos verdes de los rincones húmedos (T-102), con el mismo viento que la hierba seca.
+func hierba_verde() -> ShaderMaterial:
+	var clave := "hierba_verde"
+	if _cache.has(clave):
+		return _cache[clave]
+	var m := ShaderMaterial.new()
+	m.shader = _shader(SHADER_HIERBA)
+	m.set_shader_parameter("abajo", Color(0.13, 0.22, 0.09))
+	m.set_shader_parameter("arriba", Color(0.44, 0.60, 0.24))
+	m.set_shader_parameter("fuerza", 0.1)
+	_cache[clave] = m
+	return m
+
+
 # Degradado redondo para halos y destellos (como el de los faroles de Pastos Verdes).
 func textura_halo(c0: Color, c1: Color) -> GradientTexture2D:
 	var clave := "halo_%s_%s" % [c0.to_html(), c1.to_html()]
@@ -489,5 +593,122 @@ func mota(color: Color) -> StandardMaterial3D:
 	m.vertex_color_use_as_albedo = true
 	m.albedo_texture = textura_halo(Color(1, 1, 1, 1), Color(1, 1, 1, 0.5))
 	m.albedo_color = color
+	_cache[clave] = m
+	return m
+
+
+# ================================================================= T-102: puente que se mece, fuego y bruma
+
+# Madera y cuerda de un puente colgante que se mece: los extremos quietos (atados a los pilares) y el centro va y viene
+# unos centímetros de lado a lado y arriba y abajo. Solo se mueve lo que se ve: la colisión del puente no se mueve (Kael
+# nunca pisa en falso). El color sale de los vértices (cada tabla, su tono) por el grano estirado a lo largo de la veta.
+const SHADER_PUENTE := """
+shader_type spatial;
+render_mode diffuse_lambert, specular_schlick_ggx;
+uniform sampler2D grano : filter_linear_mipmap, repeat_enable;
+uniform vec3 color : source_color = vec3(1.0);
+uniform vec2 veta = vec2(0.5, 3.2);             // escala del grano: estirado a lo largo (x) de las tablas
+uniform float z_sur = 19.0;
+uniform float z_norte = 11.0;
+uniform float y_ancla = 1.25;                   // altura del pasamanos en los pilares: el puente cuelga de ahí
+uniform float vaiven = 0.05;                    // metros, de lado a lado, en el centro
+uniform float rebote = 0.022;                   // metros, arriba y abajo, en el centro
+uniform float fase = 0.0;
+uniform float rugosidad = 0.85;
+varying vec3 pm;
+varying vec3 nm;
+void vertex() {
+	vec3 w = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	pm = w;
+	nm = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
+	float t = clamp((z_sur - w.z) / (z_sur - z_norte), 0.0, 1.0);
+	float k = 4.0 * t * (1.0 - t);
+	float colgado = 0.45 + 0.55 * clamp((y_ancla - w.y) / 1.3, 0.0, 1.0);
+	float lado = sin(TIME * 1.9 + fase) * 0.8 + sin(TIME * 3.3 + fase * 1.7) * 0.2;
+	float arriba = sin(TIME * 2.6 + fase * 1.3 + t * 2.5);
+	VERTEX.x += lado * vaiven * k * colgado;
+	VERTEX.y += arriba * rebote * k;
+}
+void fragment() {
+	vec3 w = abs(nm);
+	w /= (w.x + w.y + w.z);
+	float g = texture(grano, pm.xz * veta).r * w.y + texture(grano, pm.xy * veta).r * w.z + texture(grano, pm.zy * veta.yx).r * w.x;
+	ALBEDO = color * COLOR.rgb * (0.62 + 0.45 * g);
+	ROUGHNESS = rugosidad;
+	SPECULAR = 0.25;
+}
+"""
+
+# Llama de antorcha o de farol: una lengua de fuego que mira a la cámara (girando solo en vertical) y tiembla. Suma
+# color, no escribe profundidad.
+const SHADER_LLAMA := """
+shader_type spatial;
+render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled;
+uniform vec3 nucleo : source_color = vec3(1.0, 0.86, 0.55);
+uniform vec3 borde : source_color = vec3(1.0, 0.42, 0.10);
+uniform float fase = 0.0;
+uniform float fuerza = 1.0;
+void vertex() {
+	MODELVIEW_MATRIX = VIEW_MATRIX * mat4(vec4(normalize(cross(vec3(0.0, 1.0, 0.0), INV_VIEW_MATRIX[2].xyz)), 0.0),
+		vec4(0.0, 1.0, 0.0, 0.0), vec4(normalize(cross(INV_VIEW_MATRIX[0].xyz, vec3(0.0, 1.0, 0.0))), 0.0), MODEL_MATRIX[3]);
+	MODELVIEW_NORMAL_MATRIX = mat3(MODELVIEW_MATRIX);
+}
+void fragment() {
+	float h = 1.0 - UV.y;                                       // 0 abajo, 1 arriba
+	float t = TIME * 7.0 + fase;
+	float baile = (sin(t + h * 6.0) * 0.07 + sin(t * 1.63 + 1.0) * 0.05) * h;
+	float ancho = 0.42 * pow(max(1.0 - h, 0.0), 0.65) * (0.85 + 0.15 * sin(t * 2.3));
+	float d = abs(UV.x - 0.5 - baile) / max(ancho, 0.001);
+	float llama = (1.0 - smoothstep(0.55, 1.0, d)) * smoothstep(0.0, 0.12, h) * (1.0 - smoothstep(0.55, 0.95, h + 0.08 * sin(t * 1.3)));
+	float centro = (1.0 - smoothstep(0.0, 0.55, d)) * (1.0 - smoothstep(0.1, 0.6, h));
+	float pulso = 0.85 + 0.15 * sin(t * 0.9 + fase * 3.0);
+	ALBEDO = mix(borde, nucleo, centro) * llama * pulso * fuerza;
+	ALPHA = llama;
+}
+"""
+
+
+func puente(z_sur: float, z_norte: float, fase: float, color: Color, veta := Vector2(0.5, 3.2), rugosidad := 0.85,
+		dos_caras := false) -> ShaderMaterial:
+	var m := ShaderMaterial.new()
+	m.shader = _shader(SHADER_PUENTE)
+	if dos_caras:                                          # telas: se ven por los dos lados
+		var s := Shader.new()
+		s.code = SHADER_PUENTE.replace("render_mode diffuse_lambert", "render_mode cull_disabled, diffuse_lambert")
+		m.shader = s
+	m.set_shader_parameter("grano", tex_grano_suave)
+	m.set_shader_parameter("color", color)
+	m.set_shader_parameter("veta", veta)
+	m.set_shader_parameter("z_sur", z_sur)
+	m.set_shader_parameter("z_norte", z_norte)
+	m.set_shader_parameter("fase", fase)
+	m.set_shader_parameter("vaiven", 0.05)
+	m.set_shader_parameter("rebote", 0.022)
+	m.set_shader_parameter("rugosidad", rugosidad)
+	return m
+
+
+func llama(fase := 0.0, fuerza := 1.0) -> ShaderMaterial:
+	var m := ShaderMaterial.new()
+	m.shader = _shader(SHADER_LLAMA)
+	m.set_shader_parameter("fase", fase)
+	m.set_shader_parameter("fuerza", fuerza)
+	return m
+
+
+# Bruma de la caída de agua: nubecillas blancas y frías que suben despacio (partículas que miran a la cámara). Mezcla
+# normal (no suma): de día no queman la imagen.
+func bruma() -> StandardMaterial3D:
+	var clave := "bruma"
+	if _cache.has(clave):
+		return _cache[clave]
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
+	m.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+	m.vertex_color_use_as_albedo = true
+	m.albedo_texture = textura_halo(Color(1, 1, 1, 0.55), Color(1, 1, 1, 0.3))
+	m.albedo_color = Color(0.86, 0.93, 1.0)
 	_cache[clave] = m
 	return m

@@ -5,7 +5,9 @@ extends DialogicPortrait
 # - Foco: quien habla se ilumina y se adelanta un poco; quien escucha se atenúa y se queda un paso atrás
 #   (_highlight y _unhighlight, que Dialogic llama al cambiar de interlocutor).
 # - Gestos breves, pedidos desde la línea de tiempo con [extra_data="…"]: ligero, firme, duda, sorpresa, decidido (o
-#   decidida), inquieta y preocupada. Cada uno dura menos de dos segundos y vuelve al reposo: nadie se mueve todo el rato.
+#   decidida), inquieta y preocupada; y, por la intención de la frase (09/11), risa, enfado y animo. Cada uno dura
+#   menos de dos segundos y vuelve al reposo: nadie se mueve todo el rato. «pose+movimiento» junta la ilustración de un
+#   gesto con el movimiento de otro («ligero+risa»).
 # - Poses (T-084): si el personaje tiene una ilustración para ese gesto («poses» en su .dch: gesto → imagen), pasa a
 #   ella con un fundido corto mientras dice su frase, y vuelve a la de reposo («image») al dejar de hablar o pasados
 #   unos segundos. Quien escucha está siempre en reposo, y cada frase lleva su gesto sin repetirse.
@@ -106,6 +108,39 @@ func _hacia_el_otro() -> float:
 func _set_extra_data(data: String) -> void:
 	if Engine.is_editor_hint() or data == "":
 		return
+	# «pose+movimiento» (09/11): la ilustración de un gesto con el movimiento de otro, p. ej. «ligero+risa» (la mano en
+	# la cadera mientras se ríe) o «decidida+enfado». La pose es la de la parte que tenga ilustración; el movimiento, el
+	# de la última parte que tenga uno.
+	var partes := data.split("+", false)
+	var movimiento := data
+	var pose := data
+	if partes.size() > 1:
+		movimiento = ""
+		pose = ""
+		for p in partes:
+			if _texturas.has(p) and pose == "":
+				pose = p
+			if p in MOVIMIENTOS:
+				movimiento = p
+	_mover(movimiento)
+	set_meta("ultimo_gesto", data)                  # lo miran las pruebas
+	if _texturas.has(pose):                         # la ilustración del gesto, mientras dice su frase
+		_cambiar_pose(pose)
+		_pose_t = _t
+		_hablo_tras_pose = false
+		if _espera != null and _espera.is_valid():
+			_espera.kill()
+		_espera = create_tween()
+		_espera.tween_interval(MANTENER_GESTO.get(pose, MANTENER))
+		_espera.tween_callback(_volver_al_reposo)
+
+
+# Gestos con movimiento (sin ilustración propia). Los de la intención de la frase (09/11): risa, enfado, animo.
+const MOVIMIENTOS := ["ligero", "firme", "duda", "sorpresa", "decidido", "decidida", "inquieta", "preocupada", "risa",
+	"enfado", "animo"]
+
+
+func _mover(data: String) -> void:
 	var g: Node2D = $Foco/Gesto
 	if _gesto != null and _gesto.is_valid():
 		_gesto.kill()
@@ -149,18 +184,33 @@ func _set_extra_data(data: String) -> void:
 			t.tween_interval(0.8)
 			t.tween_property(g, "position:y", 0.0, 0.6)
 			t.parallel().tween_property(g, "scale", Vector2.ONE, 0.6)
+		"risa":                                    # se ríe: tres botes cortos que se apagan, con el cuerpo suelto
+			for i in 3:
+				var f := 1.0 - i * 0.3
+				t.tween_property(g, "position:y", -7.0 * f, 0.1).set_ease(Tween.EASE_OUT)
+				t.parallel().tween_property(g, "rotation_degrees", 1.2 * f * (1.0 if i % 2 == 0 else -1.0) * d, 0.1)
+				t.tween_property(g, "position:y", 0.0, 0.12).set_ease(Tween.EASE_IN)
+			t.tween_property(g, "rotation_degrees", 0.0, 0.2)
+		"enfado":                                  # se tensa y se echa hacia el otro, con una sacudida seca de cabeza
+			t.tween_property(g, "position:x", 10.0 * d, 0.12).set_ease(Tween.EASE_OUT)
+			t.parallel().tween_property(g, "scale", Vector2(1.01, 0.99), 0.12)
+			t.tween_property(g, "rotation_degrees", 1.6 * d, 0.07)
+			t.tween_property(g, "rotation_degrees", -1.3 * d, 0.08)
+			t.tween_property(g, "rotation_degrees", 0.0, 0.08)
+			t.tween_interval(0.5)
+			t.tween_property(g, "position:x", 0.0, 0.45)
+			t.parallel().tween_property(g, "scale", Vector2.ONE, 0.45)
+		"animo":                                   # se yergue, se inclina hacia el otro y asiente: «vamos»
+			t.tween_property(g, "position:y", -9.0, 0.25).set_ease(Tween.EASE_OUT)
+			t.parallel().tween_property(g, "position:x", 8.0 * d, 0.25)
+			t.parallel().tween_property(g, "scale", Vector2.ONE * 1.02, 0.25)
+			t.tween_property(g, "position:y", -4.0, 0.14)
+			t.tween_property(g, "position:y", -8.0, 0.16)
+			t.tween_interval(0.6)
+			t.tween_property(g, "position", Vector2.ZERO, 0.5)
+			t.parallel().tween_property(g, "scale", Vector2.ONE, 0.5)
 		_:                                         # solo pose (p. ej. «brazalete»), o nada
 			t.kill()
-	set_meta("ultimo_gesto", data)                  # lo miran las pruebas
-	if _texturas.has(data):                         # la ilustración del gesto, mientras dice su frase
-		_cambiar_pose(data)
-		_pose_t = _t
-		_hablo_tras_pose = false
-		if _espera != null and _espera.is_valid():
-			_espera.kill()
-		_espera = create_tween()
-		_espera.tween_interval(MANTENER_GESTO.get(data, MANTENER))
-		_espera.tween_callback(_volver_al_reposo)
 
 
 func _volver_al_reposo() -> void:

@@ -62,6 +62,7 @@ func construir() -> void:
 	_muro_norte()
 	_abismo()
 	_cascada()
+	_caida_del_puente()
 	_decorado()
 	lotes.cerrar(region)
 	_haces()
@@ -158,19 +159,35 @@ func _huecos() -> void:
 # La presa del sur: cierra el abismo y lleva la escalera tallada de la cornisa alta a la baja. Al sur, la hondonada de
 # la boca de la garganta, con piedras sueltas, que se pierde en la niebla.
 func _presa_y_boca() -> void:
-	var piedra := mat.piedra_tallada()
 	var x0 := T.X_BORDE_O
 	var huella := (T.X_BORDE_E - T.X_BORDE_O) / T.ESCALONES
 	var z0: float = T.ESCALERA_Z[0]
 	var z1: float = T.ESCALERA_Z[1]
+	# T-102: sillares con su tono (cada escalón y cada bloque del pretil, distinto; musgo en lo alto del pretil del abismo)
+	# en vez de una piedra lisa y lila. Mismas cajas y misma colisión que antes.
+	var ls := Roca.Lotes.new()
+	var sillar := mat.detalle(Color.WHITE, 0.9, 0.8).duplicate() as StandardMaterial3D
+	sillar.vertex_color_use_as_albedo = true
+	var tono := func(base: Color) -> Color:
+		var c := base * randf_range(0.86, 1.08)
+		return c.lerp(Color(0.60, 0.50, 0.38), randf_range(0.0, 0.35))
 	for k in T.ESCALONES:
 		var arriba := T.ALTO - 0.4 * (k + 1)
 		var x := x0 + huella * (k + 0.5)
 		var g := randf_range(-0.02, 0.02)
-		Roca.caja(lotes, region, Vector3(x, arriba - 0.6, (z0 + z1) * 0.5), Vector3(huella + 0.04, 1.2, z1 - z0), piedra, Vector3(0, g, 0))
-		# pretiles: al norte (el abismo) y al sur (la presa)
-		Roca.caja(lotes, region, Vector3(x, arriba + 0.1, z0 - 0.45), Vector3(huella + 0.05, 1.4 + 0.5, 0.9), mat.piedra(), Vector3(0, 0, 0))
-		Roca.caja(lotes, region, Vector3(x, arriba - 0.2, z1 + 1.0), Vector3(huella + 0.05, 1.4 + 0.2, 2.0), mat.piedra(), Vector3(0, 0, 0))
+		_sillar(ls, sillar, Vector3(x, arriba - 0.6, (z0 + z1) * 0.5), Vector3(huella + 0.04, 1.2, z1 - z0), Vector3(0, g, 0),
+			tono.call(Color(0.56, 0.53, 0.49)))
+		# pretiles: al norte (el abismo) y al sur (la presa); en el del abismo, una albardilla con musgo
+		_sillar(ls, sillar, Vector3(x, arriba + 0.1, z0 - 0.45), Vector3(huella + 0.05, 1.4 + 0.5, 0.9), Vector3.ZERO,
+			tono.call(Color(0.47, 0.45, 0.46)))
+		var albardilla := BoxMesh.new()
+		albardilla.size = Vector3(huella + 0.07, 0.08, 0.96)
+		ls.poner_color(albardilla, Transform3D(Basis(), Vector3(x, arriba + 1.09, z0 - 0.45)), sillar,
+			Color(0.47, 0.45, 0.46).lerp(Materiales.MUSGO * 1.15, randf_range(0.15, 0.45)))
+		_sillar(ls, sillar, Vector3(x, arriba - 0.2, z1 + 1.0), Vector3(huella + 0.05, 1.4 + 0.2, 2.0), Vector3.ZERO,
+			tono.call(Color(0.47, 0.45, 0.46)))
+	for mi in ls.cerrar(region):
+		mi.name = "EscaleraDeLaPresa"
 	# cara sur de la presa: de la hondonada a la altura de cada escalón
 	var filas: Array = []
 	var nx := ceili((T.X_BORDE_E - T.X_BORDE_O + 1.0) / du)
@@ -417,7 +434,9 @@ func _cascada() -> void:
 # ================================================================= decorado
 
 func _decorado() -> void:
+	_entrada()
 	_losas()
+	_helechos()
 	_piedras_sueltas()
 	_hierba_seca()
 	_pinos()
@@ -496,54 +515,125 @@ func _campamento() -> void:
 		lotes.poner(cap, Transform3D(Basis.from_euler(Vector3(PI * 0.5, randf() * TAU, 0)), c + Vector3(randf_range(-1.6, 1.0), 0.05, randf_range(-1.8, 1.6))), hueso)
 
 
-# La Vía del Peregrino por el camino de arriba: losas gastadas (faltan algunas: las arrancaron).
+# La Vía del Peregrino por el camino de arriba (T-102): adoquines irregulares y gastados, bien juntos por el centro y
+# sueltos en los bordes (faltan algunos: los arrancaron), con tierra y musgo entre ellos. Cuatro formas de piedra en
+# MultiMesh (una llamada de dibujo por forma). Antes eran losas hexagonales sueltas (09/11, fase 1).
 func _losas() -> void:
-	var puntos: Array = []
-	var z := 45.0
-	while z > T.PASO_PUERTA[0] + 0.5:
-		if not T.en_hueco(z) and (z > T.PUENTES[0][0] + 0.3 or z < T.PUENTES[1][1] - 0.3 or (z < T.ISLOTE[1] - 0.6 and z > T.ISLOTE[0] + 0.6)):
-			for fila in [-0.72, 0.0, 0.72]:
-				if randf() < 0.1:
-					continue
-				var x: float = T.X_CAMINO_O + fila + randf_range(-0.15, 0.15) + 0.4 * sin(z * 0.11)
-				puntos.append(Vector3(x, 0, z + randf_range(-0.15, 0.15)))
-		z -= 0.78
-	var losa := CylinderMesh.new()
-	losa.top_radius = 0.31
-	losa.bottom_radius = 0.35
-	losa.height = 0.1
-	losa.radial_segments = 7
-	losa.rings = 1
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 2207
+	var formas: Array = []
 	var mlosa := mat.detalle(Color.WHITE, 1.3, 1.0).duplicate() as StandardMaterial3D
 	mlosa.vertex_color_use_as_albedo = true
-	losa.material = mlosa
-	var mm := MultiMesh.new()
-	mm.transform_format = MultiMesh.TRANSFORM_3D
-	mm.use_colors = true
-	mm.mesh = losa
-	mm.instance_count = puntos.size()
-	for k in puntos.size():
-		var p: Vector3 = puntos[k]
-		var t := Transform3D(Basis(Vector3.UP, randf() * TAU).scaled(Vector3(randf_range(0.85, 1.2), 1, randf_range(0.8, 1.15))),
-			Vector3(p.x, T.altura(p.x, p.z) + 0.015, p.z))
-		mm.set_instance_transform(k, t)
-		var g := randf_range(0.5, 0.64)                      # piedra clara y gastada: la senda se lee desde lejos
-		mm.set_instance_color(k, Color(g, g * 0.96, g * 0.9))
-	var mmi := MultiMeshInstance3D.new()
-	mmi.multimesh = mm
-	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	region.add_child(mmi)
+	for k in 4:
+		var malla := _adoquin(rng, 7 if nombre_perfil == "bajo" else 9)
+		malla.surface_set_material(0, mlosa)
+		formas.append(malla)
+	var puestos: Array = [[], [], [], []]
+	var z := 45.0
+	var fila := 0
+	while z > T.PASO_PUERTA[0] + 0.5:
+		var en_puente := z <= T.PUENTES[0][0] + 0.3 and z >= T.PUENTES[1][1] - 0.3 and not (z < T.ISLOTE[1] - 0.6 and z > T.ISLOTE[0] + 0.6)
+		if not T.en_hueco(z) and not en_puente:
+			var centro: float = T.X_CAMINO_O + 0.4 * sin(z * 0.11)
+			var desfase := 0.22 if fila % 2 == 0 else 0.0
+			var x := -1.15 + desfase
+			while x < 1.15:
+				var borde := absf(x) / 1.15                            # 0 en el centro, 1 en el borde
+				if rng.randf() > 0.06 + 0.5 * pow(borde, 3.0):
+					var p := Vector3(centro + x + rng.randf_range(-0.05, 0.05), 0, z + rng.randf_range(-0.05, 0.05))
+					puestos[rng.randi() % 4].append([p, rng.randf_range(0.82, 1.12), borde])
+				x += 0.44
+		z -= 0.42
+		fila += 1
+	for k in 4:
+		var lista: Array = puestos[k]
+		var mm := MultiMesh.new()
+		mm.transform_format = MultiMesh.TRANSFORM_3D
+		mm.use_colors = true
+		mm.mesh = formas[k]
+		mm.instance_count = lista.size()
+		for i in lista.size():
+			var p: Vector3 = lista[i][0]
+			var e: float = lista[i][1]
+			var hundido: float = lista[i][2] * 0.03                     # en los bordes, más hundidos en la tierra
+			var t := Transform3D(Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(e, rng.randf_range(0.85, 1.2), e * rng.randf_range(0.9, 1.1))),
+				Vector3(p.x, T.altura(p.x, p.z) - hundido, p.z))
+			mm.set_instance_transform(i, t)
+			var g := rng.randf_range(0.5, 0.66)                         # piedra clara y gastada: la senda se lee desde lejos
+			var c := Color(g, g * 0.96, g * 0.89)
+			if rng.randf() < 0.18:                                      # algunas, verdosas de musgo
+				c = c.lerp(Color(0.40, 0.46, 0.30), rng.randf_range(0.3, 0.6))
+			elif rng.randf() < 0.15:                                    # otras, más ocres
+				c = c.lerp(Color(0.62, 0.52, 0.40), 0.5)
+			mm.set_instance_color(i, c)
+		var mmi := MultiMeshInstance3D.new()
+		mmi.multimesh = mm
+		mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mmi.name = "Adoquines%d" % k
+		region.add_child(mmi)
 
 
-func _piedra(p: Vector3, r: float, m: Material) -> void:
+# Un adoquín: polígono irregular de «lados» lados (unos 0,4 m), con la cara de arriba algo abombada y el canto biselado.
+func _adoquin(rng: RandomNumberGenerator, lados: int) -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var radios: Array = []
+	for i in lados:
+		radios.append(0.2 * rng.randf_range(0.78, 1.12))
+	var arriba := 0.045
+	var canto := 0.03
+	var cima := Vector3(rng.randf_range(-0.02, 0.02), arriba + 0.02, rng.randf_range(-0.02, 0.02))
+	for i in lados:
+		var a0 := TAU * i / lados
+		var a1 := TAU * (i + 1) / lados
+		var r0: float = radios[i]
+		var r1: float = radios[(i + 1) % lados]
+		var d0 := Vector3(cos(a0), 0, sin(a0))
+		var d1 := Vector3(cos(a1), 0, sin(a1))
+		var in0 := d0 * (r0 - canto) + Vector3(0, arriba, 0)       # borde de la cara de arriba
+		var in1 := d1 * (r1 - canto) + Vector3(0, arriba, 0)
+		var out0 := d0 * r0 + Vector3(0, arriba - canto, 0)         # bisel
+		var out1 := d1 * r1 + Vector3(0, arriba - canto, 0)
+		var pie0 := d0 * r0 * 1.04 + Vector3(0, -0.06, 0)          # metido en la tierra
+		var pie1 := d1 * r1 * 1.04 + Vector3(0, -0.06, 0)
+		for v in [cima, in0, in1, in0, out1, in1, in0, out0, out1, out0, pie1, out1, out0, pie0, pie1]:   # caras delanteras en sentido horario (Godot)
+			st.add_vertex(v)
+	st.generate_normals()
+	return st.commit()
+
+
+# Peña de la cornisa: roca facetada (ruido sobre una esfera, con la base plana) con el sombreado de la roca, así que
+# lleva sus vetas y el musgo encima (canal alfa del color). Antes eran esferas grises.
+func _piedra(p: Vector3, r: float, _m: Material) -> void:
 	var sm := SphereMesh.new()
-	sm.radius = r
-	sm.height = r * 1.3
-	sm.radial_segments = 8
-	sm.rings = 5
-	var b := Basis.from_euler(Vector3(randf(), randf() * TAU, randf()) * 0.5).scaled(
-		Vector3(randf_range(0.9, 1.35), randf_range(0.6, 0.95), randf_range(0.9, 1.25)))
-	lotes.poner(sm, Transform3D(b, p + Vector3(0, r * 0.2, 0)), m)
+	sm.radius = 1.0
+	sm.height = 2.0
+	sm.radial_segments = 9 if nombre_perfil == "bajo" else 12
+	sm.rings = 5 if nombre_perfil == "bajo" else 7
+	var a: Array = sm.surface_get_arrays(0)
+	var v: PackedVector3Array = a[Mesh.ARRAY_VERTEX]
+	var idx: PackedInt32Array = a[Mesh.ARRAY_INDEX]
+	var semilla := randf() * 100.0
+	var escala := Vector3(randf_range(1.0, 1.4), randf_range(0.6, 0.9), randf_range(0.9, 1.25)) * r
+	var b := Basis(Vector3.UP, randf() * TAU) * Basis.from_euler(Vector3(randf_range(-0.12, 0.12), 0, randf_range(-0.12, 0.12)))
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var puntos := PackedVector3Array()
+	puntos.resize(v.size())
+	for i in v.size():
+		var q: Vector3 = v[i]
+		var k := 1.0 + 0.22 * Roca.n3(q.x * 1.6 + semilla, q.y * 1.6, q.z * 1.6) + 0.08 * Roca.n3(q.x * 4.0, q.y * 4.0 + semilla, q.z * 4.0)
+		q *= k
+		q.y = maxf(q.y, -0.25)                                     # base plana: asienta en el suelo
+		puntos[i] = p + b * (q * escala) + Vector3(0, r * 0.12, 0)
+	for i in idx:                                                  # sin compartir vértices: caras planas (roca tallada)
+		var w: Vector3 = puntos[i]
+		var arriba := clampf((w.y - p.y) / maxf(r, 0.01), 0.0, 1.0)
+		var c := Roca.color_roca(w, Vector3.UP, 0.0)
+		st.set_color(Color(c.r, c.g, c.b, clampf(0.25 + 0.75 * arriba, 0.0, 1.0)))
+		st.add_vertex(w)
+	st.generate_normals()
+	lotes.poner(st.commit(), Transform3D(), mat.roca())
 
 
 # Piedras en las cornisas, lejos de la senda (junto al muro y al borde).
@@ -581,6 +671,8 @@ func _hierba_seca() -> void:
 		st.add_vertex(Vector3(0, 0.45, 0) + d * 0.2)
 	var hoja := st.commit()
 	hoja.surface_set_material(0, mat.hierba())
+	var hoja_verde := hoja.duplicate() as ArrayMesh            # T-102: matas verdes donde hay humedad
+	hoja_verde.surface_set_material(0, mat.hierba_verde())
 	var trozos := {}
 	var n: int = HIERBA[nombre_perfil]
 	var intentos := 0
@@ -599,7 +691,8 @@ func _hierba_seca() -> void:
 			t = 1.0 - t
 		var x := lerpf(a, b, t)
 		var centro := Vector3(x, 0, z)
-		var clave := Vector2i(floori(z / 14.0), 1 if arriba else 0)
+		var verde := arriba and z > 6.0 and (absf(z - CAIDA_Z) < 8.0 or (t < 0.32 and randf() < 0.45))
+		var clave := Vector3i(floori(z / 14.0), 1 if arriba else 0, 1 if verde else 0)
 		if not trozos.has(clave):
 			trozos[clave] = []
 		for m in randi_range(3, 7):
@@ -613,7 +706,7 @@ func _hierba_seca() -> void:
 		var mm := MultiMesh.new()
 		mm.transform_format = MultiMesh.TRANSFORM_3D
 		mm.use_colors = true
-		mm.mesh = hoja
+		mm.mesh = hoja_verde if clave.z == 1 else hoja
 		mm.instance_count = puntos.size()
 		for k in puntos.size():
 			var p: Vector3 = puntos[k]
@@ -711,7 +804,7 @@ var luces_reales := 0
 
 
 func _faroles_peregrino() -> void:
-	var sitios := [Vector3(-14.7, 0, 39.5), Vector3(-14.7, 0, 29.0), Vector3(-14.9, 0, 19.6), Vector3(-14.6, 0, 0.6),
+	var sitios := [Vector3(-14.7, 0, 39.5), Vector3(-14.7, 0, 29.0), Vector3(-14.6, 0, 0.6),
 		Vector3(-14.8, 0, -11.0), Vector3(-13.9, 0, -17.0), Vector3(14.0, 0, 26.0), Vector3(14.1, 0, 4.0),
 		Vector3(14.0, 0, -12.5)]
 	for p in sitios:
@@ -728,6 +821,9 @@ func farol(p: Vector3, tosco := false) -> void:
 	bm.size = Vector3(0.24, 0.26, 0.24)
 	lotes.poner(bm, Transform3D(Basis(), p + Vector3(0, 1.15, 0)), mat.brillo(Materiales.FUEGO, 1.25))
 	halo(p, p + Vector3(0, 1.15, 0), Materiales.FUEGO, 4.2, 1.3)
+	llama_en(p + Vector3(0, 1.55, 0), 0.36, p.z)                 # T-102: la llama, viva, sobre la caperuza
+	if p.x < 0.0 and p.z > 15.0:                                 # los del primer tramo tiñen la roca de al lado
+		mat.poner_fuego(p + Vector3(0, 1.3, 0), 4.5)
 	if perfil.get("luces_faroles", false) and luces_reales < 4:
 		luces_reales += 1
 		var o := OmniLight3D.new()
@@ -736,6 +832,7 @@ func farol(p: Vector3, tosco := false) -> void:
 		o.omni_range = 5.0
 		o.position = p + Vector3(0, 1.3, 0)
 		region.add_child(o)
+		luces.append(o)
 
 
 # Halo falso (como los faroles de Pastos Verdes): disco de luz en el suelo y resplandor en el aire. Los discos van en el
@@ -880,3 +977,316 @@ func _aves() -> void:
 		for mi in ave.find_children("*", "MeshInstance3D", true, false):
 			mi.material_override = negro_alas if mi.mesh is QuadMesh else negro
 			mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+
+# ================================================================= T-102: el primer tramo (entrada, cornisa y puente)
+
+var luces: Array = []             # luces reales de los faroles (perfil alto): tiemblan como el fuego
+var _t_luz := 0.0
+var bruma: CPUParticles3D         # la bruma de la caída (las pruebas la cuentan)
+# La caída de agua del primer puente: brota de una grieta del muro del oeste y cae al abismo junto al puente, en el
+# primer hueco. Su roca, mojada y con su luz fría (materiales.gd, «caida»).
+const CAIDA_Z := 15.2
+const CAIDA_ARRIBA := 4.5                # brota algo por encima de la cornisa (desde arriba no cruza la pantalla)
+const BRUMAS := {"bajo": 4, "medio": 7, "alto": 11}
+const ROCIO := {"bajo": 0, "medio": 14, "alto": 28}
+const HELECHOS := {"bajo": 14, "medio": 26, "alto": 40}
+
+
+func _caida_del_puente() -> void:
+	var x_muro := T.muro_oeste(CAIDA_Z)
+	var arriba := Vector3(x_muro + 0.35, CAIDA_ARRIBA, CAIDA_Z)
+	var abajo := Vector3(x_muro + 1.4, -42.0, CAIDA_Z + 0.4)
+	var capas := [[1.8, 3.4, 0.0]] if nombre_perfil == "bajo" else [[1.8, 3.4, 0.0], [1.0, 2.2, 0.22]]
+	for capa in capas:
+		var st := SurfaceTool.new()
+		st.begin(Mesh.PRIMITIVE_TRIANGLES)
+		var tramos := 10
+		for k in tramos:
+			for e in [[0, 0], [1, 0], [0, 1], [1, 0], [1, 1], [0, 1]]:
+				var t := float(k + e[1]) / tramos
+				var ancho: float = lerpf(capa[0], capa[1], t)
+				var p := arriba.lerp(abajo, t) + Vector3(capa[2], 0, (e[0] - 0.5) * ancho)
+				p.x += (1.0 - pow(1.0 - t, 4.0)) * 1.1 - t * 0.6           # sale del muro en arco y luego cae a plomo
+				st.set_uv(Vector2(e[0], t))
+				st.add_vertex(p)
+		st.generate_normals()
+		var mi := MeshInstance3D.new()
+		mi.mesh = st.commit()
+		var m := mat.cascada()
+		m.set_shader_parameter("largo", 46.0)
+		m.set_shader_parameter("brillo", 0.82)              # en la sombra del hueco: menos blanca que la del fondo
+		m.set_shader_parameter("opacidad", 0.7)
+		mi.material_override = m
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mi.name = "CaidaDelPuente"
+		region.add_child(mi)
+	# la grieta de donde brota (roca oscura) y la espuma del chorro
+	var hueco := mat.liso(Color(0.08, 0.08, 0.1), 1.0)
+	var bm := BoxMesh.new()
+	bm.size = Vector3(0.3, 1.2, 1.8)
+	lotes.poner(bm, Transform3D(Basis(), arriba + Vector3(-0.2, 0.55, 0)), hueco)
+	var espuma := mat.brillo(Color(0.80, 0.88, 0.96), 0.8)
+	for k in 5:
+		var s := SphereMesh.new()
+		s.radius = randf_range(0.12, 0.22)
+		s.height = s.radius * 1.3
+		s.radial_segments = 8
+		s.rings = 4
+		lotes.poner(s, Transform3D(Basis(), arriba + Vector3(0.15 + randf_range(0.0, 0.2), randf_range(-0.6, 0.1), randf_range(-0.6, 0.6))), espuma)
+	# su luz fría: un resplandor azulado a la altura del puente (suma color) y la bruma que sube del abismo
+	var q := QuadMesh.new()
+	q.size = Vector2(9.0, 9.0)
+	var resplandor := MeshInstance3D.new()
+	resplandor.mesh = q
+	resplandor.material_override = mat.halo_aire(Materiales.LUZ_CAIDA, 0.32)
+	resplandor.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	resplandor.position = Vector3(x_muro + 1.6, -4.0, CAIDA_Z)
+	resplandor.name = "LuzDeLaCaida"
+	region.add_child(resplandor)
+	bruma = CPUParticles3D.new()
+	bruma.name = "BrumaDeLaCaida"
+	bruma.amount = BRUMAS[nombre_perfil]
+	bruma.lifetime = 9.0
+	bruma.preprocess = 9.0
+	bruma.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
+	bruma.emission_box_extents = Vector3(1.6, 3.5, 2.6)
+	bruma.direction = Vector3(0.4, 1.0, 0.0)
+	bruma.spread = 25.0
+	bruma.initial_velocity_min = 0.25
+	bruma.initial_velocity_max = 0.6
+	bruma.gravity = Vector3.ZERO
+	bruma.scale_amount_min = 0.7
+	bruma.scale_amount_max = 1.3
+	var qb := QuadMesh.new()
+	qb.size = Vector2(4.2, 4.2)
+	qb.material = mat.bruma()
+	bruma.mesh = qb
+	var g := Gradient.new()
+	g.colors = PackedColorArray([Color(1, 1, 1, 0.0), Color(1, 1, 1, 0.6), Color(1, 1, 1, 0.0)])
+	g.offsets = PackedFloat32Array([0.0, 0.45, 1.0])
+	bruma.color_ramp = g
+	bruma.position = Vector3(x_muro + 2.6, -5.0, CAIDA_Z)
+	bruma.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	bruma.visibility_aabb = AABB(Vector3(-6, -6, -6), Vector3(12, 16, 12))
+	region.add_child(bruma)
+	if ROCIO[nombre_perfil] > 0:                                    # gotitas de rocío que el viento sube hasta el puente
+		var rocio := CPUParticles3D.new()
+		rocio.name = "Rocio"
+		rocio.amount = ROCIO[nombre_perfil]
+		rocio.lifetime = 4.0
+		rocio.preprocess = 4.0
+		rocio.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
+		rocio.emission_box_extents = Vector3(1.2, 1.5, 2.2)
+		rocio.direction = Vector3(1.0, 0.8, 0.0)
+		rocio.spread = 30.0
+		rocio.initial_velocity_min = 0.6
+		rocio.initial_velocity_max = 1.4
+		rocio.gravity = Vector3(0, -0.15, 0)
+		var qr := QuadMesh.new()
+		qr.size = Vector2(0.06, 0.06)
+		qr.material = mat.mota(Color(0.82, 0.92, 1.0))
+		rocio.mesh = qr
+		var gr := Gradient.new()
+		gr.colors = PackedColorArray([Color(1, 1, 1, 0.0), Color(1, 1, 1, 0.8), Color(1, 1, 1, 0.0)])
+		rocio.color_ramp = gr
+		rocio.position = Vector3(x_muro + 1.5, -1.5, CAIDA_Z)
+		rocio.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		region.add_child(rocio)
+	# un colchón de niebla fría bajo el primer puente (medio y alto): el abismo se hunde en ella y se lee la altura
+	if nombre_perfil != "bajo":
+		var capa := MeshInstance3D.new()
+		var pl := PlaneMesh.new()
+		pl.size = Vector2(9.0, 7.5)
+		capa.mesh = pl
+		capa.material_override = mat.niebla(Color(0.62, 0.70, 0.86, 0.24))
+		capa.position = Vector3(-11.6, -6.5, (T.HUECOS[0][0] + T.HUECOS[0][1]) * 0.5)
+		capa.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		capa.name = "NieblaBajoElPuente"
+		region.add_child(capa)
+
+
+# La entrada de la garganta: dos piedras hincadas de los peregrinos con el anillo partido, una cuerda de cintas de
+# oración entre ellas y una antorcha en cada una. Es el umbral: Kael llega del mapa (al sur) y entra por aquí.
+const UMBRAL_Z := 33.6
+
+
+func _entrada() -> void:
+	var piedra := mat.piedra_tallada()
+	var cimas: Array = []
+	for lado in [-1.0, 1.0]:
+		var x: float = T.X_CAMINO_O + lado * 2.45
+		var p := Vector3(x, T.altura(x, UMBRAL_Z), UMBRAL_Z)
+		var alto := 2.9 if lado < 0.0 else 2.6
+		var giro := Vector3(randf_range(-0.04, 0.04), lado * 0.15, -lado * 0.05)
+		var b := Basis.from_euler(giro)
+		# la piedra: un bloque algo más estrecho arriba (dos cajas) y la base hundida
+		Roca.caja(lotes, region, p + b * Vector3(0, alto * 0.38, 0), Vector3(0.62, alto * 0.76, 0.5), piedra, giro)
+		var bm := BoxMesh.new()
+		bm.size = Vector3(0.5, alto * 0.3, 0.42)
+		lotes.poner(bm, Transform3D(b, p + b * Vector3(0, alto * 0.86, 0)), piedra)
+		var base := BoxMesh.new()
+		base.size = Vector3(0.9, 0.22, 0.75)
+		lotes.poner(base, Transform3D(Basis(Vector3.UP, 0.3 * lado), p + Vector3(0, 0.05, 0)), mat.piedra())
+		# el anillo partido tallado en la cara que mira al sur (a quien llega)
+		var anillo: ArrayMesh = load("res://zonas3d/garganta/piezas.gd").anillo_partido(0.17, 0.028, 40.0, 18, 6)
+		lotes.poner(anillo, Transform3D(b, p + b * Vector3(0, alto * 0.62, 0.26)), mat.bronce())
+		cimas.append(p + b * Vector3(-lado * 0.05, alto * 0.95, 0))
+		# la antorcha, en la cara de dentro (hacia el camino)
+		var soporte := p + b * Vector3(-lado * 0.36, 1.75, 0.05)
+		var palo := CylinderMesh.new()
+		palo.top_radius = 0.05
+		palo.bottom_radius = 0.035
+		palo.height = 0.55
+		palo.radial_segments = 6
+		lotes.poner(palo, Transform3D(Basis(Vector3.BACK, lado * 0.35), soporte), mat.madera_vieja())
+		var abrazadera := BoxMesh.new()
+		abrazadera.size = Vector3(0.14, 0.06, 0.14)
+		lotes.poner(abrazadera, Transform3D(Basis(), soporte + Vector3(lado * 0.04, -0.08, 0)), mat.hierro())
+		var fuego := soporte + Vector3(-lado * 0.1, 0.42, 0)
+		var brasa := SphereMesh.new()
+		brasa.radius = 0.08
+		brasa.height = 0.12
+		brasa.radial_segments = 6
+		brasa.rings = 3
+		lotes.poner(brasa, Transform3D(Basis(), fuego + Vector3(0, -0.12, 0)), mat.brillo(Color(1.0, 0.5, 0.18), 1.3))
+		llama_en(fuego, 0.5, lado * 2.0, 1.15)
+		halo(Vector3(p.x - lado * 0.6, p.y, p.z), fuego, Materiales.FUEGO, 4.6, 1.7)
+		mat.poner_fuego(fuego, 5.5)
+	# la cuerda con las cintas de oración, combada entre las dos cimas
+	var lt := Roca.Lotes.new()
+	var m_tela := StandardMaterial3D.new()
+	m_tela.vertex_color_use_as_albedo = true
+	m_tela.cull_mode = BaseMaterial3D.CULL_DISABLED
+	m_tela.roughness = 1.0
+	var a: Vector3 = cimas[0]
+	var b2: Vector3 = cimas[1]
+	var colores := [Color(0.70, 0.22, 0.20), Color(0.86, 0.66, 0.30), Color(0.30, 0.44, 0.70), Color(0.92, 0.90, 0.82),
+		Color(0.36, 0.56, 0.34)]
+	var cuelga := func(t: float) -> Vector3: return a.lerp(b2, t) - Vector3(0, 0.45 * 4.0 * t * (1.0 - t), 0)
+	var segs := 10
+	for k in segs:
+		var pa: Vector3 = cuelga.call(float(k) / segs)
+		var pb: Vector3 = cuelga.call(float(k + 1) / segs)
+		var cm := CylinderMesh.new()
+		cm.top_radius = 0.018
+		cm.bottom_radius = 0.018
+		cm.height = pa.distance_to(pb) + 0.02
+		cm.radial_segments = 5
+		cm.rings = 1
+		var y := (pb - pa).normalized()
+		var xe := y.cross(Vector3.FORWARD).normalized()
+		lt.poner_color(cm, Transform3D(Basis(xe, y, xe.cross(y)), (pa + pb) * 0.5), m_tela, Color(0.62, 0.53, 0.40))
+	var n_cintas := 13
+	for k in n_cintas:
+		var t := (k + 0.5) / n_cintas
+		var q := QuadMesh.new()
+		q.size = Vector2(0.24, 0.32)
+		var p: Vector3 = cuelga.call(t) - Vector3(0, 0.17, 0)
+		lt.poner_color(q, Transform3D(Basis(Vector3.RIGHT, randf_range(-0.2, 0.2)).rotated(Vector3.UP, randf_range(-0.15, 0.15)), p),
+			m_tela, colores[k % colores.size()] * randf_range(0.85, 1.05))
+	for mi in lt.cerrar(region, false):
+		mi.name = "CintasDeLaEntrada"
+
+
+# Helechos y matas verdes donde hay humedad: al pie del muro del oeste en el primer tramo y junto a la caída.
+func _helechos() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 5150
+	var hoja := _malla_helecho()
+	hoja.surface_set_material(0, mat.hierba_verde())
+	var lista: Array = []
+	var intentos := 0
+	while lista.size() < HELECHOS[nombre_perfil] and intentos < 600:
+		intentos += 1
+		var z := rng.randf_range(8.0, 44.0) if rng.randf() < 0.8 else rng.randf_range(-6.0, 8.0)
+		if T.en_hueco(z) or absf(z - UMBRAL_Z) < 0.8 or (z > 27.0 and z < 32.0):
+			continue
+		var cerca_caida := absf(z - CAIDA_Z) < 6.0
+		var x: float
+		if rng.randf() < 0.75 or cerca_caida:                          # al pie del muro (húmedo y en sombra)
+			x = T.muro_oeste(z) + rng.randf_range(0.5, 1.4)
+		else:                                                          # o asomados al borde
+			x = T.borde_oeste(z) - rng.randf_range(0.15, 0.5)
+		var p := Vector3(x, T.altura(x, z), z)
+		var e := rng.randf_range(0.7, 1.25) * (1.15 if cerca_caida else 1.0)
+		lista.append(Transform3D(Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(e, e * rng.randf_range(0.8, 1.15), e)), p))
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.use_colors = true
+	mm.mesh = hoja
+	mm.instance_count = lista.size()
+	for i in lista.size():
+		mm.set_instance_transform(i, lista[i])
+		var tono := rng.randf_range(0.8, 1.15)
+		mm.set_instance_color(i, Color(tono, tono, tono * 0.9))
+	var mmi := MultiMeshInstance3D.new()
+	mmi.multimesh = mm
+	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mmi.name = "Helechos"
+	region.add_child(mmi)
+
+
+# Un helecho: seis frondes que salen del centro y se arquean hacia fuera (tiras de 4 tramos que se estrechan). El
+# sombreado de la hierba lo mece y le da el degradado de verde.
+func _malla_helecho() -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var frondes := 6
+	for f in frondes:
+		var a := TAU * f / frondes + 0.3 * sin(f * 2.1)
+		var dir := Vector3(cos(a), 0, sin(a))
+		var lado := Vector3(-dir.z, 0, dir.x)
+		var largo := 0.55 + 0.12 * sin(f * 1.7)
+		var puntos: Array = []
+		for k in 5:
+			var t := k / 4.0
+			var p := dir * largo * t + Vector3(0, 0.42 * sin(t * PI * 0.8), 0)   # sube y se dobla
+			var ancho := 0.11 * sin(PI * minf(t * 1.2 + 0.08, 1.0))
+			puntos.append([p - lado * ancho, p + lado * ancho])
+		for k in 4:
+			var p0: Array = puntos[k]
+			var p1: Array = puntos[k + 1]
+			for v in [p0[0], p1[0], p0[1], p0[1], p1[0], p1[1]]:
+				st.set_normal(Vector3.UP)
+				st.add_vertex(v)
+	return st.commit()
+
+
+# Una llama que mira a la cámara en «p» (centro de la llama), de «alto» metros.
+func llama_en(p: Vector3, alto: float, fase := 0.0, fuerza := 1.0) -> MeshInstance3D:
+	var q := QuadMesh.new()
+	q.size = Vector2(alto * 0.62, alto)
+	var mi := MeshInstance3D.new()
+	mi.mesh = q
+	mi.material_override = mat.llama(fase, fuerza)
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mi.position = p
+	mi.name = "Llama"
+	region.add_child(mi)
+	return mi
+
+
+# El fuego tiembla: las luces reales de los faroles (perfil alto) suben y bajan un poco. La región lo llama cada
+# fotograma.
+func animar(delta: float) -> void:
+	_t_luz += delta
+	for i in luces.size():
+		var o: OmniLight3D = luces[i]
+		o.light_energy = 1.1 * (0.88 + 0.08 * sin(_t_luz * 9.0 + i * 1.7) + 0.04 * sin(_t_luz * 23.0 + i))
+
+
+# Un sillar: caja que choca (cuerpo estático) y se dibuja con su color en el lote «l» (escalera de la presa, T-102).
+func _sillar(l: Roca.Lotes, m: Material, pos: Vector3, tam: Vector3, giro: Vector3, color: Color) -> void:
+	var bm := BoxMesh.new()
+	bm.size = tam
+	l.poner_color(bm, Transform3D(Basis.from_euler(giro), pos), m, color)
+	var cuerpo := StaticBody3D.new()
+	cuerpo.position = pos
+	cuerpo.rotation = giro
+	region.add_child(cuerpo)
+	var col := CollisionShape3D.new()
+	var bs := BoxShape3D.new()
+	bs.size = tam
+	col.shape = bs
+	cuerpo.add_child(col)

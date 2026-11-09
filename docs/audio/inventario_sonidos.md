@@ -484,6 +484,92 @@ gestos y nunca dos a la vez; andando, ninguno.
 Muestras: `D:\REBELUM_diagnostico\sonido_muestras\2026-11-09_bestiario\heroes_quietos\`. Pasos de la tanda 1 para
 comparar: −32 a −39 dBFS. Si molestan en un diálogo o una cinemática, se pueden callar subiendo `QUIETO` o quitando
 su nombre de `QUIETO_DE` (sonido.gd).
+## Efectos de la tanda 5: las voces de los héroes en combate (2026-11-09, noche)
+
+Voces **no verbales** (sin palabras): **Kael**, joven e impulsivo (un hombre joven, un 3-4 % más agudo); **Lya**, cálida
+y ligera (una mujer); **Garon**, grave y veterano (otro hombre, un 8-12 % más grave). 30 derivados en
+`audio/efectos/heroes/`, con variantes y una variación leve de tono y volumen. **Licencias:** todos de los paquetes
+GDC de Sonniss 2016-2024 (los mismos PDF de siempre); ninguna fuente CC0 nueva; nada de Suno.
+
+**Reglas:** bus Efectos; **prioridad 1** (por debajo de los golpes, 2, y de las voces de los enemigos): si faltan voces,
+son lo primero que cede, y nunca quitan un golpe; **una a la vez entre los tres** (grupo «voz_heroe»: la nueva corta la
+anterior). La victoria, prioridad 3 (no baja 8 dB con la fanfarria), un momento después de ella. A la salida, todas
+entre −28 y −34 dBFS de RMS (el golpe de siempre, −27,7; las voces de los enemigos, −23 a −31).
+
+| Efecto | Cuándo | Archivos | Original (biblioteca) | dB · p | Salida (RMS) |
+|---|---|---|---|---|---|
+| `kael_esfuerzo` | Kael se lanza al ataque | `heroes/kael_esfuerzo_1…3` | Pole Position «The Grunts Library, Male 2 - Grunt - Battle Cry» (el arranque de tres gritos, ×1,04) | −16,5 · 1 | −29,9 |
+| `kael_herido` | Kael recibe un golpe físico (o cae) | `heroes/kael_herido_1…2` | Bottle Rocket «Grunt_Pain_Male_BB_10» · 344 Audio «British Soldier Voices, Grunts 16» | −14 · 1 | −30,0 |
+| `kael_jadeo` | Kael queda con poca vida (menos del 30 %) | `heroes/kael_jadeo_1…2` | Pole Position «Male 1 - Breathing - Gasping» | −10,5 · 1 | −33,6 |
+| `kael_alivio` | Kael se cura | `heroes/kael_alivio_1…2` | 344 Audio «Ahh, Relief, Drink, Soda, Exhale, Male» · el jadeo (un suspiro) | −12,5 · 1 | −31,7 |
+| `kael_victoria` | Kael celebra la victoria | `heroes/kael_victoria_1…2` | SoundBits «Male_Grunt-Shout_317» · el grito, corto | −8,5 · 3 | −29,2 |
+| `lya_esfuerzo` | Lya se lanza al ataque | `heroes/lya_esfuerzo_1…3` | Pole Position «Female 3 - Grunt - Jumping and Landing» | −14,5 · 1 | −29,9 |
+| `lya_herido` | Lya recibe un golpe físico (o cae) | `heroes/lya_herido_1…3` | Pole Position «Female 1 - Grunt - Getting Hit - Medium Intensity» | −17 · 1 | −30,7 |
+| `lya_jadeo` | Lya queda con poca vida | `heroes/lya_jadeo_1…2` | UberDuo «Inhale – Tanja: Panting, Nose» | −19 · 1 | −33,2 |
+| `lya_alivio` | Lya se cura | `heroes/lya_alivio_1` | Eiravaein «Kieuk, laughter, female, inhales, titter» | −13 · 1 | −30,4 |
+| `lya_victoria` | Lya celebra la victoria (una risa breve) | `heroes/lya_victoria_1` | AudioDesire «Voice Pack One - Emma, Female_Laugh_03» | −12 · 3 | −28,9 |
+| `garon_esfuerzo` | Garon se lanza al ataque | `heroes/garon_esfuerzo_1…3` | Articulated «Fight Vocalizations, David, Anger Fight Grunt Special Power» · Gamemaster «voice_male_b_battle_shout_short_09» · The Chris Alan «Vocal Excursion - Male - Powering Up 14» (×0,88-0,92) | −16 · 1 | −30,3 |
+| `garon_herido` | Garon recibe un golpe físico (o cae) | `heroes/garon_herido_1…2` | Articulated «Joshua, Pain Hurt Grunt Big 03» · Gamemaster «voice_male_b_death_low_09» (el principio) | −13,5 · 1 | −30,3 |
+| `garon_jadeo` | Garon queda con poca vida | `heroes/garon_jadeo_1…2` | el jadeo de Kael, ×0,85 (más grave y lento) | −15 · 1 | −30,8 |
+| `garon_alivio` | Garon se cura | `heroes/garon_alivio_1` | Articulated «Human Male Breathe, Deep Opened Mouth Breath … Long Exhale» (×0,9) | −12,5 · 1 | −31,1 |
+| `garon_victoria` | Garon celebra la victoria (una risa contenida) | `heroes/garon_victoria_1` | Eiravaein «Kieuk, laughter, male, 60s, restrained, chuckle» | −9 · 3 | −28,1 |
+
+**Lo que ya suena sin tocar `combate.gd`** (las llamadas que ya hay): `Sonido.recibe(objetivo)` en el impacto de un golpe
+físico de un enemigo (`_animar_golpe`, si `magia == ""`) da el quejido del héroe y, si le deja con menos del 30 % de su
+vida, un jadeo 0,7 s después (una vez hasta que se cure); y `Sonido.voz(o, "ataque")` en los ataques genéricos da su
+esfuerzo cuando el que ataca es un héroe. Comprobado en un combate de verdad (`prueba_efectos`, parte «heroes»): el golpe
+del limo hace quejarse a Kael; la magia sigue sin pedir voces.
+
+**La Guardia de Garon** (`guardia`, nuevo; combate lo pide por este nombre y hasta ahora sonaba `defensa`): se planta
+tras el escudo, metálico, firme y breve. `combate/guardia` (0,63 s): Double Trouble «Medieval Armor and Impacts,
+Plate_Impact_Hard_02» (×0,95) con «Weapon_Impact_Parry_01» (−8 dB) y SmartSoundFX «Medieval, ARMOR Body Drop Chain
+Leather Short 02» (−10 dB): Sonniss GDC 2017 y 2020. Efectos · −14 dB · prioridad 2 (como la defensa) · uno a la vez.
+Salida: −25 dBFS de RMS aprox. (medido −23,3 a −12 dB; la defensa, −26,9). En combate: `_sonar("guardia")` donde hoy
+dice `_sonar("defensa")` al ponerse en guardia.
+
+**Líneas para combate** (`combate.gd`; no lo he tocado, combate lo está editando):
+
+```gdscript
+# _anim_salto_3d (Kael 3D), justo después de Sonido.efecto("salto"):
+Sonido.voz(o, "ataque")                            # su esfuerzo al saltar (hoy su ataque no tiene voz)
+# _anim_fisico_3d (Lya y otros 3D con preparar_golpe), justo después de maga.preparar_golpe():
+Sonido.voz(o, "ataque")
+# _usar_objeto, tras Sonido.efecto("pocion"…), si cura PV:
+if campo == "hp" and cura > 0:
+	Sonido.voz(quien, "alivio")
+# _comprobar_fin, tras Sonido.efecto("victoria" if ganan else "derrota"):
+if ganan:
+	Sonido.victoria_heroes(heroes)                 # uno de los que siguen en pie, 0,8 s después
+# (opcional) las artes que curan o levantan (Aliento, Lumbre de Retorno, Brasa): Sonido.voz(h, "alivio")
+```
+
+Las 12 magias de siempre (también Cura, Bendición y Gracia Divina) **no** piden el alivio: añadir una voz a su
+presentación es la decisión aparte de D-048. Muestras: `D:\REBELUM_diagnostico\sonido_muestras\2026-11-09_heroes_combate\indice.md`
+(cada voz sola, un combate seguido con golpes, poción y victoria, y las tres victorias).
+### La entrada, la cornisa y los puentes de la Garganta 3D (tanda 5, para quien lleve `garganta_3d.gd`)
+
+Dos efectos nuevos (gráficos los engancha en `garganta_3d.gd`) que **no son bucles**: suenan de vez en cuando (`"cada"` en su `tres_d`) en el punto de su línea más
+cercano a quien escucha, y nada si está más lejos que `max` (`Sonido.fuente_linea` los reconoce solo). Bus Ambiente,
+prioridad 0, con el eco de la garganta que ya hay. Sin tocar `zonas3d/**` (lo pule gráficos en `area-garganta3d`).
+
+| Efecto | Qué | Archivos | Original (biblioteca) | Licencia | dB · cada · 3D | Salida (RMS) |
+|---|---|---|---|---|---|---|
+| `puente_cruje` | Los puentes colgantes crujen: las cuerdas (1-3) y las tablas de madera (4-5) | `ambiente/puente_cruje_1…5` | Rogue Waves «AMBNaut_Atmos, EXT Marina, boats, rope creaking» (+ un gozne de Jake Fielding en la 3.ª) · Matt Script «Old wood floor creak» · Coll Anderson «EFX CTM Floor Board Creak 03 A» (con una cuerda debajo) | Sonniss GDC 2024 y 2019 | −14 · cada 3-8 s · 4 m de referencia, hasta 25 m | −35,1 (a 4 m) |
+| `viento_cuerdas` | El viento silba en las cuerdas de la cornisa y los puentes (ráfagas de 5,5 s) | `ambiente/viento_cuerdas_1…2` | Ivo Vicic «Bora wind: 38 Wind_hurricane_wires_whistle» | Sonniss GDC 2018 | −8 · cada 9-18 s · 6 m, hasta 40 m | −31,9 |
+
+**Líneas propuestas** para `_sonido_3d()` de `zonas3d/garganta_3d.gd` (trazado.gd: `X_CAMINO_O`, `X_BORDE_O`, `ALTO`,
+`PUENTES`; la entrada está hacia z = 37-40):
+
+```gdscript
+for p in T.PUENTES:                                    # las cuerdas de cada puente colgante, a la altura de la mano
+	Sonido.fuente_linea(self, "puente_cruje", Vector3(T.X_CAMINO_O, T.ALTO + 0.8, p[0]), Vector3(T.X_CAMINO_O, T.ALTO + 0.8, p[1]))
+# el viento en las cuerdas, por el borde de la cornisa desde la entrada hasta el último puente
+Sonido.fuente_linea(self, "viento_cuerdas", Vector3(T.X_BORDE_O, T.ALTO - 1.0, 40.0), Vector3(T.X_BORDE_O, T.ALTO - 1.0, T.PUENTES[1][1]))
+```
+
+Comprobado sin la escena de verdad (`prueba_efectos`, parte «cuerdas»: en 40 s, las cuerdas 8 veces y el viento al menos
+una, siempre en el punto de su línea más cercano y por Ambiente; a 80 m, nada). Con ventana, cada uno solo:
+`D:\REBELUM_diagnostico\sonido_muestras\2026-11-09_heroes_combate\garganta_cuerdas\`.
 ## Candidatos aún sin usar
 
 - **Alternativas para escuchar y elegir:** `victory_…_01_s29` y `…_02_s29` (otra victoria), InspectorJ

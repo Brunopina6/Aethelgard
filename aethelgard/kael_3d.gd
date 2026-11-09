@@ -52,6 +52,7 @@ var _punta := 1.3
 func _init() -> void:
 	usa_vara = false                            # Kael lleva su sable (más abajo), no el cetro
 	heroe = "Kael"
+	clave_esperas = "Kael"                      # sus esperas de exploración (esperas_3d.gd)
 	ruta_modelo = "res://kael.fbx"
 	rutas_extra = ["res://Meshy_AI_Azure_Starblade_biped_Meshy_Merged_Animations.fbx", "res://kael.glb"]
 	vel_andar = 1.18                            # sus clips sin patinar (marcha() de maga_3d.gd; prueba_anim_pies.gd)
@@ -259,12 +260,14 @@ func andar() -> void:
 	_base_movimiento()
 	play("Andar_normal" if nombres.has("Andar_normal") else "Walking")
 	gestos.poner("k_hombro", 1.0, 0.15)
+	_porte("andar")
 
 
 func correr() -> void:
 	_base_movimiento()
 	play("Running")
 	gestos.poner("k_hombro", 1.0, 0.15)     # el sable sigue en el hombro al correr
+	_porte("correr")
 
 
 func herida() -> void:

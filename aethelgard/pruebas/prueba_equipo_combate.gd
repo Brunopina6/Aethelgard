@@ -11,7 +11,7 @@ extends SceneTree
 #   D. Diente de Grimfang (Kael): el umbral del crítico pasa de 0,12 a 0,20 (la misma tirada).
 #   T. Tienda: el Farol en Oakhaven (220), la Moneda en Sunken City (450) y ninguno en el Gran Bosque Verde; comprar el
 #      Farol lo apunta una vez; los libros de Peso del Ocaso (350) y de Segundo Aliento (450) se venden, dicen para quién
-#      son y enseñan el arte (que sale ya en el combate); lo que aún no está en el juego (Lágrima, Escarcha) no se vende.
+#      son y enseñan el arte (que sale ya en el combate); Escarcha II, desde M3; lo que aún no está (Lágrima, los III) no.
 
 const ARCHIVO := "user://prueba_equipo_combate.save"
 const MAX_FOTOGRAMAS := 5400                     # 180 s de juego por combate como mucho
@@ -274,7 +274,9 @@ func _tienda() -> void:
 	var lumbre = filas.get("Libro de Segundo Aliento (Lumbre II)", [])
 	_ok(not alba.is_empty() and alba[1] == "Para: Kael" and alba[3] == "350", "fila del libro del Alba: %s" % [alba])
 	_ok(not lumbre.is_empty() and lumbre[1] == "Para: Lya" and lumbre[3] == "450", "fila del libro de la Lumbre: %s" % [lumbre])
-	_ok(not filas.keys().any(func(k): return str(k).contains("Escarcha") or str(k).contains("Hora Dorada")),
+	var escarcha = filas.get("Libro de Muralla de Escarcha (Escarcha II)", [])      # M3, desde el 09/11
+	_ok(not escarcha.is_empty() and escarcha[1] == "Para: Kael" and escarcha[3] == "400", "fila del libro de Escarcha: %s" % [escarcha])
+	_ok(not filas.keys().any(func(k): return str(k).contains("Hora Dorada") or str(k).contains("III)") and str(k).contains("Alba")),
 		"se vende un libro que aún no está en el juego: %s" % [filas.keys()])
 	_ok(filas.has("Libro de Llamarada (Fuego II)") and filas.size() >= 10, "los libros de siempre no están: %s" % [filas.keys()])
 	var oro2: int = I.oro()

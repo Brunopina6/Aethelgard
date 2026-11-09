@@ -47,6 +47,8 @@ func _ready() -> void:
 	kael = load("res://kael_3d.gd").new()
 	kael.ruta_modelo = "res://kael.fbx"
 	add_child(kael)
+	if kael.has_method("activar_esperas"):
+		kael.activar_esperas()                     # quieto un rato, hace una de sus esperas (esperas_3d.gd)
 	cam = Camera3D.new()
 	cam.fov = campo_vision
 	cam.far = 400.0
