@@ -521,11 +521,18 @@ const RECETAS := [
 	["heroes/garon_alivio_1", F_RESPIRA_H, 7.00, 8.60, {"norm": "pico", "db": -3.0, "fi": 0.05, "fo": 0.4, "tono": 0.9}],
 	["heroes/garon_victoria_1", "S19/Eiravaein Works - Kieuk/Kieuk,laughter,male,60s,OhioCarolina,heeing,restrained,chuckle,mouthclicks.wav", 0.95, 1.85, {"norm": "pico", "db": -3.0, "fi": 0.02, "fo": 0.25}],
 	# ================================================================ tanda 5 (si sobra margen): la entrada, la cornisa y los puentes de
-	# la Garganta 3D: las cuerdas de los puentes colgantes que crujen de vez en cuando y el viento que silba en ellas
-	["ambiente/cuerda_cruje_1", F_CUERDAS_PUERTO, 0.0, 0.50, {"norm": "pico", "db": -3.0, "fi": 0.02, "fo": 0.15}],
-	["ambiente/cuerda_cruje_2", F_CUERDAS_PUERTO, 1.20, 1.80, {"norm": "pico", "db": -3.0, "fi": 0.02, "fo": 0.15}],
-	["ambiente/cuerda_cruje_3", F_CUERDAS_PUERTO, 6.05, 6.90, {"norm": "pico", "db": -3.0, "fi": 0.02, "fo": 0.2,
+	# la Garganta 3D: los puentes colgantes crujen de vez en cuando (cuerdas: 1-3; tablas de madera: 4-5) y el viento silba en las cuerdas
+	["ambiente/puente_cruje_1", F_CUERDAS_PUERTO, 0.0, 0.50, {"norm": "pico", "db": -3.0, "fi": 0.02, "fo": 0.15}],
+	["ambiente/puente_cruje_2", F_CUERDAS_PUERTO, 1.20, 1.80, {"norm": "pico", "db": -3.0, "fi": 0.02, "fo": 0.15}],
+	["ambiente/puente_cruje_3", F_CUERDAS_PUERTO, 6.05, 6.90, {"norm": "pico", "db": -3.0, "fi": 0.02, "fo": 0.2,
 		"capas": [["S24/Jake Fielding - Squeaky Gates/DOORGate_Wooden Metal Hinge Creaks_Jake Fielding_Squeaky Gates.wav", 13.75, 14.15, 0.25, -12.0]]}],
+	["ambiente/puente_cruje_4", F_VIGA_CRUJE, 2.88, 3.60, {"norm": "pico", "db": -3.0, "fi": 0.03, "fo": 0.2}],
+	["ambiente/puente_cruje_5", "S19/Coll Anderson - House Library Add Ons/EFX CTM Floor Board Creak 03 A.wav", 3.57, 4.42, {"norm": "pico", "db": -3.0, "fi": 0.03, "fo": 0.2,
+		"capas": [[F_CUERDAS_PUERTO, 1.20, 1.60, 0.30, -8.0]]}],
+	# la Guardia de Garon (tanda 5, la pide combate por este nombre): se planta tras el escudo, metálico, firme y breve
+	["combate/guardia", "S17/Double Trouble Audio - Medieval Armor and Impacts/Plate_Impact_Hard_02.wav", 0.0, 0.60, {"norm": "pico", "db": -1.0, "fo": 0.2, "tono": 0.95,
+		"capas": [["S17/Double Trouble Audio - Medieval Armor and Impacts/Weapon_Impact_Parry_01.wav", 0.02, 0.60, 0.02, -8.0],
+			["S20/SmartSoundFX – Medieval/ARMOR Body Drop Chain Leather Short 02.wav", 0.55, 0.85, 0.0, -10.0]]}],
 	["ambiente/viento_cuerdas_1", F_VIENTO_CABLES, 9.0, 14.5, {"norm": "rms", "db": -24.0, "techo": -3.0, "fi": 1.2, "fo": 1.5}],
 	["ambiente/viento_cuerdas_2", F_VIENTO_CABLES, 26.0, 31.5, {"norm": "rms", "db": -24.0, "techo": -3.0, "fi": 1.2, "fo": 1.5}],
 ]
