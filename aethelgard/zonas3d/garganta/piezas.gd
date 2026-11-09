@@ -65,27 +65,60 @@ static func anillo_partido(radio: float, grosor: float, hueco_grados := 38.0, se
 
 # Puente de tablas y cuerda entre dos pares de pilares de piedra con el anillo partido (más gastado cuanto más lejos).
 # La tablazón cuelga un poco (catenaria sencilla). Kael anda por encima: colisión en tramos que siguen la curva.
-func puente_colgante(z_sur: float, z_norte: float, desgaste_sur: float, desgaste_norte: float) -> void:
+# T-102: el puente se mece (sombreado del puente, materiales.gd): la madera y las cuerdas van y vienen unos centímetros
+# en el centro y nada en los extremos. La colisión NO se mueve (los mismos tramos de siempre): ni atascos ni caídas.
+# Cada tabla con su ancho, su grosor, su giro y su tono (algunas, de un arreglo reciente; otras, partidas); travesaños
+# debajo; pasamanos gruesos con su cuerda baja y los tirantes anudados; vientos de cuerda a estacas en los extremos de
+# fuera y, en la entrada del primero, dos faroles colgados que guían.
+const ESTRIBO_FAROLES := 19.0     # el primer puente (z_sur) lleva faroles en su entrada
+
+var puentes: Array = []           # [{z_sur, z_norte, materiales}] (las pruebas leen el vaivén)
+
+
+func puente_colgante(z_sur: float, z_norte: float, desgaste_sur: float, desgaste_norte: float, fase := 0.0) -> void:
 	var x := T.X_CAMINO_O
 	var largo := z_sur - z_norte
 	var flecha := 0.42 + 0.02 * largo
 	var y_de := func(t: float) -> float: return T.ALTO + 0.04 - flecha * 4.0 * t * (1.0 - t)
-	var madera := mat.madera()
-	var vieja := mat.madera_vieja()
-	var cuerda := mat.cuerda()
-	# tablas
-	var n_tablas := int(largo / 0.33)
-	for k in n_tablas:
-		var t := (k + 0.5) / n_tablas
-		var z := lerpf(z_sur, z_norte, t)
+	var bajo: bool = not perfil.get("relieve", true)                   # perfil bajo: menos piezas pequeñas
+	var lp := Roca.Lotes.new()                                         # lo que se mece va aparte
+	var m_tabla := mat.puente(z_sur, z_norte, fase, Color.WHITE)
+	var m_cuerda := mat.puente(z_sur, z_norte, fase, Color(0.70, 0.60, 0.44), Vector2(2.5, 2.5), 1.0)
+	var m_tela := mat.puente(z_sur, z_norte, fase, Color.WHITE, Vector2(1.0, 1.0), 1.0, true)
+	var tonos := [Color(0.48, 0.41, 0.34), Color(0.53, 0.40, 0.29), Color(0.38, 0.30, 0.24), Color(0.45, 0.40, 0.36)]
+	var arreglo := Color(0.64, 0.52, 0.38)                             # tablas nuevas de un arreglo
+	var oscuro := Color(0.27, 0.21, 0.16)
+	# tablas: de sur a norte, cada una con su ancho y su hueco
+	var z := z_sur - 0.05
+	while z > z_norte + 0.12:
+		var ancho := randf_range(0.2, 0.3)
+		var zc := z - ancho * 0.5
+		var t := (z_sur - zc) / largo
 		var y: float = y_de.call(t)
-		var pend: float = (y_de.call(t + 0.01) - y_de.call(t - 0.01)) / (largo * 0.02)   # subida por metro hacia el norte
-		var tabla := BoxMesh.new()
-		tabla.size = Vector3(T.ANCHO_PUENTE - randf_range(0.0, 0.2), 0.07, 0.27)
-		# girar sobre x lleva el eje z local a (0, −sen θ, cos θ): con θ = atan(pend), la tabla sigue la tablazón
-		lotes.poner(tabla, Transform3D(Basis.from_euler(Vector3(atan(pend), randf_range(-0.05, 0.05), randf_range(-0.02, 0.02))),
-			Vector3(x + randf_range(-0.05, 0.05), y - 0.035, z)), vieja if k % 3 == 0 else madera)
-	# largueros bajo las tablas y colisión por tramos
+		var pend: float = (y_de.call(t + 0.01) - y_de.call(t - 0.01)) / (largo * 0.02)
+		var grueso := randf_range(0.055, 0.08)
+		var tono: Color = arreglo if randf() < 0.06 else tonos[randi() % tonos.size()]
+		tono = tono * randf_range(0.9, 1.06)
+		var b := Basis.from_euler(Vector3(atan(pend), randf_range(-0.05, 0.05), randf_range(-0.025, 0.025)))
+		var dx := randf_range(-0.07, 0.07)
+		var largo_tabla := T.ANCHO_PUENTE - randf_range(0.0, 0.26)
+		if randf() < 0.08:                                             # tabla partida en dos
+			for mitad in [-1.0, 1.0]:
+				var bm := BoxMesh.new()
+				bm.size = Vector3(largo_tabla * 0.5 - 0.03, grueso, ancho)
+				lp.poner_color(bm, Transform3D(b.rotated(Vector3.UP, randf_range(-0.04, 0.04)), Vector3(x + dx + mitad * largo_tabla * 0.25,
+					y - grueso * 0.5, zc)), m_tabla, tono * randf_range(0.9, 1.05))
+		else:
+			var bm := BoxMesh.new()
+			bm.size = Vector3(largo_tabla, grueso, ancho)
+			lp.poner_color(bm, Transform3D(b, Vector3(x + dx, y - grueso * 0.5, zc)), m_tabla, tono)
+			if not bajo and randf() < 0.5:                             # clavos en los extremos (sobre los largueros)
+				for lado in [-0.85, 0.85]:
+					var cl := BoxMesh.new()
+					cl.size = Vector3(0.035, 0.012, 0.035)
+					lp.poner_color(cl, Transform3D(b, Vector3(x + lado, y + 0.004, zc)), m_tabla, Color(0.16, 0.15, 0.15))
+		z -= ancho + randf_range(0.025, 0.06)
+	# largueros bajo las tablas, travesaños y colisión por tramos (la colisión, igual que siempre)
 	var tramos := 14
 	for k in tramos:
 		var ta := float(k) / tramos
@@ -97,7 +130,11 @@ func puente_colgante(z_sur: float, z_norte: float, desgaste_sur: float, desgaste
 		for lado in [-0.85, 0.85]:
 			var larguero := BoxMesh.new()
 			larguero.size = Vector3(0.12, 0.12, pa.distance_to(pb) + 0.02)
-			lotes.poner(larguero, Transform3D(Basis.from_euler(giro), c + Vector3(lado, -0.12, 0)), vieja)
+			lp.poner_color(larguero, Transform3D(Basis.from_euler(giro), c + Vector3(lado, -0.13, 0)), m_tabla, oscuro)
+		if k % 2 == 0:
+			var trav := BoxMesh.new()
+			trav.size = Vector3(T.ANCHO_PUENTE + 0.25, 0.08, 0.1)
+			lp.poner_color(trav, Transform3D(Basis.from_euler(giro), pa + Vector3(0, -0.22, 0)), m_tabla, oscuro * 1.2)
 		var cuerpo := StaticBody3D.new()
 		cuerpo.position = c + Vector3(0, -0.1, 0)
 		cuerpo.rotation = giro
@@ -107,33 +144,122 @@ func puente_colgante(z_sur: float, z_norte: float, desgaste_sur: float, desgaste
 		caja.size = Vector3(T.ANCHO_PUENTE, 0.2, pa.distance_to(pb) + 0.04)
 		col.shape = caja
 		cuerpo.add_child(col)
-	# pasamanos de cuerda (cuelgan más que las tablas) y tirantes hasta las tablas
+	# pasamanos de cuerda (cuelgan más que las tablas), cuerda baja, tirantes anudados y cintas de los peregrinos
 	var y_mano := func(t: float) -> float: return T.ALTO + 1.25 - (flecha + 0.3) * 4.0 * t * (1.0 - t)
+	var cuerda_c := Color.WHITE
+	var colores := [Color(0.66, 0.22, 0.2), Color(0.82, 0.64, 0.30), Color(0.30, 0.42, 0.66), Color(0.90, 0.88, 0.80)]
 	for lado in [-1.0, 1.0]:
 		var xl: float = x + lado * (T.ANCHO_PUENTE * 0.5 + 0.12)
-		var segs := 16
+		var segs := 12 if bajo else 18
 		for k in segs:
 			var ta := float(k) / segs
 			var tb := float(k + 1) / segs
-			_cilindro(Vector3(xl, y_mano.call(ta), lerpf(z_sur, z_norte, ta)), Vector3(xl, y_mano.call(tb), lerpf(z_sur, z_norte, tb)), 0.035, cuerda)
-		var n_tir := int(largo / 0.65)
+			_cuerda(lp, Vector3(xl, y_mano.call(ta), lerpf(z_sur, z_norte, ta)), Vector3(xl, y_mano.call(tb), lerpf(z_sur, z_norte, tb)),
+				0.045, m_cuerda, cuerda_c, 5 if bajo else 7)
+			if not bajo:                                               # cuerda baja, a media altura
+				_cuerda(lp, Vector3(xl - lado * 0.04, y_de.call(ta) + 0.55, lerpf(z_sur, z_norte, ta)),
+					Vector3(xl - lado * 0.04, y_de.call(tb) + 0.55, lerpf(z_sur, z_norte, tb)), 0.026, m_cuerda, cuerda_c, 5)
+		var n_tir := int(largo / 0.55)
 		for k in range(1, n_tir):
 			var t := float(k) / n_tir
-			var z := lerpf(z_sur, z_norte, t)
-			_cilindro(Vector3(xl, y_mano.call(t), z), Vector3(xl - lado * 0.1, y_de.call(t), z), 0.014, cuerda)
-		# cintas de los peregrinos atadas al pasamanos
-		var colores := [Color(0.62, 0.22, 0.2), Color(0.78, 0.62, 0.32), Color(0.32, 0.42, 0.62), Color(0.86, 0.84, 0.76)]
-		for k in int(largo * 1.3):
+			var zt := lerpf(z_sur, z_norte, t)
+			var arriba := Vector3(xl, y_mano.call(t), zt)
+			_cuerda(lp, arriba, Vector3(xl - lado * 0.1, y_de.call(t) - 0.08, zt), 0.018, m_cuerda, cuerda_c, 4)
+			if not bajo:                                               # nudo en el pasamanos
+				var nudo := SphereMesh.new()
+				nudo.radius = 0.06
+				nudo.height = 0.1
+				nudo.radial_segments = 6
+				nudo.rings = 3
+				lp.poner_color(nudo, Transform3D(Basis(), arriba), m_cuerda, Color(0.85, 0.85, 0.85))
+		for k in int(largo * (0.9 if bajo else 1.4)):
 			var t := randf_range(0.08, 0.92)
 			var q := QuadMesh.new()
-			q.size = Vector2(0.07, randf_range(0.25, 0.5))
-			var p := Vector3(xl + lado * 0.02, y_mano.call(t) - q.size.y * 0.5, lerpf(z_sur, z_norte, t))
-			lotes.poner(q, Transform3D(Basis(Vector3.UP, randf_range(-0.5, 0.5)).rotated(Vector3.RIGHT, randf_range(-0.15, 0.15)), p),
-				mat.tela(colores[randi() % colores.size()]))
-	# pilares con el anillo partido en los dos extremos
+			q.size = Vector2(0.075, randf_range(0.28, 0.55))
+			var p := Vector3(xl + lado * 0.03, y_mano.call(t) - q.size.y * 0.5, lerpf(z_sur, z_norte, t))
+			lp.poner_color(q, Transform3D(Basis(Vector3.UP, randf_range(-0.5, 0.5)).rotated(Vector3.RIGHT, randf_range(-0.15, 0.15)), p),
+				m_tela, colores[randi() % colores.size()])
+	var hechas: Array = lp.cerrar(region)
+	for mi in hechas:
+		mi.extra_cull_margin = 0.3                                     # lo que se mece no se recorta antes de tiempo
+		mi.name = "PuenteColgante_%d" % int(z_sur)
+	puentes.append({"z_sur": z_sur, "z_norte": z_norte, "materiales": [m_tabla, m_cuerda, m_tela], "mallas": hechas})
+	# pilares con el anillo partido en los dos extremos, con la cuerda atada en lo alto
 	for extremo in [[z_sur + 0.35, desgaste_sur, 1.0], [z_norte - 0.35, desgaste_norte, -1.0]]:
 		for lado in [-1.0, 1.0]:
-			pilar_anillo(Vector3(x + lado * (T.ANCHO_PUENTE * 0.5 + 0.4), T.ALTO, extremo[0]), extremo[1], 1.55)
+			var pp := Vector3(x + lado * (T.ANCHO_PUENTE * 0.5 + 0.4), T.ALTO, extremo[0])
+			pilar_anillo(pp, extremo[1], 1.55)
+			for k in 2:                                                # vueltas de cuerda en lo alto del pilar
+				var anilla := CylinderMesh.new()
+				anilla.top_radius = 0.3
+				anilla.bottom_radius = 0.3
+				anilla.height = 0.055
+				anilla.radial_segments = 8
+				anilla.rings = 1
+				lotes.poner(anilla, Transform3D(Basis(Vector3.UP, k * 0.4), pp + Vector3(0, 1.18 + k * 0.08, 0)), mat.cuerda())
+	# vientos: de lo alto de los pilares de fuera a una estaca clavada en la cornisa (solo donde hay cornisa detrás)
+	for extremo in [[z_sur, 1.0], [z_norte, -1.0]]:
+		var zc: float = extremo[0]
+		if T.en_hueco(zc + extremo[1] * 1.8) or (zc + extremo[1] * 1.8 > T.ISLOTE[0] and zc + extremo[1] * 1.8 < T.ISLOTE[1]):
+			continue
+		for lado in [-1.0, 1.0]:
+			var pp := Vector3(x + lado * (T.ANCHO_PUENTE * 0.5 + 0.4), T.ALTO, zc + extremo[1] * 0.35)
+			var estaca := Vector3(x + lado * 1.95, T.altura(x + lado * 1.95, zc + extremo[1] * 1.9), zc + extremo[1] * 1.9)
+			Roca.caja(lotes, region, estaca + Vector3(0, 0.22, 0), Vector3(0.14, 0.44, 0.14), mat.madera_vieja(),
+				Vector3(extremo[1] * 0.25, 0, 0))
+			_cilindro(pp + Vector3(0, 1.2, 0), estaca + Vector3(0, 0.38, 0), 0.03, mat.cuerda(), 6)
+	if absf(z_sur - ESTRIBO_FAROLES) < 0.01:
+		for lado in [-1.0, 1.0]:
+			farol_colgado(Vector3(x + lado * 2.2, T.ALTO, z_sur + 0.35), fase + lado)
+
+
+# Un tramo de cuerda de «a» a «b» con color en los vértices, en el lote «l» (lo que se mece).
+func _cuerda(l: Roca.Lotes, a: Vector3, b: Vector3, r: float, m: Material, color: Color, lados := 5) -> void:
+	var largo := a.distance_to(b)
+	if largo < 0.001:
+		return
+	var cm := CylinderMesh.new()
+	cm.top_radius = r
+	cm.bottom_radius = r
+	cm.height = largo + r                                              # los tramos se solapan: la cuerda no se corta
+	cm.radial_segments = lados
+	cm.rings = 1
+	var y := (b - a) / largo
+	var xe := y.cross(Vector3.FORWARD if absf(y.z) < 0.95 else Vector3.RIGHT).normalized()
+	l.poner_color(cm, Transform3D(Basis(xe, y, xe.cross(y)), (a + b) * 0.5), m, color)
+
+
+# Farol de los peregrinos colgado de un poste con brazo, a la entrada de un puente: madera, hierro, cristal que brilla,
+# su llama y su halo. Tiñe la roca cercana (materiales.gd, poner_fuego). El poste choca.
+func farol_colgado(p: Vector3, fase: float) -> void:
+	var madera := mat.madera_vieja()
+	var alto := 2.35
+	Roca.caja(lotes, region, p + Vector3(0, alto * 0.5, 0), Vector3(0.16, alto, 0.16), madera)
+	var brazo := p + Vector3(0, alto - 0.12, -0.3)                   # el brazo apunta al puente (al norte)
+	Roca.caja(lotes, region, brazo, Vector3(0.09, 0.09, 0.7), madera, Vector3.ZERO, false)
+	var gancho := brazo + Vector3(0, -0.05, -0.26)
+	_cilindro(gancho, gancho + Vector3(0, -0.32, 0), 0.012, mat.hierro(), 4)
+	var c := gancho + Vector3(0, -0.52, 0)                            # centro del farol
+	var hierro := mat.hierro()
+	for dy in [-0.17, 0.17]:                                           # tapa y base
+		var bm := BoxMesh.new()
+		bm.size = Vector3(0.26, 0.04, 0.26)
+		lotes.poner(bm, Transform3D(Basis(), c + Vector3(0, dy, 0)), hierro)
+	for e in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:   # varillas
+		var bm := BoxMesh.new()
+		bm.size = Vector3(0.025, 0.34, 0.025)
+		lotes.poner(bm, Transform3D(Basis(), c + Vector3(e.x * 0.11, 0, e.y * 0.11)), hierro)
+	var vidrio := BoxMesh.new()
+	vidrio.size = Vector3(0.19, 0.28, 0.19)
+	lotes.poner(vidrio, Transform3D(Basis(), c), mat.brillo(Color(1.0, 0.66, 0.32), 1.15))
+	llama_en(c + Vector3(0, 0.02, 0), 0.34, fase)
+	esc.halo(Vector3(c.x, T.altura(c.x, c.z), c.z), c, Materiales.FUEGO, 4.0, 1.5, lotes)
+	mat.poner_fuego(c, 5.0)
+
+
+# Una llama que mira a la cámara (escenario.gd, llama_en).
+func llama_en(p: Vector3, alto: float, fase := 0.0, fuerza := 1.0) -> MeshInstance3D:
+	return esc.llama_en(p, alto, fase, fuerza)
 
 
 # Un cilindro de «a» a «b» (cuerdas, cadenas, tirantes), en el lote de su material.
