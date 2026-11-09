@@ -262,6 +262,29 @@ class Lotes:
 			_st[mat] = st
 		_st[mat].append_from(malla, 0, t)
 
+	# Como poner(), con un color en todos los vértices (cada tabla de un puente, su tono). Un lote lleva siempre color
+	# en todos sus vértices o en ninguno: los materiales que se usan aquí no se mezclan con poner().
+	func poner_color(malla: Mesh, t: Transform3D, mat: Material, color: Color) -> void:
+		if not _st.has(mat):
+			var st := SurfaceTool.new()
+			st.begin(Mesh.PRIMITIVE_TRIANGLES)
+			_st[mat] = st
+		var st: SurfaceTool = _st[mat]
+		var a: Array = malla.surface_get_arrays(0)
+		var v: PackedVector3Array = a[Mesh.ARRAY_VERTEX]
+		var n: PackedVector3Array = a[Mesh.ARRAY_NORMAL]
+		var idx: PackedInt32Array = a[Mesh.ARRAY_INDEX] if a[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
+		var nb := t.basis.inverse().transposed()
+		var orden: PackedInt32Array = idx
+		if orden.is_empty():
+			orden.resize(v.size())
+			for i in v.size():
+				orden[i] = i
+		for i in orden:
+			st.set_color(color)
+			st.set_normal((nb * n[i]).normalized())
+			st.add_vertex(t * v[i])
+
 	func cerrar(padre: Node3D, sombra := true) -> Array:
 		var hechas: Array = []
 		for mat in _st:

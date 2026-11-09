@@ -78,8 +78,6 @@ const PINTADO_EN := {
 	"nota_oak_velas": ["patio_velas", "velas"], "oak_sello": ["crematorio", "sello"], "oak_tapiz": ["concejo", "tapiz"],
 }
 const MAQUETA_ARTE := "res://ciudades/oakhaven_arte/maqueta_oakhaven.gd"   # JARDINES, si el módulo no los trae
-const Comentarios := preload("res://dialogos/comentarios.gd")   # lo que dicen los héroes al explorar (narrativa)
-const LLEGADA_COMENTARIO := 2.8           # s tras entrar: después del fundido y del aviso de la ciudad
 const QUIETO_COMENTARIO := 14.0           # s sin moverse (ni diálogo, ni menú) para que alguien diga algo
 const PAUSA_COMENTARIOS := 45.0           # s entre dos comentarios por estar quietos
 const ARBOLES := ["cerezo", "q_arbol", "q_otono", "q_pino"]
@@ -90,10 +88,7 @@ var nodos_casas: Array = []               # dibujos de gráficos de las casas de
 var farolas: Array = []                   # dónde van las farolas de las calles (casillas)
 var con_relleno := false                  # las casas y farolas son las del RELLENO de gráficos
 var vecinos: Array = []                   # Oak.NPCS con el muñeco propio de cada uno, si lo hay (_npcs)
-var llegada_t := LLEGADA_COMENTARIO       # cuenta atrás del comentario al llegar (< 0: ya pasó)
 var quieto_t := 0.0                       # tiempo sin moverse
-var comentario_pendiente := ""            # momento que espera a que acabe un aviso o un diálogo (el del cofre)
-var comentario_t := 0.0
 var musica_nodo = null                    # el autoload Musica (musica.gd)
 var musica_conoce := true                 # musica.gd ya sabe qué suena en esta escena
 var piezas: Array = []                    # [nodo, datos de Oak.PIEZAS, punto en píxeles]
@@ -981,48 +976,28 @@ func _process(delta: float) -> void:
 		velo_patio.modulate.a = move_toward(velo_patio.modulate.a, 0.0 if _patio_visible() else 1.0, delta * 2.0)
 
 
-# Lo que dicen los héroes al explorar (dialogos/comentarios.gd): al llegar, tras abrir un cofre y al quedarse quietos.
-# Nunca durante un diálogo, un fundido o con el menú abierto; si empieza un diálogo, el comentario se quita.
+# Lo que dicen los héroes al explorar (dialogos/comentarios.gd). La llegada y el cofre los lleva zona.gd; aquí, el
+# momento de la llegada (el de Oakhaven) y el de quedarse quietos. Nunca durante un diálogo, un fundido o un menú.
+func _momento_llegada() -> String:
+	return "llegar:oakhaven"
+
+
+func _ocupado_para_comentar() -> bool:
+	return viajando or super._ocupado_para_comentar()
+
+
 func _comentarios(delta: float) -> void:
 	if ui == null or jugador == null:
 		return
-	var ocupado: bool = saliendo or viajando or barra_activa or _en_dialogo()
-	if _en_dialogo():
-		for n in ui.get_children():
-			if n.name.begins_with("comentario"):
-				n.queue_free()
-	if llegada_t >= 0.0:
-		llegada_t -= delta
-		if llegada_t < 0.0:
-			_comentar("llegar:oakhaven")
-	if comentario_pendiente != "":
-		comentario_t -= delta
-		if comentario_t <= 0.0 and not ocupado:
-			_comentar(comentario_pendiente)
-			comentario_pendiente = ""
 	if quieto_t < 0.0:                             # pausa tras un comentario por estar quietos
 		quieto_t = minf(quieto_t + delta, 0.0)
 		return
-	if ocupado or tiene_destino or jugador.velocity.length() > 5.0:
+	if _ocupado_para_comentar() or tiene_destino or jugador.velocity.length() > 5.0:
 		quieto_t = 0.0                             # moverse reinicia la espera
 		return
 	quieto_t += delta
 	if quieto_t >= QUIETO_COMENTARIO:
 		quieto_t = -PAUSA_COMENTARIOS if _comentar("quieto") else 0.0
-
-
-# Enseña un comentario si toca (y si no hay otro en pantalla). Devuelve si salió.
-func _comentar(momento: String) -> bool:
-	if saliendo or viajando or _en_dialogo():
-		return false
-	for n in ui.get_children():
-		if n.name.begins_with("comentario"):
-			return false
-	var c := Comentarios.elegir(momento)
-	if c.is_empty():
-		return false
-	Comentarios.mostrar(ui, c)
-	return true
 
 
 # En las raíces, la cámara sube hasta el borde de arriba de la ciudad para que se vea la copa del Árbol entera (sin
@@ -1244,8 +1219,7 @@ func _abrir_cofre(c: Array) -> void:
 	t.tween_callback(brillo.queue_free)
 	if r["nota"] != "":
 		_avisar("Nueva nota en el Diario: «%s»" % Oak.nota(r["nota"])["nombre"], "pagina")
-	comentario_pendiente = "cofre"                 # alguien del grupo lo comenta, tras el premio
-	comentario_t = 1.2
+	_comentar_luego("cofre", 1.2)                  # alguien del grupo lo comenta, tras el premio (zona.gd)
 	_guardar()
 
 
@@ -1258,10 +1232,11 @@ func _pagar_posada() -> bool:
 	return super._pagar_posada()
 
 
-# Al despertar, una escena corta con los que están en el grupo (ciudades/oakhaven.gd, ESCENAS_POSADA).
+# Al despertar, una charla de posada nueva si la hay (CHARLAS_POSADA: queda vista) o la escena corta de siempre con
+# los que están en el grupo (ESCENAS_POSADA; las dos en ciudades/oakhaven.gd).
 func _tras_posada() -> void:
 	_actualizar_posada()
-	_empezar_dialogo(Oak.escena_posada())
+	_empezar_dialogo(Oak.escena_al_despertar())
 	if noche_invitada:
 		noche_invitada = false
 		_avisar(Oak.TEXTO_NOCHE_GRATIS)

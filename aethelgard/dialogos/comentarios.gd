@@ -15,8 +15,8 @@ extends RefCounted
 # algún día sale con retrato (ligero, firme, duda, sorpresa, decidido…); «espera», el clip de espera 3D que le pega
 # (animaciones/esperas/<héroe>.res: espera_vigilar, espera_brazalete, espera_flor, espera_apoyarse…). En 2D no se usa.
 #
-# Dónde se enganchan (ver «ENGANCHES» abajo): en Oakhaven (ciudad_oakhaven.gd) la llegada, los cofres y las esperas;
-# lo demás queda listo para quien lleve esas escenas.
+# Dónde se enganchan (ver «ENGANCHES» abajo): en las zonas 2D (zona.gd) la llegada y los cofres; en Oakhaven
+# (ciudad_oakhaven.gd), además, quedarse quieto; lo de 3D queda listo para quien lleve esas escenas.
 
 const META := "comentarios_dichos"
 const COLORES := {"Kael": Color(0.5608, 0.8275, 1.0), "Lya": Color(0.9098, 0.7686, 0.4157), "Garon": Color(0.75, 0.82, 0.95)}
@@ -86,11 +86,11 @@ const MOMENTOS := {
 
 # ENGANCHES: dónde va cada momento y en qué archivo (el responsable de cada escena lo decide).
 const ENGANCHES := {
-	"llegar:oakhaven": "ciudad_oakhaven.gd, al entrar (hecho)",
-	"cofre": "ciudad_oakhaven.gd al abrir un cofre (hecho); zona.gd _abrir_cofre, garganta 3D y pastos_verdes_3d.gd (pendiente)",
+	"llegar:oakhaven": "ciudad_oakhaven.gd, al entrar (hecho, con zona.gd _momento_llegada)",
+	"cofre": "zona.gd _abrir_cofre y ciudad_oakhaven.gd (hechos); garganta_3d.gd y pastos_verdes_3d.gd (pendiente)",
 	"quieto": "ciudad_oakhaven.gd tras 14 s sin moverse (hecho); en 3D, con las esperas de animaciones (pendiente)",
-	"llegar:lugar_nuevo": "zona.gd al entrar en un lugar por primera vez (pendiente)",
-	"llegar:garganta": "garganta 3D al entrar (pendiente)",
+	"llegar:lugar_nuevo": "zona.gd, la primera vez en la sesión que se entra en un lugar (hecho)",
+	"llegar:garganta": "la Garganta 2D por zona.gd (hecho); garganta_3d.gd al entrar (pendiente)",
 	"cascada_garganta": "garganta 3D al entrar en el mirador de la cascada (pendiente)",
 }
 

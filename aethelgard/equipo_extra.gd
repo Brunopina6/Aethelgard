@@ -39,6 +39,22 @@ const EFECTOS := {
 # disponible no se vende ni se da. C1, desde el 09/11: la ranura Accesorio y los seis accesorios de C1.
 const HECHOS: Array = ["C1"]
 
+# Botín de las bestias (T-097, decisión del coordinador del 09/11): materiales que solo se venden (sin recetas). Al
+# ganar, cada enemigo de esa clave que no haya huido deja uno (combate.gd _repartir_exp); se guardan en los objetos del
+# inventario y la tienda los compra por «venta» monedas (tienda.gd, pestaña Objetos).
+const BOTIN := {"zarzalin": "Corteza espinosa"}
+const MATERIALES := {
+	"Corteza espinosa": {"venta": 18, "desc": "Corteza de Zarzalín, llena de espinas. Se vende."},
+}
+
+
+static func botin_de(enemigos: Array) -> Array:
+	var r: Array = []
+	for e in enemigos:
+		if not e.get("huido", false) and int(e.get("hp", 0)) <= 0 and BOTIN.has(str(e.get("clave", ""))):
+			r.append(BOTIN[e["clave"]])
+	return r
+
 # Accesorios: sin atributos, solo su efecto. «efecto»: texto corto del menú (32 caracteres como mucho).
 const ACCESORIOS := {
 	"farol_peregrino": {"nombre": "Farol de peregrino", "efectos": {"atb_inicio": 35.0},

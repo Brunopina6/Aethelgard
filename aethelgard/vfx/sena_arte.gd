@@ -42,6 +42,14 @@ func _draw() -> void:
 			_aliento()
 		"hoja":
 			_hoja_sola()
+		"escarcha":
+			_escarcha()
+		"escarcha_golpe":
+			_escarcha_golpe()
+		"escarcha_rota":
+			_escarcha_rota()
+		"guardia":
+			_guardia()
 
 
 # ---------------------------------------------------------------- anillo del Alba (y del Ocaso, al revés)
@@ -205,3 +213,90 @@ func _hoja(p: Vector2, ang: float, esc: float, alfa: float) -> void:
 	draw_colored_polygon(sombra, Color(SOMBRA, 0.3 * alfa))
 	draw_colored_polygon(giradas, Color(color, alfa))
 	draw_line(p + Vector2(0, -r * 0.8).rotated(ang), p + Vector2(0, r).rotated(ang), Color(0.1, 0.2, 0.05, 0.8 * alfa), 1.5)
+
+
+# ---------------------------------------------------------------- Escarcha (M3): la coraza
+# El contorno de la coraza: un cristal hexagonal alargado alrededor del cuerpo (en el sitio del luchador).
+func _cristal(esc: float) -> PackedVector2Array:
+	var pts := PackedVector2Array()
+	for i in 6:
+		var a := TAU * i / 6.0 - PI / 2.0
+		pts.append(Vector2(cos(a) * 78.0, sin(a) * alto * 0.56) * esc + Vector2(0, -alto * 0.08))
+	return pts
+
+
+func _contorno(pts: PackedVector2Array, col: Color, ancho: float) -> void:
+	var cerrado := pts.duplicate()
+	cerrado.append(pts[0])
+	draw_polyline(cerrado, Color(SOMBRA, 0.45 * col.a), ancho + 5.0)
+	draw_polyline(cerrado, col, ancho)
+
+
+# Se forma: las caras de hielo crecen desde el suelo, brillan y se quedan tenues hasta desvanecerse.
+func _escarcha() -> void:
+	var k := clampf(t / dur, 0.0, 1.0)
+	var crece := smoothstep(0.0, 0.35, k)
+	var alfa := 1.0 - smoothstep(0.7, 1.0, k)
+	var pts := _cristal(1.0)
+	var suelo := alto * 0.48
+	var hechos := PackedVector2Array()                # aplastado hacia el suelo mientras crece
+	for p in pts:
+		hechos.append(Vector2(p.x, lerpf(suelo, p.y, crece)))
+	draw_colored_polygon(hechos, Color(color, 0.22 * alfa))
+	_contorno(hechos, Color(color, alfa), 4.0)
+	var centro := Vector2(0, lerpf(suelo, -alto * 0.08, crece))
+	for i in 6:                                     # facetas: del centro a cada vértice
+		draw_line(centro, hechos[i], Color(color.lerp(Color.WHITE, 0.4), 0.5 * alfa), 2.0)
+	if crece >= 1.0:                                # un destello recorre el cristal
+		var b := clampf((k - 0.35) / 0.3, 0.0, 1.0)
+		var y := lerpf(suelo, -alto * 0.64, b)
+		draw_line(Vector2(-60, y), Vector2(60, y - 20), Color(Color.WHITE, 0.7 * (1.0 - b) * alfa), 4.0)
+
+
+# Absorbe un golpe: el cristal aparece un instante y tiembla.
+func _escarcha_golpe() -> void:
+	var k := clampf(t / dur, 0.0, 1.0)
+	var pts := _cristal(1.0 + 0.06 * (1.0 - k))
+	draw_colored_polygon(pts, Color(color, 0.25 * (1.0 - k)))
+	_contorno(pts, Color(color.lerp(Color.WHITE, 0.4), 1.0 - k), 4.0)
+
+
+# Se rompe: el cristal salta en esquirlas que vuelan hacia fuera y caen (una por cara, sin azar).
+func _escarcha_rota() -> void:
+	var k := clampf(t / dur, 0.0, 1.0)
+	var alfa := 1.0 - smoothstep(0.5, 1.0, k)
+	var pts := _cristal(1.0)
+	var centro := Vector2(0, -alto * 0.08)
+	if k < 0.15:
+		_contorno(pts, Color(Color.WHITE, 1.0 - k / 0.15), 6.0)
+	for i in 6:
+		var a := pts[i]
+		var b := pts[(i + 1) % 6]
+		var medio := (a + b) / 3.0 + centro / 3.0
+		var sale := (medio - centro).normalized()
+		var mov := sale * (40.0 + 160.0 * k) + Vector2(0, 260.0 * k * k)
+		var giro := (i % 2 * 2 - 1) * k * 3.0
+		var esq := PackedVector2Array()
+		for q in [a, b, centro.lerp(medio, 0.4)]:
+			esq.append(medio + (q - medio).rotated(giro) * 0.55 + mov)
+		draw_colored_polygon(esq, Color(color, 0.75 * alfa))
+		var cerrada := esq.duplicate()
+		cerrada.append(esq[0])
+		draw_polyline(cerrada, Color(Color.WHITE, alfa), 2.0)
+
+
+# ---------------------------------------------------------------- la Guardia de Garon (T-100)
+# Un escudo sobre el aliado cubierto y una línea que lo une con Garon (desde).
+func _guardia() -> void:
+	var k := clampf(t / dur, 0.0, 1.0)
+	var alfa := smoothstep(0.0, 0.15, k) * (1.0 - smoothstep(0.6, 1.0, k))
+	var p := Vector2(0, -alto * 0.62 - 20.0 * k)
+	var lleva := smoothstep(0.0, 0.3, k)             # la línea sale de Garon y llega al escudo
+	draw_line(desde, desde.lerp(p, lleva), Color(SOMBRA, 0.35 * alfa), 8.0)
+	draw_line(desde, desde.lerp(p, lleva), Color(color, 0.8 * alfa), 4.0)
+	var e := 2.6
+	var pts := PackedVector2Array([p + Vector2(-14, -16) * e, p + Vector2(14, -16) * e, p + Vector2(13, 0) * e,
+		p + Vector2(0, 18) * e, p + Vector2(-13, 0) * e])
+	draw_colored_polygon(pts, Color(color, 0.35 * alfa))
+	_contorno(pts, Color(color, alfa), 4.0)
+	draw_line(p + Vector2(0, -11) * e, p + Vector2(0, 13) * e, Color(0.62, 0.17, 0.17, alfa), 5.0)

@@ -385,7 +385,7 @@ func _menu() -> void:
 	_ok(filas[1]["desc"] == "Necesitas 15 PM: tienes 10." and filas[1]["falta_pm"] and not filas[0]["falta_pm"],
 		"6: el Ocaso sin PM no dice por qué: %s" % [filas[1]])
 	_ok(A.texto_estado({"hp": 10, "aliento": 2}, "aliento") == "2" and A.texto_estado({"hp": 10}, "aliento") == ""
-		and A.texto_estado({"hp": 10, "barrera": 5}, "barrera") == "", "6: los turnos del Aliento junto a su icono")
+		and A.texto_estado({"hp": 10, "barrera": 5}, "barrera") == "5", "6: los turnos del Aliento y la coraza junto a su icono")
 	var pruebas: Array = A.filas_familia("Lumbre", 1, lya, [kael, lya], [], [], true)
 	_ok(pruebas[0]["derecha"] == "PM ∞" and pruebas[0]["apagado"], "6: con PM infinitos o sin caídos: %s" % [pruebas])
 	# iconos: se dibujan en el draw de un Control (si el modo sin ventana dibuja)

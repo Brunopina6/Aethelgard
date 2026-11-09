@@ -1,4 +1,15 @@
 extends "res://prototipos/sendero_puente.gd"
+
+# Comentarios breves de los héroes al explorar (narrativa, dialogos/comentarios.gd): al abrir el cofre y al quedarse
+# quietos. La llegada ya la cuenta PV-02. Por sesión, sin tocar la partida.
+const Comentarios := preload("res://dialogos/comentarios.gd")
+const QUIETO_COMENTARIO := 14.0          # s sin moverse para que alguien diga algo (como en Oakhaven)
+const PAUSA_COMENTARIOS := 45.0          # s de pausa tras un comentario por estar quietos
+const RETRASO_COFRE := 1.2               # s tras el premio
+var _capa_ui: CanvasLayer
+var _quieto_t := 0.0
+var _comentario_pendiente := ""
+var _comentario_t := 0.0
 # Pastos Verdes en 3D: la primera región jugable de la exploración 3D (rama experimental rebelum-alpha).
 #
 # Solo se llega con la exploración 3D activa (modo3d.gd): el mapa muestra Pastos Verdes como lugar 10 y entra
@@ -205,6 +216,8 @@ func _process(delta: float) -> void:
 	if _escena_pendiente != "":          # alguien llega para hablar: Kael quieto, sin control (como en un diálogo)
 		_esperar_escena(delta)
 	if ocupado():                        # diálogo abierto: Kael quieto y sin pasos
+		_quitar_comentarios()
+		_quieto_t = 0.0
 		_parar_kael()
 		boton_accion.visible = false
 		return
@@ -230,6 +243,7 @@ func _process(delta: float) -> void:
 			return
 	_comprobar_mision()
 	_comprobar_cerca()
+	_comentarios(delta, d)
 
 
 func _unhandled_input(ev: InputEvent) -> void:
@@ -245,6 +259,49 @@ func _unhandled_input(ev: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 	super(ev)
+
+
+# Comentarios: el pendiente (cofre) cuando pasa su espera, y el de quedarse quieto. «d»: lo andado este fotograma.
+func _comentarios(delta: float, d: float) -> void:
+	if _capa_ui == null:
+		return
+	if _comentario_pendiente != "":
+		_comentario_t -= delta
+		if _comentario_t <= 0.0 and _comentar(_comentario_pendiente):
+			_comentario_pendiente = ""
+		elif _comentario_t < -10.0:              # si en 10 s no hubo hueco, se deja
+			_comentario_pendiente = ""
+	if _quieto_t < 0.0:                          # pausa tras un comentario por estar quietos
+		_quieto_t = minf(_quieto_t + delta, 0.0)
+		return
+	if d > 0.002 or destino != null or movimiento != "":
+		_quieto_t = 0.0                          # moverse reinicia la espera
+		return
+	_quieto_t += delta
+	if _quieto_t >= QUIETO_COMENTARIO:
+		_quieto_t = -PAUSA_COMENTARIOS if _comentar("quieto") else 0.0
+
+
+# Enseña un comentario si toca y no hay otro en pantalla. Devuelve si salió.
+func _comentar(momento: String) -> bool:
+	if _capa_ui == null or ocupado() or cinematica or saliendo:
+		return false
+	for n in _capa_ui.get_children():
+		if n.name.begins_with("comentario"):
+			return false
+	var c := Comentarios.elegir(momento)
+	if c.is_empty():
+		return false
+	Comentarios.mostrar(_capa_ui, c)
+	return true
+
+
+func _quitar_comentarios() -> void:
+	if _capa_ui == null:
+		return
+	for n in _capa_ui.get_children():
+		if n.name.begins_with("comentario"):
+			n.queue_free()
 
 
 func ocupado() -> bool:
@@ -1096,6 +1153,8 @@ func _abrir_cofre() -> void:
 	boton_accion.visible = false
 	_animar_cofre()
 	_mostrar_aviso("¡Has encontrado %s!" % premio, 2.2)
+	_comentario_pendiente = "cofre"
+	_comentario_t = RETRASO_COFRE
 	guardar_posicion()
 	load("res://progreso.gd").guardar(scene_file_path)
 
@@ -1233,6 +1292,7 @@ func _crear_interfaz() -> void:
 	var capa := CanvasLayer.new()
 	capa.layer = 50
 	add_child(capa)
+	_capa_ui = capa
 	boton_accion = Button.new()
 	boton_accion.position = Vector2(980, 600)
 	boton_accion.custom_minimum_size = Vector2(270, 84)

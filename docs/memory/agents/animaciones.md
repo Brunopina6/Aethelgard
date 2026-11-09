@@ -544,3 +544,202 @@ En `D:\REBELUM_diagnostico\bestiario\2026-11-09\zarzalin\`:
 - **Aviso de la integración:** al importar, Godot crea 43 `.uid` de Oakhaven, de la Garganta 3D y de algunas pruebas, y
   añade los diálogos de Oakhaven al directorio de Dialogic de `project.godot`. No son míos: no los he confirmado y he
   devuelto `project.godot` a como estaba.
+
+## 2026-11-09 18:50 · Personalidad: esperas y porte de los héroes en la exploración 3D, y gestos por intención en los diálogos
+
+**Versión de partida:** rama `area-animaciones` @ `f6dc571`, unida con `integracion-experimental` @ `eb8bd94`
+(`git merge --no-ff`, `697dfed`, sin conflictos). Los 43 `.uid` sin seguimiento que generó la importación (todos
+venían en `eb8bd94`) se apartaron antes a `D:\REBELUM_respaldos\2026-11-09_uids\animaciones\`. Todo lo comprobado es
+del 2026-11-09, entre las 17:20 y las 18:50, con datos aislados; la carpeta real de datos no cambió en ninguna
+ejecución. **No he usado el Redmi** (ni ADB). **T-101 (Érebo) no ha entrado:** no quedaba margen (§ 8).
+
+**Commits** en `area-animaciones`, sin publicar:
+- `697dfed`: unión de `integracion-experimental` (`eb8bd94`);
+- `07486da`: el código (`esperas_3d.gd` nuevo, `maga_3d.gd`, `gestos_3d.gd`, `kael_3d.gd`, `garon_3d.gd`);
+- `8bfc29e`: los clips (`animaciones/esperas/*.res`), sus fuentes de Blender, las herramientas de captura y conversión y
+  la fila de `docs/recursos.md`;
+- `2c94481`: la activación en la exploración (`prototipos/vista3d.gd`, `zonas3d/grupo_3d.gd`);
+- `ec33301`: las pruebas (`prueba_esperas.gd`, `prueba_esperas_fotos.gd`, `lista_pruebas.txt`);
+- `50f7ccb`: los gestos por intención (`dialogos/retrato_vivo.gd`, `prologo.dtl`, `pv_03.dtl`);
+- `33b2bfc`: Garon, las espadas al estirar la espalda;
+- `ae25958`: ajustes de las pruebas;
+- y el de este informe.
+
+### 1. La causa: por qué los héroes no tenían personalidad (*observado en el código*)
+
+- Quietos en la exploración, los tres repetían siempre lo mismo: Kael su clip de reposo de Meshy (`_01a19b86`, el
+  sable al hombro), Lya una pose quieta de Meshy con los brazos bajados por código (`gestos_3d.gd`, «reposo») y
+  respiración, y Garon su guardia tranquila «Calma» (dos instantes de «Juicio» que van y vienen). Ningún clip propio.
+- Al andar y al correr, **los tres usan el mismo movimiento** de Meshy (ciclo de 1,03 s al andar y 0,63 s al correr,
+  medido en la tanda 2) y su ritmo lo fija la velocidad para que el pie apoyado no patine (`marcha()`). Lo único
+  distinto eran sus armas.
+
+### 2. Esperas: clips propios hechos en Blender 5.2.3 por script
+
+**Cómo se hacen** (reproducible, sin complementos):
+1. `pruebas/herramientas/capturar_reposo.gd` captura el reposo **tal como se ve en el juego** (el clip más los gestos de
+   `gestos_3d.gd`, después del último modificador del esqueleto): `animaciones/esperas/fuentes/reposo_<héroe>.json`.
+2. `animaciones/esperas/fuentes/esperas.py` (con `esperas_lib.py`; carpeta con `.gdignore`, no va en el APK) importa el
+   FBX del héroe en Blender, pone esa pose (relación entre los dos esqueletos por Kabsch con las posiciones de reposo:
+   error 0,00000) y resuelve cada fotograma a 30 fps a partir de unas claves de control en ejes del personaje:
+   tronco, IK analítica de brazos (con su codo) y de piernas (**los pies no se mueven del suelo**: 0,0000 en todos
+   los clips), dirección de las armas (sable, cetro, espadas), punta de un arma apoyada en el suelo, la mano izquierda
+   agarrando el arma de la derecha y dedos. Las claves se interpolan con Hermite monótona (pasa por ellas sin
+   detenerse). El primer y el último fotograma son **exactamente** la pose del juego (0,000°). Exporta un GLB por héroe
+   (armadura y un triángulo; 1,0-1,7 MB, fuera del historial: `D:\REBELUM_diagnostico\animaciones\2026-11-09\esperas\glb\`).
+3. `pruebas/herramientas/convertir_esperas.gd` pasa el GLB a los huesos del héroe (giro respecto al reposo en el espacio
+   del esqueleto, llevado al del héroe por Kabsch), quita las claves que se deducen de sus vecinas (error < 0,23°) y
+   guarda `animaciones/esperas/<héroe>.res`. **Comprobado:** el primer fotograma del clip convertido difiere de la
+   pose capturada en el juego **0,056° (Kael) y 0,040° (Lya y Garon) como mucho**.
+
+**Posador:** no ha hecho falta: la IK de dos huesos está en `esperas_lib.py` (la misma idea que `posador_ik.gd`, con
+codo hacia un polo) y así cada fotograma se resuelve por script, sin arrastrar objetivos en el editor.
+
+**Los clips** (*comprobado ejecutando*, `prueba_esperas`):
+
+| Héroe | Espera | Duración | Qué hace | Claves |
+|---|---|---|---|---|
+| Kael | `espera_vigilar` | 4,8 s | Mano en la cadera; mira a su izquierda y luego por encima del hombro derecho | 422 |
+| | `espera_empunadura` | 5,2 s | Baja el sable del hombro y apoya la punta en el suelo, delante y a su derecha; lo agarra también con la izquierda, lo gira para mirarle el filo y lo sube al hombro por fuera | 1.049 |
+| | `espera_brazalete` | 4,8 s | Alza el antebrazo izquierdo, gira la muñeca mirando el brazalete, cierra y abre el puño dos veces y sacude la mano. **Nada nuevo de la historia:** sin brillo ni efecto | 921 |
+| | `espera_impaciencia` | 4,2 s | Carga el peso en la pierna izquierda, golpea tres veces el suelo con la punta del pie derecho y resopla (hombros arriba y abajo) | 357 |
+| Lya | `espera_flor` | 6,2 s | Ve una flor a sus pies, se agacha (la cadera baja 30 cm con las rodillas por IK) con el cetro inclinado a un lado, la roza con la mano izquierda ladeando la cabeza y se levanta | 439 |
+| | `espera_cetro` | 5,4 s | Cruza el cetro delante con las dos manos, lo inclina para mirar el loto y se mece | 471 |
+| | `espera_pelo` | 3,6 s | Se recoloca el pelo detrás de la oreja izquierda, ladeando la cabeza | 286 |
+| Garon | `espera_hombros` | 5,4 s | Rueda los hombros dos veces y estira el cuello a un lado y al otro | 208 |
+| | `espera_espalda` | 5,4 s | Baja las espadas a los lados con la punta en el suelo, saca pecho, mira arriba y se inclina a un lado y al otro | 687 |
+| | `espera_apoyarse` | 5,6 s | Clava las dos espadas de punta en el suelo, delante y a los lados, y descansa el peso en ellas | 596 |
+
+- **Nombres definitivos** (los de `animaciones/esperas/fuentes/esperas.py`, iguales en los `.res` y en
+  `prueba_esperas.gd`): Kael `espera_vigilar`, `espera_empunadura`, `espera_brazalete` y `espera_impaciencia`; Lya
+  `espera_flor`, `espera_cetro` y `espera_pelo`; Garon `espera_hombros`, `espera_espalda` y `espera_apoyarse`.
+- **El brazalete de Kael** (aclaración del coordinador, 09/11): en el canon no hay «mano marcada»; es la mano del
+  brazalete. `espera_brazalete` solo mira el brazalete del antebrazo izquierdo, gira la muñeca y abre y cierra la mano:
+  no inventa una marca, no lo hace brillar ni añade ningún efecto.
+- **Garon no lleva escudo** (`RUTA_ESCUDO` vacío en `garon_3d.gd`; lucha con dos espadas): «apoya el escudo» se ha
+  hecho como «se apoya en las espadas».
+- **Coste:** sin huesos nuevos. Cada clip lleva dos pistas por hueso (giro y posición; las que no cambian, con una
+  clave): 132 pistas en Kael, 100 en Lya y 88 en Garon, y entre 208 y unas 1.000 claves. Los tres `.res` ocupan
+  120 KB. Nada medido en el móvil (§ 7).
+
+### 3. Esperas en el juego (`esperas_3d.gd`, nuevo)
+
+- **Cuándo:** si el héroe lleva **de 6 a 9 s** quieto en su reposo de exploración (Kael con el reposo de su clip, Lya con
+  el suyo, Garon en «Calma»), hace una de sus esperas al azar, **nunca la misma dos veces seguidas**; las siguientes,
+  cada 10-16 s quieto. **Dos héroes no empiezan a la vez** (3 s entre una y otra, contados con el tiempo del juego).
+- **Entrada y salida:** fundido de 0,45 s desde el reposo y de 0,5 s de vuelta (empieza antes de que acabe el clip).
+  Como el clip empieza y acaba en la pose del juego, no salta. Los gestos que hubiera (los brazos relajados de Lya) se
+  quitan al entrar y vuelven al salir; el cetro de Lya va con la mano durante la espera y vuelve a ir derecho al acabar.
+- **Se corta** (0,2 s) al moverse (`marcha`, `andar`, `correr`), con cualquier otra animación (`play`) o al empezar un
+  diálogo de Dialogic; no empieza ninguna durante un diálogo. Las miradas a quien habla (`grupo_3d.gd`) no cambian.
+- **Dónde:** `prototipos/vista3d.gd` las activa para Kael y `zonas3d/grupo_3d.gd` para Lya y Garon, así que salen en
+  Pastos Verdes 3D y en la Garganta 3D (que heredan de `vista3d.gd` y usan `grupo_3d.gd`). **El combate no las activa**
+  (comprobado: Kael 12 s quieto, sin esperas). Los enemigos que heredan de `maga_3d.gd` no tienen ni esperas ni porte.
+
+### 4. Porte al andar y al correr (`maga_3d.gd`, ESTILOS)
+
+El esqueleto lo permite y el clip es el mismo para los tres, así que el porte va **sumado** al clip con un tipo de gesto
+nuevo de `gestos_3d.gd` («+hueso»: un giro que se suma al del clip en vez de orientar el hueso, fijo o de ida y vuelta):
+- **Kael:** echado hacia delante (columna 5° al andar, 9° al correr) con la cabeza alta: tira del grupo.
+- **Lya:** erguida (pecho 3° atrás) y **mirando alrededor sin prisa** al andar (la cabeza va y viene ±9° cada 4,8 s y se
+  ladea ±3°); al correr, 4° adelante.
+- **Garon:** pecho fuera (4° atrás) y la mirada al frente, algo baja (5°); al correr, 6° adelante con el pecho firme.
+- **El ritmo no cambia:** lo fija la velocidad para que el pie apoyado no patine (tanda 2). Cambiarlo pediría clips de
+  andar propios (§ 9).
+- *Comprobado ejecutando* (capturas de lado, mismas fases del clip, sin y con porte): el cambio es **sutil**, sobre todo
+  en Kael (cuerpo pequeño y cabeza grande). Lámina en § 7. No lo he exagerado sin que lo vea alguien.
+
+### 5. Diálogos: gestos por la intención de la frase
+
+- `dialogos/retrato_vivo.gd`: tres movimientos nuevos, breves (menos de 1,3 s) y que vuelven al reposo:
+  - **risa:** tres botes cortos que se apagan, con el cuerpo suelto;
+  - **enfado:** se tensa, se echa hacia el otro con una sacudida seca y vuelve;
+  - **animo:** se yergue, se inclina hacia el otro y asiente.
+
+  Y etiquetas **«pose+movimiento»**: la ilustración de un gesto con el movimiento de otro («ligero+risa»: la mano en la
+  cadera mientras se ríe). La «duda» ya existía (ladea la cabeza). **El resaltado de quien habla no cambia** (el foco
+  va en `$Foco`; los gestos, en `$Foco/Gesto`).
+- **Etiquetas** (solo líneas `update`; **ninguna frase cambia**, comprobado línea a línea con `diff`):
+
+| Diálogo | Frase | Antes | Ahora | Por qué |
+|---|---|---|---|---|
+| Prólogo | Kael: «Lo he visto. Y como siempre, a mí ni me roza…» | ligero | ligero+risa | Bromea |
+| | Lya: «No bromees. Nadie es inmune a la niebla…» | — | enfado | Le riñe |
+| | Kael: «Entonces vamos…» | decidido | decidido+animo | Anima a ir |
+| | Lya: «Los Hollines ya no son solo sombras…» | — | firme | Advierte |
+| PV-03 | Kael: «Pensaba dejarte dormir. Es distinto.» | ligero | ligero+risa | Se escabulle con una broma |
+| | Lya: «Te dije «ten cuidado». No «vete solo».» | decidida | decidida+enfado | Le reprocha |
+
+  Las demás frases conservan su gesto (o ninguno): nadie se mueve en cada frase y nadie repite el mismo gesto seguido.
+- *Comprobado ejecutando*: `prueba_prologo` superada (retratos, poses de Kael y de Lya en cada frase, saltar, deprisa y
+  reabrir) y `prueba_prologo_video` con ventana, sin fallos (las 11 frases a ritmo de lectura, reabierto deprisa con 5
+  frases y 8 pulsaciones, saltado con Esc y vuelta al mapa).
+
+### 6. Pruebas
+- **`prueba_esperas`** (nueva, automática; *comprobado ejecutando*): los clips de cada héroe (duración, pistas, claves,
+  sin bucle); cada espera, de principio a fin, vuelve a su reposo con sus gestos y el cetro derecho; seis disparos
+  seguidos estando quieto **sin repetir** (p. ej. Kael: empuñadura, brazalete, vigilar, empuñadura, impaciencia,
+  vigilar); **se cortan al andar** (`marcha`: pasa a «Running»/«Correr») y con otra animación (`reposo()`); **en
+  combate no hay** (12 s quieto); y **en Pastos Verdes 3D** con Lya y Garon: Lya a los 7,4 s quieta, Garon a los 9,9 y
+  Kael a los 13,4 (esperó su turno), y al andar Kael con el stick se cortan todas. Superada.
+- **`prueba_esperas_fotos`** (nueva, con ventana): capturas en estudio y, con «porte», el porte al andar.
+- **Batería completa** (`ejecutar_pruebas.ps1`, 18:08-18:16): **56 superadas, 2 fallidas, 32 manuales, 0 no seguras**.
+  Partida real (`A3F3C402…`) y carpeta real de datos **sin cambios** (había 147 Godot de otras copias). Resumen:
+  `D:\REBELUM_diagnostico\animaciones\2026-11-09\bateria_personalidad\2026-11-09_180819\resumen.md`.
+  - **Las dos fallidas, `prueba_mando` y `prueba_teclado`, no vienen de este trabajo:** «Intro / A junto a Tilo no abre
+    el diálogo». Desde `c3f5692` (en `eb8bd94`), hablar con Tilo antes de PV-03 hace llegar a Lya y el diálogo empieza
+    1,2 s después (`_escena_pendiente`, `LLEGADA_LYA`), pero la prueba mira `current_timeline` pocos fotogramas después
+    de pulsar. **Comprobado:** con las esperas desactivadas a mano (sin confirmar y deshecho después), `prueba_mando`
+    falla igual (`D:\REBELUM_diagnostico\animaciones\2026-11-09\causa_prueba_mando_sin_esperas\`). Arreglo en § 9.
+- **Pasada final** con el código definitivo (`ae25958`, 18:23): `prueba_esperas`, `prueba_prologo`, `prueba_grupo3d`,
+  `prueba_anim_pies`, `prueba_dialogo`, `prueba_ruta_alpha` y `prueba_efectos`: **7 superadas, 0 fallidas**; partida y
+  carpeta real sin cambios. Resumen:
+  `D:\REBELUM_diagnostico\animaciones\2026-11-09\bateria_personalidad_final\2026-11-09_182347\resumen.md`.
+- Importaciones aisladas: `D:\REBELUM_diagnostico\importaciones\anim_personalidad_20261109_172526\` (tras la unión) y
+  `anim_esperas_20261109_180622\` (tras los archivos nuevos).
+
+### 7. Evidencias
+En `D:\REBELUM_diagnostico\animaciones\2026-11-09\esperas\`:
+- `laminas\antes_reposo_izq_despues_esperas_{kael,lya,garon}.png`: el reposo de siempre (antes, a la izquierda) y un
+  momento de cada espera; `laminas\<héroe>_esperas_filas_34_y_lado_7_momentos.png`: cada espera en 7 momentos, de 3/4
+  y de lado (filas alternas);
+- `laminas\<héroe>_porte_filas_andar_antes_despues_correr_antes_despues.png`: el porte, sin y con él;
+- `video\esperas_estudio.mp4` (44 s, 720 × 900, las diez esperas seguidas, con su nombre);
+- `region\region_*.jpg`: Pastos Verdes 3D con la cámara del juego (9 m): Kael, Lya y Garon haciendo sus esperas uno
+  tras otro;
+- `estudio\` (fotogramas sueltos), `porte\`, `glb\` (los GLB intermedios) y `registros\`.
+
+En `D:\REBELUM_diagnostico\animaciones\2026-11-09\personalidad_dialogos\`: `prologo_gestos_intencion.mp4` (el prólogo
+en movimiento con los gestos nuevos, reabierto deprisa y saltado) y `prologo\despues_frase_*_{a,b}.png` (cada frase al
+salir y al final de la lectura). El «antes» comparable es el de la tanda 2:
+`D:\REBELUM_diagnostico\animaciones\2026-11-09\prologo\despues\` y `...\2026-11-08\prologo\videos\prologo_despues.mp4`
+(el prólogo tenía entonces 9 frases; ahora 11, por T-086).
+
+### 8. Límites
+- **Pendiente en Redmi:** el coste de las esperas y del porte en el Mali-G57 (unas cuentas más por fotograma: el clip
+  de espera en lugar del de reposo y, en Lya, el cetro), cómo se leen a la distancia de la cámara del juego en la
+  pantalla del teléfono y el tacto de los fundidos. **No he medido rendimiento** (había otros especialistas trabajando)
+  ni afirmo nada del móvil.
+- **No visto por una persona:** las capturas y los vídeos los he revisado yo. Las poses son sobrias a propósito (cuerpo
+  chibi, armas grandes): el sable de Kael mide casi como él, así que la empuñadura se revisa con la punta en el suelo
+  (con el sable en alto le tapaba la cara: lo vi en la primera versión y lo corregí).
+- **Colisiones finas:** no hay comprobación automática de que un arma no roce el cuerpo; lo he mirado en las capturas
+  de 3/4 y de lado (corregido: el sable delante de la cara de Kael y las espadas de Garon atravesando el suelo).
+- **Lya no cierra las manos** (tanda 2): sus gestos son de mano abierta.
+- **El porte no cambia el ritmo:** los tres usan el mismo clip de Meshy y el ritmo lo fija el pie quieto en el suelo.
+- **T-101 (cinemática de Érebo): no empezada**, no quedaba margen. Nada de esta tanda toca a Érebo ni revela nada.
+- `pruebas/prueba_orden_pv03.gd.uid` (de la integración, no mío) queda sin confirmar.
+
+### 9. Siguiente paso y cambios que necesito en archivos de otros
+- **Para quien lleve `pruebas/prueba_mando.gd` y `pruebas/prueba_teclado.gd`:** tras pulsar «aceptar» junto a Tilo,
+  esperar a que empiece el diálogo en vez de mirar enseguida, porque ahora Lya llega antes (1,2 s). Por ejemplo, en el
+  paso 4 cambiar `if D.current_timeline == null:` por
+  `if not await _hasta(func(): return D.current_timeline != null, 3.0):`.
+- **`docs/versiones/licencias_pendientes.txt`** (del coordinador): las esperas son animación propia, sin geometría de
+  Meshy, pero solo sirven con sus modelos; si se quiere el mismo trato que los retratos, añadir `animaciones/esperas/`.
+- **Siguiente paso propuesto:**
+  1. probarlo en el Redmi (pendiente en Redmi) y medir el coste con el banco de la región;
+  2. si gusta, más esperas por héroe (alguna propia de cada zona) y esperas en pareja (Lya le enseña algo a Kael) con
+     las miradas de `grupo_3d.gd`;
+  3. andares propios (clips de Blender con el mismo método) si el porte sumado se queda corto;
+  4. T-101, la cinemática de Érebo.
