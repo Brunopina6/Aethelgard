@@ -1,0 +1,6 @@
+# PROPUESTA (D-073, pendiente: Olvido y Aldea Rocío): «El nombre borroso». Pide hitos.oak_favores (el libro de cuentas).
+join olvido (normal) center
+olvido: ¿La aldea del norte? En el mapa no se lee. Pero mira mi libro de cuentas.
+olvido: «Pan para Aldea Rocío». Lo apunté yo. Mi letra no la borra ni la niebla.
+[signal arg="oak:rocio_nombre"]
+leave olvido

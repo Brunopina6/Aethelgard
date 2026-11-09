@@ -1,0 +1,7 @@
+join kael (normal) left
+join posadera (normal) right
+posadera: ¿Una cama para uno? La del fondo. Ahí no ronca nadie cerca.
+kael: Con que no cante nadie, me vale.
+posadera: Eso no te lo prometo. Buenas noches.
+leave posadera
+leave kael

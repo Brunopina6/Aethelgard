@@ -1,0 +1,6 @@
+# PROPUESTA (D-073, pendiente: Olvido): «La deuda de Olvido» (biblia v2 §7.4, n.º 6). Sustituye a oak_posadera_favores.
+join olvido (normal) center
+olvido: Tres cenas, Kael. Te las cambio por tres favores. Hoy no doy abasto.
+olvido: Un barril del patio, flores de Rosa… y el cucharón que Pip «encontró».
+[signal arg="oak:favores_aceptados"]
+leave olvido

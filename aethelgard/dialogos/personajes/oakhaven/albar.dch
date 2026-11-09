@@ -1,0 +1,15 @@
+{
+"@path": "res://addons/dialogic/Resources/character.gd",
+"@subpath": NodePath(""),
+&"_translation_id": "",
+&"color": Color(0.82, 0.82, 0.88, 1),
+&"custom_info": {},
+&"default_portrait": "",
+&"description": "Custodio del crematorio de Oakhaven (T-089). Versión neutra (D-073): sin orden ni cripta. Provisional: sin retrato todavía (ninguna de las cuatro ilustraciones sirve para él).",
+&"display_name": "Albar",
+&"mirror": false,
+&"nicknames": [],
+&"offset": Vector2(0, 0),
+&"portraits": {},
+&"scale": 0.72
+}

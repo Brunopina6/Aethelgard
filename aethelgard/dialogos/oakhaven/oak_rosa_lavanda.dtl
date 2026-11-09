@@ -1,0 +1,5 @@
+join rosa (normal) center
+rosa: Antes la lavanda crecía hasta en los tejados. Ahora solo en los Pastos.
+rosa: Si pasas por allí, ¿me traes un ramito? Es para el Árbol Milenario.
+[signal arg="oak:lavanda_pedida"]
+leave rosa

@@ -1,0 +1,6 @@
+# PROPUESTA (D-073, pendiente: Olvido): final de «La deuda de Olvido». Sustituye a oak_posadera_favores_fin.
+join olvido (normal) center
+olvido: Barril, flores y cucharón. Deuda tachada, con mi mejor letra.
+olvido: Y apunto otra: «Kael, una cena». Hoy. Siéntate, que se enfría.
+[signal arg="oak:favores_hechos"]
+leave olvido

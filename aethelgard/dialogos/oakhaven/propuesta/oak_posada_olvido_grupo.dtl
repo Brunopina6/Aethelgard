@@ -1,0 +1,10 @@
+# PROPUESTA (D-073, pendiente: Olvido): descanso del grupo (diseño §2.1). Sustituye a oak_posada_grupo.
+join kael (normal) left
+join lya (normal) right
+olvido: Tres cenas, Kael. Con esta, cuatro.
+kael: Apúntalas a nombre de Garon. Es de fiar.
+garon: No.
+lya: Yo pago la mía. Y la de Garon.
+olvido: Por fin alguien con modales en esta mesa.
+leave lya
+leave kael

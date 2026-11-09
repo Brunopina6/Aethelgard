@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://dialogos/oakhaven/retrato_tenido.gd" id="1_tenido"]
+
+[node name="RetratoTenido" type="Node2D"]
+script = ExtResource("1_tenido")
+
+[node name="Portrait" type="Sprite2D" parent="."]
+centered = false
