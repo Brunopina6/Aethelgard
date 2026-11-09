@@ -82,7 +82,7 @@ func _mascara_juego() -> void:
 
 
 func _firma() -> String:
-	return str(D.lugares) + str(D.rutas) + str(D.islas) + str(D.zona_lugar) + str(D.ancho) + str(PASO) + "v2"
+	return str(D.lugares) + str(D.rutas) + str(D.islas) + str(D.zona_lugar) + str(D.ancho) + str(PASO) + str(D.desfase()) + "v3"
 
 
 func _campos() -> void:

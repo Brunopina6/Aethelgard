@@ -4,11 +4,12 @@ extends RefCounted
 # puede evaluar en cualquier punto y con más resolución. Así el dibujo nuevo sale de los mismos datos que el juego.
 #
 # Alineación con el juego (comprobada con la prueba prueba_mapamundi.gd):
-#   mapa.gd evalúa el campo en la esquina de cada bloque de 4×4 px (x*4, y*4) y estira la máscara de 600×337 a
-#   1200×675 con Image.resize(NEAREST), que muestrea por centros: las filas van de dos en dos y la 168 sale tres
-#   veces. Para un punto q del mundo, el juego mira la muestra (4·⌊q.x/4⌋, 4·fila_juego(q.y)) (exacto, abajo).
-#   Así, en la mitad de arriba la máscara coincide con el dibujo antiguo (textura de 600×337 a escala 4) y en la
-#   de abajo va 2 px más abajo que él. El campo continuo equivalente es v(q − desfase(q.y)).
+#   mapa.gd evalúa el campo en la esquina de cada bloque de 4×4 px (x*4, y*4), en una rejilla de 600×338 que cubre
+#   el mapa entero, y la máscara del juego (1200×675) repite cada bloque dos veces en x y en y. Para un punto q del
+#   mundo, el juego mira la muestra (4·⌊q.x/4⌋, 4·⌊q.y/4⌋). El campo continuo equivalente es v(q − desfase()):
+#   el centro de cada bloque cae sobre su muestra.
+#   (Hasta la fase 2 de T-085 la rejilla tenía 337 filas y se estiraba a 675: la mitad de abajo de la máscara iba
+#   2 px más abajo que el dibujo y los 2 px de abajo del todo quedaban sin pintar. Corregido en mapa.gd.)
 
 var MAPA = load("res://mapa.gd")   # load y no preload: mapa.gd podrá usar este archivo sin ciclos
 # Orden de las zonas: el del diccionario ZONAS de mapa.gd.
@@ -68,10 +69,9 @@ func zona_en(p: Vector2) -> int:
 
 
 # Fila de la muestra de 4 px que usa el juego (_es_tierra y _zona_en) para la coordenada y del mundo: la máscara de
-# 1200×675 sale de la de 600×337 con resize NEAREST por centros, fila = ⌊(⌊y/2⌋ + 0,5) · 337 / 675⌋.
+# 1200×675 repite dos veces cada fila de la rejilla de 4 px (mapa.gd, _generar_terreno), fila = ⌊y/4⌋.
 static func fila_juego(y: float) -> int:
-	var Y := int(y * 0.5)
-	return int(floor((Y + 0.5) * 337.0 / 675.0))
+	return int(floor(y / 4.0))
 
 
 # ¿Es tierra para el juego el punto q? Igual que mapa.gd (_es_tierra), sin necesitar su imagen.
@@ -81,10 +81,10 @@ func tierra_juego(q: Vector2) -> bool:
 	return campo_v(Vector2(4.0 * floor(q.x / 4.0), 4.0 * fila_juego(q.y))) >= 0.0
 
 
-# Desfase del campo continuo que imita la máscara del juego: el bloque de 4 px se evalúa en su esquina (−2 px en x
-# y en y respecto a su centro) y, pasada la fila 168 (y ≈ 676), la máscara baja 2 px más. Se suaviza el salto.
-static func desfase(y: float) -> Vector2:
-	return Vector2(2.0, 2.0 + 2.0 * smoothstep(660.0, 692.0, y))
+# Desfase del campo continuo que imita la máscara del juego: el bloque de 4 px se evalúa en su esquina, 2 px a la
+# izquierda y 2 px por encima de su centro. Igual en todo el mapa.
+static func desfase(_y: float = 0.0) -> Vector2:
+	return Vector2(2.0, 2.0)
 
 
 # Campos en una rejilla de `paso` px del mundo, ya alineados con el juego: la celda (i, j) cubre
