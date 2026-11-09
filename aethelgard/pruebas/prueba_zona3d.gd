@@ -88,8 +88,10 @@ func _comprobar_entrada() -> bool:
 	if _plana(r.kael.global_position, inicio) > 1.0:
 		_fallo("Kael no entra por el principio del camino (%s)" % r.kael.global_position)
 		return false
+	# DIAG vuelve en la región a propósito (45a49e6: para medir el perfil medio en el Redmi), con sus casos propios; el
+	# del prototipo, no (se quita y se vuelve a poner en su sitio). Lo que no debe quedar es el que la región quita.
 	for b in r.find_children("*", "Button", true, false):
-		if b.text in r.BOTONES_BANCO:
+		if b.text in r.BOTONES_BANCO and not b.text in ["DIAG"] or b.text == "DIAG" and b.position != Vector2(1160, 268):
 			_fallo("sigue el botón de banco «%s»" % b.text)
 			return false
 	if r.info.visible:
