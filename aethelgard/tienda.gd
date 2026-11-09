@@ -150,6 +150,11 @@ func _pintar() -> void:
 				if o == "Incienso de Ceniza":
 					desc = "Sin encuentros durante %d pasos" % load("res://progreso.gd").PASOS_INCIENSO
 				_fila(o, desc, "Tienes %d" % Inv.cantidad(o), OBJETOS[o], func(): _comprar_objeto(o))
+			var Extra = load("res://equipo_extra.gd")    # el botín de las bestias (T-097): se vende
+			for m in Extra.MATERIALES:
+				if Inv.cantidad(m) > 0:
+					_fila(m, Extra.MATERIALES[m]["desc"], "Tienes %d" % Inv.cantidad(m), Extra.MATERIALES[m]["venta"],
+						func(): _vender(m), false, true)
 		"Equipo":
 			var precios := _precios_equipo()
 			for id in precios:
@@ -179,7 +184,7 @@ func _pintar() -> void:
 	_devolver_foco(clave)
 
 
-func _fila(nombre: String, desc: String, nota: String, precio: int, al_comprar: Callable, agotado := false) -> void:
+func _fila(nombre: String, desc: String, nota: String, precio: int, al_comprar: Callable, agotado := false, vender := false) -> void:
 	var f := HBoxContainer.new()
 	f.add_theme_constant_override("separation", 14)
 	var n := _texto(nombre, 21, COLOR_TEXTO)
@@ -191,11 +196,11 @@ func _fila(nombre: String, desc: String, nota: String, precio: int, al_comprar: 
 	var no := _texto(nota, 18, COLOR_SUAVE)
 	no.custom_minimum_size = Vector2(170, 0)
 	f.add_child(no)
-	var p := _texto("%d" % precio, 21, COLOR_TITULO if Inv.oro() >= precio else COLOR_MAL)
+	var p := _texto(("+%d" if vender else "%d") % precio, 21, COLOR_TITULO if vender or Inv.oro() >= precio else COLOR_MAL)
 	p.custom_minimum_size = Vector2(70, 0)
 	f.add_child(p)
-	var b := _boton("Comprar", 18, Vector2(120, 36), "comprar:" + nombre)
-	b.disabled = agotado or Inv.oro() < precio
+	var b := _boton("Vender" if vender else "Comprar", 18, Vector2(120, 36), ("vender:" if vender else "comprar:") + nombre)
+	b.disabled = agotado or (not vender and Inv.oro() < precio)
 	b.pressed.connect(al_comprar)
 	f.add_child(b)
 	cuerpo.add_child(f)
@@ -206,6 +211,18 @@ func _comprar_objeto(o: String) -> void:
 		Inv.agregar_objeto(o)
 		Sonido.efecto("monedas")
 		_avisar("Has comprado %s." % o)
+	else:
+		Sonido.efecto("ui_error")
+	_pintar()
+
+
+# Vende uno del botín de las bestias (equipo_extra.gd MATERIALES) por su precio de venta.
+func _vender(m: String) -> void:
+	if Inv.cantidad(m) > 0:
+		Inv.gastar(m)
+		Inv.ganar_oro(int(load("res://equipo_extra.gd").MATERIALES[m]["venta"]))
+		Sonido.efecto("monedas")
+		_avisar("Has vendido %s." % m)
 	else:
 		Sonido.efecto("ui_error")
 	_pintar()
