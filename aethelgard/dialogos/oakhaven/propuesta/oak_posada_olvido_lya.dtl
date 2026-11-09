@@ -1,0 +1,9 @@
+# PROPUESTA (D-073, pendiente: Olvido): descanso con Kael y Lya. Sustituye a oak_posada_lya.
+join kael (normal) left
+join lya (normal) right
+olvido: Lya, hija, ¿le vigilas tú? Así duermo tranquila.
+lya: Lo intento. Se escapa.
+kael: Me escapo con estilo.
+olvido: Te escapas sin pagar. Buenas noches a los dos.
+leave lya
+leave kael

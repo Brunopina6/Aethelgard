@@ -1,0 +1,6 @@
+# PROPUESTA (D-073, pendiente del usuario): Olvido, la tabernera que crió a Kael (biblia v2 §4.7). Sustituye a oak_posadera.
+join olvido (normal) center
+olvido: Me llamo Olvido y no se me olvida nada: ni una cara ni una deuda.
+olvido: Kael, cariño: tres cenas. Las tengo apuntadas con buena letra.
+olvido: Cama, sopa y silencio: treinta monedas. El silencio no lo garantizo.
+leave olvido

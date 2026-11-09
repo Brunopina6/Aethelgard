@@ -1,0 +1,8 @@
+# PROPUESTA (D-073, pendiente: Olvido): descanso con Kael solo. Sustituye a oak_posada_solo.
+join kael (normal) left
+join olvido (normal) right
+olvido: ¿Otra vez tú solo? Tu cama sigue donde la dejaste.
+kael: ¿Y la cena?
+olvido: Apuntada. Como todas. Buenas noches, Kael.
+leave olvido
+leave kael

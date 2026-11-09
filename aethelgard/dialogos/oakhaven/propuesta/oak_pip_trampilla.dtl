@@ -1,0 +1,10 @@
+# PROPUESTA (D-073, pendiente: la Cripta de las Urnas y Pip como guía): sustituye a oak_pip_secreto (la grieta).
+join pip (normal) center
+pip: ¿Vuelves por lo del secreto? Una moneda. Precio de amigo.
+- Pagar una moneda
+	[signal arg="oak:pip_pagar"]
+	pip: Detrás del Cuervo hay una trampilla. Sale aire frío… y huele a ceniza.
+	pip: Por otra moneda te guío abajo. Hasta el primer bicho. Luego, os espero fuera.
+- Mejor no
+	pip: Tú te lo pierdes. Los secretos suben de precio.
+leave pip
