@@ -1,0 +1,63 @@
+{
+ "id": "casa_6x5",
+ "rect": [
+  0,
+  0,
+  6,
+  5
+ ],
+ "sprites": [
+  {
+   "capa": "cuerpo",
+   "archivo": "casa_6x5_cuerpo.webp",
+   "pos": [
+    -20,
+    -469
+   ],
+   "tam": [
+    424,
+    809
+   ],
+   "orden": 320.0,
+   "tipo": "edificio"
+  }
+ ],
+ "anclas": {
+  "puerta": [
+   201.68399047851562,
+   352.0
+  ],
+  "humo0": [
+   127.74132537841797,
+   -451.20001220703136
+  ]
+ },
+ "efectos": [
+  {
+   "tipo": "humo",
+   "ancla": "humo0",
+   "color": "calido",
+   "alto": 2.4,
+   "escala": 0.75
+  }
+ ],
+ "choques": [],
+ "marco": [
+  -144,
+  -497,
+  548,
+  474
+ ],
+ "suelo": {
+  "archivo": "casa_6x5_suelo.png",
+  "pos": [
+   -129,
+   -464
+  ],
+  "tam": [
+   672,
+   928
+  ],
+  "escala": 4
+ }
+}

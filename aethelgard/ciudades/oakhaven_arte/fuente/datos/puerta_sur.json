@@ -1,0 +1,121 @@
+{
+ "id": "puerta_sur",
+ "rect": [
+  37,
+  51,
+  7,
+  5
+ ],
+ "sprites": [
+  {
+   "capa": "torre_oeste",
+   "archivo": "puerta_sur_torre_oeste.webp",
+   "pos": [
+    2201,
+    2863
+   ],
+   "tam": [
+    218,
+    642
+   ],
+   "orden": 3507.2,
+   "tipo": "edificio"
+  },
+  {
+   "capa": "torre_este",
+   "archivo": "puerta_sur_torre_este.webp",
+   "pos": [
+    2766,
+    2863
+   ],
+   "tam": [
+    217,
+    642
+   ],
+   "orden": 3507.2,
+   "tipo": "edificio"
+  },
+  {
+   "capa": "arco",
+   "archivo": "puerta_sur_arco.webp",
+   "pos": [
+    2360,
+    3004
+   ],
+   "tam": [
+    464,
+    281
+   ],
+   "orden": 3580.8,
+   "tipo": "edificio"
+  }
+ ],
+ "anclas": {
+  "farol_oeste": [
+   2406.39990234375,
+   3340.7998962402344
+  ],
+  "farol_este": [
+   2777.60009765625,
+   3340.7998962402344
+  ],
+  "salida": [
+   2592.0,
+   3552.0
+  ]
+ },
+ "efectos": [
+  {
+   "tipo": "halo",
+   "ancla": "farol_oeste",
+   "radio": 1.2,
+   "fuerza": 0.5
+  },
+  {
+   "tipo": "halo",
+   "ancla": "farol_este",
+   "radio": 1.2,
+   "fuerza": 0.5
+  }
+ ],
+ "choques": [
+  {
+   "centro": [
+    36.0,
+    53.4
+   ],
+   "tam": [
+    2.4,
+    2.0
+   ]
+  },
+  {
+   "centro": [
+    45.0,
+    53.4
+   ],
+   "tam": [
+    2.4,
+    2.0
+   ]
+  }
+ ],
+ "marco": [
+  2107,
+  2740,
+  3077,
+  3518
+ ],
+ "suelo": {
+  "archivo": "puerta_sur_suelo.png",
+  "pos": [
+   2136,
+   2762
+  ],
+  "tam": [
+   936,
+   744
+  ],
+  "escala": 4
+ }
+}
