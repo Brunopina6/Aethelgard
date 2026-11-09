@@ -1,0 +1,5 @@
+join bastian (normal) center
+bastian: ¡Ciento doce! ¡Ciento doce faroles! Los he contado dos veces.
+bastian: Desde la torre se ve todo, ¿verdad? Yo solo he subido en sueños.
+[signal arg="oak:faroles_hechos"]
+leave bastian

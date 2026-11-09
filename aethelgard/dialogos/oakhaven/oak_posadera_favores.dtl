@@ -1,0 +1,6 @@
+join posadera (normal) center
+posadera: Hoy no doy abasto. ¿Me echas una mano? Son tres favores.
+posadera: Un barril del patio, flores de Rosa para las mesas… y mi cucharón.
+posadera: El cucharón lo tiene Pip. Dice que se lo «encontró».
+[signal arg="oak:favores_aceptados"]
+leave posadera

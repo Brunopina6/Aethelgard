@@ -1,11 +1,16 @@
-join kael (normal) left
-join lya (normal) right
+join kael (vivo_pv) left
+join lya (vivo_pv) right
+update lya [extra_data="sorpresa"]
 lya: Una ciudad… en el cielo.
+update kael [extra_data="ligero"]
 kael: Y nosotros aquí, con los pies mojados.
+update lya [extra_data="preocupada"]
 lya: Kael, te está mirando.
+update kael [extra_data="decidido"]
 kael: Las estatuas no miran.
 garon: Esta, sí.
+update lya [extra_data="duda"]
 lya: Hay flores frescas a sus pies. Alguien las ha puesto esta mañana.
-garon: Y esas huellas de hollín dan vueltas alrededor… sin pisarlas.
+garon: Huellas de hollín. Rodean las flores… sin pisarlas.
 leave kael
 leave lya

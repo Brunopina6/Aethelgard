@@ -27,9 +27,34 @@ static func activo() -> bool:
 	return OS.has_feature("rebelum3d") or "3d" in OS.get_cmdline_user_args()
 
 
-# ¿Se usa la versión 3D de este lugar? Con la exploración 3D activa y, si la región está en pruebas, con su argumento.
+# ¿Se usa la versión 3D de este lugar? Con la exploración 3D activa y, si la región está en pruebas, con su argumento
+# o elegida en Ajustes (solo en la versión experimental: menus.gd; [regiones] en user://ajustes.cfg).
 static func region_activa(indice: int) -> bool:
-	return region_activa_con(indice, OS.get_cmdline_user_args(), OS.has_feature("rebelum3d"))
+	var args := OS.get_cmdline_user_args()
+	var hace_falta: String = EN_PRUEBAS.get(indice, "")
+	if hace_falta != "" and not hace_falta in args and elegida(hace_falta):
+		args.append(hace_falta)
+	return region_activa_con(indice, args, OS.has_feature("rebelum3d"))
+
+
+const AJUSTES := "user://ajustes.cfg"            # el mismo archivo que el volumen (sonido.gd) y el mapa (mapa_arte.gd)
+
+
+# Una región en pruebas elegida en Ajustes (por ejemplo «garganta3d»). Sin archivo o sin la clave, no.
+static func elegida(clave: String) -> bool:
+	var c := ConfigFile.new()
+	return c.load(AJUSTES) == OK and bool(c.get_value("regiones", clave, false))
+
+
+# Elige o quita una región en pruebas, sin tocar lo demás del archivo (volumen, mapa).
+static func elegir(clave: String, si: bool) -> Error:
+	var c := ConfigFile.new()
+	if FileAccess.file_exists(AJUSTES):
+		var err := c.load(AJUSTES)
+		if err != OK:
+			return err
+	c.set_value("regiones", clave, si)
+	return c.save(AJUSTES)
 
 
 # Lo mismo con los argumentos y la característica dados (las pruebas comprueban así los casos que no son el suyo).

@@ -1,0 +1,92 @@
+{
+ "id": "patio_cuervo",
+ "rect": [
+  10,
+  27,
+  5,
+  4
+ ],
+ "sprites": [
+  {
+   "capa": "barriles",
+   "archivo": "patio_cuervo_barriles.webp",
+   "pos": [
+    670,
+    1654
+   ],
+   "tam": [
+    240,
+    298
+   ],
+   "orden": 1958.4,
+   "tipo": "objeto"
+  }
+ ],
+ "anclas": {
+  "barril": [
+   768.0,
+   1798.400001525879
+  ]
+ },
+ "efectos": [],
+ "choques": [
+  {
+   "centro": [
+    11.3,
+    28.0
+   ],
+   "tam": [
+    1.6,
+    0.8
+   ]
+  },
+  {
+   "centro": [
+    13.6,
+    28.2
+   ],
+   "tam": [
+    1.0,
+    0.8
+   ]
+  },
+  {
+   "centro": [
+    12.2,
+    29.0
+   ],
+   "tam": [
+    0.8,
+    0.8
+   ]
+  },
+  {
+   "centro": [
+    13.6,
+    30.05
+   ],
+   "tam": [
+    1.2,
+    0.9
+   ]
+  }
+ ],
+ "marco": [
+  626,
+  1631,
+  973,
+  2013
+ ],
+ "suelo": {
+  "archivo": "patio_cuervo_suelo.png",
+  "pos": [
+   663,
+   1651
+  ],
+  "tam": [
+   304,
+   328
+  ],
+  "escala": 4
+ }
+}

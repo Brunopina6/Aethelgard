@@ -158,3 +158,389 @@ En `D:\REBELUM_diagnostico\animaciones\2026-11-08\`:
   para que los especialistas puedan probar a la vez, siempre que la vigilancia y las huellas sigan como están.
 - **Las fuentes de los retratos** están en `dialogos/retratos/fuentes_blender/`, con `.gdignore` (Godot no las lee y no
   van en el APK). Si se prefiere, pueden pasar a `pruebas/herramientas/`.
+
+## 2026-11-09 08:10 · T-084, tanda 2: pies sin patinar, presencia en PV-03 y PV-05, retratos vivos y poses de Lya
+
+**Versión de partida:** rama `area-animaciones` @ `713fe8d`, copia `D:\Aethelgard_animaciones`, con lo nuevo de sonido
+importado con datos aislados (`D:\REBELUM_diagnostico\importaciones\anim_20261109_001449`). Todo lo comprobado es del
+2026-11-09, con datos aislados; la carpeta real de datos no cambió en ninguna ejecución.
+
+**Commits** en `area-animaciones`, sin publicar:
+- `361495b`: marcha por velocidad (`maga_3d.gd`, `kael_3d.gd`, `garon_3d.gd`, `prototipos/vista3d.gd`);
+- `b29540e`: al pararse, sin un paso de más (`maga_3d.gd`, `vista3d.gd`);
+- `2c1c160`: `zonas3d/grupo_3d.gd` (marcha, esperar y seguir, pasos);
+- `adb3f8c`: `zonas3d/pastos_verdes_3d.gd` (PV-03, PV-05 y pasos de Lya y Garon);
+- `2bbf973`: pruebas (`prueba_anim_pies.gd` nueva, `prueba_anim_pv_fotos.gd`, `lista_pruebas.txt`);
+- `b579b50`: retratos de Lya y sus fuentes de Blender;
+- `f5ab5bf`: `kael.dch`, `lya.dch`, `retrato_vivo.gd`, `prologo.dtl`, `pv_0{2,3,5,6,7}.dtl`, `prueba_prologo.gd`;
+- `65f7a52`: el `.uid` de la prueba nueva;
+- `4ea2eab`: `prueba_anim_pies.gd` comprueba un solo nodo de pasos por personaje;
+- y el de este informe, con la fila nueva de `docs/recursos.md`.
+
+### 1. Pies que patinan (decisión 1 del coordinador)
+
+**La causa, medida** (`pruebas/prueba_anim_pies.gd`, *comprobado ejecutando*): los clips son «en el sitio» y el pie
+apoyado va hacia atrás a una velocidad fija. Medida en Godot, a cámara lenta y a 1,7 m de alto: Kael anda a 1,18 m/s y
+corre a 3,90; Lya, 1,50 y 5,26; Garon, 1,09 y 3,64 (en Blender, tanda 1: 1,20/4,14, 1,51/5,40 y 1,22/3,57). Los tres
+vienen del mismo movimiento: ciclo de 1,03 s al andar y de 0,63 s al correr, y el pie izquierdo apoya al 26 % y al 29 %
+del ciclo. Se andaba a 4,2 m/s con el clip de andar: el pie apoyado resbalaba a unos 3 m/s.
+
+**Qué he hecho:**
+- `maga_3d.gd`, **`marcha(v)`**: elige andar o correr por la velocidad real en el suelo y pone el ritmo que deja el pie
+  quieto (velocidad / velocidad del clip, escalada con el tamaño del personaje). Cambia por la media geométrica de los
+  dos clips, con un margen de ±8 % para que no parpadee, y entra por el mismo punto de la zancada. El ritmo al correr
+  llega hasta ×1,8: a 7,56 m/s Kael pediría ×1,94 (6,2 pasos por segundo, como un molinillo) y con ×1,8 su pie se corre
+  un 7 %. Al arrancar desde quieto, fundido de 0,1 s entrando por la mitad del apoyo. Al pararse, **`parar_marcha()`**
+  congela la zancada mientras se funde con el reposo (antes daba un paso más con el cuerpo quieto, que además sonaba).
+  `andar()` y `correr()` del combate no cambian.
+- `prototipos/vista3d.gd`: Kael anima por su velocidad real. **La velocidad de juego no cambia**: 4,2 m/s con el
+  teclado y los toques cercanos, 7,56 con los lejanos. Decisión mía: **el stick del mando pasa a ser analógico**, como
+  en el mapa y en las zonas 2D (`mapa.gd`, `zona.gd`), del 30 % (1,3 m/s: el clip de andar a ×1,1) al 100 % (4,2). Sin
+  eso no había «stick poco inclinado»: la dirección se normalizaba. Se deshace con una línea (`fuerza`, `STICK_MIN`).
+- No he puesto aceleración a Kael, porque cambiaría cómo responde: el clip de andar sale con el stick suave y en el grupo.
+- `grupo_3d.gd`: Lya y Garon usan `marcha()` y se acercan andando los últimos pasos (`VEL_ACERCARSE` 1,3 m/s; antes 2,52
+  y se paraban en seco). Probé también una aceleración de 10 m/s² para sus arranques y la quité: se quedaban a 4,0 m del
+  de delante (`prueba_grupo3d` falla por encima de 4), frente a 1,8 m sin ella.
+
+**Antes y después** (mismo recorrido, mismas entradas y 30 fps fijos; registros y CSV en
+`D:\REBELUM_diagnostico\animaciones\2026-11-09\medidas\`: `pies_antes.log` con `antes\pies.csv`, y
+`pies_despues_final.log` con `despues\pies.csv`, del código final). Cuánto se corre el pie apoyado (plano) en cada paso:
+
+| | Kael | Lya | Garon |
+|---|---|---|---|
+| Andar con el stick (4,2 m/s) | 52 → 1,2 cm | 61 → 6,5 cm | 31 → 5 cm (5 apoyos: casi siempre apoya de puntillas) |
+| Correr hacia un toque (7,56 m/s) | 35 → 1,3 cm | 20 → 1,9 cm | 41 → 5 cm (un solo apoyo plano) |
+| Arranques y paradas | 66 → 1,3 cm | 55 → 1,9 cm | — |
+| Media vuelta | 66 → 1,0 cm | 85 → 4,7 cm | 55 → 50 cm (un apoyo, girando sobre sí) |
+| Stick poco inclinado | 57 → 1,9 cm (ahora anda a 1,3-2,5 m/s) | 79 → sin apoyos planos | — |
+
+Con el pie de apoyo aunque no esté plano (mediana de su velocidad con el cuerpo avanzando; incluye el rodar del talón a
+la punta, que en un paso bien hecho ronda 0,5-0,8 m/s): andando a 4,2 m/s, Kael pasa de 3,09 a 0,77 m/s, Lya de 2,91 a
+0,98 y Garon de 3,19 a 1,22; corriendo a 7,56, Kael de 3,63 a 0,86, Lya de 3,01 a 0,74 y Garon de 4,23 a 2,49 (su clip
+pediría ×2,1 y con el tope ×1,8 se corre un 13 %; más aún cuando alcanza a Lya a 8,7 m/s).
+
+**Vídeo:** `D:\REBELUM_diagnostico\animaciones\2026-11-09\video\pies_antes_despues.mp4` (35 s; antes a la izquierda y
+después a la derecha, con el zoom más cercano del juego, 9 m). Sus fotogramas están en `video\antes\` y `video\despues\`.
+Gráfica: `laminas\grafica_kael_andar_pie_apoyado_rojo_antes_verde_despues.png` (el pie apoyado de Kael, fotograma a
+fotograma, andando por el camino: en rojo, antes, siempre a unos 3 m/s; en verde, después, casi 0 tras cada apoyo; la
+línea gris es el cuerpo a 4,2 m/s y la rejilla va de 1 en 1 m/s).
+
+### 2. Presencia en PV-03 y PV-05 (decisión 2)
+
+- **PV-03:** al llegar al punto se pone el hito, Lya entra en el grupo y aparece en el camino, 4,5 m detrás de Kael.
+  Kael se para y no hay control durante 1,2 s mientras ella llega corriendo; luego empieza el diálogo. Quitada la unión
+  de `_tras_dialogo` (el sonido «union» sigue al acabar, como con Garon).
+- **PV-05:** Garon espera junto a Tilo desde que se entra, del lado por el que se llega y a 2 m o más de donde se pone
+  quien habla con Tilo. Está en su «Calma», con un cilindro de choque como el de Tilo, y mira a quien habla si la
+  conversación es a menos de 6 m. Al acabar PV-05 se pone en la fila desde ahí.
+- Lya y Garon entran en el grupo de la partida al empezar su escena, a la vez que el hito. Antes entraban al acabarla: si
+  la app se cerraba a media escena, se guardaba el hito sin ellos y ya no se unían.
+- **`grupo_3d.gd` mantiene su API** (para la Garganta 3D): todo lo de antes sigue igual. Lo nuevo es `esperar(nombre,
+  sitio, mirada)`, `seguir(nombre)`, `unir(n, desde, exacto := false)`, `esperando` y `pasos_superficie` (opcional).
+- *Comprobado ejecutando* (`prueba_anim_pv_fotos`, sin ventana y con ventana):
+  - Garon espera al entrar, y Lya está a 1,8 m de Kael antes de su primera frase.
+  - En todas las frases, quien escucha mira a quien habla (0°), salvo Tilo, que es una figura sin animación.
+  - Tras PV-05, el grupo es Lya y Garon (Garon a 2,1 m, en «Calma»).
+  - `prueba_ruta_alpha`: la misión entera, superada.
+
+### 3. Retratos vivos en Pastos Verdes (decisión 3)
+
+`kael.dch` y `lya.dch` tienen un retrato **`vivo_pv`**: el vivo (respira, resalta a quien habla y cambia de pose) con
+la escala y el desplazamiento del «normal». No sale un 12 % más grande ni 70 px más abajo (comprobado en las capturas:
+mismo tamaño y mismo sitio). En los `pv_0{2,3,5,6,7}.dtl`, los `join` pasan de `(normal)` a `(vivo_pv)` y algunas
+frases de Kael y Lya llevan delante una etiqueta de gesto, sin repetir seguidas. **El texto no cambia** (comprobado
+línea a línea). Garon y Tilo no tienen retrato: cuando hablan, los dos retratos quedan atenuados.
+
+### 4. Poses de Lya (decisión 4)
+
+- **De dónde sale su retrato** (*comprobado ejecutando*, Blender 5.2): `lya.png` es un render de su modelo en el clip
+  quieto `_01a19663` (fotograma 20), con los brazos bajados como el gesto «reposo» del juego y la cámara girada +14° y
+  6° hacia abajo. La silueta coincide en un 98,4 % (sin bajar los brazos, como mucho en un 84,8 %). La de Kael va a
+  −13,5°: los dos retratos se miran.
+- **Nuevas**, con su modelo, cámara, luz y un lienzo común (342 × 624; el original, 335 × 620; escala del `.dch`
+  compensada ×624/620):
+  - `lya_reposo`: el reposo original;
+  - `lya_preocupada`: las manos cruzadas sobre el pecho y la cabeza baja y ladeada hacia Kael;
+  - `lya_decidida`: la mano abierta sobre el pecho y la barbilla arriba;
+  - `lya_duda`: los dedos en la barbilla, el otro brazo bajo el codo y la cabeza ladeada.
+- **Sus manos no se cierran:** el modelo solo tiene el pulgar y una cadena «Middle», y los dedos no deforman (probado por
+  los tres ejes). Por eso los gestos son de mano abierta.
+- **Color y nitidez:** el color se ajusta como el de Kael (diferencia 0,089 → 0,042). Su original es además más nítido y
+  contrastado que estos renders (alta frecuencia ×0,56 y contraste ×0,82). La luz no lo arregla: probé 12 intensidades y
+  7 direcciones, y el preset de Kael ya era el mejor. Por eso `finalizar.py` tiene un «afinar» opcional (enfoque de 1 px
+  y contraste local de 6 px, sin halos) que lo deja en ×1,00 y ×0,93. Sin «afinar», los retratos de Kael se rehacen
+  **idénticos byte a byte** (comprobado). Queda una diferencia: el pelo del original tiene sombras algo más oscuras.
+- **Uso** (solo etiquetas):
+  - en el prólogo, sus cinco frases van en reposo (con «inquieta» solo se acerca), reposo, duda, decidida (etiqueta
+    nueva) y preocupada; nunca repite ilustración;
+  - en Pastos Verdes: preocupada (PV-05 y PV-07), decidida (PV-03) y duda (PV-07), más gestos breves sin ilustración
+    (inquieta, firme, sorpresa).
+  - `retrato_vivo.gd`: «decidida» hace el mismo gesto breve que «decidido».
+  - `prueba_prologo` comprueba ahora también sus poses (superada).
+- Hoja: `D:\REBELUM_diagnostico\animaciones\2026-11-09\retratos\lya_original_reposo_diferencia_y_poses.png` (el
+  original, el reposo nuevo, su diferencia y las tres poses; la silueta del reposo coincide con la del original al 99,1 %).
+
+### 5. Pasos de Lya y Garon (decisión 5)
+
+`grupo_3d.gd` les pone `Sonido.pasos_3d(nodo, pasos_superficie)` al crearlos: uno por personaje, también a Garon
+mientras espera (no suena porque no anda). `pastos_verdes_3d.gd` le da `suelo_de_pasos`, el mismo suelo que a Kael:
+piedra a menos de 1,15 m del sendero y hierba fuera. *Comprobado ejecutando* (`prueba_anim_pies`): Kael, Lya y Garon
+llevan un solo nodo «Pasos» cada uno; Kael no lleva dos. En `prueba_efectos` (superada), Kael da ahora 13 pasos en 2,6 s
+por el camino en vez de 8: son los apoyos que se ven (antes resbalaba en vez de pisar).
+
+### 6. Pruebas
+
+- Sueltas, todas superadas:
+  - `prueba_grupo3d` (Lya-Kael hasta 1,80 m, como antes) y `prueba_grupo3d_rutas` (hasta 3,45 m, como antes);
+  - `prueba_ruta_alpha`, `prueba_efectos` y `prueba_prologo`;
+  - `prueba_anim_pv_fotos`;
+  - `prueba_anim_pies limite=1.0` (nueva y automática: falla si vuelven a patinar).
+- **Batería completa** (2026-11-09 08:09-08:20, con el código final de los commits): **40 superadas, 0 fallidas**, 23
+  manuales (con ventana o a mano: no se pasan en lote) y 0 no seguras. La partida y la carpeta real de datos, sin
+  cambios. Había 13 Godot de otras copias (Garganta 3D y narrativa), anotados por el ejecutor. «Proyecto: cambiado» se
+  debe a la fila de `docs/recursos.md` que añadí durante la pasada y a un `__pycache__` de mis scripts de Blender en
+  `fuentes_blender\` (borrado). Resumen:
+  `D:\REBELUM_diagnostico\animaciones\2026-11-09\bateria\2026-11-09_080900\resumen.md`.
+- Después de la batería, `prueba_anim_pies` comprueba también los nodos de pasos (`pies_despues_final.log`, superada).
+- Giros, paradas y el puente están en el recorrido de `prueba_anim_pies`. La reentrada, la carga y la vuelta del combate,
+  en las pruebas de la batería (`prueba_grupo3d`, `prueba_zona3d`, `prueba_cofre3d`, `prueba_centinela`): `marcha()` no
+  guarda nada de una escena a otra, y al volver cada uno empieza en su reposo.
+
+### 7. Evidencias
+
+En `D:\REBELUM_diagnostico\animaciones\2026-11-09\`:
+- `video\pies_antes_despues.mp4` y `medidas\`, con los registros y CSV de antes y después;
+- `laminas\grafica_kael_andar_pie_apoyado_rojo_antes_verde_despues.png` y `laminas\pies_fotogramas_antes_izq_despues_dcha.png`
+  (los mismos fotogramas del recorrido, antes y después);
+- `pastos_verdes\despues\`: cada frase de PV-02, PV-03 y PV-05, la llegada de Lya, Garon esperando y uniéndose, y
+  primeros planos. Las de antes son las de la tanda 1, en `2026-11-08\pastos_verdes\despues\`;
+- `prologo\despues\`: cada frase al salir (`_a`) y al final de la lectura (`_b`), el reabierto deprisa, la vuelta al
+  mapa y los fotogramas para el vídeo;
+- `laminas\pastos_verdes_antes_izq_despues_dcha.png` y `laminas\prologo_lya_frases_1_3_5_7_9_antes_izq_despues_dcha.png`;
+- `retratos\`: la hoja de Lya y `lya_afinado_prueba.png` (el original, sin afinar y afinado);
+- `ejecuciones\` y `bateria\`.
+
+### 8. Incidente: la carpeta temporal compartida
+
+A las 07:19, el especialista de gráficos escribió en la raíz de la carpeta temporal compartida un `godot_aislado.ps1`
+que pisó el mío. Mis dos órdenes de las 07:19:58 y las 07:24:59 (`prueba_grupo3d` y `prueba_grupo3d_rutas`) lanzaron su
+ejecutor y abrieron el juego sobre `D:\Aethelgard_graficos`, con datos aislados. Sus registros están en
+`D:\REBELUM_diagnostico\mapamundi\2026-11-09\registros\_071958` y `_072459`.
+- Lo vi en la salida y cerré el segundo Godot (PID 24304 y 6808, hijos de mi orden).
+- Pasé mis herramientas a `scratchpad\animaciones\`: `anim_godot.ps1` apunta a `D:\Aethelgard_animaciones`.
+- Borré mi copia de la raíz y repetí las dos pruebas, a las 07:29 y a las 07:37, sin fallos.
+
+### 9. Límites
+
+- **Sin probar en el Redmi** (no compilo APK) y **sin medir rendimiento** (había otros trabajando): `marcha()` hace unas
+  cuentas por fotograma y personaje; los cuatro retratos nuevos, de 342 × 624, van comprimidos como los demás.
+- **Giros rápidos:** el cuerpo gira entero en 0,12 s y el pie apoyado barre un arco (en el eslalon, Lya y Garon llegan a
+  unos 3 m/s en esos fotogramas). Garon corriendo a 7,56-8,7 m/s se corre un 13-30 % (tope ×1,8).
+- **El stick analógico** cambia el tacto del mando (no el del teclado ni el de los toques). Si no gusta, se quita.
+- **Pasos del grupo:** suenan como los de Kael, con el mismo volumen y sin posición. Ver §10.
+- **Lya:** su pelo sale algo más claro que en el original, y sus manos no se pueden cerrar.
+- **La aparición de Lya** a 4,5 m sigue viéndose: la cámara no gira y a 20 m cubre unos 12 m a cada lado. Para que
+  entrara desde fuera de la pantalla, tendría que aparecer a 13 m o más y habría que esperar unos 2,5 s.
+- `pruebas/prueba_boton_prologo.gd.uid` (de T-081, no mío) queda sin confirmar.
+
+### 10. Siguiente paso y cambios que necesito en archivos de otros
+
+- **Sonido (`sonido.gd`, `Pasos3D`):** una opción de volumen por cuerpo, o pasos 3D con posición, para que los de Lya y
+  Garon suenen algo por debajo de los de Kael. Hoy los tres comparten los «paso_*» (2 voces y 0,09 s entre dos iguales).
+- **Garganta 3D:** puede usar `grupo_3d.gd` igual que antes. Si quiere pasos para el grupo, que le dé `pasos_superficie`
+  antes de `preparar()`; `esperar()` y `seguir()` sirven para quien espera en la zona.
+- **Decidir:** el stick analógico (§1) y si Lya debe aparecer más lejos en PV-03 (§9).
+
+## 2026-11-09 13:25 · T-097, primer paso: Zarzalín preparado para el combate (modelo, clips y escena)
+
+**Versión de partida:** rama `area-animaciones` @ `129b517` (igual que `integracion-experimental`), copia
+`D:\Aethelgard_animaciones`. Todo lo comprobado es del 2026-11-09, entre las 12:20 y las 13:25, con datos aislados
+(importaciones en `D:\REBELUM_diagnostico\importaciones\animaciones_zarzalin_*`); la carpeta real de datos no cambió en
+ninguna ejecución. **No toco `combate.gd`:** el enganche lo hace el especialista de combate.
+
+**Commits** en `area-animaciones`, sin publicar:
+- `399f5b3`: `enemigos/zarzalin/` (el GLB completo con sus texturas, la escena, su guion y el guion de Blender);
+- `2821e99`: las pruebas (`prueba_zarzalin_modelo.gd`, `prueba_zarzalin_fotos.gd`, sus `.uid` y `lista_pruebas.txt`);
+- `2be546e`: la fila de `docs/recursos.md`;
+- y el de este informe.
+
+### 1. El modelo del usuario, revisado (*comprobado ejecutando*, Godot 4.7.2 y Blender 5.2.3)
+
+- **`zarzalin.glb`** (6,3 MB, SHA-256 `d76d92bd08c19e06…`): una malla de 8.027 triángulos (8.954 vértices en glTF), un
+  material y un esqueleto de **12 huesos** (root, body, head, tail y dos por pata). Mide **0,92 m de alto** (el lomo),
+  1,35 m de largo y 0,47 m de ancho, con los pies en y = 0. **Mira a +Z** (la cámara del combate está en +Z): con el
+  giro de los enemigos 3D (`FRENTE_ENEMIGO`, 53°) queda de 3/4 mirando a los héroes, como Grimfang.
+- **Material:** `StandardMaterial3D` (vale para Compatibility): color, normales y una textura de rugosidad (canal G,
+  media 0,74) y metal (canal B, media 0,002: no es metálico), a doble cara. Nada que no exista en GLES3.
+- **Texturas 2K** (2048 × 2048, JPG de 2,5, 1,5 y 1,7 MB). En la GPU:
+  - como las importa Godot sin ventana (sin comprimir, RGB8 con mipmaps): **48 MB** las tres, 16 MB cada una;
+  - **comprimidas para la GPU** (`compress/mode=2`; las normales, con `normal_map=1`): **10,7 MB** (color 2,7, rugosidad
+    y metal 2,7, normales 5,3; S3TC/RGTC en el PC y ETC2 en Android, del mismo tamaño). Es lo que hace el editor al
+    detectar una textura 3D; aquí queda fijado en sus `.import`.
+  - **Antes y después**, en el mismo fotograma, misma pose y luz del combate: diferencia media 2,5/255, máxima 24/255;
+    el 0,03 % de los píxeles del jabalí cambia más de 16/255. No se distingue a simple vista (lámina en § 6).
+  - No hago una variante de 1K: comprimidas ocupan 10,7 MB. Si el Redmi lo pide, se mide antes.
+- **Clips:** reposo (1,1 s), embestida_espinosa (1,3), colmillo_lateral (1,07) y recibir_golpe (0,63), con todas las
+  claves muestreadas a 30 fps. Ninguno en bucle (glTF no lo guarda).
+- **Hallazgo 1, las anclas iban un fotograma tarde** (*comprobado*: tiempos de las claves del GLB). El exportador
+  escribió cada clip con el tiempo del fotograma de Blender (fotograma 1 = 1/30 s), así que el impacto de la embestida
+  (fotograma 18) caía a 0,600 s y el del colmillo (fotograma 15) a 0,500 s, no a los 0,57 y 0,47 de la ficha, que
+  cuentan desde el fotograma 1. El reposo, además, repetía un fotograma al dar la vuelta. **Corregido en el origen:** el
+  GLB nuevo se exporta con `export_anim_slide_to_zero`; el impacto queda a **0,567 s** y **0,467 s**, y el reposo dura
+  1,067 s con el primer y el último fotograma iguales.
+- **Hallazgo 2, la embestida no baja el hocico** (*comprobado*, cinemática del clip en Godot). En su preparación
+  (fotogramas 1-13) retrocede 0,22 m y se agacha 0,07 m, pero la cabeza **sube** 12° (de −4,2° a +7,8°): el hocico solo
+  baja 5 cm con el cuerpo. Para el aviso que pide la ficha («anuncia con dos golpes de pezuña») he hecho un clip propio.
+- **Avance dentro del clip:** en el impacto de la embestida, el hocico está **0,635 m** por delante de su reposo, y al
+  aterrizar (0,73 s) llega a 0,87 m: sigue 0,24 m más allá del golpe y vuelve solo a su sitio al final del clip. El
+  colmillo lateral apenas avanza el hocico (1 cm) y lo barre 0,40 m hacia su lado.
+
+### 2. Clips nuevos (Blender 5.2.3, sobre una copia del `.blend`)
+
+`enemigos/zarzalin/fuentes_blender/crear_clips.py` (con `.gdignore`) abre una copia, crea las acciones y exporta el
+GLB. **No toca los cuatro clips del usuario** (las poses de sus claves son las mismas; las texturas del GLB nuevo son
+idénticas byte a byte a las suyas). Cada pose se escribe como giros sobre una pose base (el reposo o el fotograma 13 de
+la embestida) y la raíz se apoya sola en el suelo con la malla deformada: los pies no se hunden ni flotan. **Se rehace
+idéntico:** desde una copia nueva del `.blend` del usuario sale el mismo GLB byte a byte (SHA-256 `4245e115…`,
+*comprobado ejecutando*); el `.blend` del usuario sigue intacto (`785fc3b3…`).
+
+| Clip | Duración | Qué hace | Anclas |
+|---|---|---|---|
+| `derrota` | 1,167 s | Encaje del golpe, dobla las patas delanteras y cae sobre su costado izquierdo (patas y vientre hacia la cámara del combate), rebota y se queda quieto | En el suelo a 0,6 s; el combate lo desvanece a los 0,9 s, como a los demás enemigos 3D |
+| `entrada` | 1,167 s | Salta a su sitio desde 0,85 m por detrás, aterriza, sacude la cabeza, da un pisotón y acaba en la pose del reposo | Aterriza a 0,47 s |
+| `aviso_embestida` | 0,967 s | Retrocede, **baja el hocico 22° más que en la embestida** (la pose de carga) y da dos golpes con la pezuña delantera derecha | Hocico abajo 0,267 s; pezuña 0,467 y 0,733 s |
+| `aviso_espera` | 1,0 s, bucle | La pose de carga respirando hasta su turno | — |
+| `correr` | 0,5 s, bucle | Galope en el sitio, para acercarse al objetivo y volver | — |
+
+La pose de carga es la del fotograma 13 de la embestida con el hocico bajo: desde ella la embestida sigue en su
+segundo 0,4 (una mezcla de 0,1 s) sin repetir la preparación. Hojas de poses en § 6.
+
+### 3. La escena y su API (para combate)
+
+`enemigos/zarzalin/zarzalin_3d.tscn` (Node3D con `zarzalin_3d.gd` y el GLB dentro). También se puede crear como
+Grimfang: `load("res://enemigos/zarzalin/zarzalin_3d.gd").new()` con `ruta_modelo` (lo comprueba la prueba).
+- **Lo que el combate ya llama a un enemigo 3D** (mismos nombres que `maga_3d.gd`): `reposo()`, `correr()` y `andar()`
+  (galope), `herida()` (= `recibir_golpe()`), `morir()` (= `derrota()`), `cansada(si)` (solo hace más lento el reposo:
+  los ataques no cambian de tiempo), `revivir()`, `victoria()`, `mirar(dir, dur)`, `mirar_frente(dur)`,
+  `punto_magia()` (la punta del hocico), `ALTURA` (0,92, para Érebo) y `anim`, `skel`, `pivote`, `caida`, `ajuste`.
+- **Lo nuevo:**
+  - `atacar(ataque: String, al_impactar := Callable()) -> void` (con `await`): `"embestida_espinosa"` o
+    `"colmillo_lateral"`. En el ancla emite `impacto(ataque)` y llama a `al_impactar` **una sola vez** (también si
+    algo corta el clip antes); vuelve al reposo y emite `ataque_terminado(ataque)`. Si está derrotado, no hace nada.
+    Un golpe recibido a mitad no lo corta.
+  - `avisar(ataque := "embestida_espinosa") -> void` (con `await` hasta acabar el aviso): emite `aviso(ataque)` al bajar
+    el hocico (0,267 s) y `pezuna(1)` y `pezuna(2)` en cada golpe; luego queda en `aviso_espera`. Un golpe recibido
+    en carga reacciona y vuelve a la carga. `reposo()` la anula.
+  - `recibir_golpe()`, `derrota()` (emite `clip_terminado("derrota")` y se queda en el suelo) y `entrada()` (emite
+    `clip_terminado("entrada")` y queda en reposo; empieza sin mezcla, 0,85 m por detrás).
+  - `alcance(ataque) -> float` (0,635 m la embestida; 0,011 el colmillo), `tiempo_impacto(ataque) -> float`
+    (0,467, 0,567 o, desde la carga, 0,167), `duracion(clip)` y `hocico() -> Vector3`.
+  - Constantes: `ATAQUES` (anclas), `HOCICO_BAJO`, `GOLPES_PEZUNA`, `CENTRO` (0,5 m: el centro del cuerpo), `CLIPS` y
+    `BUCLES` (los bucles los pone el guion: glTF no los trae y el `_subresources` del `.import` de Godot 4.7 crece a
+    6.216 líneas, así que no lo uso).
+- **Precisión de las anclas:** el guion se procesa después del AnimationPlayer (`process_priority = 10`) y dispara cada
+  ancla en el fotograma más cercano a su segundo del clip (medio fotograma como mucho).
+
+### 4. Encuadre en la cámara del combate y propuesta para `combate.gd`
+
+- Proyectando la malla de cada fotograma de cada clip con la cámara del combate (ortográfica, 12°), con el jabalí
+  girado al frente y hacia los héroes, todo cabe en x ∈ [−1,15, +1,58] m e y ∈ [−0,22, +1,16] m (lo más ancho: la
+  entrada por la izquierda y la embestida por la derecha). De ahí sale una ventana 3D de 1,5 m de alto mirando a
+  0,48 m del suelo.
+- **Escala:** a su tamaño (0,92 m) y con los 280 px/m de Grimfang, su lomo queda a la altura del pecho del goblin y
+  por debajo de la cadera de Kael. **Propongo ×1,25**: se lee mejor como enemigo y sigue por debajo de los héroes
+  (lámina en § 6). Cuesta más píxeles: 347.000 por fotograma a 0,75 de resolución, frente a 223.000 de Grimfang y
+  315.000 de Kael. La alternativa barata es `"esc": 0.75` con la ventana de ×1,0 (mismos píxeles que Grimfang, algo
+  más blanda). Lo decide el usuario o el coordinador.
+- Entrada propuesta para `MODELOS` (×1,25):
+  `"zarzalin": {"tipo": "3d", "esc": 0.6, "script": "res://enemigos/zarzalin/zarzalin_3d.gd", "gestos": "res://gestos_3d.gd", "rutas": ["res://enemigos/zarzalin/zarzalin_completo.glb"], "vp": Vector2i(1175, 525), "alto_vista": 1.5, "centro_y": 0.48, "barra_y": 40.0}`
+  (a ×1,0: `"vp": Vector2i(940, 420)` y `"barra_y": 32.0`).
+- **Lo que combate tiene que tener en cuenta:**
+  - `_crear_rig_3d` pone el centro del cuerpo a 0,85 m (`centro_ofs`), pensado para personas: para Zarzalín es
+    **0,5 m** (`CENTRO`), o los números y los destellos salen por encima del lomo.
+  - **Colocación para atacar** (en píxeles de la escena, con `px_m = vp.y / alto_vista * esc`, 210 a ×1,25): los pies
+    en `centro_objetivo.x − 30 − 0,632 · px_m − alcance(ataque) · px_m` y a la altura de los pies del objetivo. Así los
+    colmillos llegan al frente del héroe en el impacto. **Durante el clip no se mueve el rig**: el clip ya lleva el
+    avance y vuelve a su sitio.
+  - El acercamiento y la vuelta, con `mirar(ida)` y `correr()` (el galope) y, al llegar a casa, `mirar_frente()` y
+    `reposo()`, como hoy en `_anim_ataque_3d`.
+  - El ataque cargado de la ficha: en su turno, `await p.avisar()` y el indicador con la señal `aviso`; en su
+    siguiente turno, `await p.atacar("embestida_espinosa", al_golpear)` (el impacto llega 0,13-0,17 s después:
+    entra por la carga). El turno de recuperación es lógica del combate.
+  - `morir()` ya lo llama `_restablecer_color`: la derrota se ve entera antes del desvanecido (en el suelo a 0,6 s).
+  - `entrada()` al empezar el combate es opcional; si se usa, conviene un fundido corto del rig en los primeros
+    0,15 s, porque aparece 0,85 m por detrás de su sitio.
+  - La huida (`_huir`) solo desliza y desvanece el rig: si se quiere, antes `mirar(Vector3(-1, 0, 0.1))` y `correr()`.
+  - La huella del combate no cambia (no he tocado `combate.gd`).
+
+### 5. Pruebas
+
+- **Nueva `prueba_zarzalin_modelo`** (automática, en `lista_pruebas.txt`): los 9 clips; en la escena, en bucle solo
+  reposo, aviso_espera y correr; cada clip gira los 12 huesos (con `remove_immutable_tracks=false`, ninguna pose se
+  queda de un clip anterior: tras la derrota, `revivir()` vuelve a 0°); ataques, golpe y entrada acaban en la pose del
+  reposo y los bucles cierran sin salto (0,00°); texturas 2K comprimidas; impacto una vez por ataque y en su ancla con
+  el clip a 0,466 s (colmillo, ancla 0,467) y 0,567 s (embestida, desde el reposo y desde la carga); aviso a 0,267 s y
+  pezuña a 0,467 y 0,733 s; pausa de 1 s a mitad (no golpea en pausa; luego, un golpe a 0,467); un golpe recibido a
+  mitad no corta el ataque; derrota que no ataca ni avisa; entrada; liberado a mitad de un ataque, sin errores; creado
+  con `.new()`.
+- **Nueva `prueba_zarzalin_fotos`** (con ventana, `-Manual`): lo mismo y las capturas desde el combate de verdad
+  (`combate.tscn` de Pastos Verdes con los grupos 0 y 9; Zarzalín sustituye a un Grimfang en su ventana 3D con el
+  encuadre propuesto, el combate no avanza turnos y la prueba llama a sus efectos, `_golpe_visual` y
+  `_restablecer_color`, como lo haría `combate.gd`). Con `tam=1.25`, más grande.
+- Con el ejecutor y el código de los commits: `D:\REBELUM_diagnostico\pruebas\2026-11-09_131921\resumen.md`
+  (prueba_zarzalin_modelo **SUPERADA**, prueba_zarzalin_fotos **MANUAL** con 29 capturas, revisadas; código de salida
+  0; datos reales y proyecto sin cambios; había 4 Godot de otras copias).
+- **Incidente:** en la pasada de las 13:13 (`2026-11-09_131323`), `prueba_zarzalin_fotos` se quedó esperando a que la
+  ventana dibujara y agotó los 300 s, sin capturas. Ahora cada captura espera como mucho 10 fotogramas y avisa si la
+  ventana no dibuja; la pasada siguiente, la de arriba, terminó en 19 s.
+- Comprobación de que no rompo nada: `prueba_escenas`, `prueba_huir` y **`prueba_combate_huella`** SUPERADAS
+  (`D:\REBELUM_diagnostico\pruebas\2026-11-09_130917\resumen.md`; «proyecto: CAMBIADO» es la fila de `recursos.md`, que
+  escribí durante la pasada).
+
+### 6. Evidencias
+
+En `D:\REBELUM_diagnostico\bestiario\2026-11-09\zarzalin\`:
+- `capturas\` (×1,0) y `capturas_tam_1_25\` (×1,25), desde la cámara del combate: `10_reposo`, `20-24_entrada_*`,
+  `30_aviso_hocico_bajo`, `31_aviso_pata_alzada`, `32_aviso_golpe_pezuna`, `33_aviso_espera_carga`,
+  `40_embestida_galope`, `41_embestida_empuje`, **`42_embestida_impacto`** (Kael en rojo con su número),
+  `43_embestida_aterriza`, `50_colmillo_gira`, **`51_colmillo_impacto`**, `52_vuelve_galopando`, `60_recibir_golpe`,
+  `70-72_derrota_*`, y `00/01/02` con Grimfang antes y Zarzalín junto a él;
+- `capturas\80_texturas_jpg_sin_comprimir`, `81_texturas_comprimidas_gpu` y `82_diferencia_x8`;
+- `capturas_sin_comprimir\`: la primera pasada, con las texturas sin comprimir;
+- `laminas\`: `secuencia_combate_tam_1_25.png` (la secuencia entera), `escala_1_0_arriba_1_25_abajo.png`,
+  `texturas_sin_comprimir_izq_comprimidas_centro_diferencia_x8_dcha.png`, `originales_poses.png` y
+  `originales_embestida_cerca.png` (los clips del usuario), y `nuevos_v1_*.png` (los clips nuevos, en Blender);
+- `registros\`: la inspección del GLB original en Godot, el encuadre medido en Blender y las salidas de las pruebas;
+- `referencia_video\`: un fotograma por segundo del MP4 del usuario;
+- `blender\zarzalin_completo.blend` (la copia con los clips nuevos; fuera del repositorio, D-075) y
+  `exportado\zarzalin_completo.glb`.
+
+### 7. Límites
+
+- **Sin enganchar al combate** (lo hace combate) y **sin probar en el Redmi** ni medir rendimiento (había otros
+  trabajando y no compilo APK). Las cifras de memoria son de los `.ctex` importados.
+- **Escala:** ×1,25 es mi propuesta, no una decisión.
+- **El galope** es un ciclo sencillo en el sitio y no he medido si patina en el acercamiento de 0,55 s del combate.
+- **La embestida** aterriza 0,24 m más allá del punto del golpe: con la colocación propuesta, la cabeza pasa por
+  delante del héroe al aterrizar (se ve como una embestida, pero solapa).
+- **La entrada** empieza visible, 0,85 m por detrás: la ventana 3D no deja entrar desde fuera de la pantalla.
+- El sonido (tierra, ramas y cuero, según la ficha) no está: las señales `pezuna` e `impacto` son sus anclas.
+- `aviso_espera` y `correr` no se piden en la tarea: los añado porque el flujo real del combate los necesita (la espera
+  hasta su turno y el acercamiento con `correr()`).
+
+### 8. Siguiente paso y cambios que necesito en archivos de otros
+
+- **Coordinador, `docs/versiones/licencias_pendientes.txt`:** añadir
+  `enemigos/zarzalin/ | Zarzalín, bestiario 01 (Meshy + Blender, D-075) | Plan de Meshy sin confirmar`, para que
+  `compilar_apk_experimental.ps1` marque como «NO DISTRIBUIR» un APK que lo lleve.
+- **Combate, `combate.gd`:** el enganche de § 4 (entradas de `MODELOS`, `ENEMIGOS`, `ANIM` y un grupo de Pastos Verdes;
+  la rama de `_animar_golpe` con `atacar()`; el aviso con un turno de antelación; el centro a 0,5 m) y su prueba de
+  combate (aviso, daño único, defensa, victoria, huida, regreso y guardado).
+- **Sonido, `sonido.gd`:** la voz y los golpes de Zarzalín (`clave` "zarzalin") y la tierra de la pezuña con la señal
+  `pezuna`.
+- **Para decidir:** la escala (×1,0 o ×1,25). Y las texturas 2K de Grimfang, Garon y Érebo siguen **sin comprimir**
+  (`compress/mode=0`, 16 MB cada una en la GPU; Kael y Lya sí lo están): con la misma comparación de antes y después,
+  bajarían a la cuarta parte.
+- **Aviso de la integración:** al importar, Godot crea 43 `.uid` de Oakhaven, de la Garganta 3D y de algunas pruebas, y
+  añade los diálogos de Oakhaven al directorio de Dialogic de `project.godot`. No son míos: no los he confirmado y he
+  devuelto `project.godot` a como estaba.

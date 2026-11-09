@@ -54,6 +54,8 @@ func _init() -> void:
 	heroe = "Kael"
 	ruta_modelo = "res://kael.fbx"
 	rutas_extra = ["res://Meshy_AI_Azure_Starblade_biped_Meshy_Merged_Animations.fbx", "res://kael.glb"]
+	vel_andar = 1.18                            # sus clips sin patinar (marcha() de maga_3d.gd; prueba_anim_pies.gd)
+	vel_correr = 3.90
 
 
 func _ready() -> void:

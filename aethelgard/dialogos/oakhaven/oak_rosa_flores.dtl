@@ -1,0 +1,5 @@
+join rosa (normal) center
+rosa: ¿Flores para las mesas del Cuervo? ¡Claro! Las más alegres que tengo.
+rosa: Que no se las coma nadie. Pasó una vez. Fue Pip.
+[signal arg="oak:favor_flores"]
+leave rosa

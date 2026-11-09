@@ -61,6 +61,11 @@ const LUZ_RELLENO := Color("7FA0D8")
 const TAM_ESCENA := 0.74
 const PIVOTE_ESCENA := Vector2(640, 505)
 
+# Ampliaciones de T-091 y T-092 (docs/diseno/combate_enganches.md): las artes van por su propia ruta (_elegir_arte y
+# _lanzar_arte) y no tocan MAGIAS ni NIVELES_MAGIA; los accesorios solo suman sus efectos (equipo_extra.gd).
+const Artes := preload("res://artes.gd")             # familias nuevas de T-091 (Alba, Escarcha y Lumbre)
+const Extra := preload("res://equipo_extra.gd")       # accesorios y armas especiales de T-092 (C1)
+
 # Magias: cambia aquí el coste, el daño y los colores.
 const MAGIAS := {
 	# colores de los efectos según la Biblia de arte
@@ -316,10 +321,18 @@ var res_efectos := 1.0                   # resolución de las ventanas 3D de las
 var res_personajes := 0.75               # resolución de las ventanas 3D de Kael y Lya
 var max_efectos_3d := 8                  # efectos 3D a la vez como mucho
 var efectos_3d_activos := 0
+var ultimo_esquivado := false            # el último golpe físico lo esquivó un héroe (Pluma de arpía, T-092)
 
 
 func _ready() -> void:
-	randomize()
+	var semilla := -1                              # pruebas: -- semilla=N (C0); en el juego, al azar como siempre
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("semilla="):
+			semilla = int(a.substr(8))
+	if semilla >= 0:
+		seed(semilla)
+	else:
+		randomize()
 	# modo móvil: en Android (o probando con -- movil) los efectos son más ligeros
 	movil = OS.has_feature("mobile") or "movil" in OS.get_cmdline_user_args()
 	if movil:
@@ -365,6 +378,8 @@ func _ready() -> void:
 			h["magia_extra"] = e["magia_extra"]
 			h["mult_fisico"] = e["mult_fisico"]
 			h["mult_magia"] = e["mult_magia"]
+			h["efectos"] = Extra.efectos_de(h["nombre"])           # accesorios (T-092); el equipo de hoy no da nada
+			h["atb"] = Extra.atb_inicial(h["efectos"], ATB_MAX)     # Farol de peregrino; sin él, 0 como siempre
 	_elegir_enemigos()
 	_crear_texturas()
 	_crear_interfaz()
@@ -404,6 +419,7 @@ func _elegir_enemigos() -> void:
 	for g in grupo:
 		var e: Dictionary = ENEMIGOS[g[0]].duplicate(true)
 		e["hero"] = false
+		e["clave"] = g[0]                              # qué enemigo es: su voz (sonido.gd, T-083)
 		var mod: Dictionary = MODELOS[e["modelo"]]
 		if mod.get("tipo", "") == "3d" and _ruta_3d(mod) == "" and mod.has("respaldo"):   # falta el 3D: su dibujo 2D
 			push_warning("Falta el modelo 3D de %s: se usa su respaldo 2D" % e["nombre"])
@@ -1016,6 +1032,7 @@ func _anim_fisico_imagen(o: Dictionary, obj: Dictionary, impacto: Callable) -> v
 	t1.tween_property(rig, "position", base + Vector2(dx, dy), 0.6 if poses else 0.45).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	t1.parallel().tween_property(cuerpo, "rotation_degrees", 6.0 * k, 0.45)
 	await t1.finished
+	Sonido.voz(o, "ataque")                          # su voz al alzar el arma (sonido.gd, T-083)
 	_pose_img(o, "prep")                             # alza el arma
 	var t2 := create_tween()
 	t2.tween_property(cuerpo, "rotation_degrees", -14.0 * k, 0.25).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
@@ -1186,6 +1203,7 @@ func _siguiente_turno() -> void:
 		if f.get("defendiendo", false):          # la defensa dura hasta su siguiente turno
 			f["defendiendo"] = false
 			f["rig"].modulate = Color(1, 1, 1)
+		_tic_estados_heroe(f)                    # Segundo Aliento y Cinta de Lumi (sin ellos, nada)
 		_mostrar_menu()
 	else:
 		estado = "enemigo"
@@ -1253,9 +1271,11 @@ func _turno_enemigo(f: Dictionary) -> void:
 		var presa := _elegir_objetivo("cobarde", vivos)
 		var mordisco: int = int(f["atk"] * 1.6 * mult) + randi_range(-2, 3)
 		registro.text = "¡%s devora a %s!" % [f["nombre"], presa["nombre"]]
+		f["devora"] = true                           # su mordisco suena al morder (sonido.gd, T-083)
 		await _animar_golpe(f, presa, mordisco, "")
+		f["devora"] = false
 		var cura: int = mini(int(mordisco * 0.6), f["hp_max"] - f["hp"])
-		if cura > 0 and f["hp"] > 0:
+		if cura > 0 and f["hp"] > 0 and not ultimo_esquivado:   # si la presa lo esquiva (pluma), no se cura
 			f["hp"] += cura
 			_numero_flotante(f, "+%d" % cura, C_CURA)
 			_actualizar()
@@ -1347,6 +1367,7 @@ func _congelar(f: Dictionary) -> void:
 		f["congel_quitado"] = quitar
 		f["hp_max"] = maxi(1, f["hp_max"] - quitar)
 		f["hp"] = mini(f["hp"], f["hp_max"])
+		Sonido.efecto("congelar")                    # el hielo cruje al congelarse (sonido.gd, T-083)
 		_numero_flotante(f, "❄ Congelado", C_HIELO, 32)
 		_particulas(_centro(f), Color(0.85, 0.97, 1.0, 1.0), Color(0.4, 0.75, 1.0, 0.0), 30, 0.8, Vector2(40, 140),
 			60.0, Vector2(0, -1), 180.0, Vector2(0, 60), 0.07)
@@ -1688,6 +1709,7 @@ func _tecnica_garon(n: String, obj: Dictionary) -> void:
 		var impacto := func():
 			Sonido.golpe(true)                       # el tajo de Juicio (sonido.gd)
 			_quitar_pv(obj, d)
+			Sonido.recibe(obj)                       # y su voz: herido o caída (sonido.gd)
 			_destello(_centro(obj), menu.COLOR_HEROE.get("Garon", Color.WHITE).lightened(0.4), 1.8)
 			_golpe_visual(obj, d, _efecto_embuir(quien, obj))
 		if _p3d(quien) != null and _p3d(quien).has_method("atacar_juicio"):
@@ -1703,6 +1725,7 @@ func _tecnica_garon(n: String, obj: Dictionary) -> void:
 					continue
 				var d := _dano_fisico(quien, t["mult"])
 				_quitar_pv(e, d)
+				Sonido.recibe(e)                     # su voz (sonido.gd: una por familia y dos a la vez como mucho)
 				_golpe_visual(e, d, _efecto_embuir(quien, e))
 			_temblor(6.0)
 		var centro: Dictionary = objs[0]               # se planta delante del enemigo del medio
@@ -1731,41 +1754,52 @@ func _hechizos(f: Dictionary) -> Array:
 			n = gr.nivel_magia(f["nombre"], k)
 		for i in n:
 			r.append([k, i + 1, NIVELES_MAGIA[k][i]])
-	return r
+	return r + Artes.hechizos(f["nombre"])          # y las artes que ya puede usar (artes.gd; Garon, ninguna)
 
 
 # Menú de magia: arriba las pestañas de nivel (I, II, III; solo las que sabe) y debajo las magias de
 # ese nivel con el icono de su elemento, su nombre y su coste (con el modo pruebas, «PM ∞»).
 # Debajo, una línea explica la magia elegida.
+# Detrás de I · II · III, una pestaña con icono por cada familia nueva que sabe (artes.gd: Alba, Lumbre...), con sus
+# niveles en filas. Sin artes, las pestañas, las filas y su orden son exactamente los de antes.
 const NIVELES_ROMANOS := ["I", "II", "III"]
 
 
 func _menu_magia(nivel := 0) -> void:
 	estado = "magia"
 	var por_nivel := [[], [], []]
+	var familias: Array = []                      # artes (artes.gd), en el orden de sus pestañas
+	var sabe := {}                                # familia → nivel que puede usar
 	for h in _hechizos(actor):
-		por_nivel[h[1] - 1].append(h)
+		if Artes.es_arte(h[0]):
+			if not h[0] in familias:
+				familias.append(h[0])
+			sabe[h[0]] = h[1]
+		else:
+			por_nivel[h[1] - 1].append(h)
 	if nivel == 0:
 		nivel = magia_nivel_menu.get(actor["nombre"], 1)
-	if por_nivel[nivel - 1].is_empty():
-		nivel = 1
-	magia_nivel_menu[actor["nombre"]] = nivel
+	var p: Dictionary = Artes.pestanas_magia(por_nivel.map(func(x): return not x.is_empty()), familias, nivel)
+	nivel = p["valor"]
+	magia_nivel_menu[actor["nombre"]] = nivel     # 1-3: nivel; 4 y 5: primera y segunda familia
 	var pestanas: Array = []
-	var activa := 0
-	for n in 3:
-		if not por_nivel[n].is_empty():
-			if n + 1 == nivel:
-				activa = pestanas.size()
-			pestanas.append({"texto": NIVELES_ROMANOS[n], "accion": _menu_magia.bind(n + 1)})
-	if pestanas.size() < 2:
-		pestanas = []
+	for t in p["pestanas"]:
+		var tab: Dictionary = t.duplicate()
+		tab["accion"] = _menu_magia.bind(t["valor"])
+		pestanas.append(tab)
 	var items: Array = []
-	for h in por_nivel[nivel - 1]:
-		var d: Dictionary = h[2]
-		items.append({"texto": d["nombre"], "accion": _elegir_hechizo.bind(h[0], h[1]), "icono": h[0],
-			"derecha": "PM ∞" if MODO_PRUEBAS else "%d PM" % d["coste"], "apagado": not _puede_pagar(d["coste"]),
-			"desc": _desc_magia(h[0], d)})
-	menu.submenu(items, pestanas, activa)
+	if nivel >= 4:
+		var fam: String = familias[nivel - 4]
+		for it in Artes.filas_familia(fam, sabe[fam], actor, heroes, enemigos, cola, MODO_PRUEBAS, ATB_MAX):
+			it["accion"] = _elegir_hechizo.bind(fam, it["nivel"])
+			items.append(it)
+	else:
+		for h in por_nivel[nivel - 1]:
+			var d: Dictionary = h[2]
+			items.append({"texto": d["nombre"], "accion": _elegir_hechizo.bind(h[0], h[1]), "icono": h[0],
+				"derecha": "PM ∞" if MODO_PRUEBAS else "%d PM" % d["coste"], "apagado": not _puede_pagar(d["coste"]),
+				"desc": _desc_magia(h[0], d)})
+	menu.submenu(items, pestanas, p["activa"])
 
 
 func _desc_magia(magia: String, d: Dictionary) -> String:
@@ -1784,6 +1818,9 @@ func _desc_magia(magia: String, d: Dictionary) -> String:
 
 # Una magia de nivel I se dirige a un enemigo; las de nivel II y III van a todos a la vez.
 func _elegir_hechizo(magia: String, nivel: int, sola := false) -> void:
+	if Artes.es_arte(magia):                        # familias nuevas (artes.gd): su ruta; las 12 de siempre, igual
+		_elegir_arte(magia, nivel, sola)
+		return
 	nivel_sel = nivel
 	if MAGIAS[magia].get("cura", false):           # magia de curación: se elige a un aliado
 		magia_sel = magia
@@ -1806,6 +1843,104 @@ func _elegir_hechizo(magia: String, nivel: int, sola := false) -> void:
 		_aplicar(enemigos.filter(func(e): return e["hp"] > 0)[0])
 	else:
 		_menu_objetivo("magia", magia)
+
+
+# ---------------------------------------------------------------- artes (T-091, artes.gd)
+
+# Las de uno piden objetivo como las de siempre; las de todos, no. Con «sola» (pruebas: -- magia=Alba:1), al primero.
+# Si no hay a quién o faltan PM, nada: el menú ya la enseña apagada con su motivo.
+func _elegir_arte(fam: String, nv: int, sola := false) -> void:
+	var d: Dictionary = Artes.datos(fam, nv)
+	var objs: Array = Artes.objetivos(fam, nv, actor, heroes, enemigos, cola, ATB_MAX)
+	if objs.is_empty() or not _puede_pagar(d["coste"]):
+		return
+	if d["todos"]:
+		_lanzar_arte(fam, nv, objs)
+	elif sola:
+		_lanzar_arte(fam, nv, [objs[0]])
+	else:
+		_pedir_objetivo(objs, func(f): _lanzar_arte(fam, nv, [f]), _menu_magia.bind(0),
+			"TOCA UN ENEMIGO" if d["a"] == "enemigos" else "TOCA A UN ALIADO")
+
+
+# Lanza un arte: gasta los PM, anima a quien lanza (el círculo de siempre con el color de su familia), aplica el efecto
+# (artes.gd), suena una vez y acaba el turno (la Armonía +0,15, como cualquier acción).
+func _lanzar_arte(fam: String, nv: int, objs: Array) -> void:
+	_ocultar_menu()
+	estado = "accion"
+	var quien = actor
+	var d: Dictionary = Artes.datos(fam, nv)
+	_gastar_pm(quien, d["coste"])
+	_actualizar()
+	registro.text = "%s lanza %s" % [quien["nombre"], d["nombre"]]
+	quien["animando"] = true
+	var circulo := _carga_magia(quien, fam, 1.0 + 0.3 * (nv - 1))
+	var p = _p3d(quien)
+	if p != null:
+		await p.lanzar_magia()
+	else:
+		await get_tree().create_timer(0.5).timeout
+	var extra := int(quien.get("efectos", {}).get("apoyo_turnos", 0.0))   # Báculo del Peregrino (C2)
+	var hechos: Array = Artes.aplicar(fam, nv, objs, cola, ATB_MAX, extra)
+	_sonar(Artes.sonido(fam, nv))                    # una vez, al aplicarse (si sonido.gd ya lo tiene)
+	var col: Color = Artes.COLOR[fam]
+	if fam == "Alba" and nv == 2:
+		_fogonazo(Color(0.55, 0.35, 0.8), 0.25, 1.2)   # Peso del Ocaso: la pantalla se tiñe de violeta
+	for x in hechos:
+		var f: Dictionary = x["f"]
+		_onda(_suelo_de(f), Color(col, 0.9), 20.0, 160.0, 0.7, 8.0)
+		_particulas(_centro(f) + Vector2(0, 60), Color(col, 1.0), Color(col, 0.0), 26, 1.0, Vector2(40, 120), 60.0,
+			Vector2(0, -1), 30.0, Vector2(0, -60), 0.07)
+		if x.has("atb"):
+			_numero_flotante(f, "Retraso" if x["atb"] < 0.0 else "¡Antes!", col, 32)
+		elif x.has("pv"):
+			_revivir_visual(f)
+			_numero_flotante(f, "+%d" % x["pv"], C_CURA)
+		elif x.has("aliento"):
+			_numero_flotante(f, "Aliento", col, 30)
+		elif x.has("barrera"):
+			_numero_flotante(f, "❄ %d" % x["barrera"], col, 30)
+		elif x.has("brasa"):
+			_numero_flotante(f, "Brasa", col, 30)
+	_actualizar()
+	_quitar_carga(circulo)
+	await get_tree().create_timer(0.9).timeout
+	if p != null:
+		p.fin_magia()
+	await get_tree().create_timer(0.3).timeout
+	quien["animando"] = false
+	_terminar_turno()
+
+
+# Lumbre de Retorno: el 3D se levanta (revivir(), que ya tienen los tres modelos); el 2D deshace la pose de caído de
+# _restablecer_color (giro de 25° y 30 px abajo).
+func _revivir_visual(f: Dictionary) -> void:
+	var p = _p3d(f)
+	if p != null and p.has_method("revivir"):
+		p.revivir()
+	elif f.has("cuerpo"):
+		f["cuerpo"].rotation_degrees = 0.0
+		f["rig"].position = f["rig_base"]
+	_restablecer_color(f)
+
+
+# Al empezar el turno de un héroe, antes de su menú: su Aliento (Segundo Aliento) y la regeneración de su equipo
+# (Cinta de Lumi, C1). Sin ninguno de los dos, no hace nada.
+func _tic_estados_heroe(f: Dictionary) -> void:
+	var con_aliento := int(f.get("aliento", 0)) > 0
+	var cura: int = Artes.curar_al_empezar_turno(f, Extra.regen(f.get("efectos", {})))
+	if cura > 0:
+		_numero_flotante(f, "+%d" % cura, C_CURA)
+		if con_aliento:
+			_sonar(Artes.SONIDO_ESTADO["aliento"])
+		_actualizar()
+
+
+# Sonidos nuevos (artes y accesorios): solo si ya están en el catálogo de sonido.gd. Mientras no estén, silencio (y
+# sin el aviso de Sonido.efecto por un nombre que no conoce).
+func _sonar(nombre: String) -> void:
+	if Sonido.EFECTOS.has(nombre):
+		Sonido.efecto(nombre)
 
 
 # Elegir a qué aliado curar: se toca al héroe.
@@ -2042,6 +2177,9 @@ func _escapar() -> void:
 func _terminar_turno(carga := true) -> void:
 	estado = "accion"
 	actor["atb"] = 0.0
+	var pm_extra: int = Extra.pm_al_terminar(actor)            # Gota de la cascada alta (sin ella, 0)
+	if pm_extra > 0:
+		_numero_flotante(actor, "+%d PM" % pm_extra, Color(0.55, 1.0, 0.85), 30)
 	if actor.get("embuir_turnos", 0) > 0:         # Embuir dura 3 turnos de Garon (sin contar el que lo pone)
 		if actor.get("embuir_nuevo", false):
 			actor["embuir_nuevo"] = false
@@ -2159,6 +2297,7 @@ func _decidir(f: Dictionary) -> void:
 	if f.has("brasas") and is_instance_valid(f["brasas"]):
 		f["brasas"].emitting = false
 	registro.text = "%s cae de rodillas. Te mira, sin fuerzas." % f["nombre"]
+	Sonido.voz(f, "caida")                         # se queja y las rodillas golpean el suelo (sonido.gd, T-083)
 	create_tween().tween_property(f["rig"], "position:y", f["rig_base"].y + 24.0, 0.5)
 	if musica != null:
 		create_tween().tween_property(musica, "volume_db", -18.0, 1.0)
@@ -2196,6 +2335,7 @@ func _acabar(f: Dictionary) -> void:
 	_destello(_centro(f), Color(1.0, 0.9, 0.7), 2.0)
 	_temblor(10.0)
 	f["hp"] = 0
+	Sonido.voz(f, "muerte")                        # su último aliento (sonido.gd, T-083)
 	_restablecer_color(f)
 	_actualizar()
 	await get_tree().create_timer(1.0).timeout
@@ -2468,7 +2608,7 @@ func _espera_invocacion(seg: float) -> void:
 # ================================================================= animaciones
 
 func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: String) -> void:
-	var critico: bool = magia == "" and randf() < PROB_CRITICO
+	var critico: bool = magia == "" and randf() < Extra.prob_critico(PROB_CRITICO, origen.get("efectos", {}))   # Diente: la misma tirada
 	if critico:
 		dano = int(dano * MULT_CRITICO)
 	if magia == "" and objetivo["hero"]:              # la defensa del héroe resta daño a los golpes
@@ -2476,13 +2616,24 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 	if objetivo.get("defendiendo", false):
 		dano = max(1, int(dano * 0.5))
 	var congela: bool = magia == "" and origen["hero"] and _lleva_frostfang(origen) and randf() < PROB_CONGELAR
+	# Pluma de arpía: un héroe esquiva un golpe físico (solo tira el dado con la pluma puesta: sin ella, nada cambia)
+	var esquiva: bool = magia == "" and objetivo["hero"] and Extra.esquiva(objetivo.get("efectos", {}))
+	ultimo_esquivado = esquiva
 	var embuido: bool = magia == "" and origen.get("embuir", "") != ""    # Garon con Embuir: +20 % y su elemento
 	if embuido:
 		dano = int(dano * (1.0 + EMBUIR["extra"]))
 	var impacto: Callable = func():
+		if esquiva:                                    # el golpe no llega: ni daño, ni golpe, ni voz de dolor
+			_sonar("esquiva")
+			_numero_flotante(objetivo, "¡Esquiva!", Color(0.85, 0.95, 1.0), 34)
+			return
 		if magia == "":                                # golpe físico resuelto: su sonido, una vez (sonido.gd, T-083)
 			Sonido.golpe(critico, objetivo.get("defendiendo", false))
+			if origen.get("devora", false):
+				Sonido.voz(origen, "devorar")              # el mordisco de Gorthor
 		_quitar_pv(objetivo, dano)
+		if magia == "":
+			Sonido.recibe(objetivo)                    # la voz del enemigo golpeado: herido o caída (sonido.gd)
 		if embuido:
 			_golpe_visual(objetivo, dano, _efecto_embuir(origen, objetivo), critico)
 		else:
@@ -2587,6 +2738,7 @@ func _anim_fisico_sprite(o: Dictionary, obj: Dictionary, impacto: Callable) -> v
 	var t1 := create_tween()
 	t1.tween_property(rig, "position", base + Vector2(dx, dy), 0.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	await t1.finished
+	Sonido.voz(o, "ataque")                          # se estira para lanzarse (sonido.gd, T-083)
 	anim.play("attack")
 	while anim.animation == "attack" and anim.frame < int(a["frame_golpe"]):
 		await anim.frame_changed
@@ -2695,6 +2847,7 @@ func _anim_ataque_3d(o: Dictionary, obj: Dictionary, impacto: Callable, metodo: 
 	var t1 := create_tween()
 	t1.tween_property(rig, "position", destino, 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	await t1.finished
+	Sonido.voz(o, "ataque")                            # el enemigo se lanza: su voz (sonido.gd; los héroes, nada)
 	var golpes := [0]
 	var al_golpear := func():
 		golpes[0] += 1
@@ -2704,6 +2857,8 @@ func _anim_ataque_3d(o: Dictionary, obj: Dictionary, impacto: Callable, metodo: 
 				_temblor(9.0)
 		else:
 			_temblor(4.0)
+			# el segundo tajo del doble ataque no hace daño, pero se ve: suena, 6 dB más bajo (sonido.gd, T-083)
+			Sonido.golpe(false, obj.get("defendiendo", false), -6.0)
 	match metodo:
 		"golpe_fuerte":
 			await p.golpe_fuerte(al_golpear)
@@ -2788,6 +2943,7 @@ func _anim_fisico(o: Dictionary, obj: Dictionary, impacto: Callable) -> void:
 		t1.tween_property(p["brazo_a"], "rotation_degrees", a["a_prep"], 0.45)
 	t1.tween_property(cuerpo, "rotation_degrees", a["lean_prep"], 0.45)
 	await t1.finished
+	Sonido.voz(o, "ataque")                          # un enemigo de los de antes (Hollín): su voz (sonido.gd)
 	var t2 := create_tween().set_parallel(true)
 	t2.tween_property(p["brazo_f"], "rotation_degrees", a["golpe"], 0.17).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	if p.has("arma"):
@@ -3083,7 +3239,7 @@ func _suelo_de(f: Dictionary) -> Vector2:
 
 # Círculo mágico que gira en el suelo bajo quien lanza la magia, con chispas que suben.
 func _carga_magia(o: Dictionary, magia: String, tam := 1.0) -> Node2D:
-	var color: Color = MAGIAS[magia]["color"]
+	var color: Color = MAGIAS[magia]["color"] if MAGIAS.has(magia) else Artes.COLOR[magia]   # las artes, su color
 	var raiz := Node2D.new()
 	raiz.position = _suelo_de(o)
 	raiz.scale = Vector2(1.0, 0.32) * tam         # aplastado: parece tumbado en el suelo
@@ -3329,6 +3485,7 @@ func _lluvia_meteoros(objs: Array, impacto_en: Callable) -> void:
 	_fogonazo(Color(1.0, 0.3, 0.05), 0.25, 1.4)
 	_luz(Color(1.0, 0.4, 0.1), 2.0, 12.0, 2.0, Vector2(300, 300))
 	var rng := RandomNumberGenerator.new()
+	rng.seed = randi()                             # C0: sale de la semilla del combate (en el juego, igual de al azar)
 	for i in 6:                                    # meteoros de adorno (no hacen daño)
 		var p := Vector2(rng.randf_range(-150, 650), rng.randf_range(380, 560))
 		get_tree().create_timer(rng.randf_range(0.0, 0.9)).timeout.connect(func():
@@ -3506,7 +3663,7 @@ func _tormenta(objs: Array, impacto_en: Callable) -> void:
 	t.tween_property(oscuro, "color:a", 0.45, 0.3)
 	await t.finished
 	var rng := RandomNumberGenerator.new()
-	rng.randomize()
+	rng.seed = randi()                             # C0: sale de la semilla del combate (en el juego, igual de al azar)
 	for i in 5:                                    # rayos de adorno alrededor
 		var p := Vector2(rng.randf_range(-150, 650), rng.randf_range(400, 560))
 		get_tree().create_timer(rng.randf_range(0.0, 0.9)).timeout.connect(func():
@@ -3756,6 +3913,7 @@ func _repartir_exp(ganan: bool) -> void:
 	await get_tree().create_timer(1.0).timeout
 	var mult: float = load("res://progreso.gd").mult_exp(Engine.get_meta("zona", "llanura"),
 		Engine.get_meta("tipo_combate", "normal"), load("res://progreso.gd").nivel_grupo())
+	oro = Extra.oro_con_extra(oro, heroes.map(func(h): return h.get("efectos", {})))   # Moneda del Águila, una vez
 	registro.text = "+%d EXP   +%d monedas" % [int(round(total * mult)), oro]
 	if oro > 0:
 		Sonido.efecto("monedas")                   # sonido.gd
@@ -3793,6 +3951,9 @@ func _repartir_exp(ganan: bool) -> void:
 				if nm > 0 and gr.NIVEL_MAGIA[nm - 1] > nivel - subidos:
 					await get_tree().create_timer(1.0).timeout
 					registro.text = "%s aprende %s" % [h["nombre"], NIVELES_MAGIA[k][nm - 1]["nombre"]]
+			for x in Artes.nuevas_al_subir(h["nombre"], gr.datos()[h["nombre"]], nivel - subidos, nivel):   # artes
+				await get_tree().create_timer(1.0).timeout
+				registro.text = "%s aprende %s" % [h["nombre"], Artes.datos(x[0], x[1])["nombre"]]
 	await get_tree().create_timer(0.6).timeout
 
 

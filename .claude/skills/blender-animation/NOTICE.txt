@@ -1,0 +1,9 @@
+Skill «blender-animation» de REBELUM.
+
+Toma ideas y estructura de la skill «blender-animation» de terminal-skills, cuya cabecera declara la licencia
+Apache-2.0. Se consultó en https://github.com/Andrew1326/dominations, en .claude/skills/blender-animation/SKILL.md,
+revisión e8c31141fdc7 (2026-05-29). Ese repositorio no tiene archivo de licencia propio.
+
+Por esa duda de origen, no se ha copiado su texto. Solo se usan patrones de uso general de la API de Blender (bpy),
+como keyframe_insert o export_scene.gltf. La redacción y las reglas son propias de REBELUM, escritas el 09/11/2026
+por el coordinador del proyecto.

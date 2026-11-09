@@ -73,10 +73,12 @@ static func contexto_de(e: Node) -> String:
 			return "mapa"
 		"res://isla.tscn":
 			return "viento"
-		"res://garganta.tscn":
+		"res://garganta.tscn", "res://zonas3d/garganta_3d.tscn":   # la Garganta 2D y la 3D (T-095)
 			return "mazmorra"
 		"res://zonas3d/pastos_verdes_3d.tscn", "res://prototipos/sendero_puente.tscn":
 			return "pradera"
+		"res://ciudad_oakhaven.tscn":                  # Oakhaven hecha a mano (T-089; hereda de zona.gd): el ambiente
+			return "ciudad"                            # de las ciudades, como la Oakhaven generada (sus sonidos: fuente_2d)
 		"res://zona.tscn":
 			var l: Dictionary = Engine.get_meta("lugar", {})
 			if l.get("tipo", "") == "ciudad":

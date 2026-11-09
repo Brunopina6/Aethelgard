@@ -1,0 +1,339 @@
+# Informe del especialista de combate
+
+Rama `area-combate`, copia `D:\Aethelgard_combate`. Cada entrega añade una sección; no se borran las anteriores.
+
+## 2026-11-09, 00:25 · Fase 0 de T-091, T-092 y T-093 (solo diseño)
+
+**Encargo:** diseñar, sin tocar código ni ejecutar Godot, las magias nuevas (T-091), los accesorios y las armas
+especiales (T-092) y los enemigos nuevos (T-093), según D-071 y D-072.
+
+**1. Archivos y commits** (base `dddbddb`):
+- `docs/diseno/combate_ampliaciones.md` (nuevo): el diseño completo. Commit `4911e50`.
+- `docs/memory/agents/combate.md` (este informe, nuevo): commit siguiente.
+- Ningún archivo de código tocado.
+
+**2. Pruebas:** ninguna. Es una fase de diseño y el encargo pedía no ejecutar Godot.
+
+**3. Evidencias:**
+- **Observado en el código** de `dddbddb`: las líneas se citan en el documento.
+- **Ganchos de sonido** mirados en `area-sonido` @ `1359386` (`Sonido.efecto`, `Sonido.golpe`), sin integrar todavía.
+- **Memoria contrastada** el 09/11 a las 00:05: la rama remota `memoria-desarrollo` (`19982f0`) es igual que la copia
+  local.
+
+**4. Hallazgos que condicionan el diseño** (observado en el código):
+- **El sistema de equipo ya existe:** 7 ranuras, 6 armas y 16 protecciones. Frostfang ya es un arma especial
+  (congela). Por eso se añade una ranura y no un sistema nuevo.
+- **El menú de magia no admite una quinta familia:** Lya ya llena las 4 filas que caben sobre el bloque del grupo
+  (y = 562 con tres héroes). Por eso, una pestaña con icono por familia nueva.
+- **Nadie revive en combate,** pero los tres modelos 3D tienen `revivir()` sin usar.
+- **La personalidad «apoyo»** (chamán) existe y no la usa ningún enemigo.
+- **Encuentros:** los mismos 5 grupos en todo el mundo. Los enemigos no tienen debilidades ni botín.
+- **El Templo Sumergido** usa el estilo «llanura» (nivel 2): sus enemigos huirían casi siempre por «zona limpia».
+- **Riesgos de código:**
+  - poner el ATB a 100 a mano deja a un héroe sin turno (no vuelve a la cola);
+  - un héroe que muere con la barra llena se queda sin turno al revivir si no se le vacía;
+  - `_golpe_visual` con «Fuego» encendería una quemadura en un héroe que nadie apagaría;
+  - un id de equipo desconocido rompe los menús (`menus.gd:283`, `inventario.gd:162`).
+
+**5. Límites:**
+- Nada comprobado ejecutando: las cifras son de partida y la geometría del menú sale de las constantes.
+- El determinismo de la prueba de huella (C0) está pendiente de comprobar.
+- Las licencias del limo y de las tiras del Hollín están sin registrar.
+- Algunos lugares de los secretos dependen de T-089 y T-090.
+
+**6. Siguiente paso propuesto:**
+- **C0** (semilla y huella del combate) y después **M1** (familias y Compás del Alba). Orden completo en el documento,
+  §6.
+- **Decisiones para el usuario,** en §7: el menú por pestañas, las debilidades contra los enemigos nuevos, el
+  aprendizaje por nivel o por tomos, P1 «Guardia a tiempo»…
+
+**7. Cambios que necesito en archivos de otros** (§8 del documento):
+- **`sonido.gd`:** el catálogo de efectos nuevos; sin usar el generador aleatorio global durante el combate.
+- **`material_arma.gd`:** `tinte` y `color_brillo` opcionales.
+- **`goblin_3d.gd`:** la variante con bastón y la señal «antes del golpe».
+- **Mundo** (`zona.gd`, `garganta.gd`, `isla.gd`, `zonas3d/`): cofres que llamen a `Recompensas.dar(id)`.
+- **`fondo_combate.gd`:** fondo «templo».
+- **`diario.gd`:** fichas nuevas.
+- **`carga.gd`:** precargar las tres escenas nuevas de `vfx/`.
+- **`docs/recursos.md`:** la procedencia del limo y del Hollín.
+
+## 2026-11-09, 08:50 · Fase 1 de T-091 a T-093: C0, y M1, M2 y C1 preparados en archivos nuevos
+
+**Encargo** (coordinador, 09/11): la red de seguridad C0 (huella del combate con semilla fija y su referencia) y la
+preparación de M1, M2 y C1 en archivos nuevos, **sin enganchar** a `combate.gd`, los menús ni `grupo.gd`, con sus
+pruebas y la lista exacta de enganches.
+- **Base:** `area-combate` @ `2cb8221`; tras la parada por el límite de uso, @ `2386761` (con la tanda 2 de sonido),
+  importada con datos aislados (`D:\REBELUM_diagnostico\importaciones\combate_20261109_073909`).
+- **Decisiones del coordinador aplicadas:** pestañas por familia detrás de I · II · III; la ranura se llama
+  «Accesorio»; las artes se aprenden por nivel y con libros o tomos.
+- **Pendientes del usuario, sin implementar:** las debilidades, P1 «Guardia a tiempo», P2 «Eclipse», los aspectos
+  provisionales y las Fauces de Gorthor (por eso, nada de E1 a E3).
+
+**1. Commits** (todos en `area-combate`; ningún archivo ajeno tocado):
+- `1139d38` · C0: `pruebas/prueba_combate_huella.gd`, `pruebas/referencias/huella_combate.txt` y su línea en
+  `lista_pruebas.txt`.
+- `0127900` · M1 y M2: `artes.gd` y `pruebas/prueba_artes.gd` (con sus `.uid` y el de la huella) y su línea.
+- `81ac8ba` · C1: `equipo_extra.gd` y `pruebas/prueba_equipo.gd` (con sus `.uid`) y su línea.
+- `dbb27c5` · Enganches: `docs/diseno/combate_enganches.md`; `pruebas/combate_con_artes.gd` (solo pruebas) y
+  `pruebas/prueba_artes_combate.gd` (con sus `.uid`) y su línea; «con_enganches» en la huella.
+- Este informe: el commit siguiente.
+- **Sin tocar:** `combate.gd`, `menu_combate.gd`, `menus.gd`, `tienda.gd`, `grupo.gd`, `inventario.gd`, `progreso.gd`,
+  `sonido.gd`, `zona.gd`, `garganta.gd`, `zonas3d/`, `dialogos/` y `mapa*`.
+
+**2. C0: la huella es estable** (comprobado ejecutando, aislado, 09/11, `2386761`)
+- **Ocho combates** con guion:
+  - E1, Kael solo: Fuego, Defender, Rayo, Éter y Poción;
+  - E2, Kael y Lya: Agua, Cura, Fuego, Rayo y Poción;
+  - E3, los tres: Érebo, Juicio, Éter, Giro, Cura y Agua;
+  - E4 y E5, nivel 10: Llamarada, Tormenta, Torrente, Bendición, Maremoto y Gracia Divina;
+  - E6, huida; E7, derrota (`curar_todos`);
+  - E8, Gorthor: presentación, quemadura, golpe devastador cargado, Érebo sobre el jefe, segunda fase, Embuir, Juicio,
+    Giro, último aliento y «perdonar», con `combates_ganados` y `decisiones`.
+- **Lo que anota:** cada turno, cada cartel y cada cambio de PV y PM con su fotograma; el final, el grupo (también los
+  ausentes), el oro y los objetos. 506 líneas, SHA-256 `a33fdae7…`.
+- **Estable:** dos pasadas en un proceso (`D:\REBELUM_diagnostico\pruebas\2026-11-09_080207`), otro proceso
+  (`…_080259`) y E3 y E8 solos (`…_080327`) dan exactamente lo mismo. Contra la referencia, desde la lista:
+  `…_080448`.
+- **Cubre 10 de las 12 magias.** Infierno y Cólera del Cielo quedan fuera hasta el arreglo de C0 (abajo).
+- **Determinismo sin tocar `combate.gd`:** la prueba siembra el generador global justo después de `_ready` (que llama a
+  `randomize()`) y vuelve a repartir el ATB inicial de los enemigos con la semilla. Cada combate lleva su semilla:
+  `solo=E3` da la misma huella que la lista entera.
+- **Hallazgos al buscar el determinismo** (comprobado ejecutando):
+  1. Con `--fixed-fps 30`, los fotogramas 4 a 6 del proceso dan pasos de 0,029167, 0,030 y 0,0325 s. El primer
+     combate de cada proceso salía distinto (E1: 24 de daño o 28; `…_075602` y `…_075614`). La prueba espera 15 pasos
+     fijos seguidos antes de empezar. **Afecta a cualquier prueba que quiera ser determinista desde el fotograma 1.**
+  2. En Godot 4.7, `RandomNumberGenerator.new()` **empieza al azar** (dos procesos: 1189864965 y 2393320160).
+     `_lluvia_meteoros` (Infierno, sin semilla) y `_tormenta` (Cólera del Cielo, `randomize()`) reparten sus adornos
+     al azar. E4 con Infierno dio 3 huellas distintas en 6 pasadas (`…_080026`); sin él, 6 iguales (`…_080114`).
+  3. **Deducido, sin verlo en el código del motor:** las `CPUParticles2D` tiran del generador global. Los adornos de
+     Infierno no llaman a `randf()` en GDScript; solo crean partículas. Por eso la huella depende también de los
+     efectos visuales.
+- **Arreglo propuesto para `combate.gd`** (no aplicado): `rng.seed = randi()` en `_lluvia_meteoros` y `_tormenta`, y
+  `-- semilla=N` en `_ready` para las demás pruebas. Detalle en `docs/diseno/combate_enganches.md` §1. Con él,
+  Infierno y Cólera del Cielo entran en la huella.
+- **La huella cambia** si cambian las reglas, el equilibrio, el orden de las tiradas del generador global (también las
+  visuales: `_temblor`, partículas, el rayo 3D) o lo que duran las animaciones. Entonces se mira la primera línea
+  distinta y, si el cambio es el esperado, se saca otra referencia (cómo, en su cabecera) y se explica en el commit.
+
+**3. Módulos nuevos** (observado en el código y comprobado con sus pruebas)
+- **`artes.gd` (M1 y M2):**
+  - **Datos:** las nueve artes, que no hacen daño (Alba, Escarcha y Lumbre, con los PM del diseño), con descripciones
+    y motivos de fila apagada.
+  - **Aprendizaje:** Alba 3/9/16, Escarcha 6/12/20 y Lumbre 4/10/18. Ninguna en el nivel 1 y ninguna para Garon. Se
+    calcula con `grupo.datos()`; libros y tomos van en `libros`, como los de siempre.
+  - **Lógica sobre los diccionarios de luchador:** el ATB no llega a 100 a mano, y el retraso saca de la cola (los
+    jefes, la mitad); a quién va cada arte; revivir con la barra a 0 y fuera de la cola; Aliento; coraza que no se
+    suma; Brasa.
+  - **Menú:** pestañas (caben hasta x = 1240), filas e iconos de familia y de estado, dibujados por código.
+  - **`ACTIVOS`** limita lo que saldrá en el juego: Alba I y II, y Lumbre I y II.
+  - **Grupo:** no necesita `grupo.gd` cambiado.
+- **`equipo_extra.gd` (C1, y los datos de C2):**
+  - **Objetos:** la ranura «accesorio», 8 accesorios y 6 armas especiales con «solo». Las armas reutilizan las mallas
+    de hoy, con `tinte` y `color_brillo`.
+  - **Efectos:** se suman con topes; el equipo de hoy y los ids desconocidos dan `{}`.
+  - **Ganchos puros:** ATB inicial, crítico con la misma tirada, esquiva que solo tira con la pluma, monedas una vez,
+    PM por turno, robo de vida, ataque por recuerdos, réplica y cubrir.
+  - **`HECHOS`:** solo se vende y se da lo enganchado. También las tiendas por lugar y `conseguir(id)`.
+- **Ninguno de los dos tira del generador global** (salvo la esquiva con la pluma puesta, una tirada). Así lo
+  comprueban sus pruebas.
+- **Un detalle del diseño:** Peso del Ocaso (Alba II) no estaba en ningún incremento. Lo dejo con M1, porque es el
+  mismo mecanismo (`ACTIVOS["Alba"] = 2`); si se prefiere, se pone a 1.
+
+**4. Pruebas** (todas con datos aislados, 09/11; resultados SUPERADA salvo donde se dice)
+- **`prueba_combate_huella`:** dos pasadas, referencia y una tercera pasada con los enganches de M1 y M2.
+- **`prueba_artes`** (10 apartados):
+  - lo protegido de D-048 y D-037 en `combate.gd` y `grupo.gd`: las 12 magias, Esgrima, Embuir, Érebo, la Armonía,
+    el ATB y Garon sin artes;
+  - umbrales, ATB, objetivos, Lumbre y Escarcha, y las nueve artes con sus valores;
+  - menú, iconos (el modo sin ventana sí dibuja) y generador global;
+  - guardar y cargar.
+- **`prueba_equipo`** (7 apartados): datos; «solo»; suma; ganchos; lo disponible; guardar y cargar, en memoria y en
+  `user://prueba_equipo.save`; partidas antiguas; ids desconocidos; generador global.
+- **`prueba_artes_combate`:** el código de los enganches de M1 y M2 en un combate de verdad, con
+  `pruebas/combate_con_artes.gd`, una subclase de `combate.gd` solo para pruebas:
+  - el Compás del Alba: una entrada en la cola, un solo turno de Lya, 6 PM y Armonía +0,15;
+  - Segundo Aliento: cura un 8 % al empezar el turno y le quedan 2;
+  - Peso del Ocaso baja la barra de los Slimes;
+  - Lumbre de Retorno: vuelve con el 25 %, la barra a 0, fuera de la cola, y actúa;
+  - el Compás sale apagado, con su motivo, con Kael solo;
+  - el menú de Lya a nivel 1 es el de hoy.
+  - Evidencia: `…_083028`.
+- **La huella con los enganches de M1 y M2 es la misma** que la referencia (`…_083028`): sin usar las artes, los
+  enganches no cambian el combate.
+- **Mutaciones** (`…_081752`), y los módulos, restaurados: con el Compás a +55, `prueba_artes` FALLIDA; sin «solo»,
+  `prueba_equipo` FALLIDA, con 3 fallos. Las pruebas no están vacías.
+- **Batería completa** (`D:\REBELUM_diagnostico\pruebas\2026-11-09_083311\resumen.md`): **43 SUPERADAS, 0 FALLIDAS**,
+  23 MANUALES y 0 NO SEGURAS.
+  - La partida real, la carpeta real de datos y los archivos del proyecto, sin cambios.
+  - Había 14 Godot de otras copias, vigilados.
+  - Dentro, la huella hizo 3 pasadas iguales a la referencia (la tercera, con los enganches), en 57,8 s.
+
+**5. Enganches pendientes:** `docs/diseno/combate_enganches.md`.
+- **Contenido:** archivo, función, línea en `2386761`, ancla exacta y código.
+- **C0:** 3 líneas en `combate.gd`.
+- **M1 y M2:**
+  - `combate.gd`: 2 constantes, 5 cambios y 5 funciones nuevas;
+  - `menu_combate.gd`: 1 constante y 3 cambios;
+  - `menus.gd`, `tienda.gd` y `diario.gd`: 1 cambio cada uno.
+- **C1:**
+  - `inventario.gd`: 7 cambios;
+  - `combate.gd`: 5;
+  - `menus.gd` y `tienda.gd`: 2 cada uno.
+- `grupo.gd` y `progreso.gd`: **ninguno**.
+- **La huella no debe cambiar** con ningún enganche salvo C0.2 y C0.3.
+- Al enganchar M1 y M2, se borra `pruebas/combate_con_artes.gd` y `prueba_artes_combate` pasa a usar `combate.tscn`.
+
+**6. Riesgos**
+- **La huella es sensible a los tiempos** (2.3): una tanda de animaciones o de sonido que alargue un golpe la cambia.
+  Hay que revisar la diferencia y sacar otra referencia con su explicación. No es un fallo del combate.
+- **`combate_con_artes.gd` copia** `_siguiente_turno`, `_menu_magia` y el principio de `_carga_magia` de `2386761`. Si
+  `combate.gd` cambia antes de enganchar, puede quedarse atrás. La huella con «con_enganches» lo detectaría en lo que
+  juega.
+- **Las líneas del documento** son de `2386761`. Si otra tanda las mueve, sirven las anclas.
+- **Al enganchar, cambiar `HECHOS = ["C1"]`** en `equipo_extra.gd`: sin eso, no se vende nada.
+- **Partidas:**
+  - las artes aparecen por nivel al cargar una partida antigua (decidido);
+  - una partida nueva abierta con una versión anterior rompería sus menús con un id desconocido (diseño, §4.7).
+- **Licencias:** las armas especiales reutilizan `espada2`, `diamante_azul`, `vara` y `hoja_infernal`, que están en
+  `licencias_pendientes.txt` («Origen sin registrar»). No añaden recursos, pero dependen de esos.
+- **Iconos de estado** (x 935-995): pueden rozar unos PV largos; solo se ve con capturas.
+
+**7. Límites**
+- **Nada enganchado en el juego:** ni los menús ni los iconos se han visto en pantalla (sin capturas), y no se ha
+  medido nada en el móvil (no se pedía medir fotogramas).
+- **El combate con artes** usa una subclase de prueba, no `combate.gd`.
+- **Lo de las partículas** (2.3) es una deducción.
+- **Los combates ganados con guion** no prueban la estrategia de un jugador.
+
+**8. Siguiente paso propuesto y peticiones**
+1. **El coordinador aplica C0** (3 líneas). Yo meto Infierno (E4) y Cólera del Cielo (un E9) en la huella, compruebo
+   dos pasadas y saco otra referencia.
+2. **Enganchar M1 y M2** con el documento, borrar la subclase y añadir capturas del menú y de los iconos. Después, C1
+   con `HECHOS = ["C1"]`.
+3. **Sonido:** catálogo `arte_alba`, `arte_ocaso`, `arte_hora_dorada`, `arte_escarcha`, `arte_lumbre`, `renacer`,
+   `aliento`, `barrera_absorbe`, `barrera_rota`, `brasa` y `esquiva`.
+4. **Gráficos:** `tinte` y `color_brillo` en `material_arma.gd` (C2).
+5. **Para el usuario,** además de las de §7 del diseño: ¿Peso del Ocaso con M1, o más tarde?
+
+## 2026-11-09, 12:50 · Fase 2 de T-091 y T-092: C0, M1, M2 y C1 enganchados al juego
+
+**Encargo** (coordinador, 09/11): enganchar C0, M1, M2 y C1 con `docs/diseno/combate_enganches.md`.
+- **Base:** `area-combate` @ `555fc29` (= `integracion-experimental`: mi fase 1, mapamundi, sonido y animaciones en sus
+  tandas 1 y 2, Garganta 3D y Oakhaven fase 1). Importada con datos aislados
+  (`D:\REBELUM_diagnostico\importaciones\combate_20261109_084817`; otra, para los `.uid` nuevos, `…_123009`).
+- **Decisiones aplicadas:** C0 aprobado; Peso del Ocaso con M1; `ACTIVOS` = Alba 2, Escarcha 0, Lumbre 2;
+  `HECHOS = ["C1"]`.
+- **Archivos tocados:** `combate.gd`, `menu_combate.gd`, `menus.gd`, `tienda.gd`, `inventario.gd`, `artes.gd`,
+  `equipo_extra.gd` y pruebas. **Sin tocar:** `grupo.gd` (no hizo falta), `diario.gd`, `progreso.gd`, `sonido.gd`,
+  `audio/**`, `zonas3d/**`, `mapa*`, `zona.gd`, `ciudad_oakhaven.*`, `ciudades/**` y las filas de Ajustes de `menus.gd`.
+- **Sin confirmar en la copia:** `project.godot` (los directorios de Dialogic de Oakhaven) y 43 `.uid` de narrativa y de
+  la Garganta 3D. Los dejó la importación; no son míos y no los confirmo (son los «44 cambios» que vio el coordinador).
+
+**1. Commits** (todos en `area-combate`):
+- `30780e5` · **C0**: `combate.gd` (3 líneas), la huella con E9 y su referencia nueva.
+- `653d7b6` · **M1 y M2**: `combate.gd`, `menu_combate.gd`, `menus.gd` (Habilidades), `tienda.gd` (libros), `artes.gd`;
+  `prueba_artes_combate` con `combate.tscn`; se borra `pruebas/combate_con_artes.gd`.
+- `a3c4432` · **C1**: `inventario.gd`, `combate.gd`, `tienda.gd`, `menus.gd` y `equipo_extra.gd`; `prueba_equipo_combate`.
+  (El asunto dice `HECHOS = [C1]`: PowerShell 5.1 se comió las comillas. No lo reescribo.)
+- `5e3bf18` · **Menú de combate**: nombres largos sin pisar el coste; `prueba_controles_nuevos` y `prueba_combate_fotos`.
+- `075946e` · `prueba_huir`: el clic llega a HUIR sin ventana y la prueba comprueba que se huye.
+- Este informe y el estado de `docs/diseno/combate_enganches.md` (§7): el commit siguiente.
+
+**2. Qué se juega ya** (observado en el código y comprobado ejecutando, aislado, 09/11)
+- **Kael, Alba** (pestaña con el sol, detrás de I · II · III):
+  - Compás del Alba, desde el nivel 3: 6 PM; un aliado gana media barra. Sale apagado si no hay otro aliado en pie o si
+    ya espera su turno.
+  - Peso del Ocaso, desde el nivel 9: 15 PM; los enemigos pierden 40 de barra, los jefes 20.
+- **Lya, Lumbre** (pestaña con el farol):
+  - Lumbre de Retorno, desde el nivel 4: 14 PM; levanta a un caído con el 25 % de sus PV, la barra a 0 y fuera de la
+    cola; el modelo 3D se levanta.
+  - Segundo Aliento, desde el nivel 10: 16 PM; tres turnos de cada aliado, un 8 % de PV al empezar su turno; icono de
+    hoja junto al nombre.
+- **Libros** en todas las tiendas: Peso del Ocaso (350) y Segundo Aliento (450).
+- **Al subir de nivel:** «Kael aprende Compás del Alba». **Habilidades** enseña las artes con su nivel.
+- **Accesorio:** la octava ranura del menú Grupo.
+  - Se venden el Farol de peregrino (Oakhaven, 220: empieza con 35 de barra) y la Moneda del Águila (Sunken City, 450:
+    +25 % de monedas, una vez).
+  - Enganchados y probados, pero todavía sin cómo conseguirlos (los dará el mundo con `conseguir(id)`): Diente de
+    Grimfang (crítico de 0,12 a 0,20, la misma tirada), Gota de la cascada alta (+2 PM al acabar el turno), Cinta de Lumi
+    (+5 % de PV al empezar el turno) y Pluma de arpía (esquiva el 12 % de los golpes físicos).
+- **Sonidos de las artes y de la esquiva:** solo si están en el catálogo de `sonido.gd`. Hoy no están: no suenan ni
+  avisan.
+- **Garon** no tiene artes; las 12 magias, Esgrima, Embuir, Érebo, la Armonía y el ATB, sin cambios (la huella).
+
+**3. La huella**
+- **Sobre `555fc29`, antes de tocar nada:** igual a la referencia (8 de 8, SHA `a33fdae7…`), también con la pasada de
+  los enganches (`D:\REBELUM_diagnostico\pruebas\2026-11-09_084905`). Las tandas de animación y sonido no la cambiaron:
+  no hizo falta otra referencia por eso.
+- **C0** (comprobado ejecutando, aislado):
+  - sin las dos líneas de `rng.seed = randi()`, E9 dio 5 huellas distintas en 6 pasadas; cambió hasta el daño
+    (Guardián 180 → 106 o 110) (`D:\REBELUM_diagnostico\combate\2026-11-09\ejecuciones\20261109_115849_huella_e9_sin_c0`);
+  - con ellas, 3 pasadas iguales en un proceso (`…_115830_huella_e9b`) y lo mismo en todas las pasadas posteriores.
+- **E9** (nivel 10, grupo 4): Lya se defiende, Kael lanza Infierno y Lya, Cólera del Cielo. Va en un combate nuevo y no
+  en E4, para que E1 a E8 sigan comparándose línea a línea con la primera referencia.
+- **Referencia nueva:** la de antes más E9, SHA `3372b413…` (`D:\REBELUM_diagnostico\pruebas\2026-11-09_115925`).
+- **Con M1, M2 y C1 enganchados y sin usarlos, la huella es la misma:** 9 de 9 (`…\pruebas\2026-11-09_122651` y la
+  batería).
+
+**4. Pruebas** (datos aislados; la partida real y la carpeta real de datos, sin cambios)
+- **Nuevas:**
+  - `prueba_equipo_combate`: Farol, Gota, Cinta, Moneda, Pluma (con la esquiva forzada al 100 %) y Diente en combates de
+    verdad; los atributos no cambian; la tienda de cada lugar; los libros de las artes (para quién, precio, enseñan).
+  - `prueba_controles_nuevos`: con teclado, mando y toques, MAGIA, la pestaña del Alba (Q / L1 vuelve), el Compás sobre
+    Lya; la fila Accesorio se ve sin desplazar, ↓ desde Amuleto, Intro / A pone y quita el Farol, ← a su ◀, y se toca.
+  - `prueba_combate_fotos` (con ventana): las capturas.
+- `prueba_artes_combate`, ya con `combate.tscn`, y su escenario D: el aviso «aprende» al subir al 3.
+- **Mutaciones** (`…\ejecuciones\20261109_122918_mutacion_equipo`, restauradas): sin la Gota o sin la esquiva,
+  `prueba_equipo_combate` FALLIDA. Las pruebas no están vacías.
+- **Batería completa** (`D:\REBELUM_diagnostico\pruebas\2026-11-09_123210\resumen.md`): **49 SUPERADAS, 0 FALLIDAS**,
+  28 MANUALES y 0 NO SEGURAS. La partida real, la carpeta real de datos y el proyecto, sin cambios; 28 Godot de otras
+  copias, vigilados. Dentro, la huella: 9 de 9 iguales a la referencia.
+- **Las pedidas por el coordinador,** en esa batería: `prueba_menu_magia`, `prueba_equilibrio`, `prueba_ia`, `prueba_mando`,
+  `prueba_teclado`, `prueba_foco`, `prueba_grupos_combate` y `prueba_incorporacion` (242 s), SUPERADAS.
+- **`prueba_huir` arreglada** (`075946e`): sin ventana, su clic caía fuera y salía SUPERADA sin huir (en la batería, el
+  combate seguía en «menu»). Ahora huye y lo comprueba (`…\pruebas\2026-11-09_124326`).
+
+**5. Capturas con ventana** (`D:\REBELUM_diagnostico\combate\2026-11-09\capturas\`, 15, 1280 × 720):
+- 01 y 01b, la pestaña I y la III de Kael con el sol del Alba detrás; 02, la pestaña del Alba;
+- 03 y 04, el Compás (elegir a Lya y «¡Antes!»);
+- 05, la pestaña de la Lumbre; 06 y 07, Segundo Aliento y su hoja junto a los nombres;
+- 08 y 09, la Lumbre de Retorno (Kael en el suelo y de pie);
+- 10, el menú Grupo con «Accesorio: Farol de peregrino» y su efecto; 11, Habilidades; 12, Objetos;
+- 13, la tienda con los libros; 14, el Equipo de Oakhaven con el Farol el primero.
+- **Antes del ajuste** (`…\capturas_antes_del_ajuste\`): «Compás del Alba» sobre «I · 6 PM», y lo mismo con «Cólera del
+  Cielo» y «32 PM», que **ya pasaba antes de las artes** (01b).
+
+**6. Hallazgos**
+- **Nombres largos sobre el coste** en los submenús (también con Cólera del Cielo, de antes). Arreglado en
+  `menu_combate.gd`: se juntan las letras y, si hace falta, baja el tamaño (no menos de 26). Los que caben no cambian.
+- **Menú Grupo:** la octava ranura no cabía. Panel de 640, 3 px entre filas y «Arma: solo espadas.» junto al título.
+- **Sin ventana, la ventana raíz mide 100 × 100** (comprobado con una sonda). Los toques y clics simulados tienen que
+  pasar por `root.get_final_transform()`; si no, no tocan nada.
+  - `prueba_huir` no tocaba HUIR (arreglada). Pendiente de verificar: `prueba_menu_nuevo` y `prueba_mirador` también
+    hacen clics en coordenadas del juego.
+- **Sin ventana**, al pasar el ratón simulado sobre una fila, `DisplayServer.mouse_get_button_state()` escribe un
+  `ERROR` (no implementado en el modo sin ventana). No rompe nada ni cuenta como fallo.
+- **Con teclado y mando, ↑ ↓ se saltan las filas apagadas:** el motivo («Nadie ha caído.») solo se lee tocándolas. Pasa
+  igual con las magias de siempre.
+- **`conseguir(id)` no mira `HECHOS`:** el código del mundo solo debe dar lo disponible (`disponible(id)`).
+
+**7. Límites**
+- Nada medido en el Redmi: no se pedía; los menús nuevos dibujan unos pocos iconos por código.
+- **Los sonidos nuevos no existen todavía:** no se ha oído nada.
+- **Los combates con guion** no prueban la estrategia de un jugador ni el equilibrio de las artes.
+- **La Pluma** se probó con la esquiva forzada al 100 %; el 12 %, solo en `prueba_equipo`.
+- **Diente, Gota, Cinta y Pluma** no se pueden conseguir todavía en el juego.
+
+**8. Pendiente y peticiones**
+- **Narrativa (`diario.gd`, línea 119, pestaña Combate):** `for f in FICHAS:` → `for f in FICHAS +
+  load("res://artes.gd").fichas_activas():`. Hoy añade «Ritmo» y «Aliento».
+- **Sonido:** `arte_alba`, `arte_ocaso`, `arte_lumbre`, `renacer`, `aliento` y `esquiva` (los demás, con M3 y M4).
+  `combate.gd` ya los pide por esos nombres en cuanto estén en `Sonido.EFECTOS`.
+- **Mundo (T-089, T-090):** cofres y secretos con `load("res://equipo_extra.gd").conseguir(id)` (Diente, Gota, Cinta y
+  Pluma), comprobando antes `disponible(id)`.
+- **Siguiente, en orden:**
+  - **C2:** las armas especiales. Necesita `tinte` y `color_brillo` en `material_arma.gd` (gráficos), `arma_de` y
+    `grupo.gd`, y la decisión del usuario sobre las Fauces de Gorthor.
+  - **M3:** Escarcha y la coraza (`_quitar_pv`; el golpe devastador pasa a `_quitar_pv`).
+  - **M4:** los III, Brasa y tomos.
+  - **E1 a E3:** los enemigos nuevos, cuando el usuario decida las debilidades.

@@ -1,0 +1,120 @@
+{
+ "id": "jardin_urnas",
+ "rect": [
+  57,
+  9,
+  5,
+  5
+ ],
+ "sprites": [
+  {
+   "capa": "fondo",
+   "archivo": "jardin_urnas_fondo.webp",
+   "pos": [
+    3658,
+    399
+   ],
+   "tam": [
+    300,
+    211
+   ],
+   "orden": 614.4,
+   "tipo": "objeto"
+  },
+  {
+   "capa": "urnas_norte",
+   "archivo": "jardin_urnas_urnas_norte.webp",
+   "pos": [
+    3678,
+    554
+   ],
+   "tam": [
+    260,
+    119
+   ],
+   "orden": 675.2,
+   "tipo": "objeto"
+  },
+  {
+   "capa": "urnas_sur",
+   "archivo": "jardin_urnas_urnas_sur.webp",
+   "pos": [
+    3678,
+    712
+   ],
+   "tam": [
+    260,
+    115
+   ],
+   "orden": 828.8,
+   "tipo": "objeto"
+  }
+ ],
+ "anclas": {
+  "paseo": [
+   3808.0,
+   736.0
+  ]
+ },
+ "efectos": [],
+ "choques": [
+  {
+   "centro": [
+    59.5,
+    10.2
+   ],
+   "tam": [
+    4.2,
+    0.7
+   ]
+  },
+  {
+   "centro": [
+    59.5,
+    12.6
+   ],
+   "tam": [
+    4.2,
+    0.7
+   ]
+  },
+  {
+   "centro": [
+    57.4,
+    9.4
+   ],
+   "tam": [
+    0.8,
+    0.6
+   ]
+  },
+  {
+   "centro": [
+    61.6,
+    9.3
+   ],
+   "tam": [
+    0.8,
+    0.6
+   ]
+  }
+ ],
+ "marco": [
+  3583,
+  339,
+  4053,
+  891
+ ],
+ "suelo": {
+  "archivo": "jardin_urnas_suelo.png",
+  "pos": [
+   3651,
+   377
+  ],
+  "tam": [
+   392,
+   460
+  ],
+  "escala": 4
+ }
+}

@@ -1,7 +1,7 @@
 extends Control
 # Diario (Godot 4.x): lo que el jugador ha descubierto mirando el escenario y un repaso del combate.
 #   Detalles: los detalles de lore de cada acto (progreso.gd). Los que faltan salen como «???».
-#     Con todos los de un acto se desbloquea su página extra.
+#     Con todos los de un acto se desbloquea su página extra. Debajo, las notas leídas en las ciudades (T-089).
 #   Combate: una ficha corta de cada mecánica, para quien la olvide.
 # Se crea por código desde el mapa:  var d = load("res://diario.gd").new(); ui.add_child(d)
 # Al cerrarse emite "cerrado" y se borra solo.
@@ -78,6 +78,8 @@ func _ready() -> void:
 
 
 func _ir_a_pestana(p: String) -> void:
+	if p != pestana:
+		Sonido.efecto("libro_hoja")                  # se pasa la hoja (sonido.gd, T-083; abrir el Diario ya suena)
 	pestana = p
 	marco.scroll_vertical = 0
 	_pintar()
@@ -86,6 +88,7 @@ func _ir_a_pestana(p: String) -> void:
 func _cerrar() -> void:
 	if is_queued_for_deletion():
 		return
+	Sonido.efecto("libro_cerrar")                    # el libro se cierra (sonido.gd, T-083)
 	cerrado.emit()
 	queue_free()
 
@@ -113,7 +116,7 @@ func _pintar() -> void:
 	for b in botones:
 		b.add_theme_color_override("font_color", Estilo.ORO if b.get_meta("p") == pestana else Estilo.LUZ_CLARA)
 	if pestana == "Combate":
-		for f in FICHAS:
+		for f in FICHAS + load("res://artes.gd").fichas_activas():   # con las fichas de las artes nuevas (T-091)
 			cuerpo.add_child(_texto(f[0], 30, Estilo.ORO, true))
 			cuerpo.add_child(_texto(f[1], 20, Estilo.LUZ_CLARA))
 		return
@@ -141,6 +144,27 @@ func _pintar() -> void:
 		else:
 			cuerpo.add_child(_texto("Página por descubrir (%d de %d detalles)" % [vistos, total], 18, Estilo.GRIS))
 		cuerpo.add_child(Control.new())
+	_pintar_notas(Progreso, lugares)
+
+
+# Notas de las ciudades (progreso.gd, CIUDADES): solo las leídas, con su lugar. No hay página que completar, así que las
+# que faltan no salen, y la sección no aparece hasta leer la primera.
+func _pintar_notas(Progreso, lugares: Array) -> void:
+	var leidas: Array = []
+	for l in Progreso.CIUDADES:
+		for n in Progreso.notas_de(l):
+			if Progreso.visto(n["id"]):
+				leidas.append([n, lugares[l]["nombre"]])
+	if leidas.is_empty():
+		return
+	cuerpo.add_child(_texto("Notas", 32, Estilo.ORO, true))
+	for x in leidas:
+		cuerpo.add_child(_texto("%s · %s" % [x[0]["nombre"], x[1]], 22, Estilo.LUZ_CLARA))
+		var t := _texto("      " + x[0]["texto"], 20, Estilo.GRIS, true)
+		t.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		t.custom_minimum_size = Vector2(1040, 0)
+		cuerpo.add_child(t)
+	cuerpo.add_child(Control.new())
 
 
 func _texto(t: String, tam: int, color: Color, cursiva := false) -> Label:

@@ -1,4 +1,5 @@
-join kael (normal) left
+join kael (vivo_pv) left
 kael: Pastos Verdes. Ni rastro de niebla.
-kael: Bien. Por una vez, algo sale bien.
+update kael [extra_data="ligero"]
+kael: Y nadie me ha seguido. Por una vez, algo sale bien.
 leave kael

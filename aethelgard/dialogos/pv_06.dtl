@@ -1,7 +1,9 @@
-join kael (normal) left
-join lya (normal) right
+join kael (vivo_pv) left
+join lya (vivo_pv) right
 garon: Quietos. Dos.
+update kael [extra_data="sorpresa"]
 kael: ¿Le están pegando a una estatua?
+update lya [extra_data="inquieta"]
 lya: Al ojo. Quieren apagárselo.
 leave kael
 leave lya

@@ -16,6 +16,9 @@ comentarios, commits e informes.
   `area-graficos`). Usa SIEMPRE rutas absolutas dentro de esa copia: la consola vuelve sola a
   `D:\Aethelgard\aethelgard`, que es la copia del usuario. Ahí no se escribe nada ni se ejecuta Godot (el usuario puede
   tener su editor abierto).
+- **Archivos temporales:** solo en una subcarpeta con el nombre de tu área dentro de la carpeta temporal de la sesión
+  (por ejemplo `scratchpadsonido`). Esa carpeta es compartida y otro especialista podría pisarte un archivo con el
+  mismo nombre (pasó el 09/11). Tus scripts de lanzamiento apuntan siempre a TU copia.
 - No toques otras copias (`D:\Aethelgard`, `D:\Aethelgard_alpha`, las de otros especialistas, `D:\Aethelgard_memoria`)
   ni cambies de rama.
 - Edita solo los archivos que la tarea te asigna. Si necesitas cambiar otro, no lo hagas: pídelo en tu informe con el

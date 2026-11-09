@@ -135,6 +135,8 @@ func guardar_posicion() -> void:
 
 # Crea un continente que une los lugares de RUTAS, islas para ISLAS y océano alrededor.
 # Rellena zonas_img (máscara + colores de zona, como mapa_zonas.png) y terreno_tex (el dibujo).
+# El mapa pintado (mapa_arte/) usa esta misma máscara, ya hecha: si cambia algo aquí, hay que regenerarla
+# (mapa_arte/generar_mapa.gd) y la prueba prueba_mapamundi.gd lo avisa.
 func _generar_terreno() -> void:
 	var ruido := FastNoiseLite.new()
 	ruido.seed = 7
@@ -143,8 +145,8 @@ func _generar_terreno() -> void:
 	var ruido_zona := FastNoiseLite.new()
 	ruido_zona.seed = 21
 	ruido_zona.frequency = 0.006
-	var w := int(MAPA_TAM.x) / RES_TERRENO
-	var h := int(MAPA_TAM.y) / RES_TERRENO
+	var w := int(ceil(MAPA_TAM.x / RES_TERRENO))     # 600
+	var h := int(ceil(MAPA_TAM.y / RES_TERRENO))     # 338: cubre los 1350 px (con 337 quedaban 2 px sin pintar abajo)
 	var mascara := Image.create(w, h, false, Image.FORMAT_RGBA8)
 	var dibujo := Image.create(w, h, false, Image.FORMAT_RGB8)
 	var mar := Color8(28, 58, 110)
@@ -181,8 +183,11 @@ func _generar_terreno() -> void:
 			if v < 0.08:
 				c = arena                                   # costa
 			dibujo.set_pixel(x, y, c)
-	mascara.resize(int(MAPA_TAM.x / 2), int(MAPA_TAM.y / 2), Image.INTERPOLATE_NEAREST)
-	zonas_img = mascara
+	# La máscara del juego (un píxel cada 2 px del mundo, 1200×675): cada bloque de 4 px, dos veces en x y en y (×2
+	# exacto) y recortada; así coincide con el dibujo en todo el mapa. Antes se estiraba de 337 a 675 filas y la mitad
+	# de abajo quedaba 2 px más abajo que el dibujo.
+	mascara.resize(w * 2, h * 2, Image.INTERPOLATE_NEAREST)
+	zonas_img = mascara.get_region(Rect2i(0, 0, int(MAPA_TAM.x / 2), int(MAPA_TAM.y / 2)))
 	terreno_tex = ImageTexture.create_from_image(dibujo)
 
 
@@ -220,6 +225,7 @@ func _crear_mapa() -> void:
 		et.text = l["nombre"]
 		et.size = Vector2(260, 26)
 		et.position = l["pos"] + Vector2(-130, 20)
+		et.z_index = 1                                # por encima de Kael: al abrir el mapa, Kael ya no tapa «Oakhaven»
 		et.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		et.add_theme_font_size_override("font_size", 20)
 		et.add_theme_color_override("font_color", Color(1, 0.95, 0.8))
@@ -656,14 +662,15 @@ func _entrar() -> void:
 	var t := create_tween()
 	t.tween_property(negro, "color:a", 1.0, 0.5)
 	await t.finished
-	# la Garganta del Diablo es una mazmorra hecha a mano (garganta.gd); las regiones 3D (modo3d.gd) tienen su
-	# escena; el resto, zonas generadas
+	# la Garganta del Diablo es una mazmorra hecha a mano (garganta.gd) y Oakhaven (lugar 0), una ciudad hecha a mano
+	# (ciudad_oakhaven.gd, T-089); las regiones 3D (modo3d.gd) tienen su escena; el resto, zonas generadas
 	var region_3d: String = load("res://modo3d.gd").escena_de(i)
 	if region_3d != "":
 		Engine.set_meta("pos_3d_ok", false)          # entra por el principio del camino
 		Recursos.cambiar_escena(region_3d)
 		return
-	Recursos.cambiar_escena("res://garganta.tscn" if i == INDICE_GARGANTA else "res://zona.tscn")
+	Recursos.cambiar_escena("res://garganta.tscn" if i == INDICE_GARGANTA else
+		("res://ciudad_oakhaven.tscn" if i == 0 else "res://zona.tscn"))
 
 
 func _mostrar_aviso(texto: String) -> void:

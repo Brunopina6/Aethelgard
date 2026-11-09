@@ -1,0 +1,146 @@
+{
+ "id": "arbol",
+ "rect": [
+  38,
+  5,
+  4,
+  4
+ ],
+ "sprites": [
+  {
+   "capa": "raices",
+   "archivo": "arbol_raices.webp",
+   "pos": [
+    2117,
+    139
+   ],
+   "tam": [
+    860,
+    848
+   ],
+   "orden": 139,
+   "tipo": "objeto",
+   "escala": 2
+  },
+  {
+   "capa": "cuerpo",
+   "archivo": "arbol_cuerpo.webp",
+   "pos": [
+    2224,
+    0
+   ],
+   "tam": [
+    712,
+    517
+   ],
+   "orden": 576.0,
+   "tipo": "edificio"
+  },
+  {
+   "capa": "copa",
+   "archivo": "arbol_copa.webp",
+   "pos": [
+    2043,
+    0
+   ],
+   "tam": [
+    1035,
+    511
+   ],
+   "orden": 577.28,
+   "tipo": "edificio",
+   "viento": 1.0
+  }
+ ],
+ "anclas": {
+  "farolillo_1": [
+   2316.800048828125,
+   377.60002136230463
+  ],
+  "farolillo_2": [
+   2790.39990234375,
+   383.9999694824218
+  ],
+  "farolillo_3": [
+   2521.60009765625,
+   403.2000122070312
+  ],
+  "tronco": [
+   2560.0,
+   576.0
+  ],
+  "luciernagas": [
+   2560.0,
+   652.8000106811523
+  ],
+  "cofre_raices": [
+   2752.0,
+   192.0
+  ],
+  "anillos": [
+   2880.0,
+   608.0
+  ],
+  "encina": [
+   2240.0,
+   640.0
+  ]
+ },
+ "efectos": [
+  {
+   "tipo": "luciernagas",
+   "ancla": "luciernagas",
+   "caja": [
+    16.0,
+    5.0
+   ],
+   "cantidad": 14
+  },
+  {
+   "tipo": "halo",
+   "ancla": "farolillo_1",
+   "radio": 0.9,
+   "fuerza": 0.45
+  },
+  {
+   "tipo": "halo",
+   "ancla": "farolillo_2",
+   "radio": 0.9,
+   "fuerza": 0.45
+  },
+  {
+   "tipo": "halo",
+   "ancla": "farolillo_3",
+   "radio": 0.9,
+   "fuerza": 0.45
+  },
+  {
+   "tipo": "brillo",
+   "ancla": "cofre_raices",
+   "radio": 0.45,
+   "fuerza": 0.9,
+   "color": "oro",
+   "estado_no": "cofre_raices_abierto",
+   "delante": 4.0
+  }
+ ],
+ "choques": [],
+ "marco": [
+  1927,
+  0,
+  3258,
+  1121
+ ],
+ "suelo": {
+  "archivo": "arbol_suelo.png",
+  "pos": [
+   1947,
+   9
+  ],
+  "tam": [
+   1304,
+   1096
+  ],
+  "escala": 4
+ }
+}

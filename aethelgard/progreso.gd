@@ -187,6 +187,31 @@ static func _ids_acto(a: Dictionary) -> Array:
 	return ids
 
 
+# ---------------------------------------------------------------- notas de las ciudades (T-089)
+# Las ciudades hechas a mano tienen notas que se leen al examinarlas (un bando, un letrero, un libro...). El Diario las
+# enseña aparte, en «Notas»: no son detalles, no cuentan para las páginas de los actos y no hay ninguna que completar.
+# Se apuntan en «lore_visto» con su id («nota_…»): ninguna clave nueva en la partida.
+const CIUDADES := {0: "res://ciudades/oakhaven.gd"}   # índice en LUGARES de mapa.gd → módulo de la ciudad (NOTAS)
+
+
+static func notas_de(lugar: int) -> Array:
+	return load(CIUDADES[lugar]).NOTAS if CIUDADES.has(lugar) else []
+
+
+# Apunta una nota. Devuelve true si es nueva. Nunca completa un acto.
+static func ver_nota(id: String) -> bool:
+	var es_nota := false
+	for l in CIUDADES:
+		for n in notas_de(l):
+			es_nota = es_nota or n["id"] == id
+	var v: Dictionary = Engine.get_meta("lore_visto", {})
+	if not es_nota or v.has(id):
+		return false
+	v[id] = true
+	Engine.set_meta("lore_visto", v)
+	return true
+
+
 # ================================================================= mazmorras y combates fijos
 
 # Estado de una mazmorra (palancas, puertas...): Engine.get_meta("mazmorras")[nombre][clave].
@@ -335,6 +360,19 @@ static func restaurar(d: Dictionary) -> String:
 	var escena: String = d.get("escena_guardada", MAPA)
 	if not ResourceLoader.exists(escena) or (escena.begins_with("res://zonas3d/") and not load("res://modo3d.gd").activo()):
 		escena = MAPA
+	# Escenas que ya tienen una versión nueva:
+	# - Oakhaven: una partida guardada en la ciudad generada (zona.tscn con el lugar 0) abre la ciudad hecha a mano
+	#   (T-089), por su entrada, porque el trazado es otro;
+	# - la Garganta: si su versión 3D está en uso (modo3d.gd), una partida guardada en la 2D sigue en la 3D, en el sitio
+	#   equivalente (T-095; escena_equivalente deja la posición en Engine).
+	var lugar = d.get("lugar", {})                 # en la partida, «lugar» es un diccionario con su «indice»
+	var indice_lugar: int = int(lugar.get("indice", -1)) if lugar is Dictionary else -1
+	if escena == "res://zona.tscn" and indice_lugar == 0 and ResourceLoader.exists("res://ciudad_oakhaven.tscn"):
+		Engine.set_meta("pos_zona_ok", false)
+		return "res://ciudad_oakhaven.tscn"
+	var en_3d: String = load("res://modo3d.gd").escena_equivalente(escena)
+	if en_3d != "":
+		return en_3d
 	if escena != MAPA:
 		Engine.set_meta("pos_zona_ok", true)        # vuelve al mismo sitio de la zona o la mazmorra
 	return escena
