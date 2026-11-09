@@ -37,6 +37,18 @@ const ARMAR_SALIDA := 2.5                # una salida solo funciona después de 
 # Bancos del prototipo que no sirven en la región (experimentos de árboles y del perfil medio). PRUEBA y TOPE se
 # quedan: miden la región en el móvil igual que se midió el prototipo.
 const BOTONES_BANCO := ["DIAG", "ARB"]
+# Botón «MEDIO» (09/11, medido en el Redmi): el perfil medio daba 23-25 FPS con su tope de 30. Candidatos para que
+# llegue a 30 estables, todos con tope (como se jugará); el alto no se toca.
+const BANCO_MEDIO := [["medio", 20.0, false, {}, "medio actual", true],
+	["medio", 20.0, false, {"escala_3d": 0.8}, "medio esc0,8", true],
+	["medio", 20.0, false, {"sombra_tramos": 1, "dist_sombras": 24.0}, "medio sombra1", true],
+	["medio", 20.0, false, {"hierba": 3000, "flores": 350, "dist_hierba": 34.0}, "medio hierba-", true],
+	["medio", 20.0, false, {"relieve": false}, "medio-relieve", true],
+	["medio", 20.0, false, {"escala_3d": 0.8, "sombra_tramos": 1, "dist_sombras": 24.0}, "cand A", true],
+	["medio", 20.0, false, {"escala_3d": 0.8, "sombra_tramos": 1, "dist_sombras": 24.0, "hierba": 3000, "flores": 350,
+		"dist_hierba": 34.0}, "cand B", true],
+	["medio", 34.0, false, {"escala_3d": 0.8, "sombra_tramos": 1, "dist_sombras": 24.0, "hierba": 3000, "flores": 350,
+		"dist_hierba": 34.0}, "cand B", true]]
 # Botón «GRUPO»: lo que cuestan Lya y Garon en cada perfil, sin tope de FPS (sin grupo y con grupo, a 20 m), y el
 # perfil bajo con el grupo y su tope de 30 FPS, como se jugará.
 const BANCO_GRUPO := [["bajo", 20.0, false, {"grupo": false}, "bajo sin grupo"], ["bajo", 20.0, false, {}, "bajo con grupo"],
@@ -196,6 +208,15 @@ func _crear_panel_rnd(capa: CanvasLayer) -> void:
 	bg.focus_mode = Control.FOCUS_NONE
 	bg.pressed.connect(func(): _empezar_banco(BANCO_GRUPO))
 	capa.add_child(bg)
+	for b in [["DIAG", 268, BANCO_DIAG], ["MEDIO", 332, BANCO_MEDIO]]:   # medidas en el móvil (09/11)
+		var nb := Button.new()
+		nb.text = b[0]
+		nb.position = Vector2(1160, b[1])
+		nb.custom_minimum_size = Vector2(108, 56)
+		nb.focus_mode = Control.FOCUS_NONE
+		var casos: Array = b[2]
+		nb.pressed.connect(func(): _empezar_banco(casos))
+		capa.add_child(nb)
 
 
 # Al cambiar de perfil se recarga la escena: antes se apunta dónde está Kael para no volver al principio.
