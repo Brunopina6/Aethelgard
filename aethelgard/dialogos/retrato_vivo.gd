@@ -4,14 +4,15 @@ extends DialogicPortrait
 # - Respira: una escala vertical muy pequeña desde los pies (no se despegan del suelo), con su propio ritmo.
 # - Foco: quien habla se ilumina y se adelanta un poco; quien escucha se atenúa y se queda un paso atrás
 #   (_highlight y _unhighlight, que Dialogic llama al cambiar de interlocutor).
-# - Gestos breves, pedidos desde la línea de tiempo con [extra_data="…"]: ligero, firme, duda, sorpresa, decidido,
-#   inquieta y preocupada. Cada uno dura menos de dos segundos y vuelve al reposo: nadie se mueve todo el rato.
+# - Gestos breves, pedidos desde la línea de tiempo con [extra_data="…"]: ligero, firme, duda, sorpresa, decidido (o
+#   decidida), inquieta y preocupada. Cada uno dura menos de dos segundos y vuelve al reposo: nadie se mueve todo el rato.
 # - Poses (T-084): si el personaje tiene una ilustración para ese gesto («poses» en su .dch: gesto → imagen), pasa a
 #   ella con un fundido corto mientras dice su frase, y vuelve a la de reposo («image») al dejar de hablar o pasados
 #   unos segundos. Quien escucha está siempre en reposo, y cada frase lleva su gesto sin repetirse.
 #   El fundido no deja ver el fondo a través del cuerpo: la pose nueva aparece ENCIMA de la anterior y solo después se
 #   retira la de debajo (que ya solo se ve donde la nueva no tapa: el brazo que cambia de sitio).
-# Se usa con el retrato «vivo» de los personajes (kael.dch y lya.dch).
+# Se usa con el retrato «vivo» de los personajes (kael.dch y lya.dch) en el prólogo y con «vivo_pv» en los diálogos de
+# Pastos Verdes (el mismo, del tamaño y en el sitio del retrato «normal»; T-084, tanda 2).
 
 @export_group('Main')
 @export_file var image := ""
@@ -132,7 +133,7 @@ func _set_extra_data(data: String) -> void:
 			t.parallel().tween_property(g, "scale", Vector2.ONE * 1.03, 0.1)
 			t.tween_property(g, "position:y", 0.0, 0.3).set_ease(Tween.EASE_IN)
 			t.parallel().tween_property(g, "scale", Vector2.ONE, 0.3)
-		"decidido":                                # un paso hacia el otro
+		"decidido", "decidida":                    # un paso hacia el otro
 			t.tween_property(g, "position:x", 18.0 * d, 0.4)
 			t.parallel().tween_property(g, "scale", Vector2.ONE * 1.025, 0.4)
 			t.tween_interval(1.0)

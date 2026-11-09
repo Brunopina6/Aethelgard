@@ -29,6 +29,16 @@
 "offset": Vector2(0, 70),
 "scale": 1.1272258,
 "scene": "res://dialogos/retrato_vivo.tscn"
+},
+"vivo_pv": {
+"export_overrides": {
+"image": "\"res://dialogos/retratos/kael_reposo.png\"",
+"poses": "{\"ligero\": \"res://dialogos/retratos/kael_mano_cadera.png\", \"brazalete\": \"res://dialogos/retratos/kael_brazalete.png\", \"sorpresa\": \"res://dialogos/retratos/kael_sorpresa.png\", \"decidido\": \"res://dialogos/retratos/kael_puno.png\"}"
+},
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1.0064516,
+"scene": "res://dialogos/retrato_vivo.tscn"
 }
 },
 &"scale": 0.72

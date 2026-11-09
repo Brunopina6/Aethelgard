@@ -6,7 +6,8 @@ extends SceneTree
 #      vista) y Kael vuelve a andar; ninguna pulsación de más llega al mapa.
 #      Poses (T-084): mientras habla Lya, Kael está en reposo (sin la mano junto a la cabeza: la ilustración de reposo
 #      no es la de antes); en cada una de sus cuatro frases hace un gesto con su ilustración, distinto en cada una, y
-#      el fundido entre poses termina (no se queda la ilustración de encima a medias).
+#      el fundido entre poses termina (no se queda la ilustración de encima a medias). Lya (tanda 2): en reposo
+#      mientras habla Kael y, en sus cinco frases, reposo, reposo, duda, decidida y preocupada (POSES_LYA).
 #   2. Saltado con Esc en mitad del diálogo: lo mismo, y no se queda nada a medias.
 #   3. Saltado durante la entrada (antes de la primera frase): lo mismo.
 #   4. Deprisa (T-084): una pulsación cada 0,1 s, también mientras se escribe y en mitad de los fundidos: termina,
@@ -19,6 +20,10 @@ const MAPA := "res://mapa.tscn"
 const REPOSO := "res://dialogos/retratos/kael_reposo.png"
 const ORIGINAL := "res://dialogos/retratos/kael.png"   # la de la mano junto a la cabeza: ya no sale en el prólogo
 const GESTOS_KAEL := ["ligero", "brazalete", "sorpresa", "decidido"]   # sus cuatro frases, en orden
+# Lya (T-084, tanda 2): en sus cinco frases, la ilustración de cada una («inquieta» y la frase sin etiqueta van en
+# reposo: solo un gesto breve o nada); no repite ninguna ni se mueve en todas.
+const POSES_LYA := ["reposo", "reposo", "duda", "decidida", "preocupada"]
+const REPOSO_LYA := "res://dialogos/retratos/lya_reposo.png"
 
 var D
 var fallos: Array = []
@@ -140,14 +145,18 @@ func _pasada(modo: String) -> void:
 			return
 		var frases := 0
 		var gestos_vistos: Array = []
+		var poses_lya: Array = []
 		while D.current_timeline != null and frases < 20:
-			# poses de Kael mientras se escribe la frase: desde que sale hasta que está entera
+			# poses de Kael y de Lya mientras se escribe la frase: desde que sale hasta que está entera
 			var vistas := {}
+			var vistas_lya := {}
 			var hablante := ""
 			while D.current_timeline != null and not (D.current_state == D.States.IDLE and _texto() != "" and _revelado()):
 				var v := _vivos()
 				if v.has("Kael") and _texto() != "":
 					vistas[String(v["Kael"].get_meta("pose", "?"))] = true
+					if v.has("Lya"):
+						vistas_lya[String(v["Lya"].get_meta("pose", "?"))] = true
 					var sp = D.Text.get_current_speaker()
 					hablante = sp.display_name if sp != null else ""
 				await process_frame
@@ -157,12 +166,15 @@ func _pasada(modo: String) -> void:
 			var v2 := _vivos()
 			if v2.has("Kael"):
 				vistas[String(v2["Kael"].get_meta("pose", "?"))] = true
+				if v2.has("Lya"):
+					vistas_lya[String(v2["Lya"].get_meta("pose", "?"))] = true
 				var sp2 = D.Text.get_current_speaker()
 				hablante = sp2.display_name if sp2 != null else hablante
 			if frases == 1:
 				_comprobar_retratos()
 			if modo == "entero":
 				_comprobar_poses(frases, hablante, vistas.keys(), gestos_vistos)
+				_comprobar_poses_lya(frases, hablante, vistas_lya.keys(), poses_lya)
 			if modo == "saltar_dialogo" and frases == 3:
 				await _pulsar(KEY_ESCAPE)
 				break
@@ -177,6 +189,8 @@ func _pasada(modo: String) -> void:
 				_fallo("entero: salen %d frases (esperaba 9)" % frases)
 			if gestos_vistos != GESTOS_KAEL:
 				_fallo("entero: los gestos de Kael en sus frases son %s (esperaba %s)" % [gestos_vistos, GESTOS_KAEL])
+			if poses_lya != POSES_LYA:
+				_fallo("entero: las poses de Lya en sus frases son %s (esperaba %s)" % [poses_lya, POSES_LYA])
 	# al acabar (o al saltar): todo como estaba
 	if not await _volver_al_juego(m, escena, zoom0, lay, capa0, modo):
 		return
@@ -208,6 +222,26 @@ func _comprobar_poses(frase: int, hablante: String, vistas: Array, gestos_vistos
 	var encima: Sprite2D = k.get_node("Foco/Gesto/Respira/Siguiente")
 	if encima.visible and k.get("_fundido") == null:
 		_fallo("frase %d: la ilustración del fundido se queda a la vista sin fundido en marcha" % frase)
+
+
+# Lya (T-084, tanda 2): en reposo mientras habla Kael, y en sus frases con la ilustración de su gesto (o en reposo
+# cuando su gesto no tiene ilustración). Nunca con el retrato antiguo lya.png: todas sus poses comparten lienzo.
+func _comprobar_poses_lya(frase: int, hablante: String, vistas: Array, poses_lya: Array) -> void:
+	var v := _vivos()
+	if not v.has("Lya"):
+		_fallo("frase %d: no está el retrato vivo de Lya" % frase)
+		return
+	var ruta := _ruta_textura(v["Lya"])
+	if ruta == "res://dialogos/retratos/lya.png":
+		_fallo("frase %d: Lya sale con el retrato antiguo (otro lienzo)" % frase)
+	if hablante == "Kael":
+		if vistas != ["reposo"]:
+			_fallo("frase %d (habla Kael): Lya no está en reposo (poses vistas: %s)" % [frase, vistas])
+	elif hablante == "Lya":
+		var gestos := vistas.filter(func(p): return p != "reposo")
+		poses_lya.append(gestos[0] if not gestos.is_empty() else "reposo")
+		if gestos.is_empty() and ruta != REPOSO_LYA:
+			_fallo("frase %d (habla Lya, en reposo): su ilustración es %s" % [frase, ruta])
 
 
 # Deprisa: una pulsación cada 0,1 s hasta el final (también mientras se escribe y en mitad de los fundidos).

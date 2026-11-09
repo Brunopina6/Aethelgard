@@ -11,6 +11,7 @@ update lya [extra_data="duda"]
 lya: Ese brazalete…[pause=0.5] He visto ese símbolo en los libros prohibidos del templo. Lo llamaban la «Llave del Confino».
 update kael [extra_data="sorpresa"]
 kael: ¿La llave de qué?
+update lya [extra_data="decidida"]
 lya: No lo sé.[pause=0.3] Pero si los Hollines han empezado a salir del bosque, alguien tiene que averiguarlo.
 update kael [extra_data="decidido"]
 kael: Entonces vamos. El Gran Bosque Verde no está lejos.
