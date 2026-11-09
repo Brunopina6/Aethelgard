@@ -18,6 +18,16 @@ extends SceneTree
 #      suena una vez (tapa y premio); la emboscada suena y, en el combate, el río y la cascada ya no están.
 #   7. Zona 2D: los pasos siguen los fotogramas del muñeco con el suelo de la zona; cofre, posada sin dinero y
 #      emboscada. Garganta: puerta sellada, ascensor sin fuerza, palanca y puente, y guardado. Menús y tienda.
+# Tanda 2 (T-083):
+#   8. Voces de los enemigos en combates de verdad: el limo, Grimfang, el Gólem de ámbar y Gorthor suenan con su
+#      familia, una vez por evento (ataque al lanzarse, herido, caída), la magia no las pide, los héroes no tienen voz;
+#      el segundo tajo del doble ataque suena más bajo; Gorthor de rodillas, «Acabar» y su mordisco; congelar, una vez.
+#      API: una voz por enemigo, dos voces a la vez como mucho, la furia más fuerte.
+#   9. Agua 2D: el río de una llanura suena más cuanto más cerca, se calla lejos (y deja de sonar), con un fundido, y
+#      se apaga al salir de la zona; en la Garganta (abismo) y en una ciudad no hay agua que suene.
+#  10. Interfaz y mundo: el Diario (pasar hoja solo si cambia, cerrar), el brazalete (una vez por detalle) y el altar.
+#      Garganta: la puerta suena al abrirse (tras la palanca), el ascensor ya viaja y el nido (emboscada y cofre raro).
+#  11. Aleatorio: los efectos no tocan el generador global (randi() sale igual con y sin sonidos).
 
 const REGION := "res://zonas3d/pastos_verdes_3d.tscn"
 const PARTIDA := "user://prueba_efectos.save"
@@ -126,6 +136,14 @@ func _probar() -> void:
 		await _garganta()
 	if _parte("menus"):
 		await _menus()
+	if _parte("voces"):
+		await _voces()
+	if _parte("agua"):
+		await _agua2d()
+	if _parte("interfaz"):
+		await _interfaz()
+	if _parte("azar"):
+		_azar()
 	print("OK efectos: ", ", ".join(hechos))
 	print("FALLOS: %d" % fallos.size())
 	quit(1 if fallos.size() > 0 else 0)
@@ -157,8 +175,9 @@ func _catalogo() -> void:
 			if not s is AudioStreamWAV or s.format != AudioStreamWAV.FORMAT_QOA or s.stereo or s.mix_rate != 48000:
 				_fallo("1: %s no es QOA mono a 48 kHz" % ruta)
 				continue
-			if (s.loop_mode == AudioStreamWAV.LOOP_FORWARD) != d.has("tres_d"):
-				_fallo("1: %s %s debería ser un bucle" % [ruta, "no" if d.has("tres_d") else "sí y no"])
+			var bucle: bool = d.has("tres_d") or d.has("dos_d")
+			if (s.loop_mode == AudioStreamWAV.LOOP_FORWARD) != bucle:
+				_fallo("1: %s %s debería ser un bucle" % [ruta, "no" if bucle else "sí y no"])
 			var w := AudioStreamWAV.load_from_file(ProjectSettings.globalize_path(ruta))   # el derivado, sin comprimir
 			var b: PackedByteArray = w.data                # (una vez: cada «w.data» copia todo el sonido)
 			var pico := 0.0
@@ -305,11 +324,11 @@ func _api() -> void:
 
 
 # 5. Combate de verdad (Kael contra el grupo 7): las acciones se llaman a mano, con el ATB parado.
-func _nuevo_combate() -> Node:
+func _nuevo_combate(grupo := 7) -> Node:
 	var G = load("res://grupo.gd")
 	G.datos()
 	Engine.set_meta("grupo_activo", ["Kael"])
-	Engine.set_meta("grupo_combate", 7)
+	Engine.set_meta("grupo_combate", grupo)
 	Engine.set_meta("tipo_combate", "normal")
 	Engine.set_meta("desde_mapa", false)
 	var c = load("res://combate.tscn").instantiate()
@@ -562,13 +581,48 @@ func _garganta() -> void:
 	g.pieza_cerca = {"tipo": "ascensor_arriba", "otro": g.jugador.position}
 	g._accion()
 	g._tirar_palanca()
-	await _juego(0.8)
+	await _juego(1.6)                                    # la puerta se abre 1,3 s después de la palanca (tanda 2)
 	g.pieza_cerca = {"tipo": "guardado", "pos": g.jugador.position}
 	g._accion()
-	for k in ["cerrada", "atascado", "palanca", "puente_baja", "guardado"]:
+	for k in ["cerrada", "atascado", "palanca", "puente_baja", "puerta_abre", "guardado"]:
 		if _n(k) != 1:
 			_fallo("7: en la Garganta, «%s» suena %d veces" % [k, _n(k)])
-	hechos.append("Garganta")
+	# tanda 2: con la palanca bajada el ascensor viaja; no hay río en el abismo; el cofre raro y el nido
+	_limpiar()
+	g.pieza_cerca = {"tipo": "ascensor_arriba", "otro": g.jugador.position}
+	g._accion()
+	await _juego(0.8)
+	if _n("ascensor") != 1 or _n("atascado") != 0:
+		_fallo("10: con la palanca bajada, el ascensor: viaje %d, atascado %d" % [_n("ascensor"), _n("atascado")])
+	if g.get_node_or_null("Sonido_rio_2d") != null:
+		_fallo("9: en la Garganta (abismo) suena un río")
+	_limpiar()
+	for c in g.cofres:
+		if c[1] == g._id_cofre(g.COFRE_NIDO * g.T) and not c[2]:
+			g._abrir_cofre(c)
+	await _juego(0.6)
+	if _n("cofre") != 1 or _n("tesoro") != 1:
+		_fallo("10: el cofre raro del nido: cofre %d, premio %d" % [_n("cofre"), _n("tesoro")])
+	_limpiar()
+	g._combate_fijo("garganta_nido", 6, "normal", Vector2(30.8, 44.0), "¡Algo se mueve en el nido!")
+	await _juego(0.3)
+	if _n("emboscada") != 1:
+		_fallo("10: el combate del nido empieza con la emboscada %d veces" % _n("emboscada"))
+	await _hasta(func(): return _en_escena("res://combate.tscn"), 60.0)
+	await _esperar(5)
+	await _escena_vacia()                                # que el combate del nido no siga sonando en las partes siguientes
+	hechos.append("Garganta (puerta, ascensor, cofre raro y nido)")
+
+
+# Una escena vacía: lo que había (un combate con su ATB, una zona) deja de existir y de sonar.
+func _escena_vacia() -> void:
+	var vacia := Node.new()
+	vacia.name = "Vacia"
+	var ps := PackedScene.new()
+	ps.pack(vacia)
+	vacia.free()
+	change_scene_to_packed(ps)
+	await _esperar(3)
 
 
 func _menus() -> void:
@@ -597,3 +651,343 @@ func _menus() -> void:
 	if _n("monedas") != 1 or _n("ui_error") != 1 or _n("ui_cerrar") != 1:
 		_fallo("7: la tienda: monedas %d, error %d, cerrar %d" % [_n("monedas"), _n("ui_error"), _n("ui_cerrar")])
 	hechos.append("menús y tienda")
+
+
+# ================================================================= tanda 2
+
+func _registro_de(prefijo: String) -> Array:
+	return Son.registro.filter(func(x): return String(x[1]).begins_with(prefijo))
+
+
+func _sin_vida(f: Dictionary) -> void:                     # que no muera en la prueba: mucha vida
+	f["hp_max"] = 9999
+	f["hp"] = 9999
+
+
+# 8. Voces de los enemigos en combates de verdad (con el ATB parado) y la API.
+func _voces() -> void:
+	await _escena_vacia()
+	# el limo (grupo 7): se lanza, recibe, la magia no pide voces y cae
+	var c = await _nuevo_combate(7)
+	var h: Dictionary = c.heroes[0]
+	var e: Dictionary = c.enemigos[0]
+	_sin_vida(h)
+	_sin_vida(e)
+	if Son.familia(e) != "limo":
+		_fallo("8: el slime no tiene la familia del limo («%s»)" % Son.familia(e))
+	parte = "voces: el limo se lanza"
+	_limpiar()
+	await c._animar_golpe(e, h, 1, "")
+	await _juego(0.4)
+	if _n("limo_ataque") != 1 or _golpes() != 1:
+		_fallo("8: el limo se lanza: su voz %d, golpes %d (esperaba 1 y 1)" % [_n("limo_ataque"), _golpes()])
+	parte = "voces: el limo recibe"
+	_limpiar()
+	await c._animar_golpe(h, e, 1, "")
+	await _juego(0.4)
+	if _n("limo_herido") != 1 or _suma("limo_") != 1:
+		_fallo("8: Kael golpea al limo: herido %d (%s)" % [_n("limo_herido"), str(Son.contador)])
+	parte = "voces: la magia no pide voces"
+	_limpiar()
+	await c._animar_golpe(h, e, 1, "Agua")
+	await _juego(0.4)
+	if not Son.contador.is_empty():
+		_fallo("8: una magia pide sonidos (%s): el catálogo mágico no cambia" % str(Son.contador))
+	parte = "voces: el limo cae"
+	_limpiar()
+	e["hp"] = 1
+	await c._animar_golpe(h, e, 5, "")
+	await _juego(0.4)
+	if _n("limo_caida") != 1 or _n("limo_herido") != 0:
+		_fallo("8: el golpe que tumba al limo: caída %d, herido %d" % [_n("limo_caida"), _n("limo_herido")])
+	c.queue_free()
+	await _esperar(3)
+	# Grimfang (grupo 9): voz al lanzarse y el doble tajo (el segundo, más bajo); herido; congelar una vez
+	c = await _nuevo_combate(9)
+	h = c.heroes[0]
+	var g: Dictionary = c.enemigos[0]
+	_sin_vida(h)
+	_sin_vida(g)
+	parte = "voces: Grimfang ataca"
+	_limpiar()
+	await c._animar_golpe(g, h, 1, "")
+	await _juego(0.4)
+	var tajos := _registro_de("golpe")
+	if _n("goblin_ataque") != 1 or tajos.size() != 2:
+		_fallo("8: Grimfang ataca: su voz %d, tajos que suenan %d (esperaba 1 y 2)" % [_n("goblin_ataque"), tajos.size()])
+	elif absf(float(tajos[1][0]) - float(tajos[0][0]) - 0.62) > 0.2:
+		_fallo("8: los dos tajos de Grimfang no van separados como su animación (%.2f s)" % (float(tajos[1][0]) - float(tajos[0][0])))
+	var info := "Grimfang: voz y 2 tajos"
+	parte = "voces: Grimfang recibe"
+	_limpiar()
+	await c._animar_golpe(h, g, 1, "")
+	await _juego(0.4)
+	if _n("goblin_herido") != 1 or _n("goblin_caida") != 0:
+		_fallo("8: Kael golpea a Grimfang: herido %d, caída %d" % [_n("goblin_herido"), _n("goblin_caida")])
+	parte = "voces: congelar"
+	_limpiar()
+	g["congelado"] = 0                                     # (si Kael lleva Frostfang, su golpe de antes ya lo congeló)
+	c._congelar(g)
+	c._congelar(g)                                         # ya congelado: solo renueva las rondas
+	if _n("congelar") != 1:
+		_fallo("8: congelar dos veces seguidas suena %d veces (esperaba 1)" % _n("congelar"))
+	c.queue_free()
+	await _esperar(3)
+	# el Gólem de ámbar (grupo 6) tiene su propia voz, aunque lleva el dibujo del guardián de piedra
+	c = await _nuevo_combate(6)
+	h = c.heroes[0]
+	_sin_vida(h)
+	var gol: Dictionary = {}
+	for x in c.enemigos:
+		if x.get("clave", "") == "golem_ambar":
+			gol = x
+	if gol.is_empty():
+		_fallo("8: en el grupo 6 no está el Gólem de ámbar (¿combate.gd no apunta la clave?)")
+	else:
+		parte = "voces: el Gólem de ámbar"
+		_limpiar()
+		await c._animar_golpe(gol, h, 1, "")
+		await _juego(0.4)
+		if _n("ambar_ataque") != 1 or _n("piedra_ataque") != 0:
+			_fallo("8: el Gólem de ámbar se lanza: ámbar %d, piedra %d" % [_n("ambar_ataque"), _n("piedra_ataque")])
+	c.queue_free()
+	await _esperar(3)
+	# Gorthor (grupo 5): su mordisco, el golpe que lo deja de rodillas, la caída y «Acabar»
+	c = await _nuevo_combate(5)
+	await _juego(2.5)                                      # su presentación (su nombre en grande)
+	h = c.heroes[0]
+	var go: Dictionary = c.enemigos[0]
+	_sin_vida(h)
+	parte = "voces: Gorthor muerde"
+	_limpiar()
+	go["devora"] = true
+	await c._animar_golpe(go, h, 1, "")
+	go["devora"] = false
+	await _juego(0.4)
+	if _n("gorthor_ataque") != 1 or _n("gorthor_devorar") != 1:
+		_fallo("8: Gorthor devora: ataque %d, mordisco %d (esperaba 1 y 1)" % [_n("gorthor_ataque"), _n("gorthor_devorar")])
+	parte = "voces: Gorthor cae de rodillas"
+	_limpiar()
+	go["hp"] = 1
+	await c._animar_golpe(h, go, 50, "")
+	await _juego(0.4)
+	if _n("gorthor_herido") != 1 or not go.get("rendido", false):
+		_fallo("8: el golpe que deja a Gorthor de rodillas: herido %d, rendido %s" % [_n("gorthor_herido"), go.get("rendido", false)])
+	_limpiar()
+	c._decidir(go)
+	await _juego(0.3)
+	if _n("gorthor_caida") != 1:
+		_fallo("8: Gorthor cae de rodillas y su caída suena %d veces" % _n("gorthor_caida"))
+	await _juego(1.2)
+	_limpiar()
+	c._acabar(go)
+	await _juego(0.4)
+	if _n("gorthor_muerte") != 1 or _n("golpe_critico") != 1:
+		_fallo("8: «Acabar»: su muerte %d, el golpe %d" % [_n("gorthor_muerte"), _n("golpe_critico")])
+	c.queue_free()
+	await _esperar(3)
+	# la API: los héroes no tienen voz; una voz por enemigo; dos a la vez como mucho; la furia, más fuerte
+	parte = "voces: API"
+	_limpiar()
+	if Son.voz({"hero": true, "modelo": "kael3d", "nombre": "Kael"}, "ataque") != null:
+		_fallo("8: un héroe tiene voz")
+	var a := {"hero": false, "clave": "grimfang", "nombre": "A"}
+	var b := {"hero": false, "clave": "slime", "nombre": "B"}
+	var d := {"hero": false, "clave": "guardian", "nombre": "C"}
+	var p1 = Son.voz(a, "ataque")
+	var p2 = Son.voz(a, "herido")
+	if p1 == null or p2 == null or not p1.get_meta("apagando", false):
+		_fallo("8: la voz nueva de un enemigo no corta la suya anterior")
+	_limpiar()
+	Son.voz(a, "ataque")
+	Son.voz(b, "ataque")
+	Son.voz(d, "ataque")
+	var vivas := 0
+	for x in Son._todas():
+		if x.playing and x.get_meta("grupo", "") == "voz" and not x.get_meta("apagando", false):
+			vivas += 1
+	if vivas != 2:
+		_fallo("8: tres enemigos a la vez: suenan %d voces (máximo 2)" % vivas)
+	_limpiar()
+	a["furia"] = true
+	var f = Son.voz(a, "ataque")
+	if f == null or f.volume_db < float(Son.EFECTOS["goblin_ataque"]["db"]) + 1.2:
+		_fallo("8: con furia, el ataque no suena más fuerte (%s dB)" % (str(f.volume_db) if f else "no suena"))
+	# pasos de varios personajes 3D (animaciones pondrá los de Lya y Garon): uno por cuerpo, sin duplicar
+	var cuerpos: Array = []
+	for i in 3:
+		var n3 := Node3D.new()
+		root.add_child(n3)
+		cuerpos.append(n3)
+	var sup := func(_p): return "hierba"
+	var pa = Son.pasos_3d(cuerpos[0], sup)
+	var pb = Son.pasos_3d(cuerpos[0], sup, -3.0)
+	Son.pasos_3d(cuerpos[1], sup, -3.0)
+	Son.pasos_3d(cuerpos[2], sup, -3.0)
+	var n_pasos := 0
+	for n3 in cuerpos:
+		for hijo in n3.get_children():
+			if String(hijo.name).begins_with("Pasos"):
+				n_pasos += 1
+	if pa != pb or n_pasos != 3 or float(pb.db) != -3.0:
+		_fallo("8: pasos de tres cuerpos: %d nodos (esperaba 3, uno por cuerpo; pedirlo dos veces no duplica)" % n_pasos)
+	for n3 in cuerpos:
+		n3.queue_free()
+	hechos.append("voces (limo, %s, ámbar, Gorthor: mordisco, rodillas y «Acabar»; magia muda; API; pasos de 3 cuerpos)" % info)
+
+
+# 9. El agua de las zonas 2D: más cerca, más fuerte; lejos, en silencio; con fundido; se apaga al salir.
+func _agua2d() -> void:
+	Engine.set_meta("lugar", {"indice": 1, "nombre": "Gran Bosque Verde", "tipo": "lugar", "zona": "llanura", "texto": "x"})
+	Engine.set_meta("pos_zona_ok", false)
+	change_scene_to_file("res://zona.tscn")
+	if not await _hasta(func(): return _en_escena("res://zona.tscn"), 60.0):
+		_fallo("9: no se abre la zona")
+		return
+	await _esperar(10)
+	var z = current_scene
+	var e = z.get_node_or_null("Sonido_rio_2d")
+	if e == null or e.bus != &"Ambiente" or e.stream.loop_mode != AudioStreamWAV.LOOP_FORWARD:
+		_fallo("9: en una llanura con río no hay agua que suene en bucle por Ambiente")
+		return
+	# sitios de tierra a distintas distancias del agua (las mide el propio emisor)
+	var quiero := [0.3, 3.0, 6.0, 11.0]
+	var sitios := []
+	for q in quiero:
+		sitios.append(null)
+	var guardado: Vector2 = z.jugador.position
+	for y in range(3, z.ALTO - 4):
+		for x in range(3, z.ANCHO - 4):
+			var pos: Vector2 = Vector2(x + 0.5, y + 0.5) * z.T
+			if z._en_agua(pos) or z.muros[y * z.ANCHO + x] != 0:
+				continue
+			z.jugador.position = pos
+			e._buscar()
+			for i in quiero.size():
+				if sitios[i] != null:
+					continue
+				var vale := false
+				if i == quiero.size() - 1:                 # el último: «lejos» o más
+					vale = e.distancia >= quiero[i]
+				else:
+					vale = absf(e.distancia - quiero[i]) < (0.3 if i == 0 else 0.5)
+				if vale:
+					sitios[i] = pos
+	z.jugador.position = guardado
+	if sitios.has(null):
+		_fallo("9: no se encuentran sitios a %s casillas del agua (%s)" % [str(quiero), str(sitios)])
+		return
+	var niveles := []
+	var sonando := []
+	for i in sitios.size():
+		z.jugador.position = sitios[i]
+		for k in int(1.6 * 30.0):                          # con el fundido de 0,8 s y la búsqueda cada 0,12 s
+			z.pasos = 0
+			z.tiene_destino = false
+			await process_frame
+		niveles.append(e.volume_db)
+		sonando.append(e.playing)
+	print("AGUA2D distancias %s → %s dB, sonando %s" % [str(quiero), str(niveles.map(func(v): return snappedf(v, 0.1))), str(sonando)])
+	if not (sonando[0] and sonando[1] and sonando[2]) or sonando[3]:
+		_fallo("9: suena cerca y lejos no: %s (a %s casillas)" % [str(sonando), str(quiero)])
+	elif not (niveles[0] > niveles[1] + 3.0 and niveles[1] > niveles[2] + 2.0):
+		_fallo("9: el río no suena más cuanto más cerca: %s dB" % str(niveles))
+	elif absf(niveles[0] - float(Son.EFECTOS["rio_2d"]["db"])) > 1.5:
+		_fallo("9: en la orilla el río no va a su volumen del catálogo (%.1f dB)" % niveles[0])
+	# fundido: al volver a la orilla desde lejos, no salta de golpe
+	z.jugador.position = sitios[0]
+	for k in 6:
+		z.pasos = 0
+		await process_frame
+	if e.volume_db > niveles[0] - 6.0:
+		_fallo("9: al llegar a la orilla el río salta de golpe (%.1f dB a los 0,2 s)" % e.volume_db)
+	for k in int(1.2 * 30.0):
+		z.pasos = 0
+		await process_frame
+	# al salir (combate o mapa), el agua se funde y deja de sonar
+	z.saliendo = true
+	for k in int(1.2 * 30.0):
+		await process_frame
+	if e.playing:
+		_fallo("9: al salir de la zona el río sigue sonando")
+	z.saliendo = false
+	# sin agua de verdad, no hay emisor (la lava, el veneno, el hielo y el abismo, de momento, nada)
+	var falsa := ZonaFalsa.new()
+	var con_lava := ZonaFalsa.new()
+	con_lava.estilo = {"agua": "lava"}
+	con_lava.agua_v = PackedByteArray([0, 1, 1, 0])
+	if Son.agua_zona(falsa) != null or Son.agua_zona(con_lava) != null:
+		_fallo("9: suena agua donde no hay (o es lava)")
+	falsa.free()
+	con_lava.free()
+	hechos.append("agua 2D (%s dB a %s casillas)" % [str(niveles.map(func(v): return snappedf(v, 0.1))), str(quiero)])
+
+
+class ZonaFalsa extends Node2D:
+	var ANCHO := 1
+	var ALTO := 1
+	var estilo := {"agua": "agua"}
+	var agua_v := PackedByteArray([0, 0, 0, 0])
+
+
+# 10. Interfaz y mundo: el Diario, el brazalete y el altar de una zona.
+func _interfaz() -> void:
+	_limpiar()
+	var d = load("res://diario.gd").new()
+	root.add_child(d)
+	await _esperar(2)
+	d._ir_a_pestana("Combate")
+	d._ir_a_pestana("Combate")                             # ya está en esa pestaña: no se pasa ninguna hoja
+	d._cerrar()
+	await _esperar(2)
+	if _n("libro_hoja") != 1 or _n("libro_cerrar") != 1 or _n("ui_tic") != 0:
+		_fallo("10: el Diario: hoja %d, cerrar %d, tic %d (esperaba 1, 1 y 0)" % [_n("libro_hoja"), _n("libro_cerrar"), _n("ui_tic")])
+	Engine.set_meta("lugar", {"indice": 1, "nombre": "Gran Bosque Verde", "tipo": "lugar", "zona": "llanura", "texto": "x"})
+	Engine.set_meta("pos_zona_ok", false)
+	change_scene_to_file("res://zona.tscn")
+	if not await _hasta(func(): return _en_escena("res://zona.tscn"), 60.0):
+		_fallo("10: no se abre la zona")
+		return
+	await _esperar(10)
+	var z = current_scene
+	var info := "Diario"
+	if z.detalles.is_empty():
+		print("AVISO 10: este lugar no tiene detalles de lore: el brazalete no se prueba aquí")
+	else:
+		_limpiar()
+		z.brillados.clear()
+		z.jugador.position = z.detalles[0][0].position + Vector2(z.RADIO_BRAZALETE * 0.5, 0)
+		z._brazalete()
+		z._brazalete()                                     # ya brilló por este detalle: no otra vez
+		if _n("brazalete") != (0 if load("res://progreso.gd").visto(z.detalles[0][1]["id"]) else 1):
+			_fallo("10: el brazalete suena %d veces junto a un detalle sin ver" % _n("brazalete"))
+		info += ", brazalete"
+	_limpiar()
+	z.cofre_cerca = null
+	z.detalle_cerca = null
+	z.npc_cerca = null
+	z._accion()                                            # examinar el altar
+	if _n("examinar") != 1:
+		_fallo("10: examinar el altar suena %d veces" % _n("examinar"))
+	await _escena_vacia()
+	hechos.append(info + " y altar")
+
+
+# 11. El sonido no usa el generador aleatorio global: la secuencia de randi() es la misma con y sin efectos.
+func _azar() -> void:
+	_limpiar()
+	var falso := {"hero": false, "clave": "grimfang", "nombre": "Z"}
+	seed(20261109)
+	var sin_sonido := [randi(), randi(), randf(), randi_range(0, 1000)]
+	seed(20261109)
+	for i in 12:
+		Son._ultimo.clear()
+		Son.efecto("paso_hierba")
+		Son.golpe(i % 3 == 0)
+		Son.voz(falso, "ataque" if i % 2 == 0 else "herido")
+		Son.efecto("monedas")
+	var con_sonido := [randi(), randi(), randf(), randi_range(0, 1000)]
+	if sin_sonido != con_sonido:
+		_fallo("11: los efectos cambian el generador aleatorio global (%s ≠ %s)" % [str(sin_sonido), str(con_sonido)])
+	_limpiar()
+	hechos.append("aleatorio propio")

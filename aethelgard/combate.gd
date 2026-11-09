@@ -404,6 +404,7 @@ func _elegir_enemigos() -> void:
 	for g in grupo:
 		var e: Dictionary = ENEMIGOS[g[0]].duplicate(true)
 		e["hero"] = false
+		e["clave"] = g[0]                              # qué enemigo es: su voz (sonido.gd, T-083)
 		var mod: Dictionary = MODELOS[e["modelo"]]
 		if mod.get("tipo", "") == "3d" and _ruta_3d(mod) == "" and mod.has("respaldo"):   # falta el 3D: su dibujo 2D
 			push_warning("Falta el modelo 3D de %s: se usa su respaldo 2D" % e["nombre"])
@@ -1016,6 +1017,7 @@ func _anim_fisico_imagen(o: Dictionary, obj: Dictionary, impacto: Callable) -> v
 	t1.tween_property(rig, "position", base + Vector2(dx, dy), 0.6 if poses else 0.45).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	t1.parallel().tween_property(cuerpo, "rotation_degrees", 6.0 * k, 0.45)
 	await t1.finished
+	Sonido.voz(o, "ataque")                          # su voz al alzar el arma (sonido.gd, T-083)
 	_pose_img(o, "prep")                             # alza el arma
 	var t2 := create_tween()
 	t2.tween_property(cuerpo, "rotation_degrees", -14.0 * k, 0.25).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
@@ -1253,7 +1255,9 @@ func _turno_enemigo(f: Dictionary) -> void:
 		var presa := _elegir_objetivo("cobarde", vivos)
 		var mordisco: int = int(f["atk"] * 1.6 * mult) + randi_range(-2, 3)
 		registro.text = "¡%s devora a %s!" % [f["nombre"], presa["nombre"]]
+		f["devora"] = true                           # su mordisco suena al morder (sonido.gd, T-083)
 		await _animar_golpe(f, presa, mordisco, "")
+		f["devora"] = false
 		var cura: int = mini(int(mordisco * 0.6), f["hp_max"] - f["hp"])
 		if cura > 0 and f["hp"] > 0:
 			f["hp"] += cura
@@ -1347,6 +1351,7 @@ func _congelar(f: Dictionary) -> void:
 		f["congel_quitado"] = quitar
 		f["hp_max"] = maxi(1, f["hp_max"] - quitar)
 		f["hp"] = mini(f["hp"], f["hp_max"])
+		Sonido.efecto("congelar")                    # el hielo cruje al congelarse (sonido.gd, T-083)
 		_numero_flotante(f, "❄ Congelado", C_HIELO, 32)
 		_particulas(_centro(f), Color(0.85, 0.97, 1.0, 1.0), Color(0.4, 0.75, 1.0, 0.0), 30, 0.8, Vector2(40, 140),
 			60.0, Vector2(0, -1), 180.0, Vector2(0, 60), 0.07)
@@ -1688,6 +1693,7 @@ func _tecnica_garon(n: String, obj: Dictionary) -> void:
 		var impacto := func():
 			Sonido.golpe(true)                       # el tajo de Juicio (sonido.gd)
 			_quitar_pv(obj, d)
+			Sonido.recibe(obj)                       # y su voz: herido o caída (sonido.gd)
 			_destello(_centro(obj), menu.COLOR_HEROE.get("Garon", Color.WHITE).lightened(0.4), 1.8)
 			_golpe_visual(obj, d, _efecto_embuir(quien, obj))
 		if _p3d(quien) != null and _p3d(quien).has_method("atacar_juicio"):
@@ -1703,6 +1709,7 @@ func _tecnica_garon(n: String, obj: Dictionary) -> void:
 					continue
 				var d := _dano_fisico(quien, t["mult"])
 				_quitar_pv(e, d)
+				Sonido.recibe(e)                     # su voz (sonido.gd: una por familia y dos a la vez como mucho)
 				_golpe_visual(e, d, _efecto_embuir(quien, e))
 			_temblor(6.0)
 		var centro: Dictionary = objs[0]               # se planta delante del enemigo del medio
@@ -2159,6 +2166,7 @@ func _decidir(f: Dictionary) -> void:
 	if f.has("brasas") and is_instance_valid(f["brasas"]):
 		f["brasas"].emitting = false
 	registro.text = "%s cae de rodillas. Te mira, sin fuerzas." % f["nombre"]
+	Sonido.voz(f, "caida")                         # se queja y las rodillas golpean el suelo (sonido.gd, T-083)
 	create_tween().tween_property(f["rig"], "position:y", f["rig_base"].y + 24.0, 0.5)
 	if musica != null:
 		create_tween().tween_property(musica, "volume_db", -18.0, 1.0)
@@ -2196,6 +2204,7 @@ func _acabar(f: Dictionary) -> void:
 	_destello(_centro(f), Color(1.0, 0.9, 0.7), 2.0)
 	_temblor(10.0)
 	f["hp"] = 0
+	Sonido.voz(f, "muerte")                        # su último aliento (sonido.gd, T-083)
 	_restablecer_color(f)
 	_actualizar()
 	await get_tree().create_timer(1.0).timeout
@@ -2482,7 +2491,11 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 	var impacto: Callable = func():
 		if magia == "":                                # golpe físico resuelto: su sonido, una vez (sonido.gd, T-083)
 			Sonido.golpe(critico, objetivo.get("defendiendo", false))
+			if origen.get("devora", false):
+				Sonido.voz(origen, "devorar")              # el mordisco de Gorthor
 		_quitar_pv(objetivo, dano)
+		if magia == "":
+			Sonido.recibe(objetivo)                    # la voz del enemigo golpeado: herido o caída (sonido.gd)
 		if embuido:
 			_golpe_visual(objetivo, dano, _efecto_embuir(origen, objetivo), critico)
 		else:
@@ -2587,6 +2600,7 @@ func _anim_fisico_sprite(o: Dictionary, obj: Dictionary, impacto: Callable) -> v
 	var t1 := create_tween()
 	t1.tween_property(rig, "position", base + Vector2(dx, dy), 0.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	await t1.finished
+	Sonido.voz(o, "ataque")                          # se estira para lanzarse (sonido.gd, T-083)
 	anim.play("attack")
 	while anim.animation == "attack" and anim.frame < int(a["frame_golpe"]):
 		await anim.frame_changed
@@ -2695,6 +2709,7 @@ func _anim_ataque_3d(o: Dictionary, obj: Dictionary, impacto: Callable, metodo: 
 	var t1 := create_tween()
 	t1.tween_property(rig, "position", destino, 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	await t1.finished
+	Sonido.voz(o, "ataque")                            # el enemigo se lanza: su voz (sonido.gd; los héroes, nada)
 	var golpes := [0]
 	var al_golpear := func():
 		golpes[0] += 1
@@ -2704,6 +2719,8 @@ func _anim_ataque_3d(o: Dictionary, obj: Dictionary, impacto: Callable, metodo: 
 				_temblor(9.0)
 		else:
 			_temblor(4.0)
+			# el segundo tajo del doble ataque no hace daño, pero se ve: suena, 6 dB más bajo (sonido.gd, T-083)
+			Sonido.golpe(false, obj.get("defendiendo", false), -6.0)
 	match metodo:
 		"golpe_fuerte":
 			await p.golpe_fuerte(al_golpear)
@@ -2788,6 +2805,7 @@ func _anim_fisico(o: Dictionary, obj: Dictionary, impacto: Callable) -> void:
 		t1.tween_property(p["brazo_a"], "rotation_degrees", a["a_prep"], 0.45)
 	t1.tween_property(cuerpo, "rotation_degrees", a["lean_prep"], 0.45)
 	await t1.finished
+	Sonido.voz(o, "ataque")                          # un enemigo de los de antes (Hollín): su voz (sonido.gd)
 	var t2 := create_tween().set_parallel(true)
 	t2.tween_property(p["brazo_f"], "rotation_degrees", a["golpe"], 0.17).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	if p.has("arma"):

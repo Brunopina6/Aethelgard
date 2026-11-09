@@ -30,6 +30,15 @@ extends Node
 #   quien escucha) y oyente_3d (se escucha desde el personaje, mirando como la cámara).
 # - Detalles de la naturaleza: según el contexto de Musica, de vez en cuando una ráfaga, un pájaro, unas hojas o una
 #   gota (DETALLES), por el bus Ambiente.
+# - Voces de los enemigos (tanda 2): Sonido.voz(enemigo, "ataque" | "herido" | "caida" | …) elige la familia de cada
+#   enemigo (FAMILIAS: limo, goblin, gorthor, piedra, ámbar) y suena una vez por evento real: «ataque» al lanzarse,
+#   «herido» o «caida» cuando un golpe físico ya le ha quitado los PV (Sonido.recibe). Una voz por enemigo (la nueva
+#   corta la suya anterior) y como mucho MAX_GRUPO["voz"] a la vez entre todos. Los héroes no tienen voz. Las magias no
+#   piden voces (su presentación está protegida: va en la propuesta de magias, docs/audio/inventario_sonidos.md).
+# - Agua de las zonas 2D: agua_zona(zona) pone el río en el agua más cercana a quien anda; suena al acercarse, con un
+#   fundido, y se calla lejos (Agua2D).
+# - Aleatorio: todo lo del sonido usa su propio generador (_rng), nunca randf()/randi()/shuffle()/pick_random() globales:
+#   así no cambia la secuencia del combate cuando una prueba fija su semilla.
 # - Para las pruebas: contador (veces que ha sonado cada efecto), descartes y registro (lo último que sonó).
 
 const ARCHIVO := "user://ajustes.cfg"
@@ -45,11 +54,14 @@ const EF := "res://audio/efectos/"
 const VOCES := {"Efectos": 10, "Interfaz": 4, "Ambiente": 4}
 const ATENUAR_DB := 8.0                                    # lo que bajan las prioridades 0-2 mientras suena una 4
 const FUNDIDO_CORTE := 0.1                                 # s: al cambiar de escena o cortar
+const MAX_GRUPO := {"voz": 2}                              # cuántos de un mismo grupo suenan a la vez como mucho
 
 # a: archivo (sin .wav, dentro de audio/efectos/) o prefijo con n variantes (a + "1"… a + "n"); codigo: tono de los
 # menús hecho por código (menu_combate.gd, sonidos_ui). db: volumen. tono: variación (± fracción). p: prioridad
 # (0 pasos y detalles · 1 interfaz y movimientos · 2 golpes y objetos · 3 eventos · 4 victoria, derrota y jefes).
 # max: cuántos a la vez. espera: s mínimos entre dos iguales. cruza: sigue al cambiar de escena. tres_d: emisor 3D.
+# dos_d: emisor 2D por cercanía (agua de las zonas). grupo: comparte el límite MAX_GRUPO (las voces de los enemigos).
+# tono_fijo: multiplica siempre el tono (el Gólem de ámbar usa el ataque de la piedra, más agudo).
 const EFECTOS := {
 	# ---- pasos
 	"paso_hierba": {"a": "pasos/hierba_", "n": 6, "db": -15.0, "tono": 0.06, "p": 0, "max": 2, "espera": 0.09},
@@ -76,6 +88,27 @@ const EFECTOS := {
 	"nivel": {"a": "combate/nivel", "db": -7.0, "p": 3, "max": 2, "espera": 0.3},
 	"monedas": {"a": "combate/monedas_", "n": 3, "db": -9.0, "tono": 0.04, "p": 3, "max": 2, "espera": 0.15},
 	"pocion": {"a": "combate/pocion", "db": -8.0, "tono": 0.05, "p": 2, "max": 1, "espera": 0.2},
+	"congelar": {"a": "combate/congelar", "db": -9.0, "tono": 0.05, "p": 2, "max": 1, "espera": 0.3},
+	# ---- voces de los enemigos (tanda 2; voz() y recibe()). <familia>_ataque: al lanzarse; _herido: un golpe físico que
+	# no lo tumba; _caida: el que lo tumba (Gorthor: al caer de rodillas); _muerte: «Acabar»; _devorar: su mordisco.
+	# «espera» corta las repeticiones (el Giro golpea a varios a la vez: una voz por familia) y «grupo» limita el total.
+	"limo_ataque": {"a": "voces/limo_ataque_", "n": 2, "db": -6.0, "tono": 0.07, "p": 2, "max": 1, "espera": 0.25, "grupo": "voz"},
+	"limo_herido": {"a": "voces/limo_herido_", "n": 3, "db": -6.0, "tono": 0.08, "p": 2, "max": 1, "espera": 0.3, "grupo": "voz"},
+	"limo_caida": {"a": "voces/limo_caida_", "n": 2, "db": -8.0, "tono": 0.05, "p": 3, "max": 2, "espera": 0.1, "grupo": "voz"},
+	"goblin_ataque": {"a": "voces/goblin_ataque_", "n": 3, "db": -13.0, "tono": 0.05, "p": 2, "max": 1, "espera": 0.25, "grupo": "voz"},
+	"goblin_herido": {"a": "voces/goblin_herido_", "n": 3, "db": -14.0, "tono": 0.06, "p": 2, "max": 1, "espera": 0.3, "grupo": "voz"},
+	"goblin_caida": {"a": "voces/goblin_caida_", "n": 2, "db": -11.0, "tono": 0.04, "p": 3, "max": 2, "espera": 0.1, "grupo": "voz"},
+	"gorthor_ataque": {"a": "voces/gorthor_ataque_", "n": 2, "db": -10.0, "tono": 0.03, "p": 3, "max": 1, "espera": 0.3, "grupo": "voz"},
+	"gorthor_herido": {"a": "voces/gorthor_herido_", "n": 2, "db": -13.0, "tono": 0.03, "p": 2, "max": 1, "espera": 0.4, "grupo": "voz"},
+	"gorthor_caida": {"a": "voces/gorthor_caida", "db": -8.0, "p": 3, "max": 1, "espera": 1.0, "grupo": "voz"},
+	"gorthor_muerte": {"a": "voces/gorthor_muerte", "db": -9.0, "p": 3, "max": 1, "espera": 1.0, "grupo": "voz"},
+	"gorthor_devorar": {"a": "voces/gorthor_devorar", "db": -10.0, "tono": 0.03, "p": 3, "max": 1, "espera": 0.5, "grupo": "voz"},
+	"piedra_ataque": {"a": "voces/piedra_ataque_", "n": 2, "db": -11.0, "tono": 0.04, "p": 2, "max": 1, "espera": 0.3, "grupo": "voz"},
+	"piedra_herido": {"a": "voces/piedra_herido_", "n": 3, "db": -8.0, "tono": 0.06, "p": 2, "max": 1, "espera": 0.25, "grupo": "voz"},
+	"piedra_caida": {"a": "voces/piedra_caida_", "n": 2, "db": -5.0, "tono": 0.03, "p": 3, "max": 1, "espera": 0.5, "grupo": "voz"},
+	"ambar_ataque": {"a": "voces/piedra_ataque_", "n": 2, "db": -11.0, "tono_fijo": 1.12, "tono": 0.04, "p": 2, "max": 1, "espera": 0.3, "grupo": "voz"},
+	"ambar_herido": {"a": "voces/ambar_herido_", "n": 2, "db": -8.0, "tono": 0.05, "p": 2, "max": 1, "espera": 0.25, "grupo": "voz"},
+	"ambar_caida": {"a": "voces/ambar_caida", "db": -5.0, "p": 3, "max": 1, "espera": 0.5, "grupo": "voz"},
 	# ---- cofres, puertas, objetos, recompensas y momentos de la misión
 	"cofre": {"a": "mundo/cofre_", "n": 3, "db": -7.0, "tono": 0.05, "p": 3, "max": 1, "espera": 0.3},
 	"tesoro": {"a": "mundo/tesoro", "db": -8.0, "p": 3, "max": 1, "espera": 0.3},
@@ -92,6 +125,8 @@ const EFECTOS := {
 	"posada": {"a": "mundo/posada", "db": -9.0, "p": 3, "max": 1, "espera": 1.0},
 	"portal": {"a": "mundo/portal", "db": -6.0, "p": 3, "max": 1, "espera": 1.0, "cruza": true},
 	"entrar": {"a": "mundo/entrar", "db": -12.0, "tono": 0.05, "p": 2, "max": 1, "espera": 0.5, "cruza": true},
+	"puerta_abre": {"a": "mundo/puerta_abre", "db": -9.0, "p": 3, "max": 1, "espera": 1.0},
+	"brazalete": {"a": "mundo/brazalete", "db": -17.0, "tono": 0.03, "p": 1, "max": 1, "espera": 1.5},
 	# ---- interfaz (los tonos de siempre, hechos por código, y unos pocos de la biblioteca)
 	"ui_tic": {"codigo": "tic", "bus": "Interfaz", "db": -6.0, "p": 1, "max": 2, "espera": 0.03},
 	"ui_confirmar": {"codigo": "confirmar", "bus": "Interfaz", "db": -6.0, "p": 1, "max": 2, "espera": 0.05},
@@ -103,8 +138,12 @@ const EFECTOS := {
 	"ui_error": {"a": "interfaz/error", "bus": "Interfaz", "db": -13.0, "p": 1, "max": 1, "espera": 0.15},
 	"ui_equipar": {"a": "interfaz/equipar", "bus": "Interfaz", "db": -12.0, "tono": 0.05, "p": 1, "max": 1, "espera": 0.1},
 	"ui_equipar_arma": {"a": "interfaz/equipar_arma", "bus": "Interfaz", "db": -12.0, "tono": 0.05, "p": 1, "max": 1, "espera": 0.1},
+	"libro_hoja": {"a": "interfaz/libro_hoja", "bus": "Interfaz", "db": -8.0, "tono": 0.05, "p": 1, "max": 1, "espera": 0.08},
+	"libro_cerrar": {"a": "interfaz/libro_cerrar", "bus": "Interfaz", "db": -11.0, "tono": 0.03, "p": 1, "max": 1, "espera": 0.2},
 	# ---- ambiente: emisores 3D (bucles) y detalles sueltos
 	"rio": {"a": "ambiente/rio", "bus": "Ambiente", "db": -3.0, "tres_d": {"unidad": 4.0, "max": 32.0}},
+	# el río de las zonas 2D (el mismo bucle): a todo volumen a «cerca» casillas de la orilla o menos, callado a «lejos»
+	"rio_2d": {"a": "ambiente/rio", "bus": "Ambiente", "db": -5.0, "dos_d": {"cerca": 1.5, "lejos": 9.0}},
 	"cascada": {"a": "ambiente/cascada", "bus": "Ambiente", "db": 3.0, "tres_d": {"unidad": 8.0, "max": 45.0}},
 	"rafaga_hierba": {"a": "ambiente/rafaga_hierba_", "n": 4, "bus": "Ambiente", "db": -14.0, "tono": 0.05, "p": 0, "max": 1, "espera": 3.0},
 	"rafaga_arbol": {"a": "ambiente/rafaga_arbol_", "n": 4, "bus": "Ambiente", "db": -14.0, "tono": 0.05, "p": 0, "max": 1, "espera": 3.0},
@@ -129,6 +168,14 @@ const SUELOS := {"hierba": "hierba", "hierba_oscura": "hojas", "tierra": "grava"
 # Fotogramas del muñeco 2D (muneco.gd, «correr», 10 por vuelta) en los que un pie toca el suelo.
 const CUADROS_PASO := [1, 6]
 
+# Voz de cada enemigo: por su clave en combate.gd (ENEMIGOS) o, si no se sabe, por su dibujo (MODELOS).
+const FAMILIAS := {"slime": "limo", "grimfang": "goblin", "gorthor": "gorthor", "guardian": "piedra", "golem_ambar": "ambar"}
+const FAMILIA_MODELO := {"slime": "limo", "grimfang": "goblin", "hollin": "goblin", "hollin_a": "goblin", "hollin_b": "goblin",
+	"gorthor3d": "gorthor", "gorthor": "gorthor", "guardian": "piedra"}
+# Qué suena junto al líquido de una zona 2D (zona.gd, ESTILOS «agua»): de momento solo el agua de verdad (el hielo, el
+# abismo, la lava y el veneno, nada).
+const AGUA_2D := {"agua": "rio_2d"}
+
 var _volumen := {}
 var _muestras := {}                                        # bus → reproductor de su muestra en los ajustes
 var _sonidos := {}                                         # bus → AudioStreamWAV de su muestra (se hace una vez)
@@ -146,6 +193,7 @@ var reloj := 0.0                                           # s de juego (los tie
 var _escena: Node = null
 var _gen := 0                                              # sube en cada cambio de escena
 var _oyente: Node3D = null
+var _voz_de := {}                                          # enemigo → [su última voz, su orden] (una voz por enemigo)
 var _det_ctx := ""
 var _det_t := 0.0
 var _rng := RandomNumberGenerator.new()
@@ -327,6 +375,9 @@ func efecto(nombre: String, op := {}) -> Node:
 	if stream == null:
 		return _descartar(nombre, "sin_archivo")
 	var prioridad := int(d.get("p", 1))
+	var grupo: String = d.get("grupo", "")
+	if grupo != "" and not _hueco_grupo(grupo, prioridad):
+		return _descartar(nombre, "grupo")
 	var p := _voz(nombre, bus, prioridad, int(d.get("max", 2)), op.get("en"))
 	if p == null:
 		return _descartar(nombre, "sin_voz")
@@ -348,6 +399,7 @@ func efecto(nombre: String, op := {}) -> Node:
 	p.set_meta("p", prioridad)
 	p.set_meta("t", _orden)
 	p.set_meta("cruza", d.get("cruza", false))
+	p.set_meta("grupo", grupo)
 	p.play()
 	if prioridad >= 4:
 		_bajar_hasta[bus] = ahora + stream.get_length() / maxf(pitch, 0.01)
@@ -359,9 +411,56 @@ func efecto(nombre: String, op := {}) -> Node:
 	return p
 
 
-# Un golpe físico resuelto: normal, crítico o contra quien se defiende.
-func golpe(critico := false, defendido := false) -> void:
-	efecto("golpe_defendido" if defendido else ("golpe_critico" if critico else "golpe"))
+# Un golpe físico resuelto: normal, crítico o contra quien se defiende. db: más bajo (el segundo tajo del doble ataque,
+# que solo tiembla y no hace daño, suena así: −6 dB).
+func golpe(critico := false, defendido := false, db := 0.0) -> void:
+	efecto("golpe_defendido" if defendido else ("golpe_critico" if critico else "golpe"), {"db": db} if db != 0.0 else {})
+
+
+# La voz de un enemigo de combate (un diccionario de combate.gd): «ataque», «herido», «caida», «muerte» (si su familia no
+# la tiene, la de caída) o «devorar». Los héroes no tienen voz. Una voz por enemigo: la nueva corta la suya de antes.
+# Con «furia» (menos del 30 % de vida, combate.gd), su ataque suena más fuerte y más grave.
+func voz(quien: Dictionary, evento: String) -> Node:
+	if quien.is_empty() or quien.get("hero", true):
+		return null
+	var fam := familia(quien)
+	var nombre := fam + "_" + evento
+	if fam != "" and not EFECTOS.has(nombre) and evento == "muerte":
+		nombre = fam + "_caida"
+	if fam == "" or not EFECTOS.has(nombre):
+		return null
+	var op := {}
+	if evento == "ataque" and quien.get("furia", false):
+		op = {"db": 2.0, "tono": 0.94}
+	var clave = _clave_de(quien)
+	var antes: Array = _voz_de.get(clave, [])
+	var p = efecto(nombre, op)
+	if p != null:
+		if antes.size() == 2 and is_instance_valid(antes[0]) and antes[0] != p and antes[0].playing \
+				and int(antes[0].get_meta("t", -1)) == int(antes[1]):
+			_apagar(antes[0], 0.06)                        # su voz anterior se corta (no dos voces del mismo)
+		_voz_de[clave] = [p, int(p.get_meta("t", 0))]
+	return p
+
+
+# Un golpe físico ya le ha restado los PV a «quien»: si sigue en pie, su voz de herido; si cae, la de caída. (Un jefe
+# que se queda de rodillas con 1 PV se queja como herido; su caída suena al arrodillarse, combate.gd _decidir.)
+func recibe(quien: Dictionary) -> void:
+	voz(quien, "caida" if int(quien.get("hp", 1)) <= 0 else "herido")
+
+
+static func familia(quien: Dictionary) -> String:
+	var clave := String(quien.get("clave", ""))
+	if FAMILIAS.has(clave):
+		return FAMILIAS[clave]
+	return FAMILIA_MODELO.get(String(quien.get("modelo", "")), "")
+
+
+func _clave_de(quien: Dictionary):
+	var r = quien.get("rig")
+	if r is Object and is_instance_valid(r):
+		return r.get_instance_id()
+	return String(quien.get("nombre", ""))
 
 
 # Corta (con un fundido) lo que suena de un efecto, o de todos los de Efectos y Ambiente si no se dice cuál.
@@ -395,18 +494,22 @@ func reiniciar_contadores() -> void:
 	_ultimo.clear()
 
 
-# Rutas de todos los archivos del catálogo (para precargarlos y para las pruebas).
+# Rutas de todos los archivos del catálogo, sin repetir (el río 2D y el ataque del ámbar usan archivos de otros).
 static func archivos() -> PackedStringArray:
 	var r := PackedStringArray()
 	for nombre in EFECTOS:
 		var d: Dictionary = EFECTOS[nombre]
 		if d.has("codigo"):
 			continue
+		var rutas: Array = []
 		if d.has("n"):
 			for i in int(d["n"]):
-				r.append(EF + d["a"] + str(i + 1) + ".wav")
+				rutas.append(EF + d["a"] + str(i + 1) + ".wav")
 		else:
-			r.append(EF + d["a"] + ".wav")
+			rutas.append(EF + d["a"] + ".wav")
+		for ruta in rutas:
+			if not ruta in r:
+				r.append(ruta)
 	return r
 
 
@@ -485,6 +588,26 @@ func _voz(nombre: String, bus: String, prioridad: int, maximo: int, dueno) -> Au
 	return null
 
 
+# Límite de un grupo (MAX_GRUPO): si ya suenan tantos, se quita el menos importante (y más viejo) si no lo es más que el
+# nuevo; si todos lo son, el nuevo no suena.
+func _hueco_grupo(grupo: String, prioridad: int) -> bool:
+	var lista: Array = []
+	for p in _todas():
+		if p.playing and p.get_meta("grupo", "") == grupo and not p.get_meta("apagando", false):
+			lista.append(p)
+	if lista.size() < int(MAX_GRUPO.get(grupo, 99)):
+		return true
+	var peor: AudioStreamPlayer = null
+	for p in lista:
+		if peor == null or int(p.get_meta("p", 0)) < int(peor.get_meta("p", 0)) or (
+				int(p.get_meta("p", 0)) == int(peor.get_meta("p", 0)) and int(p.get_meta("t", 0)) < int(peor.get_meta("t", 0))):
+			peor = p
+	if int(peor.get_meta("p", 0)) > prioridad:
+		return false
+	_apagar(peor, 0.05)
+	return true
+
+
 func _todas() -> Array:
 	var r: Array = []
 	for bus in _voces:
@@ -515,9 +638,11 @@ func _apagar(p: AudioStreamPlayer, fundido: float) -> void:
 	t.tween_property(p, "volume_db", -60.0, fundido)
 	t.tween_callback(p.stop)
 	p.set_meta("tween", t)
+	p.set_meta("apagando", true)                           # ya se va: no cuenta para el límite de su grupo
 
 
 func _parar_fundido(p: AudioStreamPlayer) -> void:
+	p.remove_meta("apagando")
 	if p.has_meta("tween"):
 		var t = p.get_meta("tween")
 		if t is Tween and t.is_valid():
@@ -537,6 +662,7 @@ func _process(delta: float) -> void:
 # Cambio de escena: lo de Efectos y Ambiente que no «cruza» se apaga y lo programado ya no suena.
 func _al_cambiar_escena() -> void:
 	_gen += 1
+	_voz_de.clear()                                        # los enemigos de antes ya no existen
 	for p in _todas():
 		if p.playing and String(p.bus) != "Interfaz" and not p.get_meta("cruza", false):
 			_apagar(p, FUNDIDO_CORTE)
@@ -583,14 +709,23 @@ func pausar(si: bool) -> void:
 
 # Pasos de un personaje 3D: suenan cuando un pie toca el suelo (los huesos LeftFoot / RightFoot del esqueleto), solo
 # si avanza. «superficie» recibe la posición y dice el suelo («hierba», «piedra»…). Sin esqueleto, por distancia.
-func pasos_3d(cuerpo: Node3D, superficie: Callable) -> Node:
+# Vale para varios personajes a la vez (Kael, Lya, Garon…), uno por cuerpo: pedirlo dos veces para el mismo cuerpo
+# devuelve el que ya tenía (no se duplican). db: más bajo para quien no es el que escucha (los compañeros, −3 dB).
+# Dos pasos del mismo suelo con menos de 0,09 s entre ellos suenan como uno («espera» del catálogo).
+func pasos_3d(cuerpo: Node3D, superficie: Callable, db := 0.0) -> Node:
 	if cuerpo == null:
 		return null
+	for h in cuerpo.get_children():
+		if h is Pasos3D:
+			h.superficie = superficie
+			h.db = db
+			return h
 	var n := Pasos3D.new()
 	n.name = "Pasos"
 	n.son = self
 	n.cuerpo = cuerpo
 	n.superficie = superficie
+	n.db = db
 	cuerpo.add_child(n)
 	return n
 
@@ -631,6 +766,7 @@ class Pasos3D extends Node:
 	var son
 	var cuerpo: Node3D
 	var superficie: Callable
+	var db := 0.0                                # más bajo para los compañeros
 	var skel: Skeleton3D
 	var pies: Array = []                         # {"i": hueso, "y": altura anterior, "min": lo más bajo, "baja": bool}
 	var _ant := Vector3.ZERO
@@ -699,7 +835,7 @@ class Pasos3D extends Node:
 			return
 		_t_ultimo = _t
 		pasos += 1
-		son.efecto("paso_" + String(superficie.call(p)), {"db": 2.0 if _vel > 5.5 else 0.0})
+		son.efecto("paso_" + String(superficie.call(p)), {"db": db + (2.0 if _vel > 5.5 else 0.0)})
 
 
 # ================================================================= ambiente 3D
@@ -798,3 +934,140 @@ class FuenteLineal extends AudioStreamPlayer3D:
 		var ab := b - a
 		var t := clampf((o - a).dot(ab) / maxf(ab.length_squared(), 0.0001), 0.0, 1.0)
 		global_position = a + ab * t
+
+
+# ================================================================= agua de las zonas 2D (tanda 2)
+
+# El río de una zona 2D (zona.gd): un emisor 2D se pone en el punto del río más cercano a quien anda (así suena a la
+# izquierda o a la derecha) y su volumen sale de la distancia a la orilla, con un fundido; lejos se calla y deja de
+# sonar. Por el bus Ambiente y por debajo del ambiente del lugar. Solo el río (el agua que cruza la zona de lado a
+# lado): las charcas están quietas y no suenan a corriente. Sin río de agua de verdad (AGUA_2D), no hay emisor.
+func agua_zona(z: Node) -> Node:
+	if z == null or not z.get("estilo") is Dictionary or not z.get("agua_v") is PackedByteArray:
+		return null
+	var nombre: String = AGUA_2D.get(String(z.estilo.get("agua", "")), "")
+	var d: Dictionary = EFECTOS.get(nombre, {})
+	var s := _stream(EF + String(d.get("a", "")) + ".wav") if d.has("dos_d") else null
+	if s == null or z.get("ANCHO") == null or z.get("ALTO") == null:
+		return null
+	var rio := mascara_rio(z.agua_v, int(z.ANCHO) + 1, int(z.ALTO) + 1)
+	if not rio.has(1):
+		return null
+	var e := Agua2D.new()
+	e.name = "Sonido_" + nombre
+	e.son = self
+	e.zona = z
+	e.rio = rio
+	e.stream = s
+	e.bus = &"Ambiente"
+	e.base_db = float(d.get("db", 0.0))
+	e.cerca = float(d["dos_d"].get("cerca", 1.5))
+	e.lejos = float(d["dos_d"].get("lejos", 9.0))
+	e.attenuation = 0.0                                    # el volumen lo pone Agua2D (la distancia es a la orilla)
+	e.max_distance = 1.0e6
+	e.volume_db = -80.0
+	e.process_mode = Node.PROCESS_MODE_PAUSABLE
+	e.set_meta("efecto", nombre)
+	z.add_child(e)
+	_emisores.append(e)
+	contador[nombre] = int(contador.get(nombre, 0)) + 1
+	return e
+
+
+# Los vértices de agua (1) que forman el río: las manchas de agua que llegan a un lado de la zona (el río la cruza de
+# lado a lado; las charcas nunca están a menos de 4 casillas del borde, zona.gd) o que cruzan media zona. Las charcas
+# se quedan fuera.
+static func mascara_rio(v: PackedByteArray, vw: int, vh: int) -> PackedByteArray:
+	var r := PackedByteArray()
+	r.resize(v.size())
+	if v.size() != vw * vh:
+		return r
+	var visto := PackedByteArray()
+	visto.resize(v.size())
+	for i in v.size():
+		if v[i] != 1 or visto[i] == 1:
+			continue
+		var mancha := PackedInt32Array([i])
+		visto[i] = 1
+		var k := 0
+		var x0 := vw
+		var x1 := -1
+		while k < mancha.size():
+			var j := mancha[k]
+			k += 1
+			var x := j % vw
+			x0 = mini(x0, x)
+			x1 = maxi(x1, x)
+			for n in [j - 1 if x > 0 else -1, j + 1 if x < vw - 1 else -1, j - vw, j + vw]:
+				if n >= 0 and n < v.size() and v[n] == 1 and visto[n] == 0:
+					visto[n] = 1
+					mancha.append(n)
+		if x0 <= 3 or x1 >= vw - 4 or x1 - x0 >= vw / 2:
+			for j in mancha:
+				r[j] = 1
+	return r
+
+
+class Agua2D extends AudioStreamPlayer2D:
+	const CADA := 0.12                     # s entre dos búsquedas del agua más cercana
+	const FUNDIDO := 0.8                   # s de nada a todo (y de todo a nada)
+	var son
+	var zona: Node
+	var rio := PackedByteArray()           # los vértices del río (mascara_rio)
+	var base_db := 0.0
+	var cerca := 1.5                       # casillas desde la orilla: más cerca, a todo volumen
+	var lejos := 9.0                       # casillas: más lejos, en silencio
+	var nivel := 0.0                       # volumen lineal de ahora (va hacia «objetivo» con el fundido)
+	var objetivo := 0.0
+	var distancia := 99.0                  # casillas hasta la orilla más cercana
+	var punto := Vector2.ZERO              # el agua más cercana (px, en la zona)
+	var _t := 0.0
+
+	func _ready() -> void:
+		_buscar()
+		position = punto
+
+	func _process(delta: float) -> void:
+		if not is_instance_valid(zona) or zona.get("jugador") == null:
+			return
+		_t -= delta
+		if _t <= 0.0:
+			_t = CADA
+			_buscar()
+		var saliendo: bool = zona.get("saliendo") == true
+		if saliendo:                       # la zona se va (combate, mapa): el agua se funde, el doble de rápido (su
+			objetivo = 0.0                 # fundido a negro dura 0,5 s) y no vuelve
+		position = position.lerp(punto, minf(1.0, delta * 5.0))
+		nivel = move_toward(nivel, objetivo, delta / (FUNDIDO * (0.5 if saliendo else 1.0)))
+		if nivel > 0.003:
+			volume_db = base_db + linear_to_db(nivel)
+			if not playing:
+				play(son._rng.randf_range(0.0, maxf(0.0, stream.get_length() - 1.0)))
+		elif playing:
+			stop()
+			volume_db = -80.0
+
+	# El vértice del río más cercano (mascara_rio sobre zona.gd agua_v) en un cuadro alrededor de quien anda.
+	func _buscar() -> void:
+		var t: float = zona.T
+		var p: Vector2 = zona.jugador.position / t
+		var v: PackedByteArray = rio
+		var vw: int = zona.ANCHO + 1
+		var vh: int = zona.ALTO + 1
+		var r := int(ceil(lejos)) + 1
+		var mejor := 1.0e9
+		var mp := Vector2.ZERO
+		for y in range(maxi(0, int(p.y) - r), mini(vh, int(p.y) + r + 2)):
+			for x in range(maxi(0, int(p.x) - r), mini(vw, int(p.x) + r + 2)):
+				if v[y * vw + x] == 1:
+					var d2 := p.distance_squared_to(Vector2(x, y))
+					if d2 < mejor:
+						mejor = d2
+						mp = Vector2(x, y)
+		if mejor > 1.0e8:
+			distancia = 99.0
+			objetivo = 0.0
+			return
+		distancia = maxf(0.0, sqrt(mejor) - 0.5)       # el agua empieza media casilla antes de su vértice
+		punto = mp * t
+		objetivo = cerca / maxf(distancia, cerca) * (1.0 - smoothstep(lejos * 0.65, lejos, distancia))
