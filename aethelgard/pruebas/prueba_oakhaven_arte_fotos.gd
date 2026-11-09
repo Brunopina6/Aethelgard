@@ -9,7 +9,7 @@ extends SceneTree
 # Escribe en <carpeta> (.png, 1280×720 salvo lo dicho): los ENCUADRES (Kael en cada sitio, con la interfaz),
 #   9_ciudad_entera (la ciudad entera reducida, sin interfaz ni Kael), 10_movil_20x9 (1600×720, con la cruceta y las
 #   franjas negras del aspecto «keep») y, solo en la maqueta, 11_taberna_x2 (la fachada ampliada ×2) y
-#   12_detras_taberna (Kael por detrás de la taberna: el edificio se aclara a su alrededor).
+#   12_detras_concejo (Kael por detrás de la Casa del Concejo: el edificio se aclara a su alrededor).
 #
 # Modo comparación: ... -- <carpeta_salida> comparar=<carpeta_antes>,<carpeta_despues>
 #   parejas <n>.jpg (ANTES a la izquierda, DESPUÉS a la derecha) y lamina_antes_despues.jpg.
@@ -143,8 +143,8 @@ func _capturar(antes: bool) -> void:
 		_interfaz(false)
 		await _ir(Vector2(16.0, 27.2), 2.0)
 		await _foto("11_taberna_x2")
-		await _ir(Vector2(15.0, 17.6), 1.0)
-		await _foto("12_detras_taberna")
+		await _ir(Vector2(47.0, 14.6), 1.0)             # detrás de la Casa del Concejo (hierba, fuera de la plaza)
+		await _foto("12_detras_concejo")
 	# móvil alargado 20:9 (1600×720): con el estirado «canvas_items» y el aspecto «keep», franjas a los lados
 	_interfaz(true)
 	var dpad = load("res://dpad.gd").new()
