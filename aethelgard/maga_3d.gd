@@ -205,7 +205,7 @@ func play(nombre: String, transicion := 0.2) -> void:
 		return
 	var real: String = nombres.get(nombre, nombre)
 	if anim.has_animation(real) and anim.current_animation != real:
-		anim.play(real, transicion)  # transición suave
+		anim.play(real, _fundido_marcha if _fundido_marcha >= 0.0 else transicion)  # transición suave
 
 
 func andar() -> void:
@@ -222,6 +222,93 @@ func _base_movimiento() -> void:
 	gestos.quitar_todos(0.15)
 	gestos.respirar = 0.0
 	anim.speed_scale = 1.0
+
+
+# ---------------------------------------------------------------- marcha por la exploración (T-084, tanda 2)
+# Los clips de andar y correr son «en el sitio»: mientras un pie está apoyado, va hacia atrás a una velocidad fija, la
+# del clip. Si el personaje avanza más deprisa que eso, el pie patina (en la exploración se andaba a 4,2 m/s con un clip
+# de 1,2 m/s: el pie apoyado resbalaba a 3 m/s). marcha(v) elige el clip por la velocidad real en el suelo y ajusta su
+# ritmo (anim.speed_scale) para que el pie apoyado se quede quieto: correr para la marcha normal (4,2 m/s, el clip de
+# correr de Kael va a 3,9) y andar para ir despacio (el stick poco inclinado, acercarse, apartarse).
+# Velocidad de cada clip sin patinar, en m/s para 1,7 m de alto (se escala con el tamaño del personaje): medida con
+# pruebas/prueba_anim_pies.gd (2026-11-09). Los clips de los tres vienen del mismo movimiento (ciclo de 1,03 s al andar
+# y de 0,63 s al correr) y apoyan el pie izquierdo en el 26 % del ciclo al andar y en el 29 % al correr: al cambiar de
+# uno a otro se entra por el mismo punto de la zancada (el pie que estaba en el suelo sigue en el suelo).
+var vel_andar := 1.50                       # Lya; kael_3d.gd y garon_3d.gd ponen las suyas
+var vel_correr := 5.26
+const APOYO_ANDAR := 0.26
+const APOYO_CORRER := 0.29
+# Ritmo mínimo y máximo de cada clip. Fuera de ellos patina un poco: mejor eso que un andar a cámara lenta o unas
+# piernas que giran como molinillos. Al correr, hasta ×1,8: a 7,56 m/s (Kael corriendo hacia un toque lejano) el clip
+# pediría ×1,94 (6,2 pasos por segundo) y con ×1,8 da 5,7 y el pie apoyado apenas se mueve (un 7 %).
+const RITMO_ANDAR := Vector2(0.5, 1.9)
+const RITMO_CORRER := Vector2(0.55, 1.8)
+const VEL_QUIETO := 0.25                    # m/s: más despacio, no anda (quien la llama decide su reposo)
+const CAMBIO_MARCHA := 0.08                 # ±8 % alrededor del punto de cambio: no parpadea entre andar y correr
+# Al arrancar desde quieto, Kael pasa de golpe a 4,2 m/s (la velocidad del juego no cambia): mientras el reposo se
+# funde con la marcha, los pies del reposo van con el cuerpo y resbalan. Por eso el arranque se funde en 0,1 s (no en
+# 0,2) y entra por la mitad del apoyo del pie izquierdo (el pie bajo el cuerpo, como en el reposo).
+const FUNDIDO_ARRANQUE := 0.1
+const MEDIO_APOYO_ANDAR := 0.56
+const MEDIO_APOYO_CORRER := 0.36
+var _fundido_marcha := -1.0                 # si es ≥ 0, play() usa esta transición (la pone marcha() al arrancar)
+
+
+# Clip y ritmo para ir a «v» m/s por el suelo. Devuelve "andar", "correr" o "" (por debajo de VEL_QUIETO: no toca nada
+# y quien llama pone el reposo que quiera). Se llama en cada fotograma mientras se mueve; el combate no la usa.
+func marcha(v: float) -> String:
+	if anim == null or _muerta or v < VEL_QUIETO:
+		return ""
+	var e := _escala_mundo()
+	var va := vel_andar * e
+	var vc := vel_correr * e
+	var cambio := sqrt(va * vc)             # los dos clips igual de lejos de su ritmo natural
+	var antes := marcha_actual()
+	var nueva := antes
+	if antes == "":
+		nueva = "correr" if v >= cambio else "andar"
+	elif antes == "andar" and v > cambio * (1.0 + CAMBIO_MARCHA):
+		nueva = "correr"
+	elif antes == "correr" and v < cambio * (1.0 - CAMBIO_MARCHA):
+		nueva = "andar"
+	if nueva != antes:
+		var fase := anim.current_animation_position / maxf(anim.current_animation_length, 0.001)
+		_fundido_marcha = FUNDIDO_ARRANQUE if antes == "" else -1.0
+		if nueva == "correr":
+			correr()                         # cada personaje pone lo suyo: el sable al hombro, el viento en la capa…
+		else:
+			andar()
+		_fundido_marcha = -1.0
+		var entra: float
+		if antes == "":                      # desde quieto: por la mitad del apoyo
+			entra = MEDIO_APOYO_CORRER if nueva == "correr" else MEDIO_APOYO_ANDAR
+		else:                                # de andar a correr o al revés: por el mismo punto de la zancada
+			var desde := APOYO_ANDAR if antes == "andar" else APOYO_CORRER
+			var hasta := APOYO_CORRER if nueva == "correr" else APOYO_ANDAR
+			entra = fposmod(fase - desde + hasta, 1.0)
+		anim.seek(entra * anim.current_animation_length, true)
+	var lim: Vector2 = RITMO_CORRER if nueva == "correr" else RITMO_ANDAR
+	anim.speed_scale = clampf(v / (vc if nueva == "correr" else va), lim.x, lim.y)
+	return nueva
+
+
+# "andar" o "correr" si está sonando uno de sus clips de marcha, o "".
+func marcha_actual() -> String:
+	if anim == null:
+		return ""
+	var actual := String(anim.current_animation)
+	if actual == "":
+		return ""
+	if actual == String(nombres.get("Running", "")):
+		return "correr"
+	if actual == String(nombres.get("Andar_normal", nombres.get("Walking", ""))):
+		return "andar"
+	return ""
+
+
+# Cuánto mide respecto a los 1,7 m de los clips medidos (Lya va al 90 % en la exploración: grupo_3d.gd, ESCALA).
+func _escala_mundo() -> float:
+	return maxf(global_transform.basis.get_scale().y, 0.01)
 
 
 # ---------------------------------------------------------------- gestos

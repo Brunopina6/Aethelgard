@@ -24,6 +24,10 @@ const INCL_MAX := 65.0
 const GIRO := 0.0                      # la cámara nunca gira: el mundo siempre se lee igual
 const VELOCIDAD := 4.2                 # m/s andando
 const CORRER_DESDE := 3.0              # si el destino está más lejos, corre
+# Con el mando, el stick poco inclinado anda más despacio, como en el mapa y en las zonas 2D (mapa.gd, zona.gd): la
+# inclinación que pasa de la zona muerta va del 30 % (1,3 m/s, el ritmo natural del clip de andar) al 100 % (4,2 m/s,
+# como siempre). Teclado y toques no cambian: van siempre al 100 % (T-084, tanda 2).
+const STICK_MIN := 0.3
 
 var cam: Camera3D
 var kael: Node3D
@@ -410,9 +414,11 @@ func _process(delta: float) -> void:
 	if Input.is_key_pressed(KEY_S): direccion_teclas.y = 1
 	var paso := Vector3.ZERO
 	var corre := false
+	var fuerza := 1.0
 	if direccion_teclas.length() > 0.1:
 		destino = null
 		paso = Vector3(direccion_teclas.x, 0, direccion_teclas.y).normalized()
+		fuerza = clampf(direccion_teclas.length(), STICK_MIN, 1.0)
 	elif destino != null:
 		var falta: Vector3 = destino - kael.global_position
 		falta.y = 0.0
@@ -421,9 +427,10 @@ func _process(delta: float) -> void:
 		else:
 			corre = falta.length() > CORRER_DESDE
 			paso = falta.normalized()
+	var andado := 0.0
 	if paso != Vector3.ZERO:
 		# el avance del fotograma se hace en tramos cortos: igual a 20 que a 60 FPS
-		var total := VELOCIDAD * (1.8 if corre else 1.0) * delta
+		var total := VELOCIDAD * (1.8 if corre else 1.0) * fuerza * delta
 		var tramos := maxi(1, ceili(total / TRAMO_MAX))
 		var avanzo := false
 		for t in tramos:
@@ -432,6 +439,7 @@ func _process(delta: float) -> void:
 			if is_nan(y):                                   # pared, pendiente, agua o borde: no pasa
 				break
 			kael.global_position = Vector3(siguiente.x, y, siguiente.z)
+			andado += total / tramos
 			avanzo = true
 		if not avanzo:
 			destino = null
@@ -440,9 +448,14 @@ func _process(delta: float) -> void:
 	if paso != Vector3.ZERO:
 		kael.mirar(paso, 0.12)
 		var nuevo := "correr" if corre else "andar"
-		if movimiento != nuevo:
-			movimiento = nuevo
+		# El clip y su ritmo salen de la velocidad real (maga_3d.gd, marcha): a 4,2 m/s corre sin que los pies patinen
+		# (antes andaba con un clip de 1,2 m/s). Sin marcha() (otro modelo), como antes: andar o correr según el modo.
+		if kael.has_method("marcha"):
+			if kael.marcha(andado / maxf(delta, 0.0001)) == "" and kael.marcha_actual() != "":
+				kael.reposo()
+		elif movimiento != nuevo:
 			kael.call(nuevo)
+		movimiento = nuevo
 	elif movimiento != "":
 		movimiento = ""
 		kael.reposo()
