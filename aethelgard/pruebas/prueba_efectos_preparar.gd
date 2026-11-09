@@ -126,6 +126,7 @@ const F_CUERO_LENTO := "S20/Systematic-Sound - Sound Themes - Modern Cloth Foley
 const F_RESPIRA_H := "S20/Articulated Sounds - Human Male Breathe/HUMAN BREATH Male_Deep Opened Mouth Breath with S Formed Lips Long Exhale_F.wav"
 const F_GRITO_H := "S23/Pole Position Production - The Grunts Library/Male 2 - Grunt - Battle Cry - Long - Ehrlund M1.wav"
 const F_JADEO_H := "S23/Pole Position Production - The Grunts Library/Male 1 - Breathing - Gasping - Ehrlund M1.wav"
+const F_ESFUERZO_H := "S18/The Chris Alan - Little Fighter Guy - Vocalizations/Little Fighter Guy - Vocalizations - "
 const F_SALTO_M := "S23/Pole Position Production - The Grunts Library/Female 3 - Grunt - Jumping and Landing - Long - Ehrlund M1.wav"
 const F_GOLPE_M := "S23/Pole Position Production - The Grunts Library/Female 1 - Grunt - Getting Hit - Medium Intensity - Ehrlund M1.wav"
 const F_JADEO_M := "S24/UberDuo - Inhale – Tanja – Character Playset/HMNBrth_Human, Adult, Female, Panting, Nose, Loop_UberDuo_INHL.wav"
@@ -490,9 +491,10 @@ const RECETAS := [
 	# ================================================================ tanda 5: las voces de los héroes en combate (no verbales)
 	# Kael, joven e impulsivo (un hombre joven, algo más agudo); Lya, cálida y ligera (una mujer); Garon, grave y veterano
 	# (otro hombre, más grave). Esfuerzo al atacar, quejido al recibir, jadeo con poca vida, alivio al curarse, victoria.
-	["heroes/kael_esfuerzo_1", F_GRITO_H, 1.70, 2.15, {"norm": "pico", "db": -2.0, "fo": 0.15, "tono": 1.04}],
-	["heroes/kael_esfuerzo_2", F_GRITO_H, 5.43, 5.88, {"norm": "pico", "db": -2.0, "fo": 0.15, "tono": 1.04}],
-	["heroes/kael_esfuerzo_3", F_GRITO_H, 12.90, 13.35, {"norm": "pico", "db": -2.0, "fo": 0.15, "tono": 1.04}],
+	# tanda 6: esfuerzos cortos y enteros (antes, el arranque recortado de un grito largo)
+	["heroes/kael_esfuerzo_1", F_ESFUERZO_H + "Punch Kick Chop_19.wav", 0.0, -1, {"norm": "pico", "db": -2.0, "fo": 0.06}],
+	["heroes/kael_esfuerzo_2", F_ESFUERZO_H + "Jump Lift Push_09.wav", 0.0, -1, {"norm": "pico", "db": -2.0, "fo": 0.08}],
+	["heroes/kael_esfuerzo_3", F_ESFUERZO_H + "Crash Bump Fall_01.wav", 0.0, 0.30, {"norm": "pico", "db": -2.0, "fo": 0.08, "tono": 1.03}],
 	["heroes/kael_herido_1", "S16/Bottle Rocket Fx - Scream/Grunt_Pain_Male_BB_10_SCREAM LIBRARY_BRFX-004.wav", 0.02, 0.32, {"norm": "pico", "db": -2.0, "fo": 0.08, "tono": 1.04}],
 	["heroes/kael_herido_2", "S20/344 Audio - British Soldier Voices/Grunts 16.wav", 0.0, 0.30, {"norm": "pico", "db": -2.0, "fo": 0.08, "tono": 1.04}],
 	["heroes/kael_jadeo_1", F_JADEO_H, 0.85, 2.60, {"norm": "pico", "db": -3.0, "fi": 0.03, "fo": 0.3, "tono": 1.03}],
@@ -507,8 +509,11 @@ const RECETAS := [
 	["heroes/lya_herido_1", F_GOLPE_M, 3.88, 4.18, {"norm": "pico", "db": -2.0, "fo": 0.08}],
 	["heroes/lya_herido_2", F_GOLPE_M, 23.60, 23.88, {"norm": "pico", "db": -2.0, "fo": 0.08}],
 	["heroes/lya_herido_3", F_GOLPE_M, 25.35, 25.64, {"norm": "pico", "db": -2.0, "fo": 0.08}],
-	["heroes/lya_jadeo_1", F_JADEO_M, 2.80, 4.30, {"norm": "pico", "db": -4.0, "fi": 0.05, "fo": 0.3}],
-	["heroes/lya_jadeo_2", F_JADEO_M, 9.20, 10.40, {"norm": "pico", "db": -4.0, "fi": 0.05, "fo": 0.3}],
+	# tanda 6: respiraciones de la misma actriz que los esfuerzos de Lya, con poca ganancia (antes, una muy amplificada)
+	["heroes/lya_jadeo_1", F_SALTO_M, 6.70, 7.50, {"norm": "pico", "db": -4.0, "fi": 0.03, "fo": 0.25,
+		"capas": [[F_SALTO_M, 7.08, 7.42, 0.62, -3.0]]}],
+	["heroes/lya_jadeo_2", F_SALTO_M, 26.22, 26.85, {"norm": "pico", "db": -4.0, "fi": 0.03, "fo": 0.25,
+		"capas": [[F_SALTO_M, 23.00, 23.20, 0.55, -5.0]]}],
 	["heroes/lya_alivio_1", "S19/Eiravaein Works - Kieuk/Kieuk,laughter,female,30s,Charlotte,inhales,titter,lightsqueal.wav", 0.05, 0.68, {"norm": "pico", "db": -3.0, "fo": 0.2}],
 	["heroes/lya_victoria_1", "S19/AudioDesire - Voice Pack One - Emma/VO_001_Female_Laugh_03.wav", 0.07, 1.02, {"norm": "pico", "db": -2.0, "fo": 0.3}],
 	["heroes/garon_esfuerzo_1", "S19/Articulated Sounds - Fight Vocalizations/EMOTE David, Man, Anger Fight Grunt Special Power 03.wav", 0.03, 0.62, {"norm": "pico", "db": -2.0, "fo": 0.2, "tono": 0.9}],
@@ -529,7 +534,18 @@ const RECETAS := [
 	["ambiente/puente_cruje_4", F_VIGA_CRUJE, 2.88, 3.60, {"norm": "pico", "db": -3.0, "fi": 0.03, "fo": 0.2}],
 	["ambiente/puente_cruje_5", "S19/Coll Anderson - House Library Add Ons/EFX CTM Floor Board Creak 03 A.wav", 3.57, 4.42, {"norm": "pico", "db": -3.0, "fi": 0.03, "fo": 0.2,
 		"capas": [[F_CUERDAS_PUERTO, 1.20, 1.60, 0.30, -8.0]]}],
-	# la Guardia de Garon (tanda 5, la pide combate por este nombre): se planta tras el escudo, metálico, firme y breve
+	# ================================================================ tanda 6: Oakhaven vivo (2D ahora; las mismas fuentes valen en 3D, T-103)
+	# el murmullo de la Plaza del Tapiz (un pueblo con caballos, con paso bajo para que no se entiendan las palabras), el
+	# del mercado (voces tranquilas y pasos en tierra), la fuente de la plaza, y detalles según la hora: pájaros de día,
+	# un grillo al atardecer y de noche, y un mochuelo de noche
+	["ambiente/plaza_murmullo", "S17/Charlie Atanasyan - Jordan sound library by Faunethic/Village medium in a canyon voices activity and horses, wide reverb_160822_001.wav", 20.0, 52.0, {"norm": "rms", "db": -22.0, "techo": -3.0, "bucle": 2.0, "pb": 4500.0}],
+	["ambiente/mercado_murmullo", "S18/Charlie Atanasyan - Chile sound library by Faunethic/CHIL Market Village calm with voices light activity with sand ground footsteps.wav", 10.0, 42.0, {"norm": "rms", "db": -22.0, "techo": -3.0, "bucle": 2.0, "pb": 5000.0}],
+	["ambiente/fuente_plaza", "S17/Articulated Sounds - 100 Fountains/FOUNTAIN Medium, Invigorating Network of Dribbles, Close.wav", 5.0, 37.0, {"norm": "rms", "db": -21.0, "techo": -3.0, "bucle": 2.0}],
+	["ambiente/pajaro_ciudad_1", "S18/Discover Oregon - Ravens and Robins/Robins 2015 Medlock Dawn Robins.wav", 0.35, 1.25, {"norm": "rms", "db": -24.0, "techo": -3.0, "fi": 0.05, "fo": 0.3}],
+	["ambiente/pajaro_ciudad_2", "S18/Discover Oregon - Ravens and Robins/Robins 2015 Medlock Dawn Robins.wav", 1.20, 2.60, {"norm": "rms", "db": -24.0, "techo": -3.0, "fi": 0.05, "fo": 0.4}],
+	["ambiente/grillo", "S20/justsoundeffects - Crickets and Cicadas/JSE_Single Cricket Night Countryside Italy_05.wav", 2.0, 8.0, {"norm": "rms", "db": -24.0, "techo": -3.0, "fi": 1.0, "fo": 1.5}],
+	["ambiente/mochuelo_1", "S19/Ivo Vicic - Natural ambiences vol.1/43 Little owl_river_night_distant.WAV", 0.40, 1.20, {"norm": "pico", "db": -3.0, "fi": 0.1, "fo": 0.4}],
+	["ambiente/mochuelo_2", "S19/Ivo Vicic - Natural ambiences vol.1/43 Little owl_river_night_distant.WAV", 3.15, 3.90, {"norm": "pico", "db": -3.0, "fi": 0.1, "fo": 0.4}],	# la Guardia de Garon (tanda 5, la pide combate por este nombre): se planta tras el escudo, metálico, firme y breve
 	["combate/guardia", "S17/Double Trouble Audio - Medieval Armor and Impacts/Plate_Impact_Hard_02.wav", 0.0, 0.60, {"norm": "pico", "db": -1.0, "fo": 0.2, "tono": 0.95,
 		"capas": [["S17/Double Trouble Audio - Medieval Armor and Impacts/Weapon_Impact_Parry_01.wav", 0.02, 0.60, 0.02, -8.0],
 			["S20/SmartSoundFX – Medieval/ARMOR Body Drop Chain Leather Short 02.wav", 0.55, 0.85, 0.0, -10.0]]}],

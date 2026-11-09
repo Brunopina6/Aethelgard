@@ -19,6 +19,8 @@ extends SceneTree
 #   «mezclas=2» o «mezclas=3»: solo las mezclas de esa tanda (con «efectos=…»).
 # Tanda 4: las bestias del bestiario, una mezcla por ataque con los tiempos de su ficha («mezclas=4»).
 # Tanda 5: las voces de los héroes en un combate seguido, con los golpes y la victoria («mezclas=5»).
+# Tanda 6: la mezcla por buses («mezclas=6»): un combate con su música, golpes, voces y la interfaz, y un paseo por una
+#   ciudad con su ambiente, el murmullo, la fuente y pasos; se graba cada bus a la vez y se mide cuánto asoma cada uno
 
 const PROCEDENCIA := "docs/audio/efectos_procedencia.csv"
 const GARGANTA3D := "res://zonas3d/garganta_3d.tscn"
@@ -243,6 +245,8 @@ func _grabar_todo() -> void:
 			await _tanda4()
 		if "5" in mezclas:
 			await _tanda5()
+		if "6" in mezclas:
+			await _tanda6()
 		AudioServer.remove_bus_effect(0, AudioServer.get_bus_effect_count(0) - 1)
 		_indice()
 		for f in fallos:
@@ -284,6 +288,7 @@ func _grabar_todo() -> void:
 	await _tanda3()
 	await _tanda4()
 	await _tanda5()
+	await _tanda6()
 	AudioServer.remove_bus_effect(0, AudioServer.get_bus_effect_count(0) - 1)
 	_indice()
 	for f in fallos:
@@ -604,6 +609,8 @@ func _medir(w: AudioStreamWAV, archivo: String, efecto: String, evento: String) 
 	print("SEÑAL %-26s pico %6.1f dBFS · RMS %6.1f dBFS · %.2f s con señal" % [archivo, pico_db, rms_db, dur])
 	if rms_db < -60.0 or a < 0:
 		fallos.append("%s no da señal (RMS %.1f dBFS)" % [archivo, rms_db])
+	elif pico_db >= -0.3 and archivo.begins_with("buses_"):   # la mezcla de hoy: se apunta, es lo que se mide (tanda 6)
+		print("AVISO: %s llega a %.1f dBFS de pico (la mezcla de hoy roza la saturación: ver las propuestas)" % [archivo, pico_db])
 	elif pico_db >= -0.3:
 		fallos.append("%s satura a la salida (pico %.1f dBFS)" % [archivo, pico_db])
 	var fuente := ""
@@ -669,6 +676,18 @@ func _indice() -> void:
 	t.append("Para escuchar: lo mejor, con auriculares y el volumen a mitad. Fíjate en: si algo suena «de otro juego»")
 	t.append("(demasiado moderno o de dibujos), si los pasos se notan repetidos, si los golpes tapan la música, si la")
 	t.append("victoria y la derrota encajan, y si el río y la cascada se oyen bien sin molestar.")
+	if not mezcla_buses.is_empty():                        # tanda 6: la mezcla por buses
+		t.append("")
+		t.append("## La mezcla por buses (tanda 6)")
+		t.append("")
+		t.append("Cada bus grabado a la vez que el Master: RMS de la parte con señal / la ventana de 0,1 s más fuerte (dBFS) y")
+		t.append("el tiempo que suena; y cuánto quedan los efectos y la interfaz por encima del fondo (la música en el combate, el")
+		t.append("ambiente en la ciudad) en las ventanas en que suenan.")
+		t.append("")
+		t.append("| Escena | Música | Ambiente | Efectos | Interfaz | Efectos sobre el fondo | Interfaz sobre el fondo |")
+		t.append("|---|---|---|---|---|---|---|")
+		for fb in mezcla_buses:
+			t.append("| %s | %s | %s | %s | %s | %s | %s |" % fb)
 	var csv_magias := "%s/magias/magias_procedencia.csv" % dir
 	if FileAccess.file_exists(csv_magias):                 # la propuesta de magias (prueba_efectos_preparar «magias=»)
 		t.append("")
@@ -742,3 +761,161 @@ func _tanda5() -> void:
 		"Combate: Kael, Lya y Garon se lanzan; el enemigo golpea a Lya y a Garon (que jadea con poca vida); Garon bebe una poción (alivio); victoria y Kael lo celebra")
 	await _escena("heroes_victorias", [[0.0, "victoria"], [0.8, "lya_victoria"], [3.5, "victoria"], [4.3, "garon_victoria"]],
 		"La victoria con el gesto de Lya y, después, con el de Garon")
+
+# ================================================================= tanda 6
+
+var mezcla_buses: Array = []                               # filas del informe de la mezcla por buses (indice.md)
+
+
+# La mezcla por buses: se graba a la vez el Master y cada bus (un AudioEffectRecord al final de cada uno) mientras suena
+# una escena, y se mide el nivel de cada bus (RMS de la parte con señal) y, en ventanas de 0,1 s, cuánto quedan los
+# efectos y las voces por encima de la música o del ambiente cuando suenan (la mediana y el peor caso).
+func _tanda6() -> void:
+	var musica := AudioStreamPlayer.new()
+	var ruta: String = load("res://combate.gd").MUSICA_NORMAL
+	if ResourceLoader.exists(ruta):
+		var pista = load(ruta)
+		if pista is AudioStreamMP3 or pista is AudioStreamOggVorbis:
+			pista.loop = true
+		musica.stream = pista
+	musica.volume_db = -6.0                                   # como combate.gd
+	musica.bus = &"Musica"
+	root.add_child(musica)
+	musica.play(20.0)
+	await _real(1.0)
+	var combate := [[0.0, "ui_tic"], [0.4, "ui_confirmar"], [1.0, "kael_esfuerzo"], [1.4, "golpe"],
+		[1.4, "goblin_herido"], [2.6, "goblin_ataque"], [3.2, "golpe_defendido"], [3.2, "lya_herido"], [4.4, "zarzalin_aviso_embestida"],
+		[4.6, "zarzalin_pezuna"], [4.87, "zarzalin_pezuna"], [5.9, "zarzalin_embestida"], [5.9, "golpe"], [5.9, "garon_herido"],
+		[6.6, "garon_jadeo"], [7.8, "ui_tic"], [8.2, "pocion"], [8.4, "garon_alivio"], [9.4, "garon_esfuerzo"], [9.8, "golpe_critico"],
+		[9.8, "zarzalin_caida"], [10.8, "victoria"], [11.6, "lya_victoria"], [12.8, "monedas"]]
+	await _mezcla_por_buses("buses_combate", combate, 15.0,
+		"Combate con su música (−6 dB, como hoy): interfaz, golpes, voces de héroes y enemigos, una bestia, poción y victoria")
+	# propuestas, para comparar con lo mismo: (B) la música 4 dB más baja; (C) como hoy, pero la música se aparta un poco
+	# cuando suenan los efectos (un compresor en el bus Musica que escucha al bus Efectos)
+	musica.volume_db = -10.0
+	await _mezcla_por_buses("buses_combate_musica_10", combate, 15.0, "El mismo combate con la música a −10 dB (propuesta B)")
+	musica.volume_db = -6.0
+	var im := AudioServer.get_bus_index("Musica")
+	var duck := AudioEffectCompressor.new()
+	duck.threshold = -32.0
+	duck.ratio = 4.0
+	duck.attack_us = 8000.0
+	duck.release_ms = 300.0
+	duck.sidechain = &"Efectos"
+	AudioServer.add_bus_effect(im, duck, 0)
+	await _mezcla_por_buses("buses_combate_apartar", combate, 15.0,
+		"El mismo combate con la música a −6 dB que se aparta cuando suenan los efectos (propuesta C: compresor con sidechain)")
+	for k in range(AudioServer.get_bus_effect_count(im) - 1, -1, -1):
+		if AudioServer.get_bus_effect(im, k) == duck:
+			AudioServer.remove_bus_effect(im, k)
+	musica.stop()
+	musica.queue_free()
+	await _real(0.5)
+	# la ciudad: el ambiente de las ciudades, el murmullo de la plaza, la fuente, pasos de piedra y la interfaz
+	var c := Node2D.new()
+	root.add_child(c)
+	var quien := Node2D.new()
+	c.add_child(quien)
+	var cam := Camera2D.new()
+	quien.add_child(cam)
+	cam.make_current()
+	var t := 64.0
+	var plaza := Vector2(40.5, 26) * t
+	Son.fuente_2d(c, "plaza_murmullo", plaza, quien)
+	Son.fuente_2d(c, "fuente_plaza", plaza + Vector2(0, 1) * t, quien)
+	Son.fuente_2d(c, "mercado_murmullo", Vector2(54, 29.5) * t, quien)
+	Mus.pedir("ciudad")
+	quien.position = plaza + Vector2(2, 3) * t
+	await _real(3.0)
+	var pasos: Array = []
+	for i in 14:
+		pasos.append([0.5 + i * 0.36, "paso_piedra"])
+	var paseo: Array = pasos + [[1.0, "pajaro_ciudad"], [3.0, "ui_abrir"], [3.6, "ui_tic"], [4.5, "farol"], [6.0, "campana"],
+		[7.5, "ui_cerrar"]]
+	await _mezcla_por_buses("buses_ciudad", paseo, 10.0,
+		"La Plaza del Tapiz (a 3 casillas de la fuente): el ambiente de las ciudades, el murmullo, la fuente, el mercado lejos, pasos, un farol, la campana y la interfaz")
+
+	Mus.pedir("silencio")
+	c.queue_free()
+	await _real(1.0)
+
+
+func _mezcla_por_buses(nombre: String, golpes: Array, segundos: float, texto: String) -> void:
+	var recs := {}
+	for bus in ["Musica", "Efectos", "Interfaz", "Ambiente"]:
+		var i := AudioServer.get_bus_index(bus)
+		var r := AudioEffectRecord.new()
+		AudioServer.add_bus_effect(i, r)
+		recs[bus] = r
+	Son.reiniciar_contadores()
+	for bus in recs:
+		recs[bus].set_recording_active(true)
+	rec.set_recording_active(true)
+	var t0 := Time.get_ticks_msec()
+	for g in golpes:
+		while Time.get_ticks_msec() - t0 < int(g[0] * 1000.0):
+			await process_frame
+		Son._ultimo.erase(g[1])
+		Son.efecto(g[1])
+	while Time.get_ticks_msec() - t0 < int(segundos * 1000.0):
+		await process_frame
+	rec.set_recording_active(false)
+	var env := {}
+	for bus in recs:
+		recs[bus].set_recording_active(false)
+		var w: AudioStreamWAV = recs[bus].get_recording()
+		if w != null:
+			w.save_to_wav("%s/%s_%s.wav" % [salida, nombre, bus])
+			env[bus] = _ventanas(w)
+	for bus in recs:
+		var i := AudioServer.get_bus_index(bus)
+		for k in range(AudioServer.get_bus_effect_count(i) - 1, -1, -1):
+			if AudioServer.get_bus_effect(i, k) == recs[bus]:
+				AudioServer.remove_bus_effect(i, k)
+	_medir(rec.get_recording(), nombre, "", texto)
+	# cada bus: RMS de las ventanas con señal (> −60 dBFS) y pico de ventana
+	var fila := [nombre]
+	for bus in ["Musica", "Ambiente", "Efectos", "Interfaz"]:
+		var e: Array = env.get(bus, [])
+		var activas := e.filter(func(v): return v > 0.001)
+		var s := 0.0
+		for v in activas:
+			s += v * v
+		var rms := linear_to_db(maxf(sqrt(s / maxf(1.0, activas.size())), 1e-6)) if activas.size() > 0 else -99.0
+		var mx := linear_to_db(maxf(e.max() if e.size() > 0 else 0.0, 1e-6))
+		fila.append("%.1f / %.1f (%d %%)" % [rms, mx, int(100.0 * activas.size() / maxf(1.0, e.size()))])
+		print("BUS %-14s %-9s RMS %6.1f dBFS · ventana más fuerte %6.1f · con señal %d %% del tiempo" % [nombre, bus, rms, mx,
+			int(100.0 * activas.size() / maxf(1.0, e.size()))])
+	# margen: cuando suenan los efectos (o la interfaz), cuánto quedan por encima del fondo (la música o el ambiente)
+	for capa in ["Efectos", "Interfaz"]:
+		var fondo: Array = env.get("Musica", []) if nombre.begins_with("buses_combate") else env.get("Ambiente", [])
+		var arriba: Array = env.get(capa, [])
+		var margenes: Array = []
+		for k in mini(fondo.size(), arriba.size()):
+			if arriba[k] > db_to_linear(-45.0):
+				margenes.append(linear_to_db(maxf(arriba[k], 1e-6)) - linear_to_db(maxf(fondo[k], 1e-6)))
+		margenes.sort()
+		var med: float = margenes[margenes.size() / 2] if margenes.size() > 0 else 0.0
+		var peor: float = margenes[0] if margenes.size() > 0 else 0.0
+		fila.append("%s: mediana %+.1f dB, peor %+.1f dB" % [capa, med, peor])
+		print("MARGEN %-14s %-9s sobre el fondo: mediana %+.1f dB · peor %+.1f dB (%d ventanas)" % [nombre, capa, med, peor, margenes.size()])
+	mezcla_buses.append(fila)
+
+
+# RMS por ventanas de 0,1 s (estéreo de 16 bits) de una grabación.
+func _ventanas(w: AudioStreamWAV) -> Array:
+	var b: PackedByteArray = w.data
+	var n := b.size() / 2
+	var paso := int(w.mix_rate * 0.1) * 2
+	var r: Array = []
+	var i := 0
+	while i < n:
+		var s := 0.0
+		var k := 0
+		while k < paso and i + k < n:
+			var v := b.decode_s16((i + k) * 2) / 32768.0
+			s += v * v
+			k += 1
+		r.append(sqrt(s / maxf(1.0, k)))
+		i += paso
+	return r
