@@ -539,6 +539,30 @@ if ganan:
 Las 12 magias de siempre (también Cura, Bendición y Gracia Divina) **no** piden el alivio: añadir una voz a su
 presentación es la decisión aparte de D-048. Muestras: `D:\REBELUM_diagnostico\sonido_muestras\2026-11-09_heroes_combate\indice.md`
 (cada voz sola, un combate seguido con golpes, poción y victoria, y las tres victorias).
+### La entrada, la cornisa y los puentes de la Garganta 3D (tanda 5, para quien lleve `garganta_3d.gd`)
+
+Dos efectos nuevos que **no son bucles**: suenan de vez en cuando (`"cada"` en su `tres_d`) en el punto de su línea más
+cercano a quien escucha, y nada si está más lejos que `max` (`Sonido.fuente_linea` los reconoce solo). Bus Ambiente,
+prioridad 0, con el eco de la garganta que ya hay. Sin tocar `zonas3d/**` (lo pule gráficos en `area-garganta3d`).
+
+| Efecto | Qué | Archivos | Original (biblioteca) | Licencia | dB · cada · 3D | Salida (RMS) |
+|---|---|---|---|---|---|---|
+| `cuerda_cruje` | Las cuerdas de los puentes colgantes crujen | `ambiente/cuerda_cruje_1…3` | Rogue Waves «AMBNaut_Atmos, EXT Marina, boats, rope creaking» (+ un gozne de Jake Fielding, −12 dB, en la 3.ª) | Sonniss GDC 2024 | −14 · cada 3-8 s · 4 m de referencia, hasta 25 m | −35,1 (a 4 m) |
+| `viento_cuerdas` | El viento silba en las cuerdas de la cornisa y los puentes (ráfagas de 5,5 s) | `ambiente/viento_cuerdas_1…2` | Ivo Vicic «Bora wind: 38 Wind_hurricane_wires_whistle» | Sonniss GDC 2018 | −8 · cada 9-18 s · 6 m, hasta 40 m | −31,9 |
+
+**Líneas propuestas** para `_sonido_3d()` de `zonas3d/garganta_3d.gd` (trazado.gd: `X_CAMINO_O`, `X_BORDE_O`, `ALTO`,
+`PUENTES`; la entrada está hacia z = 37-40):
+
+```gdscript
+for p in T.PUENTES:                                    # las cuerdas de cada puente colgante, a la altura de la mano
+	Sonido.fuente_linea(self, "cuerda_cruje", Vector3(T.X_CAMINO_O, T.ALTO + 0.8, p[0]), Vector3(T.X_CAMINO_O, T.ALTO + 0.8, p[1]))
+# el viento en las cuerdas, por el borde de la cornisa desde la entrada hasta el último puente
+Sonido.fuente_linea(self, "viento_cuerdas", Vector3(T.X_BORDE_O, T.ALTO - 1.0, 40.0), Vector3(T.X_BORDE_O, T.ALTO - 1.0, T.PUENTES[1][1]))
+```
+
+Comprobado sin la escena de verdad (`prueba_efectos`, parte «cuerdas»: en 40 s, las cuerdas 8 veces y el viento al menos
+una, siempre en el punto de su línea más cercano y por Ambiente; a 80 m, nada). Con ventana, cada uno solo:
+`D:\REBELUM_diagnostico\sonido_muestras\2026-11-09_heroes_combate\garganta_cuerdas\`.
 ## Candidatos aún sin usar
 
 - **Alternativas para escuchar y elegir:** `victory_…_01_s29` y `…_02_s29` (otra victoria), InspectorJ
