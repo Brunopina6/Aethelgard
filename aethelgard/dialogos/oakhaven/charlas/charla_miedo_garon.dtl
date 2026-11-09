@@ -1,0 +1,13 @@
+join kael (vivo) left
+join lya (vivo) right
+update lya [extra_data="preocupada"]
+lya: Garon… en la estatua te pusiste delante sin pensarlo.
+garon: Lo pensé. Rápido.
+update kael [extra_data="duda"]
+kael: ¿Y nunca te da miedo nada?
+garon: Una cosa. Contar al volver y que falte alguien.
+update lya [extra_data="firme"]
+lya: Pues cuenta. Estamos los tres.
+garon: …Tres. Bien. A dormir.
+leave lya
+leave kael

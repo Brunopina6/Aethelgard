@@ -1232,10 +1232,11 @@ func _pagar_posada() -> bool:
 	return super._pagar_posada()
 
 
-# Al despertar, una escena corta con los que están en el grupo (ciudades/oakhaven.gd, ESCENAS_POSADA).
+# Al despertar, una charla de posada nueva si la hay (CHARLAS_POSADA: queda vista) o la escena corta de siempre con
+# los que están en el grupo (ESCENAS_POSADA; las dos en ciudades/oakhaven.gd).
 func _tras_posada() -> void:
 	_actualizar_posada()
-	_empezar_dialogo(Oak.escena_posada())
+	_empezar_dialogo(Oak.escena_al_despertar())
 	if noche_invitada:
 		noche_invitada = false
 		_avisar(Oak.TEXTO_NOCHE_GRATIS)

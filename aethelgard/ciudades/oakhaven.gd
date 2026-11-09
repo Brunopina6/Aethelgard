@@ -196,6 +196,38 @@ const ESCENAS_POSADA := [
 	{"dialogo": "oak_posada_solo", "grupo": ["Kael"]},
 ]
 
+# Charlas de posada (narrativa, 09/11): conversaciones breves de los héroes al descansar en el Cuervo, una por noche en
+# lugar de la escena de siempre: la más nueva sin ver de las que ya están desbloqueadas («hito», uno que ya existe) y
+# cuyo «grupo» está entero en el grupo activo. En la lista, de la más antigua a la más nueva (orden de la historia).
+# Lo visto se guarda como estado de la ciudad («charla_…» en «mazmorras», ya en la partida): una partida antigua no
+# lo tiene y vale «sin ver». Los diálogos, en dialogos/oakhaven/charlas/ (con el gesto de cada frase); «intenciones»,
+# una por frase y en su orden («Quién: intención»), para animaciones.
+const RUTA_CHARLAS := "res://dialogos/oakhaven/charlas/"
+const CHARLAS_POSADA := [
+	{"id": "charla_conocerse", "hito": "pv_03", "grupo": ["Kael", "Lya"], "tema": "Cómo se conocieron",
+		"intenciones": ["Lya: lo saca con una sonrisa, a ver qué recuerda él", "Kael: ofendido de broma",
+			"Lya: se defiende con datos", "Kael: la pilla", "Lya: digna, y tierna en la segunda frase",
+			"Kael: le da las gracias sin dárselas"]},
+	{"id": "charla_cama_grande", "hito": "pv_05", "grupo": ["Kael", "Lya", "Garon"], "tema": "La broma de la cama grande",
+		"intenciones": ["Kael: abre el juicio, encantado", "Garon: impasible",
+			"Lya: aporta la prueba, sin piedad y con cariño", "Garon: ni un parpadeo", "Kael: no se lo cree",
+			"Garon: cierra el caso"]},
+	{"id": "charla_miedo_garon", "hito": "pv_06", "grupo": ["Kael", "Lya", "Garon"], "tema": "El miedo de Garon",
+		"intenciones": ["Lya: se lo agradece riñéndole", "Garon: corrige, seco", "Kael: curiosidad de verdad, sin broma",
+			"Garon: lo dice una vez y no lo repetirá", "Lya: le devuelve la calma",
+			"Garon: cuenta de verdad; se ablanda medio segundo"]},
+	{"id": "charla_mano", "hito": "pv_07", "grupo": ["Kael", "Lya", "Garon"], "tema": "La mano del brazalete",
+		"intenciones": ["Garon: lo ha visto; lo dice como un parte", "Kael: esconde la mano también con la broma",
+			"Lya: preocupada de verdad", "Kael: le quita hierro", "Garon: una orden que es cariño",
+			"Kael: lo promete, esta vez en serio"]},
+	{"id": "charla_miedo_lya", "hito": "mecha_tilo", "grupo": ["Kael", "Lya"], "tema": "El miedo de Lya",
+		"intenciones": ["Kael: lo nota y entra con una broma", "Lya: piensa en voz alta",
+			"Lya: el miedo, dicho con precisión", "Kael: la cuida con un plan absurdo", "Lya: se ríe sin querer"]},
+	{"id": "charla_miedo_kael", "hito": "oak_faroles", "grupo": ["Kael", "Lya"], "tema": "El miedo de Kael",
+		"intenciones": ["Lya: lo saca con cuidado", "Kael: desvía", "Kael: el miedo, envuelto en chiste",
+			"Lya: no le deja escapar", "Kael: lo acepta en serio"]},
+]
+
 # ================================================================= misiones pequeñas
 # «pasos»: en orden; «hecho», condición que lo da por hecho. «recompensa»: oro, objetos (los de tienda.gd) y
 # «noche_gratis» (una noche en el Cuervo sin pagar). Las misiones avanzan con las señales de los diálogos
@@ -420,6 +452,40 @@ static func escena_posada() -> String:
 		if todos:
 			return ruta_dialogo(e["dialogo"])
 	return ruta_dialogo(ESCENAS_POSADA[-1]["dialogo"])
+
+
+# La charla de posada que toca esta noche (su id), o "" si no hay ninguna desbloqueada y sin ver.
+static func charla_posada() -> String:
+	var P = load("res://progreso.gd")
+	var activos: Array = load("res://grupo.gd").activos()
+	for i in range(CHARLAS_POSADA.size() - 1, -1, -1):
+		var c: Dictionary = CHARLAS_POSADA[i]
+		if not P.hito(c["hito"]) or charla_vista(c["id"]):
+			continue
+		if c["grupo"].all(func(q): return q in activos):
+			return c["id"]
+	return ""
+
+
+static func charla_vista(id: String) -> bool:
+	return load("res://progreso.gd").estado(NOMBRE, id)
+
+
+static func marcar_charla(id: String) -> void:
+	load("res://progreso.gd").poner_estado(NOMBRE, id)
+
+
+static func ruta_charla(id: String) -> String:
+	return RUTA_CHARLAS + id + ".dtl"
+
+
+# La escena al despertar en la posada: la charla que toque (y queda vista) o, si no hay, la de siempre.
+static func escena_al_despertar() -> String:
+	var c := charla_posada()
+	if c == "":
+		return escena_posada()
+	marcar_charla(c)
+	return ruta_charla(c)
 
 
 # «sin_empezar», «en_curso» o «hecha».
