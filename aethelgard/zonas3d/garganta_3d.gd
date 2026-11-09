@@ -690,6 +690,11 @@ func _sonido_3d() -> void:
 	Sonido.fuente_linea(self, "cascada_grande", CASCADA_ARRIBA, CASCADA_ABAJO)
 	# la caída del primer puente (T-102): el mismo sonido, más bajo, a la altura del puente
 	Sonido.fuente_3d(self, "cascada_grande", Vector3(T.muro_oeste(15.2) + 1.0, -2.0, 15.2), -6.0)
+	# los puentes crujen (cuerdas y tablas) y el viento silba en las cuerdas de la cornisa (sonido, tanda 5)
+	for p in T.PUENTES:                                    # las cuerdas de cada puente colgante, a la altura de la mano
+		Sonido.fuente_linea(self, "puente_cruje", Vector3(T.X_CAMINO_O, T.ALTO + 0.8, p[0]), Vector3(T.X_CAMINO_O, T.ALTO + 0.8, p[1]))
+	# el viento en las cuerdas, por el borde de la cornisa desde la entrada hasta el último puente
+	Sonido.fuente_linea(self, "viento_cuerdas", Vector3(T.X_BORDE_O, T.ALTO - 1.0, 40.0), Vector3(T.X_BORDE_O, T.ALTO - 1.0, T.PUENTES[1][1]))
 	var x_eje := (T.X_BORDE_O + T.X_BORDE_E) * 0.5
 	Sonido.fuente_linea(self, "viento_abismo", Vector3(x_eje, T.BAJO + 3.0, T.Z_PRESA_N), Vector3(x_eje, T.BAJO + 3.0, T.Z_NORTE + 2.0))
 	Sonido.fuente_linea(self, "viento_abismo", Vector3(T.X_CAMINO_O, T.ALTO - 2.5, T.PUENTES[0][0]),
