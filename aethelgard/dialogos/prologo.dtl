@@ -2,8 +2,9 @@ join kael (vivo) left
 join lya (vivo) right
 update lya [extra_data="inquieta"]
 lya: Kael…[pause=0.4] ¿lo has visto? La niebla ha vuelto a tragarse otra aldea al norte de Oakhaven.
-update kael [extra_data="ligero"]
+update kael [extra_data="ligero+risa"]
 kael: Lo he visto. Y como siempre, a mí ni me roza.[pause=0.3] Será que hasta la niebla tiene buen gusto.
+update lya [extra_data="enfado"]
 lya: No bromees. Nadie es inmune a la niebla.[pause=0.5] Nadie… salvo tú.
 update kael [extra_data="brazalete"]
 kael: Supongo que este brazalete sirve para algo más que para presumir.
@@ -14,10 +15,11 @@ update kael [extra_data="sorpresa"]
 kael: ¿La llave de qué?
 update lya [extra_data="decidida"]
 lya: No lo sé.[pause=0.3] Pero si los Hollines han empezado a salir del bosque, alguien tiene que averiguarlo.
-update kael [extra_data="decidido"]
+update kael [extra_data="decidido+animo"]
 kael: Entonces vamos. El Gran Bosque Verde no está lejos.
 update lya [extra_data="preocupada"]
 lya: Ten cuidado ahí fuera.
+update lya [extra_data="firme"]
 lya: Los Hollines ya no son solo sombras: ahora llevan hachas del Vacío.
 leave lya
 leave kael

@@ -37,6 +37,16 @@ var usa_vara := true
 var heroe := "Lya"
 var vara: Node3D
 var _vara_punta := 0.5
+# Esperas de exploración (esperas_3d.gd): solo en la exploración, con activar_esperas().
+var clave_esperas := ""                     # qué héroe es («Lya» si es este script tal cual; kael_3d.gd y garon_3d.gd
+                                            # ponen el suyo): sus esperas y su porte al andar. «» = ninguno (enemigos)
+var esperas: Node = null
+# Durante una espera el cetro va con la mano (lo inclina, lo cruza delante…); fuera de ellas, siempre derecho.
+var vara_mano := 0.0
+var _vara_calibrar := false
+var _vara_hoja_local := Vector3.UP
+var _vara_filo_local := Vector3.FORWARD
+var _tw_vara: Tween
 
 
 func _ready() -> void:
@@ -64,6 +74,10 @@ func _ready() -> void:
 	gestos = load("res://gestos_3d.gd").new()
 	skel.add_child(gestos)
 	gestos.preparar()
+	if clave_esperas == "" and get_script() != null and get_script().resource_path == "res://maga_3d.gd":
+		clave_esperas = "Lya"                    # este script tal cual es Lya (los enemigos que heredan de él, no)
+	for k in ESTILOS.get(clave_esperas, {}):
+		gestos.registrar("porte_" + k, ESTILOS[clave_esperas][k])
 	_normalizar()
 	_yaw0 = _angulo(_adelante_mundo())
 	mirar(FRENTE, 0.0)
@@ -107,6 +121,16 @@ func _actualizar_vara(sk: Skeleton3D) -> void:
 	if w > 0.001:
 		hoja = hoja.slerp(gestos.dir(Vector3(0.25, 1.0, 0.0)), w)
 	filo = (filo - hoja * filo.dot(hoja)).normalized()
+	if _vara_calibrar:                                   # al empezar una espera: cómo va el cetro respecto a la mano
+		var b0 := mano.basis.orthonormalized().inverse()
+		_vara_hoja_local = b0 * hoja
+		_vara_filo_local = b0 * filo
+		_vara_calibrar = false
+	if vara_mano > 0.001:
+		var bm := mano.basis.orthonormalized()
+		hoja = hoja.slerp((bm * _vara_hoja_local).normalized(), vara_mano)
+		filo = filo.slerp((bm * _vara_filo_local).normalized(), vara_mano)
+		filo = (filo - hoja * filo.dot(hoja)).normalized()
 	vara.global_transform = sk.global_transform * Transform3D(Basis(filo, hoja, filo.cross(hoja)), palma)
 
 
@@ -203,6 +227,8 @@ func _angulo(v: Vector3) -> float:
 func play(nombre: String, transicion := 0.2) -> void:
 	if anim == null:
 		return
+	if esperas != null:
+		esperas.cortar()                             # cualquier otra animación corta la espera (esperas_3d.gd)
 	var real: String = nombres.get(nombre, nombre)
 	if anim.has_animation(real) and anim.current_animation != real:
 		anim.play(real, _fundido_marcha if _fundido_marcha >= 0.0 else transicion)  # transición suave
@@ -211,14 +237,43 @@ func play(nombre: String, transicion := 0.2) -> void:
 func andar() -> void:
 	_base_movimiento()
 	play("Walking")
+	_porte("andar")
 
 
 func correr() -> void:
 	_base_movimiento()
 	play("Running")
+	_porte("correr")
+
+
+# Porte al andar y al correr (09/11): los clips de los tres héroes son el mismo movimiento de Meshy, así que cada uno
+# lleva encima su manera de ir, como un giro que se suma al del clip (gestos_3d.gd, «+hueso»). El ritmo no cambia: lo
+# fija la velocidad para que el pie apoyado no patine (marcha). Inclinarse adelante: eje (0, 0, -1), grados +.
+const ESTILOS := {
+	"Kael": {      # impaciente: echado hacia delante, con la cabeza alta, como quien tira del grupo
+		"andar": {"+columna": [Vector3(0, 0, -1), 5.0], "+cabeza": [Vector3(0, 0, -1), -4.0]},
+		"correr": {"+columna": [Vector3(0, 0, -1), 9.0], "+cabeza": [Vector3(0, 0, -1), -6.0]},
+	},
+	"Lya": {       # ligera y curiosa: erguida, mirando alrededor sin prisa
+		"andar": {"+pecho": [Vector3(0, 0, -1), -3.0], "+cabeza": [Vector3(0, 1, 0), 9.0, 0.21],
+			"+cuello": [Vector3(1, 0, 0), 3.0, 0.29, 1.0]},
+		"correr": {"+columna": [Vector3(0, 0, -1), 4.0], "+cabeza": [Vector3(0, 0, -1), -3.0]},
+	},
+	"Garon": {     # sólido y veterano: el pecho fuera y la mirada al frente, algo baja
+		"andar": {"+pecho": [Vector3(0, 0, -1), -4.0], "+cabeza": [Vector3(0, 0, -1), 5.0]},
+		"correr": {"+columna": [Vector3(0, 0, -1), 6.0], "+pecho": [Vector3(0, 0, -1), -2.0]},
+	},
+}
+
+
+func _porte(como: String) -> void:
+	if gestos != null and gestos.gestos_def.has("porte_" + como):
+		gestos.poner("porte_" + como, 1.0, 0.25)
 
 
 func _base_movimiento() -> void:
+	if esperas != null:
+		esperas.cortar()
 	gestos.quitar_todos(0.15)
 	gestos.respirar = 0.0
 	anim.speed_scale = 1.0
@@ -327,6 +382,51 @@ func marcha_actual() -> String:
 # Cuánto mide respecto a los 1,7 m de los clips medidos (Lya va al 90 % en la exploración: grupo_3d.gd, ESCALA).
 func _escala_mundo() -> float:
 	return maxf(global_transform.basis.get_scale().y, 0.01)
+
+
+# ---------------------------------------------------------------- esperas de exploración (personalidad, 09/11)
+
+# Enciende (o apaga) las esperas: si se queda quieto en su reposo unos segundos, hace una de las suyas (esperas_3d.gd).
+# Solo la exploración la llama (vista3d.gd y grupo_3d.gd); en combate no hay esperas.
+func activar_esperas(si := true) -> bool:
+	if not si:
+		if esperas != null:
+			esperas.cortar()
+			esperas.queue_free()
+			esperas = null
+		return false
+	if esperas != null:
+		return true
+	if anim == null or not ResourceLoader.exists("res://esperas_3d.gd"):
+		return false
+	var e: Node = load("res://esperas_3d.gd").new()
+	if not e.preparar(self, clave_esperas):
+		e.free()
+		return false
+	esperas = e
+	add_child(e)
+	return true
+
+
+# Al empezar una espera, el cetro pasa a ir con la mano (la espera lo inclina o lo cruza delante); al acabar, vuelve a
+# ir siempre derecho. Empieza y acaba en la pose de reposo, donde las dos maneras coinciden.
+func espera_empieza() -> void:
+	if vara == null:
+		return
+	_vara_calibrar = true
+	_fundir_vara(1.0, 0.05)
+
+
+func espera_termina(fundido: float) -> void:
+	if vara != null:
+		_fundir_vara(0.0, maxf(fundido, 0.05))
+
+
+func _fundir_vara(meta: float, t: float) -> void:
+	if _tw_vara != null and _tw_vara.is_valid():
+		_tw_vara.kill()
+	_tw_vara = create_tween()
+	_tw_vara.tween_property(self, "vara_mano", meta, t)
 
 
 # ---------------------------------------------------------------- gestos
