@@ -2505,12 +2505,16 @@ func _teatro_erebo(obj: Dictionary, es_jefe: bool, al_resultado: Callable) -> vo
 		await get_tree().process_frame
 	create_tween().tween_property(pantalla, "modulate:a", 1.0, 0.4)
 
-	var inv = load("res://invocacion_erebo.gd").new()
+	# T-101: la invocación nueva si se ha elegido en Ajustes (invocacion_erebo_nueva.gd); si no, la de siempre.
+	var nueva: bool = ResourceLoader.exists("res://invocacion_erebo_nueva.gd") and load("res://invocacion_erebo_nueva.gd").elegida()
+	var inv = load("res://invocacion_erebo_nueva.gd" if nueva else "res://invocacion_erebo.gd").new()
 	mundo.add_child(inv)
 	inv.ajustes.calidad = "movil" if movil else "alta"
 	inv.evento.connect(_evento_erebo.bind(titulo))
 	var ctx := {"invocador": lya, "objetivo": doble, "es_jefe": es_jefe, "camara": cam,
 		"al_resultado": _resultado_erebo.bind(doble, al_resultado)}
+	if nueva:                                      # Kael mira (y reacciona) si está en pie
+		ctx["kael"] = heroes.any(func(h): return h["nombre"] == "Kael" and h["hp"] > 0)
 	for a in OS.get_cmdline_user_args():           # pruebas: -- erebo=exito / erebo=fallo
 		if a.begins_with("erebo="):
 			ctx["forzar"] = a.substr(6)
