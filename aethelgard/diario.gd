@@ -153,8 +153,10 @@ func _pintar_notas(Progreso, lugares: Array) -> void:
 	var leidas: Array = []
 	for l in Progreso.CIUDADES:
 		for n in Progreso.notas_de(l):
-			if Progreso.visto(n["id"]):
-				leidas.append([n, lugares[l]["nombre"]])
+			if Progreso.visto(n["id"]):                # (Pastos Verdes, el 10, no está en LUGARES: su módulo da el nombre)
+				var nombre: String = lugares[l]["nombre"] if l < lugares.size() \
+					else str(load(Progreso.CIUDADES[l]).get_script_constant_map().get("NOMBRE_LUGAR", ""))
+				leidas.append([n, nombre])
 	if leidas.is_empty():
 		return
 	cuerpo.add_child(_texto("Notas", 32, Estilo.ORO, true))
