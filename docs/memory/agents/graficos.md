@@ -509,3 +509,124 @@ con el puente si es barato, y los enganches de narrativa y de sonido en `gargant
 2. Que la generación (peñas, sillares, dovelas) se haga una vez y se guarde: la carga vuelve a lo de antes.
 3. Medir en un hueco sin carga y en el Redmi (perfil bajo). Si hace falta, sacar las vetas del bajo y juntar las llamas.
 4. Luego, T-103 (Oakhaven 3D), como ha dicho el coordinador.
+
+
+## 2026-11-09 23:40 · T-103, tramo 1: Oakhaven 3D jugable (Puerta del Sur → plaza → posada por dentro)
+
+Copia nueva `D:\Aethelgard_oakhaven3d`, rama `area-oakhaven3d`, creada desde `integracion-experimental` @ `b86ef60`
+(`git worktree add`, sin tocar otras copias). Importación aislada en
+`D:\REBELUM_diagnostico\importaciones\oakhaven3d_2026-11-09\`. Se activa con «-- 3d oakhaven3d» o en Ajustes.
+
+### 1. Qué se juega (comprobado ejecutando, aislado)
+
+- **El recorrido:** se entra desde el mapa por la Puerta del Sur (el `INICIO` de la 2D).
+  - Aldric, a un lado del arco, abre su diálogo de siempre (`Oak.dialogo_de`, Dialogic).
+  - Calle Mayor con faroles → Plaza del Tapiz (fuente, tablón, puesto de flores) → Calle del Cuervo → puerta de la
+    Taberna del Cuervo Oxidado.
+  - Cerca de la taberna se oye a la clientela (`Vida.VOCES`, `Vida.frase` con su franja).
+- **La posada se recorre por dentro:** la sala se construye por código lejos de la ciudad y se entra con un fundido.
+  - Lleva barra con botellas, hogar con fuego, mesas con velas y parroquianos, barriles y la escalera a las
+    habitaciones.
+  - La pared del sur es baja para que la cámara, que mira al norte, vea dentro.
+  - **La posadera** abre el panel con `Posada.servicios()`:
+    - dormir (`Posada.dormir()`: 30 monedas o la noche gratis; cura al grupo, amanece y sale la escena de la posada si
+      la hay);
+    - la sopa (`Posada.comer()`, 10);
+    - rumores (`Posada.rumor()`).
+  - Se guarda tras cada servicio. Se sale a la calle ante la taberna.
+- **Salida al mapa** por el borde sur. Guardado al entrar, al pausar o cerrar la app y tras los servicios. Dentro de
+  la posada se guarda la puerta de la calle.
+- **Partidas antiguas:**
+  - `modo3d.gd` pone Oakhaven en `REGIONES`, `EN_PRUEBAS` («oakhaven3d») y `EQUIVALENTES` (`ciudad_oakhaven.tscn`).
+  - Una partida guardada en la ciudad 2D vuelve a la 3D en la misma casilla (`posicion_desde_2d`; si cae en un
+    edificio, a la plaza).
+  - Sin «oakhaven3d», todo sigue como siempre: la 2D. No toqué `progreso.gd`: su `restaurar()` ya pasa por
+    `escena_equivalente`.
+- **Ajustes** (`menus.gd`, bajo la Garganta): «Oakhaven: 2D (la de siempre) / 3D (en pruebas)». No toqué las filas de
+  calidad.
+- **El decorado:**
+  - los 18 modelos de Blender de gráficos (T-089) que hacen falta para este tramo y lo que se ve desde él, en su sitio;
+  - el relleno de casas y faroles de `oakhaven_piezas.gd`;
+  - suelo por sitios (empedrado, hierba, tierra), adoquines, hierba y flores en los jardines, prado y camino fuera de
+    la muralla;
+  - faroles con llama y halo; luz real cerca del camino, solo en el alto;
+  - hora azul (cielo índigo, luz fría del oeste) con las ventanas encendidas de los modelos.
+
+### 2. Archivos y commits (`area-oakhaven3d`)
+
+- `237ba99`: los 18 `.glb` (11 MB, obra propia de gráficos, de `oakhaven_arte/modelos/*.blend`) y las dos imágenes que
+  Godot saca de ellos.
+- `54b84f9`: el tramo jugable.
+  - `zonas3d/oakhaven_3d.gd` y `.tscn`;
+  - `zonas3d/oakhaven/ciudad.gd` y `posada3d.gd`;
+  - `modo3d.gd` y `menus.gd`;
+  - `pruebas/prueba_oakhaven3d.gd`.
+- `2893d06`: el presupuesto del Mali y las capturas (`pruebas/prueba_oakhaven3d_fotos.gd`).
+- `dd328ac`: las dos líneas de `lista_pruebas.txt`.
+- Este informe, en su propio commit.
+- Reutilizo de la Garganta, ya integrada: `zonas3d/garganta/materiales.gd` y `roca.gd` (llama, halos, sillar, hierba,
+  lotes).
+- `project.godot`: la importación sin editor le quitó el registro de personajes de Dialogic. Lo devolví a su versión y
+  no lo confirmé.
+
+### 3. Pruebas
+
+- **`prueba_oakhaven3d`** (nueva, auto): SUPERADA. Comprueba:
+  - modo3d con y sin «oakhaven3d» y la partida de la 2D;
+  - Aldric;
+  - de la Puerta del Sur a la taberna, 221 fotogramas sin atascos;
+  - dentro de la posada: sopa −10, un rumor, dormir −30 con el grupo curado y amanece;
+  - salir, guardar y volver, y salida al mapa.
+- **Batería completa aislada** sobre `dd328ac`: SUPERADAS 68 · FALLIDAS 0 · MANUALES 36 · NO SEGURAS 0; `partida.save` real, carpeta real de datos y proyecto sin cambios (`D:\REBELUM_diagnostico\oakhaven3d\2026-11-09\bateria\2026-11-09_232625\resumen.md`). Pasan también `prueba_restaurar_escenas`, `prueba_escenas`, `prueba_dpad`, `prueba_toque`, `prueba_mando`, `prueba_teclado` e `prueba_integridad`.
+
+### 4. Evidencias (PC con RTX 3050; no es el Redmi)
+
+- **Antes (la ciudad 2D de hoy) y después (3D), 8 parejas:**
+  `D:\REBELUM_diagnostico\oakhaven3d\2026-11-09\comparacion_oakhaven_2d_3d.jpg`.
+  - Capturas: 2D en `...\fotos\2026-11-09_231245\prueba_oakhaven_fotos\`; 3D en
+    `...\fotos\2026-11-09_232335\prueba_oakhaven3d_fotos\` (bajo, medio y alto).
+- **Dibujo por vista con la cámara del juego**, recorrido de la calle (Puerta del Sur a la taberna) / dentro de la
+  posada:
+
+  | Perfil | Llamadas de dibujo, calle | Primitivas, calle | Llamadas, posada | Primitivas, posada |
+  |---|---|---|---|---|
+  | bajo | 49-65 | 240-298 k | 49-55 | 102 k |
+  | medio | 59-79 | 334-401 k | 73-79 | 203 k |
+  | alto | 107-183 | 743-830 k | 73-79 | 203 k |
+
+  - En la posada, unos 60 k triángulos son de Kael, Lya y Garon.
+  - Antes de juntar los modelos eran 600-6000 llamadas de dibujo: los glb traen cada pieza aparte (la taberna, 400
+    mallas).
+  - GPU del PC: 0,7-1,5 ms.
+- **Carga** (sin ventana, perfil del PC): 3,2 s hasta el fotograma 20. La ciudad tarda 1,0 s, sobre todo en juntar
+  los modelos: `_modelos` 387 ms y `_relleno` 448 ms.
+
+### 5. Límites (respecto al presupuesto que fijó el coordinador)
+
+- **Perfil medio:** 60-80 llamadas de dibujo, dentro del presupuesto, pero **334-401 k primitivas**, por encima de los
+  200-300 k.
+  - La simplificación (`generate_lod`) solo quita un 10 %: las caras planas no comparten vértices.
+  - Pendiente: un modelo «ligero» del árbol (112 k triángulos) y de las casas para el medio y el bajo, o rehacer los
+    glb con menos detalle desde los `.blend`.
+  - **Pendiente en Redmi.**
+- **Claves nuevas de perfil** para el especialista de rendimiento (se leen con un valor por defecto):
+  - `sombras_edificios`: hoy solo en el alto;
+  - las cantidades de `ciudad.gd` (`ADOQUINES`, `MATAS`, `FLORES`, `SIMPLIFICAR`), que hoy van por nombre de perfil.
+- **El aspecto todavía no llega al de la 2D ni a la referencia.** Faltan:
+  - setos, macizos y árboles en los jardines (la 2D está mucho más llena);
+  - tono más cálido;
+  - la casa de la botica tapa la esquina suroeste de la plaza;
+  - la posadera queda detrás del panel.
+- **Lo demás de Oakhaven sigue en la 2D** (vecinos, misiones, cofres, mercado, árbol, ronda): son los siguientes tramos.
+- **Música:** el contexto de `res://zonas3d/oakhaven_3d.tscn` falta en `musica.gd`, que no es mío.
+- **No oído:** pasos (piedra, madera, hierba) y la puerta.
+
+### 6. Siguiente paso
+
+1. Que el coordinador lo mida en el Redmi (APK con Oakhaven 3D elegida en Ajustes).
+2. Modelos ligeros y vegetación de jardín; tono cálido; aclarar la casa que tape a Kael.
+3. Guardar las mallas juntadas en `user://`, como la Garganta (la carga, −0,8 s).
+4. El siguiente tramo: el mercado (la tienda), Selene en la botica, el árbol y los vecinos de la plaza.
+5. **Para otros:**
+   - `musica.gd`: que `oakhaven_3d.tscn` vaya con «ciudad».
+   - Rendimiento: las claves de §5.
