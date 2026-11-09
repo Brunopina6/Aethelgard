@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://c1lyny5tsmhbb"
-path="res://.godot/imported/garon_2.png-30165e7ca9e06a4ad095b2c54e2ef64f.ctex"
+path.s3tc="res://.godot/imported/garon_2.png-30165e7ca9e06a4ad095b2c54e2ef64f.s3tc.ctex"
+path.etc2="res://.godot/imported/garon_2.png-30165e7ca9e06a4ad095b2c54e2ef64f.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "79f1aae2e0c1abd583960954bbc3399b"
@@ -14,11 +16,11 @@ generator_parameters={
 [deps]
 
 source_file="res://garon_2.png"
-dest_files=["res://.godot/imported/garon_2.png-30165e7ca9e06a4ad095b2c54e2ef64f.ctex"]
+dest_files=["res://.godot/imported/garon_2.png-30165e7ca9e06a4ad095b2c54e2ef64f.s3tc.ctex", "res://.godot/imported/garon_2.png-30165e7ca9e06a4ad095b2c54e2ef64f.etc2.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

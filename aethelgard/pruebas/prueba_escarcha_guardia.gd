@@ -131,6 +131,7 @@ func _probar() -> void:
 	await _escarcha()
 	await _guardia()
 	await _varios_impactos()
+	await _arreglos()
 	_limpiar()
 	Engine.remove_meta("archivo_partida_prueba")
 	print("OK: ", "; ".join(hechos))
@@ -142,10 +143,10 @@ func _probar() -> void:
 
 # ---------------------------------------------------------------- A. Escarcha
 func _aprendizaje() -> void:
-	_ok(A.ACTIVOS["Escarcha"] == 2, "A: Escarcha no está enganchada (ACTIVOS %d)" % A.ACTIVOS["Escarcha"])
+	_ok(A.ACTIVOS["Escarcha"] == 3, "A: Escarcha no está enganchada entera (ACTIVOS %d)" % A.ACTIVOS["Escarcha"])
 	_ok(A.nivel_usable("Kael", "Escarcha", {"nivel": 5}) == 0 and A.nivel_usable("Kael", "Escarcha", {"nivel": 6}) == 1
-		and A.nivel_usable("Kael", "Escarcha", {"nivel": 12}) == 2 and A.nivel_usable("Kael", "Escarcha", {"nivel": 30}) == 2,
-		"A: los niveles de la Escarcha (6 y 12; el III aún no)")
+		and A.nivel_usable("Kael", "Escarcha", {"nivel": 12}) == 2 and A.nivel_usable("Kael", "Escarcha", {"nivel": 20}) == 3,
+		"A: los niveles de la Escarcha (6, 12 y 20)")
 	_ok(A.nuevas_al_subir("Kael", {"nivel": 6}, 5, 6) == [["Escarcha", 1]], "A: al subir a 6 no se aprende la Coraza")
 	_ok(A.nivel_usable("Kael", "Escarcha", {"nivel": 7, "libros": {"Escarcha": 2}}) == 2, "A: el libro no enseña la Muralla")
 	_ok(A.libros_en_venta().has(["Escarcha", 2, 400]), "A: el libro de la Muralla no se vende")
@@ -269,7 +270,7 @@ func _guardia() -> void:
 	await _esperar(3)
 	_ok(kael.get("guardia_de", "") == "Garon" and garon.get("defendiendo", false) and garon["mp"] == pm0 - 4,
 		"B: la Guardia no cubre a Kael, no pone a Garon en guardia o no gasta 4 PM")
-	_ok(_pedidos("defensa", desde).size() == 1 and not _senas("guardia").is_empty(), "B: la Guardia no suena una vez o no tiene seña")
+	_ok(_pedidos("guardia", desde).size() == 1 and _pedidos("defensa", desde).is_empty() and not _senas("guardia").is_empty(), "B: la Guardia no suena una vez («guardia») o no tiene seña")
 	_ok("guardia" in A.estados_de(kael), "B: el HUD no enseña el escudo junto a Kael")
 	await _hasta(_libre, 400)
 	# la embestida va a Garon, a la mitad; Kael no pierde nada
@@ -369,3 +370,32 @@ func _heroes_esperan() -> void:
 	for i in range(c.cola.size() - 1, -1, -1):
 		if c.cola[i].get("hero", false):
 			c.cola.remove_at(i)
+
+
+# Arreglos del 09/11: el mordisco de Gorthor no se cura con lo que paró la coraza, y un golpe parado entero no tiñe de
+# rojo ni hace la reacción de dolor.
+func _arreglos() -> void:
+	_combate({"Kael": 20}, 5, "jefe")
+	await _esperar(30)
+	var g: Dictionary = c.enemigos[0]
+	var kael := _heroe("Kael")
+	A.poner_barrera(kael, 0.30)
+	g["devora"] = true
+	g["absorbido"] = 0
+	await c._animar_golpe(g, kael, 40, "")
+	g["devora"] = false
+	var paro: int = int(g.get("absorbido", 0))
+	_ok(paro > 0 and paro <= 40, "arreglo: el impacto no apunta lo que paró la coraza (%d)" % paro)
+	g["hp"] = g["hp_max"] - 100
+	_ok(c._cura_devorar(g, 40) == int((40 - paro) * 0.6), "arreglo: el mordisco se cura %d (esperado %d)" % [c._cura_devorar(g, 40), int((40 - paro) * 0.6)])
+	g["absorbido"] = 0
+	_ok(c._cura_devorar(g, 40) == 24, "arreglo: sin coraza, el mordisco ya no cura el 60 %% (%d)" % c._cura_devorar(g, 40))
+	await _esperar(40)
+	kael["barrera"] = 500
+	var real: int = c._quitar_pv(kael, 30)
+	c._golpe_visual(kael, real, "")
+	await _esperar(1)
+	var mod: Color = kael["rig"].modulate
+	_ok(real == 0 and mod.r < 1.0 and mod.b > 1.0, "arreglo: un golpe parado entero tiñe %s (debería ser frío)" % mod)
+	await _cerrar()
+	hechos.append("arreglos: el mordisco no se cura con lo absorbido; parado entero, frío")
