@@ -452,13 +452,16 @@ func _process(delta: float) -> void:
 		# (antes andaba con un clip de 1,2 m/s). Sin marcha() (otro modelo), como antes: andar o correr según el modo.
 		if kael.has_method("marcha"):
 			if kael.marcha(andado / maxf(delta, 0.0001)) == "" and kael.marcha_actual() != "":
-				kael.reposo()
+				kael.parar_marcha()
 		elif movimiento != nuevo:
 			kael.call(nuevo)
 		movimiento = nuevo
 	elif movimiento != "":
 		movimiento = ""
-		kael.reposo()
+		if kael.has_method("parar_marcha"):
+			kael.parar_marcha()                         # sin un paso de más al pararse (maga_3d.gd)
+		else:
+			kael.reposo()
 	var zoom := Input.get_axis("camara_acercar", "camara_alejar") if InputMap.has_action("camara_acercar") else 0.0
 	if zoom != 0.0:                                     # + / - o el stick derecho (la rueda y el pellizco, como siempre)
 		distancia = clampf(distancia + zoom * 12.0 * delta, DIST_MIN, DIST_MAX)

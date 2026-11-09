@@ -292,6 +292,24 @@ func marcha(v: float) -> String:
 	return nueva
 
 
+# Se para tras andar o correr: su reposo, pero sin que la zancada siga mientras se funde con él (el clip de marcha se
+# congela durante la mezcla). Si no, en esa mezcla el pie que iba en el aire seguía su ciclo y daba un paso más con el
+# cuerpo ya quieto (y sonaba: Sonido.pasos_3d). Si vuelve a andar antes, marcha() pone su ritmo.
+const FUNDIDO_PARADA := 0.3
+
+
+func parar_marcha() -> void:
+	var venia := marcha_actual() != ""
+	reposo()
+	if not venia or anim == null:
+		return
+	var ritmo := anim.speed_scale                  # el que deja el reposo (más lento si está cansado)
+	anim.speed_scale = 0.0
+	get_tree().create_timer(FUNDIDO_PARADA).timeout.connect(func():
+		if is_instance_valid(self) and anim.speed_scale == 0.0 and not _muerta:
+			anim.speed_scale = ritmo)
+
+
 # "andar" o "correr" si está sonando uno de sus clips de marcha, o "".
 func marcha_actual() -> String:
 	if anim == null:
