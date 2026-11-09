@@ -11,15 +11,26 @@ extends "res://zona.gd"
 #
 # EL ARTE (gráficos): si existe ciudades/oakhaven_piezas.gd con
 #     static func crear_pieza(id: String, rect_casillas: Rect2i, tam_casilla: int) -> Node2D
-# se le pide un dibujo para cada lugar de LUGARES, cada pieza, cada nota con casilla y cada detalle de canon. Si no
-# existe, o si devuelve null, se dibuja la versión provisional de aquí. Contrato:
-#   - rect_casillas: el rectángulo del lugar; para lo que es un punto (piezas, notas y detalles), la casilla que lo
-#     contiene (1 × 1). tam_casilla: 64.
+# se le pide un dibujo para cada lugar de LUGARES, cada pieza, cada nota con casilla, cada detalle de canon, cada casa
+# del relleno («casa_<ancho>x<alto>», p. ej. «casa_4x4») y cada farola de las calles («farol»). Si no existe, o si
+# devuelve null, se dibuja la versión provisional de aquí. Contrato:
+#   - rect_casillas: el rectángulo del lugar o de la casa; para lo que es un punto (piezas, notas, detalles y farolas),
+#     la casilla que lo contiene (1 × 1). tam_casilla: 64.
 #   - El nodo se añade a «mundo_y» (ordenado por la y de su posición: conviene que su origen sea el pie del dibujo). Si
 #     viene en (0, 0), se pone en la esquina de arriba a la izquierda del rectángulo; si trae otra posición, se respeta.
-#   - Bajo el dibujo de un edificio, sus casillas son un muro invisible (3, zona.gd): choca igual, pero no se dibuja.
+#   - Bajo el dibujo de un edificio o de una casa, sus casillas son un muro invisible (3, zona.gd): choca igual, pero
+#     no se dibuja.
 #   - Hablar, examinar y usar se miden desde las casillas de ciudades/oakhaven.gd, no desde el dibujo.
-#   - Los faroles de la ronda: si el nodo tiene encender(si: bool), se le llama al cargar y al encenderlos.
+#   - Si el dibujo de un lugar ya incluye una pieza, nota o detalle (el letrero del cuervo en la taberna, los faroles
+#     en la ronda, el sello en el crematorio…), crear_pieza de ese id debe devolver un Node2D vacío: así no se pinta
+#     la provisional encima.
+#   - Estados: a los dibujos de los lugares que tengan poner_estado(nombre, si) (pieza.gd de gráficos) se les pide
+#     «farol_1», «farol_2» y «farol_3» (los faroles de la ronda encendidos) y, por cada cofre, su id (true mientras
+#     está cerrado). Si alguno tiene tiene_estado(<id del cofre>), la ciudad no pone su destello provisional. A una
+#     pieza con encender(si: bool) (un farol de la ronda) se le llama al cargar y al encenderlo.
+#   - Si el módulo trae la constante AMBIENTE (Color), la ciudad la usa para su luz ambiente (el arte va horneado a la
+#     hora azul).
+# Las pruebas pueden poner otro módulo con Engine «oakhaven_arte_prueba» (su ruta: prueba_oakhaven usa uno falso).
 #
 # Estado: solo claves que ya existen en la partida (ver ciudades/oakhaven.gd). Nada se guarda en Engine que sea un recurso:
 # los personajes nuevos de Dialogic se dan a conocer por su ruta (Oak.registrar_dialogic()).
@@ -53,6 +64,10 @@ const OBJETOS_OAK := {
 
 var arte = null                           # ciudades/oakhaven_piezas.gd, si existe
 var nodos_lugar := {}                     # id de LUGARES → dibujo de gráficos (antes de entrar en mundo_y)
+var nodos_casas: Array = []               # dibujos de gráficos de las casas del relleno (antes de entrar en mundo_y)
+var farolas: Array = []                   # dónde van las farolas de las calles (casillas)
+var musica_nodo = null                    # el autoload Musica (musica.gd)
+var musica_conoce := true                 # musica.gd ya sabe qué suena en esta escena
 var piezas: Array = []                    # [nodo, datos de Oak.PIEZAS, punto en píxeles]
 var notas: Array = []                     # [nodo, datos de Oak.NOTAS, punto en píxeles]
 var pieza_cerca = null
@@ -76,8 +91,9 @@ var r_patio: Rect2
 # ================================================================= construcción
 
 func _ready() -> void:
-	if ResourceLoader.exists(PIEZAS_ARTE):
-		var s = load(PIEZAS_ARTE)
+	var ruta: String = Engine.get_meta("oakhaven_arte_prueba", PIEZAS_ARTE)
+	if ResourceLoader.exists(ruta):
+		var s = load(ruta)
 		if s is Script and _tiene_funcion(s, "crear_pieza"):
 			arte = s
 	Oak.registrar_dialogic()                       # los personajes nuevos, por su ruta, antes del primer diálogo
@@ -86,6 +102,8 @@ func _ready() -> void:
 	if D != null:
 		D.signal_event.connect(_al_senal)
 		D.timeline_ended.connect(_al_acabar_dialogo)
+	musica_nodo = get_node_or_null("/root/Musica")
+	musica_conoce = musica_nodo == null or load("res://musica.gd").contexto_de(self) == "ciudad"
 	_actualizar_posada()
 
 
@@ -115,6 +133,9 @@ func _leer_lugar() -> void:
 	lugar["texto"] = Oak.TEXTO_ARBOL               # lo que se lee al examinar el Árbol (el altar de zona.gd)
 	nombre_estilo = "ciudad"
 	estilo = ESTILOS["ciudad"]
+	if arte != null and arte.get_script_constant_map().get("AMBIENTE") is Color:   # la hora azul del arte de gráficos
+		estilo = estilo.duplicate()
+		estilo["ambiente"] = arte.get_script_constant_map()["AMBIENTE"]
 	es_ciudad = true
 	semilla = 1000 + Oak.INDICE * 7919
 
@@ -212,9 +233,12 @@ func _poner_casas(rng: RandomNumberGenerator) -> void:
 					break
 			if tam == Vector2i.ZERO:
 				continue
+			var casa := _arte("casa_%dx%d" % [tam.x, tam.y], Rect2i(x, y, tam.x, tam.y))   # la de gráficos, si la hay
+			if casa != null:
+				nodos_casas.append(casa)
 			for yy in tam.y:
 				for xx in tam.x:
-					muros[(y + yy) * ANCHO + x + xx] = 2
+					muros[(y + yy) * ANCHO + x + xx] = 3 if casa != null else 2
 			for yy in tam.y + 1:
 				_jardin(x + tam.x, y + yy)
 			for xx in tam.x:
@@ -267,7 +291,7 @@ func _decorar(rng: RandomNumberGenerator) -> void:
 				continue
 			colocados.append({"tipo": "q_flores" if puestas % 2 == 0 else "q_flores_amarillas", "pos": p * T})
 			puestas += 1
-	var farolas: Array = []
+	var candidatas: Array = []
 	for l in Oak.LUGARES:
 		if not l["id"].begins_with("calle_"):
 			continue
@@ -278,20 +302,20 @@ func _decorar(rng: RandomNumberGenerator) -> void:
 		for j in n:
 			var t := (j + 0.5) * largo / n
 			if vertical:
-				farolas.append(Vector2(r.position.x + 0.28 if j % 2 == 0 else r.end.x - 0.28, r.position.y + t))
+				candidatas.append(Vector2(r.position.x + 0.28 if j % 2 == 0 else r.end.x - 0.28, r.position.y + t))
 			else:
-				farolas.append(Vector2(r.position.x + t, r.position.y + 0.3 if j % 2 == 0 else r.end.y - 0.2))
+				candidatas.append(Vector2(r.position.x + t, r.position.y + 0.3 if j % 2 == 0 else r.end.y - 0.2))
 	var pz := _rect("plaza")
-	farolas.append_array([pz.position + Vector2(0.4, 0.5), Vector2(pz.end.x - 0.4, pz.position.y + 0.5),
+	candidatas.append_array([pz.position + Vector2(0.4, 0.5), Vector2(pz.end.x - 0.4, pz.position.y + 0.5),
 		Vector2(pz.position.x + 0.4, pz.end.y - 0.4), pz.end - Vector2(0.4, 0.4)])
 	var ps := _rect("puerta_sur")
-	farolas.append_array([Vector2(ps.position.x + 0.35, ps.end.y - 1.5), Vector2(ps.end.x - 0.35, ps.end.y - 1.5)])
-	farolas.append(Vector2(_rect("soportal_guardia").end.x - 0.3, _rect("soportal_guardia").position.y + 0.4))
+	candidatas.append_array([Vector2(ps.position.x + 0.35, ps.end.y - 1.5), Vector2(ps.end.x - 0.35, ps.end.y - 1.5)])
+	candidatas.append(Vector2(_rect("soportal_guardia").end.x - 0.3, _rect("soportal_guardia").position.y + 0.4))
 	var puerta: Vector2 = _lugar("crematorio")["puerta"]
-	farolas.append_array([puerta + Vector2(-2.5, 0.7), puerta + Vector2(2.5, 0.7)])
-	for p in farolas:
+	candidatas.append_array([puerta + Vector2(-2.5, 0.7), puerta + Vector2(2.5, 0.7)])
+	for p in candidatas:
 		if _pisable(p) and not _cerca_de_algo(p, 1.6):
-			colocados.append({"tipo": "farola", "pos": p * T})
+			farolas.append(p)                      # se ponen en _crear_objetos (las de gráficos o las de zona.gd)
 
 
 func _al_azar(pesos: Dictionary, rng: RandomNumberGenerator) -> String:
@@ -371,8 +395,16 @@ static func _secreto(id: String) -> Dictionary:
 
 func _crear_objetos() -> void:
 	super._crear_objetos()                         # hierba, decorado, el Árbol, los vecinos y los detalles
-	for id in nodos_lugar:                         # el arte de gráficos de cada lugar
+	for id in nodos_lugar:                         # el arte de gráficos de cada lugar y de las casas
 		mundo_y.add_child(nodos_lugar[id])
+	for n in nodos_casas:
+		mundo_y.add_child(n)
+	for p in farolas:                              # las farolas de las calles: las de gráficos o las de zona.gd
+		var f := _arte("farol", _rect_punto(p))
+		if f != null:
+			mundo_y.add_child(f)
+		else:
+			_poner_objeto("farola", p * T)
 	_poner_cofres()
 	_poner_piezas()
 	_poner_notas()
@@ -480,7 +512,7 @@ func _poner_cofres() -> void:
 		var sp := _poner_objeto("cofre_abierto" if abierto else "cofre", pos)
 		cofres.append([sp, c["id"], abierto])
 		var tipo: String = _secreto(c.get("secreto", "")).get("tipo", "")
-		if not abierto and tipo in ["cofre escondido", "cofre a la vista"]:
+		if not abierto and tipo in ["cofre escondido", "cofre a la vista"] and not _arte_tiene_estado(c["id"]):
 			destellos[c["id"]] = _destello_fijo(pos + Vector2(0, -34), 0.2 if c.has("brilla_desde") else 0.12,
 				Color(1.0, 0.85, 0.4), 30)
 
@@ -551,12 +583,37 @@ func _destello_fijo(pos: Vector2, escala: float, color: Color, z: int) -> Sprite
 	return b
 
 
-# Los faroles de la ronda, encendidos o apagados según la partida.
+# Los faroles de la ronda, encendidos o apagados según la partida, y los estados del arte de gráficos.
 func _actualizar_piezas() -> void:
 	for e in piezas:
 		var id: String = e[1]["id"]
 		if id.begins_with("oak_farol_"):
 			_encender(e[0], Progreso.estado(Oak.NOMBRE, id.trim_prefix("oak_")))
+	var abiertos: Dictionary = Engine.get_meta("cofres_abiertos", {})
+	for n in _nodos_con_estados():
+		for i in [1, 2, 3]:
+			n.call("poner_estado", "farol_%d" % i, Progreso.estado(Oak.NOMBRE, "farol_%d" % i))
+		for c in Oak.COFRES:
+			n.call("poner_estado", c["id"], not abiertos.has(c["id"]))
+
+
+# Los dibujos de lugares de gráficos que tienen estados (pieza.gd: poner_estado y tiene_estado).
+func _nodos_con_estados() -> Array:
+	var r: Array = []
+	var todos: Array = nodos_lugar.values()
+	if arbol != null and not arbol_provisional:
+		todos.append(arbol)
+	for n in todos:
+		if is_instance_valid(n) and n.has_method("poner_estado"):
+			r.append(n)
+	return r
+
+
+func _arte_tiene_estado(nombre: String) -> bool:
+	for n in _nodos_con_estados():
+		if n.has_method("tiene_estado") and n.call("tiene_estado", nombre):
+			return true
+	return false
 
 
 func _encender(n: Node2D, si: bool) -> void:
@@ -790,11 +847,9 @@ func _mirar_arbol(delta: float) -> void:
 # musica.gd elige la música por la escena; mientras no conozca esta, la ciudad pide la suya («ciudad»). Cuando la conozca
 # (una línea en contexto_de, pedida en el informe), esto no hace nada.
 func _musica() -> void:
-	var m = get_node_or_null("/root/Musica")
-	if m == null or get_tree().current_scene != self or m.contexto == "ciudad":
+	if musica_conoce or musica_nodo.contexto == "ciudad" or get_tree().current_scene != self:
 		return
-	if load("res://musica.gd").contexto_de(self) != "ciudad":
-		m.pedir("ciudad")
+	musica_nodo.pedir("ciudad")
 
 
 # Detrás de la copa del Árbol, Kael se vería tapado: la copa se vuelve translúcida.
@@ -963,6 +1018,7 @@ func _abrir_cofre(c: Array) -> void:
 	if destellos.has(c[1]):
 		destellos[c[1]].queue_free()
 		destellos.erase(c[1])
+	_actualizar_piezas()                           # (el destello del arte de gráficos, si lo pinta él)
 	if r.is_empty():                               # ya estaba abierto (no debería pasar: se dibuja abierto)
 		return
 	Sonido.efecto("cofre")                         # la tapa y, después, el premio (sonido.gd)
