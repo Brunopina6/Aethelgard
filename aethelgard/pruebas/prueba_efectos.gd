@@ -1609,6 +1609,12 @@ func _quietos() -> void:
 # 18. Las voces de los héroes en combate (no verbales).
 func _heroes() -> void:
 	await _escena_vacia()
+	var gd: Dictionary = Son.EFECTOS.get("guardia", {})          # la Guardia de Garon: su propio efecto
+	if gd.is_empty() or int(gd.get("p", 0)) != 2 or String(gd.get("bus", "Efectos")) != "Efectos" or gd["a"] == Son.EFECTOS["defensa"]["a"]:
+		_fallo("18: falta «guardia» (propio, por Efectos, prioridad 2)")
+	_limpiar()
+	if Son.efecto("guardia") == null or Son.efecto("guardia") != null:
+		_fallo("18: «guardia» pedido dos veces en el mismo instante no suena una vez")
 	for nombre in ["Kael", "Lya", "Garon"]:
 		var fam: String = Son.FAMILIAS_HEROE[nombre]
 		var h := {"hero": true, "nombre": nombre, "modelo": "x", "hp": 100, "hp_max": 100}
@@ -1698,9 +1704,9 @@ func _cuerdas() -> void:
 	_limpiar()
 	var a := Vector3(-3, 0, -10)
 	var b := Vector3(-3, 0, 10)
-	var f = Son.fuente_linea(current_scene, "cuerda_cruje", a, b)
+	var f = Son.fuente_linea(current_scene, "puente_cruje", a, b)
 	var g = Son.fuente_linea(current_scene, "viento_cuerdas", a, b)
-	var lejos = Son.fuente_linea(current_scene, "cuerda_cruje", Vector3(80, 0, 0), Vector3(90, 0, 0), -3.0)
+	var lejos = Son.fuente_linea(current_scene, "puente_cruje", Vector3(80, 0, 0), Vector3(90, 0, 0), -3.0)
 	if not f is Node3D or f is AudioStreamPlayer3D or g == null or lejos == null:
 		_fallo("19: fuente_linea con «cada» no crea una fuente de vez en cuando (%s)" % str(f))
 		return
@@ -1709,7 +1715,7 @@ func _cuerdas() -> void:
 	for i in int(40.0 * 30):
 		await process_frame
 		for x in Son._voces3d:
-			if is_instance_valid(x) and x.playing and x.get_meta("efecto", "") in ["cuerda_cruje", "viento_cuerdas"]:
+			if is_instance_valid(x) and x.playing and x.get_meta("efecto", "") in ["puente_cruje", "viento_cuerdas"]:
 				var q: Vector3 = x.global_position
 				if absf(q.x + 3.0) > 0.01 or absf(q.z) > 10.01 or String(x.bus) != "Ambiente":
 					puntos_bien = false

@@ -167,7 +167,7 @@ const EVENTOS_BESTIAS := {
 	"lya_esfuerzo": "Lya se lanza al ataque (esfuerzo, cálida y ligera)", "lya_herido": "Lya recibe un golpe físico",
 	"lya_jadeo": "Lya jadea: le queda poca vida", "lya_alivio": "Lya se cura (poción)", "lya_victoria": "Lya celebra la victoria (una risa breve)",
 	"garon_esfuerzo": "Garon se lanza al ataque (esfuerzo, grave y veterano)", "garon_herido": "Garon recibe un golpe físico",
-	"garon_jadeo": "Garon jadea: le queda poca vida", "garon_alivio": "Garon se cura (poción)", "garon_victoria": "Garon celebra la victoria (una risa contenida)",	"cuerda_cruje": "Las cuerdas de los puentes colgantes de la Garganta 3D crujen (de vez en cuando, desde la cuerda)",
+	"garon_jadeo": "Garon jadea: le queda poca vida", "garon_alivio": "Garon se cura (poción)", "garon_victoria": "Garon celebra la victoria (una risa contenida)",	"puente_cruje": "Las cuerdas de los puentes colgantes de la Garganta 3D crujen (de vez en cuando, desde la cuerda)",
 	"viento_cuerdas": "El viento silba en las cuerdas de la cornisa y los puentes (de vez en cuando)",
 	"quieto_kael": "Kael lleva un rato quieto en la exploración 3D: se recoloca el cuero y suelta el aire (muy bajo)",
 	"quieto_lya": "Lya lleva un rato quieta: sorbe por la nariz y se ajusta la tela (muy bajo, desde su sitio)",
