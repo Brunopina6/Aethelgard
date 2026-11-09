@@ -243,3 +243,407 @@ La carpeta de la propuesta no se apunta (`.gdignore`).
 - Con `zona.gd`, `mapa.gd`, `progreso.gd` y `diario.gd` en la mano: `ciudad_oakhaven.gd` y los enganches de §5, y la
   prueba de la ciudad jugada (entrar, hablar con los ocho, una misión entera, un cofre, una nota, la posada y salir).
 - Cuando animaciones suelte los `.dtl`: el texto de T-086 (sesión anterior, §5).
+
+## 2026-11-09, 12:45 — Fase 2 de T-089: Oakhaven enganchada al juego
+
+**Encargo:** que Oakhaven se vea y se juegue. Desde el mapa, el lugar 0 abre una ciudad hecha a mano,
+`ciudad_oakhaven.tscn`, que hereda de `zona.gd` como la Garganta y usa los datos de la fase 1. Archivos asignados:
+`zona.gd` (métodos que se puedan sobrescribir), `ciudad_oakhaven.gd` y `.tscn`, la entrada del lugar 0 en `mapa.gd`,
+`progreso.gd` (`CIUDADES`, `notas_de()` y `ver_nota()`), la sección «Notas» de `diario.gd` y el ramito de lavanda de
+`zonas3d/pastos_verdes_3d.gd`. El arte lo hace gráficos aparte: aquí, el provisional.
+Copia `D:\Aethelgard_narrativa`, rama `area-narrativa`, desde `ab250c9`. Un límite de uso cortó la sesión a media
+tarea; se retomó desde los cambios sin confirmar, que se revisaron antes de seguir.
+
+### 1. Archivos y commits
+| Commit | Qué |
+|---|---|
+| `2be0bf1` | Los `.uid` de los archivos de la fase 1, que generó la importación pedida |
+| `acc8e74` | `zona.gd`: los métodos que una ciudad puede sobrescribir, sin cambiar lo que hacen las demás zonas |
+| `c69fba1` | `progreso.gd` (`CIUDADES`, `notas_de()`, `ver_nota()`) y `diario.gd` (sección «Notas») |
+| `59140ea` | `ciudad_oakhaven.gd`, `.tscn` y `.uid`; la entrada en `mapa.gd`; textos nuevos en `ciudades/oakhaven.gd` |
+| `32f6325` | `zonas3d/pastos_verdes_3d.gd`: solo el ramito de lavanda |
+| `557f5fe` | `prueba_oakhaven` y `prueba_oakhaven_fotos` (con sus `.uid` y su línea en la lista); `prueba_foco`, `prueba_escenas` y `prueba_ciudad_datos`, al día |
+| `ee438b7` | `ciudad_oakhaven.gd`, preparada para el arte de gráficos tal como lo está montando (casas, farolas, estados y ambiente) |
+| `d62fae3` | `prueba_oakhaven` prueba también el camino del arte, con `pruebas/oakhaven_arte_falso.gd` |
+| `77aabdc` | `prueba_foco_fotos` espera la ciudad nueva |
+| (este) | Este informe |
+
+**`zona.gd`** (observado en el código; las pruebas de las otras zonas siguen pasando):
+- `_poner_altar()` y `_adornar_altar()`, el altar y su orbe;
+- `_npcs()`: cada vecino puede traer `casilla` (en vez de `lugar`, respecto a la plaza), `tinte`, `escala` y `corto`
+  (para «Hablar con»); sin ellos, lo de siempre;
+- `_dialogo_npc()`, qué diálogo toca; al abrirse uno, el vecino pasa de turno (sus frases de respaldo, igual que
+  antes);
+- `_pagar_posada()` y `_tras_posada()`;
+- `_brillo_brazalete()`, el brillo, aparte;
+- el muro 3: muro invisible (choca, no se dibuja, no crece hierba), que solo pone una ciudad.
+- Las líneas de sonido no cambian.
+
+**`ciudad_oakhaven.gd`: qué se juega ya** (comprobado ejecutando, ver §2)
+- **Entrar desde el mapa:** «Entrar: Oakhaven» abre la ciudad. Kael aparece en la Puerta del Sur. Suena el ambiente
+  de ciudad (ver §5, `musica.gd`). Al salir por la puerta se vuelve al mapa.
+- **El trazado** de `ciudades/oakhaven.gd`:
+  - calles, plaza y patios empedrados; la colina, las raíces y el jardín de urnas, con hierba;
+  - la muralla, con la Puerta del Sur abierta (la del este, doble: la ronda va por encima);
+  - edificios de tejado (taberna, botica, Concejo, cuerpo de guardia) y de piedra (torre, crematorio);
+  - el resto, casas con jardines entre ellas. Los jardines no se pisan y tienen setos junto a las calles, para que
+    se note;
+  - unas 21 farolas en las calles, la plaza, la puerta, el soportal y el crematorio (en la Oakhaven generada había
+    unas 20), más los 3 faroles de la ronda.
+- **Los ocho vecinos**, en su casilla y con su muñeco provisional (tinte y escala). Su diálogo, por
+  `Oak.dialogo_de()`: lo de una misión en curso va primero; si no, se turnan.
+- **Las señales de Dialogic** (`oak:…`):
+  - misiones, pagos y recompensas, una sola vez;
+  - sus avisos salen al cerrar el diálogo, de uno en uno, con un efecto que ya existía (`pagina`, `tesoro`,
+    `ui_confirmar`, `monedas`);
+  - la partida se guarda al acabar el diálogo.
+- **La posada:**
+  - con la noche gratis de «Tres favores para el Cuervo», no cobra y el botón dice «POSADA (gratis)»;
+  - al despertar, la escena de los que están en el grupo; con la noche gratis, después, «Esta noche invita la
+    posadera.».
+- **Cuatro cofres** con id escrito y premio fijo. Los escondidos brillan mientras están cerrados: el de la ronda y el
+  de las raíces, entre las hojas. El de los requisados sigue cerrado (aviso de Aldric) hasta que Kael ha salido
+  (en 3D, PV-02); deja su nota en el Diario.
+- **Las piezas:**
+  - el barril (favor de la posadera);
+  - la torre: con un fundido, sube a la ronda; la primera vez, la vista;
+  - los tres faroles: «Encender» con la misión de Bastián; «Examinar» sin ella; encendidos dan luz y ya no se usan;
+  - la escalera para bajar;
+  - la grieta, que se pasa de lado en los dos sentidos.
+  - Lo de la ronda solo se usa estando en la ronda: desde el suelo, al pie de la torre, quedaba a menos de 90 px.
+- **El Patio de las Velas, a oscuras** hasta pasar la grieta. Desde el callejón solo se ve la luz de la grieta, y el
+  brazalete brilla cerca de ella mientras no se haya pasado.
+- **Las cinco notas** con casilla se examinan, dan su aviso y quedan en el Diario («Nueva nota en el Diario: «…»»).
+  No completan ningún acto. La sexta sale del cofre de los requisados.
+- **Los detalles de canon,** en su sitio nuevo: el sello, a la puerta del crematorio; el tapiz, en el pórtico. Siguen
+  siendo detalles: brazalete, Diario y página del acto I.
+- **El Árbol Milenario** en lugar del altar, provisional: el arce grande, único en la ciudad.
+  - «Examinar» a su pie da `TEXTO_ARBOL`.
+  - Su copa se vuelve translúcida si Kael pasa por detrás.
+  - En las raíces, la cámara sube para que se vea entera.
+- **Las dos vistas:** desde la torre (con texto distinto tras PV-07) y desde las raíces, la primera vez. De momento
+  son avisos; las viñetas están pedidas.
+- **Tras cada cambio de la partida** (cofre, nota, pieza, señal o posada) se guarda.
+- **La música:** `musica.gd` elige por la escena y aún no conoce esta. Mientras, la ciudad pide su contexto,
+  «ciudad». Cuando `musica.gd` la conozca, ese código no hará nada (ver §5).
+
+**El arte** (contrato con gráficos, completo en la cabecera de `ciudad_oakhaven.gd`):
+- si existe `ciudades/oakhaven_piezas.gd` con `crear_pieza(id, rect_casillas, tam_casilla)`, se le pide un dibujo
+  para:
+  - cada lugar de `LUGARES`, cada pieza, cada nota con casilla y cada detalle;
+  - cada casa del relleno (`casa_<ancho>x<alto>`) y cada farola de las calles (`farol`).
+- El nodo va a `mundo_y`. Si viene en (0, 0), se pone en la esquina de arriba a la izquierda de su huella; si no, se
+  respeta su posición.
+- Bajo el dibujo de un edificio o una casa, sus casillas pasan a muro invisible.
+- Hablar, examinar y usar se miden desde las casillas de los datos, no desde el dibujo.
+- Un `Node2D` vacío evita la provisional de una pieza que ya dibuja su lugar (el letrero en la taberna, los faroles en
+  la ronda…).
+- **Estados:** `poner_estado("farol_1"…"farol_3", encendido)` y `poner_estado(<id del cofre>, cerrado)`. Si un dibujo
+  pinta el destello de un cofre (`tiene_estado`), la ciudad no pone el suyo. A un farol con `encender(si)` se le
+  llama.
+- Si el módulo trae `AMBIENTE`, es la luz ambiente de la ciudad.
+- **Comprobado con un módulo falso** (`prueba_oakhaven`, apartado 11), porque el de verdad aún no está publicado.
+- Visto sin tocarlo (solo lectura, 12:25): el borrador de gráficos en `D:\Aethelgard_graficos`, sin confirmar, ya usa
+  esta forma: `Pieza` con `poner_estado` y `tiene_estado`, `AMBIENTE` y piezas `casa_4x4` y `farol`. Ver §5.
+
+**`progreso.gd` y `diario.gd`:**
+- `CIUDADES = {0: "res://ciudades/oakhaven.gd"}`;
+- `notas_de(lugar)` lee `NOTAS` del módulo;
+- `ver_nota(id)` apunta en `lore_visto` solo las notas de una ciudad y nunca completa un acto. `Oak.ver_nota()` pasa
+  por ella.
+- Ni claves nuevas ni cambios en guardar, cargar o sus protecciones.
+- En el Diario, la sección «Notas» va bajo los actos, con las leídas («nombre · lugar» y el texto). No aparece hasta
+  leer la primera.
+
+**`pastos_verdes_3d.gd`:** el ramito sale junto al camino, antes del puente, si Rosa lo pidió y no se ha cogido.
+- «Coger la lavanda» aplica la señal una vez, avisa, lo quita y guarda.
+- Provisional (espigas moradas y un destello) y sin choque.
+- Nada más de la región cambia.
+
+**Textos nuevos que ve el jugador** (todos en `ciudades/oakhaven.gd`, revisados por `prueba_ciudad_datos`: D-033,
+D-073 y largo de aviso)
+| Dónde | Texto |
+|---|---|
+| Vista desde la torre (antes de PV-07) | «Al sureste, un brillo morado. Al norte, la niebla.» |
+| Vista desde la torre (tras PV-07) | «Al sureste, un brillo morado. Al norte, la niebla. Y arriba, la ciudad flotante.» |
+| Vista desde las raíces | «Desde las raíces se ve la ciudad entera. Los faroles se encienden en ola.» |
+| Al despertar con la noche gratis | «Esta noche invita la posadera.» |
+| Nota nueva | «Nueva nota en el Diario: «‹nombre›»» (como la página nueva de los detalles) |
+| Botones | «Subir el barril», «Subir», «Bajar», «Encender», «Pasar», «Examinar» (de los datos) y «Coger la lavanda» (3D) |
+
+### 2. Pruebas
+- **Importación aislada** (lo pedido, antes de empezar): `D:\REBELUM_diagnostico\importaciones\narrativa_20261109_082934\importacion.log`,
+  salida 0.
+  - Creó los `.uid` de los archivos de la fase 1 (confirmados, `2be0bf1`).
+  - Añadió en `project.godot` los 4 personajes y los 27 diálogos de Oakhaven (`dialogic/directories`). Ese archivo no
+    es mío: lo dejé como estaba (ver §5). Con `registrar_dialogic()`, el juego funciona igual con ellos o sin ellos;
+    las pruebas se pasaron sin ellos, como está confirmado.
+  - Dos importaciones más (`narrativa_20261109_121920` y `_123130`) dieron los `.uid` de los guiones nuevos.
+- **`prueba_oakhaven`** (comprobado ejecutando, aislado, 2026-11-09): **SUPERADA, FALLOS: 0**, en 6-14 s.
+  - Recorre los once apartados de su cabecera: entrar, trazado, los ocho vecinos, Pip y los favores, la posada, la
+    torre y los faroles, la grieta, los cofres, la nota y el Diario, salir y volver, guardar y cargar, la lavanda con
+    Pastos Verdes 3D y el camino del arte con el módulo falso.
+  - Usa su propia partida (`user://prueba_oakhaven.save`).
+- **Repaso pedido** (comprobado ejecutando, aislado, 2026-11-09 a las 12:16): **13 de 13 SUPERADAS**
+  (`D:\REBELUM_diagnostico\pruebas\2026-11-09_121605\resumen.md`).
+  - `prueba_ciudad_datos`, `prueba_oakhaven`, `prueba_foco`, `prueba_escenas`, `prueba_musica`,
+    `prueba_guardado_protegido`, `prueba_dialogo_interfaz`, `prueba_mapamundi` y `prueba_efectos`;
+  - además, `prueba_partida`, `prueba_guardado`, `prueba_cofre` y `prueba_dialogo`.
+  - `prueba_foco` (6, la ciudad) y `prueba_escenas` ahora entran en `ciudad_oakhaven.tscn`. `prueba_musica` sigue usando
+    `zona.tscn` con el lugar 0, que no cambia.
+- **Batería completa** (comprobado ejecutando, aislado, 2026-11-09, sobre `557f5fe`): **SUPERADAS 43 · FALLIDAS 0 ·
+  MANUALES 26 · NO SEGURAS 0** (`D:\REBELUM_diagnostico\pruebas\2026-11-09_122212\resumen.md`).
+  - La partida real, su carpeta y el proyecto, sin cambios. Había otros Godot abiertos, de otras copias.
+  - En la fase 1 fueron 40 y 23. Las nuevas son `prueba_oakhaven` y `prueba_oakhaven_fotos`, más las que otras áreas
+    añadieron entre medias.
+- **Tras los cambios del arte** (`ee438b7` y `d62fae3`), sobre `d62fae3`:
+  - las seis de la ciudad, **SUPERADAS** (`prueba_oakhaven`, `prueba_ciudad_datos`, `prueba_foco`, `prueba_escenas`,
+    `prueba_musica` y `prueba_precalentado`; `2026-11-09_123215`);
+  - `prueba_foco_fotos`, con ventana: 8 capturas, la de la ciudad ya en la nueva (`2026-11-09_123621`).
+- **Capturas con ventana** en `D:\REBELUM_diagnostico\oakhaven\2026-11-09\`:
+  - `antes\`: cinco, de `zona.tscn` con el lugar 0, sobre `ab250c9`;
+  - `despues\`: dieciocho, entrando desde el mapa, sobre `d62fae3`;
+  - `comparacion_antes_despues.png`: las cinco tomas comunes, lado a lado.
+
+### 3. Evidencias
+- **Capturas:** las rutas de §2. La lámina compara entrada, plaza, norte (el altar frente al Árbol), la ciudad entera
+  y un diálogo.
+  - En `despues\` están, además: el Cuervo, el callejón con el patio a oscuras, el patio al pasar la grieta, el
+    crematorio, la ronda apagada y encendida, el Árbol y su copa translúcida, el mercado, el Diario con «Notas», la
+    posada gratis, su escena y el ramito en Pastos Verdes 3D.
+- **Cómo se ve** (revisado a ojo, en el PC):
+  - una ciudad densa de calles empedradas entre casas, en vez del prado con casas sueltas de antes;
+  - los lugares de canon se reconocen: la taberna con su cuervo de hierro, el crematorio de piedra con la puerta
+    sellada y el Árbol al norte.
+  - Es arte provisional: tejados y piedra de `zona.gd`, objetos dibujados por código y la ilustración de un arce.
+
+### 4. Límites y pendientes de decisión
+- **Partidas guardadas dentro de la Oakhaven de antes** (`escena_guardada = zona.tscn` y lugar 0): al cargarlas se abre
+  la zona generada de siempre, hasta salir al mapa y volver a entrar. Lo resolvería una línea al cargar, en
+  `progreso.gd` (`restaurar()`) o en `carga.gd`. No los toco: son la carga de la partida. Ver §5.
+- **`musica.gd`** no es mío. Mientras no tenga su línea, la ciudad pide la música con `Musica.pedir("ciudad")`.
+- **Sin medir en el Redmi:**
+  - unas 25 luces de llama (21 farolas, 3 faroles y las velas) y la del Árbol; en la Oakhaven generada, unas 20;
+  - el coste de las casas y los jardines.
+  - Con el arte de gráficos, las farolas serán las suyas, sin luces 2D según su cabecera.
+- **Muñecos y retratos provisionales,** como en la fase 1. Bastián no va «de farol en farol»: está quieto.
+- **Vistas:** de momento, avisos. Las viñetas pintadas están pedidas.
+- **Sin cambios** en lo que espera al usuario (n.º 1, Olvido; 2, la Cripta; 3, Aldea Rocío; 5, Pip guía): sigue la
+  versión neutra.
+
+### 5. Siguiente paso y cambios en archivos de otros
+- **`musica.gd`** (pedido, de sonido o del coordinador): en `contexto_de()`, junto a los demás casos,
+  `"res://ciudad_oakhaven.tscn": return "ciudad"`. Con eso, lo de la ciudad no hace nada.
+  - Después, conviene que `prueba_musica` pase también por `ciudad_oakhaven.tscn`.
+- **Partidas antiguas en Oakhaven** (propuesta, del coordinador): en `progreso.gd` `restaurar()`, si
+  `escena == "res://zona.tscn"` y el lugar guardado es el 0, volver a `"res://ciudad_oakhaven.tscn"` con
+  `pos_zona_ok = false`, para entrar por la puerta: las posiciones de antes no valen en el trazado nuevo.
+  - La ciudad ya se protege de una posición que no sea calle: pone a Kael en la puerta.
+- **`project.godot`** (del coordinador): confirmar o no lo que añade la importación en `dialogic/directories` (4
+  personajes y 27 diálogos). Con o sin ello funciona igual.
+- **Para gráficos** (`oakhaven_piezas.gd`):
+  - **Ids que pide la ciudad:** los de `LUGARES`, `PIEZAS`, `NOTAS` (con casilla) y los detalles `oak_sello` y
+    `oak_tapiz`; `casa_<ancho>x<alto>` para cada casa del relleno (de 3 a 6 de ancho y de 3 a 4 de alto); `farol` para
+    cada farola de calle.
+  - Para lo que ya pinte un lugar (letrero, faroles de la ronda, sello), un `Node2D` vacío.
+  - **Tamaños,** en casillas de 64 px (de `LUGARES`):
+    - Edificios: taberna 10 × 6 (fachada al sur, a la Calle del Cuervo), crematorio 10 × 8 (puerta sellada al sur, en
+      (67, 15,5)), Concejo 9 × 5 (pórtico de 9 × 2 al sur), botica 5 × 5, cuerpo de guardia 5 × 4, torre 4 × 4 (puerta
+      al sur, en (73,5, 42)).
+    - Árbol: tronco 4 × 4 con el pie en (40, 9). La copa provisional mide unas 5,3 × 8,8 casillas. En las raíces, la
+      cámara sube hasta el borde de la ciudad para enseñarla.
+  - **Piezas y notas,** por su casilla: barril (12, 29); tres faroles en la ronda (76,5; 38,5, 34,5 y 31,5), con
+    `encender(si)` o los estados `farol_N` de la ronda; escalera (76,5, 41,5); grieta (23, 35), una casilla del muro
+    del callejón; tablón (36, 29); letrero del cuervo (13, 25,5); raíz cortada (45, 10); atril con el libro
+    (42,5, 46,5); altar de las velas (25,5, 38). Detalles: sello (67, 16) y tapiz (47, 22).
+  - **Viñetas:** `oak_vista_torre` y `oak_vista_raices`. Hoy son avisos. Propuesta: que `crear_pieza` las devuelva con
+    su id y la ciudad las enseñe 4-6 s, saltables con un toque.
+  - **En 3D:** el ramito de lavanda.
+- **Para sonido** (lo de la fase 1, sigue pendiente): campana lejana, bullicio de taberna, el chirrido del cuervo de
+  hierro y un farol que prende. Hoy suenan efectos que ya existían.
+- **Siguiente paso de narrativa:** cuando gráficos publique su módulo, repasar las capturas con el arte de verdad y
+  pasar `prueba_oakhaven`. Cuando el usuario decida n.º 1, 2, 3 y 5, adoptar la propuesta
+  (`dialogos/oakhaven/propuesta/`, fase 1).
+
+## 2026-11-09, 13:20 — T-086: el texto del prólogo y de Pastos Verdes, aplicado
+
+**Encargo:** aplicar los 6 cambios de la tabla de `docs/diseno/ciudades_y_lugares.md` §5.2, adoptada por el
+coordinador en D-073 (incluido partir los dos globos del prólogo), sin mover las etiquetas de retrato y gesto de
+animaciones; ajustar las pruebas que cuentan frases; capturas con ventana antes y después; comprobar la continuidad.
+Copia `D:\Aethelgard_narrativa`, rama `area-narrativa`, desde `70ef723`.
+
+### 1. Archivos y commits
+| Commit | Qué |
+|---|---|
+| `453c794` | `pruebas/prueba_prologo_fotos.gd`: imprime cuántas líneas ocupa cada frase en la caja (solo informa) |
+| `6e3bc57` | Los 6 cambios en `dialogos/prologo.dtl`, `pv_02.dtl`, `pv_07.dtl`, `pv_tilo.dtl` y `pv_tilo_fin.dtl`; `pruebas/prueba_prologo.gd` y `prueba_prologo_video.gd`, al día |
+| (este) | Este informe |
+
+- **Las etiquetas de animaciones** no se mueven ni se quitan:
+  - al partir un globo, el gesto (`duda`, `preocupada`) se queda en el primero, que es la frase que lo pide;
+  - el segundo no lleva gesto propio, así que ninguno se repite seguido;
+  - los globos nuevos son de Lya (`lya: …`) y salen con su retrato «vivo». Ella conserva el foco porque sigue
+    hablando: Dialogic solo cambia el resaltado al cambiar de interlocutor (observado en
+    `addons/dialogic/Modules/Character/subsystem_portraits.gd`, final de `change_speaker`).
+- **`prueba_prologo.gd`**, qué cambia y por qué:
+  - espera 11 frases (`FRASES`, antes 9), en la pasada entera y en la deprisa: los dos globos partidos suman dos;
+  - Lya tiene siete frases. El segundo globo de cada frase partida admite la pose del primero o el reposo
+    (`duda|reposo` y `preocupada|reposo`). Sin etiqueta propia, sigue con la pose anterior hasta que
+    `retrato_vivo.gd` la devuelve sola al reposo, 3,2 s después de pedirla. A la velocidad de la prueba se ve la cola
+    (vio `duda, duda` y `preocupada, preocupada`); a ritmo de lectura ya está en reposo (§3, capturas del vídeo);
+  - **nuevo:** cada frase cabe en dos líneas de la caja (`LINEAS_MAX`), contadas con `RichTextLabel.get_line_count()`
+    en la caja de verdad. Imprime las poses de Lya y las líneas de cada frase.
+- **`prueba_prologo_video.gd`:** espera 11 frases.
+- **Repasadas, sin cambios:**
+  - `prueba_dialogo_interfaz`: el texto nuevo de `pv_tilo` no tiene «Rosa» ni «flores»;
+  - `prueba_ruta_alpha`: solo usa nombres de diálogos, objetivos y grupo;
+  - `prueba_anim_pv_fotos` y `prueba_boton_prologo`: no cuentan frases.
+
+### 2. Pruebas
+- **Importación aislada,** antes de empezar:
+  `D:\REBELUM_diagnostico\importaciones\narrativa_20261109_125053\importacion.log`. Salida 0, sin archivos nuevos.
+- **Antes** (comprobado ejecutando, aislado, 12:54, sobre `70ef723` con la impresión de líneas):
+  `D:\REBELUM_diagnostico\narrativa\2026-11-09\texto\2026-11-09_125422\`.
+  - Sonda de líneas, SUPERADA.
+  - `prueba_prologo_fotos`, con ventana: 9 frases, FALLOS 0.
+- **Después** (comprobado ejecutando, aislado, 12:58, sobre lo que luego fue `6e3bc57`; después solo cambiaron
+  comentarios): `...\texto\2026-11-09_125821\`.
+  - SUPERADAS: `prueba_prologo`, `prueba_dialogo_interfaz`, `prueba_dialogo`, `prueba_ruta_alpha` y
+    `prueba_boton_prologo`.
+  - Con ventana y sin errores (MANUAL): `prueba_anim_pv_fotos` y `prueba_prologo_video`.
+  - `prueba_prologo_fotos` salió FALLIDA en esa pasada **por el orden de mi lista**: `prueba_boton_prologo` deja una
+    partida en la carpeta aislada (`partida_exp.save`) y, con partida, el prólogo no sale. En una pasada propia
+    (`...\texto\2026-11-09_130120\`), sin errores y con 11 frases.
+- **Batería completa** (comprobado ejecutando, aislado, sobre `6e3bc57`, de 13:09 a 13:17):
+  **SUPERADAS 49 · FALLIDAS 0 · MANUALES 28 · NO SEGURAS 0**
+  (`D:\REBELUM_diagnostico\narrativa\2026-11-09\bateria\2026-11-09_130914\resumen.md`).
+  - Ninguna fallida, así que ningún fallo nuevo. Del historial: la última batería completa de la carpeta común
+    (`D:\REBELUM_diagnostico\pruebas\2026-11-09_123210`, de otra copia) dio los mismos totales.
+  - La partida real, su carpeta y el proyecto, sin cambios. Había otros Godot abiertos, de otras copias.
+  - Las MANUALES son las de ventana y las manuales, que la batería no ejecuta. Las de diálogos con ventana se pasaron
+    aparte (arriba).
+- **Sondas temporales,** que no se confirman; copia en
+  `C:\Users\G513\AppData\Local\Temp\claude\1e8b2791f134856b\01fe04af-8fa2-417a-a9ef-c72745be1c17\scratchpad\narrativa\t086\`.
+  Estuvieron en `pruebas/` solo mientras corrían.
+  - `sonda_narrativa_lineas.gd`: las líneas de cada frase del prólogo y de Pastos Verdes (44 antes y 46 después);
+  - `sonda_narrativa_tilo.gd`: la continuidad de §4.
+
+### 3. Evidencias
+**Antes y después de cada frase.** Largo: caracteres visibles. Líneas: medidas en la caja con `get_line_count`, sin
+ventana y con ventana (dan lo mismo).
+
+| N.º (§5.2) | Archivo | Quién | Antes | Después | Largo | Líneas |
+|---|---|---|---|---|---|---|
+| 5 | `prologo.dtl:11` → `11-12` | Lya | Ese brazalete…[pause=0.5] He visto ese símbolo en los libros prohibidos del templo. Lo llamaban la «Llave del Confino». | **1:** Ese brazalete…[pause=0.5] He visto ese símbolo en los libros prohibidos del templo. **2:** Lo llamaban la «Llave del Confino». | 108 → 72 + 35 | 2 → 1 + 1 |
+| 9 | `prologo.dtl:19` → `20-21` | Lya | Ten cuidado ahí fuera. Los Hollines ya no son solo sombras: ahora llevan hachas del Vacío. | **1:** Ten cuidado ahí fuera. **2:** Los Hollines ya no son solo sombras: ahora llevan hachas del Vacío. | 90 → 22 + 67 | 2 → 1 + 1 |
+| 11 | `pv_02.dtl:4` | Kael | Bien. Por una vez, algo sale bien. | Y nadie me ha seguido. Por una vez, algo sale bien. | 34 → 51 | 1 → 1 |
+| 39 | `pv_07.dtl:14` | Garon | Y esas huellas de hollín dan vueltas alrededor… sin pisarlas. | Huellas de hollín. Rodean las flores… sin pisarlas. | 61 → 51 | 1 → 1 |
+| 43 | `pv_tilo.dtl:1` | Tilo | El viejo centinela del mirador lleva cuarenta años mirando la cascada. Saludadlo antes de seguir. | ¿Todavía aquí? El viejo os espera en el mirador. Saludadlo antes de cruzar. | 97 → 75 | 2 → 1 |
+| 44 | `pv_tilo_fin.dtl:1` | Tilo | Buen camino, chicos. Y cuidad esa mecha: arde más que yo. | Buen camino, chicos. Y que no se os apague esa mecha. | 57 → 53 | 1 → 1 |
+
+Las otras 38 frases no cambian. Ninguna, antes ni después, pasa de dos líneas.
+
+**Lo que cabe en la caja** (medido el 2026-11-09):
+- el hueco del texto es de 824 × 124 px. Una línea ocupa 51 px y dos, 102: una tercera (153) ya no cabría;
+- en una línea caben unos 75 caracteres de este texto (70, 72 y 75 entran en una; 84 ya pasa a dos). Los 110
+  caracteres de `prueba_ciudad_datos` (dos de unos 55) dejan margen: valen como objetivo de lectura, no como límite
+  físico.
+
+**Corrección a mi diseño.** En §5.2 escribí que el globo 5 (108 caracteres) «lo normal es que ocupe tres líneas».
+Medido, ocupa dos (102 de 124 px). Lo que sí se ve en la captura de antes es el corte de línea: «… del templo. Lo /
+llamaban la «Llave del Confino»». Parte justo la frase del nombre. Partido el globo, el nombre sale entero y solo.
+El cambio se sostiene por eso, y porque el coordinador lo adoptó, pero ya no por espacio.
+
+**Intenciones para animaciones.** No he añadido ni quitado etiquetas; la columna de la derecha es solo propuesta.
+| Globo | Quién | Intención | Gesto o retrato que lleva hoy | Propuesta (decide animaciones con el coordinador) |
+|---|---|---|---|---|
+| Prólogo 5: «Ese brazalete… He visto ese símbolo…» | Lya | Lo reconoce y le cuesta decirlo | `duda` (ladea la cabeza; `lya_duda.png`) | = |
+| Prólogo 6: «Lo llamaban la «Llave del Confino».» | Lya | Seria: que el nombre pese | Ninguno: sigue la pose de `duda` hasta volver sola al reposo | `firme` (asentimiento seco; Lya no tiene ilustración para él, solo es el movimiento) |
+| Prólogo 10: «Ten cuidado ahí fuera.» | Lya | Preocupada, con cariño | `preocupada` (se encoge; `lya_preocupada.png`) | = |
+| Prólogo 11: «Los Hollines ya no son solo sombras…» | Lya | Advierte, grave | Ninguno: sigue la pose de `preocupada` o ya en reposo | `inquieta` (se acerca a Kael) o nada |
+| PV-02: «Y nadie me ha seguido. Por una vez, algo sale bien.» | Kael | Satisfecho; tienta a la suerte | `ligero` (mano en la cadera) | = |
+| PV-07: «Huellas de hollín. Rodean las flores… sin pisarlas.» | Garon | Mira el suelo; desconfía | Sin retrato (Garon no tiene) | En 3D, mirar al suelo si hay clip |
+| `pv_tilo`: «¿Todavía aquí? El viejo os espera…» | Tilo | Impaciente, con cariño | Sin retrato | = |
+| `pv_tilo_fin`: «Buen camino, chicos…» | Tilo | Despedida | Sin retrato | = |
+
+- Un globo corto deja ver la transición del que escucha: en la captura rápida de «Ten cuidado ahí fuera.» (22
+  caracteres) Kael aún vuelve del paso de `decidido` (dura 2 s). A ritmo de lectura ya está en reposo
+  (`despues_frase_10_a.png` del vídeo). No es un fallo.
+
+**Capturas** (con ventana, 1280 × 720, la misma resolución lógica que en el móvil):
+- `D:\REBELUM_diagnostico\narrativa\2026-11-09\texto\antes\`: las 9 frases (`antes_frase_NN.png`) y los registros;
+- `...\texto\despues\`: las 11 (`despues_frase_NN.png`) y los registros;
+- `...\texto\lamina_globos_partidos.png`: los dos globos, antes (uno) y después (dos), a tamaño real;
+- `...\texto\lamina_prologo_completo.png`: el prólogo entero, antes y después, alineado por frase;
+- a ritmo de lectura, 2,8 s por frase (`prueba_prologo_video`):
+  `...\texto\2026-11-09_125821\prueba_prologo_video\` (`despues_frase_NN_a` y `_b`);
+- PV-02, PV-03 y PV-05 en 3D con el texto nuevo: `...\texto\2026-11-09_125821\prueba_anim_pv_fotos\`.
+
+### 4. Continuidad
+**Lo que pide el encargo cuadra** (Kael solo hasta PV-03, Lya desde PV-03 y Garon desde PV-05):
+| Escena | Grupo en ese momento (`prueba_ruta_alpha`) | Quién sale en el diálogo | Texto |
+|---|---|---|---|
+| PV-02 | Kael solo | Kael | «Y nadie me ha seguido»: es lo que cree Kael, y en PV-03 llega Lya |
+| PV-03 | Lya se une al empezar la escena | Kael y Lya | = |
+| PV-05 | Kael y Lya; Garon espera junto a Tilo y se une | Kael y Lya con retrato; Garon y Tilo, sin él | = |
+| `pv_tilo` | Kael, Lya y Garon | Tilo | «os espera», «Saludadlo»: plural, cuadra |
+| PV-06 y PV-07 | Kael, Lya y Garon | Kael y Lya con retrato; Garon sin él | «Rodean las flores»: Lya acaba de verlas |
+| PV-14 y `pv_tilo_fin` | Kael, Lya y Garon | Tilo | «Tomad», «chicos», «se os apague»: plural |
+
+- Comprobado ejecutando (aislado, 2026-11-09):
+  - `prueba_ruta_alpha` SUPERADA: el grupo es nadie antes de PV-03, `["Lya"]` después y `["Lya", "Garon"]` desde
+    PV-05;
+  - `prueba_anim_pv_fotos` sin FALLO: quien habla en PV-02, PV-03 y PV-05 está en la escena 3D.
+- Los hitos, las recompensas y los objetivos no cambian: `prueba_ruta_alpha` y `prueba_centinela`.
+- **Canon** (leído en `D:\Aethelgard\docs\biblia\rebelum_biblia_narrativa_v2.md`, sin tocarlo; en esta copia no está):
+  - la biblia cita por separado «Lo llamaban la "Llave del Confino".» y «Los Hollines ya no son solo sombras: ahora
+    llevan hachas del Vacío.» (línea 121): ahora cada una es su propio globo, con las mismas palabras;
+  - su §8.5 (línea 144) dice que Lya alcanza a Kael al amanecer en Pastos Verdes, sin cambiar el prólogo. «Y nadie me
+    ha seguido» es lo que cree Kael justo antes, y cuadra;
+  - nada de Érebo, de corazones ni de recuerdos; nada de Final Fantasy X.
+
+**Hallazgo: se puede hablar con Tilo antes de PV-03.** Comprobado ejecutando (aislado, 13:07, sobre `70ef723`; no
+depende del texto): `D:\REBELUM_diagnostico\narrativa\2026-11-09\continuidad\2026-11-09_130717\`.
+- La sonda busca lo andable con las reglas de la región (`_altura_suelo`: paredes, pendientes, escalones y zonas
+  prohibidas) sin entrar en el círculo de PV-03. Después, Kael recorre ese camino de verdad, con un destino tocado.
+- Llega junto a Tilo pasando a 4,0 m del punto de PV-03 (el radio es 3,5). El camino va paralelo al sendero, un poco
+  al sur.
+- Sale «Hablar con Tilo» y, al pulsarlo, empieza **PV-05 sin PV-03**: Lya habla en el diálogo sin estar en el grupo
+  ni en la escena 3D, y Garon se une antes que ella. El objetivo sigue en «Sigue el camino.»; si se vuelve por el
+  sendero, PV-03 sale después, con Garon ya en el grupo.
+- La causa (observada en el código): en `zonas3d/pastos_verdes_3d.gd`, `_comprobar_cerca()` deja hablar con Tilo
+  siempre, y en `_accion()` la rama de Tilo no mira `pv_03`. El rombo sí lo exige.
+- Propuesta en §6. No he tocado `zonas3d/`.
+- **Menor, solo observado en el código:** en `_accion()`, PV-14 tampoco exige `pv_07`. En la práctica PV-07 salta al
+  volver del combate junto a la estatua (`prueba_ruta_alpha`, paso 15), así que no lo he visto pasar.
+
+### 5. Límites y propuestas pendientes de decisión
+- **El globo 5 cabía en dos líneas** (ver «Corrección», §3). Si el coordinador adoptó partirlo por el espacio, puede
+  revisarlo. Mi recomendación es dejarlo partido por el corte «Lo / llamaban» y por el peso del nombre.
+- **Gestos de los globos nuevos:** propuestos en la tabla de intenciones (`firme` en el 6 e `inquieta` en el 11). No
+  los he puesto: las etiquetas se acuerdan con el coordinador.
+- **Sin ver en el Redmi.** Las capturas son del PC a 1280 × 720, la resolución lógica del juego (`canvas_items`), así
+  que el corte de línea debería ser el mismo. Falta verlo en el teléfono.
+- Sin cambiar del diseño (§5.3), y lo decide el responsable de `progreso.gd`: el texto del detalle `pastos_estela`.
+
+### 6. Siguiente paso y cambios en archivos de otros
+- **`zonas3d/pastos_verdes_3d.gd`** (de quien lleve la región), para que PV-05 no salga antes que PV-03. En
+  `_accion()`, rama `"tilo"`, antes de `if not P.hito("pv_05"):`:
+  ```gdscript
+  if not P.hito("pv_03"):
+      _escena_mision("pv_03")          # Lya llega antes de hablar con Tilo: nunca PV-05 sin ella
+  elif not P.hito("pv_05"):
+  ```
+  - Con eso, al pulsar «Hablar con Tilo» sin PV-03, Lya llega corriendo como siempre y, al volver a pulsar, sale
+    PV-05.
+  - Opcional, por la misma razón: `elif not P.hito("pv_07"): _empezar_dialogo("pv_tilo")` antes de la rama de PV-14.
+  - Para probarlo, `prueba_ruta_alpha` podría hablar con Tilo antes de PV-03 y comprobar que sale PV-03.
+- **`pruebas/lista_pruebas.txt`** (del coordinador), en la nota de `prueba_prologo`: «entero (9 frases, una
+  pulsación por frase,» → «entero (11 frases, una pulsación por frase, cada una en dos líneas de la caja como
+  mucho,». Es solo la descripción; no cambia cómo se ejecuta.
+- **`docs/diseno/ciudades_y_lugares.md`** (mío, fuera de este encargo): corregir en §5.2 el motivo del n.º 5 y en
+  §5.1 la medida (unos 75 caracteres por línea). Lo hago cuando se me asigne.
+- **Prueba nueva, propuesta:** convertir `sonda_narrativa_lineas.gd` en `prueba_textos_caja`, que recorra todos los
+  `.dtl` y falle si una frase pasa de dos líneas. Necesitaría su línea en `lista_pruebas.txt`.
+- **Siguiente paso de narrativa:** con la decisión sobre los gestos, si animaciones los pone, repetir
+  `prueba_prologo` (espera `duda|reposo` y `preocupada|reposo` en los segundos globos: habría que ajustarla).

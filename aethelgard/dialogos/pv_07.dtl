@@ -11,6 +11,6 @@ kael: Las estatuas no miran.
 garon: Esta, sí.
 update lya [extra_data="duda"]
 lya: Hay flores frescas a sus pies. Alguien las ha puesto esta mañana.
-garon: Y esas huellas de hollín dan vueltas alrededor… sin pisarlas.
+garon: Huellas de hollín. Rodean las flores… sin pisarlas.
 leave kael
 leave lya

@@ -1,0 +1,73 @@
+{
+ "id": "torre",
+ "rect": [
+  72,
+  38,
+  4,
+  4
+ ],
+ "sprites": [
+  {
+   "capa": "cuerpo",
+   "archivo": "torre_cuerpo.webp",
+   "pos": [
+    4584,
+    1588
+   ],
+   "tam": [
+    304,
+    1110
+   ],
+   "orden": 2688.0,
+   "tipo": "edificio"
+  }
+ ],
+ "anclas": {
+  "puerta": [
+   4736.0,
+   2726.39990234375
+  ],
+  "farol_puerta": [
+   4668.7998046875,
+   2574.0799865722656
+  ],
+  "campana": [
+   4736.0,
+   1958.4000244140625
+  ]
+ },
+ "efectos": [
+  {
+   "tipo": "halo",
+   "ancla": "farol_puerta",
+   "radio": 1.2,
+   "fuerza": 0.5
+  },
+  {
+   "tipo": "halo",
+   "ancla": "campana",
+   "radio": 1.6,
+   "fuerza": 0.22,
+   "parpadeo": 0.3
+  }
+ ],
+ "choques": [],
+ "marco": [
+  4451,
+  1485,
+  5041,
+  2852
+ ],
+ "suelo": {
+  "archivo": "torre_suelo.png",
+  "pos": [
+   4482,
+   1705
+  ],
+  "tam": [
+   552,
+   1128
+  ],
+  "escala": 4
+ }
+}

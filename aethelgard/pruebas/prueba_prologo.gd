@@ -1,13 +1,16 @@
 extends SceneTree
 # Prueba del prólogo con su puesta en escena (T-081; escena_dialogo.gd, retrato_vivo.gd). Sin ventana, con datos
 # aislados y «-- 3d». Pasadas por el mapa con una partida nueva:
-#   1. Entero con el teclado: 9 frases, una pulsación por frase; los retratos son «vivos» y quien habla tiene el foco;
-#      al acabar, todo vuelve como estaba (cámara, capa y transparencia de Dialogic, sin pausa, el muñeco del mapa a la
-#      vista) y Kael vuelve a andar; ninguna pulsación de más llega al mapa.
+#   1. Entero con el teclado: 11 frases (FRASES), una pulsación por frase; los retratos son «vivos» y quien habla tiene
+#      el foco; al acabar, todo vuelve como estaba (cámara, capa y transparencia de Dialogic, sin pausa, el muñeco del
+#      mapa a la vista) y Kael vuelve a andar; ninguna pulsación de más llega al mapa.
 #      Poses (T-084): mientras habla Lya, Kael está en reposo (sin la mano junto a la cabeza: la ilustración de reposo
 #      no es la de antes); en cada una de sus cuatro frases hace un gesto con su ilustración, distinto en cada una, y
 #      el fundido entre poses termina (no se queda la ilustración de encima a medias). Lya (tanda 2): en reposo
-#      mientras habla Kael y, en sus cinco frases, reposo, reposo, duda, decidida y preocupada (POSES_LYA).
+#      mientras habla Kael y, en sus siete frases, las poses de POSES_LYA.
+#      Texto (T-086, D-073): cada frase cabe en la caja del móvil, en dos líneas como mucho (LINEAS_MAX). Eran 9 frases:
+#      dos globos de Lya se parten en dos con las mismas palabras («Ese brazalete…» / «Lo llamaban la Llave del
+#      Confino», y «Ten cuidado ahí fuera.» / «Los Hollines ya no son solo sombras…»).
 #   2. Saltado con Esc en mitad del diálogo: lo mismo, y no se queda nada a medias.
 #   3. Saltado durante la entrada (antes de la primera frase): lo mismo.
 #   4. Deprisa (T-084): una pulsación cada 0,1 s, también mientras se escribe y en mitad de los fundidos: termina,
@@ -20,10 +23,16 @@ const MAPA := "res://mapa.tscn"
 const REPOSO := "res://dialogos/retratos/kael_reposo.png"
 const ORIGINAL := "res://dialogos/retratos/kael.png"   # la de la mano junto a la cabeza: ya no sale en el prólogo
 const GESTOS_KAEL := ["ligero", "brazalete", "sorpresa", "decidido"]   # sus cuatro frases, en orden
-# Lya (T-084, tanda 2): en sus cinco frases, la ilustración de cada una («inquieta» y la frase sin etiqueta van en
-# reposo: solo un gesto breve o nada); no repite ninguna ni se mueve en todas.
-const POSES_LYA := ["reposo", "reposo", "duda", "decidida", "preocupada"]
+# Lya (T-084, tanda 2): en sus siete frases, la ilustración de cada una («inquieta» y la frase sin etiqueta van en
+# reposo: solo un gesto breve o nada); no repite ninguna ni se mueve en todas. Los dos globos partidos (T-086) no
+# llevan gesto propio: el segundo sigue con la pose del primero mientras dura (MANTENER en retrato_vivo.gd) o ya en
+# reposo; por eso admiten las dos («duda|reposo»).
+const POSES_LYA := ["reposo", "reposo", "duda", "duda|reposo", "decidida", "preocupada", "preocupada|reposo"]
 const REPOSO_LYA := "res://dialogos/retratos/lya_reposo.png"
+const FRASES := 11                                # 9 hasta T-086, que parte en dos los globos 5 y 9
+# Caja de 880 px y letra de 28 (boton_dialogo.gd): el hueco del texto es de 824 × 124 px y cada línea ocupa 51 (medido
+# el 2026-11-09), así que una tercera (153) ya no cabría. El criterio de D-073 son dos líneas por frase.
+const LINEAS_MAX := 2
 
 var D
 var fallos: Array = []
@@ -175,6 +184,7 @@ func _pasada(modo: String) -> void:
 			if modo == "entero":
 				_comprobar_poses(frases, hablante, vistas.keys(), gestos_vistos)
 				_comprobar_poses_lya(frases, hablante, vistas_lya.keys(), poses_lya)
+				_comprobar_lineas(frases)
 			if modo == "saltar_dialogo" and frases == 3:
 				await _pulsar(KEY_ESCAPE)
 				break
@@ -185,12 +195,14 @@ func _pasada(modo: String) -> void:
 			if D.current_timeline != null and _texto() == antes and _revelado() and D.current_state == D.States.IDLE:
 				_fallo("%s: la frase %d no avanza con una pulsación" % [modo, frases])
 		if modo == "entero":
-			if frases != 9:
-				_fallo("entero: salen %d frases (esperaba 9)" % frases)
+			if frases != FRASES:
+				_fallo("entero: salen %d frases (esperaba %d)" % [frases, FRASES])
 			if gestos_vistos != GESTOS_KAEL:
 				_fallo("entero: los gestos de Kael en sus frases son %s (esperaba %s)" % [gestos_vistos, GESTOS_KAEL])
-			if poses_lya != POSES_LYA:
+			if not _poses_como(poses_lya, POSES_LYA):
 				_fallo("entero: las poses de Lya en sus frases son %s (esperaba %s)" % [poses_lya, POSES_LYA])
+			print("POSES de Lya en sus frases: %s" % [poses_lya])
+			print("LÍNEAS de cada frase en la caja: %s (como mucho %d)" % [lineas, LINEAS_MAX])
 	# al acabar (o al saltar): todo como estaba
 	if not await _volver_al_juego(m, escena, zoom0, lay, capa0, modo):
 		return
@@ -244,6 +256,33 @@ func _comprobar_poses_lya(frase: int, hablante: String, vistas: Array, poses_lya
 			_fallo("frase %d (habla Lya, en reposo): su ilustración es %s" % [frase, ruta])
 
 
+# Las poses vistas coinciden con las esperadas; «a|b» admite cualquiera de las dos (el segundo globo de una frase
+# partida sigue con la pose del primero o ya ha vuelto al reposo, según lo deprisa que se lea).
+func _poses_como(vistas: Array, esperadas: Array) -> bool:
+	if vistas.size() != esperadas.size():
+		return false
+	for i in vistas.size():
+		if not String(vistas[i]) in String(esperadas[i]).split("|"):
+			return false
+	return true
+
+
+# Texto (T-086): la frase cabe en la caja del móvil, en LINEAS_MAX líneas como mucho (RichTextLabel.get_line_count
+# cuenta también las que corta el ajuste de línea, con el ancho y la letra de la caja de verdad).
+var lineas: Array = []
+
+
+func _comprobar_lineas(frase: int) -> void:
+	for n in get_nodes_in_group("dialogic_dialog_text"):
+		if n is RichTextLabel and n.is_visible_in_tree():
+			var l: int = n.get_line_count()
+			lineas.append(l)
+			if l > LINEAS_MAX:
+				_fallo("frase %d: ocupa %d líneas en la caja (como mucho %d): «%s»" % [frase, l, LINEAS_MAX, n.get_parsed_text()])
+			return
+	_fallo("frase %d: no encuentro el texto de la caja para contar sus líneas" % frase)
+
+
 # Deprisa: una pulsación cada 0,1 s hasta el final (también mientras se escribe y en mitad de los fundidos).
 func _deprisa(modo: String) -> void:
 	if not await _hasta(func(): return not D.paused and _texto() != ""):
@@ -271,8 +310,8 @@ func _deprisa(modo: String) -> void:
 	print("DEPRISA: %d frases vistas con %d pulsaciones" % [vistas.size(), pulsaciones])
 	if D.current_timeline != null:
 		_fallo("%s: con %d pulsaciones el prólogo no termina" % [modo, pulsaciones])
-	elif vistas.size() != 9:
-		_fallo("%s: se han visto %d frases (esperaba 9: ninguna se salta sin verse)" % [modo, vistas.size()])
+	elif vistas.size() != FRASES:
+		_fallo("%s: se han visto %d frases (esperaba %d: ninguna se salta sin verse)" % [modo, vistas.size(), FRASES])
 
 
 # Al terminar: cámara, capa, transparencia, pausa, muñeco, la capa liberada, sin cambiar de escena, Kael anda y sin hitos.

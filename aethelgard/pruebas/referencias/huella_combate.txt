@@ -1,7 +1,10 @@
 # Huella del combate (C0 de T-091 a T-093): la referencia de pruebas/prueba_combate_huella.gd.
-# Sacada el 2026-11-09 en area-combate @ 2386761 (con la tanda 2 de sonido), Godot 4.7.2, --headless --fixed-fps 30,
-# semilla 20261109. Comprobado ejecutando, aislado: dos pasadas en un proceso, otro proceso y E3 y E8 solos dan
-# exactamente esto (SHA-256 del texto sin esta cabecera: a33fdae76d9dbc97dc4532c8c7f4e5504ce85a9d8ef70ac8a5563a6e8e204974).
+# Sacada el 2026-11-09 sobre area-combate @ 555fc29 con C0 aplicado en combate.gd (el commit que trae esta versión),
+# Godot 4.7.2, --headless --fixed-fps 30, semilla 20261109. Comprobado ejecutando, aislado: dos pasadas en un proceso
+# dan exactamente esto (SHA-256 del texto sin esta cabecera:
+# 3372b413669351f3ff8dbc3c8e402e0a427b5835be1d301bfcd11a0d4fa2196a), y E9 da lo mismo en otros dos procesos.
+# Historia: la primera (2386761, SHA a33fdae7...) tenía E1 a E8. Con C0 se añade E9 (Infierno y Cólera del Cielo);
+# E1 a E8 siguen idénticos, línea a línea, a los de la primera.
 # No cuentan las líneas que empiezan por «#» ni las vacías.
 # Formato: «== combate · grupo · nivel · zona · tipo · semilla» y una línea por suceso con su fotograma: ▶ turno de un
 # héroe y lo que hace (guion de la prueba), ▷ turno de un enemigo, · cartel, Δ cambios de PV y PM, ■ fin y ◆ decisión.
@@ -12,7 +15,6 @@
 #   600 | {salida} | ...»>
 # y copiar aquí <carpeta de la pasada>\prueba_combate_huella\huella_combate.txt bajo esta cabecera, explicando el
 # cambio en el commit. Sin esa explicación, una huella distinta es un fallo.
-
 == E1_kael_solo · grupo 9 · nivel 1 · zona llanura · normal · semilla 20262109
 00000 inicio · Kael PV 120/120 PM 16/16 ATQ 18 VEL 23 DEF 9 · Grimfang PV 110/110 ATQ 15 VEL 13 ATB 24.356
 00131 · (cartel vacío)
@@ -519,3 +521,37 @@ final · Kael PV 162/162 PM 30/30 ATQ 18 VEL 23 DEF 9 · Lya PV 122/122 PM 60/60
 grupo · Kael nivel 8 exp 230 pv 162 pm 30 puntos 3 · Lya nivel 8 exp 230 pv 122 pm 60 puntos 3 · Garon nivel 8 exp 230 pv 210 pm 24 puntos 3
 bolsa · oro 150→300 · Poción 5→5 · Éter 3→3
 partida · combates_ganados { "garganta_gorthor": true } · decisiones { "gorthor": "perdonado" } · Armonía 0.75 · velocidad 1.00
+
+== E9_nivel10_supremas · grupo 4 · nivel 10 · zona desierto · normal · semilla 20270109
+00000 inicio · Kael PV 174/174 PM 34/34 ATQ 18 VEL 23 DEF 9 · Lya PV 134/134 PM 64/64 ATQ 10 VEL 26 DEF 7 · Guardián de piedra PV 180/180 ATQ 19 VEL 8 ATB 27.929 · Grimfang PV 110/110 ATQ 15 VEL 13 ATB 15.672
+00116 · (cartel vacío)
+00116 ▶ turno de Lya (PV 134/134 PM 64/64)
+00116   Lya: defiende
+00117 · Lya se pone en guardia
+00140 · (cartel vacío)
+00140 ▶ turno de Kael (PV 174/174 PM 34/34)
+00140   Kael: Infierno (a todos)
+00141 · Kael lanza Infierno
+00141   Δ Kael PM 34→0
+00213   Δ Guardián de piedra PV 180→104
+00220   Δ Grimfang PV 110→42
+00282 ▷ turno de Grimfang
+00282 · Grimfang sufre quemaduras
+00282   Δ Grimfang PV 42→37
+00307 · Grimfang ataca a Lya
+00347   Δ Lya PV 134→129
+00406 · (cartel vacío)
+00406 ▶ turno de Lya (PV 129/134 PM 64/64)
+00406   Lya: Cólera del Cielo (a todos)
+00407 · Lya lanza Cólera del Cielo
+00407   Δ Lya PM 64→32
+00465   Δ Guardián de piedra PV 104→0
+00472   Δ Grimfang PV 37→0
+00546 ■ fin del combate
+00546 · ¡Victoria!
+00577 · +73 EXP   +58 monedas
+fin · victoria · fotograma 546 (18.2 s de juego)
+final · Kael PV 174/174 PM 0/34 ATQ 18 VEL 23 DEF 9 · Lya PV 129/134 PM 32/64 ATQ 10 VEL 26 DEF 7 · Guardián de piedra PV 0/180 ATQ 19 VEL 8 · Grimfang PV 0/110 ATQ 15 VEL 13
+grupo · Kael nivel 10 exp 73 pv 174 pm 0 puntos 0 · Lya nivel 10 exp 73 pv 129 pm 32 puntos 0 · Garon (ausente) nivel 10 exp 0 pv -1 pm -1 puntos 0
+bolsa · oro 150→208 · Poción 5→5 · Éter 3→3
+partida · combates_ganados {  } · decisiones {  } · Armonía 0.45 · velocidad 1.00

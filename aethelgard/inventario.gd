@@ -2,11 +2,12 @@ extends RefCounted
 # Inventario del grupo (Godot 4.x): objetos que se gastan, equipo que se lleva y qué lleva cada héroe.
 # Se guarda en Engine.get_meta("inventario") para que dure al cambiar de escena.
 # Uso desde otro script:  load("res://inventario.gd").arma_de("Kael"), .equipar("Kael", "pies", "botas_cuero")...
-# Ranuras de equipo: arma, cabeza, cuerpo, pies, anillo y amuleto.
+# Ranuras de equipo: arma, escudo, cabeza, cuerpo, pies, anillo, amuleto y accesorio (T-092: los accesorios y las
+# armas especiales viven en equipo_extra.gd; objeto() los encuentra allí).
 
-const RANURAS := ["arma", "escudo", "cabeza", "cuerpo", "pies", "anillo", "amuleto"]
+const RANURAS := ["arma", "escudo", "cabeza", "cuerpo", "pies", "anillo", "amuleto", "accesorio"]
 const NOMBRES_RANURA := {"arma": "Arma", "escudo": "Escudo", "cabeza": "Cabeza", "cuerpo": "Cuerpo", "pies": "Pies",
-	"anillo": "Anillo", "amuleto": "Amuleto"}
+	"anillo": "Anillo", "amuleto": "Amuleto", "accesorio": "Accesorio"}
 
 # Armas: "tipo" = espada (espadachines) o cetro (magas y magos). Modelo ligero (empuñadura en el
 # origen, hoja hacia +Y, largo 1), texturas, largo en metros y dónde está la punta (en el modelo
@@ -108,14 +109,16 @@ static func agregar(id: String) -> void:
 	datos()["equipables"].append(id)
 
 
-# Datos de un arma o protección por su id (o {} si no existe).
+# Datos de un arma, una protección o un accesorio por su id (o {} si no existe, p. ej. de una versión más nueva).
 static func objeto(id: String) -> Dictionary:
 	if ARMAS.has(id):
 		var a: Dictionary = ARMAS[id].duplicate()
 		a["ranura"] = "arma"
 		a["para"] = a["tipo"]
 		return a
-	return PROTECCIONES.get(id, {})
+	if PROTECCIONES.has(id):
+		return PROTECCIONES[id]
+	return load("res://equipo_extra.gd").objeto(id)   # accesorios y armas especiales (T-092); {} si no existe
 
 
 static func equipo_de(heroe: String) -> Dictionary:
@@ -130,6 +133,8 @@ static func puede_llevar(heroe: String, id: String) -> bool:
 	if o.is_empty():
 		return false
 	var tipo: String = load("res://grupo.gd").tipo_arma(heroe) if ResourceLoader.exists("res://grupo.gd") else ""
+	if o.has("solo") and o["solo"] != heroe:        # armas especiales de un héroe (equipo_extra.gd)
+		return false
 	return o["para"] == "todos" or o["para"] == tipo
 
 
@@ -146,7 +151,7 @@ static func equipar(heroe: String, ranura: String, id: String) -> bool:
 	if id == "":
 		equipo_de(heroe).erase(ranura)
 		return true
-	if not id in datos()["equipables"] or not puede_llevar(heroe, id) or objeto(id)["ranura"] != ranura:
+	if not id in datos()["equipables"] or not puede_llevar(heroe, id) or objeto(id).get("ranura", "") != ranura:
 		return false
 	var otro := quien_lleva(id)
 	if otro != "":
@@ -159,7 +164,7 @@ static func equipar(heroe: String, ranura: String, id: String) -> bool:
 static func opciones(heroe: String, ranura: String) -> Array:
 	var r: Array = []
 	for id in datos()["equipables"]:
-		if objeto(id)["ranura"] == ranura and puede_llevar(heroe, id):
+		if objeto(id).get("ranura", "") == ranura and puede_llevar(heroe, id):   # un id desconocido no rompe nada
 			r.append(id)
 	return r
 
@@ -181,6 +186,8 @@ static func resumen(id: String) -> String:
 		"vitalidad": "Vitalidad", "espiritu": "Espíritu"}
 	for k in o.get("bonus", {}):
 		partes.append("%+d %s" % [o["bonus"][k], nombres[k]])
+	if o.has("efecto"):                             # accesorios y armas especiales: lo que hacen en el combate
+		partes.append(o["efecto"])
 	return "  ".join(partes)
 
 

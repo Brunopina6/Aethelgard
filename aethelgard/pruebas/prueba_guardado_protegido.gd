@@ -1,4 +1,6 @@
 extends SceneTree
+# Una partida guardada en Oakhaven vuelve a la ciudad: la generada (zona.tscn) o, desde T-089, la hecha a mano.
+const OAKHAVEN := ["res://zona.tscn", "res://ciudad_oakhaven.tscn"]
 # Prueba de la protección del guardado traída a la copia habitual (rebelum-3d; progreso.gd e inventario.gd, de
 # rebelum-alpha 86a58af; TASKS.md, T-076 y T-077). Partidas sintéticas en un archivo propio
 # (user://prueba_guardado_protegido.save) y datos aislados (ejecutar_pruebas.ps1): nunca toca la partida de verdad.
@@ -117,7 +119,7 @@ func _cargar_y_guardar() -> void:
 			Engine.remove_meta(k)
 	var completa := var_to_str(_partida_completa())
 	var escena: String = P.cargar()
-	if escena != "res://zona.tscn" or not Engine.get_meta("partida_lista", false):
+	if not escena in OAKHAVEN or not Engine.get_meta("partida_lista", false):
 		fallos.append("2: cargar() devuelve «%s» o no deja la partida lista" % escena)
 	if Engine.get_meta("grupo", {}).get("Kael", {}).get("nivel", 0) != 4:
 		fallos.append("2: cargar() no pone el grupo de la partida")
@@ -143,7 +145,7 @@ func _partida_del_pc() -> void:
 		"lugar": {"indice": 0, "nombre": "Oakhaven", "texto": "x", "tipo": "ciudad", "zona": "ciudad"}}
 	_poner(ARCHIVO, var_to_str(pc))
 	var escena: String = P.cargar()
-	if escena != "res://zona.tscn" or Engine.has_meta("grupo") or Engine.has_meta("inventario"):
+	if not escena in OAKHAVEN or Engine.has_meta("grupo") or Engine.has_meta("inventario"):
 		fallos.append("3: la partida como la del PC no carga igual (escena «%s»)" % escena)
 	var d: Dictionary = inv.datos()
 	if not d.has("objetos") or not d.has("equipables") or not d.has("equipo"):
@@ -165,7 +167,7 @@ func _danada() -> void:
 	_poner(ARCHIVO + ".bak", buena)
 	_poner(ARCHIVO, buena.substr(0, 120))                     # cortada: no se puede leer
 	var escena: String = P.cargar()
-	if escena != "res://zona.tscn" or Engine.get_meta("inventario", {}).get("oro", 0) != 321:
+	if not escena in OAKHAVEN or Engine.get_meta("inventario", {}).get("oro", 0) != 321:
 		fallos.append("4: con la partida dañada no se recupera la copia buena (escena «%s»)" % escena)
 	if _texto(ARCHIVO + ".danada") != buena.substr(0, 120):
 		fallos.append("4: la partida dañada no se aparta en «.danada»")
@@ -178,14 +180,14 @@ func _cortes() -> void:
 	_poner(ARCHIVO, buena)
 	_poner(ARCHIVO + ".tmp", "{\n\"grupo\": {")                # corte mientras se escribía el «.tmp»
 	var escena: String = P.cargar()
-	if escena != "res://zona.tscn" or Engine.get_meta("inventario", {}).get("oro", 0) != 321:
+	if not escena in OAKHAVEN or Engine.get_meta("inventario", {}).get("oro", 0) != 321:
 		fallos.append("5: un «.tmp» a medias estropea la carga")
 	_limpiar()
 	_poner(ARCHIVO + ".tmp", buena)                           # corte entre quitar la partida y renombrar el «.tmp»
 	if not P.hay_partida():
 		fallos.append("5: con solo un «.tmp» completo, hay_partida() dice que no hay")
 	escena = P.cargar()
-	if escena != "res://zona.tscn":
+	if not escena in OAKHAVEN:
 		fallos.append("5: un «.tmp» completo sin la partida no se recupera")
 	hechos.append("5 cortes al guardar")
 

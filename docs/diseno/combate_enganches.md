@@ -1,7 +1,7 @@
 # Enganches de las ampliaciones de combate (fase 1: C0, M1, M2 y C1)
 
-> **Estado:** lista para aplicar cuando el coordinador pase `combate.gd`, `menu_combate.gd`, `menus.gd`, `tienda.gd`,
-> `inventario.gd` y `diario.gd`. **Nada de esto está aplicado:** esos archivos no se han tocado.
+> **Estado (09/11, fase 2): aplicado** en `area-combate`, salvo E-1 (`diario.gd`, de narrativa). Las diferencias con lo
+> que se escribió aquí y lo que se añadió, en el §7. El resto del documento se deja como estaba (fase 1).
 > **Base de las líneas:** `area-combate` @ `2386761` (con la tanda 2 de sonido). Si un archivo ha cambiado, cada fila
 > lleva su **ancla** (el texto exacto de la línea) para encontrarla.
 > **Módulos que se enganchan:** `artes.gd` (M1 y M2) y `equipo_extra.gd` (C1), con sus pruebas `prueba_artes` y
@@ -9,7 +9,7 @@
 > **Fecha:** 2026-11-09 (fase 1 de T-091 a T-093).
 
 **Índice:** 0. Resumen · 1. C0 · 2. M1 y M2 · 3. C1 · 4. Después (M3, C2 y M4) · 5. Peticiones a otros ·
-6. Pruebas al enganchar
+6. Pruebas al enganchar · 7. Aplicado (fase 2)
 
 ---
 
@@ -502,3 +502,36 @@ func _precios_equipo() -> Dictionary:
   de las pestañas y los iconos.
 - **C1:** `prueba_foco` y `prueba_mando` (◀ ▶ de la fila Accesorio y el foco que vuelve), `prueba_partida` y
   `prueba_guardado`; un combate con el Farol (empieza con un tercio de barra) y otro con la Moneda (+25 %).
+
+---
+
+## 7. Aplicado (fase 2, 09/11)
+
+Sobre `area-combate` @ `555fc29`. Commits: C0 `30780e5`, M1 y M2 `653d7b6`, C1 `a3c4432`, menú y pruebas `5e3bf18`.
+Las líneas de las tablas de arriba son de `2386761`; en `combate.gd` y `menu_combate.gd` no habían cambiado.
+
+| Enganche | Aplicado | Diferencias con lo de arriba |
+|---|---|---|
+| C0.1 a C0.3 | Sí | Infierno y Cólera del Cielo entran en un **E9** nuevo y no en E4: así E1 a E8 siguen idénticos, línea a línea, a la primera referencia |
+| A1 a A8 | Sí | — |
+| B1 a B4 | Sí | Además, `_ajustar_nombre`: si un nombre de submenú no cabe junto a su coste, se juntan las letras y, si hace falta, baja el tamaño (no menos de 26) |
+| C-1 | Sí | — |
+| D1 a D4 | Sí | — |
+| E-1 (`diario.gd`) | **No**: es de narrativa | El cambio exacto, en el informe |
+| F1 a F7 | Sí | — |
+| G1 a G5 | Sí | La esquiva tampoco hace sonar el golpe ni la voz; `ultimo_esquivado`: Gorthor no se cura si su mordisco se esquiva |
+| H1 y H2 | Sí | Y `get("nombre", "—")` en la fila de cada ranura |
+| I1 a I3 | Sí | Lo propio del lugar sale **primero** en la lista |
+| `HECHOS = ["C1"]` | Sí | — |
+
+**Cambios que no estaban en la lista** (vistos en las capturas o medidos en las pruebas):
+- `artes.gd`, `filas_familia`: a la derecha, solo el coste («6 PM»). Con «I · 6 PM», el nombre pisaba el coste.
+- `artes.gd`, `estados_de`: un héroe caído no tiene iconos.
+- `menus.gd`, menú Grupo: con la octava ranura, el ▶ de Accesorio salía cortado (medido: ▶ de y = 611 a 652 y la
+  lista acababa en 633). Ahora el panel mide 640 (40 px de margen arriba y abajo), la lista 560, la columna del equipo
+  va con 3 px entre filas y «Arma: solo espadas.» va junto al título «Equipo».
+- `pruebas/combate_con_artes.gd` y la pasada «con_enganches» de la huella, borrados: ya no hacen falta.
+
+**Pruebas:** `prueba_combate_huella` (9 combates, referencia nueva con E9), `prueba_artes`, `prueba_artes_combate`
+(con `combate.tscn` y el escenario D), `prueba_equipo`, `prueba_equipo_combate` y `prueba_controles_nuevos` (nuevas), y
+`prueba_combate_fotos` (con ventana).

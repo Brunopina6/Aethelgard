@@ -17,6 +17,7 @@ extends SceneTree
 
 const MAPA := "res://mapa.tscn"
 const ZONA := "res://zona.tscn"
+const CIUDAD := "res://ciudad_oakhaven.tscn"     # Oakhaven, hecha a mano desde T-089 (hereda de zona.gd)
 
 var fallos: Array = []
 var hechos: Array = []
@@ -289,10 +290,10 @@ func _ciudad() -> void:
 	var limite := Time.get_ticks_msec() + 60000     # la zona se carga en segundo plano: se espera por tiempo real
 	while Time.get_ticks_msec() < limite:
 		await _esperar(1)
-		if _escena() == ZONA and not R.cambiando and current_scene.jugador != null:
+		if _escena() in [ZONA, CIUDAD] and not R.cambiando and current_scene.jugador != null:
 			break
 	var z = current_scene
-	if _escena() != ZONA or not z.es_ciudad:
+	if not _escena() in [ZONA, CIUDAD] or not z.es_ciudad:
 		_fallo("6: no se entra en la ciudad (%s)" % _escena())
 		return
 	await _esperar(10)
@@ -321,7 +322,7 @@ func _ciudad() -> void:
 		_fallo("6: Esc no suelta los botones de la ciudad")
 	var vecino = null                               # un vecino con diálogo de Dialogic
 	for n in z.npcs:
-		if n[1].get("dialogo", "") != "":
+		if z._dialogo_npc(n) != "":                   # el que toca ahora (en Oakhaven, según la partida)
 			vecino = n
 			break
 	if vecino == null:

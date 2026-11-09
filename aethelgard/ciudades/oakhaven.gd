@@ -1,8 +1,8 @@
 extends RefCounted
-# Oakhaven, «la ciudadela de los faroles» (T-089, fase 1): los datos de la ciudad hecha a mano, listos para enganchar.
-# Diseño: docs/diseno/ciudades_y_lugares.md §2.1. Enganches pendientes y arte que pedir: docs/memory/agents/narrativa.md.
-# Aún no lo usa ninguna escena. Lo leerán una ciudad_oakhaven.gd nueva (hereda de zona.gd, como garganta.gd),
-# progreso.gd (las notas) y diario.gd (la sección «Notas»).
+# Oakhaven, «la ciudadela de los faroles» (T-089): los datos de la ciudad hecha a mano.
+# Diseño: docs/diseno/ciudades_y_lugares.md §2.1. Enganches y arte que pedir: docs/memory/agents/narrativa.md.
+# Lo usan ciudad_oakhaven.gd (la escena, que hereda de zona.gd como garganta.gd; se entra desde el mapa), progreso.gd
+# (las notas, CIUDADES), diario.gd (la sección «Notas») y zonas3d/pastos_verdes_3d.gd (el ramito de lavanda).
 #
 # VERSIÓN NEUTRA (D-073): no afirma nada de lo que espera la decisión del usuario.
 #   - La posadera del Cuervo Oxidado no tiene nombre ni se dice que criara a Kael (propuesta: Olvido).
@@ -30,6 +30,7 @@ const ARBOL := Vector2(40, 7)            # el Árbol Milenario sustituye al alta
 const INICIO := Vector2(40, 53.5)        # donde aparece Kael al entrar por la Puerta del Sur
 const SALIDA_X := 40.0
 const PRECIO_POSADA := 30                # como hoy (zona.gd); la posadera dice «treinta monedas»
+const TEXTO_NOCHE_GRATIS := "Esta noche invita la posadera."   # al despertar, si se usó la noche gratis
 const TEXTO_ARBOL := "El Árbol Milenario. Su copa se ve desde toda la ciudad."
 const RUTA_DIALOGOS := "res://dialogos/oakhaven/"
 const DIALOGOS_CANON := ["npc_aldric", "npc_selene", "npc_pip", "npc_rosa"]   # res://dialogos/<id>.dtl, sin tocar
@@ -270,14 +271,18 @@ const SECRETOS := [
 		"como": "En el patio de la guardia. Cuando Kael ya ha salido de la ciudad, Aldric mira hacia otro lado.",
 		"premio": "60 monedas, 1 Poción y la nota de los requisados.", "cofre": "oak_cofre_requisados",
 		"nota": "nota_oak_requisados"},
+	# «texto»: el aviso que sale la primera vez mientras no esté la viñeta pintada («texto_pv07»: el de después de PV-07).
 	{"id": "oak_vista_torre", "tipo": "vista", "nombre": "Desde la Torre de la Campana", "casilla": Vector2(73.5, 42.5),
 		"como": "Al subir a la torre.",
 		"premio": "Antes de PV-07, el brillo morado del Portal al sureste y la niebla al norte; después, también la ciudad flotante. Viñeta pintada de 4-6 s que se salta tocando.",
-		"estado": "estado:vista_torre"},
+		"estado": "estado:vista_torre",
+		"texto": "Al sureste, un brillo morado. Al norte, la niebla.",
+		"texto_pv07": "Al sureste, un brillo morado. Al norte, la niebla. Y arriba, la ciudad flotante."},
 	{"id": "oak_vista_raices", "tipo": "vista", "nombre": "Desde las raíces", "casilla": Vector2(40, 12.5),
 		"como": "La primera vez que se llega a las raíces del Árbol.",
 		"premio": "La ciudad entera en la hora azul; los faroles se encienden en ola, de la plaza hacia fuera.",
-		"estado": "estado:vista_raices"},
+		"estado": "estado:vista_raices",
+		"texto": "Desde las raíces se ve la ciudad entera. Los faroles se encienden en ola."},
 ]
 
 # ================================================================= piezas (lo que se examina o se usa)
@@ -626,16 +631,10 @@ static func abrir_cofre(id: String) -> Dictionary:
 	return r
 
 
-# Apunta una nota en el Diario (lore_visto). Devuelve true si es nueva. No completa ningún acto.
+# Apunta una nota en el Diario (progreso.gd, ver_nota: en «lore_visto»). Devuelve true si es nueva. No completa ningún
+# acto.
 static func ver_nota(id: String) -> bool:
-	if nota(id).is_empty():
-		return false
-	var v: Dictionary = Engine.get_meta("lore_visto", {})
-	if v.has(id):
-		return false
-	v[id] = true
-	Engine.set_meta("lore_visto", v)
-	return true
+	return not nota(id).is_empty() and _p().ver_nota(id)
 
 
 # La noche gratis de «Tres favores para el Cuervo»: true (y se gasta) si quedaba.

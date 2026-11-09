@@ -378,6 +378,11 @@ func _textos_de_datos() -> Array:
 			r.append(["bloqueado de " + c["id"], c["bloqueado"], true])
 	r.append(["LAVANDA", Oak.LAVANDA["texto"], true])
 	r.append(["TEXTO_ARBOL", Oak.TEXTO_ARBOL, true])
+	r.append(["TEXTO_NOCHE_GRATIS", Oak.TEXTO_NOCHE_GRATIS, true])          # (fase 2: avisos de la ciudad)
+	for s in Oak.SECRETOS:
+		for k in ["texto", "texto_pv07"]:
+			if s.has(k):
+				r.append(["%s de %s" % [k, s["id"]], s[k], true])
 	return r
 
 

@@ -1,8 +1,9 @@
 extends RefCounted
 # Equipo de T-092 (Godot 4.x): la ranura Accesorio, los 8 accesorios y las 6 armas especiales, dos por héroe
-# (docs/diseno/combate_ampliaciones.md, §4). Datos y lógica sin escena: inventario.gd, grupo.gd, combate.gd, menus.gd
-# y tienda.gd los usarán por los enganches de docs/diseno/combate_enganches.md; hasta entonces, nada del juego llama a
-# este archivo.
+# (docs/diseno/combate_ampliaciones.md, §4). Datos y lógica sin escena. C1 enganchado el 09/11
+# (docs/diseno/combate_enganches.md, §3): inventario.gd (la ranura y objeto()), combate.gd (ATB inicial, crítico,
+# esquiva, PM por turno, regeneración y monedas), menus.gd y tienda.gd (lo que se vende en cada lugar). Las armas
+# especiales (C2) y los efectos de M3 y M4 siguen fuera: HECHOS.
 # Uso:  var Extra = load("res://equipo_extra.gd");  Extra.efectos_de("Kael")...
 #
 # Sin un objeto nuevo equipado, todo da lo mismo que hoy: los efectos solo suman, el equipo inicial no cambia y ningún
@@ -35,8 +36,8 @@ const EFECTOS := {
 	"apoyo_turnos": {"tipo": "num", "max": 2.0, "gancho": "C2"},         # el Aliento que lanza dura más (con M2)
 }
 # Incrementos ya enganchados en el juego (se añaden al enganchar: "C1", luego "M3", "C2" y "M4"). Lo que no está
-# disponible no se vende ni se da.
-const HECHOS: Array = []
+# disponible no se vende ni se da. C1, desde el 09/11: la ranura Accesorio y los seis accesorios de C1.
+const HECHOS: Array = ["C1"]
 
 # Accesorios: sin atributos, solo su efecto. «efecto»: texto corto del menú (32 caracteres como mucho).
 const ACCESORIOS := {

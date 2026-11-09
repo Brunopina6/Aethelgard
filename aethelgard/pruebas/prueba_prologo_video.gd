@@ -13,6 +13,7 @@ extends SceneTree
 
 const MAPA := "res://mapa.tscn"
 const LECTURA := 2.8                              # segundos a la vista tras escribirse (lectura tranquila)
+const FRASES := 11                                # 9 hasta T-086, que parte en dos los globos 5 y 9 (de Lya)
 const CADA := 2                                   # un fotograma de vídeo de cada 2 (a 30 por segundo: 15)
 
 var salida := ""
@@ -136,8 +137,8 @@ func _probar() -> void:
 		await _esperar(3)
 		if D.current_timeline != null and _texto() == antes and _revelado() and D.current_state == D.States.IDLE:
 			_fallo("la frase %d no avanza con una pulsación" % frases)
-	if frases != 9:
-		_fallo("salen %d frases (esperaba 9)" % frases)
+	if frases != FRASES:
+		_fallo("salen %d frases (esperaba %d)" % [frases, FRASES])
 	if not await _hasta(func(): return m.escena_dialogo == null and D.current_timeline == null, 15.0):
 		_fallo("la escena no termina")
 		return _fin()
