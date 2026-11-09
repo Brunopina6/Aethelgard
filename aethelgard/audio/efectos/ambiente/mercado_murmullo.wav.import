@@ -14,8 +14,8 @@ dest_files=["res://.godot/imported/mercado_murmullo.wav-d0d85930fc772011448a63e7
 
 force/8_bit=false
 force/mono=false
-force/max_rate=false
-force/max_rate_hz=44100
+force/max_rate=true
+force/max_rate_hz=22050
 edit/trim=false
 edit/normalize=false
 edit/loop_mode=2
