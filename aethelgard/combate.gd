@@ -167,6 +167,12 @@ const MODELOS := {
 		"tipo": "3d", "esc": 0.6, "script": "res://goblin_3d.gd", "gestos": "res://gestos_3d.gd", "base": "res://maga_3d.gd",
 		"rutas": ["res://goblin.fbx"], "vp": Vector2i(620, 640), "alto_vista": 2.3, "centro_y": 1.05, "barra_y": 60.0,
 		"respaldo": "hollin"},
+	# Zarzalín (T-097, bestiario 01; escena y clips de animaciones: enemigos/zarzalin/). Encuadre ×1,25 (propuesta de
+	# animaciones): 1,5 m de alto de vista mirando a 0,48 m; su centro (números y efectos) a 0,5 m, no a 0,85.
+	"zarzalin": {
+		"tipo": "3d", "esc": 0.6, "script": "res://enemigos/zarzalin/zarzalin_3d.gd", "gestos": "res://gestos_3d.gd",
+		"rutas": ["res://enemigos/zarzalin/zarzalin_completo.glb"], "vp": Vector2i(1175, 525), "alto_vista": 1.5,
+		"centro_y": 0.48, "barra_y": 40.0, "centro_3d": 0.5, "respaldo": "slime"},
 	# Gorthor: el mismo goblin, el doble de grande (los jefes, al menos el doble que un héroe) y teñido de rojo.
 	"gorthor3d": {
 		"tipo": "3d", "esc": 1.2, "script": "res://goblin_3d.gd", "gestos": "res://gestos_3d.gd", "base": "res://maga_3d.gd",
@@ -211,6 +217,11 @@ const ENEMIGOS := {
 	# "ultimo_aliento": al llegar a 0 PV cae de rodillas y Kael decide si le perdona.
 	"gorthor": {"nombre": "Gorthor el Devorador", "modelo": "gorthor3d", "hp": 460, "atk": 22, "vel": 10.0, "exp": 60, "oro": 150,
 		"personalidad": "jefe", "fases": true, "ultimo_aliento": true, "titulo": true},
+	# Zarzalín: el enemigo inicial de Pastos Verdes. Enseña a Kael, cuando viaja solo, a leer un ataque cargado: avisa un
+	# turno antes bajando el hocico, embiste (×1,8; Defender lo reduce a la mitad) y el turno siguiente recupera el
+	# aliento. Si no, barre con el colmillo. Personalidad «embiste» (_turno_zarzalin).
+	"zarzalin": {"nombre": "Zarzalín", "modelo": "zarzalin", "hp": 80, "atk": 11, "vel": 14.0, "exp": 20, "oro": 12,
+		"personalidad": "embiste"},
 	"golem_ambar": {"nombre": "Gólem de ámbar", "modelo": "guardian", "hp": 200, "atk": 17, "vel": 9.0, "exp": 70, "oro": 90, "personalidad": "bruto"},
 }
 const GRUPOS := [
@@ -226,12 +237,13 @@ const GRUPOS := [
 	[["slime", Vector2(250, 120)]],                                         # 7
 	[["slime", Vector2(140, 110)], ["slime", Vector2(380, 125)]],           # 8
 	[["grimfang", Vector2(300, 130)]],                                      # 9
+	[["zarzalin", Vector2(250, 120)]],                                      # 10: Zarzalín (Pastos Verdes)
 ]
 const GRUPOS_AL_AZAR := 5           # solo los primeros salen en encuentros aleatorios (con el grupo de tres)
 # Encuentros al azar según cuántos héroes hay ahora en el grupo (grupo.gd, activos). Kael solo no tiene cura ni a
 # nadie que le cubra: sus grupos se ganan solo con ataques (pruebas/prueba_grupos_combate.gd). Los combates fijos no
 # cambian, y ninguno de estos enemigos aturde, duerme ni congela.
-const AL_AZAR_POR_TAMANO := {1: [7, 8, 9], 2: [1, 3, 8, 9]}
+const AL_AZAR_POR_TAMANO := {1: [7, 8, 9, 10], 2: [1, 3, 8, 9, 10]}   # 10, Zarzalín (T-097): un randi() igual que antes
 
 
 const ANIM := {
@@ -262,6 +274,7 @@ const ANIM := {
 		"ret": -360.0, "lean_prep": 12.0, "lean_golpe": -20.0},
 	"slime": {"distancia": 200.0, "frame_golpe": 4},
 	"grimfang": {"distancia": 120.0},
+	"zarzalin": {"distancia": 150.0},
 	"gorthor3d": {"distancia": 190.0},
 	"hollin": {"distancia": 140.0},
 	"gorthor": {"distancia": 170.0},
@@ -383,6 +396,12 @@ func _ready() -> void:
 	_elegir_enemigos()
 	_crear_texturas()
 	_crear_interfaz()
+	for e in enemigos:                               # los que tienen entrada (Zarzalín): llegan de un salto, con un
+		var pe = _p3d(e)                             # fundido corto porque el clip empieza 0,85 m por detrás
+		if pe != null and pe.has_method("entrada"):
+			e["rig"].modulate.a = 0.0
+			create_tween().tween_property(e["rig"], "modulate:a", 1.0, 0.15)
+			pe.entrada()
 	_iniciar_musica()
 	_actualizar()
 	_precalentar_efectos()
@@ -393,8 +412,9 @@ func _ready() -> void:
 
 # Índice de un grupo al azar para un encuentro con «cuantos» héroes (los de tres, como siempre).
 static func grupo_al_azar(cuantos: int) -> int:
-	if AL_AZAR_POR_TAMANO.has(cuantos):
-		var opciones: Array = AL_AZAR_POR_TAMANO[cuantos]
+	var tabla: Dictionary = AL_AZAR_POR_TAMANO
+	if tabla.has(cuantos):
+		var opciones: Array = tabla[cuantos]
 		return opciones[randi() % opciones.size()]
 	return randi() % GRUPOS_AL_AZAR
 
@@ -940,7 +960,7 @@ func _crear_rig_3d(f: Dictionary, m: Dictionary, raiz: Node2D, base: Vector2, es
 	f["p3d"] = maga
 	f["cam3d"] = cam
 	# centro del cuerpo en pantalla (para efectos y números de daño)
-	f["centro_ofs"] = cam.unproject_position(Vector3(0, 0.85, 0)) / q * esc
+	f["centro_ofs"] = cam.unproject_position(Vector3(0, m.get("centro_3d", 0.85), 0)) / q * esc
 
 
 # Personaje 3D (maga o Kael) de un luchador, o null si es 2D.
@@ -1249,6 +1269,10 @@ func _turno_enemigo(f: Dictionary) -> void:
 		await _huir(f)
 		_fin_turno_enemigo(f)
 		return
+	if p == "embiste":                               # Zarzalín: aviso, embestida y recuperación (T-097)
+		await _turno_zarzalin(f, vivos, mult)
+		_fin_turno_enemigo(f)
+		return
 	# curar a un aliado
 	if p == "apoyo":
 		var herido = null
@@ -1329,6 +1353,55 @@ func _elegir_objetivo(p: String, vivos: Array) -> Dictionary:
 	return debil
 
 
+# Zarzalín (ficha del bestiario 01): enseña a leer un ataque cargado.
+#   - Si avisó en su turno anterior («cargando»), embiste a quien eligió (×1,8; Defender lo reduce a la mitad, como
+#     cualquier golpe) y el turno siguiente recupera el aliento: nunca dos ataques fuertes seguidos.
+#   - Si no, a veces (40 %) avisa: baja el hocico y da dos golpes de pezuña (avisar() de zarzalin_3d.gd). Se ve
+#     «⚠ Cargando» sobre su vida y el cartel dice a quién va.
+#   - Si no, el colmillo lateral: un golpe corto a un objetivo.
+# Cada ataque se resuelve una sola vez, en el impacto del clip (_anim_zarzalin).
+const ZARZALIN := {"prob_aviso": 0.4, "mult_embestida": 1.8}
+
+
+func _turno_zarzalin(f: Dictionary, vivos: Array, mult: float) -> void:
+	var p = _p3d(f)
+	if f.get("recupera", false):
+		f["recupera"] = false
+		registro.text = "%s recupera el aliento" % f["nombre"]
+		_numero_flotante(f, "Recupera", Color(0.8, 0.85, 0.75), 28)
+		await get_tree().create_timer(0.8).timeout
+		return
+	if f.get("cargando", false):
+		f["cargando"] = false
+		f["recupera"] = true
+		var objetivo = f.get("objetivo_carga", null)
+		if objetivo == null or objetivo["hp"] <= 0:
+			objetivo = _elegir_objetivo("agresivo", vivos)
+		f.erase("objetivo_carga")
+		registro.text = "¡%s embiste a %s!" % [f["nombre"], objetivo["nombre"]]
+		f["ataque_3d"] = "embestida_espinosa"
+		await _animar_golpe(f, objetivo, int(f["atk"] * ZARZALIN["mult_embestida"] * mult) + randi_range(-2, 3), "")
+		f.erase("ataque_3d")
+		return
+	if randf() < ZARZALIN["prob_aviso"]:
+		var objetivo := _elegir_objetivo("agresivo", vivos)
+		f["cargando"] = true
+		f["objetivo_carga"] = objetivo
+		registro.text = "%s baja el hocico: ¡va a embestir a %s!" % [f["nombre"], objetivo["nombre"]]
+		_numero_flotante(f, "⚠ ¡Embestida!", Color(1.0, 0.8, 0.2), 32)
+		_actualizar()
+		if p != null and p.has_method("avisar"):
+			await p.avisar("embestida_espinosa")
+		else:
+			await get_tree().create_timer(1.0).timeout
+		return
+	var objetivo := _elegir_objetivo("agresivo", vivos)
+	registro.text = "%s ataca a %s" % [f["nombre"], objetivo["nombre"]]
+	f["ataque_3d"] = "colmillo_lateral"
+	await _animar_golpe(f, objetivo, int(f["atk"] * mult) + randi_range(-2, 3), "")
+	f.erase("ataque_3d")
+
+
 func _fin_turno_enemigo(f: Dictionary) -> void:
 	f["atb"] = 0.0
 	_actualizar()
@@ -1343,6 +1416,10 @@ func _huir(f: Dictionary) -> void:
 	Sonido.efecto("huida", {"db": -4.0})           # sonido.gd
 	f["huido"] = true
 	var rig: Node2D = f["rig"]
+	var pz = _p3d(f)
+	if pz != null and pz.has_method("avisar"):        # Zarzalín: se da la vuelta y se va galopando
+		pz.mirar(Vector3(-1, 0, 0.1), 0.12)
+		pz.correr()
 	var t := create_tween()
 	t.tween_property(rig, "position:x", rig.position.x - 500.0, 0.6).set_ease(Tween.EASE_IN)
 	t.parallel().tween_property(rig, "modulate:a", 0.0, 0.6)
@@ -2745,6 +2822,8 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 		await _anim_magia_3d(origen, objetivo, magia, impacto)
 	elif magia != "":
 		await _anim_magia(origen, objetivo, magia, impacto)
+	elif _p3d(origen) != null and _p3d(origen).has_method("avisar"):           # Zarzalín (T-097)
+		await _anim_zarzalin(origen, objetivo, impacto, str(origen.get("ataque_3d", "colmillo_lateral")))
 	elif _p3d(origen) != null and _p3d(origen).has_method("atacar_hacha"):     # Grimfang y Gorthor
 		# golpe fuerte a dos manos con rabia o al descargar el golpe cargado; si no, el doble tajo
 		var fuerte: bool = origen.get("furia", false) or origen.get("descarga", false)
@@ -2976,6 +3055,50 @@ func _anim_ataque_3d(o: Dictionary, obj: Dictionary, impacto: Callable, metodo: 
 	else:
 		p.mirar(-ida, 0.2)
 		p.correr()
+	var t3 := create_tween()
+	t3.tween_property(rig, "position", base, 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	await t3.finished
+	p.mirar_frente(0.25)
+	p.reposo()
+	rig.z_index = 0
+	o["animando"] = false
+
+
+# Zarzalín ataca (T-097): galopa hasta el héroe, se planta donde sus colmillos llegan a él en el impacto del clip
+# (propuesta de animaciones: los pies a centro − 30 − 0,632·px_m − alcance·px_m, y a la altura de los pies del objetivo),
+# y atacar(ataque, al_golpear) llama al golpe UNA vez en su ancla. Durante el clip el rig no se mueve (el clip lleva el
+# avance). Vuelve galopando y queda en reposo. Desde la carga (avisar), la embestida entra sin repetir la preparación.
+func _anim_zarzalin(o: Dictionary, obj: Dictionary, impacto: Callable, ataque: String) -> void:
+	var p = _p3d(o)
+	var rig: Node2D = o["rig"]
+	var base: Vector2 = o["rig_base"]
+	var m: Dictionary = MODELOS[o["modelo"]]
+	var px_m: float = m["vp"].y / m["alto_vista"] * m["esc"]
+	var alcance: float = p.alcance(ataque) if p.has_method("alcance") else 0.0
+	var pies_x: float = _centro(obj).x - 30.0 - 0.632 * px_m - alcance * px_m
+	var destino := base + Vector2(pies_x - _suelo_de(o).x, _suelo_de(obj).y - _suelo_de(o).y)
+	var ida := Vector3(1, 0, 0.1)
+	o["animando"] = true
+	rig.z_index = 5
+	p.mirar(ida, 0.15)
+	p.correr()                                        # galopa (tras el aviso sigue «en carga»: la embestida no repite la preparación)
+	var t1 := create_tween()
+	t1.tween_property(rig, "position", destino, 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	await t1.finished
+	p.mirar(ida, 0.1)
+	Sonido.voz(o, "ataque")                            # se lanza: su voz (sonido.gd; si no tiene, nada)
+	var golpes := [0]
+	var al_golpear := func():
+		golpes[0] += 1
+		if golpes[0] == 1:
+			impacto.call()
+			if ataque == "embestida_espinosa":
+				_temblor(9.0)
+	await p.atacar(ataque, al_golpear)
+	if golpes[0] == 0:                                 # sin el clip (o cortado): el golpe igualmente, una vez
+		al_golpear.call()
+	p.mirar(-ida, 0.2)
+	p.correr()
 	var t3 := create_tween()
 	t3.tween_property(rig, "position", base, 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	await t3.finished
