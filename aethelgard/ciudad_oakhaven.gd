@@ -78,7 +78,10 @@ const PINTADO_EN := {
 	"nota_oak_velas": ["patio_velas", "velas"], "oak_sello": ["crematorio", "sello"], "oak_tapiz": ["concejo", "tapiz"],
 }
 const MAQUETA_ARTE := "res://ciudades/oakhaven_arte/maqueta_oakhaven.gd"   # JARDINES, si el módulo no los trae
-const QUIETO_COMENTARIO := 14.0           # s sin moverse (ni diálogo, ni menú) para que alguien diga algo
+const Vida := preload("res://ciudades/oakhaven_vida.gd")        # lo que dicen vecinos y gente al pasar (narrativa)
+const Posada := preload("res://ciudades/oakhaven_posada.gd")    # los servicios de la posadera (también para el 3D)
+const EstiloUI := preload("res://estilo.gd")
+const QUIETO_COMENTARIO := 14.0          # s sin moverse (ni diálogo, ni menú) para que alguien diga algo
 const PAUSA_COMENTARIOS := 45.0           # s entre dos comentarios por estar quietos
 const ARBOLES := ["cerezo", "q_arbol", "q_otono", "q_pino"]
 
@@ -89,6 +92,11 @@ var farolas: Array = []                   # dónde van las farolas de las calles
 var con_relleno := false                  # las casas y farolas son las del RELLENO de gráficos
 var vecinos: Array = []                   # Oak.NPCS con el muñeco propio de cada uno, si lo hay (_npcs)
 var quieto_t := 0.0                       # tiempo sin moverse
+var franja := "anochecer"                 # «manana» tras dormir en la posada, hasta salir (ciudades/oakhaven_vida.gd)
+var voz_pausa := 4.0                      # s hasta que alguien pueda decir algo al pasar (la primera, tras la llegada)
+var voz_quien := {}                       # id → s hasta que esa persona pueda volver a hablar
+var voz_dichos := {}                      # frases dichas en esta visita (texto → true)
+var voz_globo: Node2D                     # la frase en pantalla, sobre quien la dice
 var musica_nodo = null                    # el autoload Musica (musica.gd)
 var musica_conoce := true                 # musica.gd ya sabe qué suena en esta escena
 var piezas: Array = []                    # [nodo, datos de Oak.PIEZAS, punto en píxeles]
@@ -972,6 +980,7 @@ func _process(delta: float) -> void:
 	_arbol_translucido(delta)
 	_mirar_arbol(delta)
 	_comentarios(delta)
+	_vida(delta)
 	if velo_patio != null:
 		velo_patio.modulate.a = move_toward(velo_patio.modulate.a, 0.0 if _patio_visible() else 1.0, delta * 2.0)
 
@@ -998,6 +1007,86 @@ func _comentarios(delta: float) -> void:
 	quieto_t += delta
 	if quieto_t >= QUIETO_COMENTARIO:
 		quieto_t = -PAUSA_COMENTARIOS if _comentar("quieto") else 0.0
+
+
+# Oakhaven vivo (ciudades/oakhaven_vida.gd): al pasar cerca, un vecino o una voz de la calle dice algo sobre su cabeza,
+# sin abrir diálogo. Una frase a la vez, con pausas, nunca durante un diálogo, un fundido o un menú, ni a la vez que
+# un comentario de los héroes.
+func _vida(delta: float) -> void:
+	if jugador == null:
+		return
+	for k in voz_quien.keys():
+		voz_quien[k] -= delta
+	if is_instance_valid(voz_globo):
+		if _en_dialogo() or viajando or saliendo:
+			voz_globo.queue_free()
+			voz_globo = null
+		return
+	voz_pausa -= delta
+	if voz_pausa > 0.0 or _ocupado_para_comentar() or _comentario_en_pantalla():
+		return
+	var mejor := {}
+	var dist := Vida.RADIO * T
+	for n in npcs:
+		var id: String = n[1].get("id", "")
+		var d := jugador.position.distance_to(n[0].position)
+		if d < dist and voz_quien.get(id, 0.0) <= 0.0:
+			var s: Sprite2D = n[0]
+			mejor = {"id": id, "pie": s.position, "alto": s.texture.get_height() * s.scale.y, "anonimo": false}
+			dist = d
+	for v in Vida.VOCES:
+		var p: Vector2 = v["casilla"] * T
+		var d := jugador.position.distance_to(p)
+		if d < dist and voz_quien.get(v["id"], 0.0) <= 0.0:
+			mejor = {"id": v["id"], "pie": p, "alto": 90.0, "anonimo": true}
+			dist = d
+	if mejor.is_empty():
+		return
+	var texto := Vida.frase(mejor["id"], franja, voz_dichos)
+	voz_quien[mejor["id"]] = Vida.PAUSA_QUIEN
+	if texto == "":
+		return
+	voz_dichos[texto] = true
+	voz_pausa = Vida.duracion(texto) + Vida.PAUSA
+	voz_globo = _globo(texto, mejor["pie"] - Vector2(0, mejor["alto"] + 12.0), mejor["anonimo"])
+	voz_globo.set_meta("quien", mejor["id"])
+
+
+func _comentario_en_pantalla() -> bool:
+	for n in ui.get_children():
+		if n.name.begins_with("comentario"):
+			return true
+	return false
+
+
+# La frase sobre la cabeza (o en la puerta, si es una voz): sin luz ni ambiente que la oscurezcan, sube un poco y se va.
+func _globo(texto: String, pos: Vector2, anonimo: bool) -> Node2D:
+	var g := Node2D.new()
+	g.name = "voz_vecino"
+	g.position = pos
+	g.z_index = 30
+	g.modulate.a = 0.0
+	var l := Label.new()
+	l.text = ("«%s»" % texto) if anonimo else texto
+	l.add_theme_font_override("font", EstiloUI.cursiva() if anonimo else EstiloUI.normal())
+	l.add_theme_font_size_override("font_size", 24)
+	l.add_theme_color_override("font_color", Color(1.0, 0.9, 0.7) if anonimo else EstiloUI.LUZ_CLARA)
+	l.add_theme_color_override("font_outline_color", Color(0.04, 0.05, 0.1, 0.95))
+	l.add_theme_constant_override("outline_size", 7)
+	var m := CanvasItemMaterial.new()
+	m.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
+	l.material = m
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.size = Vector2(620, 34)
+	l.position = Vector2(-310, -34)
+	g.add_child(l)
+	add_child(g)
+	var t := g.create_tween()
+	t.tween_property(g, "modulate:a", 1.0, 0.2)
+	t.parallel().tween_property(g, "position:y", pos.y - 10.0, Vida.duracion(texto)).set_trans(Tween.TRANS_SINE)
+	t.tween_property(g, "modulate:a", 0.0, 0.35)
+	t.tween_callback(g.queue_free)
+	return g
 
 
 # En las raíces, la cámara sube hasta el borde de arriba de la ciudad para que se vea la copa del Árbol entera (sin
@@ -1226,15 +1315,17 @@ func _abrir_cofre(c: Array) -> void:
 # ================================================================= posada
 
 func _pagar_posada() -> bool:
-	if Oak.usar_noche_gratis():                    # «Tres favores para el Cuervo»: invita la posadera
-		noche_invitada = true
-		return true
-	return super._pagar_posada()
+	# ciudades/oakhaven_posada.gd, lo mismo que usará el Oakhaven 3D: la noche gratis de «Tres favores para el Cuervo»
+	# (invita la posadera) o PRECIO_DORMIR, que es el PRECIO_POSADA de zona.gd
+	noche_invitada = Progreso.estado(Oak.NOMBRE, "noche_gratis")
+	return Posada.pagar_noche()
 
 
 # Al despertar, una charla de posada nueva si la hay (CHARLAS_POSADA: queda vista) o la escena corta de siempre con
 # los que están en el grupo (ESCENAS_POSADA; las dos en ciudades/oakhaven.gd).
 func _tras_posada() -> void:
+	franja = "manana"                             # ha amanecido: los vecinos lo notan (oakhaven_vida.gd)
+	voz_dichos.clear()
 	_actualizar_posada()
 	_empezar_dialogo(Oak.escena_al_despertar())
 	if noche_invitada:
