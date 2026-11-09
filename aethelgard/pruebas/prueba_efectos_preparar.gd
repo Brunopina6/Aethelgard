@@ -11,7 +11,11 @@ extends SceneTree
 # Uso (con los datos aislados, como las pruebas):
 #   Godot --headless --path aethelgard --script res://pruebas/prueba_efectos_preparar.gd -- "D:/qtorrent/sound effect"
 #   ... -- "D:/qtorrent/sound effect" comprobar      (solo vuelve a calcular las huellas: «originales intactos»)
+#   ... -- "D:/qtorrent/sound effect" solo=voces/,mundo/puerta   (solo esas recetas; las demás filas del CSV se quedan)
+#   ... -- "D:/qtorrent/sound effect" magias=D:/carpeta   (las MUESTRAS de la propuesta de magias, fuera del proyecto:
+#        no entran en res:// ni en el CSV del proyecto; se apuntan en <carpeta>/magias_procedencia.csv)
 # Después hay que importar: Godot --headless --path aethelgard --import
+# El .import de un derivado que ya existe no se reescribe (conserva su uid); solo se crea para los nuevos.
 
 const SALIDA := "res://audio/efectos"
 const HZ := 48000
@@ -47,10 +51,21 @@ const F_ARPA := "S23/CB Sound Design - Dreamcatcher - The Sound of Dreams & Magi
 const F_RAFAGA_HIERBA := "S17/Hzandbits - Wind In Trees/Wind,Ext,Gust,Grasslands,Rustle,Buffeting.wav"
 const F_RAFAGA_ARBOL := "S24/Pole Position - Wind In Trees/Wind - Aspen - Gusts - Close - Inside Canopy - XY - MKH8060.wav"
 
+# T-083, tanda 2: voces de los enemigos, la puerta de la Garganta, el brazalete, el Diario y la congelación
+const F_ORCO := "S20/Sounds Great - Orc Creature Library/"
+const F_PIEDRA_HUM := "S18/Gregor Quendel - Designed Rocks/Designed Rocks - ELEM017 - Melodic 4.wav"
+const F_PIEDRA_MARTILLO := "S24/BluezoneCorp - Stone Impact/Bluezone_BC0297_stone_impact_hammer_015.wav"
+const F_PIEDRA_GOLPE := "S24/BluezoneCorp - Stone Impact/Bluezone_BC0297_stone_impact_015.wav"
+const F_PEDRUSCO := "S18/Soundrangers - Foley Elements Rocks, Dirt And Stone/boulder_impact_on_stones_14.wav"
+const F_DERRUMBE := "S17/Mechanical Wave - Rock,Brick and Dirt - Part 02/Crumbling Rock Slide_RBDII 07.wav"
+const F_SLIME := "C/08_creatures_monsters/slime_48kHz_16bit_"
+const F_AGUA_CC0 := "C/14_water_mud_slime/"
+
 # [derivado, fuente, desde (s), hasta (s, -1 = el final), opciones]
 # opciones: norm ("pico" o "rms"), db (objetivo en dBFS), techo (pico máximo con «rms»), fi / fo (fundidos en s),
 # capas ([[fuente, desde, hasta, en (s), dB], ...] que se suman a la principal), pb (paso bajo en Hz: «lejos»),
-# bucle (s de fundido final→principio: hace un bucle sin corte)
+# bucle (s de fundido final→principio: hace un bucle sin corte), tono (lo acelera o lo frena al remuestrear, como
+# una cinta: 1,12 = más agudo y corto, criatura más pequeña; 0,85 = más grave y lento, más grande)
 const RECETAS := [
 	# ---------------------------------------------------------------- pasos (un paso por archivo)
 	["pasos/hierba_1", F_HIERBA, 2.295, 2.62, {"norm": "rms", "db": -20.0}],
@@ -163,9 +178,84 @@ const RECETAS := [
 	["ambiente/gota_1", "C/14_water_mud_slime/water_drop_48kHz_16bit_0.35s_01_s32.wav", 0.0, -1, {"norm": "pico", "db": -3.0, "fo": 0.08}],
 	["ambiente/gota_2", "C/14_water_mud_slime/water_drop_48kHz_16bit_0.39s_02_s32.wav", 0.0, -1, {"norm": "pico", "db": -3.0, "fo": 0.08}],
 	["ambiente/gota_3", "C/14_water_mud_slime/water_drop_48kHz_16bit_0.59s_03_s32.wav", 0.0, -1, {"norm": "pico", "db": -3.0, "fo": 0.1}],
+	# ---------------------------------------------------------------- voces de los enemigos (tanda 2)
+	# el limo (slime): no tiene voz, suena a materia húmeda que se estira, se aplasta y se deshace
+	["voces/limo_ataque_1", F_AGUA_CC0 + "mud_48kHz_16bit_0.44s_01_s51.wav", 0.05, 0.42, {"norm": "pico", "db": -3.0, "fo": 0.1}],
+	["voces/limo_ataque_2", "S17/Bluezone Corporation - Synthetic Liquid Textures/Bluezone-BC0227-synthetic-liquid-short-texture-057.wav", 0.0, 0.75, {"norm": "pico", "db": -3.0, "fo": 0.2}],
+	["voces/limo_herido_1", F_SLIME + "0.35s_01_s35.wav", 0.0, -1, {"norm": "pico", "db": -3.0, "fo": 0.06}],
+	["voces/limo_herido_2", F_SLIME + "0.31s_03_s35.wav", 0.0, -1, {"norm": "pico", "db": -3.0, "fo": 0.06}],
+	["voces/limo_herido_3", F_AGUA_CC0 + "mud_48kHz_16bit_0.31s_03_s51.wav", 0.0, 0.28, {"norm": "pico", "db": -3.0, "fo": 0.08}],
+	["voces/limo_caida_1", F_AGUA_CC0 + "impactsplat_48kHz_16bit_1.78s_05_s06.wav", 0.03, 0.75, {"norm": "pico", "db": -2.0, "fo": 0.25,
+		"capas": [[F_AGUA_CC0 + "bubbles_48kHz_16bit_0.6s_01_s53.wav", 0.02, 0.45, 0.30, -6.0]]}],
+	["voces/limo_caida_2", F_AGUA_CC0 + "impactsplat_48kHz_16bit_0.83s_03_s06.wav", 0.0, 0.6, {"norm": "pico", "db": -2.0, "fo": 0.2,
+		"capas": [[F_AGUA_CC0 + "bubbles_48kHz_16bit_0.32s_02_s53.wav", 0.0, 0.30, 0.25, -6.0]]}],
+	# Grimfang, el goblin: voz rasposa y algo aguda (el orco, un poco acelerado: una criatura más pequeña)
+	["voces/goblin_ataque_1", "S20/Phase 4 Libraries - Monster Roars/MR - Orc Attack VO 04.wav", 0.02, 0.50, {"norm": "pico", "db": -2.0, "fo": 0.1}],
+	["voces/goblin_ataque_2", "C/08_creatures_monsters/goblin_48kHz_16bit_0.29s_02_s34.wav", 0.0, -1, {"norm": "pico", "db": -2.0, "fo": 0.05}],
+	["voces/goblin_ataque_3", F_ORCO + "attack_7.WAV", 0.04, 0.75, {"norm": "pico", "db": -2.0, "fo": 0.15, "tono": 1.15}],
+	["voces/goblin_herido_1", F_ORCO + "hit_injured_5.WAV", 0.06, 0.60, {"norm": "pico", "db": -2.0, "fo": 0.12, "tono": 1.12}],
+	["voces/goblin_herido_2", "C/08_creatures_monsters/goblin_48kHz_16bit_0.18s_01_s34.wav", 0.0, -1, {"norm": "pico", "db": -2.0, "fo": 0.04}],
+	["voces/goblin_herido_3", "C/08_creatures_monsters/creature_hurt_48kHz_16bit_0.47s_04_s57.wav", 0.0, 0.32, {"norm": "pico", "db": -2.0, "fo": 0.08}],
+	["voces/goblin_caida_1", F_ORCO + "pain_scream_5.WAV", 0.08, 1.25, {"norm": "pico", "db": -2.0, "fo": 0.4, "tono": 1.1}],
+	["voces/goblin_caida_2", "S17/MatiasMacSD - CREATURES ZONE/Creature_Monster_Pain_01.wav", 0.02, 0.90, {"norm": "pico", "db": -2.0, "fo": 0.3}],
+	# Gorthor el Devorador (el mismo goblin, el doble de grande): grave y lento; cae de rodillas, muerde y muere
+	["voces/gorthor_ataque_1", F_ORCO + "attack_7.WAV", 0.04, 0.80, {"norm": "pico", "db": -1.0, "fo": 0.2, "tono": 0.85}],
+	["voces/gorthor_ataque_2", "S23/David Dumais Audio - Monster Sound FX Pack 2/MonsterPack2_LargeMonster11_Roar03.wav", 0.02, 0.75, {"norm": "pico", "db": -1.0, "fo": 0.2}],
+	["voces/gorthor_herido_1", "S17/Gamemaster Audio - Troll Monster Vocalizations/troll_monster_hurt_pain_01.wav", 0.0, 0.62, {"norm": "pico", "db": -1.0, "fo": 0.15, "tono": 0.88}],
+	["voces/gorthor_herido_2", F_ORCO + "surprise_2.WAV", 0.05, 0.50, {"norm": "pico", "db": -1.0, "fo": 0.12, "tono": 0.85}],
+	["voces/gorthor_caida", "S20/David Dumais Audio - Monster Sound FX Pack 1/Monster9_Death10.wav", 0.04, 1.0, {"norm": "pico", "db": -1.0, "fo": 0.35,
+		"capas": [["S20/Bluezone - Forest Creature Sound Effects/Bluezone_BC0269_creature_wood_footstep_medium_004.wav", 0.0, 0.9, 0.35, -4.0]]}],
+	["voces/gorthor_muerte", "S17/Gamemaster Audio - Troll Monster Vocalizations/troll_monster_death_01.wav", 0.0, 2.0, {"norm": "pico", "db": -1.0, "fo": 0.8, "tono": 0.9}],
+	["voces/gorthor_devorar", "S18/Olivier Girardot - Monsters/Monster Bite 3.wav", 0.0, 0.72, {"norm": "pico", "db": -1.0, "fo": 0.15}],
+	# el Guardián de piedra: no tiene boca; su «voz» es roca que gruñe y arrastra, golpes de piedra y un derrumbe
+	["voces/piedra_ataque_1", F_PIEDRA_HUM, 1.5, 2.6, {"norm": "pico", "db": -2.0, "fi": 0.08, "fo": 0.35,
+		"capas": [["S20/Wav Junction Sound Effects - Rocks/0119_Rock_Quick_Drag_On_Rock_029.wav", 0.7, 1.0, 0.05, -2.0]]}],
+	["voces/piedra_ataque_2", F_PIEDRA_HUM, 0.0, 1.05, {"norm": "pico", "db": -2.0, "fi": 0.05, "fo": 0.3,
+		"capas": [["S20/Wav Junction Sound Effects - Rocks/0093_Rock_Quick_Drag_On_Rock_003.wav", 0.55, 0.8, 0.1, -2.0]]}],
+	["voces/piedra_herido_1", F_PIEDRA_MARTILLO, 0.0, 0.35, {"norm": "pico", "db": -2.0, "fo": 0.12}],
+	["voces/piedra_herido_2", F_PIEDRA_GOLPE, 0.0, 0.40, {"norm": "pico", "db": -2.0, "fo": 0.15}],
+	["voces/piedra_herido_3", F_PEDRUSCO, 0.0, 0.60, {"norm": "pico", "db": -2.0, "fo": 0.2}],
+	["voces/piedra_caida_1", F_DERRUMBE, 0.08, 1.9, {"norm": "pico", "db": -1.0, "fo": 0.6, "capas": [[F_PEDRUSCO, 0.0, 0.5, 0.0, -3.0]]}],
+	["voces/piedra_caida_2", "S18/Soundrangers - Foley Elements Rocks, Dirt And Stone/dirt_collapse_05.wav", 0.2, 2.0, {"norm": "pico", "db": -1.0, "fo": 0.6,
+		"capas": [["S24/BluezoneCorp - Stone Impact/Bluezone_BC0297_stone_impact_041.wav", 0.0, 0.5, 0.0, -3.0]]}],
+	# el Gólem de ámbar: la piedra con un brillo de cristal (su ataque es el de la piedra, más agudo: sonido.gd)
+	["voces/ambar_herido_1", F_PIEDRA_MARTILLO, 0.0, 0.35, {"norm": "pico", "db": -2.0, "fo": 0.15,
+		"capas": [["S16/Stuart Duffield - Ice SFX/Ice_impact_lite_02.wav", 0.0, 0.4, 0.0, -3.0]]}],
+	["voces/ambar_herido_2", F_PIEDRA_GOLPE, 0.0, 0.40, {"norm": "pico", "db": -2.0, "fo": 0.15,
+		"capas": [["S16/Stuart Duffield - Ice SFX/Ice_smash_light_02.wav", 0.0, 0.5, 0.01, -6.0]]}],
+	["voces/ambar_caida", F_DERRUMBE, 0.08, 1.6, {"norm": "pico", "db": -1.0, "fo": 0.5,
+		"capas": [["S23/BluezoneCorp - Broken Glass/Bluezone_BC0274_glass_impact_break_falling_debris_004.wav", 0.0, 1.0, 0.05, -5.0]]}],
+	# ---------------------------------------------------------------- más combate, la Garganta, el brazalete y el Diario (tanda 2)
+	["combate/congelar", "S23/BluezoneCorp - Ice Cracking/Bluezone_BC0278_ice_crack_break_078.wav", 0.02, 0.66, {"norm": "pico", "db": -2.0, "fo": 0.15}],
+	["mundo/puerta_abre", F_PUERTA, 0.0, 1.35, {"norm": "pico", "db": -2.0, "fo": 0.3, "pb": 2400.0}],
+	["mundo/brazalete", F_CAMPANAS, 0.6, 1.9, {"norm": "pico", "db": -3.0, "fi": 0.15, "fo": 0.6}],
+	["interfaz/libro_hoja", "C/13_paper_books/book_flip_48kHz_16bit_0.23s_02_s14.wav", 0.0, -1, {"norm": "pico", "db": -3.0, "fo": 0.04}],
+	["interfaz/libro_cerrar", "C/13_paper_books/book_close_48kHz_16bit_0.23s_01_s14.wav", 0.0, -1, {"norm": "pico", "db": -3.0, "fo": 0.04}],
+]
+
+# PROPUESTA de sonido para las 12 magias (T-083, tanda 2): NO se integran (D-048: su presentación está protegida). Solo
+# se hacen muestras para escucharlas fuera del proyecto («magias=<carpeta>»); la tabla y el enganche que tendrían están
+# en docs/audio/inventario_sonidos.md. Un candidato por magia y nivel.
+const RECETAS_MAGIAS := [
+	["magia_1_fuego", "C/07_magic_spells/fireball_48kHz_16bit_1.96s_01_s10.wav", 0.15, 1.6, {"norm": "pico", "db": -1.0, "fo": 0.4}],
+	["magia_2_llamarada", "S19/Sound Spark LLC – Magic Spells, Buffs and Attacks/Fire_Spell_Dragon_Trap_03.wav", 0.15, 1.9, {"norm": "pico", "db": -1.0, "fo": 0.5}],
+	["magia_3_infierno", "S23/David Dumais Audio - Magic Sound FX Pack 2/MagicPack2_Earth_MeteorShower003.wav", 1.4, 6.0, {"norm": "pico", "db": -1.0, "fi": 0.1, "fo": 1.2}],
+	["magia_1_agua", "S18/Gamemaster Audio - Magic and Spell Sounds/water_blast_projectile_spell_03.wav", 0.0, 1.0, {"norm": "pico", "db": -1.0, "fo": 0.3}],
+	["magia_2_torrente", "S20/David Dumais Audio - Water Magic 1/Magic_Spells_CastShort_Water_General07.wav", 0.05, 1.85, {"norm": "pico", "db": -1.0, "fo": 0.5}],
+	["magia_3_maremoto", "S23/David Dumais Audio - Magic Sound FX Pack 2/MagicPack2_WaterExplosions_Explosion2-004.wav", 0.0, 2.4, {"norm": "pico", "db": -1.0, "fo": 0.8,
+		"capas": [["S20/David Dumais Audio - Water Magic 1/Magic_Spells_CastLong_Combo_WaterCombo02.wav", 0.0, 2.4, 0.0, -8.0]]}],
+	["magia_1_rayo", "S18/Gamemaster Audio - Magic and Spell Sounds/electric_surge_blast_04.wav", 0.0, 1.4, {"norm": "pico", "db": -1.0, "fo": 0.4}],
+	["magia_2_tormenta", "S23/David Dumais Audio - Magic Sound FX Pack 2/MagicPack2_ElectricitySpells_Spell2-002.wav", 0.15, 2.2, {"norm": "pico", "db": -1.0, "fo": 0.5}],
+	["magia_3_colera_del_cielo", "S18/Soundrangers – Thunder/thunder_strike_03.wav", 0.3, 4.4, {"norm": "pico", "db": -1.0, "fo": 1.2}],
+	["magia_1_cura", "C/07_magic_spells/magic_48kHz_16bit_1.82s_03_s09.wav", 0.0, -1, {"norm": "pico", "db": -2.0, "fo": 0.4}],
+	["magia_2_bendicion", "C/07_magic_spells/magic_48kHz_16bit_2.67s_08_s29.wav", 0.0, -1, {"norm": "pico", "db": -2.0, "fo": 0.6}],
+	["magia_3_gracia_divina", "S23/InspectorJ - RPG Orchestral Essentials (Music FX)/Discovery_01-03_Organ-A_WET.wav", 0.0, 4.0, {"norm": "pico", "db": -2.0, "fo": 1.5,
+		"capas": [[F_CAMPANAS, 11.6, 14.0, 0.2, -10.0]]}],
 ]
 
 var base := ""
+var solo := PackedStringArray()                        # «solo=a/,b»: solo las recetas que empiezan así
+var salida_magias := ""                                # «magias=<carpeta>»: las muestras de la propuesta de magias
 var _huellas := {}                                     # ruta de la fuente → SHA-256 (se calcula una vez)
 var _cache := {}                                       # ruta de la fuente → [muestras mono a 48 kHz, hz original]
 
@@ -179,16 +269,34 @@ func _initialize() -> void:
 	# la ruta lleva un espacio: si llega partida en dos argumentos, se vuelve a juntar
 	var partes := PackedStringArray()
 	for a in args:
-		if a != "comprobar":
+		if a == "comprobar":
+			continue
+		if a.begins_with("solo="):
+			solo = a.substr(5).split(",", false)
+		elif a.begins_with("magias="):
+			salida_magias = a.substr(7).replace("\\", "/").trim_suffix("/")
+		else:
 			partes.append(a)
 	base = " ".join(partes).replace("\\", "/").trim_suffix("/") + "/"
 	if "comprobar" in args:
 		quit(_comprobar())
 		return
+	if salida_magias != "":
+		quit(_magias())
+		return
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(SALIDA))
 	var filas := PackedStringArray(["derivado;fuente;desde_s;hasta_s;capas;sha256_fuente;duracion_s;pico_dbfs;rms_dbfs"])
 	var fallos := 0
+	var previas := _filas_previas()                    # las recetas que no se rehacen conservan su fila
 	for r in RECETAS:
+		if not _toca(r[0]):
+			var vieja: String = previas.get(r[0] + ".wav", "")
+			if vieja == "":
+				print("FALLO: %s no se rehace (solo=) y no está en %s" % [r[0], PROCEDENCIA])
+				fallos += 1
+			else:
+				filas.append(vieja)
+			continue
 		var fila := _preparar(r)
 		if fila == "":
 			fallos += 1
@@ -207,12 +315,60 @@ func _initialize() -> void:
 	quit(1 if fallos > 0 else 0)
 
 
+func _toca(nombre: String) -> bool:
+	if solo.is_empty():
+		return true
+	for s in solo:
+		if nombre.begins_with(s):
+			return true
+	return false
+
+
+# Filas del CSV de procedencia que ya había: derivado (con .wav) → fila entera.
+func _filas_previas() -> Dictionary:
+	var r := {}
+	var csv := ProjectSettings.globalize_path("res://").path_join("../" + PROCEDENCIA).simplify_path()
+	var f := FileAccess.open(csv, FileAccess.READ)
+	if f == null:
+		return r
+	f.get_line()
+	while not f.eof_reached():
+		var l := f.get_line()
+		if l.strip_edges() != "":
+			r[l.get_slice(";", 0)] = l
+	return r
+
+
+# Muestras de la propuesta de magias: fuera del proyecto, sin .import, con su propio CSV de procedencia.
+func _magias() -> int:
+	DirAccess.make_dir_recursive_absolute(salida_magias)
+	var filas := PackedStringArray(["muestra;fuente;desde_s;hasta_s;capas;sha256_fuente;duracion_s;pico_dbfs;rms_dbfs"])
+	var fallos := 0
+	for r in RECETAS_MAGIAS:
+		var fila := _preparar(r, salida_magias)
+		if fila == "":
+			fallos += 1
+		else:
+			filas.append(fila)
+	var f := FileAccess.open(salida_magias + "/magias_procedencia.csv", FileAccess.WRITE)
+	if f == null:
+		print("FALLO: no se puede escribir en %s" % salida_magias)
+		fallos += 1
+	else:
+		f.store_string("\n".join(filas) + "\n")
+		f.close()
+	print("MAGIAS %s (%d muestras)" % [salida_magias, filas.size() - 1])
+	print("FALLOS: %d" % fallos)
+	return 1 if fallos > 0 else 0
+
+
 func _ruta(fuente: String) -> String:
 	var i := fuente.find("/")
 	return base + CARPETAS[fuente.substr(0, i)] + fuente.substr(i + 1)
 
 
-func _preparar(r: Array) -> String:
+# carpeta: "" = res://audio/efectos (con su .import); una carpeta absoluta = fuera del proyecto (muestras).
+func _preparar(r: Array, carpeta := "") -> String:
 	var nombre: String = r[0]
 	var op: Dictionary = r[4]
 	var m := _tramo(r[1], r[2], r[3])
@@ -232,6 +388,12 @@ func _preparar(r: Array) -> String:
 		for i in mc.size():
 			m[desde + i] += mc[i] * g
 		capas_txt.append("%s [%.2f-%.2f] en %.2f s a %+.0f dB (%s)" % [_corta(c[0]), c[1], c[2], c[3], c[4], _huella(c[0]).substr(0, 12)])
+	if op.has("tono"):                                  # remuestreo (como una cinta): cambia el tono y la duración
+		var k := float(op["tono"])
+		if k > 1.0:                                     # al acelerar, lo de arriba no debe doblarse hacia abajo
+			m = _paso_bajo(m, 0.45 * HZ / k)
+		m = _cubica(m, k)
+		capas_txt.append("tono ×%.2f" % k)
 	if op.has("pb"):
 		m = _paso_bajo(m, float(op["pb"]))
 	if op.has("bucle"):
@@ -252,13 +414,14 @@ func _preparar(r: Array) -> String:
 	w.mix_rate = HZ
 	w.stereo = false
 	w.data = _pcm(m)
-	var ruta := "%s/%s.wav" % [SALIDA, nombre]
+	var ruta := "%s/%s.wav" % [SALIDA if carpeta == "" else carpeta, nombre]
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(ruta.get_base_dir()))
 	var err := w.save_to_wav(ruta)
 	if err != OK:
 		print("FALLO: no se pudo guardar %s (%s)" % [ruta, error_string(err)])
 		return ""
-	_import(ruta, op.has("bucle"))
+	if carpeta == "":
+		_import(ruta, op.has("bucle"))
 	var dur := m.size() / float(HZ)
 	var p_db := linear_to_db(_pico(m))
 	var r_db := linear_to_db(maxf(_rms(m), 1e-6))
@@ -425,7 +588,10 @@ static func _pico(m: PackedFloat32Array) -> float:
 
 
 # .import: QOA (ligero en el móvil), mono, sin recortar ni normalizar (ya está hecho) y bucle solo en los ambientes.
+# Si ya existe (Godot lo completa al importar con su uid), se deja como está: rehacer un derivado no cambia su uid.
 static func _import(ruta: String, bucle: bool) -> void:
+	if FileAccess.file_exists(ruta + ".import"):
+		return
 	var c := ConfigFile.new()
 	c.set_value("remap", "importer", "wav")
 	c.set_value("remap", "type", "AudioStreamWAV")
