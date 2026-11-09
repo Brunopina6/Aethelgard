@@ -426,6 +426,23 @@ func _pintar_ajustes() -> void:
 			fg.add_child(bg)
 		cuerpo.add_child(fg)
 		cuerpo.add_child(_texto("Se nota la próxima vez que se entra en la Garganta.", 16, COLOR_SUAVE))
+		# La invocación de Érebo (T-101): la de siempre o la nueva, en pruebas (invocacion_erebo_nueva.gd).
+		var ere = load("res://invocacion_erebo_nueva.gd")
+		var nueva: bool = ere.elegida()
+		cuerpo.add_child(_texto("Invocación de Érebo", 26, COLOR_TITULO))
+		var fe := HBoxContainer.new()
+		fe.add_theme_constant_override("separation", 8)
+		for op in [[false, "La de siempre"], [true, "Nueva (en pruebas)"]]:
+			var es_nueva: bool = op[0]
+			var be := _boton(("● " if es_nueva == nueva else "○ ") + op[1], 18, Vector2(240, 34),
+				"erebo:%s" % ("nueva" if es_nueva else "actual"))
+			be.pressed.connect(func():
+				ere.elegir(es_nueva)
+				Sonido.efecto("ui_tic")
+				_pintar_de_nuevo())
+			fe.add_child(be)
+		cuerpo.add_child(fe)
+		cuerpo.add_child(_texto("Se nota la próxima vez que Lya invoca a Érebo.", 16, COLOR_SUAVE))
 		# Oakhaven en 3D (T-103), también en pruebas: la Puerta del Sur, la plaza y la posada por dentro.
 		var o3d: bool = m3d.elegida("oakhaven3d")
 		cuerpo.add_child(_texto("Oakhaven", 26, COLOR_TITULO))

@@ -89,8 +89,8 @@ func _comprobar_entrada() -> bool:
 		_fallo("Kael no entra por el principio del camino (%s)" % r.kael.global_position)
 		return false
 	for b in r.find_children("*", "Button", true, false):
-		if b.text in r.BOTONES_BANCO:
-			_fallo("sigue el botón de banco «%s»" % b.text)
+		if b.text in r.BOTONES_BANCO and b.is_visible_in_tree():   # DIAG y MEDIO existen, ocultos hasta abrir RND (09/11)
+			_fallo("se ve el botón de banco «%s»" % b.text)
 			return false
 	if r.info.visible:
 		_fallo("se ve la ayuda de teclas del prototipo")

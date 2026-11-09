@@ -317,8 +317,9 @@ static func caja(lotes: Lotes, padre: Node3D, pos: Vector3, tam: Vector3, mat: M
 		cuerpo.add_child(col)
 
 
-# Malla con su colisión (suelos que se pisan).
-static func con_suelo(padre: Node3D, malla: ArrayMesh, mat: Material) -> MeshInstance3D:
+# Malla con su colisión (suelos que se pisan). «forma»: la colisión ya hecha (escenario.gd la lee de su caché); si no
+# viene, se calcula aquí.
+static func con_suelo(padre: Node3D, malla: ArrayMesh, mat: Material, forma: Shape3D = null) -> MeshInstance3D:
 	var cuerpo := StaticBody3D.new()
 	padre.add_child(cuerpo)
 	var mi := MeshInstance3D.new()
@@ -326,8 +327,9 @@ static func con_suelo(padre: Node3D, malla: ArrayMesh, mat: Material) -> MeshIns
 	mi.material_override = mat
 	cuerpo.add_child(mi)
 	var col := CollisionShape3D.new()
-	var forma := malla.create_trimesh_shape()
-	forma.backface_collision = true
+	if forma == null:
+		forma = malla.create_trimesh_shape()
+		(forma as ConcavePolygonShape3D).backface_collision = true
 	col.shape = forma
 	cuerpo.add_child(col)
 	return mi

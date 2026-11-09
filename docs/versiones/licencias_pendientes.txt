@@ -72,4 +72,5 @@ vfx/rayo.res | Efecto de rayo (GLB aportado) | Origen sin registrar
 vfx/vortice_fuego.png | Efecto de fuego (GLB aportado) | Origen sin registrar
 vfx/vortice_fuego.res | Efecto de fuego (GLB aportado) | Origen sin registrar
 zarzalin_completo | Zarzalín, enemigo del bestiario 01: modelo y texturas de Meshy (D-075; enemigos/zarzalin/) | Plan de Meshy sin confirmar
+cencerrante_completo | Cencerrante, segunda bestia del bestiario 01: modelo y texturas de Meshy (D-075; enemigos/cencerrante/) | Plan de Meshy sin confirmar
 oakhaven_arte/munecos | Muñecos 2D de Oakhaven (posadera, Bastián, Doña Encina y Albar; derivados de los NPC de siempre) | El origen de sus originales (personajes/npc/) está sin registrar

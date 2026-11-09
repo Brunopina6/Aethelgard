@@ -77,7 +77,7 @@ static func contexto_de(e: Node) -> String:
 			return "mazmorra"
 		"res://zonas3d/pastos_verdes_3d.tscn", "res://prototipos/sendero_puente.tscn":
 			return "pradera"
-		"res://ciudad_oakhaven.tscn":                  # Oakhaven hecha a mano (T-089; hereda de zona.gd): el ambiente
+		"res://ciudad_oakhaven.tscn", "res://zonas3d/oakhaven_3d.tscn":   # Oakhaven hecha a mano (T-089) y la 3D (T-103): el ambiente
 			return "ciudad"                            # de las ciudades, como la Oakhaven generada (sus sonidos: fuente_2d)
 		"res://zona.tscn":
 			var l: Dictionary = Engine.get_meta("lugar", {})

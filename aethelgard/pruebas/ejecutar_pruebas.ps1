@@ -179,14 +179,14 @@ foreach ($linea in (Get-Content -Encoding UTF8 $lista)) {
         $texto = ""
         if (Test-Path $log) { $texto += (Get-Content $log -Raw -Encoding UTF8) }
         if (Test-Path $err) { $texto += "`n" + (Get-Content $err -Raw -Encoding UTF8) }
-        $causa = ($texto -split "`r?`n" | Where-Object { $l = $_; $PATRONES | Where-Object { $l -match $_ } } | Select-Object -First 1)
+        $causa = ($texto -split "`r?`n" | Where-Object { $l = $_; $PATRONES | Where-Object { $l -cmatch $_ } } | Select-Object -First 1)
         if ($causa) { $detalle += " · causa probable: " + ("" + $causa).Trim() }
     } else {
         $p.WaitForExit()
         $texto = ""
         if (Test-Path $log) { $texto += (Get-Content $log -Raw -Encoding UTF8) }
         if (Test-Path $err) { $texto += "`n" + (Get-Content $err -Raw -Encoding UTF8) }
-        $hallados = @($PATRONES | Where-Object { $texto -match $_ })
+        $hallados = @($PATRONES | Where-Object { $texto -cmatch $_ })
         if ($p.ExitCode -ne 0) { $resultado = "FALLIDA"; $detalle = "código de salida $($p.ExitCode)" }
         elseif ($hallados.Count -gt 0) {
             $resultado = "FALLIDA"
