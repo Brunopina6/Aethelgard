@@ -242,6 +242,25 @@ func _en_la_ciudad() -> void:
 		print("VOZ (mañana) %s: %s" % [z.voz_globo.get_meta("quien"), t2])
 		if t2 != "¿Ya en pie? El pan acaba de salir.":
 			_fallo("3: por la mañana, la posadera dice «%s»" % t2)
+	# con un comentario de los héroes en pantalla (también su respuesta), ningún vecino habla
+	if is_instance_valid(z.voz_globo):
+		z.voz_globo.free()
+	var Com = load("res://dialogos/comentarios.gd")
+	var c: Dictionary = Com.MOMENTOS["cofre"]["frases"][0].duplicate(true)
+	c["momento"] = "cofre"
+	Com.mostrar(z.ui, c)
+	# la respuesta sale cuando se va la primera caja: con nombre legible propio («comentario2»)
+	if not await _hasta(func(): return z.ui.get_children().any(func(n): return str(n.name).begins_with("comentario") and str(n.name) != "comentario"), 10.0):
+		_fallo("3: la respuesta del comentario no sale con un nombre que la ciudad reconozca")
+	z.voz_quien.clear()
+	z.voz_pausa = 0.0
+	var hablo := false
+	while z._comentario_en_pantalla():
+		if is_instance_valid(z.voz_globo):
+			hablo = true
+		await process_frame
+	if hablo:
+		_fallo("3: un vecino habla a la vez que un comentario de los héroes (o su respuesta)")
 
 
 # Espera a que una frase esté entera en pantalla (cerrar antes deja a Dialogic a medias con los retratos).
