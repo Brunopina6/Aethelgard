@@ -3,7 +3,7 @@
 **Actualizado el 2026-11-09 a mediodía** (T-030, D-064, D-067 y **T-083**: primera tanda de efectos el 08/11;
 **segunda tanda** el 09/11 por la mañana: voces de los enemigos, agua de las zonas 2D, la Garganta, el Diario, el
 brazalete y la propuesta de sonido de las magias; **tercera tanda** el 09/11 a mediodía: la Garganta 3D, los pasos de
-Lya y Garon, las artes nuevas y Oakhaven; rama `area-sonido`). Criterio: de cada sonido, el original, el recurso que
+Lya y Garon, las artes nuevas y Oakhaven; **cuarta tanda** el 09/11 por la tarde: las seis bestias del bestiario, solo en el catálogo; rama `area-sonido`). Criterio: de cada sonido, el original, el recurso que
 usa el juego, el evento, la licencia y la evidencia. Tres comprobaciones **por separado**:
 
 - **Asignación:** el código pide el sonido correcto, una vez y por su bus (`prueba_musica`, `prueba_audio`,
@@ -369,6 +369,101 @@ lo comprueba `prueba_musica`).
 - `Sonido.detalles_3d(escena, donde)`: los detalles de la naturaleza de esa escena suenan en un punto.
 - `Sonido.eco(escena, "garganta")` / `Sonido.quitar_eco()` / `Sonido.eco_activo()`.
 - `Sonido.fuente_2d(padre, nombre, pos, quien, casilla)`: fuentes del mundo en escenas 2D (bucle o de vez en cuando).
+
+## Efectos de la tanda 4: las seis bestias del bestiario (T-097, 2026-11-09, tarde)
+
+**Solo en el catálogo**: los engancha combate (empezando por Zarzalín) con estos nombres exactos. Hechos igual que las
+tandas anteriores (`prueba_efectos_preparar.gd`, «solo=bestias/»): **51 derivados** en `audio/efectos/bestias/` (211 en
+total) de 35 originales principales más sus capas, con sus huellas en [`efectos_procedencia.csv`](efectos_procedencia.csv).
+**Licencias:** todos de los paquetes GDC de Sonniss 2016, 2017, 2018, 2019, 2020, 2023 y 2024 (PDF de licencia en la
+carpeta de cada paquete; los de 2020 y 2024, releídos el 09/11: uso y modificación en juegos sin atribución, no
+venderlos tal cual, no entrenar IA). Ninguna fuente CC0 nueva; nada de 2015, TomMusic, «Helton Yan's Pixel Combat» ni
+Suno. Las fichas: `D:\REBELUM_diagnostico\entradas\2026-11-09_bestiario\REBELUM_Bestiario\Fichas_e_integracion.txt`.
+
+**Reglas de todas:**
+- `<bestia>_aviso_<ataque>`: la preparación del ataque. Suena **al empezar el ataque** (el principio de su clip) y acaba
+  antes del impacto de la ficha (lo comprueba `prueba_efectos`, parte «bestias»). Prioridad 3: el jugador tiene que oírlo.
+- `<bestia>_<ataque>`: el impacto, **en el instante del golpe** (el mismo en que el combate resuelve el daño, una vez),
+  **junto al `Sonido.golpe(critico, defendido)` de siempre**, que dice si el héroe se defiende (escudo). Prioridad 2 (el
+  Posadero, 3). La trama de eco golpea a todo el grupo: un solo impacto, como su resolución.
+- `<bestia>_herido` / `<bestia>_caida`: su voz, **sola** con `Sonido.recibe(enemigo)` si su `clave` en `combate.gd` es la
+  de `FAMILIAS` (`zarzalin`, `cencerrante`, `velaria`, `custodio_cal` o `custodio`, `hilandera_eco` o `hilandera`,
+  `posadero_hueco` o `posadero`). Grupo «voz» (dos a la vez como mucho), herido 2 y caída 3, como la tanda 2.
+- **No hay `_ataque`**: el aviso hace ese papel (`Sonido.voz(q, "ataque")` no suena para ellas).
+- `<bestia>_entrada`: al presentarse en el combate (con la emboscada o tras ella).
+- **El Posadero Hueco (jefe opcional) suena por encima**: unos 2-3 dB más y prioridad 3 en todo (su voz entra aunque
+  suenen otras dos; una voz de herido de otra bestia no quita la suya).
+
+| Efecto | Para quién y cuándo | Archivo(s) | Original (biblioteca) | Bus · dB · p | Salida (RMS, dBFS) |
+|---|---|---|---|---|---|
+| `zarzalin_aviso_embestida` | Zarzalín: señal `aviso` de `zarzalin_3d.gd` (el hocico ya está bajo, 0,267 s del clip `aviso_embestida`) | `bestias/zarzalin_aviso_embestida` | G4F «HORSES - Snort 03» (×0,9) + SoundBits «Pig_Grunt_09» | Efectos · −12 · 3 | −28,4 |
+| `zarzalin_pezuna` | Zarzalín: cada señal `pezuna(n)` (0,467 y 0,733 s del aviso) | `bestias/zarzalin_pezuna_1…2` | Dramatic Cat «Draft Horse Walk On Grass And Dirt» + Kopeikin «soil and dirt debris heavy 13» | Efectos · −11 · 3 | −29,8 |
+| `zarzalin_embestida` | Zarzalín: señal `impacto("embestida_espinosa")` (0,567 s; 0,167 s desde la carga) | `bestias/zarzalin_embestida` | Rock The Speakerbox «FLOG Leather Hit Smack 01» + Bluezone «wood_crushing_branches» + tierra + Red Libraries «bodyfall Dirt» (el aterrizaje, a 0,16 s) | Efectos · −10 · 2 | −25,3 |
+| `zarzalin_aviso_colmillo` | Zarzalín: al llamar a `atacar("colmillo_lateral")` (gira la cabeza; barrido a 0,3-0,42 s) | `bestias/zarzalin_aviso_colmillo` | Bluezone «wood_creaking_tree_005» + el gruñido + Airborne «Whoosh Organic Fabric Glove» | Efectos · −3 · 3 | −27,9 |
+| `zarzalin_colmillo` | Zarzalín: señal `impacto("colmillo_lateral")` (0,467 s) | `bestias/zarzalin_colmillo` | el cuero + InMotionAudio «WOODBrk_Snap09» + Bluezone «foliage impact short 012» | Efectos · −11 · 2 | −25,0 |
+| `zarzalin_herido` | Zarzalín recibe un golpe físico (`Sonido.recibe`) | `bestias/zarzalin_herido_1…2` | Mechanical Wave «Pig Squeal and Snort-18» (×0,9) · Articulated «Pig, Grunt, Breathe, Single» (×0,88), con ramas | Efectos · −10 · 2 (voz) | −28,3 |
+| `zarzalin_caida` | El golpe que lo tumba (`Sonido.recibe`) | `bestias/zarzalin_caida` | el chillido (×0,88) + Matt Script «wood breaking cracking» + Articulated «Pig Groan 03» | Efectos · −7 · 3 (voz) | −25,5 |
+| `zarzalin_derrumbe` | Zarzalín: al empezar su clip `derrota` (`morir()`); el cuerpo toca la tierra a 0,60 s (fotograma 19) | `bestias/zarzalin_derrumbe` | follaje + «bodyfall Dirt» + ramas + tierra | Efectos · −7 · 2 | −28,9 |
+| `zarzalin_entrada` | Zarzalín: al empezar su clip `entrada` (aterriza a 0,47 s, sacude la cabeza a 0,72, pisotón a 1 s y resopla) | `bestias/zarzalin_entrada` | follaje + «bodyfall Dirt» + crujido + casco + resoplido | Efectos · −6 · 3 | −27,8 |
+| `cencerrante_aviso_alarma` | Cencerrante: al empezar `toque_de_alarma` (toma impulso hasta 0,6 s) | `bestias/cencerrante_aviso_alarma` | Rogue Waves «rope moving through metal» + «Cable Rope Stays, Percussive» | Efectos · −6 · 3 | −27,8 |
+| `cencerrante_alarma` | Cencerrante: el repique de `toque_de_alarma` (0,73 s; refuerza, sin golpe) | `bestias/cencerrante_alarma` | Mechanical Wave «BELLHand Metallic Bell 22» (×0,75) + Ivo Vicic «Kukuljanski Bell ringers» (cencerros) + el cable | Efectos · −7 · 2 | −25,8 |
+| `cencerrante_aviso_campanada` | Cencerrante: al empezar `campanada_baja` (carga de lado con el marco) | `bestias/cencerrante_aviso_campanada` | Matt Script «Old wood floor creak» + SoundBits «Whoosh_Source_Rope_03» | Efectos · −10 · 3 | −27,7 |
+| `cencerrante_campanada` | Cencerrante: impacto de `campanada_baja` (0,53 s) | `bestias/cencerrante_campanada` | The Chris Alan «LP Bell Cowbell Straight Muted Stick Hits» (×0,62) + Double Trouble «Single Plank Drop» | Efectos · −4 · 2 | −25,2 |
+| `cencerrante_herido` | Recibe un golpe físico | `bestias/cencerrante_herido_1…2` | el cencerro (×0,8 / ×0,85) con el cable o la cuerda | Efectos · −6 · 2 (voz) | −27,7 |
+| `cencerrante_caida` | El golpe que lo tumba | `bestias/cencerrante_caida` | los cencerros + la campanilla + un golpe apagado del cencerro (el badajo agrietado) + la tabla (×0,7) | Efectos · −4 · 3 (voz) | −25,0 |
+| `cencerrante_entrada` | Al presentarse: un toque lejano | `bestias/cencerrante_entrada` | la campanilla (×0,6) + la cuerda | Efectos · −7 · 3 | −27,6 |
+| `velaria_aviso_destello` | Velaria: al empezar `destello_de_velo` (repliega las alas) | `bestias/velaria_aviso_destello` | Sergey Eybog «Umbrella 2 Close Slide Fold Snap 04» + MatiasMacSD «TextureWindChimeKeys_003» | Efectos · −2,5 · 3 | −28,1 |
+| `velaria_destello` | Velaria: abre las alas y expulsa el destello (0,70 s) | `bestias/velaria_destello` | Gladestock «GS sail impact 004» + «Cane Umbrella Large Pop Open» + tintineo + Airborne «Whip By Airy» | Efectos · −11 · 2 | −25,3 |
+| `velaria_aviso_corte` | Velaria: al empezar `corte_de_ala` (se eleva) | `bestias/velaria_aviso_corte` | Systematic Sound «Soft Shell Whoosh Flutter» (dos aleteos) | Efectos · −11 · 3 | −27,2 |
+| `velaria_corte` | Velaria: impacto de `corte_de_ala` (0,50 s) | `bestias/velaria_corte` | Airborne «Whoosh Organic Fabric Glove Punchy» + la vela | Efectos · −13 · 2 | −25,9 |
+| `velaria_herido` | Recibe un golpe físico | `bestias/velaria_herido_1…2` | la vela (×1,15) · el soplo de tela (×1,1), con tintineo | Efectos · −9,5 · 2 (voz) | −28,0 |
+| `velaria_caida` | El golpe que la tumba | `bestias/velaria_caida` | «Umbrella 2 Shake Out» + tintineo + Eiravaein «windbell porcelain» + un golpe blando (Bluezone «creature footstep damp») | Efectos · −8 · 3 (voz) | −25,7 |
+| `velaria_entrada` | Llega aleteando | `bestias/velaria_entrada` | el aleteo + tintineo | Efectos · −8 · 3 | −27,9 |
+| `custodio_aviso_portazo` | Custodio de Cal: al empezar `portazo_de_cal` (recoge el brazo, gira los hombros) | `bestias/custodio_aviso_portazo` | SoundMorph «Door - Stone Long 02» (roce de losas) | Efectos · −13 · 3 | −28,0 |
+| `custodio_portazo` | Custodio: impacto de `portazo_de_cal` (0,83 s) | `bestias/custodio_portazo` | SoundMorph «Rupture - Marble Impacts 06» + «Concrete Impact B02» + Bluezone «demolisher robot footsteps rusty creak» | Efectos · −10 · 2 | −25,2 |
+| `custodio_aviso_martillo` | Custodio: al empezar `martillo_de_piedra` (carga el peso atrás) | `bestias/custodio_aviso_martillo` | la losa (×0,85) + Gregor Quendel «Designed Rocks EVO19» | Efectos · −13 · 3 | −27,6 |
+| `custodio_martillo` | Custodio: impacto de `martillo_de_piedra` (0,83 s; más fuerte que el portazo) | `bestias/custodio_martillo` | PMSFX «Rocks Impact Hit Big LFE Heavy Designed 19» + Mattia Cellotto «Collapsed Stone House» + Bluezone «debris falling rock dust» | Efectos · −8 · 2 | −24,4 |
+| `custodio_herido` | Recibe un golpe físico | `bestias/custodio_herido_1…2` | PMSFX «Rocks Impact Hit Single Stone 92» con la llave (BluezoneCorp «stone impact steel bar») · «… 53» con Tatak | Efectos · −9 · 2 (voz) | −27,4 |
+| `custodio_caida` | Se derrumba (y cae su llave a 1,25 s) | `bestias/custodio_caida` | BluezoneCorp «building collapse rubble 008» + la piedra grande + la llave | Efectos · −8 · 3 (voz) | −25,2 |
+| `custodio_entrada` | Despierta: la piedra se arrastra y da un paso (1,2 s) | `bestias/custodio_entrada` | la losa + el paso del autómata | Efectos · −13 · 3 | −27,6 |
+| `hilandera_aviso_mordida` | Hilandera del Eco: al empezar `mordida_resonante` (alza el frente) | `bestias/hilandera_aviso_mordida` | Phase 4 «Insect Creature Attack VO 02» + TheWorkRoom «Animal Footsteps Insects ANF036» | Efectos · −10 · 3 | −27,4 |
+| `hilandera_mordida` | Hilandera: impacto de `mordida_resonante` (0,73 s) | `bestias/hilandera_mordida` | Bluezone «crab organic texture attack impact 009» + Submerged Tapes «PD39 Snap» + 344 Audio «Trailer Hit Cavernous 10» | Efectos · −7 · 2 | −25,9 |
+| `hilandera_aviso_trama` | Hilandera: al empezar `trama_de_eco` (alza las placas) | `bestias/hilandera_aviso_trama` | Hzandbits «Small Species A Voices Skitter Squeak» + Bluezone «organic texture insect» + Articulated «Seashell Pututo» | Efectos · −12 · 3 | −28,2 |
+| `hilandera_trama` | Hilandera: el pulso de `trama_de_eco` (0,83 s), **una vez** aunque golpee a todo el grupo | `bestias/hilandera_trama` | la caracola (×0,8) + 2496 «echo hit pan subsonic» + el caparazón + la caverna | Efectos · −12 · 2 | −25,2 |
+| `hilandera_herido` | Recibe un golpe físico | `bestias/hilandera_herido_1…2` | Bluezone «crab carapace crack squishy 003» · la voz de insecto (×1,12) | Efectos · −9 · 2 (voz) | −28,0 |
+| `hilandera_caida` | El golpe que la tumba | `bestias/hilandera_caida` | el caparazón + Bluezone «crab texture underwater» + «creature footstep damp» + la caracola, lejos | Efectos · −6 · 3 (voz) | −25,2 |
+| `hilandera_entrada` | Llega correteando | `bestias/hilandera_entrada` | las patas de insecto + el chirrido + el golpe húmedo | Efectos · −6 · 3 | −28,6 |
+| `posadero_aviso_cierre` | Posadero Hueco: al empezar `cierre_de_posada` (alza los brazos como un dintel) | `bestias/posadero_aviso_cierre` | BluezoneCorp «forest tree wood texture creaking 016» (vigas) + Badlands «Set of Car Keys» | Efectos · −1,5 · 3 | −26,5 |
+| `posadero_cierre` | Posadero: impacto de `cierre_de_posada` (0,97 s) | `bestias/posadero_cierre` | Rogue Waves «Wooden Door, Door Slams, Impacts 3» (×0,9) + Rock The Speakerbox «BEAM Wood Ceiling Drop» + Alex Lane «Resonant Rusty Door impact» + llaves | Efectos · −5 · 3 | −22,3 |
+| `posadero_aviso_llave` | Posadero: al empezar `llave_del_umbral` (retuerce el torso, enseña la mano) | `bestias/posadero_aviso_llave` | Double Trouble «Old Lock Fiddling» + llaves | Efectos · −1,5 · 3 | −26,4 |
+| `posadero_llave` | Posadero: impacto de `llave_del_umbral` (0,87 s) | `bestias/posadero_llave` | Federico Soler «Warlock D» (×0,85) + Alexander Ahura «Lock03 outdoor opening solid» + un portazo lejano | Efectos · −9 · 3 | −22,9 |
+| `posadero_herido` | Recibe un golpe físico | `bestias/posadero_herido_1…2` | el crujido de viga con llaves · las vigas con llaves | Efectos · −2 · 3 (voz) | −24,8 |
+| `posadero_caida` | Se derrumba: vigas, llaves y la puerta que se cierra (a 0,9 s) | `bestias/posadero_caida` | la viga que cae (×0,9) + PMSFX «HAUNTED DOORS Door Close Long Creak» + llaves + crujido | Efectos · −9 · 3 (voz) | −22,2 |
+| `posadero_entrada` | Al presentarse (con `jefe`, si se quiere): la puerta de la posada se abre | `bestias/posadero_entrada` | SoundMorph «Door - Medieval Open 16» + llaves + Wav Junction «Door Thick Open Close» | Efectos · −3 · 3 | −25,9 |
+
+Salida: medida el 09/11 con el driver real (`prueba_efectos_senal`, «efectos=zarzalin_,…» y «mezclas=4»), cada efecto
+solo, Master al 100 % (el golpe de siempre sale a −27,7; las voces de la tanda 2, de −23 a −31). Muestras y una mezcla
+por ataque con los tiempos de su ficha: `D:\REBELUM_diagnostico\sonido_muestras\2026-11-09_bestiario\indice.md`.
+
+**Cómo pedirlos** (para `combate.gd`; Zarzalín ya emite las señales en `enemigos/zarzalin/zarzalin_3d.gd`):
+
+```gdscript
+# Zarzalín (z = su nodo zarzalin_3d; q = su diccionario de combate, con clave "zarzalin")
+z.aviso.connect(func(_a): Sonido.efecto("zarzalin_aviso_embestida"))      # el hocico ya está bajo
+z.pezuna.connect(func(_n): Sonido.efecto("zarzalin_pezuna"))              # cada golpe de pezuña
+Sonido.efecto("zarzalin_aviso_colmillo")                                 # justo al llamar a atacar("colmillo_lateral")
+z.impacto.connect(func(a): Sonido.efecto("zarzalin_embestida" if a == "embestida_espinosa" else "zarzalin_colmillo"))
+# en el mismo impacto, como siempre: Sonido.golpe(critico, defendido)
+# al recibir un golpe físico: Sonido.recibe(q)  (herido o caída, por su clave)
+Sonido.efecto("zarzalin_derrumbe")                                       # al llamar a morir()/derrota()
+Sonido.efecto("zarzalin_entrada")                                        # al llamar a entrada()
+# Las demás bestias, igual: Sonido.efecto("<bestia>_aviso_<ataque>") al empezar el clip del ataque y
+# Sonido.efecto("<bestia>_<ataque>") en su impacto (velaria_destello, custodio_martillo, hilandera_trama…).
+```
+
+Sonido.BESTIAS lista, por familia, [avisos], [impactos] y los demás. **Pendiente**: oírlo (nadie lo ha escuchado),
+engancharlo en combate y oírlo en el Redmi (**pendiente en Redmi**: sobre todo lo grave de la trama de eco y del
+portazo del Posadero, que un altavoz de móvil casi no da).
 
 ## Candidatos aún sin usar
 
