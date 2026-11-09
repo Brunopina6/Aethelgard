@@ -113,3 +113,129 @@ animaciones).
 - **Decisión aparte:** sonido para las 12 magias (candidatos en el inventario).
 - **Siguiente tanda de sonido:** voces de los enemigos (furia), agua en las zonas 2D cerca de los ríos, pasos de Lya,
   Garon y los enemigos, la puerta de la Garganta al abrirse.
+
+## 2026-11-09, 07:45 · T-083, tanda 2: voces de los enemigos, río 2D, Garganta, interfaz y propuesta de magias
+
+Rama `area-sonido`, desde `713fe8d` (tanda 1 y animaciones ya integradas), en `D:\Aethelgard_sonido`. Antes de
+empezar, importado lo nuevo de animaciones con datos aislados
+(`D:\REBELUM_diagnostico\importaciones\sonido_20261109_001811`). La tanda se paró una vez (límite de uso del
+coordinador) y se retomó donde estaba. **No he podido escuchar nada**: las pruebas dicen qué suena, cuántas veces, por
+qué bus y a qué nivel sale, no cómo suena.
+
+### 1. Qué se ha hecho
+
+- **Voces de los enemigos** (observado en el código y comprobado ejecutando, 09/11): cinco familias con sus derivados
+  en `audio/efectos/voces/` (limo, goblin, Gorthor, piedra y ámbar). `Sonido.voz(enemigo, evento)`: **ataque** cuando
+  el enemigo llega y se lanza (`_anim_ataque_3d`, `_anim_fisico_imagen`, `_anim_fisico_sprite`, `_anim_fisico`);
+  **herido** o **caída** cuando un golpe físico ya le ha restado los PV (`Sonido.recibe` en el impacto de
+  `_animar_golpe`, de Juicio y de cada vuelta del Giro); Gorthor, además, **de rodillas** (`_decidir`), **«Acabar»**
+  (`_acabar`) y su **mordisco** (Devorar, en el impacto). Una voz por enemigo (la nueva corta la suya), **dos a la vez
+  como mucho** (grupo «voz»), la «espera» de cada voz deja una por familia cuando el Giro golpea a varios; con furia,
+  el ataque +2 dB y un poco más grave. Prioridades: ataque y herido 2 (bajan durante la victoria), caída 3. Los héroes
+  no tienen voz. **Las magias no piden voces** (ni la quemadura ni Érebo): va en la propuesta.
+- **El segundo tajo del doble ataque** (Grimfang y Gorthor): **decidido que suena, 6 dB más bajo** (el golpe, o el
+  escudo si el héroe se defiende). Un tajo que se ve y no se oye parece un fallo; más bajo no parece un segundo daño.
+- **Congelar** (Frostfang o Embuir de hielo): un crujido de hielo, solo la primera vez.
+- **Río de las zonas 2D**: `Sonido.agua_zona(zona)` desde `zona.gd`. Un emisor 2D (izquierda/derecha) en el punto del
+  río más cercano; todo el volumen a 1,5 casillas de la orilla o menos, la mitad cada vez que se dobla la distancia,
+  callado (y sin sonar) hacia las 9 casillas; fundido de 0,8 s; al salir de la zona se funde el doble de rápido. Solo
+  el río (la mancha de agua que llega a un lado de la zona): las charcas no suenan a corriente (`mascara_rio`); el
+  hielo, el abismo, la lava y el veneno, nada. Medido: RMS −33,1 dBFS en la orilla, −38,7 a 3 casillas, −45,3 a 6; el
+  ambiente de la pradera va a −29: no lo tapa.
+- **La Garganta 2D**: la puerta sellada **suena al abrirse**, a lo lejos (`puerta_abre`, la parte «open» de la misma
+  puerta que suena «cerrada», con paso bajo), 1,3 s tras la palanca. Revisados todos sus eventos: guardar, puerta
+  cerrada, palanca, puente, puerta que se abre, ascensor sin fuerza y con fuerza, cofre raro del nido, combates del
+  nido y de Gorthor (emboscada y voces), gotas y pasos. No he tocado la Garganta 3D.
+- **Interfaz y mundo**: el Diario pasa la hoja al cambiar de pestaña (solo si cambia) y se cierra con un libro (CC0
+  s14, Kenney); el brazalete de Kael brilla y se oye muy bajo junto a un detalle sin ver (una vez por detalle); examinar
+  el altar suena como los detalles. Ningún «tic» duplicado: donde ya había uno, no se ha añadido otro.
+- **Pasos de varios cuerpos**: `Sonido.pasos_3d(cuerpo, superficie, db)` ya admite a Kael, Lya y Garon a la vez (uno
+  por cuerpo; pedirlo dos veces para el mismo no duplica) y un volumen para los compañeros (propuesto −3 dB).
+- **Generador aleatorio** (aviso del coordinador): `sonido.gd` usa solo su `_rng` (variantes, tono, volumen, detalles,
+  punto de inicio de los bucles) y un `rng` local con semilla fija para la muestra de los ajustes. Comprobado con grep
+  el 09/11 (`sonido.gd` y `musica.gd`: ninguna llamada a `randf()`, `randi()`, `randf_range()`, `randi_range()`,
+  `shuffle()`, `pick_random()` ni `seed()` globales) y con una prueba: `randi()` sale igual con y sin sonidos.
+- **Magias, solo propuesta (D-048)**: tabla con un candidato por magia y nivel (archivo, tramo, licencia y la línea
+  donde se engancharía) en `docs/audio/inventario_sonidos.md`, y 12 muestras fuera del proyecto. Nada integrado: las
+  magias siguen sin pedir ningún sonido (lo comprueba la prueba).
+- **Licencias**: CC0 comprobadas en la página de OpenGameArt de cada fuente el 09/11 con el navegador integrado (s06,
+  s09, s10, s24, s33, s34, s51, s52, s53, s56 y s57: todas «CC0»); los paquetes de Sonniss son de años ya comprobados.
+  OpenGameArt rechaza las descargas automáticas (403), así que se miró en el navegador.
+
+### 2. Archivos y commits (rama `area-sonido`)
+
+| Commit | Qué |
+|---|---|
+| `97a4cf7` | 37 derivados nuevos (`audio/efectos/voces/` 33, `combate/congelar`, `mundo/puerta_abre`, `mundo/brazalete`, `interfaz/libro_hoja`, `interfaz/libro_cerrar`, con su `.import`), `pruebas/prueba_efectos_preparar.gd` (recetas, «solo=», «tono», «magias=», no reescribe un `.import` que ya existe) y `docs/audio/efectos_procedencia.csv` (37 filas) |
+| `35b89da` | `sonido.gd`: catálogo, `voz()`, `recibe()`, límite de grupo, `golpe(db)`, `agua_zona()`/`Agua2D`/`mascara_rio()`, `pasos_3d` de varios cuerpos |
+| `8909a4c` | Enganches: `combate.gd` (18 líneas añadidas, ninguna cambiada), `zona.gd` (3), `garganta.gd` (1), `diario.gd` (3) |
+| `f212bac` | `pruebas/prueba_efectos.gd` (partes «voces», «agua», «interfaz», «azar» y la Garganta ampliada), `pruebas/prueba_efectos_senal.gd` («efectos=», mezclas y río 2D), `pruebas/lista_pruebas.txt` (sus notas) |
+| `11fc961` | `docs/audio/inventario_sonidos.md` (tanda 2 y propuesta de magias), `docs/recursos.md` (fila de efectos) |
+| (este) | `docs/memory/agents/sonido.md` |
+
+Sin confirmar, porque no es mío: `aethelgard/pruebas/prueba_boton_prologo.gd.uid` (lo generó Godot al importar; el
+`.gd` lo añadió el coordinador en `713fe8d`).
+
+### 3. Pruebas (todas con datos aislados)
+
+- `prueba_efectos` (muda), con el ejecutor del repositorio el 09/11: **SUPERADA** (11,3 s). Partes nuevas: el limo
+  (se lanza: voz 1 y golpe 1; recibe: herido 1; con Agua no pide nada; cae: caída 1), Grimfang (voz 1 y **dos tajos
+  que suenan, separados 0,62 s** como la animación; herido 1; congelar dos veces seguidas: 1), el Gólem de ámbar (su
+  voz, no la de la piedra), Gorthor (mordisco y voz; el golpe que lo deja de rodillas: herido; de rodillas: caída;
+  «Acabar»: muerte y crítico), la API (un héroe no tiene voz; la voz nueva corta la anterior del mismo; tres enemigos
+  a la vez: suenan 2; furia más fuerte; pasos de tres cuerpos sin duplicar), el río 2D (−5,0 / −11,9 / −18,6 dB a
+  0,3 / 3 / 6 casillas y callado a 11; al llegar a la orilla no salta de golpe; al salir deja de sonar; sin río o con
+  lava no hay emisor), el Diario (hoja 1 aunque se pulse dos veces la misma pestaña, cerrar 1, ningún «tic»), el
+  brazalete (1 por detalle), el altar, la Garganta (la puerta se abre una vez, el ascensor viaja, no hay río en el
+  abismo, el cofre raro y la emboscada del nido) y el generador global intacto.
+- `prueba_efectos_senal` (con ventana y el driver real), solo la tanda 2 (`efectos=…`), 09/11 a las 07:23: **0
+  fallos**, 31 grabaciones (`D:\REBELUM_diagnostico\importaciones\sonido_senal_20261109_072308`).
+- `prueba_efectos_preparar -- <biblioteca> comprobar`: **88 de 88 originales intactos**. Las fuentes que solo son
+  capa (burbujas s53, los arrastres de Wav Junction, el paso de criatura de Bluezone, «stone_impact_041», el hielo de
+  Stuart Duffield y el cristal de BluezoneCorp) llevan en el CSV los 12 primeros caracteres de su huella.
+- **Batería completa**: (automáticas, 09/11 a las 07:30, con `11fc961`): **39 superadas, 0 fallidas, 23 manuales, 0 no seguras**; `partida.save` real y carpeta real de datos, sin cambios; `git status`, sin cambios. Resumen: `D:\REBELUM_diagnostico\pruebas\2026-11-09_073016\resumen.md`. Durante la pasada había 20 Godot de otras copias.
+
+### 4. Evidencias
+
+- **Muestras para escuchar**, con su índice: `D:\REBELUM_diagnostico\sonido_muestras\2026-11-09\indice.md`: cada
+  voz y efecto nuevo solo, cuatro combates seguidos (limo, Grimfang con su doble tajo, piedra y ámbar, Gorthor entero),
+  la palanca de la Garganta con su puerta, el río 2D a 0, 3 y 6 casillas y el río con la pradera debajo; y en
+  `magias\` las 12 muestras de la propuesta con `magias_procedencia.csv`.
+- **Niveles a la salida** (Master, todo al 100 %): voces de ataque y herido, RMS −23 a −31 dBFS (picos −9 a −16);
+  caídas −24 a −27 (Gorthor, muerte −20,7 y mordisco −21); congelar −26,1; puerta que se abre −32,7; brazalete −34,1
+  (pico −20); libro −31,8 y −36,3; el golpe de siempre −27,7 de RMS con pico −5,9. Primera medida y ajustes: goblin
+  −3 dB, Gorthor −1 a −2, piedra (ataque) −2, limo +1, río 2D +4 (en la orilla quedaba 8 dB por debajo del ambiente).
+- La tabla de cada efecto (fuente, licencia, evento, bus, dB y prioridad) y la propuesta de magias:
+  `docs/audio/inventario_sonidos.md`.
+
+### 5. Límites
+
+- **Escucha**: nadie ha oído las voces. Elegidas por nombre, duración, brillo y tono medidos (analizador propio en
+  Python, sin instalar nada). Lo más dudoso: si el goblin suena demasiado «orco» o humano, si el ataque del limo (barro)
+  suena sucio, si la piedra del guardián (un zumbido «melódico» de roca) parece una voz, y el órgano de Gracia Divina.
+- **Panorama 2D**: el río 2D suena a la izquierda o a la derecha según dónde está el agua (AudioStreamPlayer2D), pero
+  solo se ha medido de frente; el reparto entre canales no está comprobado.
+- **Rendimiento**: no medido (no tocaba). El río 2D busca el agua cada 0,12 s en un cuadro de 21 × 21 vértices y el
+  río se calcula una vez al entrar en la zona; las voces son reproductores del grupo de siempre.
+- **Pasos de Lya y Garon**: la API está lista y probada sin animación; los engancha animaciones.
+- **Línea base**: la pasada completa del principio se cortó con la parada del coordinador (hasta
+  `prueba_guardado_protegido`, todas superadas); la comparación es con la de la tanda 1 (38 superadas, 0 fallidas).
+
+### 6. Siguiente paso y cambios en archivos de otros
+
+- **Escucha del usuario** con el índice de hoy: voces de cada familia, el doble tajo, el río 2D (¿se nota lo
+  bastante en la orilla?) y la propuesta de magias (aprobar, cambiar o descartar cada una).
+- **Animaciones** (`zonas3d/grupo_3d.gd` o donde creen a Lya y Garon en 3D): una línea por compañero,
+  `Sonido.pasos_3d(lya, superficie, -3.0)` y `Sonido.pasos_3d(garon, superficie, -3.0)`, con la misma `superficie` que
+  Kael en `pastos_verdes_3d.gd`. Para que sigan los pies, el nodo debe tener `skel` (su Skeleton3D); si no, van por
+  distancia.
+- **Garganta 3D** (otro especialista): ya existen en el catálogo `palanca`, `puente_baja`, `puerta_abre`, `ascensor`,
+  `atascado`, `cerrada`, `guardado`, `cofre`, `tesoro`, `gota` y `emboscada`, y `Sonido.fuente_3d` / `fuente_linea` /
+  `oyente_3d` para el ambiente 3D; que diga qué le falta.
+- **Gráficos** (`mapa.gd`): lo que hay hoy ya suena; lo nuevo del mapamundi (por ejemplo, descubrir un lugar)
+  necesitará su línea `Sonido.efecto(...)`: que lo marque y lo preparo.
+- **Combate** (diseño): la decisión del segundo tajo está tomada y registrada; si cambia la animación de Grimfang,
+  `prueba_efectos` lo dirá (tajos separados 0,62 s).
+- **Coordinador**: confirmar o descartar `prueba_boton_prologo.gd.uid`.
+- **Siguiente tanda de sonido**: magias si se aprueban, charcas, lava y veneno de las zonas 2D, voces de los héroes
+  (si se quieren) y medir el río 2D y las voces en el Redmi.
