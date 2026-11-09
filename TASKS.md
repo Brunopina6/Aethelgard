@@ -60,7 +60,7 @@
 | [T-082](#t-082) | Organización por especialistas: coordinador y cinco subagentes (encargo del 08/11, 22:00) | En curso | Alta |
 | [T-083](#t-083) | Sonido: primera tanda de efectos de la biblioteca del usuario en eventos reales | Tandas 1 y 2 integradas; falta escucharlas | Alta |
 | [T-084](#t-084) | Animaciones: la mano de Kael en el diálogo inicial y gestos naturales | Tanda 1 integrada; tanda 2 pendiente | Alta |
-| [T-085](#t-085) | Gráficos: el mapamundi (costas, agua, relieve, biomas, lugares y rótulos) | En curso (fase 1, desde las 23:12) | Alta |
+| [T-085](#t-085) | Gráficos: el mapamundi (costas, agua, relieve, biomas, lugares y rótulos) | Integrado (`a04a9d2`); falta medirlo y verlo en el Redmi | Alta |
 | [T-086](#t-086) | Narrativa: el diálogo inicial y la misión de Pastos Verdes | Revisión hecha; falta aplicarla | Media |
 | [T-087](#t-087) | Combate: estabilidad con uno, dos y tres héroes y eventos sonoros de ataque e impacto | Pendiente | Media |
 | [T-088](#t-088) | GitHub: rama de integración y ramas por área, con revisión antes de cada push | En curso (tanda 1 subida) | Alta |
@@ -649,8 +649,26 @@
 
 ### T-085
 **Gráficos: el mapamundi**
-- **Estado:** en curso: la fase 1 (análisis, propuesta y prototipo en archivos nuevos) va desde las 23:12, en
-  `D:\Aethelgard_graficos`, rama `area-graficos`. **Prioridad:** alta. **Responsable:** especialista de gráficos.
+- **Estado:** integrado en `integracion-experimental` (`a04a9d2`, subido en `14aea04`, 09/11 a las 08:05). Falta la
+  medida de rendimiento, en un hueco sin otra carga (`pruebas/medir_mapamundi.ps1`, preparado), y verlo en el Redmi.
+  **Prioridad:** alta. **Responsable:** especialista de gráficos (rama `area-graficos`).
+- **Evidencia** (comprobado ejecutando y aislado):
+  - **Causas:** la costa era un corte binario en una imagen de 600×337 estirada ×4; el 77,2 % de los bloques eran
+    planos; no había relieve, ríos ni caminos.
+  - **Solución:** un mapa pintado y horneado sin conexión con los mismos datos del juego, con rótulos e iconos en vivo.
+    La planitud baja al 32,7 %. Sombreado en Mali-G57 (`malioc`): 1,00 ciclos por píxel con el agua animada, frente a
+    0,75; con el agua quieta, igual que antes.
+  - **Correcciones:** rótulos por encima de Kael, el del Portal apartado, el borde inferior pintado, la máscara ajustada
+    2 px al dibujo (la costa y los bordes de zona suben 2 px en la mitad de abajo; ningún lugar, ruta, encuentro ni
+    guardado cambia) y el icono de Pastos Verdes.
+  - **El mapa clásico, como alternativa:** `-- mapa_clasico`, o en Ajustes de la versión experimental, con «Mapa del
+    mundo: Pintado / De siempre» (`14aea04`).
+  - **Pruebas:** las del mapa (11) y la batería completa: 40 superadas, 0 fallidas
+    (`D:\REBELUM_diagnostico\pruebas\2026-11-09_075400\`).
+  - **Capturas:** antes y después, en `D:\REBELUM_diagnostico\mapamundi\2026-11-09\comparacion\`
+    (`lamina_antes_despues.jpg`).
+  - **Indicio sin medir:** la primera frase del prólogo sale a los 5,9 s sobre el mapa pintado y a los 3,1 s sobre el
+    clásico. Lo dirá la medida.
 - **Petición** [usuario]: «La captura muestra costas escalonadas, grandes manchas planas y poco detalle geográfico.»
   - Analizar cómo se genera y se dibuja antes de elegir la técnica. No basta con ampliar la imagen.
   - Lo que pide: costas cuidadas, agua con profundidad, relieve, montañas, bosques y biomas; ciudades, caminos y lugares

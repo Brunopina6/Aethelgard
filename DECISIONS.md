@@ -1295,6 +1295,10 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
   de andar solo a poca velocidad. La velocidad de juego no cambia. Lo implementa animaciones en su tanda 2.
 - **Sonido, tanda 2:** el segundo tajo del doble ataque suena 6 dB más bajo. El sonido de las 12 magias
   protegidas queda como propuesta, con muestras: decide el usuario.
+- **Mapamundi pintado** (`a04a9d2`): pasa a ser el mapa por defecto. El clásico se elige en Ajustes (solo en la
+  versión experimental) o con `-- mapa_clasico`. La máscara jugable se ajustó 2 px al dibujo.
+- **Carpeta temporal de los especialistas:** cada uno usa una subcarpeta con su nombre, porque el 09/11 un script de
+  gráficos pisó otro de animaciones con el mismo nombre (`f123920`).
 - **Combate: lo adoptado del diseño** (`docs/diseno/combate_ampliaciones.md`, rama `area-combate`):
   - pestañas por familia en el menú de magia;
   - la ranura se llama «Accesorio»; nada de «Quiebrasello»;

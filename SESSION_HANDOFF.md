@@ -17,6 +17,8 @@ pidió no preguntar ([MEMORIA_CHAT.md](MEMORIA_CHAT.md)). **La memoria describe 
 - **Nueva petición:** la Garganta del Diablo en 3D, como mazmorra ([T-095](TASKS.md#t-095),
   [D-074](DECISIONS.md#d-074)). Especialista de gráficos en `D:\Aethelgard_garganta3d`, rama `area-garganta3d`
   (desde `c74b872`): diseño y maqueta jugable, activable con `-- garganta3d`.
+- **Mapamundi pintado: integrado** (`a04a9d2`) con el selector en Ajustes (`14aea04`). Batería: 40 superadas, 0
+  fallidas. Falta medirlo. La memoria describe `integracion-experimental` @ `14aea04`.
 - **Reanudados con su contexto:** el mapamundi (fase 2), animaciones (tanda 2), combate (fase 1) y narrativa (fase 1).
 - **Sonido, tanda 2: terminada e integrada** (`c74ee66`; subida con `integracion-experimental` @ `4c6fafc`): voces de
   enemigos, el río 2D, la puerta de la Garganta y el Diario. Batería: 39 superadas, 0 fallidas. La memoria describe
