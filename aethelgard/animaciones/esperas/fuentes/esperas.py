@@ -19,6 +19,7 @@
 #   dedos_i/d                 cierra los dedos (grados por falange)
 #   pie_i/d (a,u,d), pie_i/d_g  mueve y gira un pie (para golpear el suelo con la punta)
 import sys, os, math
+sys.dont_write_bytecode = True                  # sin __pycache__ junto a las fuentes
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bpy
 from mathutils import Vector, Quaternion, Matrix
@@ -171,13 +172,13 @@ CLIPS = {
                    "hombro_i": v(-8, 0, 0), "hombro_d": v(8, 0, 0),
                    "mano_d_w": 1.0, "mano_d": v(-0.02, -0.19, 0.05), "codo_d": v(-1, 0, 0.3),
                    "mano_i_w": 1.0, "mano_i": v(-0.02, -0.19, -0.05), "codo_i": v(-1, 0, -0.3),
-                   "arma_d_w": 1.0, "arma_d": v(0.15, -1, 0.25), "arma_i_w": 1.0, "arma_i": v(0.15, -1, -0.25)}),
+                   "punta_d_w": 1.0, "punta_d": (-0.1, 1.0), "punta_i_w": 1.0, "punta_i": (-0.1, -1.0)}),
             (1.8, {"columna": v(0, -10, 0), "pecho": v(0, -12, 0), "cabeza": v(0, -18, 0)}),
             (2.5, {"columna": v(0, -2, 6), "pecho": v(0, -2, 6), "cabeza": v(0, -2, 4), "cadera": v(0.01, 0, -0.02)}),
             (3.2, {"columna": v(0, -2, -6), "pecho": v(0, -2, -6), "cabeza": v(0, -2, -4), "cadera": v(0.01, 0, 0.02)}),
             (3.9, {"columna": CERO, "pecho": CERO, "cabeza": v(0, 4, 0), "cadera": CERO, "hombro_i": CERO,
-                   "hombro_d": CERO, "mano_d_w": 1.0, "mano_i_w": 1.0, "arma_d_w": 1.0, "arma_i_w": 1.0}),
-            (4.8, {"mano_d_w": 0.0, "mano_i_w": 0.0, "arma_d_w": 0.0, "arma_i_w": 0.0}),
+                   "hombro_d": CERO, "mano_d_w": 1.0, "mano_i_w": 1.0, "punta_d_w": 1.0, "punta_i_w": 1.0}),
+            (4.8, {"mano_d_w": 0.0, "mano_i_w": 0.0, "punta_d_w": 0.0, "punta_i_w": 0.0}),
             (5.4, {}),
         ],
         # Se apoya en las espadas: las clava de punta en el suelo, delante y a los lados, y descansa el peso en ellas.
