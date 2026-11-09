@@ -22,6 +22,7 @@ var hechos: Array = []
 var visto := {"entrada": false, "aviso": 0, "embestida": 0, "colmillo": 0, "recupera": 0, "defendida": 0}
 var fotos := ""
 var n_foto := 0
+var sonidos: Array = []                           # [nombre, fotograma] que pide combate.gd (señal sonido_pedido)
 
 
 func _initialize() -> void:
@@ -65,6 +66,8 @@ func _combate(activos: Dictionary, semilla: int) -> void:
 	Engine.set_meta("tipo_combate", "normal")
 	Engine.set_meta("grupo_combate", 10)
 	c = load("res://combate.tscn").instantiate()
+	sonidos.clear()
+	c.sonido_pedido.connect(func(n: String): sonidos.append([n, Engine.get_process_frames()]))   # antes de _ready: la entrada
 	root.add_child(c)
 	seed(semilla)
 	z = c.enemigos[0]
@@ -108,8 +111,14 @@ func _a(semilla: int) -> void:
 	var avisos := [0]
 	var impactos := [0]
 	var derrota := [false]
-	zp.aviso.connect(func(_a): avisos[0] += 1)
-	zp.impacto.connect(func(_a): impactos[0] += 1)
+	var marcas: Array = []                          # [qué, fotograma] de las señales del modelo
+	zp.aviso.connect(func(_a):
+		avisos[0] += 1
+		marcas.append(["aviso", Engine.get_process_frames()]))
+	zp.impacto.connect(func(a):
+		impactos[0] += 1
+		marcas.append([a, Engine.get_process_frames()]))
+	zp.pezuna.connect(func(_n): marcas.append(["pezuna", Engine.get_process_frames()]))
 	zp.clip_terminado.connect(func(clip): if clip == "derrota": derrota[0] = true)
 	if fotos != "":                                 # con «fotos=<carpeta>» (y ventana): el aviso, cada impacto y la derrota
 		zp.aviso.connect(func(_a): _foto.call_deferred("aviso"))
@@ -186,6 +195,7 @@ func _a(semilla: int) -> void:
 	_ok(c.estado == "fin" and z["hp"] <= 0 and kael["hp"] > 0, "A: Kael solo no gana (Kael %d PV, Zarzalín %d)" % [kael["hp"], z["hp"]])
 	await _esperar(30)
 	_ok(derrota[0] or zp._muerta, "A: Zarzalín no cae con su clip de derrota")
+	_sonidos_a(marcas)
 	await _cerrar()
 	hechos.append("A (semilla %d)" % semilla)
 
@@ -214,3 +224,25 @@ func _foto(nombre: String) -> void:
 		return
 	n_foto += 1
 	img.save_png(fotos.path_join("%02d_%s.png" % [n_foto, nombre]))
+
+
+# Los sonidos de Zarzalín (sonido.gd, tanda 4): cada uno se pide una vez por su señal y en su mismo fotograma (la
+# entrada al empezar, el derrumbe al caer, el aviso del colmillo al lanzarse). Vale aunque el catálogo aún no los
+# tenga: se mira lo que pide combate.gd, no lo que suena.
+func _sonidos_a(marcas: Array) -> void:
+	var cuenta := func(n: String) -> int: return sonidos.filter(func(s): return s[0] == n).size()
+	var de := func(q: String) -> Array: return marcas.filter(func(m): return m[0] == q)
+	_ok(cuenta.call("zarzalin_entrada") == 1, "sonido: la entrada se pide %d veces" % cuenta.call("zarzalin_entrada"))
+	_ok(cuenta.call("zarzalin_derrumbe") == 1, "sonido: el derrumbe se pide %d veces" % cuenta.call("zarzalin_derrumbe"))
+	for par in [["aviso", "zarzalin_aviso_embestida"], ["pezuna", "zarzalin_pezuna"], ["embestida_espinosa", "zarzalin_embestida"],
+			["colmillo_lateral", "zarzalin_colmillo"]]:
+		var senales: Array = de.call(par[0])
+		var pedidos: Array = sonidos.filter(func(s): return s[0] == par[1])
+		_ok(pedidos.size() == senales.size(), "sonido: %s se pide %d veces para %d señales" % [par[1], pedidos.size(), senales.size()])
+		for i in mini(pedidos.size(), senales.size()):
+			_ok(pedidos[i][1] == senales[i][1], "sonido: %s no va en el fotograma de su señal (%d y %d)" % [par[1], pedidos[i][1], senales[i][1]])
+	var colmillos: Array = de.call("colmillo_lateral")
+	var avisos_c: Array = sonidos.filter(func(s): return s[0] == "zarzalin_aviso_colmillo")
+	_ok(avisos_c.size() == colmillos.size(), "sonido: el aviso del colmillo se pide %d veces para %d colmillos" % [avisos_c.size(), colmillos.size()])
+	for i in mini(avisos_c.size(), colmillos.size()):
+		_ok(avisos_c[i][1] < colmillos[i][1], "sonido: el aviso del colmillo no va antes de su impacto")
