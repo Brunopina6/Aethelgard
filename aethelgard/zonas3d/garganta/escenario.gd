@@ -52,35 +52,78 @@ func _init(r: Node3D, m: Materiales, p: Dictionary, nombre: String) -> void:
 
 func construir() -> void:
 	seed(9133)                                        # la escena sale siempre igual: comparaciones justas
-	_muros()
-	_cornisas()
-	_huecos()
-	_presa_y_boca()
-	_arena()
-	_aguja_paso_bajo()
-	_repisa_nido()
-	_muro_norte()
-	_abismo()
-	_cascada()
-	_caida_del_puente()
-	_decorado()
-	lotes.cerrar(region)
-	_haces()
-	_particulas()
-	_aves()
+	for paso in [_muros, _cornisas, _huecos, _presa_y_boca, _arena, _aguja_paso_bajo, _repisa_nido, _muro_norte, _abismo,
+			_cascada, _caida_del_puente, _entrada, _losas, _helechos, _senda_baja, _helechos_bajos, _piedras_sueltas,
+			_hierba_seca, _pinos, _raices, _faroles_peregrino, _cristales, _mojones, _campamento]:
+		_medido(paso)
+	_medido(func(): lotes.cerrar(region))
+	for paso in [_haces, _particulas, _aves]:
+		_medido(paso)
+
+
+# Cuánto tarda cada paso de la construcción, en ms (pruebas/medir_garganta3d.gd lo apunta con «conteo»).
+var tiempos := {}
+
+
+func _medido(paso: Callable) -> void:
+	var t0 := Time.get_ticks_usec()
+	paso.call()
+	var nombre := String(paso.get_method())
+	if nombre == "" or nombre.begins_with("<"):
+		nombre = "lotes_cerrar"
+	tiempos[nombre] = float(tiempos.get(nombre, 0.0)) + (Time.get_ticks_usec() - t0) / 1000.0
 
 
 # ================================================================= roca
 
-func _roca(malla: ArrayMesh, suelo := false, brillo := 1.0) -> MeshInstance3D:
+func _roca(malla: ArrayMesh, suelo := false, brillo := 1.0, forma: Shape3D = null) -> MeshInstance3D:
 	if malla == null:
 		return null
 	mallas_roca += 1
 	triangulos += malla.surface_get_array_index_len(0) / 3 if malla.get_surface_count() > 0 else 0
 	var m: Material = mat.roca(brillo)
 	if suelo:
-		return Roca.con_suelo(region, malla, m)
+		return Roca.con_suelo(region, malla, m, forma)
 	return Roca.dibujar(region, malla, m)
+
+
+# Roca guardada (T-102, optimización de la carga): la primera vez que se entra en la Garganta con un perfil, cada malla
+# de roca (y la colisión de los suelos) se genera y se guarda en user://cache_garganta/; las siguientes veces se lee de
+# ahí, sin generarla ni calcular la colisión. Es solo una copia: si falta o no se puede leer, se genera como siempre.
+# SUBE VERSION_CACHE si cambia la forma o el color de la roca (trazado.gd, roca.gd o las llamadas de este archivo).
+const VERSION_CACHE := "t102c"
+const DIR_CACHE := "user://cache_garganta"
+var usar_cache := not Engine.has_meta("garganta_sin_cache")   # la medida de antes y después puede apagarla
+var _n_roca := 0                  # cuántas mallas de roca van (la clave de cada una en la caché)
+var leidas_de_cache := 0          # cuántas se leyeron de la caché (pruebas y medida)
+
+
+func _roca_c(generar: Callable, suelo := false, brillo := 1.0) -> MeshInstance3D:
+	var base := "%s/%s_%s_%02d" % [DIR_CACHE, VERSION_CACHE, nombre_perfil, _n_roca]
+	_n_roca += 1
+	var malla: ArrayMesh = null
+	var forma: Shape3D = null
+	if usar_cache and ResourceLoader.exists(base + ".res") and (not suelo or ResourceLoader.exists(base + "_choque.res")):
+		malla = ResourceLoader.load(base + ".res", "", ResourceLoader.CACHE_MODE_IGNORE) as ArrayMesh
+		if suelo and malla != null:
+			forma = ResourceLoader.load(base + "_choque.res", "", ResourceLoader.CACHE_MODE_IGNORE) as Shape3D
+			if forma == null:
+				malla = null
+	if malla != null:
+		leidas_de_cache += 1
+		return _roca(malla, suelo, brillo, forma)
+	malla = generar.call()
+	if malla == null:
+		return null
+	if suelo:
+		forma = malla.create_trimesh_shape()
+		(forma as ConcavePolygonShape3D).backface_collision = true
+	if usar_cache:
+		DirAccess.make_dir_recursive_absolute(DIR_CACHE)
+		ResourceSaver.save(malla, base + ".res", ResourceSaver.FLAG_COMPRESS)
+		if suelo:
+			ResourceSaver.save(forma, base + "_choque.res", ResourceSaver.FLAG_COMPRESS)
+	return _roca(malla, suelo, brillo, forma)
 
 
 func _color_muro(base_y: float, musgo := 0.25) -> Callable:
@@ -96,14 +139,14 @@ static func _hundir_acantilado(u: float, y: float, arriba: float, semilla: float
 func _muros() -> void:
 	var tope := T.TOPE
 	# muro del oeste: el fondo del camino de arriba, de punta a punta
-	_roca(Roca.cortina(func(u): return Vector3(T.muro_oeste(u), 0, u), func(_u): return Vector3.RIGHT,
+	_roca_c(func(): return Roca.cortina(func(u): return Vector3(T.muro_oeste(u), 0, u), func(_u): return Vector3.RIGHT,
 		T.Z_NORTE - 3.0, T.Z_SUR, du, T.ALTO - 0.6, tope, dy,
 		func(u, y): return Roca.hundido(u, y, 13.0), _color_muro(T.ALTO)))
 	# muro del este: el fondo del camino de abajo (al sur de la cornisa baja, baja hasta la hondonada de la boca)
-	_roca(Roca.cortina(func(u): return Vector3(T.muro_este(u), 0, u), func(_u): return Vector3.LEFT,
+	_roca_c(func(): return Roca.cortina(func(u): return Vector3(T.muro_este(u), 0, u), func(_u): return Vector3.LEFT,
 		T.Z_NORTE - 3.0, T.Z_CORNISA_E + 0.5, du, T.BAJO - 0.6, tope, dy,
 		func(u, y): return Roca.hundido(u, y, 29.0), _color_muro(T.BAJO)))
-	_roca(Roca.cortina(func(u): return Vector3(T.muro_este(u), 0, u), func(_u): return Vector3.LEFT,
+	_roca_c(func(): return Roca.cortina(func(u): return Vector3(T.muro_este(u), 0, u), func(_u): return Vector3.LEFT,
 		T.Z_CORNISA_E - 0.5, T.Z_SUR, du, T.Y_BOCA - 1.5, tope, dy,
 		func(u, y): return Roca.hundido(u, y, 29.0), _color_muro(T.Y_BOCA)))
 
@@ -122,24 +165,24 @@ func _cornisas() -> void:
 	var sur_h1 := func(x: float) -> float: return T.borde_hueco(x, h1[1], 1.0)
 	var norte_h1 := func(x: float) -> float: return T.borde_hueco(x, h1[0], -1.0)
 	for tramo in [[56.0, h0[1], Callable(), sur_h0], [h0[0], h1[1], norte_h0, sur_h1], [h1[0], -28.0, norte_h1, Callable()]]:
-		_roca(Roca.franja(func(z): return T.muro_oeste(z) - 1.0, func(z): return T.borde_oeste(z), tramo[0], tramo[1],
+		_roca_c(func(): return Roca.franja(func(z): return T.muro_oeste(z) - 1.0, func(z): return T.borde_oeste(z), tramo[0], tramo[1],
 			dz_suelo, columnas, alto, color_o, tramo[2], tramo[3]), true)
 	# acantilados bajo la cornisa alta (hacia el abismo, o hacia la hondonada de la boca)
 	for tramo in [[56.0, T.Z_PRESA_S, T.Y_BOCA - 1.5], [T.Z_PRESA_N + 0.3, T.HUECOS[0][1], T.HONDO],
 			[T.HUECOS[0][0], T.HUECOS[1][1], T.HONDO], [T.HUECOS[1][0], T.PASO_PUERTA[0] - 1.5, T.HONDO]]:
-		_roca(Roca.cortina(func(u): return Vector3(T.borde_oeste(u), 0, u), func(_u): return Vector3.RIGHT,
+		_roca_c(func(): return Roca.cortina(func(u): return Vector3(T.borde_oeste(u), 0, u), func(_u): return Vector3.RIGHT,
 			tramo[1], tramo[0], du, tramo[2], T.ALTO + 0.06, dy,
 			func(u, y): return _hundir_acantilado(u, y, T.ALTO + 0.06, 41.0), _color_muro(-1000.0, 0.45)))
 	# cornisa baja
 	var color_e := func(p: Vector3, _n: Vector3) -> Color: return Roca.color_suelo(p, T.muro_este(p.z), T.borde_este(p.z), T.X_CAMINO_E, 1.2)
-	_roca(Roca.franja(func(z): return T.borde_este(z), func(z): return T.muro_este(z) + 1.0, T.Z_CORNISA_E, T.GRIETA[0] - 0.5,
+	_roca_c(func(): return Roca.franja(func(z): return T.borde_este(z), func(z): return T.muro_este(z) + 1.0, T.Z_CORNISA_E, T.GRIETA[0] - 0.5,
 		dz_suelo, columnas, alto, color_e), true)
 	for tramo in [[T.Z_CORNISA_E + 0.4, T.Z_PRESA_S, T.Y_BOCA - 1.5], [T.Z_PRESA_N + 0.3, T.GRIETA[0] - 0.5, T.HONDO]]:
-		_roca(Roca.cortina(func(u): return Vector3(T.borde_este(u), 0, u), func(_u): return Vector3.LEFT,
+		_roca_c(func(): return Roca.cortina(func(u): return Vector3(T.borde_este(u), 0, u), func(_u): return Vector3.LEFT,
 			tramo[1], tramo[0], du, tramo[2], T.BAJO + 0.06, dy,
 			func(u, y): return _hundir_acantilado(u, y, T.BAJO + 0.06, 67.0), _color_muro(-1000.0, 0.45)))
 	# cara sur del final de la cornisa baja (se ve desde la entrada)
-	_roca(Roca.cortina(func(u): return Vector3(u, 0, T.Z_CORNISA_E), func(_u): return Vector3.BACK,
+	_roca_c(func(): return Roca.cortina(func(u): return Vector3(u, 0, T.Z_CORNISA_E), func(_u): return Vector3.BACK,
 		T.borde_este(T.Z_CORNISA_E) - 0.4, T.muro_este(T.Z_CORNISA_E) + 0.5, du, T.Y_BOCA - 1.5, T.BAJO + 0.06, dy,
 		func(u, y): return _hundir_acantilado(u, y, T.BAJO + 0.06, 3.0), _color_muro(-1000.0, 0.3)))
 
@@ -147,11 +190,11 @@ func _cornisas() -> void:
 # Los huecos de los puentes colgantes: el muro del oeste baja hasta el fondo y se ve la cara sur del borde de enfrente.
 func _huecos() -> void:
 	for h in T.HUECOS:
-		_roca(Roca.cortina(func(u): return Vector3(T.muro_oeste(u), 0, u), func(_u): return Vector3.RIGHT,
+		_roca_c(func(): return Roca.cortina(func(u): return Vector3(T.muro_oeste(u), 0, u), func(_u): return Vector3.RIGHT,
 			h[0] - 0.8, h[1] + 0.8, du, T.HONDO, T.ALTO - 0.4, dy,
 			func(u, y): return Roca.hundido(u, y, 13.0), _color_muro(-1000.0, 0.2)))
 		var zn: float = h[0]
-		_roca(Roca.cortina(func(u): return Vector3(u, 0, T.borde_hueco(u, zn, -1.0)), func(_u): return Vector3.BACK,
+		_roca_c(func(): return Roca.cortina(func(u): return Vector3(u, 0, T.borde_hueco(u, zn, -1.0)), func(_u): return Vector3.BACK,
 			T.muro_oeste(zn) - 1.2, T.borde_oeste(zn) + 0.6, du * 0.8, T.HONDO, T.ALTO + 0.06, dy,
 			func(u, y): return _hundir_acantilado(u, y, T.ALTO + 0.06, zn), _color_muro(-1000.0, 0.45)))
 
@@ -201,11 +244,11 @@ func _presa_y_boca() -> void:
 			var y := lerpf(T.Y_BOCA - 1.5, tope, float(j) / ny)
 			f.append(Vector3(x, y, T.Z_PRESA_S + 0.05 - Roca.hundido(x, y, 7.0, 0.5) * smoothstep(tope, tope - 1.2, y)))
 		filas.append(f)
-	_roca(Roca.rejilla(filas, _color_muro(T.Y_BOCA, 0.2), Vector3.BACK))
+	_roca_c(func(): return Roca.rejilla(filas, _color_muro(T.Y_BOCA, 0.2), Vector3.BACK))
 	# la hondonada de la boca (no se pisa): piedras sueltas que bajan hacia el sur
 	var alto_boca := func(x: float, z: float) -> float:
 		return T.Y_BOCA - 0.06 * (z - T.Z_PRESA_S) + 0.7 * Roca.n2(x * 0.15, z * 0.15) + 0.25 * Roca.n2(x * 0.6, z * 0.6)
-	_roca(Roca.franja(func(z): return T.borde_oeste(z) + 0.2, func(z): return T.muro_este(z) + 1.0, T.Z_SUR, T.Z_PRESA_S - 0.4,
+	_roca_c(func(): return Roca.franja(func(z): return T.borde_oeste(z) + 0.2, func(z): return T.muro_este(z) + 1.0, T.Z_SUR, T.Z_PRESA_S - 0.4,
 		1.2, 14, alto_boca, func(p: Vector3, n: Vector3) -> Color: return Roca.color_roca(p, n, 0.6)))
 	var suelta := mat.detalle(Color(0.42, 0.40, 0.43), 0.8, 0.9)
 	for k in 26:
@@ -228,14 +271,18 @@ func _arena() -> void:
 		col = col.lerp(Color(0.36, 0.18, 0.15), 0.4 * smoothstep(0.4, 0.0, d))     # manchas oscuras junto al trono
 		return Color(col.r, col.g, col.b, 0.3)
 	var lados := 40 if nombre_perfil == "bajo" else 64
-	_roca(Roca.disco(c, rr, 9, lados, alto, colorea), true)
+	_roca_c(func(): return Roca.disco(c, rr, 9, lados, alto, colorea), true)
 	# el enlosado de la vieja arena de los peregrinos (T-102): dovelas en anillos, como un gran círculo de piedra, algunas
 	# rotas o arrancadas y teñidas de rojo junto al trono; en el centro, el anillo partido de bronce embutido en el suelo.
-	# Antes, losas hexagonales sueltas. Una sola malla (una llamada de dibujo), sin colisión (el suelo es la roca).
+	# Antes, losas hexagonales sueltas. En cuatro cuartos (lo que la cámara no ve no se dibuja), sin colisión (el suelo
+	# es la roca).
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 3131
-	var st := SurfaceTool.new()
-	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var cuartos: Array = []
+	for q in 4:
+		var sq := SurfaceTool.new()
+		sq.begin(Mesh.PRIMITIVE_TRIANGLES)
+		cuartos.append(sq)
 	var tramos_arco := 2 if nombre_perfil == "bajo" else 3
 	var anillo := 1.25
 	var ancho_anillo := 0.92
@@ -255,16 +302,18 @@ func _arena() -> void:
 			if rng.randf() < 0.15:
 				col = col.lerp(Materiales.MUSGO * 1.2, rng.randf_range(0.2, 0.4))
 			var sube := rng.randf_range(0.0, 0.025)
-			_dovela(st, c, alto, a0, a1, r0, r1, tramos_arco, 0.05 + sube, col)
+			var cuarto := clampi(floori(wrapf((a0 + a1) * 0.5, 0.0, TAU) / (PI * 0.5)), 0, 3)
+			_dovela(cuartos[cuarto], c, alto, a0, a1, r0, r1, tramos_arco, 0.05 + sube, col)
 		anillo += ancho_anillo
-	st.generate_normals()
-	var mlosa := mat.sillar()
-	var mi := MeshInstance3D.new()
-	mi.mesh = st.commit()
-	mi.material_override = mlosa
-	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	mi.name = "EnlosadoDeLaArena"
-	region.add_child(mi)
+	for q in 4:
+		var sq: SurfaceTool = cuartos[q]
+		sq.generate_normals()
+		var mi := MeshInstance3D.new()
+		mi.mesh = sq.commit()
+		mi.material_override = mat.sillar()
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mi.name = "EnlosadoDeLaArena%d" % q
+		region.add_child(mi)
 	var sello: ArrayMesh = load("res://zonas3d/garganta/piezas.gd").anillo_partido(0.62, 0.07, 40.0, 30, 6)
 	lotes.poner(sello, Transform3D(Basis(Vector3.RIGHT, -PI * 0.5), Vector3(c.x, alto.call(c.x, c.z) + 0.03, c.z)), mat.bronce())
 	# el pilar de roca que la sostiene sobre el abismo
@@ -272,7 +321,7 @@ func _arena() -> void:
 		var k := smoothstep(T.HONDO, T.ALTO, y)
 		var r := T.ARENA_RADIO * lerpf(0.62, 0.99, k) * (1.0 + 0.05 * Roca.n2(a * 2.0, y * 0.1))
 		return Vector2(r, r)
-	_roca(Roca.columna(c, radio, T.HONDO, T.ALTO + T.ARENA_ALTO - 0.04, dy * 1.3, lados, 5.0, _color_muro(-1000.0, 0.4)))
+	_roca_c(func(): return Roca.columna(c, radio, T.HONDO, T.ALTO + T.ARENA_ALTO - 0.04, dy * 1.3, lados, 5.0, _color_muro(-1000.0, 0.4)))
 	# bordillo de piedra en la mitad que da al abismo (T-102: cada piedra con su tono, algunas con musgo)
 	var lb := Roca.Lotes.new()
 	for i in 22:
@@ -292,7 +341,7 @@ func _aguja_paso_bajo() -> void:
 	var radio := func(y: float, a: float) -> Vector2:
 		var k := smoothstep(5.0, -14.0, y)
 		return Vector2(lerpf(0.55, 1.6, k), lerpf(0.8, 2.3, k)) * (1.0 + 0.1 * Roca.n2(a * 3.0, y * 0.2))
-	_roca(Roca.columna(centro, radio, T.HONDO, 5.4, dy, 16, 23.0, _color_muro(-1000.0, 0.3)))
+	_roca_c(func(): return Roca.columna(centro, radio, T.HONDO, 5.4, dy, 16, 23.0, _color_muro(-1000.0, 0.3)))
 
 
 # La repisa del nido, en el abismo bajo P6, sobre una peña; y la escalera tallada que baja hasta ella.
@@ -303,11 +352,11 @@ func _repisa_nido() -> void:
 	var alto := func(x: float, z: float) -> float:
 		var d := Vector2((x - c.x) / T.NIDO_RADIOS.x, (z - c.z) / T.NIDO_RADIOS.y).length()
 		return T.NIDO + 0.1 * Roca.n2(x * 0.8, z * 0.8) - 0.25 * smoothstep(0.85, 1.0, d)
-	_roca(Roca.disco(c, rr, 7, 36, alto, func(p: Vector3, n: Vector3) -> Color: return Roca.color_roca(p, n, 0.5)), true, 1.0)
+	_roca_c(func(): return Roca.disco(c, rr, 7, 36, alto, func(p: Vector3, n: Vector3) -> Color: return Roca.color_roca(p, n, 0.5)), true, 1.0)
 	var radio := func(y: float, a: float) -> Vector2:
 		var k := smoothstep(-34.0, T.NIDO, y)
 		return T.NIDO_RADIOS * lerpf(0.25, 0.97, k * k)
-	_roca(Roca.columna(c, radio, -34.0, T.NIDO - 0.08, dy, 28, 61.0, _color_muro(-1000.0, 0.3)))
+	_roca_c(func(): return Roca.columna(c, radio, -34.0, T.NIDO - 0.08, dy, 28, 61.0, _color_muro(-1000.0, 0.3)))
 	# piedras en el borde de la repisa (fuera de donde se anda y lejos de la llegada de la escalera)
 	var gris := mat.detalle(Color(0.40, 0.38, 0.40), 0.8, 0.9)
 	var llegada := atan2(T.VUELTA_NIDO.z - c.z, T.VUELTA_NIDO.x - c.x)
@@ -352,7 +401,7 @@ func _repisa_nido() -> void:
 
 
 func _muro_norte() -> void:
-	_roca(Roca.cortina(func(u): return Vector3(u, 0, T.Z_NORTE), func(_u): return Vector3.BACK,
+	_roca_c(func(): return Roca.cortina(func(u): return Vector3(u, 0, T.Z_NORTE), func(_u): return Vector3.BACK,
 		-22.0, 22.0, du, T.HONDO, T.TOPE, dy, func(u, y): return Roca.hundido(u, y, 51.0, 1.2), _color_muro(-1000.0, 0.15)))
 
 
@@ -446,22 +495,6 @@ func _cascada() -> void:
 
 
 # ================================================================= decorado
-
-func _decorado() -> void:
-	_entrada()
-	_losas()
-	_helechos()
-	_senda_baja()
-	_helechos_bajos()
-	_piedras_sueltas()
-	_hierba_seca()
-	_pinos()
-	_raices()
-	_faroles_peregrino()
-	_cristales()
-	_mojones()
-	_campamento()
-
 
 # Un campamento Grimfang en la cornisa de abajo (los goblins de los encuentros al azar): hoguera con rescoldos, troncos
 # para sentarse, un cobertizo de pieles contra el muro y huesos.
@@ -563,30 +596,21 @@ func _losas() -> void:
 		fila += 1
 	for k in 4:
 		var lista: Array = puestos[k]
-		var mm := MultiMesh.new()
-		mm.transform_format = MultiMesh.TRANSFORM_3D
-		mm.use_colors = true
-		mm.mesh = formas[k]
-		mm.instance_count = lista.size()
+		var piezas: Array = []
 		for i in lista.size():
 			var p: Vector3 = lista[i][0]
 			var e: float = lista[i][1]
 			var hundido: float = lista[i][2] * 0.03                     # en los bordes, más hundidos en la tierra
 			var t := Transform3D(Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(e, rng.randf_range(0.85, 1.2), e * rng.randf_range(0.9, 1.1))),
 				Vector3(p.x, T.altura(p.x, p.z) - hundido, p.z))
-			mm.set_instance_transform(i, t)
 			var g := rng.randf_range(0.5, 0.66)                         # piedra clara y gastada: la senda se lee desde lejos
 			var c := Color(g, g * 0.96, g * 0.89)
 			if rng.randf() < 0.18:                                      # algunas, verdosas de musgo
 				c = c.lerp(Color(0.40, 0.46, 0.30), rng.randf_range(0.3, 0.6))
 			elif rng.randf() < 0.15:                                    # otras, más ocres
 				c = c.lerp(Color(0.62, 0.52, 0.40), 0.5)
-			mm.set_instance_color(i, c)
-		var mmi := MultiMeshInstance3D.new()
-		mmi.multimesh = mm
-		mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		mmi.name = "Adoquines%d" % k
-		region.add_child(mmi)
+			piezas.append([t, c])
+		_por_tramos("Adoquines%d" % k, formas[k], piezas)
 
 
 # Un adoquín: polígono irregular de «lados» lados (unos 0,4 m), con la cara de arriba algo abombada y el canto biselado.
@@ -619,8 +643,26 @@ func _adoquin(rng: RandomNumberGenerator, lados: int) -> ArrayMesh:
 
 
 # Peña de la cornisa: roca facetada (ruido sobre una esfera, con la base plana) con el sombreado de la roca, así que
-# lleva sus vetas y el musgo encima (canal alfa del color). Antes eran esferas grises.
+# lleva sus vetas y el musgo encima (canal alfa del color). Antes eran esferas grises. Se hacen 6 formas una vez y cada
+# peña es una de ellas, girada y escalada (antes se hacía cada una desde cero: 50-100 ms de la carga).
+const FORMAS_PENA := 6
+var _formas_pena: Array = []
+
+
 func _piedra(p: Vector3, r: float, _m: Material) -> void:
+	if _formas_pena.is_empty():
+		var rng := RandomNumberGenerator.new()
+		rng.seed = 6060
+		for i in FORMAS_PENA:
+			_formas_pena.append(_forma_pena(rng))
+	var forma: ArrayMesh = _formas_pena[randi() % FORMAS_PENA]
+	var escala := Vector3(randf_range(1.0, 1.4), randf_range(0.6, 0.9), randf_range(0.9, 1.25)) * r
+	var b := (Basis(Vector3.UP, randf() * TAU) * Basis.from_euler(Vector3(randf_range(-0.12, 0.12), 0, randf_range(-0.12, 0.12)))).scaled(escala)
+	lotes.poner(forma, Transform3D(b, p + Vector3(0, r * 0.12, 0)), mat.roca())
+
+
+# Una forma de peña de radio 1, con caras planas, su tono de roca (algo ocre, violeta u oscura) y musgo arriba.
+func _forma_pena(rng: RandomNumberGenerator) -> ArrayMesh:
 	var sm := SphereMesh.new()
 	sm.radius = 1.0
 	sm.height = 2.0
@@ -629,9 +671,9 @@ func _piedra(p: Vector3, r: float, _m: Material) -> void:
 	var a: Array = sm.surface_get_arrays(0)
 	var v: PackedVector3Array = a[Mesh.ARRAY_VERTEX]
 	var idx: PackedInt32Array = a[Mesh.ARRAY_INDEX]
-	var semilla := randf() * 100.0
-	var escala := Vector3(randf_range(1.0, 1.4), randf_range(0.6, 0.9), randf_range(0.9, 1.25)) * r
-	var b := Basis(Vector3.UP, randf() * TAU) * Basis.from_euler(Vector3(randf_range(-0.12, 0.12), 0, randf_range(-0.12, 0.12)))
+	var semilla := rng.randf() * 100.0
+	var base := Roca.color_roca(Vector3(rng.randf_range(-12.0, 12.0), rng.randf_range(-8.0, 2.0), rng.randf_range(-30.0, 40.0)),
+		Vector3.UP, 0.0)
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var puntos := PackedVector3Array()
@@ -641,15 +683,15 @@ func _piedra(p: Vector3, r: float, _m: Material) -> void:
 		var k := 1.0 + 0.22 * Roca.n3(q.x * 1.6 + semilla, q.y * 1.6, q.z * 1.6) + 0.08 * Roca.n3(q.x * 4.0, q.y * 4.0 + semilla, q.z * 4.0)
 		q *= k
 		q.y = maxf(q.y, -0.25)                                     # base plana: asienta en el suelo
-		puntos[i] = p + b * (q * escala) + Vector3(0, r * 0.12, 0)
+		puntos[i] = q
 	for i in idx:                                                  # sin compartir vértices: caras planas (roca tallada)
 		var w: Vector3 = puntos[i]
-		var arriba := clampf((w.y - p.y) / maxf(r, 0.01), 0.0, 1.0)
-		var c := Roca.color_roca(w, Vector3.UP, 0.0)
+		var arriba := clampf(w.y + 0.12, 0.0, 1.0)
+		var c := base.darkened(0.12 * clampf(-w.y, 0.0, 1.0))
 		st.set_color(Color(c.r, c.g, c.b, clampf(0.25 + 0.75 * arriba, 0.0, 1.0)))
 		st.add_vertex(w)
 	st.generate_normals()
-	lotes.poner(st.commit(), Transform3D(), mat.roca())
+	return st.commit()
 
 
 # Piedras en las cornisas, lejos de la senda (junto al muro y al borde).
@@ -1377,19 +1419,43 @@ func _senda_baja() -> void:
 				x += 0.44
 		z -= 0.44
 		fila += 1
-	var mm := MultiMesh.new()
-	mm.transform_format = MultiMesh.TRANSFORM_3D
-	mm.use_colors = true
-	mm.mesh = forma
-	mm.instance_count = lista.size()
-	for i in lista.size():
-		mm.set_instance_transform(i, lista[i][0])
-		mm.set_instance_color(i, lista[i][1])
-	var mmi := MultiMeshInstance3D.new()
-	mmi.multimesh = mm
-	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	mmi.name = "SendaBaja"
-	region.add_child(mmi)
+	_por_tramos("SendaBaja", forma, lista)
+
+
+# Reparte piezas repetidas ([Transform3D, Color] cada una) en MultiMesh de TRAMO_MM metros a lo largo de z: lo que la
+# cámara no ve no se dibuja (antes, una MultiMesh de 70 m se dibujaba entera desde cualquier sitio). Cada tramo lleva
+# sus piezas relativas a su centro, así su caja es solo la suya.
+const TRAMO_MM := 12.0
+
+
+func _por_tramos(nombre: String, malla: Mesh, piezas: Array) -> void:
+	var grupos := {}
+	for pz in piezas:
+		var k := floori((pz[0] as Transform3D).origin.z / TRAMO_MM)
+		if not grupos.has(k):
+			grupos[k] = []
+		grupos[k].append(pz)
+	for k in grupos:
+		var lista: Array = grupos[k]
+		var centro := Vector3.ZERO
+		for pz in lista:
+			centro += (pz[0] as Transform3D).origin
+		centro /= lista.size()
+		var mm := MultiMesh.new()
+		mm.transform_format = MultiMesh.TRANSFORM_3D
+		mm.use_colors = true
+		mm.mesh = malla
+		mm.instance_count = lista.size()
+		for i in lista.size():
+			var t: Transform3D = lista[i][0]
+			mm.set_instance_transform(i, Transform3D(t.basis, t.origin - centro))
+			mm.set_instance_color(i, lista[i][1])
+		var mmi := MultiMeshInstance3D.new()
+		mmi.multimesh = mm
+		mmi.position = centro
+		mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mmi.name = "%s_%d" % [nombre, k]
+		region.add_child(mmi)
 
 
 # Helechos al pie del muro del este (la cornisa baja, en sombra y húmeda) y en la grieta, junto a la cascada del fondo.
