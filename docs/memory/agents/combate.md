@@ -508,3 +508,92 @@ no tira del generador global ni cambia tiempos, y las artes no salen en la huell
 - **Sonido (`sonido.gd`):** la voz de Zarzalín (`clave` «zarzalin»: ataque, herido, caída) y la tierra de la pezuña
   con la señal `pezuna`.
 - **Coordinador:** decidir la escala y el botín propuesto en la ficha (Corteza espinosa), que no he añadido.
+
+## 2026-11-09, 18:40 · T-100: M3 (Escarcha de Kael), la Guardia de Garon, los sonidos de Zarzalín y su botín
+
+**Encargo** (coordinador, 09/11, tras integrar `a9d316d`): M3 con la misma calidad que el Alba y la Lumbre; la
+técnica de guardia de Garon ante un ataque anunciado; el botín «Corteza espinosa» como objeto de venta; y, en la misma
+tanda, los sonidos de Zarzalín de la tanda 4 de sonido (integrada en `a330d77`). Zarzalín se queda a ×1,25 (decisión
+del coordinador).
+- **Merges** (`--no-ff`): `bada535` (`a9d316d`; un `.uid` suelto de narrativa, idéntico al que traía, apartado al
+  scratchpad para poder unir) y `a673dfa` (`a330d77`, limpio).
+- **Sin tocar:** `sonido.gd`, `audio/**`, `enemigos/**`, `diario.gd`, `.dtl`, `zonas3d/**`, `progreso.gd`. **Tocado
+  fuera de mi lista habitual:** `tienda.gd` (vender el botín; ya lo había tocado en la fase 2 por los libros).
+- **Sin confirmar en la copia:** `dialogos/comentarios.gd.uid` y `pruebas/prueba_comentarios.gd.uid` (de narrativa, los
+  crea la importación).
+
+**1. Commits** (en `area-combate`, sin publicar)
+- `0d28909` · botín: `equipo_extra.gd` (BOTIN, MATERIALES, `botin_de`) y `tienda.gd` (fila «Vender», `_vender`).
+- `de60656` · `combate.gd`, `artes.gd`, `menu_combate.gd` y `vfx/sena_arte.gd`: M3, la Guardia y los sonidos de Zarzalín.
+- `d6be65e` · pruebas: `prueba_escarcha_guardia.gd` (nueva) y `prueba_zarzalin_combate.gd` (sonidos); ajustadas
+  `prueba_artes`, `prueba_artes_combate`, `prueba_controles_nuevos`, `prueba_equipo_combate` y `prueba_hud_combate` (la
+  pestaña, el libro y la Guardia en ESGRIMA).
+- `aad8435` y el de este informe: `.uid`; `ffaf760`: `prueba_escarcha_fotos.gd`.
+
+**2. Qué hace ya** (observado en el código y comprobado ejecutando, aislado, 09/11)
+- **M3, Escarcha de Kael** (`ACTIVOS["Escarcha"] = 2`): Coraza de Escarcha (nivel 6, 7 PM, a un aliado o a sí mismo:
+  sirve con Kael solo) y Muralla de Escarcha (nivel 12, 18 PM, a todos). Se aprende al subir («Kael aprende Coraza de
+  Escarcha»), el libro de la Muralla se vende (400) y la ficha «Barrera» sale en el Diario, sin tocar `diario.gd` ni
+  `tienda.gd` para eso (salen de `ACTIVOS`). Kael tiene ya dos pestañas de familia: Alba y Escarcha.
+  - **La coraza absorbe antes que los PV** (`_quitar_pv` devuelve lo que llega a los PV): «❄ 12» en hielo, sonido
+    `barrera_absorbe`; si se rompe, salta en esquirlas, «¡Coraza rota!» y `barrera_rota`. Un sonido por golpe, en el
+    instante en que se resuelve. Sin coraza, `_quitar_pv` hace exactamente lo de siempre.
+  - **HUD:** junto al cristal, lo que aguanta aún («55»).
+  - **Seña** (dibujada, sin partículas ni luces): un cristal hexagonal que crece del suelo alrededor del aliado, con
+    facetas y un destello que lo recorre; al absorber, el cristal aparece un instante; al romperse, seis esquirlas
+    vuelan y caen. Gesto: el conjuro de Kael (`mage_soell_cast_7`), vuelto hacia el aliado si no es él mismo.
+  - **Motivo:** sin PM, «Necesitas 7 PM: tienes 0.»; el coste en naranja.
+  - El III (Invierno Guardián, congela a quien rompe la coraza) sigue fuera (M4).
+- **La Guardia de Garon** (en ESGRIMA, 4 PM): cubre a un aliado hasta su turno siguiente. Garon queda en guardia (como
+  Defender: los golpes le hacen la mitad) y **los golpes que van al cubierto los recibe él**:
+  - la embestida anunciada de Zarzalín («va a embestir a Kael» → Garon cubre → «¡Zarzalín embiste a Garon!», a la
+    mitad, y Kael no pierde nada); también el colmillo, los ataques normales y el mordisco de Gorthor;
+  - **varios impactos:** en el golpe devastador de un jefe (a todos), el golpe de Kael también va a Garon;
+  - se acaba al empezar el turno de Garon, si cae Garon o si cae el cubierto (deja de ser objetivo válido);
+  - sin nadie a quien cubrir: «No hay a quién cubrir.»; ESGRIMA dice ahora «Necesitas 4 PM» (lo más barato);
+  - gesto: Garon se vuelve hacia el aliado y avanza un paso en guardia; sonido `defensa`, una vez; seña: un escudo
+    sobre el aliado unido a Garon por una línea; HUD: un escudo junto al nombre del cubierto; «¡Cubre a Kael!» sobre
+    Garon cuando para un golpe.
+- **Sonidos de Zarzalín** (tanda 4, «Cómo pedirlos»): `zarzalin_aviso_embestida` (señal `aviso`), `zarzalin_pezuna`
+  (cada `pezuna`), `zarzalin_embestida` / `zarzalin_colmillo` (señal `impacto`, junto al `Sonido.golpe` de siempre),
+  `zarzalin_aviso_colmillo` (al llamar a `atacar("colmillo_lateral")`), `zarzalin_entrada` (al empezar) y
+  `zarzalin_derrumbe` (al caer, una vez). Su voz de herido y caída la da `Sonido.recibe` por su clave «zarzalin». Ya no
+  pide la voz de «ataque» (las bestias no la tienen).
+- **Botín:** al ganar, cada Zarzalín vencido (no huido) deja una «Corteza espinosa» (sale en el cartel de recompensas);
+  la tienda la compra por 18 monedas (pestaña Objetos, fila «Vender»). Sin recetas.
+
+**3. La huella:** igual a la referencia (`prueba_combate_huella` SUPERADA en la batería). `_quitar_pv` y `_cubre` no
+cambian nada sin coraza ni guardia, y no tiran del generador global. No hace falta otra referencia.
+
+**4. Pruebas** (datos aislados; la partida real y la carpeta real de datos, sin cambios)
+- **Nueva `prueba_escarcha_guardia`**: aprendizaje (6 y 12; el III no), libro, ficha; pestaña; motivo sin PM; la Coraza
+  sobre Kael solo (30 %, 7 PM, `arte_escarcha` una vez en el fotograma de aplicarse, su seña sin nodos, la cifra del
+  HUD); absorber entero (0 a los PV, `barrera_absorbe` una vez) y romper (solo el resto, `barrera_rota` una vez, las
+  esquirlas, sin icono); la Muralla a los tres (un sonido, tres señas); un golpe de verdad de Grimfang; la Guardia ante
+  la embestida anunciada de Zarzalín (Kael no pierde nada; Garon, la mitad o menos); su fin en el turno de Garon; con
+  Garon caído y con Kael caído; sin nadie; y varios impactos (golpe devastador del Guardián de piedra, jefe).
+- **`prueba_zarzalin_combate`**, ampliada: cada sonido de Zarzalín se pide una vez por su señal y en su mismo fotograma;
+  la entrada y el derrumbe, una vez; el aviso del colmillo, antes de su impacto.
+- **Batería completa** (`D:\REBELUM_diagnostico\pruebas\2026-11-09_182011\resumen.md`): **60 SUPERADAS, 0 FALLIDAS, 32
+  MANUALES y 0 NO SEGURAS**. «Proyecto: CAMBIADO» es mío: añadí `prueba_escarcha_fotos` y su línea de la lista durante la
+  pasada.
+- **Capturas antes y después** (`D:\REBELUM_diagnostico\combate\2026-11-09\escarcha\`): `antes\` (proyecto de `bada535`
+  exportado con `git archive` en `antes_proyecto_bada535\`, con datos aislados por variables de entorno, como el
+  ejecutor), `despues\` (`…\pruebas\2026-11-09_182913`), `comparar\` y `hoja_antes_despues.png`: la pestaña, la Coraza
+  (antes, el aro genérico; después, el cristal), el golpe absorbido (antes le quitaba 20 PV; después, «❄ 20» y nada),
+  la coraza rota (esquirlas y el resto), la Guardia sobre Kael y la embestida (antes, a Kael; después, a Garon).
+
+**5. Límites**
+- **Pendiente en Redmi:** la lectura de las señas nuevas (son líneas y polígonos, sin partículas) y el coste de todo.
+- **Sonidos:** se piden a tiempo (comprobado con la señal) y ya existen en el catálogo; **no se han oído**. La Guardia
+  usa `defensa`: un sonido propio («guardia») lo haría sonido.
+- **Gorthor y la coraza:** su mordisco se cura con el 60 % del mordisco aunque la coraza absorba parte (como hoy con la
+  defensa). Un golpe que la coraza absorbe entero aún tiñe al héroe de rojo un instante.
+- **Equilibrio:** la Guardia (4 PM) y la Coraza (30 % de los PV) son las cifras del diseño; con guion no se prueba la
+  estrategia de un jugador.
+- La captura «antes» se hizo fuera del ejecutor (en el proyecto exportado), con la misma redirección de datos.
+
+**6. Peticiones**
+- **Sonido:** un efecto propio para la Guardia (`guardia`: escudo que se planta) y, si se quiere, uno al cubrir.
+- **Animaciones (opcional):** un gesto de Garon «cubrir» (escudo al frente, un paso hacia el aliado).
+- **Siguiente, si se aprueba:** M4 (los III: Hora Dorada, Invierno Guardián, Última Brasa y los tomos) y C2.
