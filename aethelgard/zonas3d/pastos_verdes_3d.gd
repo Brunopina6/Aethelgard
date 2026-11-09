@@ -131,11 +131,17 @@ func _preparar_sonidos() -> void:
 
 # Sonido 3D de la región (sonido.gd, T-083): se escucha desde Kael, mirando como la cámara; sus pasos según el suelo
 # (las losas del camino y el puente son de piedra; lo demás, hierba); el río a lo largo del barranco y la cascada.
+# Lya y Garon llevan los suyos con el mismo suelo (grupo_3d.gd, pasos_superficie; T-084, tanda 2).
 func _sonido_3d() -> void:
 	Sonido.oyente_3d(kael, cam)
-	Sonido.pasos_3d(kael, func(p: Vector3) -> String: return "piedra" if _dist_sendero(p) < 1.15 else "hierba")
+	Sonido.pasos_3d(kael, suelo_de_pasos)
 	Sonido.fuente_linea(self, "rio", Vector3(RIO_X, AGUA_RIO + 0.4, CASCADA_Z + 1.5), Vector3(RIO_X, AGUA_RIO + 0.4, 30.0))
 	Sonido.fuente_3d(self, "cascada", Vector3(RIO_X, (AGUA_CANAL + AGUA_RIO) * 0.5, CASCADA_Z + 0.6))
+
+
+# El suelo que pisa quien está en «p»: piedra en las losas del camino y en el puente; hierba fuera.
+func suelo_de_pasos(p: Vector3) -> String:
+	return "piedra" if _dist_sendero(p) < 1.15 else "hierba"
 
 
 # Banco de medida en marcha (botones PRUEBA y TOPE de vista3d.gd): la escena se recarga en cada caso y Kael recorre
@@ -191,6 +197,8 @@ func _process(delta: float) -> void:
 	if cinematica:                       # la cinemática mueve la cámara; Kael, quieto y sin pasos
 		_paso_cinematica(delta)
 		return
+	if _escena_pendiente != "":          # alguien llega para hablar: Kael quieto, sin control (como en un diálogo)
+		_esperar_escena(delta)
 	if ocupado():                        # diálogo abierto: Kael quieto y sin pasos
 		_parar_kael()
 		boton_accion.visible = false
@@ -235,6 +243,8 @@ func _unhandled_input(ev: InputEvent) -> void:
 
 
 func ocupado() -> bool:
+	if _escena_pendiente != "":
+		return true
 	var dg = get_node_or_null("/root/Dialogic")
 	return dg != null and dg.current_timeline != null
 
@@ -243,7 +253,10 @@ func _parar_kael() -> void:
 	destino = null
 	if movimiento != "":
 		movimiento = ""
-		kael.reposo()
+		if kael.has_method("parar_marcha"):
+			kael.parar_marcha()
+		else:
+			kael.reposo()
 
 
 # ================================================================= encuentros
@@ -309,8 +322,43 @@ func _comprobar_mision() -> void:
 
 
 # Pone el hito y abre su diálogo. Sin Dialogic, el hito se pone igual (la misión no se atasca).
+# Quien habla en la escena ya está en ella cuando habla (T-084, tanda 2):
+#   - PV-03: Lya llega corriendo por el camino, por detrás de Kael, y el diálogo empieza cuando ya está a su lado
+#     (LLEGADA_LYA segundos; mientras, Kael se para y no hay control).
+#   - PV-05: Garon ya esperaba junto a Tilo (_crear_grupo); al acabar el diálogo se une a la fila desde ahí.
+# Quien se une entra en el grupo de la partida al empezar su escena, a la vez que se pone el hito: si la app se cierra
+# a media escena, la partida guarda las dos cosas juntas.
+const LLEGADA_LYA := 1.2                 # segundos desde que aparece Lya hasta que habla
+const ATRAS_LYA := 4.5                   # metros por detrás de Kael, en el camino, donde aparece
+var _escena_pendiente := ""              # escena que empieza en cuanto llega quien habla en ella
+var _espera_escena := 0.0
+
+
 func _escena_mision(id: String) -> void:
 	load("res://progreso.gd").poner_hito(id)
+	match id:
+		"pv_03":
+			var p := kael.global_position + _atras_en_camino(kael.global_position) * ATRAS_LYA
+			_unir("Lya", Vector3(p.x, altura(p.x, p.z), p.z), true)
+			if grupo != null and get_node_or_null("/root/Dialogic") != null:
+				_parar_kael()
+				boton_accion.visible = false
+				_escena_pendiente = id
+				_espera_escena = LLEGADA_LYA
+				return
+		"pv_05":
+			load("res://grupo.gd").unir("Garon")
+	if not _empezar_dialogo(id):
+		_tras_dialogo(id)
+
+
+# La escena pendiente empieza cuando ha pasado su espera (quien habla ya ha llegado).
+func _esperar_escena(delta: float) -> void:
+	_espera_escena -= delta
+	if _espera_escena > 0.0:
+		return
+	var id := _escena_pendiente
+	_escena_pendiente = ""
 	if not _empezar_dialogo(id):
 		_tras_dialogo(id)
 
@@ -339,10 +387,9 @@ func _tras_dialogo(id: String) -> void:
 		"pv_06":
 			_encuentro(COMBATE_CENTINELA, GRUPO_CENTINELA)
 			return
-		"pv_03":                         # Lya llega corriendo por el camino, por detrás
-			_unir("Lya", kael.global_position + _atras_en_camino(kael.global_position) * 4.0)
-			Sonido.efecto("union")       # alguien se une al grupo (sonido.gd)
-		"pv_05":                         # Garon esperaba junto a Tilo
+		"pv_03":                         # Lya ya llegó antes de hablar (_escena_mision); al acabar, se une al grupo
+			Sonido.efecto("union")       # alguien se une al grupo (sonido.gd), como Garon
+		"pv_05":                         # Garon esperaba junto a Tilo: se pone en la fila desde ahí
 			_unir("Garon", tilo.global_position)
 			Sonido.efecto("union")
 		"pv_14":
@@ -654,16 +701,40 @@ func _crear_grupo() -> void:
 	grupo = load("res://zonas3d/grupo_3d.gd").new()
 	grupo.name = "Grupo"
 	add_child(grupo)
+	grupo.pasos_superficie = suelo_de_pasos
 	grupo.preparar(self, kael, nombres)
 	grupo.colocar(_atras_en_camino(kael.global_position))
+	# Garon espera junto a Tilo hasta PV-05 («Llegáis tarde»): está en la escena desde que se entra, en su reposo, mira
+	# a quien habla y no sigue a nadie; al acabar PV-05 se une desde ahí (T-084, tanda 2; antes aparecía al acabar).
+	if not en_banco() and tilo != null and not "Garon" in activos and not load("res://progreso.gd").hito("pv_05"):
+		var sitio := _sitio_garon()
+		grupo.esperar("Garon", sitio, _atras_en_camino(sitio))
 
 
-# La misión une a alguien: entra en el grupo de la partida (grupo.gd) y aparece siguiendo a Kael.
-func _unir(n: String, desde: Vector3) -> void:
+# Junto a Tilo, del lado por el que se llega por el camino (así Garon recibe a Kael y no tapa a Tilo), fuera de las
+# losas, en suelo andable y con sitio alrededor. A 2 m o más de donde se pone quien va a hablar con Tilo.
+func _sitio_garon() -> Vector3:
+	var t := tilo.global_position
+	var atras := _atras_en_camino(t)
+	for r in [1.3, 1.6, 1.1]:
+		for giro in [0.0, 25.0, -25.0, 50.0, -50.0, 75.0, -75.0]:
+			var q: Vector3 = t + atras.rotated(Vector3.UP, deg_to_rad(giro)) * r
+			if _prohibido(q) or _dist_sendero(q) < 1.0:
+				continue
+			q.y = altura(q.x, q.z)
+			if _hueco_libre(q, 0.5):
+				return q
+	var p := t + atras * 1.3
+	return Vector3(p.x, altura(p.x, p.z), p.z)
+
+
+# La misión une a alguien: entra en el grupo de la partida (grupo.gd) y aparece siguiendo a Kael (o, si esperaba en la
+# región, se pone en la fila desde donde está). Con «exacto», aparece justo en «desde» si se puede.
+func _unir(n: String, desde: Vector3, exacto := false) -> void:
 	var G = load("res://grupo.gd")
 	G.unir(n)
 	if grupo != null and n in G.activos():
-		grupo.unir(n, desde)
+		grupo.unir(n, desde, exacto)
 
 
 # Hacia dónde queda «atrás» en el camino desde «p»: hacia el principio del tramo de SENDERO más cercano.
