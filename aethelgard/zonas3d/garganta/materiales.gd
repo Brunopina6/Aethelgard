@@ -615,6 +615,7 @@ uniform float vaiven = 0.05;                    // metros, de lado a lado, en el
 uniform float rebote = 0.022;                   // metros, arriba y abajo, en el centro
 uniform float fase = 0.0;
 uniform float rugosidad = 0.85;
+uniform float tiempo = 0.0;                     // lo pone la región cada fotograma (piezas.gd, mecer): Kael se mece igual
 varying vec3 pm;
 varying vec3 nm;
 void vertex() {
@@ -624,8 +625,8 @@ void vertex() {
 	float t = clamp((z_sur - w.z) / (z_sur - z_norte), 0.0, 1.0);
 	float k = 4.0 * t * (1.0 - t);
 	float colgado = 0.45 + 0.55 * clamp((y_ancla - w.y) / 1.3, 0.0, 1.0);
-	float lado = sin(TIME * 1.9 + fase) * 0.8 + sin(TIME * 3.3 + fase * 1.7) * 0.2;
-	float arriba = sin(TIME * 2.6 + fase * 1.3 + t * 2.5);
+	float lado = sin(tiempo * 1.9 + fase) * 0.8 + sin(tiempo * 3.3 + fase * 1.7) * 0.2;
+	float arriba = sin(tiempo * 2.6 + fase * 1.3 + t * 2.5);
 	VERTEX.x += lado * vaiven * k * colgado;
 	VERTEX.y += arriba * rebote * k;
 }
@@ -712,3 +713,45 @@ func bruma() -> StandardMaterial3D:
 	m.albedo_color = Color(0.86, 0.93, 1.0)
 	_cache[clave] = m
 	return m
+
+
+# Sillares y tablas con su tono (T-102, el resto del recorrido): el grano de siempre y el color de cada pieza en los
+# vértices (Lotes.poner_color). Son StandardMaterial3D: lo que tapa a Kael se puede volver medio transparente.
+func sillar() -> StandardMaterial3D:
+	var clave := "sillar"
+	if _cache.has(clave):
+		return _cache[clave]
+	var m := detalle(Color.WHITE, 0.9, 0.8).duplicate() as StandardMaterial3D
+	m.vertex_color_use_as_albedo = true
+	_cache[clave] = m
+	return m
+
+
+func madera_color() -> StandardMaterial3D:
+	var clave := "madera_color"
+	if _cache.has(clave):
+		return _cache[clave]
+	var m := madera().duplicate() as StandardMaterial3D
+	m.albedo_color = Color(1.0, 1.0, 1.0)
+	m.vertex_color_use_as_albedo = true
+	_cache[clave] = m
+	return m
+
+
+# Tono de un sillar o de una tabla: el de base, con algo de variación (y a veces ocre o verdoso).
+static func tono_piedra(base: Color, rng: RandomNumberGenerator) -> Color:
+	var c := base * rng.randf_range(0.86, 1.08)
+	var r := rng.randf()
+	if r < 0.2:
+		c = c.lerp(Color(0.60, 0.50, 0.38), rng.randf_range(0.2, 0.45))
+	elif r < 0.32:
+		c = c.lerp(MUSGO * 1.2, rng.randf_range(0.15, 0.35))
+	c.a = 1.0
+	return c
+
+
+static func tono_madera(rng: RandomNumberGenerator) -> Color:
+	var tonos := [Color(0.48, 0.41, 0.34), Color(0.53, 0.40, 0.29), Color(0.38, 0.30, 0.24), Color(0.45, 0.40, 0.36)]
+	var c: Color = tonos[rng.randi() % tonos.size()] * rng.randf_range(0.9, 1.06)
+	c.a = 1.0
+	return c

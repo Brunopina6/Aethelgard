@@ -31,11 +31,13 @@ var frames := 0
 var fase := 0
 var f_fase := 0
 var i_sitio := 0
+var _gpu: Array = []                    # tiempo de GPU (ms) de los fotogramas antes de cada foto
 
 
 func _initialize() -> void:
 	salida = OS.get_cmdline_user_args()[0]
 	DisplayServer.window_set_size(Vector2i(1280, 720))
+	RenderingServer.viewport_set_measure_render_time(root.get_viewport_rid(), true)
 	_cargar()
 
 
@@ -63,6 +65,13 @@ func _fase(n: int) -> void:
 func _foto(nombre: String) -> void:
 	var ruta := "%s/%s_%s.png" % [salida, PERFILES[ip], nombre]
 	root.get_viewport().get_texture().get_image().save_png(ruta)
+	var gpu: Array = _gpu.duplicate()
+	gpu.sort()
+	print("DIBUJO %s %s: llamadas %d · primitivas %d · GPU %.2f ms (mediana)" % [PERFILES[ip], nombre,
+		RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME),
+		RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME),
+		gpu[gpu.size() / 2] if gpu.size() > 0 else -1.0])
+	_gpu.clear()
 	print("%s %s: Kael %s · cámara %.0f° %.1f m · %d FPS" % [PERFILES[ip], nombre, v.kael.global_position.snapped(Vector3.ONE * 0.1),
 		v.inclinacion, v.distancia, Engine.get_frames_per_second()])
 
@@ -82,6 +91,11 @@ func _process(_d: float) -> bool:
 	frames += 1
 	if v != null:
 		v.pasos = 0
+	var g := RenderingServer.viewport_get_measured_render_time_gpu(root.get_viewport_rid())
+	if g > 0.0 and g < 1000.0:
+		_gpu.append(g)
+		if _gpu.size() > 20:
+			_gpu.pop_front()
 	match fase:
 		1:
 			if current_scene != null and current_scene.scene_file_path == REGION and frames - f_fase >= 20:
