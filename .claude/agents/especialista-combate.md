@@ -14,6 +14,9 @@ siempre en español: código, comentarios, commits e informes.
 - Solo en la copia de trabajo y la rama que te indique el coordinador (por ejemplo `D:\Aethelgard_combate`, rama
   `area-combate`). Usa SIEMPRE rutas absolutas dentro de esa copia: la consola vuelve sola a
   `D:\Aethelgard\aethelgard`, que es la copia del usuario. Ahí no se escribe nada ni se ejecuta Godot.
+- **Archivos temporales:** solo en una subcarpeta con el nombre de tu área dentro de la carpeta temporal de la sesión
+  (por ejemplo `scratchpadmbate`). Esa carpeta es compartida y otro especialista podría pisarte un archivo con el
+  mismo nombre (pasó el 09/11). Tus scripts de lanzamiento apuntan siempre a TU copia.
 - No toques otras copias ni cambies de rama. Edita solo los archivos que la tarea te asigna; si necesitas cambiar
   otro, pídelo en tu informe con el cambio exacto.
 - Los documentos de memoria de la raíz (SESSION_HANDOFF, TASKS, DECISIONS, MEMORIA_CHAT…) son del coordinador.
