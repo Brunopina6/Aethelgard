@@ -696,3 +696,66 @@ voces usan el generador propio de `sonido.gd`).
 - **Gráficos:** `tinte` y `color_brillo` en `material_arma.gd` (las armas especiales).
 - **Grupo (`grupo.gd`, si se quiere ver en el menú):** el ataque de la Hoja sin Nombre.
 - **Sonido / animaciones:** ya pedidos por el coordinador (la Guardia y el gesto de cubrir).
+
+## 2026-11-09, 23:45 · Armas especiales a la vista, la Hoja sin Nombre en el menú, los enemigos de siempre con su ataque anunciado y el arreglo de saltar a Érebo
+
+Rama `area-combate`, sobre la integración `45a49e6` (merge `448a977`). Sin Redmi (lo lleva el coordinador), sin push.
+
+**1. Qué se ha hecho (observado en el código y comprobado ejecutando, aislado, 09/11)**
+- **Saltar la invocación de Érebo ya no cuelga el combate** (`738a510`). Se reproducía: con la importación limpia y sin
+  el arreglo, `prueba_erebo_saltar` (nueva, `f8ed668`) se quedaba en estado «accion» al saltar durante «invocacion» y
+  «pulso». La causa: `_teatro_erebo` esperaba un tween que `limpiar()` mata al saltar, y esa espera no volvía nunca.
+  Ahora espera la señal `terminada` de la invocación (`lanzar()` y `saltar()` la emiten una vez), y `_resultado_erebo`
+  no toca un doble que ya no existe. Probado en cuatro momentos: «invocacion», «penetra», «sostiene» y «pulso».
+- **Armas especiales a la vista** (`8cd22e1`): `material_arma.gd` tiene `tinte`, `color_brillo`, `aura` (un filo de luz en
+  el borde) y `fuerza_tinte`. Solo color en el shader, sin luces ni partículas (barato en Mali). `de_arma` los aplica
+  desde la ficha; las espadas de Garon, que se cargan con su modelo, se tiñen con `tenir()` en `_crear_rig_3d`
+  (`inventario.arma_de` ya da también las armas de `equipo_extra`). Sin arma especial, el material es el de siempre.
+  Capturas: `D:\REBELUM_diagnostico\combate\2026-11-09\armas\` (seis armas y `hoja_armas.png`).
+- **La Hoja sin Nombre en el menú Grupo** (`8cd22e1`): `grupo.estadisticas()` suma su +1 de ataque por recuerdo, así que
+  el menú y el combate dan lo mismo; `combate.gd` ya no la suma aparte (no cuenta dos veces).
+- **Los enemigos de siempre con su ataque anunciado** (`42c172e`, T-097), como Zarzalín: avisan un turno antes, golpean
+  el siguiente y recuperan el aliento el otro.
+  - Grimfang (también con el dibujo del Hollín y en los grupos del centinela, que usan a Grimfang): «alza el hacha: ¡va a
+    por Kael!» y el Hachazo a ese héroe, ×1,6.
+  - Slime: «se encoge» (recibe la mitad hasta su turno, y se aplasta) y rebota contra uno, ×1,3.
+  - Gólem de ámbar: «levanta los puños» y el Pisotón a todo el grupo, ×1,0, un impacto por héroe.
+  - Guardián y Gorthor (jefes) ya avisaban su golpe devastador: ahora llevan además la señal dibujada; Zarzalín, también.
+  - El aviso se lee de cuatro maneras: el cartel, el texto flotante, «⚠ Cargando» sobre su vida y una señal dibujada
+    (un triángulo con «!», vectorial, sin nodos hijos ni partículas: igual en el perfil bajo). Se quita al golpear, al
+    morir y al huir. Pide su voz de ataque una vez; el golpe usa las animaciones y los sonidos que ya tenían.
+  - Defender lo reduce a la mitad y la Guardia de Garon lo cubre. Probabilidad del aviso: 30 % por turno.
+  - No cambian las 12 magias, costes, fórmulas de los golpes de siempre ni el ATB: es un ataque nuevo del enemigo.
+- **La señal, encima de «⚠ Cargando»** (`f3022a1`): en la primera captura con `-- movil`, el triángulo tapaba la
+  etiqueta y los PV. Antes y después en `D:\REBELUM_diagnostico\combate\2026-11-09\avisos\` (`*_antes.png` y
+  `*_aviso.png`; `despues\`, la buena), con Grimfang, el Slime y el Gólem con Grimfang.
+- **Huella regenerada en su commit** (`07fe3ce`): los patrones tiran `randf` y añaden turnos, así que E1, E2, E3, E5, E6,
+  E7 y E9 cambian desde el primer turno de enemigo; E4 y E8 (jefes) salen iguales línea a línea; los resultados no
+  cambian. Dos pasadas iguales: `D:\REBELUM_diagnostico\pruebas\2026-11-09_232628` (SHA-256 `725aef4a...`).
+
+**2. Pruebas** (datos aislados; importación aislada tras el merge, que hace falta: sin ella, la caché vieja del goblin
+daba fallos falsos en la huella)
+- Nuevas: `prueba_erebo_saltar`, `prueba_patrones_enemigos` (aviso sin daño, con señal, «Cargando» y voz; golpe al
+  avisado o a todos, un impacto por héroe; recuperación sin daño; defendido, la mitad o menos; Slime encogido en
+  guardia; el Guardián pone y quita la señal) y `prueba_armas_especiales` (tinte, brillo y aura en el material del arma
+  de cada héroe en combate; las de siempre, sin aura; la Hoja sin Nombre en `grupo.gd`).
+- **Batería completa final** sobre `f3022a1` (`D:\REBELUM_diagnostico\pruebas\2026-11-09_233213\resumen.md`):
+  **73 SUPERADAS, 1 FALLIDA, 36 MANUALES y 0 NO SEGURAS**; la partida real, la carpeta real de datos y el proyecto, sin
+  cambios (185 Godot de otras copias, vigilados). La FALLIDA es `prueba_zona3d` («sigue el botón de banco DIAG»): viene
+  de `45a49e6` (botones DIAG y MEDIO de Pastos Verdes 3D), no de combate; el coordinador ya la arregló en `5c6ac76`,
+  que esta rama aún no tiene. SUPERADAS, entre otras: la huella (referencia nueva), `prueba_patrones_enemigos`,
+  `prueba_armas_especiales`, `prueba_erebo_saltar`, `prueba_grupos_combate`, `prueba_incorporacion`, `prueba_huir`,
+  `prueba_garon`, `prueba_equilibrio`, `prueba_ia`, `prueba_menu_magia`, `prueba_menu_nuevo`, `prueba_centinela`,
+  `prueba_m4_c2`, `prueba_voces_combate`, `prueba_escarcha_guardia` y `prueba_zarzalin_combate`.
+
+**3. Límites**
+- **Pendiente en Redmi:** la lectura de la señal de aviso y de las armas teñidas en el teléfono, y su coste.
+- Los sonidos y las voces se piden a tiempo y una vez; **no se han oído**.
+- Los combates de las pruebas se juegan con guion: no prueban la estrategia de un jugador. No he medido cuánto más
+  difícil es Pastos Verdes con los patrones (la batería de equilibrio sigue pasando).
+- El Hollín no tiene ficha propia: es el dibujo 2D de Grimfang, y hereda su patrón.
+
+**4. Peticiones**
+- **Animaciones (si se quiere):** un gesto de «carga» propio para Grimfang y el Gólem; hoy el aviso usa el texto, la
+  señal y la voz, y el golpe, su animación de ataque de siempre.
+- **Sonido (si se quiere):** un sonido corto para el aviso (hoy, la voz de ataque del enemigo).

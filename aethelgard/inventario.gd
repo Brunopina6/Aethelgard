@@ -171,7 +171,11 @@ static func opciones(heroe: String, ranura: String) -> Array:
 
 # Datos del arma que lleva un héroe (o {} si no lleva ninguna).
 static func arma_de(heroe: String) -> Dictionary:
-	return ARMAS.get(equipo_de(heroe).get("arma", ""), {})
+	var id: String = equipo_de(heroe).get("arma", "")
+	if ARMAS.has(id):
+		return ARMAS[id]
+	var especial: Dictionary = load("res://equipo_extra.gd").objeto(id)   # armas especiales (C2): su malla y su tinte
+	return especial if especial.get("ranura", "") == "arma" else {}
 
 
 # Texto corto con lo que da un objeto: "+6 Ataque  +2 Defensa".

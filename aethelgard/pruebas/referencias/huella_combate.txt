@@ -1,12 +1,15 @@
 # Huella del combate (C0 de T-091 a T-093): la referencia de pruebas/prueba_combate_huella.gd.
-# Sacada el 2026-11-09 sobre area-combate @ f13d556 (M4 y C2 enganchados), Godot 4.7.2, --headless --fixed-fps 30,
-# semilla 20261109. Comprobado ejecutando, aislado: dos pasadas en un proceso dan exactamente esto (SHA-256 del texto
-# sin esta cabecera: 65bb98176a64175fafee348dffa83137b8c6814533e4980553ec0e99cb5fa84c;
-# D:\REBELUM_diagnostico\pruebas\2026-11-09_184233).
+# Sacada el 2026-11-09 sobre area-combate @ b7a5bc4 (patrones de los enemigos de siempre, T-097), Godot 4.7.2,
+# --headless --fixed-fps 30, semilla 20261109. Comprobado ejecutando, aislado: dos pasadas en un proceso dan exactamente
+# esto (SHA-256 del texto sin esta cabecera: 725aef4aad0d90bdd6289d5ce865754de59491574b8467ef88a29ab8f73b54cc;
+# D:\REBELUM_diagnostico\pruebas\2026-11-09_232628).
 # Historia: la primera (2386761, SHA a33fdae7...) tenía E1 a E8. Con C0 se añade E9 (Infierno y Cólera del Cielo;
-# 555fc29, SHA 3372b413...). Con C2 (09/11, 4fc38f6), la primera victoria contra Gorthor da las Fauces de Gorthor: en
-# E8 (combate fijo «garganta_gorthor») sale UNA línea más, el cartel «Has conseguido Fauces de Gorthor.» en el
-# fotograma 2229, tras el reparto. Nada más cambia: E1 a E9, línea a línea, iguales a la anterior.
+# 555fc29, SHA 3372b413...). Con C2 (09/11, 4fc38f6), la primera victoria contra Gorthor da las Fauces de Gorthor (una
+# línea más en E8; f13d556, SHA 65bb9817...). Con los patrones (09/11, 42c172e), Grimfang (Hachazo), el Slime (se
+# encoge y rebota) y el Gólem de ámbar (Pisotón) avisan su golpe, lo descargan el turno siguiente y recuperan el
+# aliento el otro: son decisiones nuevas del enemigo (tiran randf y añaden turnos), así que E1, E2, E3, E5, E6, E7 y E9
+# cambian desde su primer turno de enemigo; E4 y E8 (Guardián y Gorthor, jefes) salen iguales línea a línea. Los
+# resultados no cambian (E1-E5, E8 y E9 victoria; E6 huida; E7 derrota). Las 12 magias, costes, fórmulas y ATB, igual.
 # No cuentan las líneas que empiezan por «#» ni las vacías.
 # Formato: «== combate · grupo · nivel · zona · tipo · semilla» y una línea por suceso con su fotograma: ▶ turno de un
 # héroe y lo que hace (guion de la prueba), ▷ turno de un enemigo, · cartel, Δ cambios de PV y PM, ■ fin y ◆ decisión.
@@ -29,59 +32,57 @@
 00236 · Grimfang sufre quemaduras
 00236   Δ Grimfang PV 82→77
 00261 · Grimfang ataca a Kael
-00301   Δ Kael PV 120→111
+00301   Δ Kael PV 120→110
 00360 · (cartel vacío)
-00360 ▶ turno de Kael (PV 111/120 PM 8/16)
+00360 ▶ turno de Kael (PV 110/120 PM 8/16)
 00360   Kael: defiende
 00361 · Kael se pone en guardia
 00504 · (cartel vacío)
-00504 ▶ turno de Kael (PV 111/120 PM 8/16)
+00504 ▶ turno de Kael (PV 110/120 PM 8/16)
 00504   Kael: Rayo → Grimfang
 00505 · Kael lanza Rayo
 00505   Δ Kael PM 8→1
-00558   Δ Grimfang PV 77→58
+00558   Δ Grimfang PV 77→55
 00605 ▷ turno de Grimfang
 00605 · Grimfang sufre quemaduras
-00605   Δ Grimfang PV 58→53
-00630 · Grimfang ataca a Kael
-00670   Δ Kael PV 111→98
-00729 · (cartel vacío)
-00729 ▶ turno de Kael (PV 98/120 PM 1/16)
-00729   Kael: Éter → Kael
-00730 · Kael usa Éter (+15 PM)
-00730   Δ Kael PM 1→16
-00888 · (cartel vacío)
-00888 ▶ turno de Kael (PV 98/120 PM 16/16)
-00888   Kael: Poción → Kael
-00889 · Kael usa Poción (+22 PV)
-00889   Δ Kael PV 98→120
-00949 ▷ turno de Grimfang
-00949 · Grimfang ataca a Kael
-00989   Δ Kael PV 120→107
-01048 · (cartel vacío)
-01048 ▶ turno de Kael (PV 107/120 PM 16/16)
-01048   Kael: ataca a Grimfang
-01049 · Kael ataca a Grimfang
-01086   Δ Grimfang PV 53→37
-01251 · (cartel vacío)
-01251 ▶ turno de Kael (PV 107/120 PM 16/16)
-01251   Kael: ataca a Grimfang
-01252 · Kael ataca a Grimfang
-01289   Δ Grimfang PV 37→16
-01334 ▷ turno de Grimfang
-01334 · Grimfang ataca a Kael
-01397   Δ Kael PV 107→89
-01454 · (cartel vacío)
-01454 ▶ turno de Kael (PV 89/120 PM 16/16)
-01454   Kael: ataca a Grimfang
-01455 · Kael ataca a Grimfang
-01492   Δ Grimfang PV 16→0
-01536 ■ fin del combate
-01536 · ¡Victoria!
-01567 · +35 EXP   +18 monedas
-01598 · ¡Kael sube al nivel 2!
-01598   Δ Kael PV 89→126 PM 16→18
-fin · victoria · fotograma 1536 (51.2 s de juego)
+00605   Δ Grimfang PV 55→50
+00630 · Grimfang alza el hacha: ¡va a por Kael!
+00725 · (cartel vacío)
+00725 ▶ turno de Kael (PV 110/120 PM 1/16)
+00725   Kael: Éter → Kael
+00726 · Kael usa Éter (+15 PM)
+00726   Δ Kael PM 1→16
+00884 · (cartel vacío)
+00884 ▶ turno de Kael (PV 110/120 PM 16/16)
+00884   Kael: Poción → Kael
+00885 · Kael usa Poción (+10 PV)
+00885   Δ Kael PV 110→120
+00923 ▷ turno de Grimfang
+00923 · ¡Grimfang descarga el hachazo sobre Kael!
+00986   Δ Kael PV 120→99
+01043 · (cartel vacío)
+01043 ▶ turno de Kael (PV 99/120 PM 16/16)
+01043   Kael: ataca a Grimfang
+01044 · Kael ataca a Grimfang
+01081   Δ Grimfang PV 50→30
+01241 ▷ turno de Grimfang
+01241 · Grimfang recupera el aliento
+01276 · (cartel vacío)
+01276 ▶ turno de Kael (PV 99/120 PM 16/16)
+01276   Kael: ataca a Grimfang
+01277 · Kael ataca a Grimfang
+01314   Δ Grimfang PV 30→9
+01479 · (cartel vacío)
+01479 ▶ turno de Kael (PV 99/120 PM 16/16)
+01479   Kael: ataca a Grimfang
+01480 · Kael ataca a Grimfang
+01517   Δ Grimfang PV 9→0
+01561 ■ fin del combate
+01561 · ¡Victoria!
+01592 · +35 EXP   +18 monedas
+01623 · ¡Kael sube al nivel 2!
+01623   Δ Kael PV 99→126 PM 16→18
+fin · victoria · fotograma 1561 (52.0 s de juego)
 final · Kael PV 126/126 PM 18/18 ATQ 18 VEL 23 DEF 9 · Grimfang PV 0/94 ATQ 15 VEL 13
 grupo · Kael nivel 2 exp 15 pv 126 pm 18 puntos 3 · Lya (ausente) nivel 1 exp 0 pv -1 pm -1 puntos 0 · Garon (ausente) nivel 1 exp 0 pv -1 pm -1 puntos 0
 bolsa · oro 150→168 · Poción 5→4 · Éter 3→2
@@ -106,93 +107,75 @@ partida · combates_ganados {  } · decisiones {  } · Armonía 1.00 · velocida
 00318   Δ Lya PV 80→71
 00353 ▷ turno de Slime A
 00353 · Slime A ataca a Lya
-00377   Δ Lya PV 71→63
+00377   Δ Lya PV 71→61
 00412 ▷ turno de Grimfang
 00412 · Grimfang ataca a Lya
-00452   Δ Lya PV 63→48
+00452   Δ Lya PV 61→49
 00511 · (cartel vacío)
-00511 ▶ turno de Lya (PV 48/80 PM 40/46)
+00511 ▶ turno de Lya (PV 49/80 PM 40/46)
 00511   Lya: Cura → Lya
 00512 · Lya lanza Cura
 00512   Δ Lya PM 40→34
-00527   Δ Lya PV 48→80
+00527   Δ Lya PV 49→80
 00584 · (cartel vacío)
 00584 ▶ turno de Kael (PV 120/120 PM 16/16)
 00584   Kael: defiende
 00585 · Kael se pone en guardia
 00608 ▷ turno de Slime B
 00608 · Slime B ataca a Lya
-00632   Δ Lya PV 80→74
+00632   Δ Lya PV 80→72
 00667 ▷ turno de Slime A
 00667 · Slime A ataca a Lya
-00691   Δ Lya PV 74→64
+00691   Δ Lya PV 72→59
 00726 · (cartel vacío)
-00726 ▶ turno de Lya (PV 64/80 PM 34/46)
+00726 ▶ turno de Lya (PV 59/80 PM 34/46)
 00726   Lya: Fuego → Grimfang
 00727 · Lya lanza Fuego
 00727   Δ Lya PM 34→26
-00774   Δ Grimfang PV 82→8
+00774   Δ Grimfang PV 82→5
 00821 · (cartel vacío)
 00821 ▶ turno de Kael (PV 120/120 PM 16/16)
 00821   Kael: ataca a Slime A
 00822 · Kael ataca a Slime A
 00859   Δ Slime A PV 1→0
-00904 ▷ turno de Grimfang
+00904 ▷ turno de un enemigo
 00904 · Grimfang sufre quemaduras
-00904   Δ Grimfang PV 8→3
-00929 · Grimfang ataca a Lya
-00992 · ¡Golpe crítico!
-00992   Δ Lya PV 64→35
-01027 ▷ turno de Slime B
-01027 · Slime B ataca a Lya
-01051 · ¡Golpe crítico!
-01051   Δ Lya PV 35→26
-01086 · (cartel vacío)
-01086 ▶ turno de Lya (PV 26/80 PM 26/46)
-01086   Lya: Rayo → Grimfang
-01087 · Lya lanza Rayo
-01087   Δ Lya PM 26→19
-01130   Δ Grimfang PV 3→0
-01177 · (cartel vacío)
-01177 ▶ turno de Kael (PV 120/120 PM 16/16)
-01177   Kael: ataca a Slime B
-01178 · Kael ataca a Slime B
-01215   Δ Slime B PV 55→38
-01263 ▷ turno de Slime B
-01263 · Slime B ataca a Lya
-01287   Δ Lya PV 26→21
-01322 · (cartel vacío)
-01322 ▶ turno de Lya (PV 21/80 PM 19/46)
-01322   Lya: Poción → Lya
-01323 · Lya usa Poción (+59 PV)
-01323   Δ Lya PV 21→80
-01380 · (cartel vacío)
-01380 ▶ turno de Kael (PV 120/120 PM 16/16)
-01380   Kael: ataca a Slime B
-01381 · Kael ataca a Slime B
-01418   Δ Slime B PV 38→18
-01466 · (cartel vacío)
-01466 ▶ turno de Lya (PV 80/80 PM 19/46)
-01466   Lya: ataca a Slime B
-01467 · Lya ataca a Slime B
-01496   Δ Slime B PV 18→14
-01534 ▷ turno de Slime B
-01534 · Slime B ataca a Lya
-01558   Δ Lya PV 80→75
-01593 · (cartel vacío)
-01593 ▶ turno de Kael (PV 120/120 PM 16/16)
-01593   Kael: ataca a Slime B
-01594 · Kael ataca a Slime B
-01631   Δ Slime B PV 14→0
-01675 ■ fin del combate
-01675 · ¡Victoria!
-01706 · +60 EXP   +30 monedas
-01737 · ¡Kael sube al nivel 2!
-01737   Δ Kael PV 120→126 PM 16→18
-01768 · ¡Lya sube al nivel 2!
-01768   Δ Lya PV 75→86 PM 19→48
-fin · victoria · fotograma 1675 (55.8 s de juego)
-final · Kael PV 126/126 PM 18/18 ATQ 18 VEL 23 DEF 9 · Lya PV 86/86 PM 48/48 ATQ 10 VEL 26 DEF 7 · Slime A PV 0/55 ATQ 9 VEL 16 · Grimfang PV 0/110 ATQ 15 VEL 13 · Slime B PV 0/39 ATQ 9 VEL 16
+00904   Δ Grimfang PV 5→0
+00930 ▷ turno de Slime B
+00930 · Slime B se encoge: ¡va a por Lya!
+00971 · (cartel vacío)
+00971 ▶ turno de Lya (PV 59/80 PM 26/46)
+00971   Lya: Rayo → Slime B
+00972 · Lya lanza Rayo
+00972   Δ Lya PM 26→19
+01015   Δ Slime B PV 55→23
+01062 · (cartel vacío)
+01062 ▶ turno de Kael (PV 120/120 PM 16/16)
+01062   Kael: ataca a Slime B
+01063 · Kael ataca a Slime B
+01100   Δ Slime B PV 23→14
+01148 ▷ turno de Slime B
+01148 · ¡Slime B rebota contra Lya!
+01172   Δ Lya PV 59→48
+01207 · (cartel vacío)
+01207 ▶ turno de Lya (PV 48/80 PM 19/46)
+01207   Lya: Poción → Lya
+01208 · Lya usa Poción (+32 PV)
+01208   Δ Lya PV 48→80
+01265 · (cartel vacío)
+01265 ▶ turno de Kael (PV 120/120 PM 16/16)
+01265   Kael: ataca a Slime B
+01266 · Kael ataca a Slime B
+01303   Δ Slime B PV 14→0
+01347 ■ fin del combate
+01347 · ¡Victoria!
+01378 · +60 EXP   +30 monedas
+01409 · ¡Kael sube al nivel 2!
+01409   Δ Kael PV 120→126 PM 16→18
+01440 · ¡Lya sube al nivel 2!
+01440   Δ Lya PV 80→86 PM 19→48
+fin · victoria · fotograma 1347 (44.9 s de juego)
+final · Kael PV 126/126 PM 18/18 ATQ 18 VEL 23 DEF 9 · Lya PV 86/86 PM 48/48 ATQ 10 VEL 26 DEF 7 · Slime A PV 0/55 ATQ 9 VEL 16 · Grimfang PV 0/94 ATQ 15 VEL 13 · Slime B PV 0/39 ATQ 9 VEL 16
 grupo · Kael nivel 2 exp 40 pv 126 pm 18 puntos 3 · Lya nivel 2 exp 40 pv 86 pm 48 puntos 3 · Garon (ausente) nivel 1 exp 0 pv -1 pm -1 puntos 0
 bolsa · oro 150→180 · Poción 5→4 · Éter 3→3
 partida · combates_ganados {  } · decisiones {  } · Armonía 1.00 · velocidad 1.00
@@ -217,13 +200,13 @@ partida · combates_ganados {  } · decisiones {  } · Armonía 1.00 · velocida
 00684   Δ Grimfang B PV 92→0
 00748 ▷ turno de Grimfang A
 00748 · Grimfang A ataca a Lya
-00788   Δ Lya PV 80→69
+00788   Δ Lya PV 80→67
 00847 · (cartel vacío)
-00847 ▶ turno de Lya (PV 69/80 PM 46/46)
+00847 ▶ turno de Lya (PV 67/80 PM 46/46)
 00847   Lya: Cura → Lya
 00848 · Lya lanza Cura
 00848   Δ Lya PM 46→40
-00863   Δ Lya PV 69→80
+00863   Δ Lya PV 67→80
 00920 · (cartel vacío)
 00920 ▶ turno de Kael (PV 120/120 PM 16/16)
 00920   Kael: defiende
@@ -238,32 +221,30 @@ partida · combates_ganados {  } · decisiones {  } · Armonía 1.00 · velocida
 01025   Lya: Agua → Grimfang A
 01026 · Lya lanza Agua
 01026   Δ Lya PM 40→34
-01073   Δ Grimfang A PV 110→53
+01073   Δ Grimfang A PV 110→55
 01120 · (cartel vacío)
 01120 ▶ turno de Kael (PV 120/120 PM 16/16)
 01120   Kael: ataca a Grimfang A
 01121 · Kael ataca a Grimfang A
-01158   Δ Grimfang A PV 53→32
+01158   Δ Grimfang A PV 55→39
 01203 ▷ turno de Grimfang A
-01203 · Grimfang A ataca a Lya
-01243 · ¡Golpe crítico!
-01243   Δ Lya PV 80→56
-01302 · (cartel vacío)
-01302 ▶ turno de Garon (PV 168/168 PM 10/10)
-01302   Garon: Giro (a todos)
-01303 · Garon usa Giro
-01303   Δ Garon PM 10→0
-01347   Δ Grimfang A PV 32→0
-01404 ■ fin del combate
-01404 · ¡Victoria!
-01435 · +70 EXP   +36 monedas
-01466 · ¡Kael sube al nivel 2!
-01466   Δ Kael PV 120→126 PM 16→18
-01497 · ¡Lya sube al nivel 2!
-01497   Δ Lya PV 56→86 PM 34→48
-01528 · ¡Garon sube al nivel 2!
-01528   Δ Garon PV 168→174 PM 0→12
-fin · victoria · fotograma 1404 (46.8 s de juego)
+01203 · Grimfang A alza el hacha: ¡va a por Lya!
+01244 · (cartel vacío)
+01244 ▶ turno de Garon (PV 168/168 PM 10/10)
+01244   Garon: Giro (a todos)
+01245 · Garon usa Giro
+01245   Δ Garon PM 10→0
+01289   Δ Grimfang A PV 39→0
+01346 ■ fin del combate
+01346 · ¡Victoria!
+01377 · +70 EXP   +36 monedas
+01408 · ¡Kael sube al nivel 2!
+01408   Δ Kael PV 120→126 PM 16→18
+01439 · ¡Lya sube al nivel 2!
+01439   Δ Lya PV 80→86 PM 34→48
+01470 · ¡Garon sube al nivel 2!
+01470   Δ Garon PV 168→174 PM 0→12
+fin · victoria · fotograma 1346 (44.9 s de juego)
 final · Kael PV 126/126 PM 18/18 ATQ 18 VEL 23 DEF 9 · Lya PV 86/86 PM 48/48 ATQ 10 VEL 26 DEF 7 · Garon PV 174/174 PM 12/12 ATQ 50 VEL 16 DEF 12 · Grimfang B PV 0/94 ATQ 15 VEL 13 · Grimfang A PV 0/94 ATQ 15 VEL 13
 grupo · Kael nivel 2 exp 50 pv 126 pm 18 puntos 3 · Lya nivel 2 exp 50 pv 86 pm 48 puntos 3 · Garon nivel 2 exp 50 pv 174 pm 12 puntos 3
 bolsa · oro 150→186 · Poción 5→5 · Éter 3→2
@@ -316,14 +297,14 @@ partida · combates_ganados {  } · decisiones {  } · Armonía 0.45 · velocida
 00359 ▷ turno de Gólem de ámbar
 00359 · Gólem de ámbar sufre quemaduras
 00359   Δ Gólem de ámbar PV 7→2
-00384 · Gólem de ámbar ataca a Lya
-00408   Δ Lya PV 134→114
+00384 · Gólem de ámbar ataca a Kael
+00408   Δ Kael PV 174→157
 00443 · (cartel vacío)
-00443 ▶ turno de Lya (PV 114/134 PM 34/64)
+00443 ▶ turno de Lya (PV 134/134 PM 34/64)
 00443   Lya: defiende
 00444 · Lya se pone en guardia
 00478 · (cartel vacío)
-00478 ▶ turno de Kael (PV 174/174 PM 16/34)
+00478 ▶ turno de Kael (PV 157/174 PM 16/34)
 00478   Kael: Rayo → Gólem de ámbar
 00479 · Kael lanza Rayo
 00479   Δ Kael PM 16→9
@@ -332,8 +313,8 @@ partida · combates_ganados {  } · decisiones {  } · Armonía 0.45 · velocida
 00578 · ¡Victoria!
 00609 · +98 EXP   +108 monedas
 fin · victoria · fotograma 578 (19.3 s de juego)
-final · Kael PV 174/174 PM 9/34 ATQ 18 VEL 23 DEF 9 · Lya PV 114/134 PM 34/64 ATQ 10 VEL 26 DEF 7 · Gólem de ámbar PV 0/200 ATQ 17 VEL 9 · Grimfang PV 0/110 ATQ 15 VEL 13
-grupo · Kael nivel 10 exp 98 pv 174 pm 9 puntos 0 · Lya nivel 10 exp 98 pv 114 pm 34 puntos 0 · Garon (ausente) nivel 10 exp 0 pv -1 pm -1 puntos 0
+final · Kael PV 157/174 PM 9/34 ATQ 18 VEL 23 DEF 9 · Lya PV 134/134 PM 34/64 ATQ 10 VEL 26 DEF 7 · Gólem de ámbar PV 0/200 ATQ 17 VEL 9 · Grimfang PV 0/110 ATQ 15 VEL 13
+grupo · Kael nivel 10 exp 98 pv 157 pm 9 puntos 0 · Lya nivel 10 exp 98 pv 134 pm 34 puntos 0 · Garon (ausente) nivel 10 exp 0 pv -1 pm -1 puntos 0
 bolsa · oro 150→258 · Poción 5→5 · Éter 3→3
 partida · combates_ganados {  } · decisiones {  } · Armonía 0.60 · velocidad 1.00
 
@@ -352,20 +333,20 @@ partida · combates_ganados {  } · decisiones {  } · Armonía 0.60 · velocida
 00249   Δ Slime A PV 55→37
 00295 ▷ turno de Slime A
 00295 · Slime A ataca a Lya
-00319   Δ Lya PV 80→76
+00319   Δ Lya PV 80→74
 00354 · (cartel vacío)
-00354 ▶ turno de Lya (PV 76/80 PM 40/46)
+00354 ▶ turno de Lya (PV 74/80 PM 40/46)
 00354   Lya: ataca a Slime A
 00355 · Lya ataca a Slime A
-00384   Δ Slime A PV 37→34
+00384   Δ Slime A PV 37→31
 00422 · (cartel vacío)
 00422 ▶ turno de Kael (PV 120/120 PM 16/16)
 00422   Kael: huye
 00423 ■ fin del combate
 00423 · ¡El grupo huye!
 fin · huida · fotograma 423 (14.1 s de juego)
-final · Kael PV 120/120 PM 16/16 ATQ 18 VEL 23 DEF 9 · Lya PV 76/80 PM 40/46 ATQ 10 VEL 26 DEF 7 · Slime A PV 34/39 ATQ 9 VEL 16 · Slime B PV 0/55 ATQ 9 VEL 16
-grupo · Kael nivel 1 exp 0 pv 120 pm 16 puntos 0 · Lya nivel 1 exp 0 pv 76 pm 40 puntos 0 · Garon (ausente) nivel 1 exp 0 pv -1 pm -1 puntos 0
+final · Kael PV 120/120 PM 16/16 ATQ 18 VEL 23 DEF 9 · Lya PV 74/80 PM 40/46 ATQ 10 VEL 26 DEF 7 · Slime A PV 31/39 ATQ 9 VEL 16 · Slime B PV 0/55 ATQ 9 VEL 16
+grupo · Kael nivel 1 exp 0 pv 120 pm 16 puntos 0 · Lya nivel 1 exp 0 pv 74 pm 40 puntos 0 · Garon (ausente) nivel 1 exp 0 pv -1 pm -1 puntos 0
 bolsa · oro 150→150 · Poción 5→5 · Éter 3→3
 partida · combates_ganados {  } · decisiones {  } · Armonía 0.45 · velocidad 1.00
 
@@ -383,41 +364,37 @@ partida · combates_ganados {  } · decisiones {  } · Armonía 0.45 · velocida
 00222   Δ Grimfang B PV 107→88
 00267 ▷ turno de Grimfang A
 00267 · Grimfang A ataca a Lya
-00307   Δ Lya PV 18→3
+00307   Δ Lya PV 18→6
 00366 ▷ turno de Grimfang B
 00366 · Grimfang B ataca a Lya
-00406   Δ Lya PV 3→0
+00406 · ¡Golpe crítico!
+00406   Δ Lya PV 6→0
 00466 · (cartel vacío)
 00466 ▶ turno de Kael (PV 24/120 PM 16/16)
 00466   Kael: ataca a Grimfang B
 00467 · Kael ataca a Grimfang B
-00504   Δ Grimfang B PV 88→71
+00504   Δ Grimfang B PV 88→72
 00586 ▷ turno de Grimfang A
-00586 · Grimfang A ataca a Kael
-00626   Δ Kael PV 24→14
-00685 · (cartel vacío)
-00685 ▶ turno de Kael (PV 14/120 PM 16/16)
-00685   Kael: ataca a Grimfang B
-00686 · Kael ataca a Grimfang B
-00723   Δ Grimfang B PV 71→53
-00768 ▷ turno de Grimfang B
-00768 · Grimfang B ataca a Kael
-00808   Δ Kael PV 14→4
-00888 · (cartel vacío)
-00888 ▶ turno de Kael (PV 4/120 PM 16/16)
-00888   Kael: ataca a Grimfang B
-00889 · Kael ataca a Grimfang B
-00926   Δ Grimfang B PV 53→34
-00971 ▷ turno de Grimfang A
-00971 · Grimfang A ataca a Kael
-01011   Δ Kael PV 4→0
-01069 ■ fin del combate
-01069 · Derrota...
-fin · derrota · fotograma 1069 (35.6 s de juego)
-final · Kael PV 0/120 PM 16/16 ATQ 18 VEL 23 DEF 9 · Lya PV 0/80 PM 46/46 ATQ 10 VEL 26 DEF 7 · Grimfang B PV 34/94 ATQ 15 VEL 13 · Grimfang A PV 110/110 ATQ 15 VEL 13
+00586 · Grimfang A alza el hacha: ¡va a por Kael!
+00669 · (cartel vacío)
+00669 ▶ turno de Kael (PV 24/120 PM 16/16)
+00669   Kael: ataca a Grimfang B
+00670 · Kael ataca a Grimfang B
+00707 · ¡Golpe crítico!
+00707   Δ Grimfang B PV 72→44
+00752 ▷ turno de Grimfang B
+00752 · Grimfang B ataca a Kael
+00792   Δ Kael PV 24→11
+00851 ▷ turno de Grimfang A
+00851 · ¡Grimfang A descarga el hachazo sobre Kael!
+00914   Δ Kael PV 11→0
+00948 ■ fin del combate
+00948 · Derrota...
+fin · derrota · fotograma 948 (31.6 s de juego)
+final · Kael PV 0/120 PM 16/16 ATQ 18 VEL 23 DEF 9 · Lya PV 0/80 PM 46/46 ATQ 10 VEL 26 DEF 7 · Grimfang B PV 44/94 ATQ 15 VEL 13 · Grimfang A PV 110/110 ATQ 15 VEL 13
 grupo · Kael nivel 1 exp 0 pv 120 pm 16 puntos 0 · Lya nivel 1 exp 0 pv 80 pm 46 puntos 0 · Garon (ausente) nivel 1 exp 0 pv -1 pm -1 puntos 0
 bolsa · oro 150→150 · Poción 5→5 · Éter 3→3
-partida · combates_ganados {  } · decisiones {  } · Armonía 0.75 · velocidad 1.00
+partida · combates_ganados {  } · decisiones {  } · Armonía 0.60 · velocidad 1.00
 
 == E8_gorthor · grupo 5 · nivel 7 · zona garganta · jefe · semilla 20269109
 00000 inicio · Kael PV 156/156 PM 28/28 ATQ 18 VEL 23 DEF 9 · Lya PV 116/116 PM 58/58 ATQ 10 VEL 26 DEF 7 · Garon PV 204/204 PM 22/22 ATQ 50 VEL 16 DEF 12 · Gorthor el Devorador PV 460/460 ATQ 22 VEL 10 ATB 20.861
@@ -541,20 +518,19 @@ partida · combates_ganados { "garganta_gorthor": true } · decisiones { "gortho
 00282 ▷ turno de Grimfang
 00282 · Grimfang sufre quemaduras
 00282   Δ Grimfang PV 42→37
-00307 · Grimfang ataca a Lya
-00347   Δ Lya PV 134→129
-00406 · (cartel vacío)
-00406 ▶ turno de Lya (PV 129/134 PM 64/64)
-00406   Lya: Cólera del Cielo (a todos)
-00407 · Lya lanza Cólera del Cielo
-00407   Δ Lya PM 64→32
-00465   Δ Guardián de piedra PV 104→0
-00472   Δ Grimfang PV 37→0
-00546 ■ fin del combate
-00546 · ¡Victoria!
-00577 · +73 EXP   +58 monedas
-fin · victoria · fotograma 546 (18.2 s de juego)
-final · Kael PV 174/174 PM 0/34 ATQ 18 VEL 23 DEF 9 · Lya PV 129/134 PM 32/64 ATQ 10 VEL 26 DEF 7 · Guardián de piedra PV 0/180 ATQ 19 VEL 8 · Grimfang PV 0/110 ATQ 15 VEL 13
-grupo · Kael nivel 10 exp 73 pv 174 pm 0 puntos 0 · Lya nivel 10 exp 73 pv 129 pm 32 puntos 0 · Garon (ausente) nivel 10 exp 0 pv -1 pm -1 puntos 0
+00307 · Grimfang alza el hacha: ¡va a por Lya!
+00349 · (cartel vacío)
+00349 ▶ turno de Lya (PV 134/134 PM 64/64)
+00349   Lya: Cólera del Cielo (a todos)
+00350 · Lya lanza Cólera del Cielo
+00350   Δ Lya PM 64→32
+00408   Δ Guardián de piedra PV 104→0
+00415   Δ Grimfang PV 37→0
+00489 ■ fin del combate
+00489 · ¡Victoria!
+00520 · +73 EXP   +58 monedas
+fin · victoria · fotograma 489 (16.3 s de juego)
+final · Kael PV 174/174 PM 0/34 ATQ 18 VEL 23 DEF 9 · Lya PV 134/134 PM 32/64 ATQ 10 VEL 26 DEF 7 · Guardián de piedra PV 0/180 ATQ 19 VEL 8 · Grimfang PV 0/110 ATQ 15 VEL 13
+grupo · Kael nivel 10 exp 73 pv 174 pm 0 puntos 0 · Lya nivel 10 exp 73 pv 134 pm 32 puntos 0 · Garon (ausente) nivel 10 exp 0 pv -1 pm -1 puntos 0
 bolsa · oro 150→208 · Poción 5→5 · Éter 3→3
 partida · combates_ganados {  } · decisiones {  } · Armonía 0.45 · velocidad 1.00

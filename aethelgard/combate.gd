@@ -965,6 +965,11 @@ func _crear_rig_3d(f: Dictionary, m: Dictionary, raiz: Node2D, base: Vector2, es
 	f["cam3d"] = cam
 	# centro del cuerpo en pantalla (para efectos y números de daño)
 	f["centro_ofs"] = cam.unproject_position(Vector3(0, m.get("centro_3d", 0.85), 0)) / q * esc
+	if f.get("hero", false) and ResourceLoader.exists("res://inventario.gd"):   # C2: el arma especial, con su color
+		var arma: Dictionary = load("res://inventario.gd").arma_de(f["nombre"])
+		for k in ["espada", "espada_izq"]:           # (las de Kael y Lya ya salen teñidas: material_arma.de_arma)
+			if k in maga and maga.get(k) != null:
+				load("res://material_arma.gd").tenir(maga.get(k), arma)
 
 
 # Personaje 3D (maga o Kael) de un luchador, o null si es 2D.
@@ -1282,6 +1287,10 @@ func _turno_enemigo(f: Dictionary) -> void:
 		await _turno_zarzalin(f, vivos, mult)
 		_fin_turno_enemigo(f)
 		return
+	if PATRONES.has(p):                              # Grimfang, el Slime y el Gólem: su ataque anunciado (T-097)
+		if await _turno_patron(f, vivos, mult, PATRONES[p]):
+			_fin_turno_enemigo(f)
+			return
 	# curar a un aliado
 	if p == "apoyo":
 		var herido = null
@@ -1319,6 +1328,7 @@ func _turno_enemigo(f: Dictionary) -> void:
 	# el jefe carga su golpe más fuerte (un turno de aviso); en la segunda fase, más a menudo
 	if p == "jefe" and not f.get("cargando", false) and randf() < (0.45 if f.get("fase2", false) else 0.35):
 		f["cargando"] = true
+		_marcar_aviso(f, true)                       # la señal de aviso sobre él, hasta que golpee (se lee sin partículas)
 		Sonido.efecto("carga_jefe")                 # sonido.gd
 		registro.text = "¡%s se prepara para un golpe devastador!" % f["nombre"]
 		_numero_flotante(f, "⚠ ¡Cuidado!", Color(1.0, 0.8, 0.2), 34)
@@ -1331,6 +1341,7 @@ func _turno_enemigo(f: Dictionary) -> void:
 	var objetivo = _cubre(_elegir_objetivo(p, vivos))   # (si Garon le cubre, va a Garon)
 	if f.get("cargando", false):                # descarga: golpe fuerte a todo el grupo
 		f["cargando"] = false
+		_marcar_aviso(f, false)
 		registro.text = "¡%s desata su golpe devastador!" % f["nombre"]
 		var fuerte := int(f["atk"] * 2.2 * mult)
 		f["descarga"] = true                         # Grimfang / Gorthor: golpe fuerte a dos manos
@@ -1353,6 +1364,102 @@ func _turno_enemigo(f: Dictionary) -> void:
 		registro.text = "%s ataca a %s" % [f["nombre"], objetivo["nombre"]]
 		await _animar_golpe(f, objetivo, dano, "")
 	_fin_turno_enemigo(f)
+
+
+# Patrones de los enemigos de siempre (T-097, tanda del 09/11): como Zarzalín, cada uno avisa un turno antes de su
+# golpe fuerte y, tras darlo, recupera el aliento un turno. El aviso se lee de cuatro maneras: el cartel («Grimfang alza
+# el hacha: ¡va a por Kael!»), el texto sobre él, «⚠ Cargando» sobre su vida y una señal dibujada encima (sin
+# partículas: igual en el perfil bajo). Con las animaciones y los sonidos que ya tienen (el golpe a dos manos de
+# Grimfang, su voz de ataque...). Defender lo reduce a la mitad y la Guardia de Garon lo para.
+#   agresivo (Grimfang, también con el dibujo del Hollín y en el centinela): Hachazo a uno, ×1,6.
+#   cobarde (Slime): se encoge (recibe la mitad hasta su turno) y después rebota contra uno, ×1,3.
+#   bruto (Gólem de ámbar): Pisotón a todo el grupo, ×1,0.
+# Los jefes (Guardián, Gorthor) ya avisaban su golpe devastador; ahora también llevan la señal dibujada.
+const PATRONES := {
+	"agresivo": {"prob": 0.3, "a": "uno", "mult": 1.6, "prepara": "alza el hacha", "aviso": "⚠ ¡Hachazo!",
+		"golpe": "¡%s descarga el hachazo sobre %s!"},
+	"cobarde": {"prob": 0.3, "a": "uno", "mult": 1.3, "prepara": "se encoge", "aviso": "⚠ ¡Rebote!",
+		"golpe": "¡%s rebota contra %s!", "encoge": true},
+	"bruto": {"prob": 0.3, "a": "todos", "mult": 1.0, "prepara": "levanta los puños", "aviso": "⚠ ¡Pisotón!",
+		"golpe": "¡%s da un pisotón que alcanza a todos!"},
+}
+
+
+# Devuelve true si este turno ha sido del patrón (avisar, golpear o recuperarse); false, el turno de siempre.
+func _turno_patron(f: Dictionary, vivos: Array, mult: float, plan: Dictionary) -> bool:
+	if f.get("recupera", false):
+		f["recupera"] = false
+		registro.text = "%s recupera el aliento" % f["nombre"]
+		_numero_flotante(f, "Recupera", Color(0.8, 0.85, 0.75), 28)
+		await get_tree().create_timer(0.8).timeout
+		return true
+	if f.get("cargando", false):
+		f["cargando"] = false
+		f["recupera"] = true
+		_marcar_aviso(f, false)
+		if plan.get("encoge", false):                # deja de estar encogido
+			f["defendiendo"] = false
+			create_tween().tween_property(f["rig"], "scale", f.get("escala_rig", Vector2.ONE), 0.15)
+		var dano := int(f["atk"] * float(plan["mult"]) * mult)
+		f["descarga"] = true                         # Grimfang: el golpe a dos manos
+		if plan["a"] == "todos":
+			registro.text = plan["golpe"] % f["nombre"]
+			var principal: Dictionary = _cubre(_elegir_objetivo("bruto", vivos))
+			await _animar_golpe(f, principal, dano + randi_range(-2, 3), "")
+			for h0 in vivos:
+				if h0 == principal or h0["hp"] <= 0:
+					continue
+				var h: Dictionary = _cubre(h0, false)
+				if h["hp"] <= 0:
+					continue
+				var d2: int = maxi(1, dano - int(h.get("def", 0) / 2.0))
+				if h.get("defendiendo", false):
+					d2 = maxi(1, int(d2 * 0.5))
+				_golpe_visual(h, _quitar_pv(h, d2), "")
+			Sonido.golpe(true)
+			_temblor(10.0)
+		else:
+			var objetivo = f.get("objetivo_carga", null)
+			if objetivo == null or objetivo["hp"] <= 0:
+				objetivo = _elegir_objetivo("agresivo", vivos)
+			objetivo = _cubre(objetivo)
+			registro.text = plan["golpe"] % [f["nombre"], objetivo["nombre"]]
+			await _animar_golpe(f, objetivo, dano + randi_range(-2, 3), "")
+		f["descarga"] = false
+		f.erase("objetivo_carga")
+		return true
+	if randf() >= float(plan["prob"]):
+		return false
+	var obj := _elegir_objetivo("agresivo", vivos)
+	f["cargando"] = true
+	f["objetivo_carga"] = obj
+	_marcar_aviso(f, true)
+	if plan["a"] == "todos":
+		registro.text = "%s %s: ¡va a golpear a todos!" % [f["nombre"], plan["prepara"]]
+	else:
+		registro.text = "%s %s: ¡va a por %s!" % [f["nombre"], plan["prepara"], obj["nombre"]]
+	_numero_flotante(f, plan["aviso"], Color(1.0, 0.8, 0.2), 32)
+	_voz(f, "ataque")                                # su voz (sonido.gd), como al lanzarse
+	if plan.get("encoge", false):                    # el Slime se encoge: recibe la mitad hasta su turno
+		f["defendiendo"] = true
+		f["escala_rig"] = f["rig"].scale
+		create_tween().tween_property(f["rig"], "scale", f["rig"].scale * Vector2(1.12, 0.78), 0.2).set_trans(Tween.TRANS_BACK)
+	_actualizar()
+	await get_tree().create_timer(1.0).timeout
+	return true
+
+
+# La señal de aviso sobre un enemigo que prepara un golpe (vfx/sena_arte.gd «aviso»): se queda hasta que golpea.
+func _marcar_aviso(f: Dictionary, si: bool) -> void:
+	var antes = f.get("aviso_nodo", null)
+	if antes != null and is_instance_valid(antes):
+		antes.queue_free()
+	f.erase("aviso_nodo")
+	if si and f.has("rig"):
+		var s := _sena_arte("aviso", f, {"dur": 9999.0})
+		# encima de «⚠ Cargando» y de la vida, sin taparlos (la señal vive en «escena», escalada: se pasa a sus medidas)
+		s.position = (_ancla_vida(f) + Vector2(60, -40 - 24 * TAM_ESCENA) - escena.position) / TAM_ESCENA
+		f["aviso_nodo"] = s
 
 
 # Devorar (Gorthor, segunda fase): se cura el 60 % de lo que de verdad mordió. Lo que paró la coraza de Escarcha
@@ -1395,6 +1502,7 @@ func _turno_zarzalin(f: Dictionary, vivos: Array, mult: float) -> void:
 		return
 	if f.get("cargando", false):
 		f["cargando"] = false
+		_marcar_aviso(f, false)
 		f["recupera"] = true
 		var objetivo = f.get("objetivo_carga", null)
 		if objetivo == null or objetivo["hp"] <= 0:
@@ -1409,6 +1517,7 @@ func _turno_zarzalin(f: Dictionary, vivos: Array, mult: float) -> void:
 	if randf() < ZARZALIN["prob_aviso"]:
 		var objetivo := _elegir_objetivo("agresivo", vivos)
 		f["cargando"] = true
+		_marcar_aviso(f, true)
 		f["objetivo_carga"] = objetivo
 		registro.text = "%s baja el hocico: ¡va a embestir a %s!" % [f["nombre"], objetivo["nombre"]]
 		_numero_flotante(f, "⚠ ¡Embestida!", Color(1.0, 0.8, 0.2), 32)
@@ -1439,6 +1548,7 @@ func _huir(f: Dictionary) -> void:
 	registro.text = "¡%s huye!" % f["nombre"]
 	Sonido.efecto("huida", {"db": -4.0})           # sonido.gd
 	f["huido"] = true
+	_marcar_aviso(f, false)
 	var rig: Node2D = f["rig"]
 	var pz = _p3d(f)
 	if pz != null and pz.has_method("avisar"):        # Zarzalín: se da la vuelta y se va galopando
@@ -2194,7 +2304,7 @@ func _sena_arte(tipo: String, f: Dictionary, extra := {}) -> Node2D:
 	s.tipo = tipo
 	s.color = {"alba": Artes.COLOR["Alba"], "ocaso": COLOR_OCASO, "lumbre": Artes.COLOR["Lumbre"],
 		"aliento": Artes.COLOR_ESTADO["aliento"], "hoja": Artes.COLOR_ESTADO["aliento"], "escarcha": Artes.COLOR["Escarcha"],
-		"escarcha_golpe": Artes.COLOR["Escarcha"], "escarcha_rota": Artes.COLOR["Escarcha"],
+		"escarcha_golpe": Artes.COLOR["Escarcha"], "escarcha_rota": Artes.COLOR["Escarcha"], "aviso": Color(1.0, 0.72, 0.2),
 		"guardia": GUARDIA["color"], "brasa": Artes.COLOR_ESTADO["brasa"]}.get(tipo, Color.WHITE)
 	s.dur = {"alba": 1.5, "ocaso": 1.4, "lumbre": SENA_VIAJE_LUMBRE + 1.4, "aliento": 1.6, "hoja": 1.0, "escarcha": 1.5,
 		"escarcha_golpe": 0.45, "escarcha_rota": 0.9, "guardia": 1.4, "brasa": 1.4}.get(tipo, 1.4)
@@ -2237,7 +2347,7 @@ func _tic_estados_heroe(f: Dictionary) -> void:
 
 
 # Equipo que actúa al empezar el combate (M3, M4 y C2; sin él, nada cambia): la Lágrima de ámbar pone una coraza, la
-# Brasa en frasco una Brasa y la Hoja sin Nombre suma un punto de ataque por recuerdo visto (Progreso «lore_visto»).
+# Brasa en frasco una Brasa. (La Hoja sin Nombre suma su ataque en grupo.gd estadisticas: también en el menú Grupo.)
 const BRASA_FRASCO := 0.25                           # con qué parte de sus PV se levanta quien lleva la Brasa en frasco
 
 
@@ -2247,7 +2357,6 @@ func _equipo_al_empezar(h: Dictionary) -> void:
 		Artes.poner_barrera(h, float(ef["barrera_inicio"]))
 	if ef.get("brasa", false):
 		Artes.poner_brasa(h, BRASA_FRASCO)
-	h["atk"] += Extra.ataque_recuerdo(ef, Engine.get_meta("lore_visto", {}))
 
 
 # Rama del Árbol Milenario (C2): al empezar, el aliado más herido recibe Aliento («aliento_inicio» turnos).
@@ -2567,6 +2676,8 @@ func _quitar_pv(f: Dictionary, d: int) -> int:
 	elif f.get("hero", false) and f["hp"] <= 0:         # la Guardia se acaba si cae Garon o el aliado que cubre
 		_quitar_guardia(f["nombre"])
 		f.erase("guardia_de")
+	if not f.get("hero", false) and f["hp"] <= 0 and f.has("aviso_nodo"):
+		_marcar_aviso(f, false)                       # cae con el golpe preparado: su señal de aviso, fuera
 	if f.get("fases", false) and not f.get("fase2", false) and f["hp"] > 0 and f["hp"] <= f["hp_max"] * 0.5:
 		f["fase2"] = true
 		f["fase2_pendiente"] = true
@@ -2899,7 +3010,11 @@ func _teatro_erebo(obj: Dictionary, es_jefe: bool, al_resultado: Callable) -> vo
 		if a.begins_with("erebo="):
 			ctx["forzar"] = a.substr(6)
 	inv_erebo = inv
-	await inv.lanzar(ctx)
+	# Se espera a «terminada» (la emiten las dos: al acabar y al saltar, una vez) y no a que acabe lanzar(): al saltar en
+	# medio de una espera (el aplastamiento del orbe, Érebo surgiendo), limpiar() mata el tween que la coreografía
+	# esperaba y esa corrutina ya no vuelve; el combate no debe quedarse esperándola (prueba_erebo_saltar).
+	inv.lanzar(ctx)
+	await inv.terminada
 	inv_erebo = null
 	await get_tree().create_timer(0.3).timeout
 	# sale: fundido a negro y de vuelta al combate
@@ -2926,6 +3041,8 @@ func _evento_erebo(n: String, titulo: Label) -> void:
 # Al romperse el orbe (o al saltar): el resultado al enemigo de verdad y la reacción de su doble.
 func _resultado_erebo(r: Dictionary, doble: Node3D, al_resultado: Callable) -> void:
 	al_resultado.call(r)
+	if not is_instance_valid(doble) or ("anim" in doble and doble.get("anim") == null):
+		return                                       # el doble aún no tiene su modelo (se ha saltado muy pronto)
 	if r.get("muerte", false) and doble.has_method("morir"):
 		doble.morir()
 	elif doble.has_method("herida"):
