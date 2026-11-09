@@ -8,7 +8,8 @@ lya: No bromees. Nadie es inmune a la niebla.[pause=0.5] Nadie… salvo tú.
 update kael [extra_data="brazalete"]
 kael: Supongo que este brazalete sirve para algo más que para presumir.
 update lya [extra_data="duda"]
-lya: Ese brazalete…[pause=0.5] He visto ese símbolo en los libros prohibidos del templo. Lo llamaban la «Llave del Confino».
+lya: Ese brazalete…[pause=0.5] He visto ese símbolo en los libros prohibidos del templo.
+lya: Lo llamaban la «Llave del Confino».
 update kael [extra_data="sorpresa"]
 kael: ¿La llave de qué?
 update lya [extra_data="decidida"]
@@ -16,6 +17,7 @@ lya: No lo sé.[pause=0.3] Pero si los Hollines han empezado a salir del bosque,
 update kael [extra_data="decidido"]
 kael: Entonces vamos. El Gran Bosque Verde no está lejos.
 update lya [extra_data="preocupada"]
-lya: Ten cuidado ahí fuera. Los Hollines ya no son solo sombras: ahora llevan hachas del Vacío.
+lya: Ten cuidado ahí fuera.
+lya: Los Hollines ya no son solo sombras: ahora llevan hachas del Vacío.
 leave lya
 leave kael
