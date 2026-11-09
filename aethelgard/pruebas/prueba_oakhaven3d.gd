@@ -113,7 +113,7 @@ func _process(_d: float) -> bool:
 		"cargar":
 			if current_scene != null and current_scene.scene_file_path == REGION and frames - f_fase >= 20:
 				v = current_scene
-				print("CARGA hasta el fotograma 20: %.0f ms · construcción de la ciudad: %s" % [(Time.get_ticks_usec() - int(get_meta("t0"))) / 1000.0, str(v.ciudad.tiempos)])
+				print("CARGA hasta el fotograma 20: %.0f ms · construcción de la ciudad: %s · mallas leídas de la caché: %d" % [(Time.get_ticks_usec() - int(get_meta("t0"))) / 1000.0, str(v.ciudad.tiempos), v.ciudad.leidas_de_cache])
 				if v.kael.global_position.distance_to(Vector3(40, 0, 53.2)) > 0.6:
 					_mal("Kael no aparece en la Puerta del Sur (%s)" % str(v.kael.global_position))
 				_andar_ruta([Vector3(39.7, 0, 48.6)], "aldric")

@@ -18,6 +18,8 @@ const ALTO_EDIFICIO := 7.0
 const ADOQUINES := {"bajo": 0.55, "medio": 0.8, "alto": 1.0}
 const MATAS := {"bajo": 260, "medio": 520, "alto": 900}
 const FLORES := {"bajo": 120, "medio": 260, "alto": 420}
+const ARBUSTOS := {"bajo": 50, "medio": 90, "alto": 150}
+const ARBOLITOS := {"bajo": 10, "medio": 16, "alto": 26}
 
 var region: Node3D
 var mat: Materiales
@@ -41,11 +43,17 @@ func _init(r: Node3D, m: Materiales, p: Dictionary, nombre: String) -> void:
 
 func construir() -> void:
 	seed(4711)
+	_desde_cache = usar_cache and FileAccess.file_exists(_indice_cache())
 	for paso in [_suelo, _modelos, _relleno, _adoquines, _vegetacion, _faroles]:
 		var t0 := Time.get_ticks_usec()
 		paso.call()
 		tiempos[String(paso.get_method())] = (Time.get_ticks_usec() - t0) / 1000.0
-	_cerrar_fundidos()
+	if _desde_cache and not _edificios_de_cache():      # la caché no se pudo leer: se juntan como siempre
+		_desde_cache = false
+		_fundir_unicas()
+		_fundir_relleno()
+	if not _desde_cache:
+		_cerrar_fundidos()
 	lotes.cerrar(region)
 
 
@@ -138,6 +146,10 @@ func _suelo() -> void:
 
 func _modelo(id: String) -> Node3D:
 	var ruta := MODELOS + id + ".glb"
+	# medio y bajo: la versión ligera (fuente/aligerar.py, Blender: 40-70 % de las caras) si la hay; el alto, la de gráficos
+	var ligera := MODELOS + id + "_ligero.glb"
+	if perfil.get("modelos_ligeros", nombre_perfil != "alto") and ResourceLoader.exists(ligera):
+		ruta = ligera
 	if not ResourceLoader.exists(ruta):
 		push_warning("Oakhaven 3D: falta el modelo «%s»" % ruta)
 		return null
@@ -150,17 +162,17 @@ func _modelo(id: String) -> Node3D:
 
 
 func _modelos() -> void:
-	for id in UNICAS:
-		var n := _modelo(id)
-		if n != null:
-			_fundir(n)
+	if not _desde_cache:
+		_fundir_unicas()
 	# los edificios no se pisan: una caja de choque por cada uno (la huella del trazado) y su bloqueo
 	for l in Oak.LUGARES:
 		if l.get("pisable", false):
 			continue
 		var r: Rect2 = l["rect"]
 		bloqueos.append(r)
-		_caja_choque(r, ALTO_EDIFICIO)
+		var cuerpo := _caja_choque(r, ALTO_EDIFICIO)
+		if l["id"] in TAPAN:
+			_cuerpos[l["id"]] = cuerpo
 	# la fuente de la plaza (en el modelo de la plaza): no se atraviesa
 	var cuerpo := StaticBody3D.new()
 	cuerpo.position = Vector3(Oak.PLAZA.x, 0, Oak.PLAZA.y)
@@ -175,7 +187,7 @@ func _modelos() -> void:
 	bloqueos.append(Rect2(Oak.PLAZA.x - 1.5, Oak.PLAZA.y - 1.5, 3.0, 3.0))
 
 
-func _caja_choque(r: Rect2, alto: float) -> void:
+func _caja_choque(r: Rect2, alto: float) -> StaticBody3D:
 	var cuerpo := StaticBody3D.new()
 	cuerpo.position = Vector3(r.position.x + r.size.x * 0.5, alto * 0.5, r.position.y + r.size.y * 0.5)
 	region.add_child(cuerpo)
@@ -184,6 +196,7 @@ func _caja_choque(r: Rect2, alto: float) -> void:
 	caja.size = Vector3(r.size.x, alto, r.size.y)
 	col.shape = caja
 	cuerpo.add_child(col)
+	return cuerpo
 
 
 # Las casas, los faroles y la ropa tendida del relleno de gráficos: cada uno desde la esquina de su casilla.
@@ -193,11 +206,11 @@ func _relleno() -> void:
 		if id == "farol":
 			continue                                        # los pone _faroles, con su fuego
 		var r: Rect2i = d["rect"]
-		var n := _modelo(id)
-		if n == null:
-			continue
-		n.position = Vector3(r.position.x, 0, r.position.y)
-		_fundir(n)
+		if not _desde_cache:
+			var n := _modelo(id)
+			if n != null:
+				n.position = Vector3(r.position.x, 0, r.position.y)
+				_fundir(n)
 		if not d.get("suelto", false):
 			bloqueos.append(Rect2(r))
 			_caja_choque(Rect2(r), ALTO_EDIFICIO)
@@ -305,6 +318,7 @@ func _vegetacion() -> void:
 				flores.append([Transform3D(Basis(), p + Vector3(rng.randf_range(-0.3, 0.3), rng.randf_range(0.18, 0.32), rng.randf_range(-0.3, 0.3))), c])
 	_por_tramos("Matas", hoja, matas)
 	_por_tramos("Flores", flor, flores)
+	_jardines(rng)
 
 
 func _mata() -> ArrayMesh:
@@ -362,7 +376,7 @@ func _faroles() -> void:
 		if d["id"] != "farol":
 			continue
 		var r: Rect2i = d["rect"]
-		var n := _modelo("farol")
+		var n: Node3D = null if _desde_cache else _modelo("farol")   # (con la caché, el farol ya va en los edificios)
 		if n != null:
 			n.position = Vector3(r.position.x, 0, r.position.y)
 			_fundir(n)
@@ -423,10 +437,14 @@ func animar(delta: float) -> void:
 # su color a los vértices y comparten uno solo, con el grano de la piedra (materiales.gd, sillar): así una calle entera
 # es una o dos llamadas. Los que tienen imagen, brillo propio o transparencia conservan su material.
 const TROZO := 12.0
+# Los edificios al sur de la plaza y de la Calle Mayor, que pueden quedar entre la cámara y Kael: van aparte, colgados
+# de su choque, y se vuelven medio transparentes si lo tapan (como los marcos de la Garganta).
+const TAPAN := ["botica", "guardia"]
+var _cuerpos := {}
 var _fundidos := {}               # clave «trozo|material» → [SurfaceTool, Material, con_color]
 
 
-func _fundir(n: Node3D) -> void:
+func _fundir(n: Node3D, propio := "") -> void:
 	region.add_child(n)                                         # (en el árbol, para leer la transformación de cada pieza)
 	for mi in n.find_children("*", "MeshInstance3D", true, false):
 		var m3 := mi as MeshInstance3D
@@ -440,7 +458,7 @@ func _fundir(n: Node3D) -> void:
 				and not (mat_s as BaseMaterial3D).emission_enabled \
 				and (mat_s as BaseMaterial3D).transparency == BaseMaterial3D.TRANSPARENCY_DISABLED
 			var destino: Material = mat.sillar() if plano else mat_s
-			var clave := "%d_%d|%d" % [trozo.x, trozo.y, destino.get_instance_id()]
+			var clave := ("propio:" + propio if propio != "" else "%d_%d" % [trozo.x, trozo.y]) + "|%d" % destino.get_instance_id()
 			if not _fundidos.has(clave):
 				var st := SurfaceTool.new()
 				st.begin(Mesh.PRIMITIVE_TRIANGLES)
@@ -465,18 +483,74 @@ func _fundir(n: Node3D) -> void:
 
 
 func _cerrar_fundidos() -> void:
-	# (las sombras de los edificios, solo donde el perfil lo pida: en el medio dibujarlas dos veces no cabe en el Mali)
-	var con_sombra: bool = perfil.get("sombras_edificios", nombre_perfil == "alto")
-	var sombra := GeometryInstance3D.SHADOW_CASTING_SETTING_ON if con_sombra else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var guardadas: Array = []
 	for clave in _fundidos:
 		var d: Array = _fundidos[clave]
-		var mi := MeshInstance3D.new()
-		mi.mesh = _con_lod(d[0] as SurfaceTool, d[1])
-		mi.material_override = d[1]
-		mi.cast_shadow = sombra
-		mi.name = "Edificios_" + String(clave).get_slice("|", 0)
-		region.add_child(mi)
+		var malla := _con_lod(d[0] as SurfaceTool, d[1])
+		malla.surface_set_material(0, d[1])                      # la malla lleva su material: así se puede guardar
+		var sitio := String(clave).get_slice("|", 0)
+		_poner_edificio(malla, sitio)
+		guardadas.append([malla, sitio])
 	_fundidos.clear()
+	if usar_cache and not guardadas.is_empty():
+		DirAccess.make_dir_recursive_absolute(DIR_CACHE)
+		var lista := []
+		for i in guardadas.size():
+			var ruta := "%s/%s_%s_%03d.res" % [DIR_CACHE, VERSION_CACHE, nombre_perfil, i]
+			ResourceSaver.save(guardadas[i][0], ruta, ResourceSaver.FLAG_COMPRESS)
+			lista.append([ruta, guardadas[i][1]])
+		var f := FileAccess.open(_indice_cache(), FileAccess.WRITE)
+		if f != null:
+			f.store_var(lista)
+
+
+func _poner_edificio(malla: ArrayMesh, sitio: String) -> void:
+	# (las sombras de los edificios, solo donde el perfil lo pida: en el medio dibujarlas dos veces no cabe en el Mali)
+	var con_sombra: bool = perfil.get("sombras_edificios", nombre_perfil == "alto")
+	var mi := MeshInstance3D.new()
+	mi.mesh = malla
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if con_sombra else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mi.name = "Edificios_" + sitio
+	if sitio.begins_with("propio:") and _cuerpos.has(sitio.substr(7)):
+		mi.material_override = malla.surface_get_material(0)   # (la transparencia de vista3d.gd cambia el material_override)
+		_cuerpos[sitio.substr(7)].add_child(mi)              # su choque lo encuentra: se vuelve medio transparente
+		mi.add_to_group("ocluye")                               # si tapa a Kael (vista3d.gd, _oclusion)
+		mi.position = -(_cuerpos[sitio.substr(7)] as Node3D).position
+	else:
+		region.add_child(mi)
+
+
+# Las mallas juntadas, guardadas (como la roca de la Garganta): la primera vez por perfil se juntan y se guardan en
+# user://cache_oakhaven/; las siguientes se leen y no se carga ni se junta ningún glb. Si falta algo, se juntan como
+# siempre. SUBE VERSION_CACHE si cambian los modelos, el relleno o cómo se juntan.
+const VERSION_CACHE := "t103a"
+const DIR_CACHE := "user://cache_oakhaven"
+var usar_cache := not Engine.has_meta("oakhaven_sin_cache")
+var leidas_de_cache := 0
+
+
+func _indice_cache() -> String:
+	return "%s/%s_%s.indice" % [DIR_CACHE, VERSION_CACHE, nombre_perfil]
+
+
+# true si ha puesto los edificios desde la caché (entonces no hace falta cargar ni juntar los glb).
+func _edificios_de_cache() -> bool:
+	if not usar_cache or not FileAccess.file_exists(_indice_cache()):
+		return false
+	var f := FileAccess.open(_indice_cache(), FileAccess.READ)
+	var lista = f.get_var() if f != null else null
+	if not lista is Array:
+		return false
+	var mallas: Array = []
+	for e in lista:
+		var m := ResourceLoader.load(e[0], "", ResourceLoader.CACHE_MODE_IGNORE) as ArrayMesh
+		if m == null:
+			return false
+		mallas.append([m, e[1]])
+	for e in mallas:
+		_poner_edificio(e[0], e[1])
+	leidas_de_cache = mallas.size()
+	return true
 
 
 # La malla juntada con sus niveles de detalle (LOD): Godot dibuja una versión con menos triángulos cuando el trozo se ve
@@ -512,3 +586,102 @@ func _con_lod(st: SurfaceTool, m: Material) -> ArrayMesh:
 		im.call("generate_lods", 25.0, [])
 		lods_hechos += 1
 	return im.get_mesh()
+
+
+# ================================================================= jardines (la referencia: una ciudad verde y florida)
+
+# Arbustos redondos (algunos en flor) al pie de las casas y en los huertos, y arbolitos de copa redonda en los jardines.
+# Formas sencillas en MultiMesh (una llamada de dibujo por tramo), sin choque (no están en las calles).
+func _jardines(rng: RandomNumberGenerator) -> void:
+	var m := mat.detalle(Color.WHITE, 0.9, 0.6).duplicate() as StandardMaterial3D
+	m.vertex_color_use_as_albedo = true
+	var arbusto := SphereMesh.new()
+	arbusto.radius = 0.55
+	arbusto.height = 0.8
+	arbusto.radial_segments = 7
+	arbusto.rings = 4
+	arbusto.material = m
+	var arbol := _arbolito()
+	arbol.surface_set_material(0, m)
+	var verdes := [Color(0.20, 0.36, 0.16), Color(0.26, 0.42, 0.18), Color(0.17, 0.30, 0.15), Color(0.30, 0.44, 0.20)]
+	var flores := [Color(0.80, 0.45, 0.60), Color(0.90, 0.85, 0.70), Color(0.62, 0.48, 0.80)]
+	var arbustos: Array = []
+	var arboles: Array = []
+	var intentos := 0
+	while (arbustos.size() < ARBUSTOS[nombre_perfil] or arboles.size() < ARBOLITOS[nombre_perfil]) and intentos < 8000:
+		intentos += 1
+		var x := rng.randf_range(1.5, Oak.TAM.x - 1.5)
+		var z := rng.randf_range(1.5, Oak.TAM.y - 1.5)
+		if lugar_en(x, z) != "" or bloqueado(x, z, 0.8) or _cerca_de_calle(x, z, 1.0):
+			continue
+		var junto_casa := bloqueado(x, z, 2.2)                   # al pie de una casa: arbustos; en el huerto: árboles
+		if junto_casa and arbustos.size() < ARBUSTOS[nombre_perfil]:
+			var e := rng.randf_range(0.7, 1.3)
+			var c: Color = verdes[rng.randi() % verdes.size()]
+			if rng.randf() < 0.3:
+				c = c.lerp(flores[rng.randi() % flores.size()], 0.35)
+			arbustos.append([Transform3D(Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(e, e * rng.randf_range(0.8, 1.1), e)),
+				Vector3(x, 0.25 * e, z)), c])
+		elif not junto_casa and arboles.size() < ARBOLITOS[nombre_perfil] and not _cerca_de_calle(x, z, 2.5):
+			var e := rng.randf_range(0.8, 1.25)
+			arboles.append([Transform3D(Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3.ONE * e), Vector3(x, 0, z)),
+				Color.WHITE * rng.randf_range(0.85, 1.1)])
+	_por_tramos("Arbustos", arbusto, arbustos)
+	_por_tramos("Arbolitos", arbol, arboles)
+
+
+func _cerca_de_calle(x: float, z: float, margen: float) -> bool:
+	for l in Oak.LUGARES:
+		if l.get("pisable", false) and (l["rect"] as Rect2).grow(margen).has_point(Vector2(x, z)):
+			return true
+	return false
+
+
+# Un arbolito: tronco y tres copas redondas, con su color en los vértices (el tronco pardo, las copas verdes).
+func _arbolito() -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var tronco := CylinderMesh.new()
+	tronco.top_radius = 0.1
+	tronco.bottom_radius = 0.16
+	tronco.height = 2.0
+	tronco.radial_segments = 6
+	tronco.rings = 1
+	var partes := [[tronco, Transform3D(Basis(), Vector3(0, 1.0, 0)), Color(0.36, 0.26, 0.18)]]
+	for c in [[Vector3(0, 2.4, 0), 1.0, Color(0.22, 0.38, 0.17)], [Vector3(0.5, 2.0, 0.2), 0.7, Color(0.27, 0.43, 0.19)],
+			[Vector3(-0.4, 2.1, -0.3), 0.75, Color(0.19, 0.33, 0.15)]]:
+		var s := SphereMesh.new()
+		s.radius = c[1]
+		s.height = c[1] * 1.7
+		s.radial_segments = 8
+		s.rings = 5
+		partes.append([s, Transform3D(Basis(), c[0]), c[2]])
+	for p in partes:
+		var arr: Array = (p[0] as Mesh).surface_get_arrays(0)
+		var v: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+		var n: PackedVector3Array = arr[Mesh.ARRAY_NORMAL]
+		var t: Transform3D = p[1]
+		for i in arr[Mesh.ARRAY_INDEX]:
+			st.set_color(p[2])
+			st.set_normal(n[i])
+			st.add_vertex(t * v[i])
+	return st.commit()
+
+
+var _desde_cache := false
+
+
+func _fundir_unicas() -> void:
+	for id in UNICAS:
+		var n := _modelo(id)
+		if n != null:
+			_fundir(n, id if id in TAPAN else "")
+
+
+func _fundir_relleno() -> void:                       # (con los faroles: los de _faroles no se juntaron)
+	for d in Piezas2D.RELLENO:
+		var r: Rect2i = d["rect"]
+		var n := _modelo(d["id"])
+		if n != null:
+			n.position = Vector3(r.position.x, 0, r.position.y)
+			_fundir(n)
