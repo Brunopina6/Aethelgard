@@ -369,13 +369,13 @@ func _menu() -> void:
 	var kael := _heroe("Kael", 100, 100, 10)
 	var lya := _heroe("Lya", 80, 80)
 	var filas: Array = A.filas_familia("Alba", 2, kael, [kael, lya], [_enemigo("Slime", 50)], [])
-	_ok(filas.size() == 2 and filas[0]["texto"] == "Compás del Alba" and filas[0]["derecha"] == "I · 6 PM"
+	_ok(filas.size() == 2 and filas[0]["texto"] == "Compás del Alba" and filas[0]["derecha"] == "6 PM"
 		and not filas[0]["apagado"] and filas[0]["desc"] == A.DESCRIPCION["Compás del Alba"], "6: la fila del Compás: %s" % [filas])
-	_ok(filas[1]["apagado"] and filas[1]["derecha"] == "II · 15 PM", "6: el Ocaso se puede pagar con 10 PM")
+	_ok(filas[1]["apagado"] and filas[1]["derecha"] == "15 PM", "6: el Ocaso se puede pagar con 10 PM")
 	var solo: Array = A.filas_familia("Alba", 1, kael, [kael], [], [])
 	_ok(solo[0]["apagado"] and solo[0]["desc"] == A.MOTIVO["sin_otro"], "6: el Compás de Kael solo no dice por qué")
 	var pruebas: Array = A.filas_familia("Lumbre", 1, lya, [kael, lya], [], [], true)
-	_ok(pruebas[0]["derecha"] == "I · PM ∞" and pruebas[0]["apagado"], "6: con PM infinitos o sin caídos: %s" % [pruebas])
+	_ok(pruebas[0]["derecha"] == "PM ∞" and pruebas[0]["apagado"], "6: con PM infinitos o sin caídos: %s" % [pruebas])
 	# iconos: se dibujan en el draw de un Control (si el modo sin ventana dibuja)
 	lienzo = Control.new()
 	lienzo.size = Vector2(200, 40)

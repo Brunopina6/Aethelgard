@@ -37,6 +37,8 @@ const TAM_NOMBRE := 60
 const TAM_ELEGIDA := 45
 const TAM_ORDEN := 38
 const TAM_SUB := 36
+const TAM_SUB_MIN := 26          # un nombre largo (Cólera del Cielo, Lumbre de Retorno) no baja de aquí
+const HUECO_COSTE := 14.0        # entre el nombre y el coste de la derecha
 const TAM_DESC := 24
 const TAM_GRUPO := 28
 const TAM_ARMONIA := 22
@@ -51,6 +53,8 @@ const FUENTE_ORDEN_FUERTE := "res://fuentes/SairaCondensed-Medium.ttf"
 var f_nombre: Font
 var f_orden: Font
 var f_fuerte: Font
+var f_orden_junta: Font          # las mismas con menos espacio entre letras: nombres largos de los submenús
+var f_fuerte_junta: Font
 var f_numero: Font               # condensada sin espacio extra (PV, números flotantes)
 var glow_tex: GradientTexture2D
 var mat_aditivo: CanvasItemMaterial
@@ -87,6 +91,8 @@ func _ready() -> void:
 	f_nombre = fuente(FUENTE_NOMBRE, 0, 600)
 	f_orden = fuente(FUENTE_ORDEN, 6, 0)
 	f_fuerte = fuente(FUENTE_ORDEN_FUERTE, 6, 0)
+	f_orden_junta = fuente(FUENTE_ORDEN, 2, 0)
+	f_fuerte_junta = fuente(FUENTE_ORDEN_FUERTE, 2, 0)
 	f_numero = fuente(FUENTE_ORDEN_FUERTE, 1, 0)
 	var g := Gradient.new()
 	g.offsets = PackedFloat32Array([0.0, 1.0])
@@ -289,7 +295,7 @@ func actualizar_grupo(actor) -> void:
 		g["relleno"].size.x = g["fondo"].size.x * clampf(h["atb"] / 100.0, 0.0, 1.0)
 		g["relleno"].color = g["color"] if lleno else Color(LUZ_CLARA, 0.55)
 		g["brillo"].visible = lleno
-		var firma := str(Artes.estados_de(h))      # los iconos de estado se redibujan solo si cambian
+		var firma := str(Artes.estados_de(h))      # los iconos de estado se redibujan solo si cambian (o si cae)
 		if g["firma"] != firma:
 			g["firma"] = firma
 			g["estados"].queue_redraw()
@@ -442,6 +448,8 @@ func _construir(items: Array, alto: float, pestanas: Array = [], pestana := 0) -
 			r.position = Vector2(nodo.size.x - MARGEN_TOQUE - 160, 0)
 			nodo.add_child(r)
 			f["der"] = r
+		if alto != FILA and not it.get("aviso", false):
+			_ajustar_nombre(f, str(it["texto"]), x_texto, str(it.get("derecha", "")))
 		if it.get("tipo", "") == "carta":            # flechas ◂ ▸ con zona de toque grande
 			var lado: String = carta_lado.get(heroe_actual.get("nombre", ""), "a")
 			f["lado"] = lado
@@ -468,6 +476,23 @@ func _construir(items: Array, alto: float, pestanas: Array = [], pestana := 0) -
 		_elegir(primera, false)
 	else:
 		_pintar()
+
+
+# Que el nombre de una fila de submenú no pise su coste («Cólera del Cielo» y «32 PM», o las artes: «Lumbre de Retorno»
+# y «14 PM»). Si no cabe con el estilo de siempre, primero se juntan las letras (2 px en vez de 6) y, si aún no cabe, se
+# baja el tamaño hasta TAM_SUB_MIN. Los nombres que caben (casi todos) no cambian. Se mide con la fuente de la elegida,
+# que es la más ancha.
+func _ajustar_nombre(f: Dictionary, texto: String, x_texto: float, derecha: String) -> void:
+	var libre: float = f["nodo"].size.x - MARGEN_TOQUE - x_texto
+	if derecha != "":
+		libre -= f_orden.get_string_size(derecha, HORIZONTAL_ALIGNMENT_LEFT, -1, TAM_SUB - 6).x + HUECO_COSTE
+	if f_fuerte.get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, TAM_SUB).x <= libre:
+		return
+	f["junta"] = true
+	var tam := TAM_SUB
+	while tam > TAM_SUB_MIN and f_fuerte_junta.get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, tam).x > libre:
+		tam -= 1
+	f["tam"] = tam
 
 
 # Entrada: las líneas aparecen deslizándose una detrás de otra (menos de medio segundo).
@@ -514,8 +539,11 @@ func _pintar() -> void:
 			l.add_theme_font_override("font", f_fuerte if elegida and not apagado else f_orden)
 		else:                                        # submenús: mismo tamaño, la elegida en blanco
 			l.text = texto
-			l.add_theme_font_size_override("font_size", TAM_SUB)
-			l.add_theme_font_override("font", f_fuerte if elegida and not apagado else f_orden)
+			l.add_theme_font_size_override("font_size", f.get("tam", TAM_SUB))
+			if f.get("junta", false):                # nombre largo: letras más juntas (_ajustar_nombre)
+				l.add_theme_font_override("font", f_fuerte_junta if elegida and not apagado else f_orden_junta)
+			else:
+				l.add_theme_font_override("font", f_fuerte if elegida and not apagado else f_orden)
 		l.add_theme_color_override("font_color", color)
 		if f.has("der"):
 			f["der"].add_theme_color_override("font_color", GRIS_APAGADO if apagado else (LUZ_CLARA if elegida else GRIS))

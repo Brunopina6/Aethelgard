@@ -357,6 +357,8 @@ static func aplicar(familia: String, nv: int, objs: Array, cola: Array, atb_max 
 
 static func estados_de(f: Dictionary) -> Array:
 	var r: Array = []
+	if int(f.get("hp", 1)) <= 0:                     # caído: sin iconos (el Aliento no cura a quien está en el suelo)
+		return r
 	if int(f.get("barrera", 0)) > 0:
 		r.append("barrera")
 	if int(f.get("aliento", 0)) > 0:
@@ -409,8 +411,10 @@ static func filas_familia(familia: String, nivel_usable_: int, actor: Dictionary
 	for n in range(1, mini(nivel_usable_, 3) + 1):
 		var d := datos(familia, n)
 		var motivo := motivo_apagado(familia, n, actor, heroes, enemigos, cola, atb_max)
+		# A la derecha, solo el coste, como las de siempre (con «I ·» delante, los nombres largos pisaban el coste: capturas
+		# del 09/11); el nivel se ve por el orden de las filas, en Habilidades y en la tienda.
 		r.append({"texto": d["nombre"], "icono": familia, "familia": familia, "nivel": n,
-			"derecha": "%s · %s" % [ROMANOS[n - 1], "PM ∞" if modo_pruebas else "%d PM" % d["coste"]],
+			"derecha": "PM ∞" if modo_pruebas else "%d PM" % d["coste"],
 			"apagado": motivo != "" or not puede_pagar(actor, familia, n, modo_pruebas),
 			"desc": motivo if motivo != "" else DESCRIPCION[d["nombre"]]})
 	return r
