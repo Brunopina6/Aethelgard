@@ -19,6 +19,13 @@ pidió no preguntar ([MEMORIA_CHAT.md](MEMORIA_CHAT.md)). **La memoria describe 
   (desde `c74b872`): diseño y maqueta jugable, activable con `-- garganta3d`.
 - **Mapamundi pintado: integrado** (`a04a9d2`) con el selector en Ajustes (`14aea04`). Batería: 40 superadas, 0
   fallidas. Falta medirlo. La memoria describe `integracion-experimental` @ `14aea04`.
+- **09/11, 11:50:**
+  - integradas la Garganta 3D (`ea067b1`, elegible en Ajustes con `cff2323`) y la fase 1 de combate (`555fc29`, en
+    GitHub). Batería de `555fc29`: 47 superadas, 0 fallidas (`D:REBELUM_diagnosticopruebas�6-11-09_084703`);
+  - un límite de uso cortó a cuatro especialistas: combate fase 2, sonido tanda 3, narrativa fase 2 y el arte de
+    Oakhaven. Su trabajo quedó sin confirmar en sus copias. A las 11:50 se reanudan con su contexto: primero combate y
+    narrativa; sonido y gráficos, después de compilar la APK con la Garganta 3D elegible.
+  - La memoria describe `integracion-experimental` @ `555fc29`.
 - **Oakhaven:** la fase 1 (datos y diálogos, en archivos nuevos) está integrada en `ab250c9`, que ya está en GitHub.
   La fase 2 va en marcha desde las 09:00: narrativa la engancha en `D:\Aethelgard_narrativa` y gráficos hace el arte
   en `D:\Aethelgard_graficos`. **Especialistas activos:** Garganta 3D, combate (fase 1), narrativa y gráficos.
