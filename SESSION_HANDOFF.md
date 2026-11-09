@@ -19,6 +19,19 @@ pidió no preguntar ([MEMORIA_CHAT.md](MEMORIA_CHAT.md)). **La memoria describe 
   (desde `c74b872`): diseño y maqueta jugable, activable con `-- garganta3d`.
 - **Mapamundi pintado: integrado** (`a04a9d2`) con el selector en Ajustes (`14aea04`). Batería: 40 superadas, 0
   fallidas. Falta medirlo. La memoria describe `integracion-experimental` @ `14aea04`.
+- **09/11 ~19:20, punto de control por el límite de uso (sesión «calidad AAA, sin Redmi»).** Subido y comprobado:
+  `integracion-experimental` @ `955345a` (batería 64/0, `D:\REBELUM_diagnostico\pruebas\2026-11-09_184606\`) y todas
+  las ramas de área. Local sin subir: `f2e9c9f` (une la Garganta completa y Oakhaven viva, ramas ya subidas); su
+  batería quedó en marcha (`D:\REBELUM_diagnostico\pruebas\bateria_f2e9c9f.log`), **pendiente de verificar**.
+  - **Integrado hoy:** HUD de PM (T-099), Zarzalín jugable con sonidos y botín (T-097), Escarcha y Guardia de Garon
+    (T-100), esperas con personalidad y gestos de diálogo, charlas de posada, vecinos vivos, posada como servicios,
+    comentarios de los héroes (2D, Pastos Verdes 3D y Garganta 3D), Garganta 3D pulida entera (T-102), voces de
+    esfuerzo, logotipo e icono REBELUM (T-098), prueba de integridad y el lanzador de pruebas más seguro.
+  - **Detenidos por el límite, con trabajo sin confirmar en sus copias:** combate (M4 y C2, voces t5), sonido
+    (tanda 6: Oakhaven y mezcla), gráficos (optimizar la Garganta; luego T-103 en rama nueva `area-oakhaven3d`),
+    narrativa (pregunta de la posadera y notas de lore) y animaciones (T-101, la invocación nueva de Érebo).
+  - **Siguiente:** comprobar la batería de `f2e9c9f` y subirla; retomar los cinco encargos; compilar la APK de prueba
+    (nada se ha compilado hoy) y anotar en `docs/pruebas_redmi_pendientes.md` lo que falte en el teléfono.
 - **09/11 ~17:50, sesión autónoma «calidad AAA, sin Redmi».** El usuario está fuera: **no se usa el Redmi** (ni ADB
   ni copias); lo que lo necesite va a `docs/pruebas_redmi_pendientes.md` (en la integración). Subido
   `integracion-experimental` @ `eef300c`, comprobado con `git ls-remote`; después, `cd2a405` (local):
