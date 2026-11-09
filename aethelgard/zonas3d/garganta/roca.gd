@@ -268,7 +268,8 @@ class Lotes:
 			var mi := MeshInstance3D.new()
 			mi.mesh = _st[mat].commit()
 			mi.material_override = mat
-			if not sombra:
+			var transparente: bool = mat is BaseMaterial3D and (mat as BaseMaterial3D).transparency != BaseMaterial3D.TRANSPARENCY_DISABLED
+			if not sombra or transparente:                   # los halos y lo que brilla no dan sombra
 				mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			padre.add_child(mi)
 			hechas.append(mi)

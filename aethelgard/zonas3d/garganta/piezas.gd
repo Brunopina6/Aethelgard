@@ -152,35 +152,23 @@ func _cilindro(a: Vector3, b: Vector3, r: float, m: Material, lados := 5) -> voi
 	lotes.poner(cm, Transform3D(Basis(x, y, x.cross(y)), (a + b) * 0.5), m)
 
 
-# Pilar de piedra con el anillo partido tallado en la cara que mira al camino (o al sur). «desgaste» de 0 a 1: el anillo
-# más fino, más hundido y más roto. Choca y se vuelve medio transparente si tapa a Kael.
+# Pilar de piedra con el anillo partido tallado en la cara que mira al sur (al camino). «desgaste» de 0 a 1: el anillo
+# más fino, más hundido y más roto. Choca; se dibuja en los lotes (son bajos: no tapan a Kael).
 func pilar_anillo(p: Vector3, desgaste: float, alto: float, ancho := 0.42) -> StaticBody3D:
 	var cuerpo := StaticBody3D.new()
 	cuerpo.position = p
 	region.add_child(cuerpo)
 	var piedra := mat.piedra_tallada()
-	var fuste := MeshInstance3D.new()
 	var bm := BoxMesh.new()
 	bm.size = Vector3(ancho, alto, ancho)
-	fuste.mesh = bm
-	fuste.material_override = piedra
-	fuste.position.y = alto * 0.5
-	cuerpo.add_child(fuste)
-	fuste.add_to_group("ocluye")
-	var capitel := MeshInstance3D.new()
+	lotes.poner(bm, Transform3D(Basis(), p + Vector3(0, alto * 0.5, 0)), piedra)
 	var cm := BoxMesh.new()
 	cm.size = Vector3(ancho + 0.14, 0.16, ancho + 0.14)
-	capitel.mesh = cm
-	capitel.material_override = piedra
-	capitel.position.y = alto + 0.06
-	cuerpo.add_child(capitel)
-	capitel.add_to_group("ocluye")
-	var anillo := MeshInstance3D.new()
-	anillo.mesh = anillo_partido(ancho * 0.3, lerpf(0.035, 0.016, desgaste), lerpf(34.0, 80.0, desgaste), 18, 6)
-	anillo.material_override = mat.liso(Color(0.80, 0.62, 0.34).lerp(Color(0.46, 0.42, 0.40), desgaste), lerpf(0.4, 0.9, desgaste),
+	lotes.poner(cm, Transform3D(Basis(), p + Vector3(0, alto + 0.06, 0)), piedra)
+	var anillo := anillo_partido(ancho * 0.3, lerpf(0.035, 0.016, desgaste), lerpf(34.0, 80.0, desgaste), 18, 6)
+	var m_anillo := mat.liso(Color(0.80, 0.62, 0.34).lerp(Color(0.46, 0.42, 0.40), desgaste), lerpf(0.4, 0.9, desgaste),
 		lerpf(0.6, 0.1, desgaste))
-	anillo.position = Vector3(0, alto * 0.7, ancho * 0.5 + 0.005 - 0.01 * desgaste)
-	cuerpo.add_child(anillo)
+	lotes.poner(anillo, Transform3D(Basis(), p + Vector3(0, alto * 0.7, ancho * 0.5 + 0.005 - 0.01 * desgaste)), m_anillo)
 	var col := CollisionShape3D.new()
 	var forma := BoxShape3D.new()
 	forma.size = Vector3(ancho + 0.1, alto, ancho + 0.1)
@@ -199,18 +187,10 @@ func guardado(p: Vector3) -> Node3D:
 	region.add_child(cuerpo)
 	var piedra := mat.piedra_tallada()
 	for datos in [[Vector3(1.0, 0.3, 0.8), 0.15], [Vector3(0.7, 0.5, 0.55), 0.55], [Vector3(0.82, 0.12, 0.66), 0.86]]:
-		var mi := MeshInstance3D.new()
 		var bm := BoxMesh.new()
 		bm.size = datos[0]
-		mi.mesh = bm
-		mi.material_override = piedra
-		mi.position.y = datos[1]
-		cuerpo.add_child(mi)
-	var anillo := MeshInstance3D.new()
-	anillo.mesh = anillo_partido(0.17, 0.025, 36.0)
-	anillo.material_override = mat.bronce()
-	anillo.position = Vector3(0, 0.58, 0.28)
-	cuerpo.add_child(anillo)
+		lotes.poner(bm, Transform3D(Basis(), p + Vector3(0, datos[1], 0)), piedra)
+	lotes.poner(anillo_partido(0.17, 0.025, 36.0), Transform3D(Basis(), p + Vector3(0, 0.58, 0.28)), mat.bronce())
 	var col := CollisionShape3D.new()
 	var forma := BoxShape3D.new()
 	forma.size = Vector3(1.0, 1.0, 0.8)
@@ -233,7 +213,7 @@ func guardado(p: Vector3) -> Node3D:
 	var sube := cristal.create_tween().set_loops()
 	sube.tween_property(cristal, "position:y", 1.6, 1.4).set_trans(Tween.TRANS_SINE)
 	sube.tween_property(cristal, "position:y", 1.45, 1.4).set_trans(Tween.TRANS_SINE)
-	esc.halo(p, p + Vector3(0, 1.5, 0), Color(0.55, 1.0, 0.65), 3.4, 1.5)
+	esc.halo(p, p + Vector3(0, 1.5, 0), Color(0.55, 1.0, 0.65), 3.4, 1.5, lotes)
 	cuerpo.set_meta("cristal", cristal)
 	return cuerpo
 
@@ -360,42 +340,28 @@ func ascensor(encendido: bool) -> Dictionary:
 	var cesta := Node3D.new()
 	cesta.name = "Cesta"
 	region.add_child(cesta)
-	var m_cesta := vieja
+	var piezas_cesta := Roca.Lotes.new()                 # la cesta entera: una malla por material (se mueve junta)
 	for datos in [[Vector3(1.9, 0.12, 1.7), Vector3(0, 0.06, 0)], [Vector3(1.9, 0.8, 0.08), Vector3(0, 0.46, 0.81)],
 			[Vector3(1.9, 0.8, 0.08), Vector3(0, 0.46, -0.81)], [Vector3(0.08, 0.8, 1.7), Vector3(0.91, 0.46, 0)],
 			[Vector3(0.08, 0.8, 1.7), Vector3(-0.91, 0.46, 0)]]:
-		var mi := MeshInstance3D.new()
-		var bm := BoxMesh.new()
-		bm.size = datos[0]
-		mi.mesh = bm
-		mi.material_override = m_cesta
-		mi.position = datos[1]
-		cesta.add_child(mi)
+		_caja_lote(piezas_cesta, datos[0], datos[1], vieja)
 	var cuerda := mat.cuerda()
 	for e in [Vector3(0.85, 0.85, 0.75), Vector3(-0.85, 0.85, 0.75), Vector3(0.85, 0.85, -0.75), Vector3(-0.85, 0.85, -0.75)]:
-		var mi := MeshInstance3D.new()
 		var cm := CylinderMesh.new()
 		var largo: float = e.distance_to(Vector3(0, 2.6, 0))
 		cm.top_radius = 0.015
 		cm.bottom_radius = 0.015
 		cm.height = largo
 		cm.radial_segments = 4
-		mi.mesh = cm
-		mi.material_override = cuerda
 		var y: Vector3 = (Vector3(0, 2.6, 0) - e).normalized()
 		var x: Vector3 = y.cross(Vector3.FORWARD).normalized()
-		mi.transform = Transform3D(Basis(x, y, x.cross(y)), (e + Vector3(0, 2.6, 0)) * 0.5)
-		cesta.add_child(mi)
-	var polea := MeshInstance3D.new()
+		piezas_cesta.poner(cm, Transform3D(Basis(x, y, x.cross(y)), (e + Vector3(0, 2.6, 0)) * 0.5), cuerda)
 	var pm := CylinderMesh.new()
 	pm.top_radius = 0.2
 	pm.bottom_radius = 0.2
 	pm.height = 0.18
-	polea.mesh = pm
-	polea.material_override = hierro
-	polea.position = Vector3(0, 2.7, 0)
-	polea.rotation = Vector3(PI * 0.5, 0, 0)
-	cesta.add_child(polea)
+	piezas_cesta.poner(pm, Transform3D(Basis.from_euler(Vector3(PI * 0.5, 0, 0)), Vector3(0, 2.7, 0)), hierro)
+	piezas_cesta.cerrar(cesta)
 	var datos := {"cesta": cesta, "faroles": faroles, "cable": cable}
 	encender_ascensor(datos, encendido, false)
 	cesta.position = posicion_cesta(cable, 0.5)
@@ -570,7 +536,7 @@ func choque_levadizo(datos: Dictionary) -> void:
 
 func puerta(abierta: bool) -> Dictionary:
 	var p := T.PUERTA
-	var piedra := mat.detalle(Color(0.60, 0.57, 0.56), 0.5, 0.45)
+	var piedra := mat.detalle(Color(0.52, 0.49, 0.48), 0.5, 0.45)
 	var media := T.PUERTA_ANCHO * 0.5
 	var marco: Array = []
 	for datos in [[Vector3(-media - 0.55, 2.7, 0), Vector3(1.1, 5.4, 1.3)], [Vector3(media + 0.55, 2.7, 0), Vector3(1.1, 5.4, 1.3)],
@@ -606,7 +572,7 @@ func puerta(abierta: bool) -> Dictionary:
 	var hb := BoxMesh.new()
 	hb.size = Vector3(T.PUERTA_ANCHO, 5.2, 0.6)
 	hoja.mesh = hb
-	hoja.material_override = mat.detalle(Color(0.52, 0.49, 0.50), 0.5, 0.45)
+	hoja.material_override = mat.detalle(Color(0.44, 0.42, 0.43), 0.5, 0.45)
 	hoja.position.y = 2.6
 	losa.add_child(hoja)
 	var anillo := MeshInstance3D.new()
@@ -652,14 +618,15 @@ func cofre(p: Vector3, abierto: bool) -> Dictionary:
 	cuerpo.name = "Cofre"
 	cuerpo.position = p
 	region.add_child(cuerpo)
-	var madera := mat.detalle(Color(0.36, 0.20, 0.14), 0.9, 0.8)
+	var madera := mat.detalle(Color(0.30, 0.17, 0.12), 0.9, 0.8)
 	var oro := mat.liso(Color(0.95, 0.74, 0.30), 0.32, 0.65)
 	var r := COFRE_FONDO * 0.5
-	_caja_hija(cuerpo, Vector3(COFRE_ANCHO, COFRE_ALTO, COFRE_FONDO), Vector3(0, COFRE_ALTO * 0.5, 0), madera)
-	_caja_hija(cuerpo, Vector3(COFRE_ANCHO + 0.04, 0.06, COFRE_FONDO + 0.04), Vector3(0, 0.03, 0), oro)
+	var fijo := Roca.Lotes.new()                       # la caja, los herrajes y las monedas: una malla por material
+	_caja_lote(fijo, Vector3(COFRE_ANCHO, COFRE_ALTO, COFRE_FONDO), Vector3(0, COFRE_ALTO * 0.5, 0), madera)
+	_caja_lote(fijo, Vector3(COFRE_ANCHO + 0.04, 0.06, COFRE_FONDO + 0.04), Vector3(0, 0.03, 0), oro)
 	for x in [-COFRE_ANCHO * 0.5 + 0.12, 0.0, COFRE_ANCHO * 0.5 - 0.12]:
-		_caja_hija(cuerpo, Vector3(0.07, COFRE_ALTO + 0.01, COFRE_FONDO + 0.02), Vector3(x, COFRE_ALTO * 0.5, 0), oro)
-	_caja_hija(cuerpo, Vector3(0.16, 0.18, 0.02), Vector3(0, COFRE_ALTO - 0.08, r + 0.01), oro)
+		_caja_lote(fijo, Vector3(0.07, COFRE_ALTO + 0.01, COFRE_FONDO + 0.02), Vector3(x, COFRE_ALTO * 0.5, 0), oro)
+	_caja_lote(fijo, Vector3(0.16, 0.18, 0.02), Vector3(0, COFRE_ALTO - 0.08, r + 0.01), oro)
 	var gema := MeshInstance3D.new()                   # una gema de ámbar en la cerradura
 	var gm := SphereMesh.new()
 	gm.radius = 0.05
@@ -672,19 +639,16 @@ func cofre(p: Vector3, abierto: bool) -> Dictionary:
 	cuerpo.add_child(gema)
 	# el fondo con monedas (se ve al abrir)
 	var monedas := mat.brillo(Color(1.0, 0.8, 0.35), 0.95)
-	_caja_hija(cuerpo, Vector3(COFRE_ANCHO - 0.1, 0.02, COFRE_FONDO - 0.1), Vector3(0, COFRE_ALTO + 0.005, 0), mat.liso(Color(0.15, 0.08, 0.05)))
+	_caja_lote(fijo, Vector3(COFRE_ANCHO - 0.1, 0.02, COFRE_FONDO - 0.1), Vector3(0, COFRE_ALTO + 0.005, 0), mat.liso(Color(0.15, 0.08, 0.05)))
 	for k in 10:
-		var mi := MeshInstance3D.new()
 		var cm := CylinderMesh.new()
 		cm.top_radius = 0.045
 		cm.bottom_radius = 0.045
 		cm.height = 0.014
 		cm.radial_segments = 10
-		mi.mesh = cm
-		mi.material_override = monedas
-		mi.position = Vector3(-0.36 + 0.08 * k, COFRE_ALTO + 0.02 + 0.006 * (k % 3), 0.12 * sin(k * 2.3))
-		mi.rotation = Vector3(0.25 * sin(k * 1.7), 0, 0.25 * cos(k * 1.3))
-		cuerpo.add_child(mi)
+		fijo.poner(cm, Transform3D(Basis.from_euler(Vector3(0.25 * sin(k * 1.7), 0, 0.25 * cos(k * 1.3))),
+			Vector3(-0.36 + 0.08 * k, COFRE_ALTO + 0.02 + 0.006 * (k % 3), 0.12 * sin(k * 2.3))), monedas)
+	fijo.cerrar(cuerpo)
 	var tapa := Node3D.new()
 	tapa.name = "Tapa"
 	tapa.position = Vector3(0, COFRE_ALTO, -r)
@@ -718,15 +682,10 @@ func cofre(p: Vector3, abierto: bool) -> Dictionary:
 	return {"cuerpo": cuerpo, "tapa": tapa, "brillo": brillo}
 
 
-func _caja_hija(padre: Node3D, tam: Vector3, pos: Vector3, m: Material) -> MeshInstance3D:
-	var mi := MeshInstance3D.new()
+func _caja_lote(l: Roca.Lotes, tam: Vector3, pos: Vector3, m: Material) -> void:
 	var bm := BoxMesh.new()
 	bm.size = tam
-	mi.mesh = bm
-	mi.material_override = m
-	mi.position = pos
-	padre.add_child(mi)
-	return mi
+	l.poner(bm, Transform3D(Basis(), pos), m)
 
 
 # Medio cilindro tumbado (la tapa curva del cofre): eje en y = 0, de z = −radio a z = +radio.
@@ -783,8 +742,8 @@ func destello(padre: Node3D, pos: Vector3, tam: float, color := Color(1.0, 0.82,
 # abismo. Las ramas van tangentes al anillo, en capas que se cruzan (así se lee «nido» y no «montón de palos»).
 func nido(c: Vector3) -> void:
 	var rama := mat.madera_vieja()
-	var seca := mat.detalle(Color(0.55, 0.45, 0.32), 1.2, 0.6)
-	var clara := mat.detalle(Color(0.62, 0.54, 0.40), 1.2, 0.5)
+	var seca := mat.detalle(Color(0.47, 0.38, 0.27), 1.2, 0.6)
+	var clara := mat.detalle(Color(0.53, 0.46, 0.34), 1.2, 0.5)
 	var capas := 5
 	for capa in capas:
 		var y := 0.08 + 0.17 * capa
@@ -812,7 +771,7 @@ func nido(c: Vector3) -> void:
 	lecho.bottom_radius = 2.0
 	lecho.height = 0.22
 	lecho.radial_segments = 18
-	lotes.poner(lecho, Transform3D(Basis().scaled(Vector3(1, 1, 1.08)), c + Vector3(0, 0.06, 0)), mat.detalle(Color(0.58, 0.48, 0.32), 1.6, 0.6))
+	lotes.poner(lecho, Transform3D(Basis().scaled(Vector3(1, 1, 1.08)), c + Vector3(0, 0.06, 0)), mat.detalle(Color(0.49, 0.41, 0.27), 1.6, 0.6))
 	for k in 30:
 		var a := randf() * TAU
 		var r := randf_range(0.3, 2.0)
@@ -878,7 +837,7 @@ func golem(p: Vector3) -> Node3D:
 	var t := mi.create_tween().set_loops()                 # respira: el ámbar se aviva y se apaga despacio
 	t.tween_property(m, "emission_energy_multiplier", 0.3, 2.4).set_trans(Tween.TRANS_SINE)
 	t.tween_property(m, "emission_energy_multiplier", 0.08, 2.4).set_trans(Tween.TRANS_SINE)
-	esc.halo(p, p + Vector3(0, 1.4, 0), Materiales.AMBAR, 4.0, 2.2)
+	esc.halo(p, p + Vector3(0, 1.4, 0), Materiales.AMBAR, 4.0, 2.2, lotes)
 	return nodo
 
 
@@ -916,7 +875,7 @@ func gorthor(p: Vector3) -> Node3D:
 # El trono de rocas y huesos, los braseros, los tótems y los estandartes rojos del clan.
 func arena_de_gorthor(con_vida: bool) -> void:
 	var c := T.ARENA
-	var piedra := mat.detalle(Color(0.46, 0.44, 0.48), 0.8, 1.0)
+	var piedra := mat.detalle(Color(0.39, 0.37, 0.40), 0.8, 1.0)
 	var hueso := mat.hueso()
 	var trono := Vector3(T.GORTHOR.x, T.ALTO + T.ARENA_ALTO, T.GORTHOR.z - 3.0)
 	Roca.caja(lotes, region, trono + Vector3(0, 0.6, 0), Vector3(3.2, 1.2, 1.8), piedra)
@@ -981,7 +940,7 @@ func arena_de_gorthor(con_vida: bool) -> void:
 		var t := fuego.create_tween().set_loops()
 		t.tween_property(fuego, "scale", Vector3(1.1, 1.25, 1.1), 0.18 + 0.05 * lado)
 		t.tween_property(fuego, "scale", Vector3(0.9, 0.85, 0.9), 0.22)
-		esc.halo(p, p + Vector3(0, 1.7, 0), Materiales.FUEGO, 5.5, 2.4)
+		esc.halo(p, p + Vector3(0, 1.7, 0), Materiales.FUEGO, 5.5, 2.4, lotes)
 		if perfil.get("luces_faroles", false):
 			var o := OmniLight3D.new()
 			o.light_color = Color(1.0, 0.55, 0.3)
@@ -1079,7 +1038,7 @@ func pilar_peregrino(p: Vector3) -> StaticBody3D:
 		sm.radial_segments = 5
 		sm.rings = 3
 		lotes.poner(sm, Transform3D(Basis(), q + Vector3(0, alto + 0.04, 0)), llama)
-	esc.halo(p, p + Vector3(0, 0.5, 0.6), Materiales.FUEGO, 3.4, 1.2)
+	esc.halo(p, p + Vector3(0, 0.5, 0.6), Materiales.FUEGO, 3.4, 1.2, lotes)
 	# hilo de luz que baja por la grieta
 	var q := QuadMesh.new()
 	q.size = Vector2(1.4, 22.0)

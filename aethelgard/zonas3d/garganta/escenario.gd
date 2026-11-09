@@ -26,8 +26,8 @@ var triangulos := 0
 
 # Cantidades por perfil (bajo, medio, alto)
 const RESOLUCION := {"bajo": [1.15, 1.2, 0.8], "medio": [0.9, 0.95, 0.6], "alto": [0.65, 0.7, 0.5]}
-const NIEBLAS := {"bajo": [[-24.0, 0.5]], "medio": [[-19.0, 0.32], [-31.0, 0.5]],
-	"alto": [[-17.5, 0.28], [-27.0, 0.42], [-38.0, 0.55]]}
+const NIEBLAS := {"bajo": [[-33.0, 0.48]], "medio": [[-19.0, 0.26], [-33.0, 0.4]],
+	"alto": [[-17.5, 0.24], [-27.0, 0.3], [-38.0, 0.42]]}
 const HACES := {"bajo": 3, "medio": 5, "alto": 7}
 const HIERBA := {"bajo": 520, "medio": 950, "alto": 1600}
 const POLVO := {"bajo": 22, "medio": 40, "alto": 70}
@@ -190,7 +190,7 @@ func _presa_y_boca() -> void:
 		return T.Y_BOCA - 0.06 * (z - T.Z_PRESA_S) + 0.7 * Roca.n2(x * 0.15, z * 0.15) + 0.25 * Roca.n2(x * 0.6, z * 0.6)
 	_roca(Roca.franja(func(z): return T.borde_oeste(z) + 0.2, func(z): return T.muro_este(z) + 1.0, T.Z_SUR, T.Z_PRESA_S - 0.4,
 		1.2, 14, alto_boca, func(p: Vector3, n: Vector3) -> Color: return Roca.color_roca(p, n, 0.6)))
-	var suelta := mat.detalle(Color(0.5, 0.48, 0.52), 0.8, 0.9)
+	var suelta := mat.detalle(Color(0.42, 0.40, 0.43), 0.8, 0.9)
 	for k in 26:
 		var p := Vector3(randf_range(T.X_BORDE_O + 1.0, T.X_BORDE_E + 6.0), 0, randf_range(T.Z_PRESA_S + 1.5, 60.0))
 		p.y = alto_boca.call(p.x, p.z)
@@ -243,7 +243,7 @@ func _arena() -> void:
 		var p: Vector3 = puntos[k][0]
 		var b := Basis(Vector3.UP, -float(puntos[k][1]) + randf_range(-0.1, 0.1)).scaled(Vector3(randf_range(0.9, 1.05), 1, randf_range(0.82, 1.0)))
 		mm.set_instance_transform(k, Transform3D(b, Vector3(p.x, alto.call(p.x, p.z) + 0.02, p.z)))
-		var g := randf_range(0.52, 0.66)
+		var g := randf_range(0.44, 0.56)
 		var rojo := 0.18 * smoothstep(3.5, 0.0, float(puntos[k][2])) * randf()
 		mm.set_instance_color(k, Color(g + rojo, g * 0.95 - rojo * 0.3, g * 0.9 - rojo * 0.4))
 	var mmi := MultiMeshInstance3D.new()
@@ -288,7 +288,7 @@ func _repisa_nido() -> void:
 		return T.NIDO_RADIOS * lerpf(0.25, 0.97, k * k)
 	_roca(Roca.columna(c, radio, -34.0, T.NIDO - 0.08, dy, 28, 61.0, _color_muro(-1000.0, 0.3)))
 	# piedras en el borde de la repisa (fuera de donde se anda y lejos de la llegada de la escalera)
-	var gris := mat.detalle(Color(0.5, 0.48, 0.5), 0.8, 0.9)
+	var gris := mat.detalle(Color(0.40, 0.38, 0.40), 0.8, 0.9)
 	var llegada := atan2(T.VUELTA_NIDO.z - c.z, T.VUELTA_NIDO.x - c.x)
 	for k in 10:
 		var a := TAU * k / 10.0 + 0.2
@@ -342,14 +342,15 @@ func _abismo() -> void:
 	for i in capas.size():
 		var y: float = capas[i][0]
 		var a: float = capas[i][1]
-		var tibia := smoothstep(-16.0, -36.0, y)
-		var color := Color(0.40, 0.40, 0.52).lerp(Color(0.80, 0.48, 0.26), tibia)
+		# arriba, niebla fría y azulada; abajo, encendida por el ámbar del fondo (la profundidad se lee por el color)
+		var tibia := smoothstep(-18.0, -38.0, y)
+		var color := Color(0.50, 0.54, 0.68).lerp(Color(0.98, 0.58, 0.26), tibia)
 		var nm := MeshInstance3D.new()
-		var q := PlaneMesh.new()
-		q.size = Vector2(T.X_BORDE_E - T.X_BORDE_O + 7.0, T.Z_PRESA_N - T.Z_NORTE + 4.0)
+		var q := PlaneMesh.new()                                 # también bajo los huecos de los puentes (x < −8)
+		q.size = Vector2(T.X_BORDE_E - T.X_MURO_O + 4.0, T.Z_PRESA_N - T.Z_NORTE + 4.0)
 		nm.mesh = q
 		nm.material_override = mat.niebla(Color(color, a))
-		nm.position = Vector3((T.X_BORDE_O + T.X_BORDE_E) * 0.5 - 0.5, y, (T.Z_PRESA_N + T.Z_NORTE) * 0.5)
+		nm.position = Vector3((T.X_MURO_O + T.X_BORDE_E) * 0.5, y, (T.Z_PRESA_N + T.Z_NORTE) * 0.5)
 		nm.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		nm.name = "Niebla%d" % i
 		region.add_child(nm)
@@ -432,7 +433,7 @@ func _decorado() -> void:
 func _campamento() -> void:
 	var c := Vector3(12.7, 0, 4.2)
 	c.y = T.altura(c.x, c.z)
-	var piedra := mat.detalle(Color(0.42, 0.40, 0.42), 0.9, 0.9)
+	var piedra := mat.detalle(Color(0.35, 0.33, 0.35), 0.9, 0.9)
 	for k in 9:
 		var a := TAU * k / 9.0
 		var sm := SphereMesh.new()
@@ -526,7 +527,7 @@ func _losas() -> void:
 		var t := Transform3D(Basis(Vector3.UP, randf() * TAU).scaled(Vector3(randf_range(0.85, 1.2), 1, randf_range(0.8, 1.15))),
 			Vector3(p.x, T.altura(p.x, p.z) + 0.015, p.z))
 		mm.set_instance_transform(k, t)
-		var g := randf_range(0.6, 0.76)                      # piedra clara y gastada: la senda se lee desde lejos
+		var g := randf_range(0.5, 0.64)                      # piedra clara y gastada: la senda se lee desde lejos
 		mm.set_instance_color(k, Color(g, g * 0.96, g * 0.9))
 	var mmi := MultiMeshInstance3D.new()
 	mmi.multimesh = mm
@@ -547,7 +548,7 @@ func _piedra(p: Vector3, r: float, m: Material) -> void:
 
 # Piedras en las cornisas, lejos de la senda (junto al muro y al borde).
 func _piedras_sueltas() -> void:
-	var gris := mat.detalle(Color(0.56, 0.54, 0.58), 0.8, 0.9)
+	var gris := mat.detalle(Color(0.44, 0.42, 0.46), 0.8, 0.9)
 	var hecho := 0
 	var intentos := 0
 	while hecho < 34 and intentos < 400:
@@ -723,14 +724,9 @@ func farol(p: Vector3, tosco := false) -> void:
 	var piedra := mat.piedra_tallada() if not tosco else mat.piedra()
 	Roca.caja(lotes, region, p + Vector3(0, 0.55, 0), Vector3(0.34, 1.1, 0.34), piedra)
 	Roca.caja(lotes, region, p + Vector3(0, 1.32, 0), Vector3(0.5, 0.14, 0.5), piedra, Vector3.ZERO, false)
-	var luz := MeshInstance3D.new()
 	var bm := BoxMesh.new()
 	bm.size = Vector3(0.24, 0.26, 0.24)
-	luz.mesh = bm
-	luz.material_override = mat.brillo(Materiales.FUEGO, 1.25)
-	luz.position = p + Vector3(0, 1.15, 0)
-	luz.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	region.add_child(luz)
+	lotes.poner(bm, Transform3D(Basis(), p + Vector3(0, 1.15, 0)), mat.brillo(Materiales.FUEGO, 1.25))
 	halo(p, p + Vector3(0, 1.15, 0), Materiales.FUEGO, 4.2, 1.3)
 	if perfil.get("luces_faroles", false) and luces_reales < 4:
 		luces_reales += 1
@@ -742,16 +738,13 @@ func farol(p: Vector3, tosco := false) -> void:
 		region.add_child(o)
 
 
-# Halo falso (como los faroles de Pastos Verdes): disco de luz en el suelo y resplandor en el aire.
-func halo(suelo: Vector3, aire: Vector3, color: Color, ancho := 4.0, tam_aire := 1.2) -> void:
-	var disco := MeshInstance3D.new()
+# Halo falso (como los faroles de Pastos Verdes): disco de luz en el suelo y resplandor en el aire. Los discos van en el
+# lote de su color (una llamada de dibujo para todos; suman color, así que el orden no importa). «en» = el lote que
+# toca (el de piezas.gd, si lo pide una pieza).
+func halo(suelo: Vector3, aire: Vector3, color: Color, ancho := 4.0, tam_aire := 1.2, en: Roca.Lotes = null) -> void:
 	var pm := PlaneMesh.new()
 	pm.size = Vector2(ancho, ancho)
-	disco.mesh = pm
-	disco.material_override = mat.halo_suelo(color)
-	disco.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	disco.position = suelo + Vector3(0, 0.1, 0)
-	region.add_child(disco)
+	(en if en != null else lotes).poner(pm, Transform3D(Basis(), suelo + Vector3(0, 0.1, 0)), mat.halo_suelo(color))
 	var q := QuadMesh.new()
 	q.size = Vector2(tam_aire, tam_aire)
 	var brillo := MeshInstance3D.new()
@@ -797,7 +790,7 @@ func _cristales() -> void:
 
 # Mojones de piedras apiladas que dejaban los peregrinos.
 func _mojones() -> void:
-	var m := mat.detalle(Color(0.62, 0.60, 0.60), 0.9, 0.8)
+	var m := mat.detalle(Color(0.52, 0.50, 0.50), 0.9, 0.8)
 	for s in [Vector3(-9.6, 0, 36.0), Vector3(-9.2, 0, 24.5), Vector3(-9.8, 0, 11.0), Vector3(-9.5, 0, -6.0), Vector3(-10.4, 0, -16.6)]:
 		var p := Vector3(s.x, T.altura(s.x, s.z), s.z)
 		var r := 0.32

@@ -9,7 +9,8 @@ extends RefCounted
 # en los tres: cambian cantidades (nieblas, haces, partículas) en escenario.gd.
 
 var perfil: Dictionary
-var tex_grano: NoiseTexture2D           # grano fino de la roca (y de la madera, estirado)
+var tex_grano: NoiseTexture2D           # grano fino de la roca (0 a 1: el sombreado de la roca lo suaviza)
+var tex_grano_suave: NoiseTexture2D     # el mismo grano, de 0,74 a 1,06 (como Pastos Verdes): para piedra, madera y piezas
 var tex_grietas: NoiseTexture2D         # celdas: las grietas de la roca
 var tex_relieve: NoiseTexture2D         # normales del grano (perfiles medio y alto)
 var tex_niebla: NoiseTexture2D          # nubes suaves para la niebla del abismo
@@ -48,7 +49,7 @@ uniform float hondo_niebla = 30.0;
 // Luz rebotada: la pared del oeste, al sol, devuelve algo de luz cálida a la del este (que mira al oeste y está en
 // sombra). Es una suma barata en vez de una segunda luz (en Compatibility, cada luz más redibuja lo que toca).
 uniform vec3 rebote : source_color = vec3(0.50, 0.45, 0.40);
-uniform float fuerza_rebote = 0.2;
+uniform float fuerza_rebote = 0.9;
 varying vec3 pm;
 varying vec3 nm;
 void vertex() {
@@ -114,7 +115,7 @@ void fragment() {
 # El fondo del abismo: un mar de ámbar que respira, muy abajo, entre la niebla (opaco: casi no cuesta).
 const SHADER_FONDO := """
 shader_type spatial;
-render_mode unshaded, cull_disabled, shadows_disabled, fog_disabled;
+render_mode unshaded, cull_disabled, shadows_disabled;
 uniform sampler2D nubes : filter_linear_mipmap, repeat_enable;
 uniform vec3 hondo : source_color = vec3(0.13, 0.06, 0.07);
 uniform vec3 ambar : source_color = vec3(1.0, 0.56, 0.2);
@@ -124,14 +125,16 @@ void vertex() {
 	pm = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 }
 void fragment() {
-	// casi todo es penumbra rojiza; el ámbar sube en vetas y charcos que respiran (no un mar de lava)
-	vec2 uv = pm.xz * 0.045;
+	// un resplandor suave que respira, más vivo por el centro de la garganta y apagado contra las paredes (no una
+	// costra de lava: se ve a 50 m, entre la niebla)
+	vec2 uv = pm.xz * 0.06;
 	float a = texture(nubes, uv + vec2(TIME * 0.006, -TIME * 0.004)).r;
-	float b = texture(nubes, uv * 2.3 - vec2(TIME * 0.011, 0.0)).r;
-	float v = smoothstep(0.42, 0.9, a * 0.6 + b * 0.4);
-	float pulso = 0.8 + 0.2 * sin(TIME * 0.7 + pm.z * 0.08);
-	vec3 c = mix(hondo, ambar * 0.75, v * pulso);
-	c = mix(c, nucleo, smoothstep(0.82, 1.0, v) * 0.5);
+	float b = texture(nubes, uv * 2.1 - vec2(TIME * 0.009, 0.0)).r;
+	float centro = 1.0 - smoothstep(2.0, 9.0, abs(pm.x));
+	float v = smoothstep(0.3, 0.95, a * 0.6 + b * 0.4) * (0.55 + 0.45 * centro);
+	float pulso = 0.85 + 0.15 * sin(TIME * 0.6 + pm.z * 0.06);
+	vec3 c = mix(hondo, ambar * 0.85, v * pulso);
+	c = mix(c, nucleo, smoothstep(0.7, 1.0, v) * 0.4);
 	ALBEDO = c;
 }
 """
@@ -197,6 +200,10 @@ func _init(p: Dictionary) -> void:
 	grano.fractal_octaves = 4
 	grano.seed = 1211
 	tex_grano = _textura(grano, 256, false)
+	tex_grano_suave = _textura(grano, 256, false)
+	var rampa := Gradient.new()
+	rampa.colors = PackedColorArray([Color(0.74, 0.74, 0.74), Color(1.06, 1.06, 1.06)])
+	tex_grano_suave.color_ramp = rampa
 	var celdas := FastNoiseLite.new()
 	celdas.noise_type = FastNoiseLite.TYPE_CELLULAR
 	celdas.cellular_distance_function = FastNoiseLite.DISTANCE_EUCLIDEAN
@@ -273,7 +280,7 @@ func detalle(color: Color, escala := 0.6, relieve := 0.6, rugosidad := 0.9) -> S
 		return _cache[clave]
 	var m := StandardMaterial3D.new()
 	m.albedo_color = color
-	m.albedo_texture = tex_grano
+	m.albedo_texture = tex_grano_suave
 	m.uv1_triplanar = true
 	m.uv1_world_triplanar = true
 	m.uv1_scale = Vector3.ONE * escala
@@ -287,25 +294,25 @@ func detalle(color: Color, escala := 0.6, relieve := 0.6, rugosidad := 0.9) -> S
 
 
 func piedra() -> StandardMaterial3D:
-	return detalle(Color(0.62, 0.60, 0.64), 0.9, 0.9)
+	return detalle(Color(0.50, 0.48, 0.52), 0.9, 0.9)
 
 
 func piedra_tallada() -> StandardMaterial3D:              # la de los peregrinos: algo más clara y cálida
-	return detalle(Color(0.70, 0.66, 0.62), 0.9, 0.8)
+	return detalle(Color(0.58, 0.55, 0.52), 0.9, 0.8)
 
 
 func madera() -> StandardMaterial3D:
 	var clave := "madera"
 	if _cache.has(clave):
 		return _cache[clave]
-	var m := detalle(Color(0.50, 0.36, 0.25), 1.0, 0.7).duplicate() as StandardMaterial3D
+	var m := detalle(Color(0.42, 0.30, 0.21), 1.0, 0.7).duplicate() as StandardMaterial3D
 	m.uv1_scale = Vector3(0.6, 3.0, 0.6)                   # la veta estirada a lo largo
 	_cache[clave] = m
 	return m
 
 
 func madera_vieja() -> StandardMaterial3D:
-	return detalle(Color(0.42, 0.33, 0.26), 1.2, 0.7)
+	return detalle(Color(0.36, 0.28, 0.22), 1.2, 0.7)
 
 
 func liso(color: Color, rugosidad := 0.9, metal := 0.0) -> StandardMaterial3D:
