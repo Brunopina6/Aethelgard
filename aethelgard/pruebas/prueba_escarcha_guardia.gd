@@ -143,10 +143,10 @@ func _probar() -> void:
 
 # ---------------------------------------------------------------- A. Escarcha
 func _aprendizaje() -> void:
-	_ok(A.ACTIVOS["Escarcha"] == 2, "A: Escarcha no está enganchada (ACTIVOS %d)" % A.ACTIVOS["Escarcha"])
+	_ok(A.ACTIVOS["Escarcha"] == 3, "A: Escarcha no está enganchada entera (ACTIVOS %d)" % A.ACTIVOS["Escarcha"])
 	_ok(A.nivel_usable("Kael", "Escarcha", {"nivel": 5}) == 0 and A.nivel_usable("Kael", "Escarcha", {"nivel": 6}) == 1
-		and A.nivel_usable("Kael", "Escarcha", {"nivel": 12}) == 2 and A.nivel_usable("Kael", "Escarcha", {"nivel": 30}) == 2,
-		"A: los niveles de la Escarcha (6 y 12; el III aún no)")
+		and A.nivel_usable("Kael", "Escarcha", {"nivel": 12}) == 2 and A.nivel_usable("Kael", "Escarcha", {"nivel": 20}) == 3,
+		"A: los niveles de la Escarcha (6, 12 y 20)")
 	_ok(A.nuevas_al_subir("Kael", {"nivel": 6}, 5, 6) == [["Escarcha", 1]], "A: al subir a 6 no se aprende la Coraza")
 	_ok(A.nivel_usable("Kael", "Escarcha", {"nivel": 7, "libros": {"Escarcha": 2}}) == 2, "A: el libro no enseña la Muralla")
 	_ok(A.libros_en_venta().has(["Escarcha", 2, 400]), "A: el libro de la Muralla no se vende")
