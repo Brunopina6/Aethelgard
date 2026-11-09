@@ -374,6 +374,25 @@ func _pintar_ajustes() -> void:
 		f.add_child(_texto("   " + Sonido.AYUDA[b], 16, COLOR_SUAVE))
 		cuerpo.add_child(f)
 	cuerpo.add_child(_texto("Se guarda en este aparato, aparte de la partida.", 16, COLOR_SUAVE))
+	# El mapa del mundo pintado o el de siempre (T-085), solo en la versión experimental: para comparar en el móvil.
+	# Se guarda en el mismo archivo de ajustes (mapa_arte.gd, sección [mapa]) y se nota al volver a abrir el mapa.
+	if load("res://modo3d.gd").activo():
+		var arte = load("res://mapa_arte/mapa_arte.gd")
+		var clasico: bool = arte.clasico_elegido()
+		cuerpo.add_child(_texto("Mapa del mundo", 26, COLOR_TITULO))
+		var fm := HBoxContainer.new()
+		fm.add_theme_constant_override("separation", 8)
+		for op in [[false, "Pintado"], [true, "De siempre"]]:
+			var es_clasico: bool = op[0]
+			var b := _boton(("● " if es_clasico == clasico else "○ ") + op[1], 18, Vector2(200, 34),
+				"mapa:%s" % ("clasico" if es_clasico else "pintado"))
+			b.pressed.connect(func():
+				arte.elegir("clasico", es_clasico)
+				Sonido.efecto("ui_tic")
+				_pintar_de_nuevo())
+			fm.add_child(b)
+		cuerpo.add_child(fm)
+		cuerpo.add_child(_texto("Se nota la próxima vez que se abre el mapa.", 16, COLOR_SUAVE))
 
 
 func _cambiar_volumen(bus: String, paso: int) -> void:
