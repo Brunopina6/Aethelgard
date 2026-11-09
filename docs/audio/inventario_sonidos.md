@@ -465,6 +465,25 @@ Sonido.BESTIAS lista, por familia, [avisos], [impactos] y los demás. **Pendient
 engancharlo en combate y oírlo en el Redmi (**pendiente en Redmi**: sobre todo lo grave de la trama de eco y del
 portazo del Posadero, que un altavoz de móvil casi no da).
 
+### Los héroes quietos en la exploración 3D (tanda 4, pedido del coordinador)
+
+Muy discretos y sin tocar ninguna escena: el nodo de pasos de cada personaje (`Pasos3D`, el que ya crean
+`pastos_verdes_3d.gd`, `garganta_3d.gd` y `grupo_3d.gd` con `pasos_3d`) cuenta el tiempo parado. A los 7-14 s suena el
+gesto de su personaje y, mientras siga parado, otro cada 22-40 s; al andar se reinicia. **Uno a la vez entre los tres**
+(grupo «quieto»), por Efectos, prioridad 0 (lo primero que cede), con la pausa, el silencio y el cambio de escena de
+siempre; los de Lya y Garon suenan desde su sitio (como sus pasos). Kael es el que escucha (o el nodo «Kael»); Lya y
+Garon, por el nombre de su nodo. Comprobado sin ventana (`prueba_efectos`, parte «quietos», 09/11): parados 45 s, 3/2/2
+gestos y nunca dos a la vez; andando, ninguno.
+
+| Efecto | Quién | Archivos | Original (biblioteca) | Licencia | Bus · dB · p | Salida (RMS) |
+|---|---|---|---|---|---|---|
+| `quieto_kael` | Kael se recoloca el cuero y suelta el aire | `heroes/kael_quieto_1…2` | Systematic Sound «Jacket Leather Rough Movement Slow Rustle» + Articulated «Human Male Breathe … Long Exhale_F» | Sonniss GDC 2020 | Efectos · −12 · 0 | −36,4 |
+| `quieto_lya` | Lya sorbe por la nariz y se ajusta la tela | `heroes/lya_quieto_1…2` | UberDuo «Inhale – Tanja: Sniff, Nose 7» + Systematic Sound «Soft Shell Whoosh Flutter» | Sonniss GDC 2024 y 2020 | Efectos · −18 · 0 | −36,9 |
+| `quieto_garon` | Garon mueve el equipo (metal y correas) y respira hondo | `heroes/garon_quieto_1…2` | Gamemaster «foley soldier gear equipment metal cloth heavy movement light 08» (×0,94) + la respiración + el cuero | Sonniss GDC 2018 y 2020 | Efectos · −10,5 · 0 | ≈ −36 |
+
+Muestras: `D:\REBELUM_diagnostico\sonido_muestras\2026-11-09_bestiario\heroes_quietos\`. Pasos de la tanda 1 para
+comparar: −32 a −39 dBFS. Si molestan en un diálogo o una cinemática, se pueden callar subiendo `QUIETO` o quitando
+su nombre de `QUIETO_DE` (sonido.gd).
 ## Candidatos aún sin usar
 
 - **Alternativas para escuchar y elegir:** `victory_…_01_s29` y `…_02_s29` (otra victoria), InspectorJ
