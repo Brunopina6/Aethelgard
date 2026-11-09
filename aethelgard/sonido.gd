@@ -123,6 +123,8 @@ const EFECTOS := {
 	"golpe_critico": {"a": "combate/critico_", "n": 2, "db": -5.0, "tono": 0.04, "p": 3, "max": 2, "espera": 0.04},
 	"golpe_defendido": {"a": "combate/defendido_", "n": 3, "db": -7.0, "tono": 0.05, "p": 2, "max": 2, "espera": 0.04},
 	"defensa": {"a": "combate/defensa", "db": -8.0, "tono": 0.04, "p": 2, "max": 1, "espera": 0.2},
+	# la Guardia de Garon (tanda 5; la pide combate por su nombre): se planta tras el escudo, metálico, firme y breve
+	"guardia": {"a": "combate/guardia", "db": -14.0, "tono": 0.03, "p": 2, "max": 1, "espera": 0.2},
 	"salto": {"a": "combate/salto_", "n": 3, "db": -9.0, "tono": 0.05, "p": 1, "max": 2, "espera": 0.1},
 	"huida": {"a": "combate/huida", "db": -8.0, "tono": 0.06, "p": 2, "max": 2, "espera": 0.1},
 	"emboscada": {"a": "combate/emboscada", "db": -4.0, "p": 4, "max": 1, "espera": 1.0, "cruza": true},
@@ -292,10 +294,10 @@ const EFECTOS := {
 	# rumor grave) y el viento del abismo a lo largo de su eje (garganta_3d.gd, _sonido_3d)
 	"cascada_grande": {"a": "ambiente/cascada_grande", "bus": "Ambiente", "db": 0.0, "tres_d": {"unidad": 10.0, "max": 120.0}},
 	"viento_abismo": {"a": "ambiente/viento_abismo", "bus": "Ambiente", "db": -2.5, "tres_d": {"unidad": 8.0, "max": 70.0}},
-	# la entrada, la cornisa y los puentes colgantes (tanda 5; los engancha quien lleva garganta_3d.gd): las cuerdas de los
+	# la entrada, la cornisa y los puentes colgantes (tanda 5; los engancha quien lleva garganta_3d.gd): las cuerdas y tablas de los
 	# puentes crujen de vez en cuando y el viento silba en ellas, desde el punto de su línea más cercano a quien escucha
 	# («cada»: no son bucles; fuente_linea los hace sonar de vez en cuando)
-	"cuerda_cruje": {"a": "ambiente/cuerda_cruje_", "n": 3, "bus": "Ambiente", "db": -14.0, "tono": 0.07, "p": 0, "max": 2, "espera": 0.8,
+	"puente_cruje": {"a": "ambiente/puente_cruje_", "n": 5, "bus": "Ambiente", "db": -14.0, "tono": 0.07, "p": 0, "max": 2, "espera": 0.8,
 		"tres_d": {"unidad": 4.0, "max": 25.0, "filtro": -8.0, "cada": [3.0, 8.0]}},
 	"viento_cuerdas": {"a": "ambiente/viento_cuerdas_", "n": 2, "bus": "Ambiente", "db": -8.0, "tono": 0.05, "p": 0, "max": 1, "espera": 4.0,
 		"tres_d": {"unidad": 6.0, "max": 40.0, "filtro": -6.0, "cada": [9.0, 18.0]}},
