@@ -59,7 +59,13 @@ $PATRONES = @('SCRIPT ERROR', 'Parse Error', 'Failed to load script', 'Invalid c
               'Invalid get index', 'Invalid set index', 'Cannot call method', 'Attempt to call function',
               'Invalid operands', 'Nonexistent function', '\bFALLO\b', 'FALLOS:\s*[1-9]')
 
-$datosReales = Join-Path $env:APPDATA "Godot\app_userdata\Aethelgard"
+# La carpeta real se pide a Windows, no a %APPDATA%: si quien lanza esto ya tiene APPDATA desviada (o vacía), la
+# vigilancia sigue mirando la carpeta de verdad (pasó el 09/11).
+$appdataReal = [Environment]::GetFolderPath([Environment+SpecialFolder]::ApplicationData)
+if ($env:APPDATA -ne $appdataReal) {
+    Write-Host ("AVISO: APPDATA apunta a «{0}»; se vigila la carpeta real «{1}»." -f $env:APPDATA, $appdataReal) -ForegroundColor Yellow
+}
+$datosReales = Join-Path $appdataReal "Godot\app_userdata\Aethelgard"
 $partida     = Join-Path $datosReales "partida.save"
 $propios     = New-Object 'System.Collections.Generic.HashSet[int]'   # procesos que lanza esta pasada
 $ajenos      = [ordered]@{}                                           # Godot abiertos por otros durante la pasada

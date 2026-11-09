@@ -4,10 +4,12 @@ extends Control
 # derecho de la pantalla), así el combate se sigue viendo detrás.
 #   Arriba: nombre del héroe en cursiva grande con una línea fina de su color.
 #   Debajo: las órdenes en mayúsculas espaciadas (la elegida, blanca, más grande y con un guion).
-#   Abajo: el grupo (nombre, PV y barra ATB fina que brilla al llenarse) y, a la izquierda, la Armonía.
+#   Abajo: el grupo, en columnas con su etiqueta encima (T-099): nombre, estados, PV, PM (cifra y barra azul) y la
+#   barra ATB fina que brilla al llenarse. A la izquierda, la Armonía y si se puede invocar (o por qué no).
 # Los submenús (magias y objetos) salen en el mismo sitio que las órdenes; tocar «‹ Kael» vuelve.
 # Se maneja con el dedo (tocar; deslizar sobre ATACAR para girar a DEFENDER), con el ratón o con
-# teclado / mando (flechas + Intro).
+# teclado / mando (flechas + Intro). Las filas apagadas también se eligen (con ↑ ↓ o tocándolas): dicen por qué están
+# apagadas (T-100) y Intro / A o soltar el dedo sobre ellas solo suena a error.
 
 signal atras
 
@@ -23,6 +25,10 @@ const GRIS_APAGADO := Color(0.4, 0.42, 0.48)
 const COLOR_HEROE := {"Kael": Color("8FD3FF"), "Lya": Color("E8C46A"), "Garon": Color("9E2B2B"), "Nyx": Color("8E5BD8")}
 const COLOR_ELEMENTO := {"Fuego": Color("FF7A3C"), "Agua": Color("3B8FD8"), "Rayo": Color("F2E36B"),
 	"Cura": Color("8FF0B0"), "Hielo": Color("8FD3FF")}
+# PM (T-099): azul, distinto del celeste de Kael (que es el de su barra ATB llena). Los mismos que estilo.gd (PM y
+# PM_CLARO); aquí van copiados como el resto de la paleta, porque estilo.gd precarga este archivo.
+const PM_AZUL := Color("4D8EF0")
+const PM_CLARO := Color("A4C6FF")
 
 # Tamaños sobre la pantalla del juego (1280×720). En un móvil apaisado 1 px ≈ 0,57 dp: las filas
 # que se tocan miden 72 px (≈ 41 dp) o 64 px en los submenús.
@@ -44,7 +50,19 @@ const TAM_GRUPO := 28
 const TAM_ARMONIA := 22
 const MARGEN_TOQUE := 30.0
 const Y_GRUPO := 596.0
+const FILA_GRUPO := 46.0         # de un héroe al siguiente en el bloque del grupo
 const DESLIZ_CARTA := 40.0       # px que hay que deslizar el dedo para girar ATACAR / DEFENDER
+# Columnas del grupo (T-099), de izquierda a derecha: nombre (X_TEXTO), estados (detrás del nombre), PV (cifra alineada
+# a la derecha en X_PV), PM (cifra alineada en X_PM y, debajo, su barra azul de ANCHO_PM) y ATB (de X_ATB a X_DERECHA).
+# Caben «Garon» con tres estados, «222/222» y «120/134» (medido con estas fuentes el 09/11).
+const X_PV := 1040.0
+const X_PM := 1126.0
+const ANCHO_PM := 72.0
+const X_ATB := 1144.0
+const TAM_PM := 24
+const TAM_ETIQUETA := 19         # PV · PM · ATB encima de las columnas, y el estado de la Armonía
+const TAM_MOTIVO := 23           # por qué una orden está apagada (a la derecha de su fila)
+const PASO_ESTADO := 20.0        # de un icono de estado al siguiente (el Aliento, más: lleva sus turnos)
 
 const FUENTE_NOMBRE := "res://fuentes/Cormorant-Italic.ttf"
 const FUENTE_ORDEN := "res://fuentes/SairaCondensed-Light.ttf"
@@ -56,6 +74,7 @@ var f_fuerte: Font
 var f_orden_junta: Font          # las mismas con menos espacio entre letras: nombres largos de los submenús
 var f_fuerte_junta: Font
 var f_numero: Font               # condensada sin espacio extra (PV, números flotantes)
+var f_etiqueta: Font             # condensada con algo de espacio: etiquetas PV · PM · ATB y el estado de la Armonía
 var glow_tex: GradientTexture2D
 var mat_aditivo: CanvasItemMaterial
 
@@ -72,11 +91,14 @@ var submenu_abierto := false
 var activo := false
 var heroe_actual: Dictionary = {}
 var carta_lado := {}             # última opción de cada héroe: "a" (ATACAR) o "b" (DEFENDER)
-var grupo: Array = []            # [{heroe, nombre, pv, fondo, relleno, brillo}]
+var grupo: Array = []            # [{heroe, nombre, pv, pm, pm_relleno, pm_rastro, fondo, relleno, brillo...}]
+var etiquetas_grupo: Array = []  # PV · PM · ATB encima de las columnas
 var armonia_lbl: Label
 var armonia_relleno: ColorRect
 var armonia_brillo: TextureRect
 var armonia_valor := 0.0
+var armonia_estado: Label        # junto a «ARMONÍA»: «45 %», «INVOCACIÓN LISTA» o por qué no se puede (T-101)
+var invocacion_lista := false
 var sonidos := {}
 var reproductores: Array = []
 var _rep := 0
@@ -94,6 +116,7 @@ func _ready() -> void:
 	f_orden_junta = fuente(FUENTE_ORDEN, 2, 0)
 	f_fuerte_junta = fuente(FUENTE_ORDEN_FUERTE, 2, 0)
 	f_numero = fuente(FUENTE_ORDEN_FUERTE, 1, 0)
+	f_etiqueta = fuente(FUENTE_ORDEN_FUERTE, 3, 0)
 	var g := Gradient.new()
 	g.offsets = PackedFloat32Array([0.0, 1.0])
 	g.colors = PackedColorArray([Color(1, 1, 1, 1), Color(1, 1, 1, 0)])
@@ -186,6 +209,12 @@ func _ready() -> void:
 	armonia_relleno.size = Vector2(0, 3)
 	armonia_relleno.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(armonia_relleno)
+	# Érebo en el HUD (T-101): detrás de «ARMONÍA», cuánto falta o si ya se puede invocar (y si no, por qué). Solo lo
+	# explica: las reglas de la Armonía y de la invocación siguen en combate.gd.
+	armonia_estado = _etiqueta("", f_etiqueta, TAM_ETIQUETA + 1, GRIS)
+	armonia_estado.position = Vector2(40.0 + f_fuerte.get_string_size("ARMONÍA", HORIZONTAL_ALIGNMENT_LEFT, -1,
+		TAM_ARMONIA).x + 14.0, 655)
+	add_child(armonia_estado)
 
 	_crear_sonidos()
 
@@ -231,54 +260,120 @@ func _brillo(color: Color, tam: Vector2) -> TextureRect:
 	return b
 
 
-# Grupo de abajo: nombre, PV y barra ATB fina de cada héroe.
+# Grupo de abajo (T-099), una fila por héroe presente: nombre, estados, PV, PM con su barra azul y la barra ATB fina.
+# Encima de las columnas, sus etiquetas (PV · PM · ATB), para leerlas de un vistazo en el móvil. Se ve todo el combate:
+# también con el turno de un enemigo y con el menú cerrado.
 func preparar(heroes: Array) -> void:
-	var y0 := minf(Y_GRUPO, 700.0 - heroes.size() * 46.0)   # con tres héroes, el grupo sube un poco
+	var y0 := minf(Y_GRUPO, 700.0 - heroes.size() * FILA_GRUPO)   # con tres héroes, el grupo sube un poco
+	_etiquetas_columnas(y0 - 25.0)
 	for i in heroes.size():
 		var h: Dictionary = heroes[i]
-		var y := y0 + i * 46.0
+		var y := y0 + i * FILA_GRUPO
 		var c: Color = COLOR_HEROE.get(h["nombre"], LUZ_CLARA)
 		var n := _etiqueta(h["nombre"], f_nombre, TAM_GRUPO + 4, LUZ_CLARA)
 		n.position = Vector2(X_TEXTO, y - 4)
+		n.pivot_offset = Vector2(0, 24)
 		add_child(n)
 		var est := Control.new()                    # iconos de estado (artes.gd): coraza, Aliento y Brasa
-		est.position = Vector2(935, y + 6)          # entre el nombre y los PV
-		est.size = Vector2(66, 18)
+		var ancho_nombre := f_nombre.get_string_size(h["nombre"], HORIZONTAL_ALIGNMENT_LEFT, -1, TAM_GRUPO + 4).x
+		est.position = Vector2(X_TEXTO + ancho_nombre + 8.0, y + 6)   # detrás del nombre, antes de los PV
+		est.size = Vector2(maxf(18.0, X_PV - 86.0 - est.position.x), 18)
 		est.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var quien: Dictionary = h
-		est.draw.connect(func():
-			var k := 0
-			for e in Artes.estados_de(quien):
-				est.draw_set_transform(Vector2(k * 22.0, 0))
-				Artes.dibujar_estado(est, e, Vector2(18, 18))
-				k += 1
-			est.draw_set_transform(Vector2.ZERO))
+		est.draw.connect(_dibujar_estados.bind(est, quien))
 		add_child(est)
 		var pv := _etiqueta("", f_numero, TAM_GRUPO, LUZ_CLARA)
 		pv.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		pv.size = Vector2(150, 40)
-		pv.position = Vector2(1080 - 150, y)
+		pv.position = Vector2(X_PV - 150, y)
 		add_child(pv)
-		var fondo := ColorRect.new()
-		fondo.color = Color(LUZ_CLARA, 0.16)
-		fondo.position = Vector2(1100, y + 22)
-		fondo.size = Vector2(X_DERECHA - 1100, 3)
-		fondo.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		add_child(fondo)
+		# PM: la cifra y, debajo, la barra azul (con un rastro claro de lo que se acaba de gastar)
+		var pm := _etiqueta("", f_numero, TAM_PM, PM_CLARO)
+		pm.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		pm.size = Vector2(110, 32)
+		pm.position = Vector2(X_PM - 110, y - 1)
+		add_child(pm)
+		var pm_fondo := _rect(Vector2(X_PM - ANCHO_PM, y + 33), Vector2(ANCHO_PM, 5), Color(PM_AZUL, 0.24))
+		var pm_rastro := _rect(pm_fondo.position, Vector2(0, 5), Color(PM_CLARO, 0.8))
+		var pm_relleno := _rect(pm_fondo.position, Vector2(0, 5), PM_AZUL)
+		# ATB
+		var fondo := _rect(Vector2(X_ATB, y + 22), Vector2(X_DERECHA - X_ATB, 3), Color(LUZ_CLARA, 0.16))
 		var brillo := _brillo(c, Vector2(fondo.size.x + 40, 26))
 		brillo.position = fondo.position + Vector2(-20, -11)
 		brillo.visible = false
 		add_child(brillo)
-		var relleno := ColorRect.new()
-		relleno.color = Color(LUZ_CLARA, 0.55)
-		relleno.position = fondo.position
-		relleno.size = Vector2(0, 3)
-		relleno.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		add_child(relleno)
+		var relleno := _rect(fondo.position, Vector2(0, 3), Color(LUZ_CLARA, 0.55))
+		var destello := _brillo(c, Vector2(X_DERECHA - X_TEXTO + 60, 54))   # destacar_heroe (la Lumbre: quién vuelve)
+		destello.position = Vector2(X_TEXTO - 40, y - 8)
+		destello.modulate.a = 0.0
+		destello.visible = false
+		add_child(destello)
+		move_child(destello, n.get_index())          # detrás del nombre
+		var pm_ini := _fraccion_pm(h)
 		grupo.append({"heroe": h, "nombre": n, "pv": pv, "fondo": fondo, "relleno": relleno, "brillo": brillo, "color": c,
-			"estados": est, "firma": ""})
+			"estados": est, "firma": "", "pm": pm, "pm_fondo": pm_fondo, "pm_relleno": pm_relleno, "pm_rastro": pm_rastro,
+			"pm_meta": pm_ini, "pm_ver": pm_ini, "pm_rastro_v": pm_ini, "pm_espera": 0.0, "destello": destello,
+			"colores": {}})
+		pm_relleno.size.x = ANCHO_PM * pm_ini
+	actualizar_grupo(null)
 
 
+func _rect(pos: Vector2, tam: Vector2, color: Color) -> ColorRect:
+	var r := ColorRect.new()
+	r.position = pos
+	r.size = tam
+	r.color = color
+	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(r)
+	return r
+
+
+# Las etiquetas de las columnas, una vez, encima del primer héroe: PV y PM alineadas con sus cifras (a la derecha) y
+# ATB al principio de su barra. Cada una del color de lo que nombra.
+func _etiquetas_columnas(y: float) -> void:
+	for d in [["PV", X_PV, Color(LUZ_CLARA, 0.72), true], ["PM", X_PM, PM_CLARO, true], ["ATB", X_ATB, Color(LUZ_CLARA, 0.72), false]]:
+		var l := _etiqueta(d[0], f_etiqueta, TAM_ETIQUETA, d[2])
+		l.size = Vector2(80, 24)
+		if d[3]:
+			l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+			l.position = Vector2(float(d[1]) - 80.0 + 3.0, y)   # +3: el espacio que la fuente deja detrás de la última letra
+		else:
+			l.position = Vector2(float(d[1]), y)
+		add_child(l)
+		etiquetas_grupo.append(l)
+
+
+# Los iconos de estado de un héroe (artes.gd) y, junto a la hoja del Aliento, los turnos que le quedan (T-100).
+func _dibujar_estados(est: Control, quien: Dictionary) -> void:
+	var x := 0.0
+	for e in Artes.estados_de(quien):
+		est.draw_set_transform(Vector2(x, 0))
+		Artes.dibujar_estado(est, e, Vector2(18, 18))
+		x += PASO_ESTADO
+		var texto := Artes.texto_estado(quien, e)
+		if texto != "":
+			est.draw_set_transform(Vector2.ZERO)
+			est.draw_string_outline(f_numero, Vector2(x - 3.0, 18), texto, HORIZONTAL_ALIGNMENT_LEFT, -1, 17, 4, Color(SOMBRA, 0.9))
+			est.draw_string(f_numero, Vector2(x - 3.0, 18), texto, HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Artes.COLOR_ESTADO.get(e, LUZ_CLARA))
+			x += f_numero.get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x + 2.0
+	est.draw_set_transform(Vector2.ZERO)
+
+
+static func _fraccion_pm(h: Dictionary) -> float:
+	var maximo := int(h.get("mp_max", 0))
+	return 0.0 if maximo <= 0 else clampf(float(h.get("mp", 0)) / maximo, 0.0, 1.0)
+
+
+# Cambia un color de tema solo si es otro (se llama en cada fotograma).
+func _color(g: Dictionary, clave: String, l: Label, c: Color) -> void:
+	if g["colores"].get(clave, Color(0, 0, 0, 0)) != c:
+		g["colores"][clave] = c
+		l.add_theme_color_override("font_color", c)
+
+
+# Con los valores de verdad de cada héroe (combate.gd lo llama en cada fotograma): PV, PM (también si cambia el máximo:
+# al subir de nivel), ATB y estados. La cifra cambia al momento; la barra de PM baja de golpe dejando un rastro claro que
+# se va, o sube en un momento (Éter, la Gota).
 func actualizar_grupo(actor) -> void:
 	for g in grupo:
 		var h: Dictionary = g["heroe"]
@@ -289,13 +384,29 @@ func actualizar_grupo(actor) -> void:
 			cpv = GRIS_APAGADO
 		elif h["hp"] < h["hp_max"] * 0.3:
 			cpv = BRASA
-		g["pv"].add_theme_color_override("font_color", cpv)
-		g["nombre"].add_theme_color_override("font_color", g["color"] if actor != null and h == actor else (LUZ_CLARA if vivo else GRIS_APAGADO))
+		_color(g, "pv", g["pv"], cpv)
+		_color(g, "nombre", g["nombre"], g["color"] if actor != null and h == actor else (LUZ_CLARA if vivo else GRIS_APAGADO))
+		# PM
+		g["pm"].text = "%d/%d" % [int(h.get("mp", 0)), int(h.get("mp_max", 0))]
+		var cpm := PM_CLARO
+		if not vivo:
+			cpm = GRIS_APAGADO
+		elif int(h.get("mp", 0)) <= 0:
+			cpm = Color(PM_CLARO, 0.5)                # sin PM: la cifra se apaga un poco (la barra, vacía)
+		_color(g, "pm", g["pm"], cpm)
+		var meta := _fraccion_pm(h)
+		if meta < g["pm_meta"] - 0.0001:             # gasta: la barra baja ya y deja el rastro de lo gastado
+			g["pm_rastro_v"] = maxf(g["pm_rastro_v"], g["pm_ver"])
+			g["pm_ver"] = meta
+			g["pm_espera"] = 0.25
+		g["pm_meta"] = meta
+		g["pm_relleno"].color = PM_AZUL if vivo else Color(GRIS_APAGADO, 0.7)
+		# ATB (un caído no avanza: su barra se ve apagada)
 		var lleno: bool = vivo and h["atb"] >= 100.0
 		g["relleno"].size.x = g["fondo"].size.x * clampf(h["atb"] / 100.0, 0.0, 1.0)
-		g["relleno"].color = g["color"] if lleno else Color(LUZ_CLARA, 0.55)
+		g["relleno"].color = g["color"] if lleno else (Color(LUZ_CLARA, 0.55) if vivo else Color(GRIS_APAGADO, 0.35))
 		g["brillo"].visible = lleno
-		var firma := str(Artes.estados_de(h))      # los iconos de estado se redibujan solo si cambian (o si cae)
+		var firma := str(Artes.estados_de(h)) + str(h.get("aliento", 0))   # los iconos, solo si cambian (o si cae)
 		if g["firma"] != firma:
 			g["firma"] = firma
 			g["estados"].queue_redraw()
@@ -303,11 +414,57 @@ func actualizar_grupo(actor) -> void:
 		lbl_pm.text = "PM %d/%d" % [heroe_actual["mp"], heroe_actual["mp_max"]]
 
 
+# La barra de PM sigue a su valor: sube en 0,3 s; al bajar, el rastro espera un momento y se recoge.
+func _mover_pm(g: Dictionary, delta: float) -> void:
+	var meta: float = g["pm_meta"]
+	if g["pm_ver"] < meta:
+		g["pm_ver"] = minf(meta, g["pm_ver"] + delta * 3.0)
+	if g["pm_espera"] > 0.0:
+		g["pm_espera"] -= delta
+	else:
+		g["pm_rastro_v"] = move_toward(g["pm_rastro_v"], g["pm_ver"], delta * 2.4)
+	g["pm_rastro_v"] = maxf(g["pm_rastro_v"], g["pm_ver"])
+	g["pm_relleno"].size.x = ANCHO_PM * g["pm_ver"]
+	g["pm_rastro"].size.x = ANCHO_PM * g["pm_rastro_v"]
+
+
+# Ilumina la fila de un héroe (por ejemplo, quien vuelve con la Lumbre de Retorno): un brillo detrás de su nombre, que
+# además crece un momento.
+func destacar_heroe(h: Dictionary, color: Color) -> void:
+	for g in grupo:
+		if not is_same(g["heroe"], h):
+			continue
+		var d: TextureRect = g["destello"]
+		d.modulate = Color(color, 0.0)
+		d.visible = true
+		var t := create_tween()
+		t.tween_property(d, "modulate:a", 0.85, 0.25)
+		t.tween_property(d, "modulate:a", 0.0, 1.3).set_delay(0.5)
+		t.tween_callback(func(): d.visible = false)
+		var n: Label = g["nombre"]
+		var tn := create_tween()
+		tn.tween_property(n, "scale", Vector2(1.18, 1.18), 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tn.tween_property(n, "scale", Vector2.ONE, 0.5).set_delay(0.6)
+
+
 # v de 0 a 1. Llena: la barra brilla.
 func poner_armonia(v: float) -> void:
 	armonia_valor = clampf(v, 0.0, 1.0)
 	create_tween().tween_property(armonia_relleno, "size:x", 260.0 * armonia_valor, 0.35)
 	armonia_brillo.visible = armonia_valor >= 1.0
+
+
+# Érebo en el HUD (T-101): lo calcula combate.gd (_estado_invocacion) con sus reglas de siempre. «lista»: se puede
+# invocar ya; «hud»: lo que se lee junto a «ARMONÍA» («45 %», «INVOCACIÓN LISTA», «LYA HA CAÍDO»).
+func poner_invocacion(e: Dictionary) -> void:
+	invocacion_lista = bool(e.get("lista", false))
+	var texto := str(e.get("hud", ""))
+	if armonia_estado.text != texto:
+		armonia_estado.text = texto
+	if not invocacion_lista:                         # (lista, el color late en _process)
+		var c: Color = Color(BRASA, 0.85) if e.get("caida", false) else GRIS
+		if armonia_estado.get_theme_color("font_color") != c:
+			armonia_estado.add_theme_color_override("font_color", c)
 
 
 # ================================================================= abrir / cerrar
@@ -450,6 +607,15 @@ func _construir(items: Array, alto: float, pestanas: Array = [], pestana := 0) -
 			f["der"] = r
 		if alto != FILA and not it.get("aviso", false):
 			_ajustar_nombre(f, str(it["texto"]), x_texto, str(it.get("derecha", "")))
+		if alto == FILA and it.get("apagado", false) and str(it.get("motivo", "")) != "":
+			# orden apagada: por qué, a la derecha de su fila y siempre a la vista (sin elegirla, sin ratón) (T-100)
+			var mo := _etiqueta(str(it["motivo"]), f_nombre, TAM_MOTIVO, GRIS)
+			mo.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+			mo.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			mo.size = Vector2(300, alto)
+			mo.position = Vector2(nodo.size.x - MARGEN_TOQUE - 300, 3)
+			nodo.add_child(mo)
+			f["motivo"] = mo
 		if it.get("tipo", "") == "carta":            # flechas ◂ ▸ con zona de toque grande
 			var lado: String = carta_lado.get(heroe_actual.get("nombre", ""), "a")
 			f["lado"] = lado
@@ -472,9 +638,15 @@ func _construir(items: Array, alto: float, pestanas: Array = [], pestana := 0) -
 		if not filas[i]["item"].get("apagado", false):
 			primera = i
 			break
+	if primera < 0:                                  # todas apagadas: la primera, para que se lea su motivo
+		for i in filas.size():
+			if not filas[i]["item"].get("aviso", false):
+				primera = i
+				break
 	if primera >= 0:
 		_elegir(primera, false)
 	else:
+		desc.text = ""
 		_pintar()
 
 
@@ -529,31 +701,36 @@ func _pintar() -> void:
 		if it.get("tipo", "") == "carta" and f["lado"] == "b":
 			texto = it["texto_b"]
 			color = Color(ORO, 0.75)
-		if apagado:
-			color = GRIS_APAGADO
+		if apagado:                                  # apagada; elegida (con ↑ ↓ o el dedo), algo más clara
+			color = GRIS_APAGADO.lerp(GRIS, 0.55) if elegida else GRIS_APAGADO
 		elif elegida:
 			color = ORO if it.get("tipo", "") == "carta" and f["lado"] == "b" else Color.WHITE
-		if f["alto"] == FILA:                        # órdenes
-			l.text = ("— " if elegida and not apagado else "") + texto
+		if f.has("motivo"):
+			f["motivo"].add_theme_color_override("font_color", Color(LUZ_CLARA, 0.92) if elegida else GRIS)
+		if f["alto"] == FILA:                        # órdenes (la apagada elegida lleva el guion, pero no crece)
+			l.text = ("— " if elegida else "") + texto
 			l.add_theme_font_size_override("font_size", TAM_ELEGIDA if elegida and not apagado else TAM_ORDEN)
 			l.add_theme_font_override("font", f_fuerte if elegida and not apagado else f_orden)
-		else:                                        # submenús: mismo tamaño, la elegida en blanco
-			l.text = texto
+		else:                                        # submenús: mismo tamaño, la elegida en blanco (apagada: gris, en
+			l.text = texto                           # la letra gruesa de la elegida, para que se vea dónde está)
 			l.add_theme_font_size_override("font_size", f.get("tam", TAM_SUB))
 			if f.get("junta", false):                # nombre largo: letras más juntas (_ajustar_nombre)
-				l.add_theme_font_override("font", f_fuerte_junta if elegida and not apagado else f_orden_junta)
+				l.add_theme_font_override("font", f_fuerte_junta if elegida else f_orden_junta)
 			else:
-				l.add_theme_font_override("font", f_fuerte if elegida and not apagado else f_orden)
+				l.add_theme_font_override("font", f_fuerte if elegida else f_orden)
 		l.add_theme_color_override("font_color", color)
 		if f.has("der"):
-			f["der"].add_theme_color_override("font_color", GRIS_APAGADO if apagado else (LUZ_CLARA if elegida else GRIS))
+			var cder := GRIS_APAGADO if apagado else (LUZ_CLARA if elegida else GRIS)
+			if it.get("falta_pm", false):              # no le llegan los PM: el coste, en color de aviso
+				cder = Color(BRASA, 0.95 if elegida else 0.75)
+			f["der"].add_theme_color_override("font_color", cder)
 		if f.has("icono"):
 			f["icono"].modulate = Color(1, 1, 1, 0.4 if apagado else (1.0 if elegida else 0.75))
 	if sel >= 0 and sel < filas.size():
 		desc.text = filas[sel]["item"].get("desc", "")
 
 
-func _process(_d: float) -> void:
+func _process(d: float) -> void:
 	var t := Time.get_ticks_msec() / 1000.0
 	for i in filas.size():                           # la invocación lista late en dorado
 		var f: Dictionary = filas[i]
@@ -564,11 +741,14 @@ func _process(_d: float) -> void:
 	for g in grupo:
 		if g["brillo"].visible:
 			g["brillo"].modulate.a = 0.45 + 0.3 * sin(t * 5.0)
+		_mover_pm(g, d)
 	if armonia_brillo.visible:
 		armonia_brillo.modulate.a = 0.4 + 0.3 * sin(t * 4.0)
 		armonia_lbl.add_theme_color_override("font_color", ORO.lerp(Color.WHITE, 0.3 + 0.3 * sin(t * 4.0)))
 	else:
 		armonia_lbl.add_theme_color_override("font_color", ORO)
+	if invocacion_lista:                             # «INVOCACIÓN LISTA» late con la barra
+		armonia_estado.add_theme_color_override("font_color", ORO.lerp(Color.WHITE, 0.25 + 0.3 * sin(t * 4.0)))
 
 
 func _dibujar_icono(c: Control, icono) -> void:
@@ -702,9 +882,9 @@ func _unhandled_input(ev: InputEvent) -> void:
 	if ev.is_action_pressed("ui_down") or ev.is_action_pressed("ui_up"):
 		var paso := 1 if ev.is_action_pressed("ui_down") else -1
 		var i := sel
-		for n in filas.size():
+		for n in filas.size():                       # también las apagadas: así se lee su motivo sin ratón (T-100)
 			i = wrapi(i + paso, 0, filas.size())
-			if not filas[i]["item"].get("apagado", false):
+			if not filas[i]["item"].get("aviso", false):
 				break
 		_elegir(i, true)
 		get_viewport().set_input_as_handled()
