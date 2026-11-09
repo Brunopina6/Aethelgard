@@ -189,6 +189,16 @@ func _region() -> void:
 		r.objetivo.get_parent().visible = false
 	var nombres: Array = ["Kael"] + (r.grupo.nodos().map(func(x): return String(x.name)) if r.grupo != null else [])
 	print("REGIÓN: personajes ", nombres)
+	# Pasos (T-084, tanda 2): un solo nodo «Pasos» (Sonido.pasos_3d) por personaje; Kael no lleva dos.
+	var cuerpos := {"Kael": r.kael}
+	if r.grupo != null:
+		for m in r.grupo.miembros:
+			cuerpos[m["nombre"]] = m["nodo"]
+	for n in cuerpos:
+		var con_pasos: Array = cuerpos[n].get_children().filter(func(x): return String(x.name).begins_with("Pasos"))
+		print("PASOS %s: %d nodo(s)" % [n, con_pasos.size()])
+		if con_pasos.size() != 1:
+			_fallo("%s lleva %d nodos de pasos (debe llevar uno)" % [n, con_pasos.size()])
 	# a) con el stick por el camino: giros suaves, el puente de punta a punta
 	tramo = "andar"
 	for meta in CAMINO:
