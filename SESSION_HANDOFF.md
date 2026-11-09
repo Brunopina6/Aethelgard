@@ -94,9 +94,10 @@ pidió no preguntar ([MEMORIA_CHAT.md](MEMORIA_CHAT.md)). **La memoria describe 
 
 ## Pendiente del usuario (mañana)
 
-- **Instalar la Prueba v77**: está en la release privada «09/11/2026 · Prueba v77» de `Aethelgard-pruebas` (el Redmi
-  no estaba conectado para copiarla a Descargas). Qué probar, en sus notas: el prólogo con el botón nuevo, escuchar los
-  efectos, Pastos Verdes y el táctil.
+- **Instalar la Prueba v98** (la más reciente; incluye todo lo de la v77): está en la release privada «09/11/2026 ·
+  Prueba v98» de `Aethelgard-pruebas` (versionCode 98, commit `14aea04`, SHA-256 `003e5b77…`, comprobado). El Redmi no
+  estaba conectado para copiarla a Descargas. Qué probar, en sus notas: el mapamundi pintado (y compararlo con «De
+  siempre» en Ajustes), el prólogo con el botón nuevo, las voces de los enemigos y el táctil.
 - **Escuchar las muestras** y elegir la victoria, los golpes, el cofre y el tesoro (el especialista duda de ellos).
 - Revisar las decisiones de la noche ([D-073](DECISIONS.md#d-073)) y las propuestas de historia que dejen narrativa y
   combate.
