@@ -42,6 +42,19 @@ extends SceneTree
 #      del cuervo (de vez en cuando, solo cerca), la campana una vez y la ola de faroles.
 #  15. Efectos en el espacio (parte «espacio»): con «pos» suenan desde ese punto con su distancia de referencia; sin
 #      escucha 3D suenan normal; el máximo de voces 3D.
+# Tanda 4 (T-097):
+#  16. Las bestias del bestiario (parte «bestias»): cada efecto de BESTIAS existe, carga (QOA, mono, 48 kHz) y suena una
+#      vez aunque se pida dos veces, por Efectos; los avisos acaban antes del impacto de su ficha y tienen prioridad 3;
+#      la voz sale de su familia (herido y caída con Sonido.recibe), no tienen «_ataque»; el Posadero suena por encima
+#      (más prioridad y, con dos voces sonando, la suya entra).
+#  17. Los héroes quietos (parte «quietos»): Kael, Lya y Garon parados suenan con su gesto (cada uno el suyo), nunca dos
+#      a la vez, por Efectos y con prioridad 0; andando, ninguno.
+# Tanda 5:
+#  18. Las voces de los héroes (parte «heroes»): Kael, Lya y Garon con su esfuerzo, herido, jadeo (una vez con poca
+#      vida, otra tras curarse), alivio y victoria; prioridad 1 (victoria 3), una a la vez; en un combate de verdad, el
+#      golpe de un enemigo hace quejarse al héroe y la magia sigue sin pedir voces.
+#  19. Las cuerdas y el viento de los puentes de la Garganta 3D (parte «cuerdas»): suenan de vez en cuando (no en bucle),
+#      desde el punto de su línea más cercano a quien escucha, por Ambiente; lejos (más de «max»), nada.
 
 const REGION := "res://zonas3d/pastos_verdes_3d.tscn"
 const GARGANTA3D := "res://zonas3d/garganta_3d.tscn"
@@ -166,6 +179,14 @@ func _probar() -> void:
 		await _artes()
 	if _parte("oakhaven"):
 		await _oakhaven()
+	if _parte("bestias"):
+		await _bestias()
+	if _parte("quietos"):
+		await _quietos()
+	if _parte("heroes"):
+		await _heroes()
+	if _parte("cuerdas"):
+		await _cuerdas()
 	if _parte("garganta3d"):
 		await _garganta3d()
 	print("OK efectos: ", ", ".join(hechos))
@@ -200,7 +221,8 @@ func _catalogo() -> void:
 				_fallo("1: %s no es QOA mono a 48 kHz" % ruta)
 				continue
 			# bucles: los emisores 3D y las fuentes 2D, salvo las que suenan de vez en cuando («cada»: el cuervo)
-			var bucle: bool = (d.has("tres_d") or d.has("dos_d")) and not d.get("dos_d", {}).has("cada")
+			var bucle: bool = (d.has("tres_d") or d.has("dos_d")) and not d.get("dos_d", {}).has("cada") \
+				and not d.get("tres_d", {}).has("cada")
 			if (s.loop_mode == AudioStreamWAV.LOOP_FORWARD) != bucle:
 				_fallo("1: %s %s debería ser un bucle" % [ruta, "no" if bucle else "sí y no"])
 			var w := AudioStreamWAV.load_from_file(ProjectSettings.globalize_path(ruta))   # el derivado, sin comprimir
@@ -815,8 +837,9 @@ func _voces() -> void:
 	# la API: los héroes no tienen voz; una voz por enemigo; dos a la vez como mucho; la furia, más fuerte
 	parte = "voces: API"
 	_limpiar()
-	if Son.voz({"hero": true, "modelo": "kael3d", "nombre": "Kael"}, "ataque") != null:
-		_fallo("8: un héroe tiene voz")
+	if Son.voz({"hero": true, "modelo": "x", "nombre": "Nadie"}, "ataque") != null:
+		_fallo("8: un héroe sin familia (FAMILIAS_HEROE) tiene voz")
+	_limpiar()
 	var a := {"hero": false, "clave": "grimfang", "nombre": "A"}
 	var b := {"hero": false, "clave": "slime", "nombre": "B"}
 	var d := {"hero": false, "clave": "guardian", "nombre": "C"}
@@ -1456,3 +1479,255 @@ func _garganta3d() -> void:
 		_fallo("12: en el combate sigue la cascada")
 	await _escena_vacia()
 	hechos.append("Garganta 3D (oyente, cascada a %.0f m, vientos, eco, %s, gotas %d, efectos de la 2D una vez)" % [d_cascada, info, gotas])
+
+
+# ================================================================= tanda 4
+
+# 16. Las seis bestias del bestiario (solo el catálogo: combate las engancha). Impacto de cada ataque según su ficha (s
+# desde el principio del clip): el aviso que suena al empezar el ataque acaba antes (con 0,1 s de margen).
+const IMPACTO_FICHA := {"zarzalin_aviso_colmillo": 0.47, "cencerrante_aviso_alarma": 0.73, "cencerrante_aviso_campanada": 0.53,
+	"velaria_aviso_destello": 0.70, "velaria_aviso_corte": 0.50, "custodio_aviso_portazo": 0.83, "custodio_aviso_martillo": 0.83,
+	"hilandera_aviso_mordida": 0.73, "hilandera_aviso_trama": 0.83, "posadero_aviso_cierre": 0.97, "posadero_aviso_llave": 0.87}
+
+
+func _bestias() -> void:
+	await _escena_vacia()
+	var n := 0
+	for fam in Son.BESTIAS:
+		var grupos: Array = Son.BESTIAS[fam]
+		for k in 3:
+			for nombre in grupos[k]:
+				n += 1
+				var d: Dictionary = Son.EFECTOS.get(nombre, {})
+				if d.is_empty():
+					_fallo("16: falta «%s» en el catálogo" % nombre)
+					continue
+				var rutas: Array = []
+				for i in int(d.get("n", 1)):
+					rutas.append(Son.EF + d["a"] + (str(i + 1) if d.has("n") else "") + ".wav")
+				for ruta in rutas:
+					var s = load(ruta) if ResourceLoader.exists(ruta) else null
+					if not s is AudioStreamWAV or s.format != AudioStreamWAV.FORMAT_QOA or s.stereo or s.mix_rate != 48000:
+						_fallo("16: %s no carga como QOA mono a 48 kHz" % ruta)
+					elif k == 0 and IMPACTO_FICHA.has(nombre) and s.get_length() > float(IMPACTO_FICHA[nombre]) + 0.1:
+						_fallo("16: el aviso «%s» dura %.2f s y su impacto llega a %.2f s" % [nombre, s.get_length(), IMPACTO_FICHA[nombre]])
+				_limpiar()
+				var p = Son.efecto(nombre)
+				var q = Son.efecto(nombre)
+				if p == null or q != null or _n(nombre) != 1:
+					_fallo("16: «%s» pedido dos veces en el mismo instante suena %d veces" % [nombre, _n(nombre)])
+				elif String(p.bus) != "Efectos":
+					_fallo("16: «%s» no va por Efectos (%s)" % [nombre, p.bus])
+				var pr := int(d.get("p", 1))
+				if k == 0 and pr != 3:
+					_fallo("16: el aviso «%s» tiene prioridad %d (esperaba 3)" % [nombre, pr])
+				if fam == "posadero" and pr < 3:
+					_fallo("16: «%s» (el jefe opcional) tiene prioridad %d: debe sonar por encima" % [nombre, pr])
+		# la voz por su familia: herido y caída con recibe(); sin voz de «ataque» (el aviso hace ese papel)
+		var q := {"hero": false, "clave": fam, "nombre": fam, "hp": 5}
+		if Son.familia(q) != fam:
+			_fallo("16: la clave «%s» no lleva a su familia (%s)" % [fam, Son.familia(q)])
+		_limpiar()
+		Son.recibe(q)
+		q["hp"] = 0
+		await _juego(0.4)
+		Son.recibe(q)
+		if _n(fam + "_herido") != 1 or _n(fam + "_caida") != 1:
+			_fallo("16: %s: herido %d, caída %d (esperaba 1 y 1)" % [fam, _n(fam + "_herido"), _n(fam + "_caida")])
+		if Son.voz(q, "ataque") != null:
+			_fallo("16: %s tiene voz de «ataque»" % fam)
+	for clave in ["custodio_cal", "hilandera_eco", "posadero_hueco"]:
+		if Son.familia({"clave": clave}) == "":
+			_fallo("16: la clave de la ficha «%s» no tiene familia" % clave)
+	# el Posadero por encima: con dos voces de otras bestias sonando (el máximo), su voz entra; la de otra bestia, no
+	_limpiar()
+	Son.voz({"hero": false, "clave": "velaria", "nombre": "V"}, "herido")
+	Son.voz({"hero": false, "clave": "zarzalin", "nombre": "Z"}, "herido")
+	var po = Son.voz({"hero": false, "clave": "posadero", "nombre": "P"}, "herido")
+	if po == null:
+		_fallo("16: con dos voces sonando, la del Posadero no entra")
+	_limpiar()
+	Son.voz({"hero": false, "clave": "posadero", "nombre": "P"}, "herido")
+	Son.voz({"hero": false, "clave": "custodio", "nombre": "C"}, "caida")
+	if Son.voz({"hero": false, "clave": "zarzalin", "nombre": "Z"}, "herido") != null:
+		_fallo("16: una voz de herido quita la del Posadero")
+	_limpiar()
+	hechos.append("bestias (%d efectos de 6 bestias: cargan, una vez, avisos antes del impacto, voces por familia, el Posadero por encima)" % n)
+
+# 17. Los héroes quietos en la exploración 3D: un gesto discreto de cada uno al rato de pararse, uno a la vez.
+func _quietos() -> void:
+	await _escena_vacia()
+	_limpiar()
+	var sup := func(_p): return "hierba"
+	var cuerpos := {}
+	for nombre in ["Kael", "Lya", "Garon"]:
+		var n3 := Node3D.new()
+		n3.name = nombre
+		root.add_child(n3)
+		cuerpos[nombre] = Son.pasos_3d(n3, sup)
+	var a_la_vez := 0
+	var desde := -1                                           # sin ventana el driver es mudo y nada acaba solo: un
+	for i in int(45.0 * 30):                                  # gesto se da por acabado a los 2 s (duran 1,6 como mucho)
+		await process_frame
+		var ahora: int = Son.grupo_sonando("quieto")
+		a_la_vez = maxi(a_la_vez, ahora)
+		if ahora > 0 and desde < 0:
+			desde = i
+		elif ahora > 0 and i - desde >= 60:
+			for p in Son._todas():
+				if p.get_meta("grupo", "") == "quieto":
+					p.stop()
+			desde = -1
+	for nombre in cuerpos:
+		var g: int = cuerpos[nombre].gestos
+		var efecto: String = Son.QUIETO_DE[nombre]
+		if g < 1 or _n(efecto) < 1:
+			_fallo("17: %s parado 45 s no hace ningún gesto (%d; descartes %s)" % [nombre, g, str(Son.descartes)])
+		elif g > 3:
+			_fallo("17: %s hace %d gestos en 45 s (demasiados: no es discreto)" % [nombre, g])
+		var d: Dictionary = Son.EFECTOS[efecto]
+		if int(d.get("p", 1)) != 0 or String(d.get("bus", "Efectos")) != "Efectos":
+			_fallo("17: «%s» no va por Efectos con prioridad 0" % efecto)
+	if a_la_vez > 1:
+		_fallo("17: suenan %d gestos de quieto a la vez (uno como mucho)" % a_la_vez)
+	# andando, ninguno: Garon se mueve sin parar 30 s
+	var garon: Node3D = cuerpos["Garon"].cuerpo
+	var antes: int = cuerpos["Garon"].gestos
+	for i in int(30.0 * 30):
+		garon.position.x += 2.0 / 30.0
+		await process_frame
+	if cuerpos["Garon"].gestos != antes:
+		_fallo("17: Garon andando hace gestos de quieto")
+	var info := "%d/%d/%d gestos" % [cuerpos["Kael"].gestos, cuerpos["Lya"].gestos, antes]
+	for nombre in cuerpos:
+		cuerpos[nombre].cuerpo.queue_free()
+	_limpiar()
+	hechos.append("quietos (Kael, Lya y Garon: %s en 45 s, uno a la vez; andando, ninguno)" % info)
+
+# ================================================================= tanda 5
+
+# 18. Las voces de los héroes en combate (no verbales).
+func _heroes() -> void:
+	await _escena_vacia()
+	var gd: Dictionary = Son.EFECTOS.get("guardia", {})          # la Guardia de Garon: su propio efecto
+	if gd.is_empty() or int(gd.get("p", 0)) != 2 or String(gd.get("bus", "Efectos")) != "Efectos" or gd["a"] == Son.EFECTOS["defensa"]["a"]:
+		_fallo("18: falta «guardia» (propio, por Efectos, prioridad 2)")
+	_limpiar()
+	if Son.efecto("guardia") == null or Son.efecto("guardia") != null:
+		_fallo("18: «guardia» pedido dos veces en el mismo instante no suena una vez")
+	for nombre in ["Kael", "Lya", "Garon"]:
+		var fam: String = Son.FAMILIAS_HEROE[nombre]
+		var h := {"hero": true, "nombre": nombre, "modelo": "x", "hp": 100, "hp_max": 100}
+		for ev in ["esfuerzo", "herido", "jadeo", "alivio", "victoria"]:
+			var d: Dictionary = Son.EFECTOS.get(fam + "_" + ev, {})
+			if d.is_empty():
+				_fallo("18: falta «%s_%s»" % [fam, ev])
+				continue
+			var esperada := 3 if ev == "victoria" else 1
+			if int(d.get("p", 1)) != esperada or d.get("grupo", "") != "voz_heroe" or String(d.get("bus", "Efectos")) != "Efectos":
+				_fallo("18: «%s_%s» no va por Efectos con prioridad %d y grupo voz_heroe" % [fam, ev, esperada])
+			if int(d.get("p", 1)) >= int(Son.EFECTOS["golpe"]["p"]) and ev != "victoria":
+				_fallo("18: «%s_%s» no queda por debajo de los golpes" % [fam, ev])
+		_limpiar()
+		Son.voz(h, "ataque")
+		if _n(fam + "_esfuerzo") != 1:
+			_fallo("18: %s al lanzarse: esfuerzo %d (esperaba 1)" % [nombre, _n(fam + "_esfuerzo")])
+		_limpiar()
+		h["hp"] = 80
+		Son.recibe(h)
+		await _juego(1.0)
+		if _n(fam + "_herido") != 1 or _n(fam + "_jadeo") != 0:
+			_fallo("18: %s con 80 %% de vida: herido %d, jadeo %d (esperaba 1 y 0)" % [nombre, _n(fam + "_herido"), _n(fam + "_jadeo")])
+		_limpiar()
+		h["hp"] = 20
+		Son.recibe(h)
+		await _juego(1.0)
+		Son._ultimo.clear()
+		Son.recibe(h)
+		await _juego(1.0)
+		if _n(fam + "_jadeo") != 1:
+			_fallo("18: %s con poca vida y dos golpes: jadeo %d (esperaba 1)" % [nombre, _n(fam + "_jadeo")])
+		_limpiar()
+		Son.voz(h, "alivio")
+		Son._ultimo.clear()
+		Son.recibe(h)
+		await _juego(1.0)
+		if _n(fam + "_alivio") != 1 or _n(fam + "_jadeo") != 1:
+			_fallo("18: %s: alivio %d y, otra vez con poca vida, jadeo %d (esperaba 1 y 1)" % [nombre, _n(fam + "_alivio"), _n(fam + "_jadeo")])
+		_limpiar()
+		h["hp"] = 0
+		Son.recibe(h)
+		if _n(fam + "_herido") != 1:
+			_fallo("18: %s cae y no se queja (herido %d)" % [nombre, _n(fam + "_herido")])
+	# una voz de héroe a la vez; la victoria, de uno que siga en pie
+	_limpiar()
+	Son.voz({"hero": true, "nombre": "Kael", "hp": 9}, "ataque")
+	Son.voz({"hero": true, "nombre": "Lya", "hp": 9}, "ataque")
+	if Son.grupo_sonando("voz_heroe") != 1:
+		_fallo("18: suenan %d voces de héroes a la vez (una como mucho)" % Son.grupo_sonando("voz_heroe"))
+	_limpiar()
+	var v: String = Son.victoria_heroes([{"hero": true, "nombre": "Kael", "hp": 0}, {"hero": true, "nombre": "Garon", "hp": 50}])
+	await _juego(1.2)
+	if v != "garon_victoria" or _n("garon_victoria") != 1:
+		_fallo("18: la victoria no la celebra quien sigue en pie (%s, %d)" % [v, _n("garon_victoria")])
+	if Son.victoria_heroes([{"hero": true, "nombre": "Kael", "hp": 0}]) != "":
+		_fallo("18: celebra la victoria un héroe caído")
+	# combate de verdad (grupo 7, el limo): el golpe del limo hace quejarse a Kael; una magia no pide voces
+	var c = await _nuevo_combate(7)
+	var hk: Dictionary = c.heroes[0]
+	var e: Dictionary = c.enemigos[0]
+	_sin_vida(hk)
+	_sin_vida(e)
+	_limpiar()
+	await c._animar_golpe(e, hk, 1, "")
+	await _juego(0.4)
+	var fk: String = Son.familia(hk)
+	if fk == "" or _n(fk + "_herido") != 1:
+		_fallo("18: el limo golpea a %s y no se queja (%s)" % [hk.get("nombre", "?"), str(Son.contador)])
+	_limpiar()
+	await c._animar_golpe(hk, e, 1, "")
+	await _juego(0.4)
+	var esfuerzo := _n(fk + "_esfuerzo")
+	_limpiar()
+	await c._animar_golpe(hk, e, 1, "Agua")
+	await _juego(0.4)
+	if _suma(fk + "_") != 0:
+		_fallo("18: la magia de %s pide su voz (%s): el catálogo mágico no cambia" % [hk.get("nombre", "?"), str(Son.contador)])
+	c.queue_free()
+	await _esperar(3)
+	_limpiar()
+	hechos.append("voces de los héroes (Kael, Lya y Garon: esfuerzo, herido, jadeo, alivio y victoria; una a la vez; en combate, el golpe del limo hace quejarse a %s y su ataque físico da %d esfuerzo)" % [hk.get("nombre", "?"), esfuerzo])
+
+# 19. Fuentes 3D de vez en cuando (las cuerdas que crujen y el viento en ellas): una escena 3D con su cámara.
+func _cuerdas() -> void:
+	await _escena_3d()
+	_limpiar()
+	var a := Vector3(-3, 0, -10)
+	var b := Vector3(-3, 0, 10)
+	var f = Son.fuente_linea(current_scene, "puente_cruje", a, b)
+	var g = Son.fuente_linea(current_scene, "viento_cuerdas", a, b)
+	var lejos = Son.fuente_linea(current_scene, "puente_cruje", Vector3(80, 0, 0), Vector3(90, 0, 0), -3.0)
+	if not f is Node3D or f is AudioStreamPlayer3D or g == null or lejos == null:
+		_fallo("19: fuente_linea con «cada» no crea una fuente de vez en cuando (%s)" % str(f))
+		return
+	var puntos_bien := true
+	var vistos := 0
+	for i in int(40.0 * 30):
+		await process_frame
+		for x in Son._voces3d:
+			if is_instance_valid(x) and x.playing and x.get_meta("efecto", "") in ["puente_cruje", "viento_cuerdas"]:
+				var q: Vector3 = x.global_position
+				if absf(q.x + 3.0) > 0.01 or absf(q.z) > 10.01 or String(x.bus) != "Ambiente":
+					puntos_bien = false
+				x.stop()                                         # sin ventana nada acaba solo
+				vistos += 1
+	if f.veces < 3 or g.veces < 1:
+		_fallo("19: en 40 s las cuerdas suenan %d veces y el viento %d (esperaba 3 o más y 1 o más)" % [f.veces, g.veces])
+	if lejos.veces != 0:
+		_fallo("19: unas cuerdas a 80 m suenan %d veces (más allá de su «max»)" % lejos.veces)
+	if not puntos_bien:
+		_fallo("19: las cuerdas no suenan en el punto de su línea más cercano, por Ambiente")
+	var cruje: int = f.veces
+	var silba: int = g.veces
+	await _escena_vacia()
+	hechos.append("cuerdas (en 40 s: cuerdas %d, viento %d; lejos, 0)" % [cruje, silba])

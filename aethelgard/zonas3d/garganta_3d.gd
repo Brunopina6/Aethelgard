@@ -171,7 +171,7 @@ func _crear_piezas() -> void:
 	var tirada := palanca_bajada()
 	# P2: los dos puentes colgantes; sus pilares llevan el anillo, más gastado cuanto más lejos
 	piezas.puente_colgante(T.PUENTES[0][0], T.PUENTES[0][1], 0.0, 0.3)
-	piezas.puente_colgante(T.PUENTES[1][0], T.PUENTES[1][1], 0.5, 0.8)
+	piezas.puente_colgante(T.PUENTES[1][0], T.PUENTES[1][1], 0.5, 0.8, 1.7)   # se mece a destiempo del primero
 	# guardados, palanca, ascensor, levadizo y puerta
 	guardados = [piezas.guardado(T.GUARDADO_1), piezas.guardado(T.GUARDADO_2)]
 	palanca = piezas.palanca(T.PALANCA, tirada)
@@ -326,6 +326,8 @@ func _cambiar_perfil() -> void:
 
 func _process(delta: float) -> void:
 	_bloqueo = maxf(0.0, _bloqueo - delta)
+	if esc != null:
+		esc.animar(delta)                                      # el fuego de los faroles tiembla (T-102)
 	if kael == null:
 		return
 	if en_banco():

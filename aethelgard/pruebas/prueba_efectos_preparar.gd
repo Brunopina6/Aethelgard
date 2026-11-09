@@ -72,6 +72,67 @@ const F_FUEGO_GQ := "S18/Gregor Quendel – Designed Fire/"
 const F_CAMPANA_SUAVE := "S18/CB_Sounddesign – ACTIVATION UI & HUD Sound Effects Library/Bell_10_b.wav"
 const F_CHIRRIDO := "S17/SoundBits - Unsettling Creaks and Squeaks/Metal_Creak_13.wav"
 
+# T-083, tanda 4 (T-097): las seis bestias del bestiario (todas de los paquetes GDC de Sonniss 2016-2024)
+const F_RESOPLIDO := "S17/G4F SFX - Horses/G4F SFX06 - HORSES - Snort 03.wav"
+const F_CERDO_GRUNIDO := "S20/SoundBits - Collected Animals/Pig_Grunt_09.wav"
+const F_CERDO_CHILLIDO := "S24/Mechanical Wave - Farm Animals/ANMLFarm_Pig Squeal and Snort-18_MWSFX_FA.wav"
+const F_CERDO_GEMIDO := "S20/Articulated Sounds - Pig Farm Animal Groan/ANIMAL FARM Pig Groan 03, Martvili Georgia.wav"
+const F_CASCO_TIERRA := "S23/Dramatic Cat - Horse Carriage - Draft Horse/FEETHors_Draft Horse Walk On On Grass And Dirt MONO_DRCA_HOCA_MKH416.wav"
+const F_TIERRA := "S16/Alexander Kopeikin - Rocks/soil and dirt debris heavy 13.wav"
+const F_CUERO_GOLPE := "S19/Rock The Speakerbox - Melee/MELEE - CK - FLOG Leather Hit Smack 01.wav"
+const F_RAMAS_ROTAS := "S19/BlueZone - Wood Sound Effects/Bluezone_BC0254_wood_crushing_branches_001_001.wav"
+const F_CAIDA_TIERRA := "S19/Red Libraries - Bodyfall/RL_bodyfall_Dirt_M4_Close_Stereo_Hard_Impact_10.wav"
+const F_ARBOL_CRUJE := "S19/BlueZone - Wood Sound Effects/Bluezone_BC0254_wood_creaking_tree_005.wav"
+const F_SOPLO_TELA := "S19/Airborne Sound - Organic Whooshes/Whoosh,Organic,Fabric,Glove,Airy,Breathy,Punchy.wav"
+const F_RAMA_CHASQUIDO := "S24/InMotionAudio - Wood/WOODBrk_Snap09_InMotionAudio_Wood.wav"
+const F_FOLLAJE := "S23/BluezoneCorp - Forest Textures/Bluezone_BC0279_forest_tree_branch_leaf_foliage_impact_short_012.wav"
+const F_MADERA_ROTA := "S19/Matt Script - You Me & Debris/wood_breaking_cracking_snapping_breaking_peeling_bones_break_snap_crack_13.wav"
+const F_CUERDA_METAL := "S24/Rogue Waves - Yacht & Marina/BOATMech_EXT Small yacht, rope moving through metal_RogueWaves_YachtMarina.wav"
+const F_CABLE_TENSO := "S24/Rogue Waves - Yacht & Marina/METLTonl_Contact Mic, Cable Rope Stays, Percussive_RogueWaves_YachtMarina_02.wav"
+const F_CAMPANILLA := "S24/Mechanical Wave - Sound Effects Collection/BELLHand_Metallic Bell_ 22_MWSFX_SEC.wav"
+const F_CENCERROS := "S23/Ivo Vicic - Bellmen - Folk Custom/22 BELLMEN_Kukuljanski Bell ringers.wav"
+const F_CENCERRO := "S18/The Chris Alan - Musical Oddities - Bells, Whistles, Horns, Percussion and More/MODERN LP BELL COWBELL STRAIGHT MUTED STICK HITS.wav"
+const F_VIGA_CRUJE := "S19/Matt Script - Squeaks & Creaks/Old wood floor_creak_creaking_slow_back and forth_04.wav"
+const F_CUERDA_SOPLO := "S18/SoundBits - Tiny Transitions/Whoosh_Source_Rope_03.wav"
+const F_TABLA := "S17/Double Trouble Audio - Wood Impacts and Debris/Drop Soft - Single Plank, Drop 02.wav"
+const F_PARAGUAS_CIERRA := "S16/Sergey Eybog - Automatic Umbrellas/Umbrella 2,Compact,Close,Slide,Fold,Snap,04.wav"
+const F_PARAGUAS_ABRE := "S16/Sergey Eybog - Automatic Umbrellas/Cane Umbrella,Large,Pop Open,Button,Automatic,Spring Action,Unfold,04.wav"
+const F_PARAGUAS_SACUDE := "S16/Sergey Eybog - Automatic Umbrellas/Umbrella 2,Compact,Movement,Fabric,Cleaning,Shake Out,05.wav"
+const F_VELA := "S23/Gladestock Studios - Naval Warfare/GS sail impact 004.wav"
+const F_LLAVES_CAMPANILLA := "S16/MatiasMacSD - FEEL TEXTURES VOL 1/TextureWindChimeKeys_003.wav"
+const F_RAFAGA_SILBIDO := "S18/Airborne Sound - Eclectic Whooshes/Whoosh,Sound Design,Whip By,Airy to Whine,High.wav"
+const F_ALETEO := "S20/Systematic-Sound - Sound Themes - Modern Cloth Foley 01/SFX CLOTH Foley Jacket Synthetic Soft Shell Whoosh Flutter.wav"
+const F_CAMPANILLA_PORCELANA := "S19/Eiravaein Works - Helina/Helinä,windbell,Japanese,porcelain,clapper,paperwindcatcher,cottonrope,gust,strong,shorttail,MidSide.wav"
+const F_PISADA_HUMEDA := "S20/Bluezone - Cave Creature Sound Effects/Bluezone_BC0272_creature_footstep_damp_015.wav"
+const F_LOSA := "S17/SoundMorph - Portals/Door - Stone Long 02.wav"
+const F_MARMOL := "S16/SoundMorph - RUPTURE/Rupture - Marble_Impacts_06.wav"
+const F_HORMIGON := "S16/SoundMorph - RUPTURE/Rupture - Concrete_Impact_B02.wav"
+const F_AUTOMATA_PASO := "S23/BluezoneCorp - Demolisher - Robot/Bluezone_BC0290_demolisher_robot_mechanical_footsteps_rusty_creak_005.wav"
+const F_ROCA_TEXTURA := "S18/Gregor Quendel - Designed Rocks/Designed Rocks - EVO19 - Texture - Filtered 4.wav"
+const F_CASA_PIEDRA := "S16/Mattia Cellotto - Rocks Momentum/Collapsed Stone House - Rock Single Large Impacts - 1 Meter. Rock,Large,Impact,Single,Land,Various_04.wav"
+const F_POLVO_ROCA := "S20/Bluezone - Tank - Explosion Sound Effects/Bluezone_BC0271_debris_falling_rock_dust_002.wav"
+const F_LLAVE_PIEDRA := "S24/BluezoneCorp - Stone Impact/Bluezone_BC0297_stone_impact_steel_bar_01_010.wav"
+const F_INSECTO_VOZ := "S20/Phase 4 Libraries - Monster Roars/MR - Insect Creature Attack VO 02.wav"
+const F_PATAS_INSECTO := "S23/TheWorkRoom Audio Post - Animal Footsteps Foley - Insects/ANF036.wav"
+const F_CANGREJO_GOLPE := "S20/Bluezone - Crab - Creature/Bluezone_BC0263_creature_crab_organic_texture_attack_impact_009.wav"
+const F_CAPARAZON := "S20/Bluezone - Crab - Creature/Bluezone_BC0263_creature_crab_organic_texture_carapace_crack_squishy_003.wav"
+const F_CAVERNA := "S19/344 Audio - Low Frequency Elements/Trailer Hit Cavernous 10 Filtered, Low End.wav"
+const F_CARACOLA := "S20/Articulated Sounds - Seashell Resonance/Seashell Pututo from Peru, Sounding Blow 01.wav"
+const F_VIGAS := "S23/BluezoneCorp - Forest Textures/Bluezone_BC0279_forest_tree_wood_texture_creaking_016.wav"
+const F_LLAVES := "S20/Badlands Sound - Moving Loops/Moving Loops, Set of Car Keys, Small Movements, Subtle, Loopable.wav"
+const F_PORTAZO := "S24/Rogue Waves - Creaking Door/DOORCreak_Wooden Door, Door Slams, Impacts, 3_RogueWaves_CreakingDoor.wav"
+const F_VIGA_CAE := "S19/Rock The Speakerbox - Broken/BROKEN - CK - BEAM Wood Ceiling Drop On Concrete.wav"
+const F_CUERO_LENTO := "S20/Systematic-Sound - Sound Themes - Modern Cloth Foley 01/SFX CLOTH Foley Jacket Leather Rough Movement Slow Rustle.wav"
+const F_RESPIRA_H := "S20/Articulated Sounds - Human Male Breathe/HUMAN BREATH Male_Deep Opened Mouth Breath with S Formed Lips Long Exhale_F.wav"
+const F_GRITO_H := "S23/Pole Position Production - The Grunts Library/Male 2 - Grunt - Battle Cry - Long - Ehrlund M1.wav"
+const F_JADEO_H := "S23/Pole Position Production - The Grunts Library/Male 1 - Breathing - Gasping - Ehrlund M1.wav"
+const F_SALTO_M := "S23/Pole Position Production - The Grunts Library/Female 3 - Grunt - Jumping and Landing - Long - Ehrlund M1.wav"
+const F_GOLPE_M := "S23/Pole Position Production - The Grunts Library/Female 1 - Grunt - Getting Hit - Medium Intensity - Ehrlund M1.wav"
+const F_JADEO_M := "S24/UberDuo - Inhale – Tanja – Character Playset/HMNBrth_Human, Adult, Female, Panting, Nose, Loop_UberDuo_INHL.wav"
+const F_CUERDAS_PUERTO := "S24/Rogue Waves - Yacht & Marina/AMBNaut_Atmos, EXT Marina, boats, rope creaking,_RogueWaves_YachtMarina_11.wav"
+const F_VIENTO_CABLES := "S18/Ivo Vicic - Bora wind - European local wind/38 Wind_hurricane_wires_whistle.wav"
+const F_EQUIPO_SOLDADO :=  "S18/Gamemaster Audio - Footstep and Foley Sounds/foley_soldier_gear_equipment_metal_cloth_heavy_movement_light_08.wav"
+
 # [derivado, fuente, desde (s), hasta (s, -1 = el final), opciones]
 # opciones: norm ("pico" o "rms"), db (objetivo en dBFS), techo (pico máximo con «rms»), fi / fo (fundidos en s),
 # capas ([[fuente, desde, hasta, en (s), dB], ...] que se suman a la principal), pb (paso bajo en Hz: «lejos»),
@@ -294,6 +355,186 @@ const RECETAS := [
 	["mundo/cuervo_3", "S18/RZ Post - The Creepy Door/Creepy Door, Fast Metal Creak_02.wav", 0.05, 0.95, {"norm": "pico", "db": -3.0, "fi": 0.05, "fo": 0.3}],
 	# un farol que prende (una cerilla que se enciende y la llama que agarra)
 	["mundo/farol", "S20/InspectorJ - Party Pack/Party-Pack_Match_Ignite_02-03.wav", 0.0, 1.5, {"norm": "pico", "db": -2.0, "fo": 0.6}],
+	# ================================================================ tanda 4: las seis bestias del bestiario (T-097)
+	# Por bestia: el aviso de cada ataque (la preparación, desde el principio del clip; acaba antes del impacto), el
+	# impacto de cada ataque (empieza con el golpe), herido, caída y entrada. Tiempos de las fichas y de los GLB.
+	# ---- Zarzalín, el jabalí de corteza: tierra levantada, ramas quebradas, golpe corto de cuero, resoplido y pezuñas
+	["bestias/zarzalin_aviso_embestida", F_RESOPLIDO, 2.80, 3.25, {"norm": "pico", "db": -2.0, "fo": 0.15, "tono": 0.9,
+		"capas": [[F_CERDO_GRUNIDO, 0.29, 0.87, 0.05, -5.0]]}],
+	["bestias/zarzalin_pezuna_1", F_CASCO_TIERRA, 0.94, 1.20, {"norm": "pico", "db": -2.0, "fo": 0.1,
+		"capas": [[F_TIERRA, 0.04, 0.30, 0.01, -9.0]]}],
+	["bestias/zarzalin_pezuna_2", F_CASCO_TIERRA, 4.43, 4.69, {"norm": "rms", "db": -19.5, "techo": -1.0, "fo": 0.1,
+		"capas": [[F_TIERRA, 0.30, 0.55, 0.01, -10.0]]}],
+	["bestias/zarzalin_embestida", F_CUERO_GOLPE, 0.02, 0.30, {"norm": "pico", "db": -1.0, "fo": 0.25,
+		"capas": [[F_RAMAS_ROTAS, 0.24, 0.55, 0.0, -6.0], [F_TIERRA, 0.04, 0.77, 0.03, -6.0], [F_CAIDA_TIERRA, 0.05, 0.40, 0.16, -7.0]]}],
+	["bestias/zarzalin_aviso_colmillo", F_ARBOL_CRUJE, 1.85, 2.20, {"norm": "pico", "db": -2.0, "fi": 0.02, "fo": 0.08,
+		"capas": [[F_CERDO_GRUNIDO, 0.29, 0.60, 0.0, -8.0], [F_SOPLO_TELA, 0.0, 0.22, 0.25, -6.0]]}],
+	["bestias/zarzalin_colmillo", F_CUERO_GOLPE, 2.79, 2.98, {"norm": "pico", "db": -1.0, "fo": 0.15,
+		"capas": [[F_RAMA_CHASQUIDO, 0.56, 0.75, 0.0, -5.0], [F_FOLLAJE, 0.0, 0.30, 0.02, -8.0]]}],
+	["bestias/zarzalin_herido_1", F_CERDO_CHILLIDO, 0.21, 0.62, {"norm": "pico", "db": -2.0, "fo": 0.12, "tono": 0.9,
+		"capas": [[F_RAMA_CHASQUIDO, 0.57, 0.70, 0.0, -10.0]]}],
+	["bestias/zarzalin_herido_2", "S20/Articulated Sounds - Pig Farm Animal Groan/ANIMAL FARM Pig, Grunt, Breathe, Single, Isolated, 0.2m 02.wav", 0.0, 0.27, {"norm": "pico", "db": -2.0, "fo": 0.08, "tono": 0.88,
+		"capas": [[F_MADERA_ROTA, 0.21, 0.40, 0.02, -8.0]]}],
+	["bestias/zarzalin_caida", F_CERDO_CHILLIDO, 0.21, 1.03, {"norm": "pico", "db": -1.0, "fo": 0.35, "tono": 0.88,
+		"capas": [[F_MADERA_ROTA, 0.21, 0.66, 0.08, -5.0], [F_CERDO_GEMIDO, 0.06, 0.67, 0.55, -6.0]]}],
+	# el cuerpo contra la tierra: al empezar el clip «derrota» (morir()); el golpe cae a 0,60 s (fotograma 19)
+	["bestias/zarzalin_derrumbe", F_FOLLAJE, 0.0, 0.40, {"norm": "pico", "db": -1.0, "fi": 0.05, "fo": 0.3,
+		"capas": [[F_CAIDA_TIERRA, 0.04, 0.60, 0.58, 3.0], [F_RAMAS_ROTAS, 0.24, 0.50, 0.60, -5.0], [F_TIERRA, 0.90, 1.30, 0.65, -8.0]]}],
+	# salta entre la maleza (0), aterriza (0,47 s), sacude la cabeza (0,72 s), pisotón (1 s) y resopla
+	["bestias/zarzalin_entrada", F_FOLLAJE, 0.0, 0.33, {"norm": "pico", "db": -1.0, "fo": 0.25,
+		"capas": [[F_CAIDA_TIERRA, 0.04, 0.30, 0.45, -2.0], [F_ARBOL_CRUJE, 2.00, 2.15, 0.72, -8.0], [F_CASCO_TIERRA, 0.94, 1.15, 0.98, -3.0],
+			[F_RESOPLIDO, 0.82, 1.31, 1.05, -5.0]]}],
+	# ---- el Cencerrante, la campana de pastor: bronce hueco y cuerda tensada
+	["bestias/cencerrante_aviso_alarma", F_CUERDA_METAL, 0.26, 0.88, {"norm": "pico", "db": -2.0, "fi": 0.03, "fo": 0.1,
+		"capas": [[F_CABLE_TENSO, 0.0, 0.31, 0.30, -8.0]]}],
+	["bestias/cencerrante_alarma", F_CAMPANILLA, 0.03, 1.50, {"norm": "pico", "db": -1.0, "fo": 0.6, "tono": 0.75,
+		"capas": [[F_CENCERROS, 6.95, 7.90, 0.0, -8.0], [F_CABLE_TENSO, 3.91, 4.24, 0.0, -12.0]]}],
+	["bestias/cencerrante_aviso_campanada", F_VIGA_CRUJE, 0.40, 0.90, {"norm": "pico", "db": -2.0, "fi": 0.02, "fo": 0.1,
+		"capas": [[F_CUERDA_SOPLO, 0.45, 0.87, 0.05, -6.0]]}],
+	["bestias/cencerrante_campanada", F_CENCERRO, 7.70, 8.30, {"norm": "pico", "db": -1.0, "fo": 0.4, "tono": 0.62,
+		"capas": [[F_TABLA, 0.0, 0.41, 0.0, -6.0]]}],
+	["bestias/cencerrante_herido_1", F_CENCERRO, 3.20, 3.60, {"norm": "pico", "db": -2.0, "fo": 0.15, "tono": 0.8,
+		"capas": [[F_CABLE_TENSO, 3.91, 4.24, 0.0, -6.0]]}],
+	["bestias/cencerrante_herido_2", F_CENCERRO, 9.91, 10.30, {"norm": "pico", "db": -2.0, "fo": 0.15, "tono": 0.85,
+		"capas": [[F_CUERDA_METAL, 2.42, 2.75, 0.02, -8.0]]}],
+	["bestias/cencerrante_caida", F_CENCERROS, 6.95, 7.95, {"norm": "pico", "db": -1.0, "fo": 0.5, "tono": 0.7,
+		"capas": [[F_CAMPANILLA, 0.03, 1.20, 0.0, -4.0], [F_CENCERRO, 12.06, 12.50, 0.70, 0.0], [F_TABLA, 0.0, 0.40, 0.72, -4.0],
+			[F_CUERDA_SOPLO, 0.45, 0.87, 0.20, -8.0]]}],
+	["bestias/cencerrante_entrada", F_CAMPANILLA, 0.03, 1.5, {"norm": "pico", "db": -2.0, "fi": 0.01, "fo": 0.8, "tono": 0.6,
+		"capas": [[F_CUERDA_METAL, 7.09, 8.17, 0.0, -10.0]]}],
+	# ---- Velaria, la polilla de alas de farol: tela gruesa, ráfaga y tintineo suave
+	["bestias/velaria_aviso_destello", F_PARAGUAS_CIERRA, 0.0, 0.55, {"norm": "pico", "db": -2.0, "fi": 0.02, "fo": 0.15,
+		"capas": [[F_LLAVES_CAMPANILLA, 0.87, 1.17, 0.22, -12.0]]}],
+	["bestias/velaria_destello", F_VELA, 0.0, 0.60, {"norm": "pico", "db": -1.0, "fo": 0.3,
+		"capas": [[F_PARAGUAS_ABRE, 0.57, 0.95, 0.0, -3.0], [F_LLAVES_CAMPANILLA, 2.0, 2.6, 0.03, -10.0], [F_RAFAGA_SILBIDO, 0.8, 1.3, 0.0, -8.0]]}],
+	["bestias/velaria_aviso_corte", F_ALETEO, 5.95, 6.22, {"norm": "pico", "db": -2.0, "fi": 0.02, "fo": 0.08,
+		"capas": [[F_ALETEO, 14.56, 14.80, 0.18, -2.0]]}],
+	["bestias/velaria_corte", F_SOPLO_TELA, 0.0, 0.30, {"norm": "pico", "db": -1.0, "fo": 0.12,
+		"capas": [[F_VELA, 0.0, 0.25, 0.06, -5.0]]}],
+	["bestias/velaria_herido_1", F_VELA, 0.0, 0.30, {"norm": "rms", "db": -18.5, "techo": -1.0, "fo": 0.12, "tono": 1.15,
+		"capas": [[F_LLAVES_CAMPANILLA, 1.83, 1.95, 0.02, -8.0]]}],
+	["bestias/velaria_herido_2", F_SOPLO_TELA, 0.03, 0.30, {"norm": "pico", "db": -2.0, "fo": 0.1, "tono": 1.1,
+		"capas": [[F_LLAVES_CAMPANILLA, 3.31, 3.45, 0.02, -8.0]]}],
+	["bestias/velaria_caida", F_PARAGUAS_SACUDE, 0.05, 1.05, {"norm": "pico", "db": -1.0, "fo": 0.4,
+		"capas": [[F_LLAVES_CAMPANILLA, 2.0, 2.6, 0.10, -6.0], [F_CAMPANILLA_PORCELANA, 0.2, 1.05, 0.35, -6.0], [F_PISADA_HUMEDA, 0.08, 0.40, 0.85, -8.0]]}],
+	["bestias/velaria_entrada", F_ALETEO, 0.48, 1.20, {"norm": "pico", "db": -2.0, "fi": 0.05, "fo": 0.3,
+		"capas": [[F_LLAVES_CAMPANILLA, 0.0, 0.77, 0.20, -10.0]]}],
+	# ---- el Custodio de Cal, autómata de piedra con una llave de bronce: roce de losas y golpe de piedra seca
+	["bestias/custodio_aviso_portazo", F_LOSA, 0.33, 1.10, {"norm": "pico", "db": -2.0, "fi": 0.05, "fo": 0.12}],
+	["bestias/custodio_portazo", F_MARMOL, 0.0, 0.65, {"norm": "pico", "db": -1.0, "fo": 0.25,
+		"capas": [[F_HORMIGON, 0.0, 0.60, 0.0, -8.0], [F_AUTOMATA_PASO, 0.0, 0.42, 0.0, -6.0]]}],
+	["bestias/custodio_aviso_martillo", F_LOSA, 0.40, 1.05, {"norm": "pico", "db": -2.0, "fi": 0.05, "fo": 0.12, "tono": 0.85,
+		"capas": [[F_ROCA_TEXTURA, 2.30, 2.85, 0.15, -6.0]]}],
+	["bestias/custodio_martillo", "S20/PMSFX - Rocky Impacts/PM_RI_Designed_19 Rocks Impact Hit Big LFE Heavy Designed.wav", 0.0, 0.80, {"norm": "pico", "db": -1.0, "fo": 0.35,
+		"capas": [[F_CASA_PIEDRA, 8.60, 9.00, 0.0, -4.0], [F_POLVO_ROCA, 0.11, 0.70, 0.12, -8.0]]}],
+	["bestias/custodio_herido_1", "S20/PMSFX - Rocky Impacts/PM_RI_Source_92 Rocks Impact Hit Single Stone.wav", 0.0, 0.45, {"norm": "pico", "db": -2.0, "fo": 0.15,
+		"capas": [[F_LLAVE_PIEDRA, 0.0, 0.30, 0.02, -9.0]]}],
+	["bestias/custodio_herido_2", "S20/PMSFX - Rocky Impacts/PM_RI_Source_53 Rocks Impact Hit Single Stone.wav", 0.0, 0.24, {"norm": "rms", "db": -19.0, "techo": -1.0, "fo": 0.1,
+		"capas": [["S20/Tatak Audio - Rocks and Debris/Tatak_ROCKS_Single Rock Impact on Stones.wav", 2.90, 3.10, 0.04, -6.0]]}],
+	["bestias/custodio_caida", "S23/BluezoneCorp - Building Collapse/Bluezone_BC0275_building_collapse_debris_falling_rock_rubble_008.wav", 0.0, 1.60, {"norm": "pico", "db": -1.0, "fo": 0.5,
+		"capas": [[F_CASA_PIEDRA, 17.70, 18.20, 0.0, -2.0], [F_LLAVE_PIEDRA, 0.0, 0.40, 1.25, -4.0]]}],
+	["bestias/custodio_entrada", F_LOSA, 0.33, 1.60, {"norm": "pico", "db": -2.0, "fi": 0.1, "fo": 0.3,
+		"capas": [[F_AUTOMATA_PASO, 0.0, 0.45, 1.20, -2.0]]}],
+	# ---- la Hilandera del Eco, artrópodo de gruta: chasquido quitinoso y resonancia de piedra
+	["bestias/hilandera_aviso_mordida", F_INSECTO_VOZ, 0.0, 0.58, {"norm": "pico", "db": -2.0, "fo": 0.08,
+		"capas": [[F_PATAS_INSECTO, 0.38, 0.75, 0.05, -6.0]]}],
+	["bestias/hilandera_mordida", F_CANGREJO_GOLPE, 0.0, 0.45, {"norm": "pico", "db": -1.0, "fo": 0.25,
+		"capas": [["S20/Submerged Tapes - Polystyrene Destruction/PD39,Polystyrene,Snap,Bone,Break,Gore,Quick,Fast,Sharp.wav", 0.72, 0.80, 0.0, -4.0],
+			[F_CAVERNA, 0.06, 0.90, 0.0, -10.0]]}],
+	["bestias/hilandera_aviso_trama", "S23/Hzandbits - Microbes/CREASmall_ Small Species A Voices Skitter Squeak Phrase 02_HZBIT_Microbes.Wav", 0.0, 0.75, {"norm": "pico", "db": -2.0, "fi": 0.02, "fo": 0.1,
+		"capas": [["S19/BlueZone - Organic Lifeform Textures/Bluezone_BC0249_086_organic_texture_insect.wav", 0.02, 0.70, 0.0, -10.0], [F_CARACOLA, 0.08, 0.85, 0.0, -8.0]]}],
+	["bestias/hilandera_trama", F_CARACOLA, 0.20, 1.20, {"norm": "pico", "db": -1.0, "fi": 0.01, "fo": 0.7, "tono": 0.8,
+		"capas": [["S19/2496SoundEffects - Sound Design FX Super Pack 1/echo hit pan  subsonic pro sound effect.wav", 0.02, 1.60, 0.0, -4.0],
+			[F_CAPARAZON, 0.0, 0.30, 0.0, -10.0], [F_CAVERNA, 0.08, 1.40, 0.0, -8.0]]}],
+	["bestias/hilandera_herido_1", F_CAPARAZON, 0.0, 0.45, {"norm": "pico", "db": -2.0, "fo": 0.15}],
+	["bestias/hilandera_herido_2", F_INSECTO_VOZ, 0.0, 0.28, {"norm": "pico", "db": -2.0, "fo": 0.08, "tono": 1.12,
+		"capas": [[F_CAPARAZON, 0.0, 0.20, 0.0, -6.0]]}],
+	["bestias/hilandera_caida", F_CAPARAZON, 0.0, 0.60, {"norm": "pico", "db": -1.0, "fo": 0.5,
+		"capas": [["S20/Bluezone - Crab - Creature/Bluezone_BC0263_creature_crab_texture_underwater_003.wav", 0.07, 1.0, 0.15, -6.0],
+			[F_PISADA_HUMEDA, 0.08, 0.70, 0.55, -3.0], [F_CARACOLA, 1.50, 2.60, 0.60, -14.0]]}],
+	["bestias/hilandera_entrada", F_PATAS_INSECTO, 0.38, 2.20, {"norm": "pico", "db": -2.0, "fo": 0.3,
+		"capas": [["S23/Hzandbits - Microbes/CREASmall_ Small Species A Voices Skitter Squeak Phrase 02_HZBIT_Microbes.Wav", 0.60, 1.0, 0.90, -4.0],
+			[F_PISADA_HUMEDA, 0.08, 0.60, 1.60, -4.0]]}],
+	# ---- el Posadero Hueco (jefe opcional): llaves, vigas y un portazo grave
+	["bestias/posadero_aviso_cierre", F_VIGAS, 0.04, 0.85, {"norm": "pico", "db": -2.0, "fi": 0.03, "fo": 0.1,
+		"capas": [[F_LLAVES, 3.90, 4.40, 0.10, 0.0]]}],
+	["bestias/posadero_cierre", F_PORTAZO, 2.26, 2.90, {"norm": "pico", "db": -1.0, "fo": 0.5, "tono": 0.9,
+		"capas": [[F_VIGA_CAE, 0.0, 1.30, 0.0, -4.0], ["S20/Alex Lane - Resonant Rusty Door/ResonantRustyDoor_impact_hard_11.wav", 0.0, 1.10, 0.0, -8.0],
+			[F_LLAVES, 4.30, 4.60, 0.05, -2.0]]}],
+	["bestias/posadero_aviso_llave", "S17/Double Trouble Audio - Tools and Wood/Old Lock Fiddling.wav", 0.0, 0.82, {"norm": "pico", "db": -2.0, "fo": 0.1,
+		"capas": [[F_LLAVES, 3.90, 4.25, 0.30, 0.0]]}],
+	["bestias/posadero_llave", "S19/Federico Soler Fernández - Effective Trailer Whooshes/Warlock D.wav", 0.25, 0.90, {"norm": "pico", "db": -1.0, "fo": 0.25, "tono": 0.85,
+		"capas": [["S17/Alexander Ahura - Locks & Keys/Lock03_outdoor_opening_solid03.wav", 4.08, 4.30, 0.05, -2.0], [F_PORTAZO, 8.50, 8.90, 0.08, -8.0]]}],
+	["bestias/posadero_herido_1", F_VIGA_CRUJE, 0.40, 0.85, {"norm": "rms", "db": -23.0, "techo": -1.0, "fo": 0.12,
+		"capas": [[F_LLAVES, 4.30, 4.55, 0.0, 0.0]]}],
+	["bestias/posadero_herido_2", F_VIGAS, 0.04, 0.40, {"norm": "pico", "db": -2.0, "fo": 0.12,
+		"capas": [[F_LLAVES, 3.05, 3.20, 0.0, 0.0]]}],
+	["bestias/posadero_caida", F_VIGA_CAE, 2.88, 4.20, {"norm": "pico", "db": -1.0, "fo": 0.6, "tono": 0.9,
+		"capas": [["S19/PMSFX - HAUNTED DOORS/PM_HD_Source_39 Door, Close, Long Creak, Creaking.wav", 4.70, 5.30, 0.90, -2.0],
+			[F_LLAVES, 3.90, 4.60, 0.20, 0.0], [F_VIGA_CRUJE, 2.88, 3.60, 0.0, -6.0]]}],
+	["bestias/posadero_entrada", "S17/SoundMorph - Portals/Door - Medieval Open 16.wav", 0.12, 1.80, {"norm": "pico", "db": -2.0, "fo": 0.4,
+		"capas": [[F_LLAVES, 3.90, 4.60, 0.60, 0.0], ["S20/Wav Junction Sound Effects - Doors/0002_Door_Thick_Open_Close_Squeaky.wav", 0.12, 0.90, 1.45, -4.0]]}],
+	# ================================================================ tanda 4: los héroes, quietos en la exploración
+	# Muy discretos: Kael se recoloca el cuero y suelta el aire; Lya sorbe por la nariz y se ajusta la tela; Garon mueve
+	# el equipo (metal y correas) y respira hondo.
+	["heroes/kael_quieto_1", F_CUERO_LENTO, 6.47, 7.25, {"norm": "pico", "db": -3.0, "fi": 0.08, "fo": 0.3,
+		"capas": [[F_RESPIRA_H, 1.45, 2.42, 0.25, -8.0]]}],
+	["heroes/kael_quieto_2", F_CUERO_LENTO, 10.10, 10.80, {"norm": "rms", "db": -25.0, "techo": -3.0, "fi": 0.08, "fo": 0.3}],
+	["heroes/lya_quieto_1", "S24/UberDuo - Inhale – Tanja – Character Playset/HMNBrth_Human, Adult, Female, Sniff, Nose 7_UberDuo_INHL.wav", 0.05, 0.55, {"norm": "pico", "db": -3.0, "fo": 0.15,
+		"capas": [[F_ALETEO, 10.12, 10.39, 0.30, -6.0]]}],
+	["heroes/lya_quieto_2", F_ALETEO, 10.10, 10.45, {"norm": "pico", "db": -3.0, "fi": 0.03, "fo": 0.15}],
+	["heroes/garon_quieto_1", F_EQUIPO_SOLDADO, 0.0, 0.70, {"norm": "pico", "db": -3.0, "fo": 0.25, "tono": 0.94,
+		"capas": [[F_RESPIRA_H, 7.0, 8.2, 0.30, -10.0]]}],
+	["heroes/garon_quieto_2", F_EQUIPO_SOLDADO, 0.50, 1.05, {"norm": "pico", "db": -3.0, "fo": 0.25,
+		"capas": [[F_CUERO_LENTO, 14.05, 14.60, 0.0, -6.0]]}],
+	# ================================================================ tanda 5: las voces de los héroes en combate (no verbales)
+	# Kael, joven e impulsivo (un hombre joven, algo más agudo); Lya, cálida y ligera (una mujer); Garon, grave y veterano
+	# (otro hombre, más grave). Esfuerzo al atacar, quejido al recibir, jadeo con poca vida, alivio al curarse, victoria.
+	["heroes/kael_esfuerzo_1", F_GRITO_H, 1.70, 2.15, {"norm": "pico", "db": -2.0, "fo": 0.15, "tono": 1.04}],
+	["heroes/kael_esfuerzo_2", F_GRITO_H, 5.43, 5.88, {"norm": "pico", "db": -2.0, "fo": 0.15, "tono": 1.04}],
+	["heroes/kael_esfuerzo_3", F_GRITO_H, 12.90, 13.35, {"norm": "pico", "db": -2.0, "fo": 0.15, "tono": 1.04}],
+	["heroes/kael_herido_1", "S16/Bottle Rocket Fx - Scream/Grunt_Pain_Male_BB_10_SCREAM LIBRARY_BRFX-004.wav", 0.02, 0.32, {"norm": "pico", "db": -2.0, "fo": 0.08, "tono": 1.04}],
+	["heroes/kael_herido_2", "S20/344 Audio - British Soldier Voices/Grunts 16.wav", 0.0, 0.30, {"norm": "pico", "db": -2.0, "fo": 0.08, "tono": 1.04}],
+	["heroes/kael_jadeo_1", F_JADEO_H, 0.85, 2.60, {"norm": "pico", "db": -3.0, "fi": 0.03, "fo": 0.3, "tono": 1.03}],
+	["heroes/kael_jadeo_2", F_JADEO_H, 3.75, 5.80, {"norm": "pico", "db": -3.0, "fi": 0.03, "fo": 0.3, "tono": 1.03}],
+	["heroes/kael_alivio_1", "S23/344 Audio - The Burger Kitchen/Ahh, Relief, Drink, Soda, Exhale, Male.wav", 0.14, 0.95, {"norm": "pico", "db": -3.0, "fo": 0.3}],
+	["heroes/kael_alivio_2", F_JADEO_H, 6.98, 7.50, {"norm": "pico", "db": -3.0, "fi": 0.02, "fo": 0.2}],
+	["heroes/kael_victoria_1", "S16/SoundBits -  Screams & Shouts 2 - Humans/Male_Grunt-Shout_317.wav", 0.20, 0.82, {"norm": "pico", "db": -2.0, "fo": 0.2, "tono": 1.03}],
+	["heroes/kael_victoria_2", F_GRITO_H, 41.92, 42.55, {"norm": "rms", "db": -20.0, "techo": -2.0, "fo": 0.25, "tono": 1.04}],
+	["heroes/lya_esfuerzo_1", F_SALTO_M, 2.26, 2.58, {"norm": "pico", "db": -2.0, "fo": 0.1}],
+	["heroes/lya_esfuerzo_2", F_SALTO_M, 13.17, 13.40, {"norm": "pico", "db": -2.0, "fo": 0.08}],
+	["heroes/lya_esfuerzo_3", F_SALTO_M, 22.08, 22.33, {"norm": "pico", "db": -2.0, "fo": 0.08}],
+	["heroes/lya_herido_1", F_GOLPE_M, 3.88, 4.18, {"norm": "pico", "db": -2.0, "fo": 0.08}],
+	["heroes/lya_herido_2", F_GOLPE_M, 23.60, 23.88, {"norm": "pico", "db": -2.0, "fo": 0.08}],
+	["heroes/lya_herido_3", F_GOLPE_M, 25.35, 25.64, {"norm": "pico", "db": -2.0, "fo": 0.08}],
+	["heroes/lya_jadeo_1", F_JADEO_M, 2.80, 4.30, {"norm": "pico", "db": -4.0, "fi": 0.05, "fo": 0.3}],
+	["heroes/lya_jadeo_2", F_JADEO_M, 9.20, 10.40, {"norm": "pico", "db": -4.0, "fi": 0.05, "fo": 0.3}],
+	["heroes/lya_alivio_1", "S19/Eiravaein Works - Kieuk/Kieuk,laughter,female,30s,Charlotte,inhales,titter,lightsqueal.wav", 0.05, 0.68, {"norm": "pico", "db": -3.0, "fo": 0.2}],
+	["heroes/lya_victoria_1", "S19/AudioDesire - Voice Pack One - Emma/VO_001_Female_Laugh_03.wav", 0.07, 1.02, {"norm": "pico", "db": -2.0, "fo": 0.3}],
+	["heroes/garon_esfuerzo_1", "S19/Articulated Sounds - Fight Vocalizations/EMOTE David, Man, Anger Fight Grunt Special Power 03.wav", 0.03, 0.62, {"norm": "pico", "db": -2.0, "fo": 0.2, "tono": 0.9}],
+	["heroes/garon_esfuerzo_2", "S17/Gamemaster Audio -  Human Vocalizations/voice_male_b_battle_shout_short_09.wav", 0.01, 0.58, {"norm": "pico", "db": -2.0, "fo": 0.2, "tono": 0.88}],
+	["heroes/garon_esfuerzo_3", "S18/The Chris Alan - Hand-to-Hand Combat - Body Hits & Vocal Excursions/Hand-to-Hand Combat - Vocal Excursion - Male - Powering Up 14.wav", 0.03, 0.62, {"norm": "pico", "db": -2.0, "fo": 0.2, "tono": 0.92}],
+	["heroes/garon_herido_1", "S19/Articulated Sounds - Fight Vocalizations/EMOTE Joshua, Man, Pain Hurt Grunt Big 03.wav", 0.02, 0.36, {"norm": "pico", "db": -2.0, "fo": 0.1, "tono": 0.88}],
+	["heroes/garon_herido_2", "S17/Gamemaster Audio -  Human Vocalizations/voice_male_b_death_low_09.wav", 0.0, 0.48, {"norm": "pico", "db": -2.0, "fo": 0.15, "tono": 0.9}],
+	["heroes/garon_jadeo_1", F_JADEO_H, 12.00, 13.45, {"norm": "pico", "db": -3.0, "fi": 0.03, "fo": 0.3, "tono": 0.85}],
+	["heroes/garon_jadeo_2", F_JADEO_H, 18.00, 19.15, {"norm": "pico", "db": -3.0, "fi": 0.03, "fo": 0.3, "tono": 0.85}],
+	["heroes/garon_alivio_1", F_RESPIRA_H, 7.00, 8.60, {"norm": "pico", "db": -3.0, "fi": 0.05, "fo": 0.4, "tono": 0.9}],
+	["heroes/garon_victoria_1", "S19/Eiravaein Works - Kieuk/Kieuk,laughter,male,60s,OhioCarolina,heeing,restrained,chuckle,mouthclicks.wav", 0.95, 1.85, {"norm": "pico", "db": -3.0, "fi": 0.02, "fo": 0.25}],
+	# ================================================================ tanda 5 (si sobra margen): la entrada, la cornisa y los puentes de
+	# la Garganta 3D: los puentes colgantes crujen de vez en cuando (cuerdas: 1-3; tablas de madera: 4-5) y el viento silba en las cuerdas
+	["ambiente/puente_cruje_1", F_CUERDAS_PUERTO, 0.0, 0.50, {"norm": "pico", "db": -3.0, "fi": 0.02, "fo": 0.15}],
+	["ambiente/puente_cruje_2", F_CUERDAS_PUERTO, 1.20, 1.80, {"norm": "pico", "db": -3.0, "fi": 0.02, "fo": 0.15}],
+	["ambiente/puente_cruje_3", F_CUERDAS_PUERTO, 6.05, 6.90, {"norm": "pico", "db": -3.0, "fi": 0.02, "fo": 0.2,
+		"capas": [["S24/Jake Fielding - Squeaky Gates/DOORGate_Wooden Metal Hinge Creaks_Jake Fielding_Squeaky Gates.wav", 13.75, 14.15, 0.25, -12.0]]}],
+	["ambiente/puente_cruje_4", F_VIGA_CRUJE, 2.88, 3.60, {"norm": "pico", "db": -3.0, "fi": 0.03, "fo": 0.2}],
+	["ambiente/puente_cruje_5", "S19/Coll Anderson - House Library Add Ons/EFX CTM Floor Board Creak 03 A.wav", 3.57, 4.42, {"norm": "pico", "db": -3.0, "fi": 0.03, "fo": 0.2,
+		"capas": [[F_CUERDAS_PUERTO, 1.20, 1.60, 0.30, -8.0]]}],
+	# la Guardia de Garon (tanda 5, la pide combate por este nombre): se planta tras el escudo, metálico, firme y breve
+	["combate/guardia", "S17/Double Trouble Audio - Medieval Armor and Impacts/Plate_Impact_Hard_02.wav", 0.0, 0.60, {"norm": "pico", "db": -1.0, "fo": 0.2, "tono": 0.95,
+		"capas": [["S17/Double Trouble Audio - Medieval Armor and Impacts/Weapon_Impact_Parry_01.wav", 0.02, 0.60, 0.02, -8.0],
+			["S20/SmartSoundFX – Medieval/ARMOR Body Drop Chain Leather Short 02.wav", 0.55, 0.85, 0.0, -10.0]]}],
+	["ambiente/viento_cuerdas_1", F_VIENTO_CABLES, 9.0, 14.5, {"norm": "rms", "db": -24.0, "techo": -3.0, "fi": 1.2, "fo": 1.5}],
+	["ambiente/viento_cuerdas_2", F_VIENTO_CABLES, 26.0, 31.5, {"norm": "rms", "db": -24.0, "techo": -3.0, "fi": 1.2, "fo": 1.5}],
 ]
 
 # PROPUESTA de sonido para las 12 magias (T-083, tanda 2): NO se integran (D-048: su presentación está protegida). Solo

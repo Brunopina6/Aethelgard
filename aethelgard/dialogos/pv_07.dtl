@@ -5,7 +5,7 @@ lya: Una ciudad… en el cielo.
 update kael [extra_data="ligero"]
 kael: Y nosotros aquí, con los pies mojados.
 update lya [extra_data="preocupada"]
-lya: Kael, te está mirando.
+lya: Kael… te está mirando.
 update kael [extra_data="decidido"]
 kael: Las estatuas no miran.
 garon: Esta, sí.

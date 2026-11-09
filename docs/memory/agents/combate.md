@@ -337,3 +337,263 @@ pruebas y la lista exacta de enganches.
   - **M3:** Escarcha y la coraza (`_quitar_pv`; el golpe devastador pasa a `_quitar_pv`).
   - **M4:** los III, Brasa y tomos.
   - **E1 a E3:** los enemigos nuevos, cuando el usuario decida las debilidades.
+
+## 2026-11-09, 17:40 · T-099, y la parte de T-100 y T-101 que va en el HUD: PM por héroe, motivos, Érebo y señas
+
+**Encargo** (coordinador, 09/11): el HUD de combate. Interrumpido por un límite de uso y reanudado; al reanudar
+confirmé mi trabajo y después integré `integracion-experimental` (`eb8bd94`: arte de Oakhaven, Zarzalín, sonido t3,
+licencias) con `merge --no-ff`.
+- **Base:** `area-combate` @ `808a836`, importada con datos aislados
+  (`D:\REBELUM_diagnostico\importaciones\combate_20261109_130548`; tras el merge, `…\combate_20261109_172316`).
+- **Referencia del usuario:** la Prueba v136 (`555fc29`), con los PM solo en la cabecera del héroe activo. El HUD de
+  `808a836` es ese mismo: de ahí salen las capturas «antes».
+- **Sin tocar:** `sonido.gd`, `audio/**`, `enemigos/**`, `.dtl`, `zonas3d/**`, `mapa*`, `ciudad_oakhaven.*`,
+  `ciudades/**`, `progreso.gd`, `diario.gd`, `fondo_combate.gd` y `equipo_extra.gd`.
+- **Sin confirmar en la copia:** `aethelgard/pruebas/prueba_orden_pv03.gd.uid` (lo creó la importación; es de
+  narrativa).
+
+**1. Commits** (en `area-combate`, sin publicar)
+- `1e7806e` · código: `menu_combate.gd`, `combate.gd`, `artes.gd`, `estilo.gd` y `vfx/sena_arte.gd` (nuevo).
+- `7dbd3af` · pruebas: `prueba_hud_combate.gd` y `prueba_hud_fotos.gd` (nuevas), `prueba_artes.gd`,
+  `prueba_artes_combate.gd` y `lista_pruebas.txt`.
+- `21eb3ba` · merge de `integracion-experimental`. Un conflicto en `lista_pruebas.txt`: se quedan las dos líneas del
+  HUD y las de Oakhaven y Zarzalín; quité tres líneas antiguas repetidas (`prueba_artes`, `prueba_equipo` y
+  `prueba_artes_combate`, que ya estaban más arriba con su texto al día).
+- `a4e2347` · los `.uid` de mis tres archivos nuevos. Y el de este informe.
+
+**2. Qué se ve ya** (observado en el código y comprobado ejecutando, aislado, 09/11)
+- **PM por héroe (T-099):** el bloque del grupo (abajo a la derecha) va en columnas con su etiqueta encima:
+  **PV · PM · ATB**. Cada héroe presente, Garon incluido: nombre, estados, PV, la cifra `actual/máximo` de PM con su
+  **barra azul** debajo (`#4D8EF0`, distinto del celeste de Kael, que es el de su ATB llena) y la barra ATB.
+  - Se ve todo el combate: con el menú cerrado y con el turno de un enemigo.
+  - La cifra cambia al momento; la barra baja de golpe dejando un rastro claro que se recoge en medio segundo, o sube
+    en 0,3 s (Éter). Cambia también si cambia el máximo.
+  - 0 PM: la cifra se apaga a medias y la barra queda vacía. Caído: PV, PM y sus barras en gris (también su ATB).
+  - Colores: PV crema (naranja por debajo del 30 %), PM azul, ATB crema y del color del héroe al llenarse, Armonía
+    dorada abajo a la izquierda. Los colores nuevos, también en `estilo.gd` (`PM` y `PM_CLARO`).
+  - La cabecera «PM 34/34» del héroe activo se queda como estaba (junto a los costes de los submenús).
+- **Motivos de lo apagado (T-100):**
+  - **Órdenes:** a la derecha de la fila, siempre a la vista: «Necesitas 6 PM» (MAGIA, ESGRIMA, EMBUIR: lo más
+    barato), «Armonía al 45 %», «Lya ha caído» o «Nadie puede invocar» (INVOCACIÓN), «No quedan objetos», «No se puede
+    huir».
+  - **Submenús:** la explicación de la fila elegida dice el motivo: «Necesitas 8 PM: tienes 0.» (magias, Esgrima,
+    Embuir y artes; el coste sale en naranja) y «No te queda ninguno.» (objetos).
+  - **Compás del Alba:** «Kael va solo: no hay otro aliado.», «No queda otro aliado en pie.», «Lya ya espera su turno.»
+    o «Lya y Garon ya esperan su turno.».
+  - **Con el mando y el teclado, ↑ ↓ ya no se saltan las filas apagadas:** se eligen (guion gris en las órdenes, letra
+    gruesa gris en los submenús) y A / Intro solo suena a error. Con el dedo, tocarla la elige y enseña el motivo. Si
+    todas están apagadas, sale elegida la primera, con su motivo.
+- **Érebo en el HUD (T-101):** junto a «ARMONÍA», «45 %», **«INVOCACIÓN LISTA»** (late en dorado con la barra) o
+  «LYA HA CAÍDO» (naranja). Sin Lya en el grupo (Kael solo) no se la nombra: solo el porcentaje, y la orden dice
+  «Nadie puede invocar». Las reglas no cambian: `_estado_invocacion()` = Armonía llena y Lya en pie, lo mismo que antes
+  decía `_mostrar_menu`. **La cinemática no se ha tocado.**
+- **La seña de cada arte (T-100):** siluetas dibujadas con líneas y polígonos (`vfx/sena_arte.gd`), sin partículas ni
+  luces: se leen igual en el perfil bajo. El sonido se pide una vez, en el fotograma en que el arte se aplica
+  (`arte_alba`, `arte_ocaso`, `renacer`, `arte_lumbre` y `aliento`; tras el merge ya están en el catálogo de sonido).
+  - **Compás del Alba:** Kael se vuelve hacia el aliado y conjura con su clip de siempre (`mage_soell_cast_7`); un anillo
+    con cuatro marcas, como la esfera de un reloj, gira sobre el aliado y marca el ritmo (cada tiempo enciende una
+    marca), y al cerrarse sube un destello.
+  - **Peso del Ocaso:** el mismo anillo, violeta, gira al revés y baja aplastando a cada enemigo; sus marcas se apagan.
+  - **Lumbre de Retorno:** Lya se vuelve hacia el caído; una brasa vuela de ella hasta él (0,45 s) y, al llegar,
+    vuelve: columna de luz cálida, la llama del farol sobre su cabeza, «¡Kael vuelve!» y su fila del HUD se ilumina.
+  - **Segundo Aliento:** una hoja por turno sube en espiral alrededor de cada aliado y sale «Aliento: 3 turnos» una vez;
+    junto a la hoja del HUD, los turnos que le quedan (3, 2, 1). Al empezar cada turno sube una hoja; al acabarse,
+    «Aliento se acaba».
+  - La onda de suelo de antes se quita en el Alba, la Lumbre y el Aliento (la sustituye la silueta); las partículas de
+    siempre se quedan. Nada del perfil alto baja.
+
+**3. La huella:** igual a la referencia (`prueba_combate_huella` SUPERADA, dos pasadas, en la batería de abajo). El HUD
+no tira del generador global ni cambia tiempos, y las artes no salen en la huella: no hace falta referencia nueva.
+
+**4. Pruebas** (datos aislados; la partida real, la carpeta real de datos y el proyecto, sin cambios)
+- **Nueva `prueba_hud_combate`** (automática): grupos de 1, 2 y 3 (filas, etiquetas, nada recoge toques; el bloque no
+  pisa órdenes, explicaciones, vidas de enemigos ni zonas de objetivo); PM con Fuego, Juicio, Embuir, Éter, el máximo,
+  0 PM y Lya caída, a la vista con el turno de un enemigo y el menú cerrado; motivos (MAGIA, ESGRIMA, EMBUIR, OBJETO,
+  HUIR contra un jefe, magias, Esgrima, Embuir, objetos y el Compás) con el mando y con el dedo; Érebo (sin Lya, 45 %,
+  lista, Lya caída) y sus reglas; señas del Compás (y el giro de Kael), Ocaso, Lumbre y Aliento, con su sonido una vez
+  y a tiempo (±1 fotograma).
+- **Mutaciones** (restauradas desde el archivo confirmado): sin actualizar la cifra de PM y sin el motivo de
+  INVOCACIÓN, la prueba sale FALLIDA con 41 fallos (`D:\REBELUM_diagnostico\pruebas\2026-11-09_173750`).
+- **Nueva `prueba_hud_fotos`** (con ventana): 22 capturas del mismo guion con semilla fija; vale para antes y después.
+- **Batería completa tras el merge** (`D:\REBELUM_diagnostico\pruebas\2026-11-09_172357\resumen.md`): **53 SUPERADAS,
+  2 FALLIDAS, 32 MANUALES y 0 NO SEGURAS**. Entre las SUPERADAS: `prueba_combate_huella`, `prueba_hud_combate`,
+  `prueba_artes`, `prueba_artes_combate`, `prueba_grupos_combate`, `prueba_incorporacion`, `prueba_equilibrio`,
+  `prueba_ia`, `prueba_menu_magia`, `prueba_menu_nuevo`, `prueba_huir`, `prueba_garon`, `prueba_centinela`,
+  `prueba_controles_nuevos` y `prueba_equipo_combate`.
+- **Las dos FALLIDAS no son de combate:** `prueba_mando` y `prueba_teclado`, paso 4 «Intro / A junto a Tilo no abre el
+  diálogo» (Pastos Verdes, antes de cualquier combate). Mi rama solo difiere de `eb8bd94` en mis 13 archivos de
+  combate, y la pasada `2026-11-09_172149` (otra copia, 17:21) falla igual; una de las 17:33 (`…_173333`) ya pasa.
+  Viene de la integración (`c3f5692`: Tilo empieza PV-03). *Pendiente de verificar* en `integracion-experimental`.
+
+**5. Evidencias** (`D:\REBELUM_diagnostico\combate\2026-11-09\hud\`)
+- `antes\` y `despues\`: 22 capturas cada una, mismo combate y mismo momento (1280 × 720); `antes_movil\` y
+  `despues_movil\`, lo mismo con la calidad del móvil (40 % de partículas, sin luces 2D).
+- `comparar\` y `comparar_movil\`: cada par lado a lado, con el HUD del grupo y la Armonía ampliados debajo
+  (`comparar.ps1` las rehace). Las más útiles: `01_tres_menu_kael`, `06_tres_turno_enemigo` (menú cerrado),
+  `09_garon_tras_juicio`, `10_lya_erebo_listo`, `11_kael_0pm_lya_caida`, `12_mando_sobre_magia`, `13_kael_0pm_magia`,
+  `15_mando_sobre_compas`, `05_tres_compas_anillo`, `16_peso_del_ocaso`, `18_lumbre_quien_vuelve`,
+  `20_aliento_turnos`, `21_solo_menu` y `22_solo_compas`.
+- Incidente: la pasada de capturas de las 17:33 (`…_173356`) se cortó tras la primera captura sin ningún error; la
+  repetí (`…_173556`, 22 capturas).
+
+**6. Límites**
+- **Pendiente en Redmi:** si el HUD se lee de un vistazo (letras de 17 a 32 px; las etiquetas, 19 px ≈ 11 dp), el
+  coste del bloque nuevo y de las señas, y si las señas se leen en su pantalla. No se usa el teléfono.
+- **Sonidos:** se piden por nombre y a tiempo (comprobado con la señal); **no se han oído**.
+- **Gesto de Lya:** su FBX no trae clip de conjuro; usa el gesto por código «conjuro», vuelta hacia el caído. Un gesto
+  propio (ofrecer el farol, el soplo del Aliento) lo haría animaciones.
+- **Cambio de manejo:** ↑ ↓ pasan ahora por las filas apagadas (antes se las saltaban): con INVOCACIÓN apagada, llegar a
+  OBJETO cuesta una pulsación más. Las pruebas de mando y teclado lo aguantan.
+- Los combates con guion no prueban la estrategia de un jugador.
+
+**7. Siguiente paso y peticiones**
+- **Animaciones (opcional):** gestos de Lya para la Lumbre de Retorno y el Segundo Aliento.
+- **Narrativa / coordinador:** `prueba_mando` y `prueba_teclado` (paso 4, Tilo) en la integración.
+- **Siguiente encargo:** Zarzalín en el combate.
+
+## 2026-11-09, 18:00 · T-097: Zarzalín enganchado al combate
+
+**Encargo** (coordinador, 09/11, el siguiente al HUD, en la misma rama): enganchar la escena de animaciones
+(`enemigos/zarzalin/zarzalin_3d.gd`, de `eb8bd94`) al combate. **Sin tocar** `enemigos/**`, `sonido.gd` ni `zonas3d/**`.
+
+**1. Commits:** `8be73f8` (`combate.gd`) y `f77153f` (`prueba_zarzalin_combate.gd`, su `.uid` y `lista_pruebas.txt`).
+
+**2. Qué hace ya** (observado en el código y comprobado ejecutando, aislado, 09/11)
+- **Modelo:** `MODELOS["zarzalin"]` con el encuadre ×1,25 que propuso animaciones (`vp` 1175 × 525, 1,5 m de vista
+  mirando a 0,48 m, `barra_y` 40) y el centro del cuerpo a 0,5 m (clave nueva `centro_3d`; los demás siguen a 0,85).
+  Respaldo 2D, el Slime, si falta el GLB.
+- **Ficha:** «Zarzalín», 80 PV, 11 de ataque, velocidad 14, 20 de experiencia y 12 monedas. Personalidad nueva
+  «embiste» (`_turno_zarzalin`, constantes en `ZARZALIN`):
+  - **aviso** (40 % si no está cargando ni recuperándose): baja el hocico y da dos golpes de pezuña (`avisar()`); sale
+    «⚠ ¡Embestida!», el cartel dice a quién va y su vida lleva «⚠ Cargando». Ese turno no hace daño;
+  - **embestida** en su turno siguiente, a quien avisó (×1,8; Defender la deja en la mitad, como cualquier golpe);
+  - **recupera el aliento** el turno después (no ataca): nunca dos ataques fuertes seguidos;
+  - si no, **colmillo lateral** (golpe corto, ×1).
+- **Ataque** (`_anim_zarzalin`): galopa (`correr()`), se planta donde sus colmillos llegan al héroe en el impacto
+  (centro − 30 − 0,632 · px_m − alcance · px_m, a la altura de sus pies), `await atacar(ataque, al_golpear)` resuelve
+  el golpe **una sola vez** en el ancla del clip (daño, sonido del golpe y reacción a la vez), y vuelve galopando. El
+  rig no se mueve durante el clip (el avance lo lleva el clip). Tras el aviso, la embestida entra desde la carga.
+- **Entrada** de un salto al empezar el combate (con un fundido de 0,15 s, porque el clip empieza 0,85 m por detrás);
+  **derrota** con su clip (`morir()`), antes del desvanecido de siempre; **huida** dándose la vuelta y galopando.
+- **Encuentros:** grupo 10 (Zarzalín solo), en los encuentros al azar de 1 y 2 héroes (`AL_AZAR_POR_TAMANO`), que son
+  los de Pastos Verdes en la versión experimental. Se tira el dado igual (un `randi()`): la huella no cambia.
+- La invocación de Érebo funciona con él sin cambios (su doble es el mismo modelo, a 0,92 m).
+
+**3. Pruebas** (datos aislados; la partida real y la carpeta real de datos, sin cambios)
+- **Nueva `prueba_zarzalin_combate`** (automática): Kael solo, nivel 1, solo con ataques: entra de un salto; el aviso
+  (una señal `aviso`, «⚠ Cargando», sin daño), la embestida (un impacto y un cambio de PV) y la recuperación (sin
+  golpe); el colmillo (un impacto, un cambio de PV); defendiendo, la embestida quita la mitad o menos; Kael gana y
+  Zarzalín cae con su derrota. Y huir con Kael y Lya (no da experiencia). SUPERADA
+  (`D:\REBELUM_diagnostico\pruebas\2026-11-09_174411`).
+- **`prueba_grupos_combate`** juega ya el grupo 10 en Pastos Verdes 3D, con vuelta a la región y guardado: Kael solo,
+  victoria en 27 s; Kael y Lya, en 31 s.
+- **Batería completa** (`D:\REBELUM_diagnostico\pruebas\2026-11-09_174617\resumen.md`): **54 SUPERADAS, 2 FALLIDAS,
+  32 MANUALES y 0 NO SEGURAS**. La huella, SUPERADA (igual a la referencia). Las dos FALLIDAS son las mismas de antes
+  (`prueba_mando` y `prueba_teclado`, paso 4 con Tilo, de la integración).
+- **Capturas** con ventana (`D:\REBELUM_diagnostico\combate\2026-11-09\zarzalin\`): `01_entrada`,
+  `02_colmillo_lateral` (el impacto en Kael), `03_aviso` («⚠ ¡Embestida!» y «Cargando»), `04_embestida_espinosa` (el
+  impacto, con Kael en guardia) y `05_derrota`; y `hoja_zarzalin_combate.png`.
+
+**4. Límites**
+- **Pendiente en Redmi:** el coste de su ventana 3D (×1,25: unos 347.000 píxeles por fotograma a 0,75, según
+  animaciones) y sus texturas 2K comprimidas. No se usa el teléfono.
+- **Equilibrio:** 80 PV y 11 de ataque son una primera propuesta; los combates con guion no prueban la estrategia de
+  un jugador. Kael nivel 1 gana con ataques en los casos probados.
+- **Sonido:** sin voz ni golpes propios (el catálogo no tiene la familia «zarzalin»); suena el golpe de siempre. Las
+  señales `pezuna` e `impacto` del modelo son sus anclas, para sonido.
+- La embestida aterriza un poco más allá del héroe (lo avisó animaciones): se ve como una embestida, pero solapa.
+- La escala ×1,25 es la propuesta de animaciones; la decisión es del usuario o del coordinador.
+
+**5. Peticiones**
+- **Sonido (`sonido.gd`):** la voz de Zarzalín (`clave` «zarzalin»: ataque, herido, caída) y la tierra de la pezuña
+  con la señal `pezuna`.
+- **Coordinador:** decidir la escala y el botín propuesto en la ficha (Corteza espinosa), que no he añadido.
+
+## 2026-11-09, 18:40 · T-100: M3 (Escarcha de Kael), la Guardia de Garon, los sonidos de Zarzalín y su botín
+
+**Encargo** (coordinador, 09/11, tras integrar `a9d316d`): M3 con la misma calidad que el Alba y la Lumbre; la
+técnica de guardia de Garon ante un ataque anunciado; el botín «Corteza espinosa» como objeto de venta; y, en la misma
+tanda, los sonidos de Zarzalín de la tanda 4 de sonido (integrada en `a330d77`). Zarzalín se queda a ×1,25 (decisión
+del coordinador).
+- **Merges** (`--no-ff`): `bada535` (`a9d316d`; un `.uid` suelto de narrativa, idéntico al que traía, apartado al
+  scratchpad para poder unir) y `a673dfa` (`a330d77`, limpio).
+- **Sin tocar:** `sonido.gd`, `audio/**`, `enemigos/**`, `diario.gd`, `.dtl`, `zonas3d/**`, `progreso.gd`. **Tocado
+  fuera de mi lista habitual:** `tienda.gd` (vender el botín; ya lo había tocado en la fase 2 por los libros).
+- **Sin confirmar en la copia:** `dialogos/comentarios.gd.uid` y `pruebas/prueba_comentarios.gd.uid` (de narrativa, los
+  crea la importación).
+
+**1. Commits** (en `area-combate`, sin publicar)
+- `0d28909` · botín: `equipo_extra.gd` (BOTIN, MATERIALES, `botin_de`) y `tienda.gd` (fila «Vender», `_vender`).
+- `de60656` · `combate.gd`, `artes.gd`, `menu_combate.gd` y `vfx/sena_arte.gd`: M3, la Guardia y los sonidos de Zarzalín.
+- `d6be65e` · pruebas: `prueba_escarcha_guardia.gd` (nueva) y `prueba_zarzalin_combate.gd` (sonidos); ajustadas
+  `prueba_artes`, `prueba_artes_combate`, `prueba_controles_nuevos`, `prueba_equipo_combate` y `prueba_hud_combate` (la
+  pestaña, el libro y la Guardia en ESGRIMA).
+- `aad8435` y el de este informe: `.uid`; `ffaf760`: `prueba_escarcha_fotos.gd`.
+
+**2. Qué hace ya** (observado en el código y comprobado ejecutando, aislado, 09/11)
+- **M3, Escarcha de Kael** (`ACTIVOS["Escarcha"] = 2`): Coraza de Escarcha (nivel 6, 7 PM, a un aliado o a sí mismo:
+  sirve con Kael solo) y Muralla de Escarcha (nivel 12, 18 PM, a todos). Se aprende al subir («Kael aprende Coraza de
+  Escarcha»), el libro de la Muralla se vende (400) y la ficha «Barrera» sale en el Diario, sin tocar `diario.gd` ni
+  `tienda.gd` para eso (salen de `ACTIVOS`). Kael tiene ya dos pestañas de familia: Alba y Escarcha.
+  - **La coraza absorbe antes que los PV** (`_quitar_pv` devuelve lo que llega a los PV): «❄ 12» en hielo, sonido
+    `barrera_absorbe`; si se rompe, salta en esquirlas, «¡Coraza rota!» y `barrera_rota`. Un sonido por golpe, en el
+    instante en que se resuelve. Sin coraza, `_quitar_pv` hace exactamente lo de siempre.
+  - **HUD:** junto al cristal, lo que aguanta aún («55»).
+  - **Seña** (dibujada, sin partículas ni luces): un cristal hexagonal que crece del suelo alrededor del aliado, con
+    facetas y un destello que lo recorre; al absorber, el cristal aparece un instante; al romperse, seis esquirlas
+    vuelan y caen. Gesto: el conjuro de Kael (`mage_soell_cast_7`), vuelto hacia el aliado si no es él mismo.
+  - **Motivo:** sin PM, «Necesitas 7 PM: tienes 0.»; el coste en naranja.
+  - El III (Invierno Guardián, congela a quien rompe la coraza) sigue fuera (M4).
+- **La Guardia de Garon** (en ESGRIMA, 4 PM): cubre a un aliado hasta su turno siguiente. Garon queda en guardia (como
+  Defender: los golpes le hacen la mitad) y **los golpes que van al cubierto los recibe él**:
+  - la embestida anunciada de Zarzalín («va a embestir a Kael» → Garon cubre → «¡Zarzalín embiste a Garon!», a la
+    mitad, y Kael no pierde nada); también el colmillo, los ataques normales y el mordisco de Gorthor;
+  - **varios impactos:** en el golpe devastador de un jefe (a todos), el golpe de Kael también va a Garon;
+  - se acaba al empezar el turno de Garon, si cae Garon o si cae el cubierto (deja de ser objetivo válido);
+  - sin nadie a quien cubrir: «No hay a quién cubrir.»; ESGRIMA dice ahora «Necesitas 4 PM» (lo más barato);
+  - gesto: Garon se vuelve hacia el aliado y avanza un paso en guardia; sonido `defensa`, una vez; seña: un escudo
+    sobre el aliado unido a Garon por una línea; HUD: un escudo junto al nombre del cubierto; «¡Cubre a Kael!» sobre
+    Garon cuando para un golpe.
+- **Sonidos de Zarzalín** (tanda 4, «Cómo pedirlos»): `zarzalin_aviso_embestida` (señal `aviso`), `zarzalin_pezuna`
+  (cada `pezuna`), `zarzalin_embestida` / `zarzalin_colmillo` (señal `impacto`, junto al `Sonido.golpe` de siempre),
+  `zarzalin_aviso_colmillo` (al llamar a `atacar("colmillo_lateral")`), `zarzalin_entrada` (al empezar) y
+  `zarzalin_derrumbe` (al caer, una vez). Su voz de herido y caída la da `Sonido.recibe` por su clave «zarzalin». Ya no
+  pide la voz de «ataque» (las bestias no la tienen).
+- **Botín:** al ganar, cada Zarzalín vencido (no huido) deja una «Corteza espinosa» (sale en el cartel de recompensas);
+  la tienda la compra por 18 monedas (pestaña Objetos, fila «Vender»). Sin recetas.
+
+**3. La huella:** igual a la referencia (`prueba_combate_huella` SUPERADA en la batería). `_quitar_pv` y `_cubre` no
+cambian nada sin coraza ni guardia, y no tiran del generador global. No hace falta otra referencia.
+
+**4. Pruebas** (datos aislados; la partida real y la carpeta real de datos, sin cambios)
+- **Nueva `prueba_escarcha_guardia`**: aprendizaje (6 y 12; el III no), libro, ficha; pestaña; motivo sin PM; la Coraza
+  sobre Kael solo (30 %, 7 PM, `arte_escarcha` una vez en el fotograma de aplicarse, su seña sin nodos, la cifra del
+  HUD); absorber entero (0 a los PV, `barrera_absorbe` una vez) y romper (solo el resto, `barrera_rota` una vez, las
+  esquirlas, sin icono); la Muralla a los tres (un sonido, tres señas); un golpe de verdad de Grimfang; la Guardia ante
+  la embestida anunciada de Zarzalín (Kael no pierde nada; Garon, la mitad o menos); su fin en el turno de Garon; con
+  Garon caído y con Kael caído; sin nadie; y varios impactos (golpe devastador del Guardián de piedra, jefe).
+- **`prueba_zarzalin_combate`**, ampliada: cada sonido de Zarzalín se pide una vez por su señal y en su mismo fotograma;
+  la entrada y el derrumbe, una vez; el aviso del colmillo, antes de su impacto.
+- **Batería completa** (`D:\REBELUM_diagnostico\pruebas\2026-11-09_182011\resumen.md`): **60 SUPERADAS, 0 FALLIDAS, 32
+  MANUALES y 0 NO SEGURAS**. «Proyecto: CAMBIADO» es mío: añadí `prueba_escarcha_fotos` y su línea de la lista durante la
+  pasada.
+- **Capturas antes y después** (`D:\REBELUM_diagnostico\combate\2026-11-09\escarcha\`): `antes\` (proyecto de `bada535`
+  exportado con `git archive` en `antes_proyecto_bada535\`, con datos aislados por variables de entorno, como el
+  ejecutor), `despues\` (`…\pruebas\2026-11-09_182913`), `comparar\` y `hoja_antes_despues.png`: la pestaña, la Coraza
+  (antes, el aro genérico; después, el cristal), el golpe absorbido (antes le quitaba 20 PV; después, «❄ 20» y nada),
+  la coraza rota (esquirlas y el resto), la Guardia sobre Kael y la embestida (antes, a Kael; después, a Garon).
+
+**5. Límites**
+- **Pendiente en Redmi:** la lectura de las señas nuevas (son líneas y polígonos, sin partículas) y el coste de todo.
+- **Sonidos:** se piden a tiempo (comprobado con la señal) y ya existen en el catálogo; **no se han oído**. La Guardia
+  usa `defensa`: un sonido propio («guardia») lo haría sonido.
+- **Gorthor y la coraza:** su mordisco se cura con el 60 % del mordisco aunque la coraza absorba parte (como hoy con la
+  defensa). Un golpe que la coraza absorbe entero aún tiñe al héroe de rojo un instante.
+- **Equilibrio:** la Guardia (4 PM) y la Coraza (30 % de los PV) son las cifras del diseño; con guion no se prueba la
+  estrategia de un jugador.
+- La captura «antes» se hizo fuera del ejecutor (en el proyecto exportado), con la misma redirección de datos.
+
+**6. Peticiones**
+- **Sonido:** un efecto propio para la Guardia (`guardia`: escudo que se planta) y, si se quiere, uno al cubrir.
+- **Animaciones (opcional):** un gesto de Garon «cubrir» (escudo al frente, un paso hacia el aliado).
+- **Siguiente, si se aprueba:** M4 (los III: Hora Dorada, Invierno Guardián, Última Brasa y los tomos) y C2.
