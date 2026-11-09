@@ -514,3 +514,108 @@ Sin confirmar, porque no es mío: `aethelgard/pruebas/prueba_orden_pv03.gd.uid` 
   puede ir ahí en vez de al empezar el clip; los sonidos ya acaban antes del impacto en los dos casos.
 - **Usuario**: escuchar el índice de muestras (guía al final del índice).
 - **Coordinador**: confirmar o descartar `prueba_orden_pv03.gd.uid`.
+
+## 2026-11-09, 18:50 · T-083, tanda 5: las voces de los héroes en combate, la Guardia y los puentes de la Garganta 3D
+
+Rama `area-sonido`. Antes de la tanda 4 integrada, empecé con lo que no chocaba; después uní `integracion-experimental`
+(`a330d77`) con `merge --no-ff` (`03b1e12`). Para el merge aparté el `prueba_orden_pv03.gd.uid` suelto (idéntico al de la
+integración) a mi carpeta temporal. Importado con datos aislados (`D:\REBELUM_diagnostico\importaciones\sonido_20261109_182329`).
+**No he podido escuchar nada. No se ha usado el Redmi.** No he tocado `combate.gd` ni `zonas3d/**`.
+
+### 1. Qué se ha hecho
+
+- **Voces no verbales de los héroes en combate** (30 derivados en `audio/efectos/heroes/`, 15 efectos):
+  - esfuerzo al atacar, quejido al recibir, jadeo con poca vida, alivio al curarse y un gesto breve de victoria;
+  - Kael, joven e impulsivo (un hombre joven, algo más agudo); Lya, cálida y ligera (una mujer); Garon, grave y
+    veterano (otro hombre, más grave; su victoria es una risa contenida, como pide `docs/narrativa/voces_heroes.md`:
+    no se ríe en voz alta);
+  - con variantes y tono leve; bus Efectos; **prioridad 1**, por debajo de los golpes y de las voces de los enemigos:
+    son lo primero que cede y nunca quitan un golpe; **una a la vez** entre los tres (grupo «voz_heroe»); la victoria,
+    prioridad 3 y 0,8 s después de la fanfarria.
+- **Sin tocar `combate.gd`**, por las llamadas que ya hay:
+  - `Sonido.recibe(objetivo)` en el golpe físico de un enemigo da el quejido del héroe. Si le deja con menos del 30 %
+    de su vida, da también un jadeo 0,7 s después, una vez hasta que se cure;
+  - `Sonido.voz(o, "ataque")` en los ataques genéricos da el esfuerzo del héroe.
+  - Las líneas para lo demás (el salto de Kael, el golpe 3D de Lya, la poción, la victoria) están en el inventario.
+    Las 12 magias no piden voces: la Cura con alivio sería la decisión aparte de D-048.
+- **La Guardia de Garon:** `guardia`, propio, que combate pide por su nombre. Es metálica, firme y breve (placa, parada
+  y malla). Efectos, prioridad 2.
+- **Los puentes de la Garganta 3D** (los engancha gráficos; nombre y líneas en el inventario):
+  - `puente_cruje`: cuerdas y tablas de madera, 5 variantes;
+  - `viento_cuerdas`: el viento silba en las cuerdas.
+  - Ninguno es un bucle: con «cada» en su `tres_d`, `fuente_linea` los hace sonar de vez en cuando en el punto de su
+    línea más cercano a quien escucha (`FuenteCada`). Al principio se llamó `cuerda_cruje`; lo renombré antes de que
+    nadie lo usara.
+- **Licencias:** todo de los paquetes GDC de Sonniss 2016-2024 (PDF de cada paquete). Ninguna fuente CC0 nueva y
+  nada de Suno.
+
+### 2. Commits (rama `area-sonido`)
+
+| Commit | Qué |
+|---|---|
+| `eda043b` · `528945e` · `7b201cb` · `8f2abf7` | Voces de los héroes: derivados y recetas, `sonido.gd`, pruebas, documentación |
+| `329e718` · `b9c4f58` · `c6c0a1a` · `e28af95` | Cuerdas y viento de la Garganta: derivados, `FuenteCada`, prueba «cuerdas», documentación y lista de pruebas |
+| `03b1e12` | Merge de `integracion-experimental` (`a330d77`) |
+| `b8dfedf` · `c911465` · `72f50a1` · `eddb116` | La Guardia y `puente_cruje` (cuerda y madera) |
+| (este) | Este informe |
+
+Sin confirmar, porque no son míos: `aethelgard/dialogos/comentarios.gd.uid` y `aethelgard/pruebas/prueba_comentarios.gd.uid`
+(los generó la importación).
+
+### 3. Pruebas (todas con datos aislados)
+
+- `prueba_efectos`, parte «heroes»: **0 fallos**.
+  - Cada voz existe, con su prioridad y su grupo. Al lanzarse, un esfuerzo.
+  - Con poca vida y dos golpes, un solo jadeo; tras el alivio, vuelve a jadear. Al caer, se queja.
+  - Las voces suenan una a la vez, y la victoria la celebra quien sigue en pie.
+  - En un combate de verdad, el golpe del limo hace quejarse a Kael y la magia sigue sin pedir voces.
+  - La Guardia es un efecto propio y suena una vez.
+  - El ataque físico de Kael 3D aún no da esfuerzo, porque su salto no llama a `voz`: es una de las líneas para
+    combate.
+- Parte «cuerdas»: en 40 s, los crujidos suenan 7-8 veces y el viento 1-3, siempre en el punto de su línea y por
+  Ambiente; a 80 m, nada.
+- `prueba_efectos_senal` (con ventana, con el ejecutor): 0 fallos. Las voces, solas y en dos mezclas (un combate
+  seguido y las victorias); la Guardia, la defensa, los crujidos y el viento.
+  - Se cortó sola una vez sin error, igual que en la tanda 4; repetida, terminó.
+- `comprobar`: **168 de 168 originales intactos**.
+- **Batería completa** (09/11, 18:35, con `eddb116`, después del merge): **59 superadas, 0 fallidas, 32 manuales, 0 no
+  seguras**. Partida real, carpeta real y proyecto, sin cambios. Resumen:
+  `D:\REBELUM_diagnostico\pruebas\2026-11-09_183458\resumen.md`. La de antes del merge (18:13) dio 55/2: eran
+  `prueba_mando` y `prueba_teclado` (Tilo), que la integración ya trae arregladas.
+
+### 4. Evidencias
+
+- Muestras con índice: `D:\REBELUM_diagnostico\sonido_muestras\2026-11-09_heroes_combate\indice.md`, con dos subcarpetas:
+  `garganta_cuerdas\` y `guardia_y_puentes\`.
+- Niveles a la salida (RMS, Master al 100 %):
+
+| Qué | Nivel | Referencia |
+|---|---|---|
+| Voces de los héroes | −28,1 a −33,6 dBFS | el golpe, −27,7; las voces de los enemigos, −23 a −31 |
+| Mezcla del combate | picos de −4,4 dBFS | |
+| Guardia | unos −25 dBFS | la defensa, −26,9 |
+| Crujido de los puentes | −35,1 dBFS a 4 m | |
+| Viento en las cuerdas | −31,9 dBFS | |
+
+### 5. Límites
+
+- **Nadie lo ha oído.** Lo más dudoso:
+  - el esfuerzo de Kael, que es el arranque de un grito largo recortado;
+  - el jadeo de Lya, una respiración por la nariz muy amplificada (puede llevar ruido);
+  - la risa de Lya en la victoria (encaja con «riñe porque quiere»; si sobra, se quita su `_victoria`);
+  - la Guardia, si se confunde con el golpe defendido.
+- **Pendiente en Redmi:** cómo se oyen las voces bajo los golpes en un altavoz de móvil.
+- **Sin enganchar:** las líneas para combate y para `garganta_3d.gd` son propuestas. Los crujidos y el viento solo se
+  han probado en una escena de prueba, no en la Garganta.
+
+### 6. Siguiente paso y cambios en archivos de otros
+
+- **Combate** (`combate.gd`), las líneas del inventario (tanda 5):
+  - `Sonido.voz(o, "ataque")` en `_anim_salto_3d` y en `_anim_fisico_3d`;
+  - el alivio en `_usar_objeto`;
+  - `Sonido.victoria_heroes(heroes)` en `_comprobar_fin`;
+  - `_sonar("guardia")` donde hoy suena `defensa` al ponerse en guardia.
+  - Las bestias ya las pide por sus nombres: comprobado en su rama, la línea de aviso da `zarzalin_aviso_embestida`.
+- **Gráficos** (`garganta_3d.gd`): las tres líneas de `fuente_linea` del inventario (`puente_cruje` en cada puente y
+  `viento_cuerdas` por el borde de la cornisa).
+- **Usuario:** escuchar el índice de hoy.

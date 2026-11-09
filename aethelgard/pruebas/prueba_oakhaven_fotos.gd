@@ -7,7 +7,7 @@ extends SceneTree
 # también sus rincones (6_barrio_cuervo a 14_mercado: el Cuervo, el callejón y la grieta, el Patio de las Velas, la colina
 # del crematorio, la ronda apagada y encendida, el Árbol y su copa translúcida, el mercado), el Diario con las notas
 # (15_diario_notas), la posada con la noche gratis y su escena (16_ y 17_), un comentario de los héroes al explorar
-# (19_comentario) y, con «3d», el ramito de lavanda en Pastos Verdes 3D (18_lavanda_pastos).
+# (19_comentario), una charla de posada con Lya (20_ y 21_) y, con «3d», el ramito de lavanda en Pastos Verdes 3D (18_lavanda_pastos).
 # Las de la ciudad hecha a mano usan partidas sintéticas (nada se guarda: las pruebas no escriben la partida).
 
 const MAPA := "res://mapa.tscn"
@@ -199,6 +199,25 @@ func _rincones(z) -> void:
 	Com.mostrar(z.ui, c)
 	await _esperar(20)
 	await _foto("19_comentario")
+	# una charla de posada (CHARLAS_POSADA): con Lya en el grupo y PV-03, la primera noche sale «Cómo se conocieron»
+	if D != null:
+		var G = load("res://grupo.gd")
+		P.poner_hito("pv_03")
+		G.unir("Lya")
+		await _ir(z, Vector2(16, 26.6))
+		z._posada()
+		await _hasta(func(): return D.current_timeline != null, 6.0)
+		await _esperar_texto()
+		await _foto("20_charla_posada")
+		D.Inputs.handle_input()
+		await _esperar_texto()
+		await _foto("21_charla_posada_2")
+		D.end_timeline(true)
+		await _esperar(10)
+		var h: Dictionary = Engine.get_meta("hitos", {})
+		h.erase("pv_03")                                  # (lo de después, la lavanda, es con Kael solo)
+		Engine.set_meta("hitos", h)
+		G.empezar_solo()
 	if load("res://modo3d.gd").activo():            # «Lavanda para el Árbol»: el ramito en Pastos Verdes 3D
 		P.poner_hito("pv_02")                       # (sin PV-02 al entrar)
 		P.poner_estado("oakhaven", "lavanda")

@@ -7,6 +7,8 @@ extends SceneTree
 #      quien no está; se turnan; ninguna frase se repite y los momentos únicos salen una vez.
 #   3. En Oakhaven (ciudad_oakhaven.gd): al llegar, tras abrir un cofre y al quedarse quieto sale un comentario de alguien
 #      del grupo, abajo a la derecha y sin tapar el botón de examinar; un diálogo lo quita; la partida no cambia.
+#   4. En una zona 2D (zona.gd, el Gran Bosque Verde): al llegar por primera vez en la sesión, «llegar:lugar_nuevo», y
+#      tras abrir un cofre, «cofre»; al volver a entrar, ningún comentario de llegada.
 # Imprime «FALLOS: n» y sale con 1 si hay alguno.
 
 const C := preload("res://dialogos/comentarios.gd")
@@ -55,6 +57,7 @@ func _probar() -> void:
 	await _datos()
 	_quien_habla()
 	await _en_oakhaven()
+	await _en_zona()
 	for t in fallos:
 		print("FALLO: ", t)
 	print("FALLOS: %d" % fallos.size())
@@ -232,3 +235,57 @@ func _mirar_caja(z, que: String, presentes: Array) -> void:
 	var b: Rect2 = z.boton_examinar.get_global_rect()
 	if r.intersects(b) or r.end.x > 1280.0 or r.end.y > 720.0 or r.position.x < 0.0:
 		_fallo("3: la caja de «%s» (%s) se sale o tapa el botón de examinar (%s)" % [que, r, b])
+
+
+# 4. En una zona 2D generada (zona.gd).
+func _en_zona() -> void:
+	Engine.set_meta("archivo_partida_prueba", ARCHIVO)
+	var l: Dictionary = load("res://mapa.gd").LUGARES[1]
+	var z = await _abrir_zona(l)
+	if z == null:
+		return
+	if not await _hasta(func(): return _caja(z) != null, 8.0):
+		_fallo("4: al llegar a %s nadie dice nada" % l["nombre"])
+	else:
+		var caja := _caja(z)
+		var t: String = caja.get_meta("texto")
+		if not C.MOMENTOS["llegar:lugar_nuevo"]["frases"].any(func(f): return f["texto"] == t):
+			_fallo("4: al llegar a una zona sale «%s», que no es de «llegar:lugar_nuevo»" % t)
+		_mirar_caja(z, "zona, llegada", ["Kael", "Lya"])
+		await _hasta(func(): return _caja(z) == null, 15.0)
+	var cofre = null
+	for c in z.cofres:
+		if not c[2]:
+			cofre = c
+			break
+	if cofre == null:
+		print("AVISO 4: la zona no tiene cofres cerrados: el del cofre se prueba solo en Oakhaven")
+	else:
+		z._abrir_cofre(cofre)
+		if not await _hasta(func(): return _caja(z) != null, 6.0):
+			_fallo("4: tras abrir un cofre de la zona nadie dice nada")
+		else:
+			var t2: String = _caja(z).get_meta("texto")
+			if not C.MOMENTOS["cofre"]["frases"].any(func(f): return f["texto"] == t2):
+				_fallo("4: tras el cofre sale «%s», que no es del cofre" % t2)
+			_mirar_caja(z, "zona, cofre", ["Kael", "Lya"])
+			await _hasta(func(): return _caja(z) == null, 15.0)
+	# otra vez al mismo sitio: sin comentario de llegada
+	z = await _abrir_zona(l)
+	if z == null:
+		return
+	if await _hasta(func(): return _caja(z) != null, 6.0):
+		_fallo("4: al volver a %s se repite el comentario de llegada («%s»)" % [l["nombre"], _caja(z).get_meta("texto")])
+	Engine.remove_meta("archivo_partida_prueba")
+
+
+func _abrir_zona(l: Dictionary) -> Variant:
+	Engine.set_meta("lugar", {"indice": 1, "nombre": l["nombre"], "tipo": l["tipo"], "zona": l.get("zona", "bosque"), "texto": l["texto"]})
+	Engine.set_meta("pos_zona_ok", false)
+	var vieja: int = current_scene.get_instance_id() if current_scene != null else 0
+	change_scene_to_file("res://zona.tscn")
+	if not await _hasta(func(): return current_scene != null and current_scene.get_instance_id() != vieja \
+			and current_scene.scene_file_path == "res://zona.tscn" and current_scene.get("jugador") != null and not R.cambiando, 60.0):
+		_fallo("4: no se abre la zona %s" % l["nombre"])
+		return null
+	return current_scene

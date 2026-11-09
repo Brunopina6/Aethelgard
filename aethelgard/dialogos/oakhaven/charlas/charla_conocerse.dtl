@@ -1,0 +1,16 @@
+join kael (vivo) left
+join lya (vivo) right
+update lya [extra_data="duda"]
+lya: ¿Te acuerdas de la primera vez que hablamos?
+update kael [extra_data="ligero"]
+kael: Me quitaste una manzana de la mano. Sin presentarte.
+update lya [extra_data="decidida"]
+lya: Estaba verde. Te habrías pasado la noche con dolor de tripa.
+update kael [extra_data="sorpresa"]
+kael: Y luego te la comiste tú.
+update lya [extra_data="firme"]
+lya: …Alguien tenía que comprobarlo. Desde entonces vigilo lo que comes.
+update kael [extra_data="ligero"]
+kael: Pues sigue vigilando. Las manzanas de por aquí no son de fiar.
+leave lya
+leave kael

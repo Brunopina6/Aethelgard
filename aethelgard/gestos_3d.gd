@@ -31,6 +31,9 @@ const HIJO := {"columna": "columna1", "columna1": "pecho", "pecho": "cuello", "c
 # Cada gesto: hueso -> [dirección (adelante, arriba, derecha), ángulo máximo en grados].
 # La izquierda del personaje es derecha negativa.
 # "_cadera" mueve la cadera (en metros, para un personaje de 1,7 m): sirve para agacharse.
+# "+hueso": [eje (adelante, arriba, derecha), grados] SUMA ese giro al del clip en vez de orientar el hueso (sirve
+#   para el porte al andar: maga_3d.gd, ESTILOS); con [eje, grados, ciclos por segundo, fase] va y viene.
+#   Inclinarse hacia delante es girar alrededor de la izquierda: Vector3(0, 0, -1).
 # Los gestos que empiezan por "k_" son de Kael (sable).
 const GESTOS := {
 	# brazos relajados a los lados (el modelo trae los brazos abiertos en A)
@@ -241,10 +244,17 @@ func _process_modification() -> void:
 			_girar(sk, "pecho", derecha, sin(tiempo * 1.9) * deg_to_rad(1.6) * respirar)
 		for g in gestos_def:
 			var w: float = peso.get(g, 0.0)
-			if w <= 0.001 or not gestos_def[g].has(hueso):
+			if w <= 0.001:
 				continue
-			var dato: Array = gestos_def[g][hueso]
-			_apuntar(sk, hueso, dato[0], deg_to_rad(dato[1]) * w)
+			if gestos_def[g].has(hueso):
+				var dato: Array = gestos_def[g][hueso]
+				_apuntar(sk, hueso, dato[0], deg_to_rad(dato[1]) * w)
+			if gestos_def[g].has("+" + hueso):          # giro que se SUMA al del clip (no lo sustituye)
+				var mas: Array = gestos_def[g]["+" + hueso]
+				var ang: float = deg_to_rad(mas[1]) * w
+				if mas.size() > 2:                        # [eje, grados, ciclos por segundo, fase]: va y viene
+					ang *= sin(tiempo * TAU * mas[2] + (mas[3] if mas.size() > 3 else 0.0))
+				_girar(sk, hueso, dir(mas[0]), ang)
 		if hueso == "cabeza" and respirar > 0.0:
 			_girar(sk, "cabeza", derecha, -sin(tiempo * 1.9) * deg_to_rad(1.0) * respirar)
 	if al_terminar.is_valid():

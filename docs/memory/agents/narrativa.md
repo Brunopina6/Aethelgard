@@ -829,3 +829,206 @@ pega en 3D (los nombres son los de `esperas.py` de animaciones, aún sin confirm
 - **Siguiente paso de narrativa:** cuando se enganchen la Garganta y Pastos Verdes, repasar con capturas que el
   comentario no tape nada en 3D; y, con la decisión del usuario sobre la biblia v3, ampliar los momentos (al ganar un
   combate difícil, al ver la ciudad del cielo de PV-07) con la misma guía.
+
+## 2026-11-09, 18:40 — Comentarios en las zonas 2D y charlas de posada
+
+**Encargo del coordinador:**
+1. Enganchar en `zona.gd` el comentario al llegar a un lugar nuevo y el del cofre, con su prueba.
+2. «Charlas de posada»: de 4 a 6 conversaciones breves y opcionales entre los héroes. Se desbloquean por hitos que ya
+   existen y salen al descansar en la posada de Oakhaven: una por descanso, la más nueva sin ver. Temas: cómo se
+   conocieron, una broma recurrente, un miedo de cada uno y la mano de Kael sin revelar nada nuevo.
+3. Que lo visto se guarde de forma compatible con las partidas antiguas, con una prueba de partida antigua sin la clave.
+
+**Decisiones del coordinador que se aplican aquí:**
+- los comentarios se quedan por sesión;
+- no se tocan `pastos_verdes_3d.gd` ni `garganta_3d.gd`.
+
+Copia `D:\Aethelgard_narrativa`, rama `area-narrativa`, desde `8552a6e`. A mitad de la tanda uní la integración
+`cb9d51d`, que ya trae mi rama, y al final `a330d77`, como pidió el coordinador.
+
+### 1. Archivos y commits
+| Commit | Qué |
+|---|---|
+| `a884ef3` | `zona.gd`: el comentario al llegar y el del cofre. `ciudad_oakhaven.gd` usa lo de `zona.gd`. `dialogos/comentarios.gd`: los enganches, al día. `prueba_comentarios.gd`: apartado 4, zona 2D |
+| `9915507` | Las seis charlas (`dialogos/oakhaven/charlas/*.dtl`). En `ciudades/oakhaven.gd`, la constante `CHARLAS_POSADA` y las funciones que eligen y marcan. `ciudad_oakhaven.gd`, al despertar. `pruebas/prueba_charlas_posada.gd` (nueva). `prueba_oakhaven_fotos.gd`, capturas 20 y 21 |
+| `3e9d6ae` | La línea de `prueba_charlas_posada` en `lista_pruebas.txt` |
+| `12b7efe` | Unión `--no-ff` de `integracion-experimental` @ `cb9d51d`. Aparté a la carpeta temporal de mi área el `prueba_orden_pv03.gd.uid` suelto, igual que el confirmado; sin conflictos |
+| `a4c5829` | Los `.uid` de mis archivos nuevos (los generó la importación) |
+| `6958491` | Unión `--no-ff` de `a330d77`: solo trae `prueba_integridad.gd.uid`, igual al que tenía suelto (aparté el mío a la carpeta temporal de mi área) |
+| (este) | Este informe |
+
+**Sin confirmar, a la espera del coordinador:**
+- `aethelgard/project.godot`: la importación apuntó las seis charlas en `dialogic/directories`. Funciona igual sin
+  ello, porque se abren por su ruta.
+
+**Un error mío, ya deshecho.** Una orden de PowerShell con una ruta relativa creó un archivo vacío,
+`D:\Aethelgard_alpha\lista_pruebas.txt` (0 bytes, 18:12), en la copia de integración. No se usó y lo borré al momento:
+- comprobado que no existe;
+- `git status` de esa copia, como antes salvo lo suyo.
+
+No toqué nada más allí. Desde entonces uso solo rutas absolutas en las escrituras.
+
+**1. Comentarios en `zona.gd`** (observado en el código y comprobado ejecutando):
+- **Al llegar:** la primera vez en la sesión que se entra en un lugar. Se apunta con «@lugar:N» en Engine
+  «comentarios_dichos»; no se guarda en la partida, como decidió el coordinador.
+  - En un lugar cualquiera sale «llegar:lugar_nuevo»; en la Garganta 2D, «llegar:garganta»; en Oakhaven,
+    «llegar:oakhaven».
+  - Para no tocar `garganta.gd`, la Garganta se reconoce por el nombre del lugar.
+- **Tras abrir un cofre:** 1,2 s después del premio.
+- **Cuándo no sale:** con un diálogo, la tienda, el menú o la salida en marcha, el comentario espera; si empieza un
+  diálogo, el que esté en pantalla se quita.
+- Una ciudad puede cambiar el momento (`_momento_llegada()`) y lo que la tiene ocupada (`_ocupado_para_comentar()`).
+- La lógica que tenía Oakhaven pasa a `zona.gd`. La ciudad conserva solo lo de quedarse quieto. Funciona igual
+  (`prueba_comentarios`, apartados 3 y 4).
+
+**2. Charlas de posada:**
+- **Cuándo salen.** Al descansar en el Cuervo, en lugar de la escena corta de siempre, sale la charla más nueva sin
+  ver de las desbloqueadas. Una charla está desbloqueada si se cumple su hito y todo su grupo está en el grupo
+  activo.
+- **El orden.** «La más nueva» se mide por el orden de la lista, que sigue la historia; no se guarda cuándo se
+  desbloqueó.
+- **Sin charlas nuevas,** sale la escena de siempre.
+- **Por qué son opcionales.** Solo salen si se descansa (pagando o gratis) y se pueden pasar como cualquier diálogo.
+  No cambian hitos, misiones ni nada de la partida, salvo apuntar que se han visto.
+
+| Id | Hito (ya existe) | Grupo | Tema | Frases |
+|---|---|---|---|---|
+| `charla_conocerse` | `pv_03` | Kael, Lya | Cómo se conocieron | 6 |
+| `charla_cama_grande` | `pv_05` | Kael, Lya, Garon | La broma de la cama grande (sigue la de `oak_posada_grupo`) | 6 |
+| `charla_miedo_garon` | `pv_06` | Kael, Lya, Garon | El miedo de Garon | 6 |
+| `charla_mano` | `pv_07` | Kael, Lya, Garon | La mano del brazalete | 6 |
+| `charla_miedo_lya` | `mecha_tilo` | Kael, Lya | El miedo de Lya | 5 |
+| `charla_miedo_kael` | `oak_faroles` | Kael, Lya | El miedo de Kael | 5 |
+
+- **Guardado.** Lo visto se guarda como estado de la ciudad: `Progreso.poner_estado("oakhaven", "charla_…")`, dentro
+  de «mazmorras». Esa clave ya está en la partida y ya la usa Oakhaven (la noche gratis, los faroles…).
+  - Es opcional y vale `false` si falta: una partida antigua sin «mazmorras», o con la ciudad pero sin ninguna
+    «charla_…», carga igual y la charla sale sin ver.
+  - Así no hace falta una clave nueva en `progreso.gd`, que no es mío, y cumple lo que se pidió: opcional y con
+    valor por defecto.
+  - Comprobado ejecutando (`prueba_charlas_posada`, apartado 5).
+- **«La mano marcada de Kael».** En el canon no hay ninguna marca en su mano: ni en la biblia v2, ni en la v3, ni en el
+  código. Lo traté como la mano del brazalete:
+  - Garon ve que la esconde cuando brilla. Que brille ya se ve en el juego: brilla cerca de los detalles sin ver.
+  - Kael dice que no le duele y no sabe más.
+  - No hay marca nueva ni revelación. Si el coordinador quería otra cosa, se cambia la charla.
+
+### 2. Pruebas
+- **Importación aislada** tras la unión: `D:\REBELUM_diagnostico\importaciones\narrativa_20261109_181321\` (salida 0).
+- **`prueba_comentarios`** (comprobado ejecutando, aislado), con un apartado nuevo, el 4, en el Gran Bosque Verde: al
+  llegar sale una frase de «llegar:lugar_nuevo» de alguien del grupo (Lya); tras abrir un cofre, una del cofre
+  (Kael); al volver a entrar, ninguna de llegada.
+- **`prueba_charlas_posada`** (nueva, auto, comprobado ejecutando y aislado), FALLOS 0:
+  - los datos: 6 charlas, con hitos que existen, grupos y diálogos sin huérfanos;
+  - el texto: de 5 a 6 frases; solo habla el grupo y hablan todos; 75 letras la más larga; una intención por frase;
+    gesto de Kael y Lya de la lista; ninguna palabra vetada; sin comentarios, porque Dialogic los imprime en la
+    consola;
+  - cada charla, recorrida entera con Dialogic;
+  - cuál toca: con PV-03 a PV-07, sale `charla_mano`, `charla_miedo_garon`, `charla_cama_grande` y
+    `charla_conocerse`, y después la escena de siempre;
+  - con Kael solo, ninguna;
+  - las partidas antiguas;
+  - en la ciudad: la primera noche sale `charla_conocerse.dtl` y la segunda, `oak_posada_lya.dtl`.
+- **Tras los enganches de `zona.gd`,** 9 de 9 superadas
+  (`D:\REBELUM_diagnostico\narrativa\2026-11-09\zona_comentarios\2026-11-09_180652\resumen.md`): `prueba_escenas`,
+  `prueba_foco`, `prueba_cofre`, `prueba_guardado`, `prueba_guardado_protegido`, `prueba_restaurar_escenas`,
+  `prueba_oakhaven`, `prueba_oakhaven_ciudad_arte` y `prueba_comentarios`. Marcó «proyecto cambiado» porque yo editaba
+  `oakhaven.gd` mientras corría; la batería completa de abajo es la limpia.
+- **Batería completa** (aislada, sobre `a4c5829`): **SUPERADAS 60 · FALLIDAS 0 · MANUALES 32 · NO SEGURAS 0** (`D:\REBELUM_diagnostico\narrativa\2026-11-09\bateria_charlas\2026-11-09_181401\resumen.md`). La partida real, su carpeta y el proyecto, sin cambios. `prueba_mando` y `prueba_teclado` vuelven a pasar (las arregló el coordinador en `9f94601`, que llegó con `cb9d51d`).
+- **Tras unir `a330d77`** (`6958491`; solo trae un `.uid` igual al que tenía suelto): `prueba_charlas_posada`, `prueba_comentarios`, `prueba_integridad` y `prueba_oakhaven`, SUPERADAS (`...\tras_a330d77\2026-11-09_182338\resumen.md`).
+- **Capturas con ventana** (aislado, 1280 × 720, sobre `6958491`): `D:\REBELUM_diagnostico\oakhaven\2026-11-09_arte\charlas\20_charla_posada.png` y `21_charla_posada_2.png` (las dos primeras frases de «Cómo se conocieron», con los retratos vivos: Lya pensativa y Kael con la mano en la cadera), además de `19_comentario.png`. Las dos primeras veces el guion salió a los 6-7 s sin error y con código 0; a la tercera, todo bien. No he encontrado la causa en el juego: lo apunto por si vuelve a pasar.
+
+### 3. Evidencias: texto, intención y gesto de cada frase
+Kael y Lya llevan el gesto (`extra_data`, retrato «vivo») que se pide justo antes de su frase. Garon no tiene retrato:
+para él, solo la intención (en 3D, cuando haya clip). Las intenciones también están en `CHARLAS_POSADA`, en su orden.
+
+**Cómo se conocieron** (`charla_conocerse`, Kael y Lya, desde PV-03):
+| # | Quién | Frase | Intención | Gesto |
+|---|---|---|---|---|
+| 1 | Lya | ¿Te acuerdas de la primera vez que hablamos? | Lo saca con una sonrisa, a ver qué recuerda él | `duda` |
+| 2 | Kael | Me quitaste una manzana de la mano. Sin presentarte. | Ofendido de broma | `ligero` |
+| 3 | Lya | Estaba verde. Te habrías pasado la noche con dolor de tripa. | Se defiende con datos | `decidida` |
+| 4 | Kael | Y luego te la comiste tú. | La pilla | `sorpresa` |
+| 5 | Lya | …Alguien tenía que comprobarlo. Desde entonces vigilo lo que comes. | Digna, y tierna en la segunda frase | `firme` |
+| 6 | Kael | Pues sigue vigilando. Las manzanas de por aquí no son de fiar. | Le da las gracias sin dárselas | `ligero` |
+
+**La broma de la cama grande** (`charla_cama_grande`, los tres, desde PV-05):
+| # | Quién | Frase | Intención | Gesto |
+|---|---|---|---|---|
+| 1 | Kael | Garon, cada noche dices «duermo en el suelo». | Abre el juicio, encantado | `ligero` |
+| 2 | Garon | Y duermo en el suelo. | Impasible | — |
+| 3 | Lya | Esta mañana estabas en la cama grande. Abrazado a la almohada. | Aporta la prueba, sin piedad y con cariño | `duda` |
+| 4 | Garon | Comprobaba el colchón. | Ni un parpadeo | — |
+| 5 | Kael | ¿Toda la noche? | No se lo cree | `sorpresa` |
+| 6 | Garon | Es un colchón grande. | Cierra el caso | — |
+
+**El miedo de Garon** (`charla_miedo_garon`, los tres, desde PV-06):
+| # | Quién | Frase | Intención | Gesto |
+|---|---|---|---|---|
+| 1 | Lya | Garon… en la estatua te pusiste delante sin pensarlo. | Se lo agradece riñéndole | `preocupada` |
+| 2 | Garon | Lo pensé. Rápido. | Corrige, seco | — |
+| 3 | Kael | ¿Y nunca te da miedo nada? | Curiosidad de verdad, sin broma | `duda` |
+| 4 | Garon | Una cosa. Contar al volver y que falte alguien. | Lo dice una vez y no lo repetirá | — |
+| 5 | Lya | Pues cuenta. Estamos los tres. | Le devuelve la calma | `firme` |
+| 6 | Garon | …Tres. Bien. A dormir. | Cuenta de verdad; se ablanda medio segundo | — |
+
+**La mano del brazalete** (`charla_mano`, los tres, desde PV-07):
+| # | Quién | Frase | Intención | Gesto |
+|---|---|---|---|---|
+| 1 | Garon | Esa mano. La escondes cuando brilla. | Lo ha visto; lo dice como un parte | — |
+| 2 | Kael | Es la mano de comer. Hay que cuidarla. | Esconde la mano también con la broma | `brazalete` |
+| 3 | Lya | Kael… ¿te duele? | Preocupada de verdad | `preocupada` |
+| 4 | Kael | No. Brilla cuando le da la gana. Como un farol con mal genio. | Le quita hierro | `ligero` |
+| 5 | Garon | Si un día duele, lo dices. | Una orden que es cariño | — |
+| 6 | Kael | Seréis los primeros. Palabra. | Lo promete, esta vez en serio | `decidido` |
+
+**El miedo de Lya** (`charla_miedo_lya`, Kael y Lya, desde la mecha de Tilo):
+| # | Quién | Frase | Intención | Gesto |
+|---|---|---|---|---|
+| 1 | Kael | Estás muy callada. Eso me da miedo hasta a mí. | Lo nota y entra con una broma | `duda` |
+| 2 | Lya | Pensaba en Tilo. Tantos años cuidando de una estatua. | Piensa en voz alta | `duda` |
+| 3 | Lya | Me da miedo eso: llegar tarde a alguien. Curar es fácil. Llegar, no. | El miedo, dicho con precisión | `preocupada` |
+| 4 | Kael | Entonces voy yo delante y tú llegas conmigo. Problema resuelto. | La cuida con un plan absurdo | `decidido` |
+| 5 | Lya | …Tonto. Gracias. | Se ríe sin querer | `decidida` |
+
+**El miedo de Kael** (`charla_miedo_kael`, Kael y Lya, desde «Los faroles de la ronda»):
+| # | Quién | Frase | Intención | Gesto |
+|---|---|---|---|---|
+| 1 | Lya | Bastián dice que encendiste los faroles de la ronda muy despacio. | Lo saca con cuidado | `duda` |
+| 2 | Kael | A mí la niebla ni me roza. Ya lo sabes. | Desvía | `ligero` |
+| 3 | Kael | Imagina que un día se os lleva a todos y a mí me deja. Vaya suerte, ¿eh? | El miedo, envuelto en chiste | `brazalete` |
+| 4 | Lya | Kael… Pues enciende faroles. Muchos. Y no te quedes solo. | No le deja escapar | `preocupada` |
+| 5 | Kael | …Prometido. | Lo acepta en serio | `decidido` |
+
+- **Para animaciones:** el gesto de la segunda frase seguida de Lya (charla 5, frase 3) es distinto del de la primera
+  (`duda` y luego `preocupada`), así que se ve el cambio. Garon tiene ocho frases: si un día tiene retrato o clip,
+  sus intenciones van de la seca a la tierna.
+
+### 4. Continuidad y canon
+- **Quién habla.** Solo los del grupo de cada charla, y la charla solo sale si están todos (Kael solo hasta PV-03,
+  Lya desde PV-03 y Garon desde PV-05). Comprobado ejecutando: con Kael solo, ninguna; sin Garon, solo las de Kael y
+  Lya.
+- **Texto que cuadra con lo ya dicho:**
+  - la cama grande sigue la escena `oak_posada_grupo` (Garon: «Duermo en el suelo.»);
+  - la estatua de PV-06 (Garon delante) y la mecha de Tilo (PV-14), tal como están;
+  - «la niebla ni me roza» es el prólogo.
+- **Detalle nuevo pequeño, sin contradecir nada:** la manzana de la primera vez (charla 1). No fija ni edad, ni lugar,
+  ni familia; es solo cómo lo recuerda cada uno. Si el usuario prefiere no fijar ni eso, se cambia por otra anécdota.
+- **Ni Érebo, ni lo que guarda, ni «recuerdos»:** «¿Te acuerdas…?» es de Lya y no habla de su sombra; la prueba lo
+  mira. Nada de Final Fantasy X. Lo que la biblia v2 solo propone (el pasado de cada uno, el secreto de Lya, la noche
+  de Garon) no aparece.
+
+### 5. Límites y propuestas pendientes
+- **«La más nueva»** sigue el orden de la lista, no el momento real del desbloqueo; con estos hitos, casi siempre
+  coinciden. Guardar ese momento necesitaría otro estado, y no lo he añadido.
+- **Una charla por noche,** y desplaza la escena corta de siempre esa noche. Si el coordinador prefiere las dos (la
+  escena y después la charla), es una línea en `escena_al_despertar()`.
+- **Pendiente en Redmi:** cómo se leen las charlas en la caja del teléfono (la más larga tiene 75 letras: dos líneas,
+  según la medida de T-086).
+
+### 6. Siguiente paso y cambios en archivos de otros
+- **Coordinador:** confirmar o no las seis líneas de `project.godot` (`dialogic/directories`).
+- **Animaciones:** los gestos de las charlas son los de siempre; si añade gestos nuevos (de Garon, por ejemplo), las
+  intenciones de `CHARLAS_POSADA` dicen cuál pide cada frase.
+- **Siguiente paso de narrativa:** con las capturas, revisar la charla en la caja; más charlas cuando haya más hitos
+  (después de Pastos Verdes), con la misma guía de voz.
