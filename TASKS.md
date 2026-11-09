@@ -59,7 +59,7 @@
 | [T-081](#t-081) | El primer diálogo: presentación, cámara, texto y gestos (encargo del 08/11 por la noche) | En curso (prólogo y botón hechos; falta el Redmi) | Alta |
 | [T-082](#t-082) | Organización por especialistas: coordinador y cinco subagentes (encargo del 08/11, 22:00) | En curso | Alta |
 | [T-083](#t-083) | Sonido: primera tanda de efectos de la biblioteca del usuario en eventos reales | Tandas 1 y 2 integradas; falta escucharlas | Alta |
-| [T-084](#t-084) | Animaciones: la mano de Kael en el diálogo inicial y gestos naturales | Tanda 1 integrada; tanda 2 pendiente | Alta |
+| [T-084](#t-084) | Animaciones: la mano de Kael en el diálogo inicial y gestos naturales | Tandas 1 y 2 integradas | Alta |
 | [T-085](#t-085) | Gráficos: el mapamundi (costas, agua, relieve, biomas, lugares y rótulos) | Integrado (`a04a9d2`); falta medirlo y verlo en el Redmi | Alta |
 | [T-086](#t-086) | Narrativa: el diálogo inicial y la misión de Pastos Verdes | Revisión hecha; falta aplicarla | Media |
 | [T-087](#t-087) | Combate: estabilidad con uno, dos y tres héroes y eventos sonoros de ataque e impacto | Pendiente | Media |
@@ -621,9 +621,26 @@
 
 ### T-084
 **Animaciones: la mano de Kael en el diálogo inicial y gestos naturales**
-- **Estado:** tanda 1 terminada e integrada (`e84cf32`, 09/11 a las 00:05). La tanda 2 queda pendiente: pies que
-  patinan en 3D, Lya y Garon presentes cuando hablan en PV-03 y PV-05, retratos vivos en Pastos Verdes, poses de Lya y
-  la señal `pisada`. **Prioridad:** alta. **Responsable:** especialista de animaciones (rama `area-animaciones`).
+- **Estado:** tandas 1 y 2 terminadas e integradas. La tanda 2 está subida en `integracion-experimental` @ `4414ebf`
+  (09/11 a las 08:35). **Prioridad:** alta. **Responsable:** especialista de animaciones (rama `area-animaciones`).
+- **Evidencia, tanda 2** (comprobado ejecutando y aislado):
+  - **Pies sin patinar:** `marcha(v)` elige andar o correr por la velocidad real y ajusta el ritmo, con un tope de
+    ×1,8. Deslizamiento del pie apoyado andando: Kael, de 52 a 1,2 cm; Lya, de 61 a 6,5 cm. La velocidad de juego no
+    cambia.
+  - **Stick analógico en 3D,** como en 2D (decisión del especialista).
+  - **PV-03:** Lya llega corriendo desde 4,5 m antes de hablar.
+  - **PV-05:** Garon espera junto a Tilo.
+  - **Retratos:** el vivo en Pastos Verdes (`vivo_pv`, del tamaño del normal), y cuatro poses de Lya renderizadas desde
+    su modelo.
+  - **Pasos:** los de Lya y Garon.
+  - **Pruebas:** batería de la integración: 41 superadas, 0 fallidas (`D:\REBELUM_diagnostico\pruebas\2026-11-09_081858\`),
+    con `prueba_anim_pies` nueva.
+  - **Evidencias:** vídeo y láminas en `D:\REBELUM_diagnostico\animaciones\2026-11-09\`.
+  - **Pendiente:**
+    - el pie aún barre un arco en los giros rápidos;
+    - Garon patina un 13-30 % al correr muy rápido;
+    - Tilo no se vuelve hacia quien habla;
+    - los pasos de Lya y Garon suenan tan fuertes como los de Kael (le toca a sonido).
 - **Evidencia, tanda 1** (comprobado ejecutando y aislado):
   - **Causa:** `kael.png` es un render del modelo en el fotograma 5 del reposo `_01a19b86` (el sable al hombro), sin
     el sable. La silueta coincide en un 98,9 % (Blender).

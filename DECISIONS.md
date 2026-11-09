@@ -1299,6 +1299,10 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
   versión experimental) o con `-- mapa_clasico`. La máscara jugable se ajustó 2 px al dibujo.
 - **Carpeta temporal de los especialistas:** cada uno usa una subcarpeta con su nombre, porque el 09/11 un script de
   gráficos pisó otro de animaciones con el mismo nombre (`f123920`).
+- **Animaciones, tanda 2** (`4414ebf`):
+  - el stick del mando es analógico en 3D, como en el mapa y en las zonas 2D;
+  - en PV-03, Lya aparece a 4,5 m y llega corriendo (el usuario puede pedir que aparezca más lejos);
+  - Lya y Garon entran en el grupo de la partida al ponerse el hito, para que la partida no los guarde separados.
 - **Combate: lo adoptado del diseño** (`docs/diseno/combate_ampliaciones.md`, rama `area-combate`):
   - pestañas por familia en el menú de magia;
   - la ranura se llama «Accesorio»; nada de «Quiebrasello»;

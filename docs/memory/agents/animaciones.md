@@ -158,3 +158,195 @@ En `D:\REBELUM_diagnostico\animaciones\2026-11-08\`:
   para que los especialistas puedan probar a la vez, siempre que la vigilancia y las huellas sigan como están.
 - **Las fuentes de los retratos** están en `dialogos/retratos/fuentes_blender/`, con `.gdignore` (Godot no las lee y no
   van en el APK). Si se prefiere, pueden pasar a `pruebas/herramientas/`.
+
+## 2026-11-09 08:10 · T-084, tanda 2: pies sin patinar, presencia en PV-03 y PV-05, retratos vivos y poses de Lya
+
+**Versión de partida:** rama `area-animaciones` @ `713fe8d`, copia `D:\Aethelgard_animaciones`, con lo nuevo de sonido
+importado con datos aislados (`D:\REBELUM_diagnostico\importaciones\anim_20261109_001449`). Todo lo comprobado es del
+2026-11-09, con datos aislados; la carpeta real de datos no cambió en ninguna ejecución.
+
+**Commits** en `area-animaciones`, sin publicar:
+- `361495b`: marcha por velocidad (`maga_3d.gd`, `kael_3d.gd`, `garon_3d.gd`, `prototipos/vista3d.gd`);
+- `b29540e`: al pararse, sin un paso de más (`maga_3d.gd`, `vista3d.gd`);
+- `2c1c160`: `zonas3d/grupo_3d.gd` (marcha, esperar y seguir, pasos);
+- `adb3f8c`: `zonas3d/pastos_verdes_3d.gd` (PV-03, PV-05 y pasos de Lya y Garon);
+- `2bbf973`: pruebas (`prueba_anim_pies.gd` nueva, `prueba_anim_pv_fotos.gd`, `lista_pruebas.txt`);
+- `b579b50`: retratos de Lya y sus fuentes de Blender;
+- `f5ab5bf`: `kael.dch`, `lya.dch`, `retrato_vivo.gd`, `prologo.dtl`, `pv_0{2,3,5,6,7}.dtl`, `prueba_prologo.gd`;
+- `65f7a52`: el `.uid` de la prueba nueva;
+- `4ea2eab`: `prueba_anim_pies.gd` comprueba un solo nodo de pasos por personaje;
+- y el de este informe, con la fila nueva de `docs/recursos.md`.
+
+### 1. Pies que patinan (decisión 1 del coordinador)
+
+**La causa, medida** (`pruebas/prueba_anim_pies.gd`, *comprobado ejecutando*): los clips son «en el sitio» y el pie
+apoyado va hacia atrás a una velocidad fija. Medida en Godot, a cámara lenta y a 1,7 m de alto: Kael anda a 1,18 m/s y
+corre a 3,90; Lya, 1,50 y 5,26; Garon, 1,09 y 3,64 (en Blender, tanda 1: 1,20/4,14, 1,51/5,40 y 1,22/3,57). Los tres
+vienen del mismo movimiento: ciclo de 1,03 s al andar y de 0,63 s al correr, y el pie izquierdo apoya al 26 % y al 29 %
+del ciclo. Se andaba a 4,2 m/s con el clip de andar: el pie apoyado resbalaba a unos 3 m/s.
+
+**Qué he hecho:**
+- `maga_3d.gd`, **`marcha(v)`**: elige andar o correr por la velocidad real en el suelo y pone el ritmo que deja el pie
+  quieto (velocidad / velocidad del clip, escalada con el tamaño del personaje). Cambia por la media geométrica de los
+  dos clips, con un margen de ±8 % para que no parpadee, y entra por el mismo punto de la zancada. El ritmo al correr
+  llega hasta ×1,8: a 7,56 m/s Kael pediría ×1,94 (6,2 pasos por segundo, como un molinillo) y con ×1,8 su pie se corre
+  un 7 %. Al arrancar desde quieto, fundido de 0,1 s entrando por la mitad del apoyo. Al pararse, **`parar_marcha()`**
+  congela la zancada mientras se funde con el reposo (antes daba un paso más con el cuerpo quieto, que además sonaba).
+  `andar()` y `correr()` del combate no cambian.
+- `prototipos/vista3d.gd`: Kael anima por su velocidad real. **La velocidad de juego no cambia**: 4,2 m/s con el
+  teclado y los toques cercanos, 7,56 con los lejanos. Decisión mía: **el stick del mando pasa a ser analógico**, como
+  en el mapa y en las zonas 2D (`mapa.gd`, `zona.gd`), del 30 % (1,3 m/s: el clip de andar a ×1,1) al 100 % (4,2). Sin
+  eso no había «stick poco inclinado»: la dirección se normalizaba. Se deshace con una línea (`fuerza`, `STICK_MIN`).
+- No he puesto aceleración a Kael, porque cambiaría cómo responde: el clip de andar sale con el stick suave y en el grupo.
+- `grupo_3d.gd`: Lya y Garon usan `marcha()` y se acercan andando los últimos pasos (`VEL_ACERCARSE` 1,3 m/s; antes 2,52
+  y se paraban en seco). Probé también una aceleración de 10 m/s² para sus arranques y la quité: se quedaban a 4,0 m del
+  de delante (`prueba_grupo3d` falla por encima de 4), frente a 1,8 m sin ella.
+
+**Antes y después** (mismo recorrido, mismas entradas y 30 fps fijos; registros y CSV en
+`D:\REBELUM_diagnostico\animaciones\2026-11-09\medidas\`: `pies_antes.log` con `antes\pies.csv`, y
+`pies_despues_final.log` con `despues\pies.csv`, del código final). Cuánto se corre el pie apoyado (plano) en cada paso:
+
+| | Kael | Lya | Garon |
+|---|---|---|---|
+| Andar con el stick (4,2 m/s) | 52 → 1,2 cm | 61 → 6,5 cm | 31 → 5 cm (5 apoyos: casi siempre apoya de puntillas) |
+| Correr hacia un toque (7,56 m/s) | 35 → 1,3 cm | 20 → 1,9 cm | 41 → 5 cm (un solo apoyo plano) |
+| Arranques y paradas | 66 → 1,3 cm | 55 → 1,9 cm | — |
+| Media vuelta | 66 → 1,0 cm | 85 → 4,7 cm | 55 → 50 cm (un apoyo, girando sobre sí) |
+| Stick poco inclinado | 57 → 1,9 cm (ahora anda a 1,3-2,5 m/s) | 79 → sin apoyos planos | — |
+
+Con el pie de apoyo aunque no esté plano (mediana de su velocidad con el cuerpo avanzando; incluye el rodar del talón a
+la punta, que en un paso bien hecho ronda 0,5-0,8 m/s): andando a 4,2 m/s, Kael pasa de 3,09 a 0,77 m/s, Lya de 2,91 a
+0,98 y Garon de 3,19 a 1,22; corriendo a 7,56, Kael de 3,63 a 0,86, Lya de 3,01 a 0,74 y Garon de 4,23 a 2,49 (su clip
+pediría ×2,1 y con el tope ×1,8 se corre un 13 %; más aún cuando alcanza a Lya a 8,7 m/s).
+
+**Vídeo:** `D:\REBELUM_diagnostico\animaciones\2026-11-09\video\pies_antes_despues.mp4` (35 s; antes a la izquierda y
+después a la derecha, con el zoom más cercano del juego, 9 m). Sus fotogramas están en `video\antes\` y `video\despues\`.
+Gráfica: `laminas\grafica_kael_andar_pie_apoyado_rojo_antes_verde_despues.png` (el pie apoyado de Kael, fotograma a
+fotograma, andando por el camino: en rojo, antes, siempre a unos 3 m/s; en verde, después, casi 0 tras cada apoyo; la
+línea gris es el cuerpo a 4,2 m/s y la rejilla va de 1 en 1 m/s).
+
+### 2. Presencia en PV-03 y PV-05 (decisión 2)
+
+- **PV-03:** al llegar al punto se pone el hito, Lya entra en el grupo y aparece en el camino, 4,5 m detrás de Kael.
+  Kael se para y no hay control durante 1,2 s mientras ella llega corriendo; luego empieza el diálogo. Quitada la unión
+  de `_tras_dialogo` (el sonido «union» sigue al acabar, como con Garon).
+- **PV-05:** Garon espera junto a Tilo desde que se entra, del lado por el que se llega y a 2 m o más de donde se pone
+  quien habla con Tilo. Está en su «Calma», con un cilindro de choque como el de Tilo, y mira a quien habla si la
+  conversación es a menos de 6 m. Al acabar PV-05 se pone en la fila desde ahí.
+- Lya y Garon entran en el grupo de la partida al empezar su escena, a la vez que el hito. Antes entraban al acabarla: si
+  la app se cerraba a media escena, se guardaba el hito sin ellos y ya no se unían.
+- **`grupo_3d.gd` mantiene su API** (para la Garganta 3D): todo lo de antes sigue igual. Lo nuevo es `esperar(nombre,
+  sitio, mirada)`, `seguir(nombre)`, `unir(n, desde, exacto := false)`, `esperando` y `pasos_superficie` (opcional).
+- *Comprobado ejecutando* (`prueba_anim_pv_fotos`, sin ventana y con ventana):
+  - Garon espera al entrar, y Lya está a 1,8 m de Kael antes de su primera frase.
+  - En todas las frases, quien escucha mira a quien habla (0°), salvo Tilo, que es una figura sin animación.
+  - Tras PV-05, el grupo es Lya y Garon (Garon a 2,1 m, en «Calma»).
+  - `prueba_ruta_alpha`: la misión entera, superada.
+
+### 3. Retratos vivos en Pastos Verdes (decisión 3)
+
+`kael.dch` y `lya.dch` tienen un retrato **`vivo_pv`**: el vivo (respira, resalta a quien habla y cambia de pose) con
+la escala y el desplazamiento del «normal». No sale un 12 % más grande ni 70 px más abajo (comprobado en las capturas:
+mismo tamaño y mismo sitio). En los `pv_0{2,3,5,6,7}.dtl`, los `join` pasan de `(normal)` a `(vivo_pv)` y algunas
+frases de Kael y Lya llevan delante una etiqueta de gesto, sin repetir seguidas. **El texto no cambia** (comprobado
+línea a línea). Garon y Tilo no tienen retrato: cuando hablan, los dos retratos quedan atenuados.
+
+### 4. Poses de Lya (decisión 4)
+
+- **De dónde sale su retrato** (*comprobado ejecutando*, Blender 5.2): `lya.png` es un render de su modelo en el clip
+  quieto `_01a19663` (fotograma 20), con los brazos bajados como el gesto «reposo» del juego y la cámara girada +14° y
+  6° hacia abajo. La silueta coincide en un 98,4 % (sin bajar los brazos, como mucho en un 84,8 %). La de Kael va a
+  −13,5°: los dos retratos se miran.
+- **Nuevas**, con su modelo, cámara, luz y un lienzo común (342 × 624; el original, 335 × 620; escala del `.dch`
+  compensada ×624/620):
+  - `lya_reposo`: el reposo original;
+  - `lya_preocupada`: las manos cruzadas sobre el pecho y la cabeza baja y ladeada hacia Kael;
+  - `lya_decidida`: la mano abierta sobre el pecho y la barbilla arriba;
+  - `lya_duda`: los dedos en la barbilla, el otro brazo bajo el codo y la cabeza ladeada.
+- **Sus manos no se cierran:** el modelo solo tiene el pulgar y una cadena «Middle», y los dedos no deforman (probado por
+  los tres ejes). Por eso los gestos son de mano abierta.
+- **Color y nitidez:** el color se ajusta como el de Kael (diferencia 0,089 → 0,042). Su original es además más nítido y
+  contrastado que estos renders (alta frecuencia ×0,56 y contraste ×0,82). La luz no lo arregla: probé 12 intensidades y
+  7 direcciones, y el preset de Kael ya era el mejor. Por eso `finalizar.py` tiene un «afinar» opcional (enfoque de 1 px
+  y contraste local de 6 px, sin halos) que lo deja en ×1,00 y ×0,93. Sin «afinar», los retratos de Kael se rehacen
+  **idénticos byte a byte** (comprobado). Queda una diferencia: el pelo del original tiene sombras algo más oscuras.
+- **Uso** (solo etiquetas):
+  - en el prólogo, sus cinco frases van en reposo (con «inquieta» solo se acerca), reposo, duda, decidida (etiqueta
+    nueva) y preocupada; nunca repite ilustración;
+  - en Pastos Verdes: preocupada (PV-05 y PV-07), decidida (PV-03) y duda (PV-07), más gestos breves sin ilustración
+    (inquieta, firme, sorpresa).
+  - `retrato_vivo.gd`: «decidida» hace el mismo gesto breve que «decidido».
+  - `prueba_prologo` comprueba ahora también sus poses (superada).
+- Hoja: `D:\REBELUM_diagnostico\animaciones\2026-11-09\retratos\lya_original_reposo_diferencia_y_poses.png` (el
+  original, el reposo nuevo, su diferencia y las tres poses; la silueta del reposo coincide con la del original al 99,1 %).
+
+### 5. Pasos de Lya y Garon (decisión 5)
+
+`grupo_3d.gd` les pone `Sonido.pasos_3d(nodo, pasos_superficie)` al crearlos: uno por personaje, también a Garon
+mientras espera (no suena porque no anda). `pastos_verdes_3d.gd` le da `suelo_de_pasos`, el mismo suelo que a Kael:
+piedra a menos de 1,15 m del sendero y hierba fuera. *Comprobado ejecutando* (`prueba_anim_pies`): Kael, Lya y Garon
+llevan un solo nodo «Pasos» cada uno; Kael no lleva dos. En `prueba_efectos` (superada), Kael da ahora 13 pasos en 2,6 s
+por el camino en vez de 8: son los apoyos que se ven (antes resbalaba en vez de pisar).
+
+### 6. Pruebas
+
+- Sueltas, todas superadas:
+  - `prueba_grupo3d` (Lya-Kael hasta 1,80 m, como antes) y `prueba_grupo3d_rutas` (hasta 3,45 m, como antes);
+  - `prueba_ruta_alpha`, `prueba_efectos` y `prueba_prologo`;
+  - `prueba_anim_pv_fotos`;
+  - `prueba_anim_pies limite=1.0` (nueva y automática: falla si vuelven a patinar).
+- **Batería completa** (2026-11-09 08:09-08:20, con el código final de los commits): **40 superadas, 0 fallidas**, 23
+  manuales (con ventana o a mano: no se pasan en lote) y 0 no seguras. La partida y la carpeta real de datos, sin
+  cambios. Había 13 Godot de otras copias (Garganta 3D y narrativa), anotados por el ejecutor. «Proyecto: cambiado» se
+  debe a la fila de `docs/recursos.md` que añadí durante la pasada y a un `__pycache__` de mis scripts de Blender en
+  `fuentes_blender\` (borrado). Resumen:
+  `D:\REBELUM_diagnostico\animaciones\2026-11-09\bateria\2026-11-09_080900\resumen.md`.
+- Después de la batería, `prueba_anim_pies` comprueba también los nodos de pasos (`pies_despues_final.log`, superada).
+- Giros, paradas y el puente están en el recorrido de `prueba_anim_pies`. La reentrada, la carga y la vuelta del combate,
+  en las pruebas de la batería (`prueba_grupo3d`, `prueba_zona3d`, `prueba_cofre3d`, `prueba_centinela`): `marcha()` no
+  guarda nada de una escena a otra, y al volver cada uno empieza en su reposo.
+
+### 7. Evidencias
+
+En `D:\REBELUM_diagnostico\animaciones\2026-11-09\`:
+- `video\pies_antes_despues.mp4` y `medidas\`, con los registros y CSV de antes y después;
+- `laminas\grafica_kael_andar_pie_apoyado_rojo_antes_verde_despues.png` y `laminas\pies_fotogramas_antes_izq_despues_dcha.png`
+  (los mismos fotogramas del recorrido, antes y después);
+- `pastos_verdes\despues\`: cada frase de PV-02, PV-03 y PV-05, la llegada de Lya, Garon esperando y uniéndose, y
+  primeros planos. Las de antes son las de la tanda 1, en `2026-11-08\pastos_verdes\despues\`;
+- `prologo\despues\`: cada frase al salir (`_a`) y al final de la lectura (`_b`), el reabierto deprisa, la vuelta al
+  mapa y los fotogramas para el vídeo;
+- `laminas\pastos_verdes_antes_izq_despues_dcha.png` y `laminas\prologo_lya_frases_1_3_5_7_9_antes_izq_despues_dcha.png`;
+- `retratos\`: la hoja de Lya y `lya_afinado_prueba.png` (el original, sin afinar y afinado);
+- `ejecuciones\` y `bateria\`.
+
+### 8. Incidente: la carpeta temporal compartida
+
+A las 07:19, el especialista de gráficos escribió en la raíz de la carpeta temporal compartida un `godot_aislado.ps1`
+que pisó el mío. Mis dos órdenes de las 07:19:58 y las 07:24:59 (`prueba_grupo3d` y `prueba_grupo3d_rutas`) lanzaron su
+ejecutor y abrieron el juego sobre `D:\Aethelgard_graficos`, con datos aislados. Sus registros están en
+`D:\REBELUM_diagnostico\mapamundi\2026-11-09\registros\_071958` y `_072459`.
+- Lo vi en la salida y cerré el segundo Godot (PID 24304 y 6808, hijos de mi orden).
+- Pasé mis herramientas a `scratchpad\animaciones\`: `anim_godot.ps1` apunta a `D:\Aethelgard_animaciones`.
+- Borré mi copia de la raíz y repetí las dos pruebas, a las 07:29 y a las 07:37, sin fallos.
+
+### 9. Límites
+
+- **Sin probar en el Redmi** (no compilo APK) y **sin medir rendimiento** (había otros trabajando): `marcha()` hace unas
+  cuentas por fotograma y personaje; los cuatro retratos nuevos, de 342 × 624, van comprimidos como los demás.
+- **Giros rápidos:** el cuerpo gira entero en 0,12 s y el pie apoyado barre un arco (en el eslalon, Lya y Garon llegan a
+  unos 3 m/s en esos fotogramas). Garon corriendo a 7,56-8,7 m/s se corre un 13-30 % (tope ×1,8).
+- **El stick analógico** cambia el tacto del mando (no el del teclado ni el de los toques). Si no gusta, se quita.
+- **Pasos del grupo:** suenan como los de Kael, con el mismo volumen y sin posición. Ver §10.
+- **Lya:** su pelo sale algo más claro que en el original, y sus manos no se pueden cerrar.
+- **La aparición de Lya** a 4,5 m sigue viéndose: la cámara no gira y a 20 m cubre unos 12 m a cada lado. Para que
+  entrara desde fuera de la pantalla, tendría que aparecer a 13 m o más y habría que esperar unos 2,5 s.
+- `pruebas/prueba_boton_prologo.gd.uid` (de T-081, no mío) queda sin confirmar.
+
+### 10. Siguiente paso y cambios que necesito en archivos de otros
+
+- **Sonido (`sonido.gd`, `Pasos3D`):** una opción de volumen por cuerpo, o pasos 3D con posición, para que los de Lya y
+  Garon suenen algo por debajo de los de Kael. Hoy los tres comparten los «paso_*» (2 voces y 0,09 s entre dos iguales).
+- **Garganta 3D:** puede usar `grupo_3d.gd` igual que antes. Si quiere pasos para el grupo, que le dé `pasos_superficie`
+  antes de `preparar()`; `esperar()` y `seguir()` sirven para quien espera en la zona.
+- **Decidir:** el stick analógico (§1) y si Lya debe aparecer más lejos en PV-03 (§9).
