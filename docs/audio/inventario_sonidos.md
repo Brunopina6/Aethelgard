@@ -669,6 +669,81 @@ Muestras (cada bus por separado, para escucharlo): `D:\REBELUM_diagnostico\sonid
 y los WAV `buses_*_<bus>.wav` en `D:\REBELUM_diagnostico\pruebas\2026-11-09_185932\prueba_efectos_senal\`.
 **Límite:** la medida es por nivel (RMS), no por bandas de frecuencia. Un efecto agudo se oye sobre una música grave
 aunque tengan el mismo RMS. Por eso las propuestas 1 y 2 hay que escucharlas.
+## Tanda 7 (2026-11-09, noche): la mezcla del combate aplicada y la memoria del audio
+
+### La mezcla del combate (decisión del coordinador, reversible; el usuario aún no lo ha escuchado)
+
+- **En combate, la música se aparta sola cuando suenan efectos** (propuesta C de la tanda 6). La activa
+  `APARTAR_MUSICA_EN_COMBATE` en `sonido.gd`:
+  - es un `AudioEffectCompressor` al final del bus Musica que escucha al bus Efectos (sidechain);
+  - se pone solo mientras el contexto de `Musica` es «combate» y se quita al salir;
+  - ajustes conservadores para que no «bombee» (`APARTAR`): umbral −30 dB, ratio 2:1, ataque 30 ms, suelta 800 ms.
+- **Un limitador suave en el Master** (`LIMITADOR_MASTER`): `AudioEffectHardLimiter` con techo de −1 dBFS y suelta de
+  0,15 s. Solo toca los picos que pasarían de −1 dBFS.
+- **Para volver atrás**, basta con poner las dos constantes a `false`. La alternativa B (la música del combate de −6 a
+  −10 dB en `combate.gd`) queda documentada y medida abajo.
+
+Medido el 09/11 con el mismo combate de 15 s (`prueba_efectos_senal`, «mezclas=6», con ventana y el driver real):
+
+| Combate | Música (RMS) | Efectos (RMS) | Efectos sobre la música (mediana · peor) | Interfaz sobre la música | Pico del Master |
+|---|---|---|---|---|---|
+| Antes (música −6 dB, sin apartar, sin limitador) | −19,2 | −23,4 | −8,4 dB · −24,9 | −12,7 dB | −2,9 (en otras pasadas, hasta −0,3) |
+| **Ahora** (la música se aparta y hay limitador) | −24,7 | −23,5 | **+1,6 dB** · −18,0 | −10,3 dB | −4,4 |
+| Alternativa B (música −10 dB, sin apartar) | −24,2 | −23,5 | −3,4 dB · −22,0 | −7,9 dB | −1,9 |
+
+En este combate de prueba los efectos suenan el 67 % del tiempo, así que la música pasa casi todo el rato apartada: baja
+5,5 dB de media. En un combate de verdad hay más silencios y bajará menos. Hay que escucharlo: si se nota que la música
+sube y baja, toca una suelta más larga o volver a la B. Lo comprueba `prueba_efectos`, parte «mezcla»: en combate el
+compresor está, con su sidechain y un ratio suave; fuera, no; y el limitador está en el Master.
+
+### El eco de la Garganta 3D
+
+Sigue limitado a esa zona, como pide el usuario hasta que escuche las muestras. Solo lo pide `garganta_3d.gd`
+(`Sonido.eco(self, "garganta")`) y se quita solo al salir de la escena (`prueba_efectos`, parte «garganta3d»).
+
+### La memoria del audio
+
+`pruebas/prueba_audio_memoria.gd` (nueva, sin ventana y aislada) suma lo que ocupa cada sonido en la RAM (los datos del
+`AudioStreamWAV` o del MP3, que se cargan enteros) y en el paquete (el recurso importado).
+
+| | Sonidos | RAM (datos) | Paquete | Memoria estática al cargarlos |
+|---|---|---|---|---|
+| Antes de la tanda 7 | 276 (275 WAV en QOA y la música MP3) | 22,45 MB | 22,55 MB | +22,9 MB |
+| Después | 276 | **19,47 MB** | **19,57 MB** | +20,0 MB |
+
+- **Qué cambia:** ocho bucles largos se importan a menos frecuencia (`force/max_rate` en su `.import`):
+  - viento, viento del abismo, taberna y los murmullos de la plaza y del mercado, a 22 050 Hz;
+  - pradera, mazmorra y desierto, a 32 000 Hz.
+  - Solo donde lo que hay por encima de la nueva mitad (11 o 16 kHz) quedaba **entre 52 y 81 dB por debajo** del total
+    del bucle. Lo medí el 09/11 con una FFT de 80 bloques por archivo, con un guion propio en Python y sin instalar
+    nada.
+  - Bosque, río, cascadas y la fuente tienen hojas o agua por encima de 12 kHz (entre −18 y −28 dB): se quedan a
+    48 kHz.
+- **Qué no cambia:** los WAV del repositorio, los volúmenes y los cortes de bucle. Medido con el driver real: los
+  ambientes salen igual (pradera −28,5 frente a −29,1; mazmorra −34,5 frente a −34,7; desierto −33,6 frente a −34,1;
+  mapa −38,7 frente a −38,7). La diferencia, de ±0,6 dB, es la del punto de arranque al azar: el bosque, que no cambia,
+  también se mueve. En la plaza, el ambiente sigue en −30,7 dBFS.
+- **Todos los WAV del juego ya estaban en QOA** (ninguno en PCM), salvo los 5 «typing» de ejemplo de Dialogic
+  (`addons/`, 0,1 MB).
+- **Ogg Vorbis en streaming: no se ha podido.** Ni Godot ni la biblioteca estándar de Python codifican Vorbis, y no
+  puedo instalar un codificador. Si se autoriza uno (ffmpeg u oggenc) o se convierten fuera, los candidatos son:
+  - los 13 bucles largos, que ocupan 8,7 MB de los 19,5;
+  - en Ogg a unos 96 kbit/s ocuparían unos 4,5 MB, en streaming (sin cargarlos enteros);
+  - la clase de cada recurso cambiaría de `AudioStreamWAV` a `AudioStreamOggVorbis`, y `sonido.gd` ya los trata igual
+    al reproducirlos.
+
+**Lo más grande que queda es la música del combate** (`musica_combate_normal.mp3`, 6,6 MB, el 34 %). La pantalla de carga
+(`recursos.gd`) la carga al abrir el juego aunque solo suena en combate. **Propuesta** para quien lleve `recursos.gd`:
+excluirla de la carga inicial y cargarla al entrar en combate. Así se ahorran 6,6 MB de RAM fuera del combate. Su
+licencia sigue pendiente.
+
+Otras propuestas, sin aplicar porque cambian cómo suena:
+- los cinco ambientes estéreo (`audio/ambiente`) en mono ahorrarían otros ~2 MB, pero se pierde la anchura;
+- dar a cada lugar sus bucles en vez de tenerlos todos cargados (por ejemplo, una carpeta `audio/bucles/` que
+  `recursos.gd` no cargue al abrir y que `sonido.gd` cargue y suelte por escena) ahorraría ~7 MB fuera de cada lugar.
+
+Evidencias: `D:\REBELUM_diagnostico\sonido_muestras\2026-11-09_tanda7\memoria\`: los registros de antes y después y
+`memoria_audio_*.csv`, una fila por sonido. La mezcla está en `…\2026-11-09_tanda7\indice.md` y en `…\despues\`.
 ## Candidatos aún sin usar
 
 - **Alternativas para escuchar y elegir:** `victory_…_01_s29` y `…_02_s29` (otra victoria), InspectorJ
