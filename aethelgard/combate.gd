@@ -1817,7 +1817,7 @@ func _guardia(obj: Dictionary) -> void:
 		p.mirar(Vector3(signf(dx) * 0.9, 0.0, 0.45), 0.2)
 		if p.has_method("avanzar"):
 			p.avanzar(0.8)
-	_sonar("defensa")                                # una vez, al ponerse en guardia (sonido: pedido «guardia» propio)
+	_sonar("guardia")                                # una vez, al ponerse en guardia (sonido.gd, tanda 5)
 	_sena_arte("guardia", obj, {"desde": _centro(quien) - _centro(obj)})
 	_numero_flotante(obj, "Guardia", GUARDIA["color"], 30)
 	await get_tree().create_timer(0.7).timeout
@@ -2271,6 +2271,13 @@ func _brasa_levanta(f: Dictionary) -> void:
 # sin el aviso de Sonido.efecto por un nombre que no conoce). La señal «sonido_pedido» sale siempre: con ella las pruebas
 # comprueban que cada uno se pide una sola vez y en su momento, también antes de que exista el archivo.
 signal sonido_pedido(nombre: String)
+signal voz_pedida(quien: String, evento: String)   # las voces de los héroes (tanda 5), para las pruebas
+
+
+# Una voz de héroe o enemigo (sonido.gd elige la familia por su nombre o su clave); la señal sale siempre.
+func _voz(quien: Dictionary, evento: String) -> void:
+	voz_pedida.emit(str(quien.get("nombre", "")), evento)
+	Sonido.voz(quien, evento)
 
 
 func _sonar(nombre: String) -> void:
@@ -2426,6 +2433,8 @@ func _usar_objeto(nombre: String, quien: Dictionary) -> void:
 	var cura: int = min(o["cura"], quien[campo + "_max"] - quien[campo])
 	quien[campo] += cura
 	Sonido.efecto("pocion", {"tono": 1.0 if campo == "hp" else 1.12})   # el frasco (sonido.gd)
+	if campo == "hp" and cura > 0:                     # su alivio, si la poción le cura PV (sonido.gd, tanda 5)
+		_voz(quien, "alivio")
 	if quien == actor:
 		registro.text = "%s usa %s (+%d %s)" % [quien["nombre"], nombre, cura, o["que"]]
 	else:
@@ -3146,6 +3155,7 @@ func _anim_fisico_3d(o: Dictionary, obj: Dictionary, impacto: Callable) -> void:
 	t1.tween_property(rig, "position", base + Vector2(dx, dy), 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	await t1.finished
 	maga.preparar_golpe()
+	_voz(o, "ataque")                                # su esfuerzo al golpear (sonido.gd, tanda 5)
 	await get_tree().create_timer(0.28).timeout
 	maga.golpear()
 	await get_tree().create_timer(0.1).timeout
@@ -3182,6 +3192,7 @@ func _anim_salto_3d(o: Dictionary, obj: Dictionary, impacto: Callable) -> void:
 	k.ataque_salto(_impacto_fuerte.bind(impacto))
 	await get_tree().create_timer(SALTO_T[0]).timeout
 	Sonido.efecto("salto")                         # el sable sube con el salto (sonido.gd)
+	_voz(o, "ataque")                              # su esfuerzo al saltar (sonido.gd, tanda 5)
 	o["suelo_salto"] = despegue.y                  # la sombra se queda en el suelo mientras salta
 	var t2 := create_tween()
 	t2.tween_property(rig, "position", despegue + Vector2(-40, -130), SALTO_T[1]).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
@@ -4310,6 +4321,9 @@ func _comprobar_fin() -> bool:
 		estado = "fin"
 		_ocultar_menu()
 		Sonido.efecto("victoria" if ganan else "derrota")   # sonido.gd
+		if ganan:                                      # el gesto de uno de los que siguen en pie (tanda 5)
+			voz_pedida.emit("", "victoria")
+			Sonido.victoria_heroes(heroes)
 		registro.text = "¡Victoria!" if ganan else "Derrota..."
 		if ganan:
 			for h in heroes:
