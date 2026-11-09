@@ -268,3 +268,134 @@ fachada sur y el tejado: en 3D les faltan las otras tres fachadas y los interior
   medir en un hueco sin otra carga (memoria de vídeo y fotograma en PC y Redmi) y decidir si las texturas grandes van
   comprimidas en VRAM.
 - Oakhaven 3D: partir de los `.blend`; la posada necesita su interior.
+
+## 2026-11-09 18:30 · T-102: la Garganta 3D, primer tramo pulido (entrada, primera cornisa y primer puente)
+
+Especialista de gráficos en `D:\Aethelgard_garganta3d`, rama `area-garganta3d`. Antes de empezar, unión `--no-ff` de
+`integracion-experimental` (`eb8bd94`) → `cc9a07a`. Referencia de ambiente: «Aventura entre Cascadas y Ruinas»
+(`D:\REBELUM_diagnostico\entradas\2026-11-09_imagenes\rebelum_paisaje.webp`): senda empedrada, roca con estratos y
+musgo, puente de cuerda con postes y faroles, agua que cae entre acantilados.
+
+### 1. Qué se ha hecho (observado en el código y comprobado ejecutando, aislado)
+
+**Por qué se veía plano** (capturas de antes): la pared era un gris liso de grano grande; el suelo, gravilla parda con
+losas hexagonales sueltas y esferas grises; el puente, tablas casi iguales y cuerdas finas; el abismo, sin agua ni
+bruma cerca del camino; los faroles, un cubo encendido sin llama.
+
+- **Entrada (umbral, z = 33,6):** dos piedras hincadas de los peregrinos con el anillo partido en bronce, una cuerda
+  de cintas de oración combada entre ellas y una antorcha en cada una (llama viva, halo y calor en la roca).
+- **Vía del Peregrino:** adoquines irregulares y gastados (cuatro formas en MultiMesh), juntos en el centro y sueltos
+  en los bordes, algunos verdosos u ocres; peñas facetadas con el sombreado de la roca y musgo encima; helechos y
+  matas verdes al pie del muro y junto al agua; la hierba de esos rincones, verde (el resto sigue seca).
+- **Roca:** vetas finas de los estratos (cada 0,85 m) con su labio claro y musgo vivo en los labios; roca mojada,
+  más oscura y con luz fría junto a la caída; resplandor cálido de hasta 8 fuegos pintado en la roca, sin luces
+  reales. Fuegos, humedad y distancia se calculan en los vértices.
+- **La caída del primer puente:** agua que brota de una grieta del muro del oeste junto al primer hueco y cae al
+  abismo, en arco; espuma, resplandor frío, bruma que sube (4/7/11 partículas por perfil), rocío que llega al puente
+  (medio y alto) y un colchón de niebla fría bajo el puente (medio y alto): la profundidad se lee.
+- **Primer puente colgante (y el segundo):** cada tabla con su ancho, grosor, giro y tono (algunas de un arreglo,
+  otras partidas, clavos en medio y alto); largueros y travesaños; pasamanos gruesos, cuerda baja, tirantes con nudo;
+  vueltas de cuerda en los pilares; vientos a estacas; dos faroles colgados en la entrada del primero. **Se mece**:
+  5 cm de lado a lado y 2 cm arriba y abajo en el centro, nada en los extremos, a destiempo en el segundo. Solo se
+  mueve el dibujo: **la colisión es la misma de antes** (no hay atascos ni caídas, comprobado).
+- **Faroles de piedra:** con su llama; los del primer tramo tiñen la roca de al lado. En el perfil alto, sus luces
+  reales tiemblan como el fuego. El farol de la cabeza del primer puente deja su sitio a los faroles colgados.
+- **Escalera de la presa** (se ve desde la entrada): sillares con su tono y albardilla con musgo; misma colisión.
+- **Intacto:** `trazado.gd` (geografía, piezas, posiciones, por dónde se anda, zonas de cámara), identificadores,
+  encuentros, progreso, combates fijos y la 2D.
+
+**Perfiles** (detalle escalonado; el alto no se rebaja): bajo sin relieve, sin grano cercano, veta sencilla, una capa de
+agua, 4 brumas, sin rocío ni colchón de niebla, menos piezas pequeñas en el puente (sin cuerda baja, nudos ni clavos);
+medio y alto, todo.
+
+### 2. Archivos y commits (rama `area-garganta3d`)
+
+- `cc9a07a` unión de `integracion-experimental` (`eb8bd94`).
+- `acfb5e3` `zonas3d/garganta/roca.gd`: `Lotes.poner_color` (color por vértice en un lote).
+- `a331006` `zonas3d/garganta/materiales.gd`: sombreados (roca, puente que se mece, llama, bruma, hierba verde).
+- `c69c045` `zonas3d/garganta/piezas.gd` y `zonas3d/garganta_3d.gd`: los puentes colgantes y el temblor del fuego.
+- `a0ee5ff` `zonas3d/garganta/escenario.gd`: entrada, adoquines, peñas, helechos, caída, faroles y escalera.
+- `b266e61` pruebas: `pruebas/prueba_garganta3d_tramo.gd` (nueva, auto), `pruebas/prueba_garganta3d_tramo_fotos.gd`
+  (nueva, ventana) con su `.uid`, y sus dos líneas en `pruebas/lista_pruebas.txt`.
+- Este informe, en su propio commit.
+- `.uid` ajeno apartado (no confirmado): `pruebas/prueba_orden_pv03.gd.uid` →
+  `D:\REBELUM_respaldos\2026-11-09_uids\aethelgard\pruebas\`. El de `prueba_garganta3d_tramo.gd` no lo generó Godot
+  (lo hará el editor).
+
+### 3. Pruebas
+
+- **Importación aislada** de la copia tras la unión: sin errores (datos en
+  `D:\REBELUM_diagnostico\importaciones\garganta3d_2026-11-09\`).
+- **`prueba_garganta3d_tramo`** (nueva, auto, SUPERADA en todas las pasadas): entrada → umbral → cornisa → cabeza
+  del puente → mitad → islote y vuelta con el dedo (26-65 fotogramas por tramo); de la entrada al islote y de vuelta
+  con la cruceta (183 y 162 fotogramas); empujando a izquierda y derecha en mitad del puente, Kael se queda en el
+  tablero (x = −12,70 y −11,30; el tablero va de −13,1 a −10,9); altura mínima −0,54 m (la comba del puente); los
+  158 cuerpos que chocan, quietos; la escena trae caída, bruma, luz fría, cintas, helechos y llamas.
+- **`prueba_garganta3d`** (la de siempre): SUPERADA tras los cambios.
+- **Batería completa aislada** sobre `b266e61`: SUPERADAS 56 · FALLIDAS 2 · MANUALES 32 · NO SEGURAS 0; `partida.save`
+  real, carpeta real de datos y proyecto sin cambios
+  (`D:\REBELUM_diagnostico\garganta3d\2026-11-09\bateria\2026-11-09_181258\resumen.md`). Las dos fallidas son
+  `prueba_mando` y `prueba_teclado` («Intro / A junto a Tilo no abre el diálogo», en Pastos Verdes): **no vienen de
+  T-102**. Fallan igual con el código de la Garganta de antes
+  (`D:\REBELUM_diagnostico\garganta3d\2026-11-09\bateria\con_codigo_de_antes\2026-11-09_182317\`) y fallaron igual a
+  las 17:46-17:47 en las copias de animaciones y combate (`D:\REBELUM_diagnostico\pruebas\2026-11-09_174617\` y
+  `2026-11-09_174741\`): llegan con la unión de `eb8bd94`. `prueba_dpad`, `prueba_toque` y `prueba_escenas`: SUPERADAS
+  (repetidas en `D:\REBELUM_diagnostico\garganta3d\2026-11-09\bateria\2026-11-09_182231\`).
+- Aviso que no es mío: «N resources still in use at exit» sale en casi todas las pruebas de esta integración (también
+  en las de otras copias) y con `--verbose` son reproducciones de audio vivas al salir; es intermitente.
+- **Cortes de Godot con ventana:** 4 de unas 20 pasadas con ventana terminaron a los pocos segundos con código 0 y sin
+  error ni rastro en el registro de Windows, **también con el código de antes** (2 de ellas). Lanzado a mano (aislado)
+  no se repitió. Pendiente de averiguar; no parece de la escena (había 4-12 Godot de otros especialistas abiertos).
+
+### 4. Evidencias (PC: Intel + RTX 3050 Laptop, OpenGL 3.3 Compatibility; NO es el Redmi)
+
+- **Comparación antes/después desde los mismos puntos** (9 vistas: 6 con la cámara del juego y 3 fijas):
+  `D:\REBELUM_diagnostico\garganta3d\2026-11-09\comparacion_tramo_alto.jpg` y `comparacion_tramo_bajo.jpg`.
+  Las capturas sueltas: antes en `...\2026-11-09\ab\antes_1\...\prueba_garganta3d_tramo_fotos\` (y
+  `...\antes\2026-11-09_174027\`), después en `...\ab\despues_1\...` (1280 × 720) y
+  `...\despues\2026-11-09_181206\` (1600 × 720, el móvil 20:9: con el aspecto «keep» el juego dibuja 1280 × 720 con
+  franjas, así que la imagen del juego es la misma; antes en `...\antes\2026-11-09_173045\`).
+- **Dibujo por vista** (deterministas; `...\2026-11-09\ab\comparacion_dibujo.txt`): llamadas de dibujo bajo
+  +9 a +32 (p. ej. cornisa 119 → 143, puente 104 → 123), alto +15 a +44 (cornisa 207 → 242); primitivas +8-10 % en
+  bajo (168 k → 185 k en la cornisa) y +11-14 % en alto (453 k → 521 k).
+- **GPU del PC por vista** (medianas, dos pasadas alternas antes/después): bajo 0,58 → 0,64 ms en la cornisa y el
+  puente (+0,06 ms); alto 1,50 → 1,29-1,63 ms (dentro del ruido).
+- **Tiempos por fotograma** (`medir_garganta3d`, PC, alterno; `...\2026-11-09\ab_medida\comparacion_medida.txt`):
+  con otros Godot en marcha, el ruido (±1 ms) es del tamaño de la diferencia: bajo, entrada 4,35 → 4,03 ms y puentes
+  3,85 → 4,29 ms (mediana); alto, entrada 4,21 → 7,13 ms y puentes 4,20 → 5,94 ms (la arena, que no cambia, también
+  subió 1,2 ms: no concluyente). Hay que repetirlo en un hueco sin otra carga.
+- **Memoria** (misma medida): vídeo +0,6 MB (bajo) y +1,5 MB (alto); estática +1 MB.
+- **Carga de la región** (conteo sin ventana, alterno): bajo 1,44-1,69 s → 1,59-1,82 s, alto 1,75-2,01 s →
+  2,11-2,46 s (+0,1 a +0,4 s: la generación por código de peñas, adoquines y tablas). Con ventana: alto 3,52 → 3,69 s,
+  bajo 2,52 → 2,50 s.
+- **Conteo de la escena** (bajo/alto): mallas 173/188 → 198/215, MultiMesh 15 → 23, transparentes 40/46 → 56/63,
+  partículas 36/130 → 40/169, triángulos de malla 192 k/260 k → 196 k/276 k, roca igual, luces reales igual (0/6).
+- **malioc (Mali-G57)**, estimación con el código del sombreado de roca pasado a ESSL 3.0 (sin la iluminación de
+  Godot): ciclos aritméticos del fragmento, bajo 3,10 → 4,12 y alto 4,00 → 6,78, registros 32 → 31 (ocupación 100 %).
+  Llama 1,50 ciclos; madera del puente 1,12. Archivos en `D:\REBELUM_diagnostico\garganta3d\2026-11-09\malioc\`.
+  Primer intento: 8,60 ciclos en bajo con los fuegos por píxel; por eso fuegos, humedad y distancia pasaron a los
+  vértices y la veta del bajo va sin suavizado.
+
+### 5. Límites
+
+- **Pendiente en Redmi:** fluidez de la entrada y del puente en el perfil bajo (la roca cuesta +1 ciclo por píxel
+  según malioc), las ~25 llamadas de dibujo más, la carga (+0,1-0,4 s en el PC) y cómo se ven las vetas, la bruma y la
+  llama a 720 p. Nada de esto se ha probado en el teléfono.
+- Los tiempos por fotograma del PC no son concluyentes (otros Godot abiertos).
+- El aspecto lo he juzgado yo en las capturas; falta el juicio del usuario (sobre todo la caída nueva junto al primer
+  puente y el tono de las tablas).
+- Sonido del tramo (agua de la caída, crujido del puente, viento): no es mío; lo pido abajo.
+- Kael no sube y baja con el vaivén (2 cm): no se nota en las capturas.
+
+### 6. Siguiente paso y cambios que pido
+
+1. Medir en el Redmi el perfil bajo en la entrada y el primer puente; si no llega a 30 FPS: quitar las vetas del
+   bajo (−0,6 ciclos) y juntar las llamas en una malla (−10 llamadas).
+2. El mismo acabado en el resto (segundo puente ya mece; faltan islote, levadizo, puerta, arena, cornisa baja, nido,
+   palanca y grieta).
+3. **Sonido** (especialista de sonido), en `garganta_3d.gd`, `_sonido_3d`: una `fuente_3d` de agua en la caída del
+   primer puente (x ≈ −15, y ≈ −2, z = 15,2) y crujidos de madera al pisar los puentes colgantes.
+4. Que el coordinador repita `medir_garganta3d` en un hueco sin otra carga (alterno antes/después) para cerrar los
+   tiempos del PC.
+5. **Coordinador:** `prueba_mando` y `prueba_teclado` fallan desde la unión de `eb8bd94` (también en otras copias):
+   revisar el diálogo de Tilo con Intro / A en `integracion-experimental`.
