@@ -85,7 +85,8 @@ func _capturar() -> void:
 	m.jugador.position = m.lugares[0]["pos"] + Vector2(20, 0)
 	await _esperar(4)
 	await _pulsar(KEY_ENTER)
-	await _hasta(func(): return _escena() == ZONA and not R.cambiando and current_scene.jugador != null, 60.0)
+	# junto a Oakhaven: desde T-089, su ciudad hecha a mano (ciudad_oakhaven.tscn, hereda de zona.gd)
+	await _hasta(func(): return _escena() in [ZONA, "res://ciudad_oakhaven.tscn"] and not R.cambiando and current_scene.jugador != null, 60.0)
 	await _esperar(20)
 	var z = current_scene
 	await _pulsar(KEY_TAB)
