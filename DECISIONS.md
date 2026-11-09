@@ -88,6 +88,7 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 | [D-074](#d-074) | La Garganta del Diablo pasa a 3D como mazmorra (cambia el plan 3D, que la dejaba en 2D) | Aprobada |
 | [D-075](#d-075) | Recursos que aporta el usuario el 09/11: el bestiario, el paquete de dos espadas y el logotipo | Aprobada |
 | [D-076](#d-076) | **Todas las ciudades, pueblos y posadas pasan a 3D jugable**, al nivel de Pastos Verdes; la Garganta, pulida como mazmorra | Aprobada |
+| [D-077](#d-077) | Sesión «calidad AAA, sin Redmi» (09/11 tarde): personalidad de los héroes y decisiones del coordinador | Aprobada en el encargo |
 | [D-H01 a D-H15](#6-diseño-ya-implementado-del-3010-al-0511) | Diseño ya implementado antes de Git | Aprobada (historial) |
 
 ## 1. Reglas de trabajo, Git y versiones
@@ -1402,6 +1403,29 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 - **Perfiles:** el Redmi ajusta sombras, niebla, transparencias y detalle lejano; el perfil alto no se rebaja.
 - **Orden:** terminar lo que está en marcha; después, primero el tramo pulido de la Garganta y luego el primer
   recorrido 3D de Oakhaven con su posada, cada uno con su APK y su ruta.
+
+### D-077
+**Sesión «calidad AAA, sin Redmi» y decisiones del coordinador (09/11, de 17:30 a 22:50)**
+- **Encargo** [usuario]: «quiero que utilices los programas necesarios de mi pc para mejorar mapas animaciones
+  personajes, necesito que los personajes tengan personalidad … convirtiéndolo en un juego AAA … NO PARES», con la
+  instrucción de **no usar el Redmi** (fuera de casa): nada de instalar, desplegar ni pedir pruebas manuales; lo que
+  dependa del teléfono se anota como pendiente (`docs/pruebas_redmi_pendientes.md`) y se sigue con otra mejora.
+  No se afirma ningún rendimiento Android sin medirlo.
+- **Decisiones del coordinador** (reversibles; el usuario lo delegó todo, D-073):
+  - Zarzalín a ×1,25 en combate; su botín, «Corteza espinosa», se vende por 18 monedas, sin recetas.
+  - Los comentarios de los héroes al explorar son por sesión (no se guardan en la partida).
+  - Las charlas de posada vistas se guardan como estado de Oakhaven dentro de «mazmorras» (clave que ya existía).
+  - Comer en la posada: sopa del día, 10 monedas, recupera PV y no PM; la posadera pregunta «¿Algo más?».
+  - La Cura (magia protegida, D-048) no pide voz de alivio por ahora.
+  - C2: la primera victoria contra Gorthor da las Fauces de Gorthor (estaba en la lista de D-073); la huella de
+    combate cambia solo en esa línea de E8 y se regeneró con su justificación (`ebae3ed`, rama `area-combate`).
+  - La app de pruebas se llama «REBELUM Exp» (mismo paquete `com.aethelgard.experimental`: se actualiza encima).
+  - El icono del proyecto pasa a ser el de REBELUM; la app estable no se compila ni se instala.
+  - En la mano de Kael no hay ninguna marca: los gestos usan el brazalete, sin revelar nada.
+- **Herramientas:** el lanzador de pruebas vigila la carpeta real que da Windows aunque APPDATA venga desviada
+  (`eef300c`); prueba nueva de integridad (`cd2a405`).
+- **Publicado:** Prueba v293 en `Aethelgard-pruebas` (`exp-20261109-dca4c1c`, SHA-256 `3dbe855e…`), sin copiarla al
+  Redmi.
 
 ## 6. Diseño ya implementado del 30/10 al 05/11
 

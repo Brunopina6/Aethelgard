@@ -19,6 +19,17 @@ pidió no preguntar ([MEMORIA_CHAT.md](MEMORIA_CHAT.md)). **La memoria describe 
   (desde `c74b872`): diseño y maqueta jugable, activable con `-- garganta3d`.
 - **Mapamundi pintado: integrado** (`a04a9d2`) con el selector en Ajustes (`14aea04`). Batería: 40 superadas, 0
   fallidas. Falta medirlo. La memoria describe `integracion-experimental` @ `14aea04`.
+- **09/11 ~22:50, Prueba v293 publicada (sin Redmi).** `integracion-experimental` @ `dca4c1c` (batería 67/0,
+  `D:\REBELUM_diagnostico\pruebas\2026-11-09_185720\`), subida y comprobada. APK en `Aethelgard-pruebas`, release
+  «09/11/2026 · Prueba v293» (`exp-20261109-dca4c1c`, Latest, 293 147 570 bytes, SHA-256 `3dbe855e…`); el registro
+  del script la marca NO DISTRIBUIR (Meshy, Zarzalín y dibujos sin origen) y no lleva música de Suno. **No se ha
+  copiado al Redmi** (el usuario está fuera); cuando vuelva, la instala él y sigue `docs/pruebas_redmi_pendientes.md`.
+  - **Reanudados los cinco especialistas** (21:50), cada uno en su copia: combate (M4, C2, voces t5), sonido
+    (tanda 6), narrativa (notas de lore y la pregunta de la posadera), animaciones (cerrar T-101) y gráficos
+    (optimizar la Garganta y T-103 en `area-oakhaven3d`).
+  - **Ya confirmado en sus ramas y sin integrar:** combate `f7cc79e`, sonido `a97c786`, narrativa `34c7591` y
+    animaciones `095f2cf`. Se integran cuando cada uno entregue su informe con la batería.
+  - Decisiones de la tarde en [D-077](DECISIONS.md#d-077).
 - **09/11 ~19:20, punto de control por el límite de uso (sesión «calidad AAA, sin Redmi»).** Subido y comprobado:
   `integracion-experimental` @ `955345a` (batería 64/0, `D:\REBELUM_diagnostico\pruebas\2026-11-09_184606\`) y todas
   las ramas de área. Local sin subir: `f2e9c9f` (une la Garganta completa y Oakhaven viva, ramas ya subidas); su

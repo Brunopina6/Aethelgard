@@ -222,6 +222,15 @@
       (compañeros); los secretos, grutas y posadas van en T-089 y T-090; decisión [D-072](DECISIONS.md#d-072).
     - La inspiración, solo de principios.
     - Un compañero nuevo en el grupo va como propuesta, porque es una decisión de historia.
+- **09/11** [usuario]:
+  - **Mediodía:** aportó el bestiario (seis bestias, Zarzalín primero), dos skills de Claude, el logotipo REBELUM para
+    la pantalla de carga y el icono, y el encargo del HUD de PM, las artes y la invocación de Érebo ([D-075](DECISIONS.md#d-075)).
+  - **12:35:** la Garganta del Diablo y todas las ciudades en 3D ([D-076](DECISIONS.md#d-076)).
+  - **Tarde:** «sube ya todos los cambios a github y continua» (se subieron las ramas revisadas; el bloque B, no).
+  - **~17:30:** personajes con personalidad y calidad «AAA», usando los programas del PC, **sin el Redmi** (está
+    fuera de casa): lo del teléfono, a `docs/pruebas_redmi_pendientes.md` ([D-077](DECISIONS.md#d-077)).
+  - **Hecho y publicado:** Prueba v293 con esperas y voces de los héroes, charlas de posada, comentarios, HUD de
+    PM, Zarzalín, Escarcha y Guardia, la Garganta 3D pulida, Oakhaven con arte y vecinos, y el icono REBELUM.
 
 ## Índice
 

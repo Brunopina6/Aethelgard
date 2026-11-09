@@ -72,13 +72,13 @@
 | [T-094](#t-094) | Compañeros de viaje: propuesta y versión que no cambie el canon | Propuesta hecha; decide el usuario | Media |
 | [T-095](#t-095) | La Garganta del Diablo en 3D, como mazmorra (petición del 09/11) | Maqueta integrada; se elige en Ajustes (v136) | Alta |
 | [T-096](#t-096) | Dos skills de Claude: Godot (Atlas Agent Teams) y Blender Animation (Dominations) | Hecha (`129b517`) | Alta |
-| [T-097](#t-097) | El bestiario: Zarzalín y las otras cinco bestias como enemigos jugables | Pendiente | Alta |
-| [T-098](#t-098) | El nombre REBELUM en la pantalla de carga y el icono nuevo de la app | Hecha en el PC (`96b2a37`); falta verla en el Redmi | Alta |
-| [T-099](#t-099) | Barra de PM de cada personaje en el HUD de combate | En curso (combate, desde las 13:05) | Alta |
-| [T-100](#t-100) | Artes jugables (continúa T-091) y la técnica de guardia de Garon | Pendiente | Alta |
-| [T-101](#t-101) | La invocación de Érebo, una cinemática que merezca verse | Pendiente | Alta |
-| [T-102](#t-102) | Pulir la Garganta del Diablo 3D como mazmorra, con acabado de juego | Pendiente | Alta |
-| [T-103](#t-103) | **Todas las ciudades, pueblos y posadas en 3D jugable**, al nivel de Pastos Verdes; primero Oakhaven y su posada | Pendiente | Alta |
+| [T-097](#t-097) | El bestiario: Zarzalín y las otras cinco bestias como enemigos jugables | Zarzalín jugable en el PC (v293); faltan las otras cinco | Alta |
+| [T-098](#t-098) | El nombre REBELUM en la pantalla de carga y el icono nuevo de la app | Hecha en el PC (`96b2a37`, v293); falta verla en el Redmi | Alta |
+| [T-099](#t-099) | Barra de PM de cada personaje en el HUD de combate | Hecha en el PC (`a9d316d`, v293); falta leerla en el Redmi | Alta |
+| [T-100](#t-100) | Artes jugables (continúa T-091) y la técnica de guardia de Garon | Escarcha (M3) y Guardia hechas en el PC (v293); M4 y C2 en curso | Alta |
+| [T-101](#t-101) | La invocación de Érebo, una cinemática que merezca verse | En curso (animaciones: variante nueva en Ajustes, sin integrar) | Alta |
+| [T-102](#t-102) | Pulir la Garganta del Diablo 3D como mazmorra, con acabado de juego | Hecha en el PC (`75f3bc0`, v293); falta el Redmi; optimización en curso | Alta |
+| [T-103](#t-103) | **Todas las ciudades, pueblos y posadas en 3D jugable**, al nivel de Pastos Verdes; primero Oakhaven y su posada | En curso (gráficos, rama `area-oakhaven3d`); Oakhaven 2D con arte y vecinos vivos en v293 | Alta |
 
 ## Continuidad
 
