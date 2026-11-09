@@ -4,7 +4,8 @@ extends SceneTree
 #   Godot --path aethelgard --script res://pruebas/prueba_prologo_fotos.gd --fixed-fps 30 -- <carpeta> 3d [variante=existente] [etiqueta=antes]
 # Partida nueva (por defecto): «<etiqueta>_entrada_NN» (la entrada, fotograma a fotograma, a modo de vídeo),
 # «<etiqueta>_frase_NN» (cada frase ya escrita entera) y «<etiqueta>_despues» (el mapa al terminar). Comprueba que
-# cada pulsación de Intro avanza una sola frase y que, al acabar, el jugador vuelve a moverse.
+# cada pulsación de Intro avanza una sola frase y que, al acabar, el jugador vuelve a moverse. De cada frase imprime
+# también cuántas líneas ocupa en la caja del móvil (T-086: el criterio son dos; en una caben unos 75 caracteres).
 # Partida existente («variante=existente»): guarda antes una partida con el prólogo visto y comprueba qué sale al abrir.
 # FALLO si el prólogo no aparece en la partida nueva, si aparece en la existente o si se pierde el control.
 
@@ -141,7 +142,9 @@ func _probar() -> void:
 		await _esperar(6)
 		await _foto("%s_frase_%02d" % [etiqueta, n])
 		var texto: String = _texto_visible()
-		print("FRASE %02d · %s" % [n, texto.left(90)])
+		var lineas := _lineas()
+		_lineas_max = maxi(_lineas_max, lineas)
+		print("FRASE %02d · %d línea(s) · %s" % [n, lineas, texto.left(90)])
 		await _pulsar(KEY_ENTER)
 		await _esperar(4)
 		if D.current_timeline != null and D.current_state == D.States.IDLE and _texto_visible() == texto:
@@ -149,7 +152,7 @@ func _probar() -> void:
 	await _hasta(func(): return D.current_timeline == null, 10.0)
 	var duracion := (Time.get_ticks_usec() - t0) / 1e6
 	_medir(false)
-	print("FRASES: %d" % n)
+	print("FRASES: %d · la más larga ocupa %d línea(s) en la caja" % [n, _lineas_max])
 	print("PEOR FOTOGRAMA: el n.º %d desde que se llega al mapa (%s)" % [_peor_en, _peor_que])
 	if _tl >= 0:
 		var fin := _tl_fin if _tl_fin > _tl else _todos.size()
@@ -267,6 +270,17 @@ func _texto_visible() -> String:
 		if n is RichTextLabel and n.is_visible_in_tree():
 			return n.get_parsed_text()
 	return ""
+
+
+# Líneas que ocupa la frase en la caja (con su ancho y su letra de verdad; las que corta el ajuste cuentan).
+var _lineas_max := 0
+
+
+func _lineas() -> int:
+	for n in get_nodes_in_group("dialogic_dialog_text"):
+		if n is RichTextLabel and n.is_visible_in_tree():
+			return n.get_line_count()
+	return 0
 
 
 func _guardar_partida_existente() -> void:
