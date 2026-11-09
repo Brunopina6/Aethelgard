@@ -158,7 +158,8 @@ const NPCS := [
 				"si": ["estado:favores", "!cond:favores_listos", "!hito:oak_favores"], "prioridad": true},
 			{"dialogo": "oak_posadera"},
 			{"dialogo": "oak_posadera_favores", "si": ["!estado:favores", "!hito:oak_favores"]},
-			{"dialogo": "oak_posadera_niebla"}],
+			{"dialogo": "oak_posadera_niebla"},
+			{"dialogo": "oak_posadera_servicios"}],   # «¿Algo más?»: la sopa y los rumores (oakhaven_posada.gd)
 		"frases": ["Bienvenido al Cuervo Oxidado. Cama, sopa y silencio: treinta monedas.",
 			"El silencio no lo garantizo. Los de la mesa del fondo cantan."]},
 	{"id": "albar", "nombre": "Albar", "corto": "Albar", "personaje": "albar",
@@ -374,7 +375,7 @@ const NOTAS := [
 const SENALES := ["oak:pip_pagar", "oak:favores_aceptados", "oak:favor_barril", "oak:favor_flores",
 	"oak:favor_cucharon", "oak:favores_hechos", "oak:faroles_aceptados", "oak:farol_1", "oak:farol_2", "oak:farol_3",
 	"oak:faroles_hechos", "oak:lavanda_pedida", "oak:lavanda_cogida", "oak:lavanda_entregada", "oak:encina_gracias",
-	"oak:torre", "oak:grieta", "oak:vista_raices"]
+	"oak:torre", "oak:grieta", "oak:vista_raices", "oak:sopa", "oak:rumor"]
 # Condiciones con nombre (las demás: hito:, estado:, decision:k=v, grupo:, oro:n, modo:3d/2d y ganado:<combate fijo>,
 # uno de «combates_ganados», como garganta_gorthor; «!» las niega).
 const CONDICIONES := {
@@ -595,8 +596,9 @@ static func error_condicion(cond: Variant) -> String:
 
 # ================================================================= efectos (señales de los diálogos y de las piezas)
 
-# Aplica una señal «oak:…» y devuelve el aviso que enseñar ("" si no hace nada). Cada efecto se aplica una sola vez:
-# repetir la señal no da dos veces la recompensa. Las señales de otros sitios (sin «oak:») se ignoran.
+# Aplica una señal «oak:…» y devuelve el aviso que enseñar ("" si no hace nada). Cada efecto se aplica una sola vez
+# repetir la señal no da dos veces la recompensa (salvo «oak:sopa», que es un servicio que se paga cada vez). Las señales
+# de otros sitios (sin «oak:») se ignoran.
 static func aplicar_senal(arg: Variant) -> String:
 	var s := str(arg)
 	if not s.begins_with("oak:"):
@@ -604,6 +606,10 @@ static func aplicar_senal(arg: Variant) -> String:
 	var P = _p()
 	var k := s.trim_prefix("oak:")
 	match s:
+		"oak:sopa":                                   # un servicio de la posada: se repite (ciudades/oakhaven_posada.gd)
+			return load("res://ciudades/oakhaven_posada.gd").comer()["texto"]
+		"oak:rumor":                                  # el rumor lo cuenta la posadera en otro diálogo (ciudad_oakhaven.gd)
+			return ""
 		"oak:pip_pagar":
 			if cumple("decision:pip_oak=pagado") or not load("res://inventario.gd").gastar_oro(1):
 				return ""

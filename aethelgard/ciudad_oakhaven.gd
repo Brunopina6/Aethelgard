@@ -113,6 +113,7 @@ var viajando := false                     # fundido de la torre o la grieta: Kae
 var brillo_grieta := false
 var cambios := false                      # una señal de un diálogo cambió la partida: se guarda al acabar
 var noche_invitada := false
+var rumor_pendiente := ""                 # el rumor que la posadera cuenta al acabar el diálogo de sus servicios
 var velo_patio: Polygon2D                 # el Patio de las Velas, a oscuras hasta pasar la grieta
 var r_ronda: Rect2                        # rectángulos de LUGARES que se miran en cada fotograma
 var r_raices: Rect2
@@ -1348,6 +1349,9 @@ func _al_senal(arg) -> void:
 	if not s.begins_with("oak:"):
 		return
 	cambios = true
+	if s == "oak:rumor":                         # la posadera lo cuenta al acabar este diálogo (_al_acabar_dialogo)
+		rumor_pendiente = Posada.rumor()["texto"]
+		return
 	var t := Oak.aplicar_senal(s)
 	if t == "":
 		return
@@ -1359,15 +1363,34 @@ func _al_senal(arg) -> void:
 
 func _al_acabar_dialogo() -> void:
 	_poner_oro()
+	if rumor_pendiente != "":
+		var texto := rumor_pendiente
+		rumor_pendiente = ""
+		get_tree().create_timer(0.2).timeout.connect(func():   # (Dialogic acaba de cerrar: un momento)
+			if is_instance_valid(self) and not saliendo:
+				_contar_rumor(texto))
 	if cambios:
 		cambios = false
 		_guardar()
 
 
+# El rumor de la posadera (ciudades/oakhaven_posada.gd), en su caja de diálogo: una frase hecha al momento.
+func _contar_rumor(texto: String) -> void:
+	var D = get_node_or_null("/root/Dialogic")
+	if D == null or D.current_timeline != null:
+		_avisar(texto)
+		return
+	var t := DialogicTimeline.new()
+	t.from_text("join posadera (normal) center\nposadera: %s\nleave posadera" % texto)
+	tiene_destino = false
+	boton_examinar.visible = false
+	D.start(t)
+
+
 static func _efecto_de(s: String) -> String:
 	if s == "":
 		return ""
-	if s == "oak:pip_pagar":
+	if s in ["oak:pip_pagar", "oak:sopa"]:
 		return "monedas"
 	if s.begins_with("oak:farol_"):                # Kael enciende un farol de la ronda (tanda 3 de sonido)
 		return "farol"
