@@ -29,6 +29,7 @@ const PESTANAS := ["Objetos", "Equipo", "Magias"]
 var pestana := "Objetos"
 var Inv
 var Grupo
+var Artes                                          # artes.gd (T-091): sus libros, detrás de los de siempre
 var cuerpo: VBoxContainer
 var lbl_oro: Label
 var lbl_aviso: Label
@@ -40,6 +41,7 @@ func _ready() -> void:
 	add_to_group("menu_quieto")                  # Recursos activa el modo ahorro mientras está abierta
 	Inv = load("res://inventario.gd")
 	Grupo = load("res://grupo.gd")
+	Artes = load("res://artes.gd")
 	size = Vector2(1280, 720)
 	var oscuro := ColorRect.new()
 	oscuro.color = Color(Estilo.SOMBRA, 0.55)
@@ -159,14 +161,14 @@ func _pintar() -> void:
 					EQUIPO[id], func(): _comprar_equipo(id), tiene)
 		"Magias":
 			var romano := ["", "I", "II", "III"]
-			for l in LIBROS:
-				var nombre: String = load("res://combate.gd").NIVELES_MAGIA[l[0]][l[1] - 1]["nombre"]
+			for l in LIBROS + Artes.libros_en_venta():    # las de siempre y, detrás, las artes ya en el juego
+				var nombre := _nombre_libro(l[0], l[1])
 				var quienes := PackedStringArray()
 				var la_usan := 0                          # los que están ahora en el grupo y usan esa magia
 				for h in Grupo.activos():
-					if l[0] in Grupo.HEROES[h]["magias"]:
+					if _usa(h, l[0]):
 						la_usan += 1
-						if Grupo.nivel_magia(h, l[0]) < l[1]:
+						if _sabe(h, l[0]) < l[1]:
 							quienes.append(h)
 				var info := "Para: " + ", ".join(quienes)
 				if quienes.is_empty():
@@ -222,7 +224,7 @@ func _comprar_equipo(id: String) -> void:
 func _comprar_libro(l: Array) -> void:
 	var quienes: Array = []
 	for h in Grupo.activos():
-		if l[0] in Grupo.HEROES[h]["magias"] and Grupo.nivel_magia(h, l[0]) < l[1]:
+		if _usa(h, l[0]) and _sabe(h, l[0]) < l[1]:
 			quienes.append(h)
 	if quienes.size() == 1:
 		_dar_libro(l, quienes[0])
@@ -245,13 +247,34 @@ func _comprar_libro(l: Array) -> void:
 
 func _dar_libro(l: Array, heroe: String) -> void:
 	if Inv.gastar_oro(l[2]):
-		Grupo.aprender(heroe, l[0], l[1])
+		_aprender(heroe, l[0], l[1])
 		Sonido.efecto("monedas")
-		var nombre: String = load("res://combate.gd").NIVELES_MAGIA[l[0]][l[1] - 1]["nombre"]
-		_avisar("%s aprende %s." % [heroe, nombre])
+		_avisar("%s aprende %s." % [heroe, _nombre_libro(l[0], l[1])])
 	else:
 		Sonido.efecto("ui_error")
 	_pintar()
+
+
+# Libros: de las magias de siempre (grupo.gd) o de las artes (artes.gd, que se apuntan en los mismos «libros»).
+func _usa(h: String, magia: String) -> bool:
+	return magia in (Artes.familias_de(h) if Artes.es_arte(magia) else Grupo.HEROES[h]["magias"])
+
+
+func _sabe(h: String, magia: String) -> int:
+	return Artes.nivel(h, magia) if Artes.es_arte(magia) else Grupo.nivel_magia(h, magia)
+
+
+func _nombre_libro(magia: String, n: int) -> String:
+	if Artes.es_arte(magia):
+		return Artes.datos(magia, n)["nombre"]
+	return load("res://combate.gd").NIVELES_MAGIA[magia][n - 1]["nombre"]
+
+
+func _aprender(h: String, magia: String, n: int) -> void:
+	if Artes.es_arte(magia):
+		Artes.aprender(h, magia, n)                 # grupo.gd aprender() no las conoce
+	else:
+		Grupo.aprender(h, magia, n)
 
 
 func _avisar(t: String) -> void:

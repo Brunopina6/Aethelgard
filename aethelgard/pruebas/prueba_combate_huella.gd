@@ -22,9 +22,10 @@ extends SceneTree
 # juego siguen al azar y aquí salen de la semilla. E1 a E8 no cambian con C0: ninguno lanza esas dos magias.
 #
 # Argumentos (después de --): semilla=N · salida=<carpeta> (escribe ahí huella_combate.txt) · dos_pasadas o
-# pasadas=N (para buscar lo que no es fijo) · solo=E1,E3 · sin_referencia (para sacar una referencia nueva) ·
-# con_enganches (añade una pasada, la última, con pruebas/combate_con_artes.gd: los enganches de M1 y M2 sin tocar
-# combate.gd; sin usar las artes, su huella tiene que ser la misma).
+# pasadas=N (para buscar lo que no es fijo) · solo=E1,E3 · sin_referencia (para sacar una referencia nueva).
+# Con M1, M2 y C1 enganchados en combate.gd (09/11), la referencia es la misma: ningún combate usa artes ni equipo
+# nuevo, ni cruza un umbral de las artes al subir de nivel. Así se comprueba que lo nuevo, sin usarse, no cambia nada.
+# (La pasada «con_enganches» con pruebas/combate_con_artes.gd ya no hace falta: ese archivo se borró al enganchar.)
 # La huella cambia si cambian las reglas, el orden de las tiradas del generador global (también las de los efectos
 # visuales, como _temblor) o lo que duran las animaciones. Entonces se revisa la diferencia y, si es la esperada, se
 # saca otra referencia (cómo, en la cabecera de pruebas/referencias/huella_combate.txt).
@@ -84,7 +85,6 @@ var salida := ""
 var pasadas := 1                                 # «dos_pasadas» = 2; «pasadas=N» para buscar lo que no es fijo
 var con_referencia := true
 var solo: Array = []
-var con_enganches := false                       # «con_enganches»: combate.gd con los enganches de M1 y M2 (pruebas)
 
 var pendientes: Array = []                       # [{"pasada", "indice"}]
 var actual := {}
@@ -126,19 +126,15 @@ func _initialize() -> void:
 			con_referencia = false
 		elif a.begins_with("solo="):
 			solo = Array(a.substr(5).split(",", false))
-		elif a == "con_enganches":
-			con_enganches = true
 	Engine.set_meta("archivo_partida_prueba", ARCHIVO)
-	if con_enganches:                             # una pasada más, la última, con los enganches de M1 y M2
-		pasadas += 1
 	for p in range(1, pasadas + 1):
 		huellas[p] = {}
 		for i in ESCENARIOS.size():
 			var id: String = ESCENARIOS[i]["id"]
 			if solo.is_empty() or id in solo or id.get_slice("_", 0) in solo:
-				pendientes.append({"pasada": p, "indice": i, "enganches": con_enganches and p == pasadas})
-	print("Huella del combate · semilla %d · %d combates%s%s" % [semilla, pendientes.size(),
-		(" (%d pasadas)" % pasadas) if pasadas > 1 else "", "; la última, con los enganches de M1 y M2" if con_enganches else ""])
+				pendientes.append({"pasada": p, "indice": i})
+	print("Huella del combate · semilla %d · %d combates%s" % [semilla, pendientes.size(),
+		(" (%d pasadas)" % pasadas) if pasadas > 1 else ""])
 
 
 func _process(delta: float) -> bool:
@@ -208,12 +204,7 @@ func _empezar(item: Dictionary) -> void:
 	bolsa_antes = {"oro": I.oro(), "Poción": I.cantidad("Poción"), "Éter": I.cantidad("Éter")}
 	guion = actual["guion"].duplicate(true)
 	decidido = false
-	if item.get("enganches", false):             # combate.tscn es un Node2D con combate.gd: lo mismo, con los enganches
-		c = Node2D.new()
-		c.name = "combate"
-		c.set_script(load("res://pruebas/combate_con_artes.gd"))
-	else:
-		c = load("res://combate.tscn").instantiate()
+	c = load("res://combate.tscn").instantiate()
 	root.add_child(c)                            # aquí se ejecuta su _ready entero (con randomize())
 	var s: int = semilla + 1000 * (indice + 1)
 	seed(s)                                      # desde aquí, todo lo que tira el generador global es fijo
@@ -541,19 +532,13 @@ func _terminar() -> void:
 				if not b.has(id):
 					fallos.append("%s: falta la pasada %d" % [id, pas])
 					continue
-				if con_enganches and pas == pasadas:
-					_comparar(id, a[id], b[id], "los enganches de M1 y M2 (combate_con_artes.gd) cambian el combate sin usar las artes")
-				else:
-					_comparar(id, a[id], b[id], "la pasada 1 y la %d difieren (¿algo no determinista?)" % pas)
+				_comparar(id, a[id], b[id], "la pasada 1 y la %d difieren (¿algo no determinista?)" % pas)
 		if fallos.size() == antes:
-			print("OK: las %d pasadas dan la misma huella (%d combates)%s" % [pasadas, huellas[1].size(),
-				"; también con los enganches de M1 y M2" if con_enganches else ""])
+			print("OK: las %d pasadas dan la misma huella (%d combates)" % [pasadas, huellas[1].size()])
 	if salida != "":
 		DirAccess.make_dir_recursive_absolute(salida)
 		for pas in range(1, pasadas + 1):
 			var nombre := "huella_combate.txt" if pas == 1 else "huella_combate_pasada%d.txt" % pas
-			if con_enganches and pas == pasadas:
-				nombre = "huella_combate_enganches.txt"
 			var f := FileAccess.open(salida.path_join(nombre), FileAccess.WRITE)
 			if f == null:
 				fallos.append("no se pudo escribir la huella en %s" % salida)

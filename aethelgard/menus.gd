@@ -330,6 +330,7 @@ func _usar_fuera(objeto: String, heroe_n: String) -> void:
 
 func _pintar_habilidades() -> void:
 	var niveles: Dictionary = load("res://combate.gd").NIVELES_MAGIA
+	var Artes = load("res://artes.gd")              # artes (T-091): solo los niveles que ya están en el juego
 	var romano := ["I", "II", "III"]
 	for n in Grupo.activos():
 		cuerpo.add_child(_texto("%s (nivel %d)" % [n, Grupo.datos()[n]["nivel"]], 24, COLOR_TITULO))
@@ -344,6 +345,15 @@ func _pintar_habilidades() -> void:
 					cuerpo.add_child(_texto(texto + "   ✔", 18, COLOR_BIEN))
 				else:
 					cuerpo.add_child(_texto(texto + "   (se aprende al nivel %d)" % Grupo.NIVEL_MAGIA[i], 18, COLOR_SUAVE))
+		for fam in Artes.familias_de(n):
+			var sabe: int = Artes.nivel(n, fam)
+			for i in int(Artes.ACTIVOS.get(fam, 0)):
+				var d: Dictionary = Artes.datos(fam, i + 1)
+				var texto := "   %s %s — %s, %d PM, %s" % [fam, romano[i], d["nombre"], d["coste"], "a todos" if d["todos"] else "a uno"]
+				if i < sabe:
+					cuerpo.add_child(_texto(texto + "   ✔", 18, COLOR_BIEN))
+				else:
+					cuerpo.add_child(_texto(texto + "   (se aprende al nivel %d)" % Artes.UMBRALES[fam][i], 18, COLOR_SUAVE))
 
 
 # ---------------------------------------------------------------- Ajustes

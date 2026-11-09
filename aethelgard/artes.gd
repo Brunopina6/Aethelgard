@@ -2,8 +2,9 @@ extends RefCounted
 # Artes (Godot 4.x): las tres familias de magia nuevas de T-091, que no hacen daño (docs/diseno/combate_ampliaciones.md,
 # §3): Alba (Kael) mueve el ATB, Escarcha (Kael) pone corazas y Lumbre (Lya) levanta y sostiene.
 # Datos y lógica sin escena: trabajan sobre los diccionarios de luchador de combate.gd («hp», «hp_max», «mp», «atb»,
-# «hero»...) y sobre su cola de turnos. combate.gd, menu_combate.gd, menus.gd y tienda.gd los usarán por los enganches
-# de docs/diseno/combate_enganches.md; hasta entonces, nada del juego llama a este archivo.
+# «hero»...) y sobre su cola de turnos. Enganchado el 09/11 (docs/diseno/combate_enganches.md): combate.gd (menú de
+# magia, lanzar, Aliento y aviso al subir de nivel), menu_combate.gd (pestañas e iconos), menus.gd (Habilidades) y
+# tienda.gd (libros). Falta el Diario (diario.gd, de narrativa): fichas_activas().
 # Uso:  var Artes = load("res://artes.gd");  Artes.nivel("Kael", "Alba")...
 #
 # Lo que no cambia (D-048, D-037): las 12 magias de siempre siguen su camino (ninguna arte pasa por _animar_golpe,
