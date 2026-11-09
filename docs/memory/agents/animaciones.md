@@ -743,3 +743,165 @@ salir y al final de la lectura). El «antes» comparable es el de la tanda 2:
      las miradas de `grupo_3d.gd`;
   3. andares propios (clips de Blender con el mismo método) si el porte sumado se queda corto;
   4. T-101, la cinemática de Érebo.
+
+## 2026-11-09 23:10 · T-101: la invocación nueva de Érebo (variante elegible en Ajustes; la de siempre, intacta) y el gesto de cubrir de Garon
+
+**Versión de partida:** `area-animaciones` @ `4705db9`. Uní `integracion-experimental` dos veces con `--no-ff` y sin
+conflictos: `6adc4d9` durante el trabajo (`da13602`) y `dca4c1c` al reanudar tras el límite de uso (`501fc78`). Los
+`.uid` sin seguimiento que ya venían en la integración (`prueba_orden_pv03.gd.uid` y `prueba_comentarios_3d.gd.uid`)
+están apartados en `D:\REBELUM_respaldos\2026-11-09_uids\animaciones\`. Todo lo comprobado es del 2026-11-09, con datos
+aislados; la carpeta real de datos no cambió en ninguna ejecución. **Sin Redmi.** Leídos T-101, T-051, T-072, las
+decisiones D1-D12 (`D:\Aethelgard\docs\erebo\invocacion_erebo_cinematica.md` y `invocacion_erebo_plan_final.md`) y la
+memoria `erebo-invocacion-direccion`.
+
+**Al reanudar:** las esperas a prueba de saltos (`_hasta_fin`) y los recortes de tiempo sí estaban guardados, en
+`ba858aa` (comprobado con `git show 095f2cf:aethelgard/invocacion_erebo_nueva.gd`). Lo que no había acabado era la
+batería: la de las 18:55 se cortó a medias y en ella `prueba_erebo_nueva` salió FALLIDA con «FALLOS: 0». **Causa:**
+`ejecutar_pruebas.ps1` busca `\bFALLO\b` sin distinguir mayúsculas (`-match`), y la prueba escribía «TEATRO fallo: …» en
+el caso de la mano vacía. Arreglado en la prueba (`521f2f0`: ahora escribe «mano vacía»); el ejecutor no lo toco.
+
+**Commits** en `area-animaciones`, sin publicar:
+- `ba858aa`: `invocacion_erebo_nueva.gd` (nuevo) y `erebo_3d.gd`;
+- `8ca0bc9`: la elección en Ajustes (`menus.gd`) y el enganche en el teatro (`combate.gd`, `_teatro_erebo`);
+- `64a9fb9`: `pruebas/prueba_erebo_nueva.gd`, `lista_pruebas.txt` y `animaciones/erebo/fuentes/referencia_erebo.py`;
+- `da13602` y `501fc78`: las uniones; `095f2cf`: los `.uid`;
+- `521f2f0`: la prueba no escribe «fallo» en lo normal y tiene un modo «video»;
+- `13708c0`: el plano lateral de P8 llega al agarrar el orbe (también con la mano vacía) y el enemigo se vacía mientras tira;
+- `f2d8960`: el gesto de cubrir de Garon en la Guardia (`garon_3d.gd` y `combate.gd`);
+- y el de este informe.
+
+### 1. Antes: la invocación de siempre (*comprobado ejecutando*, la misma prueba con «variante=actual»)
+- Dura **17,3 s** con éxito y **12,0 s** con fallo (la memoria hablaba de ≈16,4 s).
+- **La mano no llega al pecho:** Érebo se coloca a 0,95 m fijos del enemigo y la mano se queda en el aire (se ve en
+  `hoja_actual_exito_cada_0,5s.png`, filas 3-4). Es la causa medida en la Fase 1 (0,52-0,56 m de error).
+
+### 2. Vídeo de referencia (Blender 5.2.3 por script)
+`animaciones/erebo/fuentes/referencia_erebo.py` (con `.gdignore`) monta con los modelos del juego (Érebo con sus clips
+de Mixamo, Lya, Kael y Grimfang) los planos P1-P11 de la propuesta con sus tiempos y cámaras, y coloca a Érebo por la
+mano (corrección de 0,45 m: la mano quedaba a 0,46 m del pecho). Es una previsualización: sin efectos del juego.
+- `D:\REBELUM_diagnostico\animaciones\2026-11-09\erebo\referencia\erebo_nueva_exito_referencia.mp4` (11,8 s) y
+  `erebo_nueva_fallo_referencia.mp4` (9,0 s), 640 × 360, con el tiempo y el fotograma impresos;
+- `planos\exito_P*.png` y `planos\fallo_P*.png` (un fotograma por plano) y `hoja_planos_exito.png`.
+
+### 3. La nueva, en el juego (`invocacion_erebo_nueva.gd`)
+Sigue P1-P11 con las recomendaciones de D1-D12 que **siguen abiertas (T-072)**, tomadas como variante experimental:
+- **P1** Lya alza el cetro, la luz baja al 60 % y Kael se vuelve hacia ella; **P2** la sombra se desprende y corre a ras
+  de suelo; **P3** el enemigo se pone alerta, el suelo tiembla y sale el título; **P4** grúa en órbita de 140° mientras
+  Érebo **surge con la pose quieta** (D7), la cabeza baja y la levanta al final, y queda **levitando 5 cm** (D8); Kael da
+  medio paso atrás en guardia; **P5** por encima del hombro del enemigo, la máscara arriba; **P6-P7** por detrás del
+  hombro derecho de Érebo (D4), **se acerca flotando 0,3 m** (D6) y mete **la mano abierta** con un solo clip,
+  «Extraer» (D2); cámara lenta y pausa de impacto en el contacto, onda en el pecho y el enemigo se arquea; **P8** tira
+  del orbe (el enemigo se vacía) y se aparta flotando; **P9** de frente a la máscara, **tres latidos y 0,3 s de
+  silencio**; **P10** el resultado se aplica al cerrarse las palmas, plano general, Kael aparta la cara; **P11** se hunde
+  mientras la sombra vuelve a Lya, la luz sube, la cámara vuelve a la del teatro y Lya respira hondo.
+- **Fallo:** P1-P7, la mano sale vacía con humo, Kael resopla (su `espera_impaciencia`), a Lya se le escapa el aire, y
+  Érebo se hunde.
+- **Colocación por la mano** (el arreglo de la Fase 1, que se conserva): pecho real del enemigo (su `Spine2` más la
+  profundidad del torso, 0,133 × alto), la punta de la mano de Érebo en «Extraer» a 0,80 s medida en el propio juego
+  (`erebo_3d.gd`, `punta_en`), la escala `k = clamp(alto del pecho / alto de la mano, 0,8, 1,6)` (al menos ×1 si el pecho
+  está a 0,7 m o más) y una **IK de alcance** de dos huesos (`ik_mano`, dos pasadas por fotograma) que corrige el resto.
+  **Comprobado:** en el contacto, la punta queda a **1,0 cm** del punto del pecho con Grimfang y a **0,4 cm** con el
+  doble de jefe ×1,6 (Fase 1: 0-2 cm).
+- **Reglas sin cambios:** el mismo dado que la de siempre (`randf()` una vez, ninguna con un jefe), el resultado se aplica
+  **una vez** en el fotograma en que se cierran las palmas (o al saltar), y saltar devuelve tiempo, cámara, luces,
+  sombra y personajes. **Saltar ya no se puede quedar colgado:** las esperas largas de Érebo y la sombra van por
+  `_hasta_fin`, que también acaba si se salta (al saltar, `limpiar()` mata sus tweens y un `await tween.finished` no
+  volvería).
+- **Nada del acto III:** el orbe va vacío, sin hilos cálidos, sin puntos que se acumulen y sin reverencia; el título
+  sigue siendo «Ladrón de Corazones». Las variantes por etapa (E0-E4) no están: dependen de la biblia v3 (D5).
+- **Coste:** sin partículas nuevas (las de siempre de `erebo_3d.gd`, que ya bajan en «movil»); Kael es el mismo modelo
+  del combate. Sin medir en el móvil.
+- **`erebo_3d.gd`:** funciones nuevas (`emerger_quieto`, `deslizar`, `extraer_abierto`, `punta_en`, la IK de alcance) y
+  `aplastar` con latidos, silencio y modo rápido como parámetros. **Con los valores por defecto, la de siempre hace lo
+  mismo** (mismos tiempos, mismo número de latidos).
+
+### 4. Elegirla en Ajustes
+- `menus.gd`: «Invocación de Érebo: La de siempre / Nueva (en pruebas)», en los Ajustes de la versión experimental,
+  junto al mapa y la Garganta 3D; se guarda en `user://ajustes.cfg`, sección `[combate]`. **Por defecto, la de siempre.**
+- `combate.gd`, `_teatro_erebo`: si se ha elegido la nueva, usa `invocacion_erebo_nueva.gd` y le dice si Kael está en
+  pie. **No toco** las reglas, la Armonía ni el HUD de disponibilidad y motivo.
+
+### 5. Pruebas (aisladas, desde PowerShell)
+- **`prueba_erebo_nueva`** (nueva, automática; *comprobado ejecutando*). En un teatro como el del combate (Lya, Kael,
+  Grimfang y la cámara):
+
+  | Caso | Dura (con los 0,6 s en que vuelve la cámara) | Resultado aplicado | La punta de la mano, del pecho |
+  |---|---|---|---|
+  | Éxito | 12,7 s | una vez: muerte | 1,0 cm |
+  | Mano vacía | 10,0 s | una vez: nada | 1,0 cm |
+  | Jefe (doble ×1,6) | 12,7 s | una vez: 20 % de su vida actual, sin muerte | 0,4 cm |
+  | Saltada a los 0,5 s | 1,1 s | una vez | — |
+  | Saltada a los 9,5 s | 9,5 s | una vez | 1,0 cm |
+  | Mano vacía saltada a los 7,5 s | 7,5 s | una vez | 1,0 cm |
+
+  En todos, el tiempo vuelve a ×1, la cámara a su sitio, las luces a su energía y Érebo queda oculto. Y **en un combate
+  de verdad** (`combate.tscn` con «-- invocar erebo=exito erebo_nueva»): Lya invoca con la variante nueva, el enemigo
+  muere una vez, el teatro se cierra y el combate sigue. La de siempre, con la misma prueba («variante=actual»): 17,3 s y
+  12,0 s, resultado aplicado una vez.
+- **Batería completa** sobre `521f2f0` (tras unir `dca4c1c`; 22:46-23:00): **68 superadas, 0 fallidas, 35 manuales, 0 no
+  seguras**. Partida real (`A3F3C402…`) y carpeta real de datos **sin cambios**. Resumen:
+  `D:\REBELUM_diagnostico\animaciones\2026-11-09\bateria_t101_final\2026-11-09_224646\resumen.md`.
+  - **La huella del combate, intacta:** `prueba_combate_huella`, 9 de 9 combates iguales a la referencia y dos pasadas
+    iguales (con «Érebo» dentro, que usa la invocación de siempre). La invocación de siempre no cambia.
+  - `prueba_mando` y `prueba_teclado`, superadas (la integración ya traía su arreglo).
+- **Pasada final** con el código definitivo (`f2d8960`, 23:01-23:03): `prueba_erebo_nueva`, `prueba_combate_huella`,
+  `prueba_artes`, `prueba_artes_combate`, `prueba_hud_combate`, `prueba_esperas`, `prueba_grupo3d` y
+  `prueba_escarcha_guardia` (la Guardia de Garon en combates de verdad, con el gesto nuevo): **8 superadas, 0
+  fallidas**; partida y carpeta real sin cambios. Resúmenes en
+  `D:\REBELUM_diagnostico\animaciones\2026-11-09\bateria_t101_cubrir\`.
+- Importaciones aisladas: `D:\REBELUM_diagnostico\importaciones\anim_t101_*`.
+
+### 5 bis. Garon: el gesto de cubrir (la Guardia, T-100)
+- **Antes** (*observado en el código*): al elegir la Guardia, Garon se volvía hacia el aliado, daba un paso y a los
+  0,7 s volvía a su guardia de combate de siempre: nada distinguía que estaba cubriendo.
+- **Ahora** (`garon_3d.gd`, `cubrir()` y `fin_cubrir()`; `f2d8960`): se planta (rodillas dobladas, el peso abajo y el
+  cuerpo echado hacia el golpe, de cara a los enemigos y con las espadas en su guardia cruzada) y se queda así mientras
+  cubre: su reposo no lo quita. Lo deja al atacar o al caer, y `combate.gd` lo quita en `_quitar_guardia` cuando se
+  acaba la Guardia. Sin cambios de reglas ni de ATB (la huella, igual).
+- Probé antes unas espadas cruzadas en aspa delante del pecho (con giros de brazo): las hojas salían en horizontal, como
+  alas, porque la dirección de cada espada sale del pulgar de su mano. Lo dejé en la postura plantada, que se lee bien.
+- Capturas: `D:\REBELUM_diagnostico\animaciones\2026-11-09\garon_cubrir\garon_guardia_izq_cubre_dcha.png` (de 3/4 y de
+  lado, la guardia de siempre y cubriendo).
+
+### 6. Evidencias
+En `D:\REBELUM_diagnostico\animaciones\2026-11-09\erebo\`:
+- **`erebo_antes_izq_despues_dcha.mp4`** (30 s, 1920 × 600, 15 fps): la de siempre a la izquierda y la nueva a la
+  derecha, en el mismo teatro y con la misma luz, primero con éxito (17,3 s frente a 12,7 s) y después con la mano vacía
+  (12,0 s frente a 10,0 s). Sus fotogramas, en `video_juego\`;
+- `referencia\`: los dos vídeos de Blender, los planos y su hoja;
+- `hoja_actual_exito_cada_0,5s.png` y `hoja_nueva_exito_cada_0,5s.png` (antes y después, una captura cada 0,5 s en el
+  teatro con la luz del combate); `hoja_actual_fallo_…` y `hoja_nueva_fallo_…`;
+- `juego\`: las capturas sueltas y sus registros.
+
+### 7. Límites
+- **Pendiente en Redmi:** el coste en el Mali-G57 (no he medido rendimiento) y cómo se ven la luz que baja, la cámara
+  lenta y la grúa en el teléfono.
+- **D1-D12 siguen abiertas (T-072):** esto es la variante con las recomendaciones; lo decide el usuario viéndola.
+- **No hay versión corta (≈5,6 s)** de la nueva ni la regla de D11 (la completa la primera vez); con la nueva elegida
+  siempre se ve la completa (se puede saltar).
+- **Sin sonido nuevo** (D9, D12): usa los `erebo_*.wav` de siempre en los momentos nuevos (pulso en el contacto,
+  fractura, resonancia, susurros).
+- **El enemigo** solo se arquea, se vacía y muere como siempre (sin la ceniza violeta de D3) y no se gira hacia Érebo si
+  es un dibujo 2D.
+- **Las capturas** de la variante están hechas en el teatro de la prueba (mismo suelo, fondo y luces que el del
+  combate, sin el dibujo de la zona al fondo); la prueba también la juega en un combate de verdad (sin capturas).
+- **La de siempre** podría quedarse colgada si se salta justo durante el aplastamiento (espera un tween que `limpiar()`
+  mata). No lo he comprobado ni tocado: es su código. La nueva no tiene ese problema.
+- **La señal `aviso` de las otras cinco bestias** (cencerrante, custodio_cal, hilandera_eco, posadero_hueco y velaria): no
+  está hecha. Sus modelos solo están en la entrada del usuario
+  (`D:\REBELUM_diagnostico\entradas\2026-11-09_bestiario\REBELUM_Bestiario\modelos\`), no en el juego: cada una pide
+  prepararla como Zarzalín (T-097: modelo, clips de aviso, escena y guion) antes de poder emitir `aviso`.
+- **El plano lateral de P8** (lado B, como pide la propuesta) sale más oscuro que los demás: la luz del teatro viene del
+  lado A. Se ve la mano con el orbe, pero es el plano más apagado de la secuencia.
+
+### 8. Siguiente paso
+- Que el usuario vea la nueva (Ajustes → Invocación de Érebo → Nueva) y decida D1-D12; con lo que apruebe, la versión
+  corta, la regla de D11, la ceniza (D3) y las variantes por etapa (D5) cuando la v3 se cierre.
+- Medir en el Redmi y, si hiciera falta, los perfiles de D10.
+- **Pendiente en Redmi:** ver la nueva y el gesto de cubrir en el teléfono, y medir su coste.
+- **Cambios en archivos de otros (ya hechos en mi rama, para revisar al integrar):** `combate.gd` (la elección de la
+  invocación en `_teatro_erebo`; `cubrir` en `_guardia` y `fin_cubrir` en `_quitar_guardia`) y `menus.gd` (la opción de
+  Ajustes). Son pocas líneas y no tocan reglas, ATB ni HUD.
+- **Para el ejecutor (`pruebas/ejecutar_pruebas.ps1`, del coordinador):** `\bFALLO\b` se busca sin distinguir mayúsculas,
+  así que cualquier «fallo» en minúsculas de una línea normal marca la prueba como FALLIDA. Si se quiere, `-cmatch` en
+  ese patrón; mientras tanto, las pruebas no deben escribir «fallo» salvo para declarar uno.

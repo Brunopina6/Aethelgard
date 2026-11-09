@@ -37,7 +37,7 @@ const EFECTOS := {
 }
 # Incrementos ya enganchados en el juego (se añaden al enganchar: "C1", luego "M3", "C2" y "M4"). Lo que no está
 # disponible no se vende ni se da. C1, desde el 09/11: la ranura Accesorio y los seis accesorios de C1.
-const HECHOS: Array = ["C1"]
+const HECHOS: Array = ["C1", "M3", "M4", "C2"]   # M3, M4 y C2 enganchados el 09/11 (combate.gd)
 
 # Botín de las bestias (T-097, decisión del coordinador del 09/11): materiales que solo se venden (sin recetas). Al
 # ganar, cada enemigo de esa clave que no haya huido deja uno (combate.gd _repartir_exp); se guardan en los objetos del

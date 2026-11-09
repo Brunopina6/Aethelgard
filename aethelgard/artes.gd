@@ -22,7 +22,7 @@ const UMBRALES := {"Alba": [3, 9, 16], "Escarcha": [6, 12, 20], "Lumbre": [4, 10
 const COLOR := {"Alba": Color("F2B5A0"), "Escarcha": Color("BFE6FF"), "Lumbre": Color("FFE3A3")}
 # Niveles que ya tienen su enganche en el juego: los demás tienen datos y lógica (y sus pruebas), pero no salen en los
 # menús. M1: Alba I (y el II, mismo mecanismo); M2: Lumbre I y II; M3: Escarcha I y II; M4: los III.
-const ACTIVOS := {"Alba": 2, "Escarcha": 2, "Lumbre": 2}   # M3 (Escarcha I y II), enganchado el 09/11
+const ACTIVOS := {"Alba": 3, "Escarcha": 3, "Lumbre": 3}   # M3 (Escarcha I y II) y M4 (los III), enganchados el 09/11
 const ROMANOS := ["I", "II", "III"]
 
 # Cada nivel: «a» = a quién va; «todos» = a todos a la vez, sin elegir; «dano» 0, como pide la ruta propia (§3.1).
@@ -75,6 +75,9 @@ const FICHAS := [
 	["Aliento", "Tres turnos: el aliado recupera vida al empezar cada uno de sus turnos.", "Lumbre", 2],
 	["Barrera", "Una coraza de hielo absorbe el daño hasta romperse. No se suma.", "Escarcha", 1],
 	["Brasa", "Si el aliado cae, se levanta una vez con algo de vida.", "Lumbre", 3],
+	["Hora Dorada", "Llena la barra de los demás aliados, sin darles nunca dos turnos.", "Alba", 3],
+	["Invierno", "Quien rompe una coraza del Invierno Guardián queda Congelado.", "Escarcha", 3],
+	["Tomos", "Un tomo escondido enseña antes de tiempo el nivel III. Se lee una vez.", "Alba", 3],
 ]
 # Estados de los héroes, en el orden en que se dibujan sus iconos junto al nombre.
 const ESTADOS := ["barrera", "aliento", "brasa", "guardia"]   # guardia: la de Garon (combate.gd, T-100)
@@ -164,6 +167,23 @@ static func nuevas_al_subir(heroe: String, d: Dictionary, antes: int, ahora: int
 			if umbral > antes and umbral <= ahora:
 				r.append([familia, n])
 	return r
+
+
+# Tomos (M4): el código del mundo los da en un lugar escondido con dar_tomo(id). Enseñan el III de su familia a quien
+# la usa (Kael o Lya), una sola vez, y lo apuntan en «libros» (como los libros: la partida no cambia de forma).
+# Devuelve el aviso («Kael aprende Hora Dorada.») o "" si no existe, nadie la usa o ya lo sabía.
+const NOMBRE_TOMO := {"tomo_alba": "Tomo del Alba", "tomo_escarcha": "Tomo de la Escarcha", "tomo_lumbre": "Tomo de la Lumbre"}
+
+
+static func dar_tomo(id: String) -> String:
+	if not TOMOS.has(id):
+		return ""
+	var familia: String = TOMOS[id][0]
+	var nv: int = int(TOMOS[id][1])
+	for heroe in DE_HEROE:
+		if familia in DE_HEROE[heroe] and aprender(heroe, familia, nv):
+			return "%s aprende %s." % [heroe, datos(familia, nv)["nombre"]]
+	return ""
 
 
 static func libros_en_venta() -> Array:

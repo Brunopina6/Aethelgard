@@ -138,6 +138,10 @@ var _radio := 0.1              # radio actual del orbe (metros del mundo)
 var _aplasta := 0.0            # 0 = esfera, 1 = aplastado entre las palmas
 var _ik := 0.0                 # peso de la IK de las dos manos
 var _largos := {}
+# Invocación nueva (T-101, invocacion_erebo_nueva.gd): la punta de la mano derecha llega a un punto del mundo (el pecho
+# del enemigo) con una IK de dos huesos encima del clip. Peso 0 = solo el clip (la invocación de siempre no la usa).
+var ik_mano := 0.0
+var mano_objetivo := Vector3.ZERO
 
 
 func _init() -> void:
@@ -469,6 +473,9 @@ func _post_pose(sk: Skeleton3D) -> void:
 	if _ik > 0.001:
 		_ik_brazo(sk, "Right", 1.0)
 		_ik_brazo(sk, "Left", -1.0)
+	elif ik_mano > 0.001:
+		_ik_alcance(sk)
+		_ik_alcance(sk)                 # (dos pasadas: la punta depende del giro de la mano)
 	if _i["Spine2"] >= 0:
 		gema.global_position = g * sk.get_bone_global_pose(_i["Spine2"]).origin + _adelante() * 0.11 * ALTURA
 	if orbe.visible:
@@ -564,6 +571,137 @@ func _ik_brazo(sk: Skeleton3D, lado: String, signo: float) -> void:
 			var giro := Quaternion.IDENTITY.slerp(_quat_entre(pulgar, pulgar_obj), _ik)
 			b3 = Basis(giro) * b3
 		sk.set_bone_global_pose(ih, Transform3D(b3, h_n.origin))
+
+
+# IK de alcance (T-101): lleva la punta de la mano derecha (el dedo corazón) a mano_objetivo, con el codo hacia abajo
+# y afuera. Corrige lo que quede tras colocar a Érebo por la mano (unos centímetros) sin cambiar el gesto del clip.
+func _ik_alcance(sk: Skeleton3D) -> void:
+	var ia: int = _i["RightArm"]
+	var ie: int = _i["RightForeArm"]
+	var ih: int = _i["RightHand"]
+	var im: int = _i["RightHandMiddle1"]
+	if ia < 0 or ie < 0 or ih < 0 or im < 0:
+		return
+	var obj_sk: Vector3 = sk.global_transform.affine_inverse() * mano_objetivo
+	var punta_rel: Vector3 = sk.get_bone_global_pose(im).origin - sk.get_bone_global_pose(ih).origin
+	var objetivo: Vector3 = obj_sk - punta_rel                       # la muñeca, para que la punta caiga en el sitio
+	var la: float = _largos["Right"][0]
+	var lb: float = _largos["Right"][1]
+	var a_pose := sk.get_bone_global_pose(ia)
+	var s: Vector3 = a_pose.origin
+	var e_pose := sk.get_bone_global_pose(ie)
+	var to_t := objetivo - s
+	var d := clampf(to_t.length(), 0.001, (la + lb) * 0.999)
+	var dir := to_t.normalized()
+	var ejes := _ejes_torso(sk)
+	var polo: Vector3 = (-ejes[2] * 0.7 + ejes[0] * 0.6).normalized()
+	polo = (polo - dir * polo.dot(dir)).normalized()
+	var cos_a := clampf((la * la + d * d - lb * lb) / (2.0 * la * d), -1.0, 1.0)
+	var codo: Vector3 = s + dir * (la * cos_a) + polo * (la * sqrt(1.0 - cos_a * cos_a))
+	var q1 := Quaternion.IDENTITY.slerp(_quat_entre(e_pose.origin - s, codo - s), ik_mano)
+	sk.set_bone_global_pose(ia, Transform3D(Basis(q1) * a_pose.basis, a_pose.origin))
+	var e_n := sk.get_bone_global_pose(ie)
+	var h_act := sk.get_bone_global_pose(ih).origin
+	var q2 := Quaternion.IDENTITY.slerp(_quat_entre(h_act - e_n.origin, (s + dir * d) - e_n.origin), ik_mano)
+	sk.set_bone_global_pose(ie, Transform3D(Basis(q2) * e_n.basis, e_n.origin))
+
+
+# Dónde queda la punta de la mano derecha en el instante «t» del clip «clip», respecto a los pies de Érebo y en sus
+# ejes (adelante, arriba, derecha), en metros del mundo (con su escala). Para colocarlo por la mano (T-101).
+func punta_en(clip: String, t: float) -> Vector3:
+	if anim == null or not anim.has_animation(clip) or _i.get("RightHandMiddle1", -1) < 0:
+		return Vector3(0.37, 0.88, 0.0)                    # lo medido en la Fase 1 con «Extraer» a 0,80 s
+	var antes := String(anim.current_animation)
+	var pos_antes := anim.current_animation_position
+	anim.play(clip, 0.0)
+	anim.seek(t, true)
+	var p: Vector3 = skel.global_transform * skel.get_bone_global_pose(_i["RightHandMiddle1"]).origin - global_position
+	if antes != "":
+		anim.play(antes, 0.0)
+		anim.seek(pos_antes, true)
+	var fwd := _adelante()
+	var der := fwd.cross(Vector3.UP).normalized()
+	return Vector3(p.dot(fwd), p.y, p.dot(der))
+
+
+# Surge con la pose quieta (D7): sin el clip de levantarse, la cabeza baja, despacio al principio y posándose al
+# final, y se queda levitando «levita» metros (D8). Dura «dur» segundos.
+func emerger_quieto(dur := 1.9, levita := 0.05) -> void:
+	_efectos(false)
+	_mat_cuerpo.set_shader_parameter("disolver", 1.0)
+	ajuste.position.y = _y_base - ALTURA * 1.05
+	visible = true
+	anim.play(nombres.get("Idle", "Reposo"), 0.0)
+	anim.seek(0.0, true)
+	anim.speed_scale = 0.0
+	gestos.poner("cansada", 0.6, 0.01)                      # cabeza baja y brazos algo caídos mientras sube
+	var t := _tw()
+	t.tween_method(func(v): _mat_charco.set_shader_parameter("abierto", v), 0.0, 1.0, 0.4).set_ease(Tween.EASE_OUT)
+	await t.finished
+	if cancelado: return
+	evento.emit("emerge")
+	_rafaga(global_position + Vector3(0, 0.1, 0), COLOR_HUMO_CLARO, 12, 0.8, 0.14 * ALTURA)
+	humo.visible = true
+	humo.emitting = true
+	var sube := _tw().set_parallel(true)
+	var s := dur - 0.4
+	sube.tween_property(ajuste, "position:y", _y_base + levita / maxf(scale.y, 0.01), s).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	sube.tween_method(func(v): _mat_cuerpo.set_shader_parameter("disolver", v), 1.0, 0.0, s * 1.05)
+	await _espera(s - 0.6)
+	if cancelado: return
+	gestos.quitar("cansada", 0.6)                           # en los últimos 0,6 s levanta la máscara
+	await _espera(0.6)
+	if cancelado: return
+	_efectos(true)
+	evento.emit("asoma")
+	fogonazo(gema.global_position, COLOR_DESTELLO, 0.25 * ALTURA, 0.3)
+	anim.speed_scale = 1.0
+	reposo()
+
+
+# Se acerca flotando hasta «hasta» (D6), con aceleración y frenada suaves.
+func deslizar(hasta: Vector3, dur := 0.8) -> void:
+	var t := _tw()
+	t.tween_property(self, "global_position", hasta, dur).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	await t.finished
+
+
+# Mete la mano abierta en el pecho y saca el orbe con un solo clip, «Extraer» (Fase 2, plan final §1.2): la estocada
+# 0,15 → 0,80 s (el contacto) en «llegada» segundos, y después agarra y tira hasta 2,4 s. La IK de alcance lleva la
+# punta al pecho (mano_objetivo) durante la llegada y el agarre. al_contacto se llama en el fotograma del contacto.
+func extraer_abierto(saca: bool, llegada: float, al_contacto: Callable) -> void:
+	gestos.quitar_todos(0.1)
+	aura_mano.visible = true
+	anim.play(nombres.get("Extraer", "Extraer"), 0.2, (0.80 - 0.15) / maxf(llegada, 0.05))
+	anim.seek(0.15, true)
+	var ik := _tw()
+	ik.tween_property(self, "ik_mano", 1.0, llegada * 0.45).set_delay(llegada * 0.4).set_trans(Tween.TRANS_SINE)
+	await _espera(llegada)
+	if cancelado: return
+	anim.speed_scale = 1.0
+	anim.seek(0.80, true)
+	evento.emit("penetra")
+	if al_contacto.is_valid():
+		await al_contacto.call()
+	if cancelado: return
+	await _espera(0.25)                                    # los dedos se cierran dentro (0,80 → 1,05)
+	if cancelado: return
+	evento.emit("agarra")
+	var suelta := _tw()
+	suelta.tween_property(self, "ik_mano", 0.0, 0.35).set_trans(Tween.TRANS_SINE)
+	if saca:
+		_radio = 0.02 * ALTURA
+		_orbe_en = "mano"
+		orbe.visible = true
+		_halo.visible = true
+		_tw().tween_property(self, "_radio", 0.034 * ALTURA, 0.5).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		evento.emit("orbe_fuera")
+	await _espera(1.35 if saca else 0.9)                   # tira hasta 2,4 s (vacía, la retira antes)
+	if cancelado: return
+	aura_mano.visible = false
+	if not saca:
+		_rafaga(_punta_mano(), COLOR_HUMO_CLARO, 10, 0.4, 0.08 * ALTURA)
+		evento.emit("vacia")
 
 
 func _quat_entre(a: Vector3, b: Vector3) -> Quaternion:
@@ -667,9 +805,11 @@ func extraer(saca: bool) -> void:
 
 # Lo alza, lo lleva delante de la máscara, lo rodea con las dos manos y lo comprime hasta romperlo.
 # al_estallar se llama en el instante en que las palmas se cierran.
-func aplastar(al_estallar: Callable) -> void:
+func aplastar(al_estallar: Callable, pulsos: Array = [], silencio := 0.25, rapido := false) -> void:
+	# rapido (T-101): sin el clip de alzarlo; las manos van al orbe en 0,4 s y se sueltan antes
 	# alzar con la derecha y mirarlo
-	await _tramo("Alzar", 0.3, 1.0, 1.0)
+	if not rapido:
+		await _tramo("Alzar", 0.3, 1.0, 1.0)
 	if cancelado: return
 	# pasar a sujetarlo con las dos manos delante de la máscara
 	# cuerpo erguido (reposo casi congelado, solo un leve balanceo) y la IK lleva las manos al orbe
@@ -678,21 +818,23 @@ func aplastar(al_estallar: Callable) -> void:
 	_centro = desde_mano
 	_orbe_en = "centro"
 	var t0 := _tw().set_parallel(true)
-	t0.tween_property(self, "_ik", 0.35, 0.3)
+	var r := 0.5 if rapido else 1.0         # (con rapido, los tiempos de las manos a la mitad)
+	t0.tween_property(self, "_ik", 0.35, 0.3 * r)
 	await t0.finished
 	if cancelado: return
 	var hacia := _centro_sostener()
 	var t := _tw().set_parallel(true)
-	t.tween_property(self, "_centro", hacia, 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	t.tween_property(self, "_ik", 1.0, 0.45).set_trans(Tween.TRANS_SINE)
-	t.tween_property(self, "_radio", 0.034 * ALTURA, 0.55)
+	t.tween_property(self, "_centro", hacia, 0.55 * r).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	t.tween_property(self, "_ik", 1.0, 0.45 * r).set_trans(Tween.TRANS_SINE)
+	t.tween_property(self, "_radio", 0.034 * ALTURA, 0.55 * r)
 	await t.finished
 	if cancelado: return
 	evento.emit("sostiene")
-	await _espera(0.35)
+	await _espera(0.35 * r)
 	if cancelado: return
 	# compresión: late cada vez más rápido, se agrieta y se deforma
-	var pulsos := [0.55, 0.45, 0.36, 0.28, 0.22, 0.17]
+	if pulsos.is_empty():                  # los de siempre; la invocación nueva (T-101) pide tres latidos
+		pulsos = [0.55, 0.45, 0.36, 0.28, 0.22, 0.17]
 	for k in pulsos.size():
 		var avance := float(k + 1) / pulsos.size()
 		evento.emit("pulso")
@@ -705,7 +847,7 @@ func aplastar(al_estallar: Callable) -> void:
 		await p.finished
 		if cancelado: return
 	evento.emit("tension")                 # silencio previo al impacto
-	await _espera(0.25)
+	await _espera(silencio)
 	if cancelado: return
 	# las palmas se cierran de golpe
 	var cierra := _tw().set_parallel(true)
@@ -724,10 +866,10 @@ func aplastar(al_estallar: Callable) -> void:
 	_mat_orbe.set_shader_parameter("grietas", 0.0)
 	_mat_orbe.set_shader_parameter("temblor", 0.0)
 	_aplasta = 0.0
-	await _espera(0.45)
+	await _espera(0.45 * r)
 	if cancelado: return
 	var suelta := _tw()
-	suelta.tween_property(self, "_ik", 0.0, 0.5).set_trans(Tween.TRANS_SINE)
+	suelta.tween_property(self, "_ik", 0.0, 0.5 * r).set_trans(Tween.TRANS_SINE)
 	await suelta.finished
 	if cancelado: return
 	reposo()
@@ -790,6 +932,7 @@ func limpiar() -> void:
 	aura_mano.visible = false
 	_orbe_en = ""
 	_ik = 0.0
+	ik_mano = 0.0
 	_aplasta = 0.0
 	_efectos(false)
 	_mat_charco.set_shader_parameter("abierto", 0.0)
