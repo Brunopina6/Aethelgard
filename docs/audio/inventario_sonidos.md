@@ -1,9 +1,10 @@
 # Inventario de sonidos de AETHELGARD / REBELUM
 
-**Actualizado el 2026-11-09 por la mañana** (T-030, D-064, D-067 y **T-083**: primera tanda de efectos el 08/11 y
-**segunda tanda** el 09/11: voces de los enemigos, agua de las zonas 2D, la Garganta, el Diario, el brazalete y la
-propuesta de sonido de las magias; rama `area-sonido`). Criterio: de cada sonido, el original, el recurso que usa el
-juego, el evento, la licencia y la evidencia. Tres comprobaciones **por separado**:
+**Actualizado el 2026-11-09 a mediodía** (T-030, D-064, D-067 y **T-083**: primera tanda de efectos el 08/11;
+**segunda tanda** el 09/11 por la mañana: voces de los enemigos, agua de las zonas 2D, la Garganta, el Diario, el
+brazalete y la propuesta de sonido de las magias; **tercera tanda** el 09/11 a mediodía: la Garganta 3D, los pasos de
+Lya y Garon, las artes nuevas y Oakhaven; rama `area-sonido`). Criterio: de cada sonido, el original, el recurso que
+usa el juego, el evento, la licencia y la evidencia. Tres comprobaciones **por separado**:
 
 - **Asignación:** el código pide el sonido correcto, una vez y por su bus (`prueba_musica`, `prueba_audio`,
   `prueba_efectos`; sin ventana, mudas).
@@ -247,6 +248,128 @@ Si se aprueba: un efecto por magia en el catálogo (prioridad 3, una vez por lan
 también con las magias, la quemadura del Fuego con un chisporroteo corto, y escucharlo todo con la música de combate.
 Érebo sigue con sus 7 sonidos de licencia pendiente (no se han tocado).
 
+## Efectos de la tanda 3 (T-083, 2026-11-09, mediodía)
+
+Hechos igual (`prueba_efectos_preparar.gd`, con «solo=»): **23 derivados nuevos** (160 en total) de 20 originales
+principales y 7 capas, con sus huellas en [`efectos_procedencia.csv`](efectos_procedencia.csv). **Licencias:** todos
+de los paquetes GDC de Sonniss 2016, 2017, 2018, 2019, 2020, 2023 y 2024 (el PDF de licencia de cada paquete está en su
+carpeta: comprobado otra vez el 09/11), salvo `esquiva_1`, de la colección CC0 (s32, Vehicle «Tinysized SFX»,
+comprobada el 08/11). Ninguno es del paquete de 2015, de TomMusic, de «Helton Yan's Pixel Combat» ni de Suno.
+
+### La Garganta del Diablo 3D (`zonas3d/garganta_3d.gd`, `_sonido_3d`)
+
+- **Se escucha desde Kael** (`Sonido.oyente_3d`), mirando como la cámara.
+- **Pasos según el suelo** (`suelo_de_pasos`): **tablas** (`paso_madera`) en los puentes colgantes, el levadizo y las
+  estaciones del ascensor; **roca** (`paso_piedra`) en lo demás (cornisas, escaleras talladas, la arena y el nido).
+  Lya y Garon llevan los suyos con el mismo suelo (`grupo.pasos_superficie`, una línea en `_crear_grupo`).
+- **La cascada grande** (`cascada_grande`): un emisor a lo largo de su caída (x = 3,6, de y = 26 a −40): suena desde
+  el punto a la altura de quien escucha. Se oye en toda la garganta: de lejos, solo el rumor grave (Godot quita los
+  agudos con la distancia).
+- **El viento del abismo** (`viento_abismo`, un aullido tonal): a lo largo del eje del abismo (y = −5) y, 6 dB más bajo,
+  bajo los dos puentes colgantes (y = −2,5): al cruzarlos se está encima del vacío y el viento sube.
+- **Las gotas en la roca:** la mazmorra (también la 2D) tiene ahora `gota` y `gota_cueva`; en la 3D cada una cae en la
+  pared de roca más cercana a Kael (`Sonido.detalles_3d` con `_punto_gota`), algo por delante o detrás y por encima.
+- **El eco de la garganta** (`Sonido.eco(self, "garganta")`, `ECO` en `sonido.gd`): una reverberación al final de los
+  buses Efectos (0,45) y Ambiente (0,35), con lo directo a 0,92; nunca en la música ni en la interfaz. Se quita sola al
+  salir (combate, mapa). Medido el 09/11 con el driver real (A/B, mismo sonido): un paso de roca deja una cola unos 26 dB
+  por debajo del golpe entre 0,1 y 0,4 s y 36 dB entre 0,4 y 1 s; una gota, 16 y 25 dB (suena a cueva); la palanca sube
+  2,3 dB de pico y la emboscada 1,5 (sin saturar); el bucle del viento no cambia de nivel (−0,3 dB). Con 0,16 de
+  «húmedo» (la primera prueba) la cola quedaba a 36 y 48 dB: no se oía. **Coste:** dos efectos de bus solo en esa
+  escena; sin medir en el Redmi.
+- **Los efectos de la 2D, una vez cada uno** (comprobado pulsando dos veces): guardar, la puerta sellada, el ascensor
+  sin fuerza y con fuerza, la palanca, el cofre raro (tapa y premio), examinar y la emboscada. **El puente que baja**
+  suena desde el levadizo (a unos 14 m de la palanca, a la izquierda) y **la puerta que se abre** (nuevo en la 3D: en la
+  2D ya sonaba) desde la puerta, a 1,3 s, como en la 2D. Lo que pasa junto a Kael (palanca, cofre, ascensor) suena sin
+  posición, como siempre.
+
+| Efecto | Dónde suena | Archivo del juego | Original (biblioteca) | Licencia | Bus · dB · 3D |
+|---|---|---|---|---|---|
+| `cascada_grande` | La cascada del muro del norte (bucle) | `ambiente/cascada_grande` (30 s) | Justsoundeffects «WATRFall_Waterfall Roaring Rumble_03» (Streams and Rivers) | Sonniss GDC 2023 | Ambiente · 0 · 10 m de referencia, hasta 120 m |
+| `viento_abismo` | El eje del abismo y bajo los puentes (bucle) | `ambiente/viento_abismo` (30 s) | Hzandbits «Wind,Int,Howl,Tonal,Mumble» (Howling Winds - Interior) | Sonniss GDC 2016 | Ambiente · −2,5 (−8,5 bajo los puentes) · 8 m, hasta 70 m |
+| `gota_cueva` | De vez en cuando en la mazmorra (2D y 3D) | `ambiente/gota_cueva_1…2` | InMotionAudio «WATRDrip_SingleDripDesign05» (Cave Design); la 2.ª, ×0,84 | Sonniss GDC 2024 | Ambiente · −14 · en la roca (3 m) |
+| `puente_baja` · `puerta_abre` | En la Garganta 3D, desde el levadizo y desde la puerta | (los de la tanda 1 y 2) | (los mismos) | (los mismos) | Efectos · −9 · 14 m y 20 m de referencia, sin quitar agudos (ya vienen «lejos») |
+
+**Niveles a la salida** (Master, todo al 100 %, en la escena de verdad con Lya y Garon, 09/11): ver la tabla de
+muestras de la tanda 3 en el informe y en `D:\REBELUM_diagnostico\sonido_muestras\2026-11-09_tanda3\indice.md`.
+
+### Los pasos de Lya y Garon (`sonido.gd`, `Pasos3D`)
+
+- **Desde su pie, en el espacio:** con un oyente 3D (Pastos Verdes y la Garganta), los pasos de quien no es el que
+  escucha suenan desde el hueso del pie que pisa (`PASO_3D`: a 2,5 m de la cabeza de Kael, a su volumen; más lejos, más
+  bajos; lo agudo apenas cambia). Detrás de Kael (2-3 m) quedan unos 1-3 dB por debajo, a un lado o al otro según
+  vayan; si se quedan atrás, más bajos. Los de Kael siguen sin posición (están en sus oídos).
+- **Un volumen por personaje** (`DB_PASOS`, por el nombre del nodo que les da `grupo_3d.gd`): Lya −2 dB (pisa más
+  ligera), Garon 0. Sin oyente 3D, 3 dB más bajos (`DB_COMPANERO_SIN_POSICION`).
+- **Sin duplicar ni perder:** un nodo «Pasos» por personaje (lo comprueba `prueba_anim_pies`); la espera mínima entre
+  dos pasos es ahora de cada cuerpo (antes, si dos pisaban a la vez el mismo suelo, se perdía uno: casi la mitad de los
+  de los compañeros); hasta 3 pasos del mismo suelo a la vez (antes 2). En la Garganta, 9 de 9 pisadas de Kael, 9 de 9
+  de Lya y 8 de 8 de Garon sonaron (`prueba_efectos`, 09/11).
+
+### Las artes nuevas (T-091; las engancha combate en `combate.gd`)
+
+No son las 12 magias de siempre (que siguen sin sonar): son Alba, Escarcha y Lumbre. `artes.gd` pide sus nombres
+(`SONIDO_LANZAR`, `SONIDO_ESTADO`) y `combate.gd` solo los pide si existen en el catálogo (`_sonar`). Bus Efectos;
+prioridad 3 los lanzamientos, 1 los toques (Aliento, la coraza que absorbe) y 2 la esquiva.
+
+| Efecto | Evento (lo pide) | Archivo del juego | Original (biblioteca) | Licencia | dB · p |
+|---|---|---|---|---|---|
+| `arte_alba` | Compás del Alba (Alba I): una campanilla que sube y un tic de reloj | `combate/arte_alba` | The Chris Alan «Bell Guitar Gliss Up 01» + InspectorJ «CLOCKTick_InsJ_Clock-07_Ticking_Single-01» | Sonniss GDC 2019 y 2023 | −11 · 3 |
+| `arte_ocaso` | Peso del Ocaso (Alba II): un tono que cae y un golpe sordo | `combate/arte_ocaso` | The Chris Alan «Marimba Gliss Down Fast 01» (×0,8) + 344 Audio «Explosive Hit 10 Filtered, Low End» | Sonniss GDC 2019 | −10 · 3 |
+| `arte_hora_dorada` | Hora Dorada (Alba III): un acorde cálido que crece, con campanillas | `combate/arte_hora_dorada` | BluezoneCorp «BC0273_eternity_synth_chord_002_01» + «…_chimes_texture_001» | Sonniss GDC 2023 | −9 · 3 |
+| `arte_escarcha` | Las tres de Escarcha: la coraza de hielo se forma y cruje | `combate/arte_escarcha` | David Dumais «Magic_Spells_CastShort_Ice_General24» + Soundrangers «ice_freeze_crack_04» | Sonniss GDC 2020 y 2018 | −9 · 3 |
+| `barrera_absorbe` | La coraza absorbe un golpe (dos a la vez como mucho, cada 0,05 s) | `combate/barrera_absorbe_1…2` | George Karagioules «Wine Glass Hit Higher Pitch» (dos golpes) | Sonniss GDC 2016 | −8 · 1 |
+| `barrera_rota` | La coraza se rompe | `combate/barrera_rota` | Chris Skyes «Glass,Shards,Smash,Medium Impact,Lots of Large Shards» + David Dumais «Magic_Spells_Impact_Ice13» | Sonniss GDC 2017 y 2020 | −9 · 3 |
+| `arte_lumbre` | Segundo Aliento y Última Brasa (Lumbre II y III): una subida cálida con una campana suave | `combate/arte_lumbre` | Gregor Quendel «Designed Fire - Winds - Binaural, swoosh, waves 02» + CB Sounddesign «Bell_10_b» | Sonniss GDC 2018 | −9 · 3 |
+| `renacer` | Lumbre de Retorno (Lumbre I): un soplo que se levanta, con brasas | `combate/renacer` | Airborne Sound «Whoosh, Sound Design, Airy, Full, Soft, Shudder, Very Slow, Aftershock» + Gregor Quendel «Designed Fire - Swooshes - Burst, evolving 34» | Sonniss GDC 2019 y 2018 | −9 · 3 |
+| `aliento` | Aliento: cura al empezar el turno (muy suave, uno a la vez) | `combate/aliento` | Eiravaein Works «Helinä, windchimes, Pacific, obsidian, beads…» | Sonniss GDC 2019 | −13 · 1 |
+| `brasa` | Brasa: el aliado que cae se levanta (chisporroteo y campana) | `combate/brasa` | The Sound Keeper «sm-fire-firewood-small-03» + «Bell_10_b» + Gregor Quendel (la llamarada) | Sonniss GDC 2018 | −11 · 3 |
+| `esquiva` | Esquiva (Pluma de arpía): un silbido de aire | `combate/esquiva_1…2` | `04_combat_melee/tin_whistle_whoosh_…_s32` · Airborne Sound «Whoosh, Sound Design, Airy, Full, Forceful, Soft» | CC0 (s32) · Sonniss GDC 2019 | −9 · 2 |
+
+**Niveles a la salida** (cada una sola, Master al 100 %, 09/11): los lanzamientos, RMS −24 a −26 dBFS (como Embuir y
+la unión al grupo; el golpe de siempre, −27,7); Aliento −36,9; la coraza que absorbe −33 (pico −12); esquiva −24 (un
+silbido de 0,1 s).
+
+### Oakhaven (T-089; los engancha narrativa en su escena)
+
+| Efecto | Qué es | Archivo del juego | Original (biblioteca) | Licencia | Bus · dB |
+|---|---|---|---|---|---|
+| `campana` | La campana lejana de la Torre de la Campana (unas campanadas, con paso bajo: lejos) | `mundo/campana` (6,4 s) | Justsoundeffects «AMBRlgn_Church Bells Ringing Village» (Urban Ambiences) | Sonniss GDC 2023 | Ambiente · −12 |
+| `taberna` | El bullicio de la Taberna del Cuervo Oxidado, oído desde la calle (bucle, por cercanía) | `ambiente/taberna` (30 s) | West Wolf «RA_06_Restaurant_Dinner_Int_Walla_Crowd_50-75 People» (paso bajo 2,6 kHz: a través de la puerta) | Sonniss GDC 2018 | Ambiente · −2 (a 2 casillas o menos; callado a 11) |
+| `cuervo` | El letrero del cuervo de hierro que chirría con el viento (de vez en cuando, cada 4-11 s, por cercanía) | `mundo/cuervo_1…3` | SoundBits «Metal_Creak_13» (dos chirridos) · RZ Post «Creepy Door, Fast Metal Creak_02» | Sonniss GDC 2017 y 2018 | Ambiente · −12 (a 2 casillas o menos; nada a 12) |
+| `farol` | Un farol que prende (una cerilla y la llama) | `mundo/farol` | InspectorJ «Party-Pack_Match_Ignite_02-03» (Party Pack) | Sonniss GDC 2020 | Efectos · −6 (tres a la vez como mucho) |
+
+**Cómo pedirlos** (para `ciudad_oakhaven.gd`, que hereda de `zona.gd`: casillas de `T` = 64 px; `jugador`, el nodo de
+quien anda):
+
+```gdscript
+# en _ready (las fuentes son hijas de la escena: se van con ella)
+Sonido.fuente_2d(self, "taberna", Vector2(16, 25) * T, jugador)       # la puerta de la taberna: el bullicio, por cercanía
+Sonido.fuente_2d(self, "cuervo", Vector2(13, 25.5) * T, jugador)      # el letrero: chirría de vez en cuando si estás cerca
+# en los sucesos
+Sonido.efecto("campana")                       # la campana lejana (al entrar, al subir a la torre, a una hora…)
+Sonido.efecto("farol")                         # Kael enciende un farol de la ronda (oak:farol_1…3)
+for i in 6:                                    # la ola de faroles de la vista desde las raíces (O7), cada vez más lejos
+	Sonido.efecto("farol", {"retraso": 0.15 * i, "db": -2.0 * i})
+```
+
+`fuente_2d(padre, nombre, posición_px, quien, casilla := 64.0)`: el volumen sale de la distancia a `quien` (sin él, la
+cámara 2D); suena a la izquierda o a la derecha según dónde esté en la pantalla; con la pausa, el silencio y el cambio
+de escena de siempre. El ambiente de fondo de Oakhaven es el de las ciudades: `musica.gd` da a
+`res://ciudad_oakhaven.tscn` el contexto «ciudad», como a la Oakhaven generada (así la escena ya no tiene que pedirlo;
+lo comprueba `prueba_musica`).
+
+### API nueva de `sonido.gd` (tanda 3)
+
+- `Sonido.efecto(nombre, {"pos": Vector3})`: suena desde ese punto de la escena 3D (reproductores 3D de la escena,
+  `VOCES_3D` = 8 como mucho, con las mismas reglas); `en_3d` del catálogo (o de la petición) da la distancia de
+  referencia, el alcance y cuánto agudo se pierde; sin oyente ni cámara 3D, suena normal. `{"clave": …}`: la espera
+  mínima por quien lo pide (los pasos de cada cuerpo).
+- `Sonido.fuente_3d(padre, nombre, pos, db)` y `Sonido.fuente_linea(padre, nombre, a, b, db)`: con `db`, el mismo bucle
+  más bajo en otro sitio.
+- `Sonido.detalles_3d(escena, donde)`: los detalles de la naturaleza de esa escena suenan en un punto.
+- `Sonido.eco(escena, "garganta")` / `Sonido.quitar_eco()` / `Sonido.eco_activo()`.
+- `Sonido.fuente_2d(padre, nombre, pos, quien, casilla)`: fuentes del mundo en escenas 2D (bucle o de vez en cuando).
+
 ## Candidatos aún sin usar
 
 - **Alternativas para escuchar y elegir:** `victory_…_01_s29` y `…_02_s29` (otra victoria), InspectorJ
@@ -257,8 +380,13 @@ también con las magias, la quemadura del Fuego con un chisporroteo corto, y esc
   David Dumais «Monster06_Attack13» y «Monster09_Death02», Gamemaster «troll_monster_growl_long_05» (para la furia),
   Bluezone «mountain_dweller_creature_orc_grunt_003», y de la colección CC0 `08_creatures_monsters` (s24, s35 «ogre» y
   «giant», s36 «zombie», s56 «roar»: CC0 comprobado el 09/11).
-- **Pasos de Lya, Garon y los enemigos**: la API admite varios cuerpos a la vez (`Sonido.pasos_3d(nodo, superficie)`,
-  un nodo «Pasos» por personaje, cada uno con su espera entre pasos); los engancha animaciones en su tanda 2.
+- **Pasos de los enemigos en la exploración 3D** (cuando los haya): la misma API (`Sonido.pasos_3d(nodo, superficie)`)
+  los pondría en el espacio como los de Lya y Garon (tanda 3).
+- **Otras cascadas y vientos para la Garganta 3D** (por si no convencen al escucharlos): Sound Sower «01 SPRING
+  WATERFALLS, fall, continuous…» y Ivo Vicic «07 Waterfall near field 7_LOOP» (Sonniss 2020); Sound of Essen
+  «TonalWind_Atmo_SealLikeHowling_Mono» y Articulated Sounds «WEATHER WIND Synth… Howling, Whistling, Eerie» (2020).
+- **Otra campana para Oakhaven:** Kenney «impact_bell_heavy» (colección CC0, s12; su página de kenney.nl está sin
+  comprobar), más grave con «tono» 0,5.
 - **Charcas, lava y veneno de las zonas 2D**: hoy solo suena el río de agua. Candidatos: `14_water_mud_slime`
   «loop_bubbles» (s53) para el veneno y «water_boiling_loop» (s52) para la lava, ambos CC0 (comprobado el 09/11).
 - **Paquete GDC 2015 de Sonniss:** su carpeta no trae el PDF de licencia (solo «ROYALTY-FREE SINGLE LICENSE» en el

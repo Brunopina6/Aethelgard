@@ -17,9 +17,10 @@ extends "res://prototipos/vista3d.gd"
 # mapa. El progreso usa los mismos identificadores que la 2D: mazmorras["garganta"]["palanca"], el cofre «2_1984_3238»,
 # los combates «garganta_nido» y «garganta_gorthor» y los detalles «garganta_puentes» y «garganta_pilar»: una partida
 # con la Garganta 2D avanzada sigue valiendo aquí (y al revés).
-# Sonido: suenan los mismos efectos que en la 2D (palanca, puente, ascensor, cofre, puerta, guardado…); el sonido 3D
-# (oyente, pasos según el suelo, la cascada y el viento del abismo) lo engancha después el especialista de sonido
-# (docs/diseno/garganta_3d.md, «Sonido»).
+# Sonido: suenan los mismos efectos que en la 2D (palanca, puente, ascensor, cofre, puerta, guardado…); el puente que
+# baja y la puerta que se abre, desde donde están. El sonido 3D (_sonido_3d, T-083 tanda 3): se escucha desde Kael, los
+# pasos según el suelo (también los de Lya y Garon), la cascada y el viento del abismo en el espacio, las gotas en la
+# roca y el eco de la garganta.
 
 const T := preload("res://zonas3d/garganta/trazado.gd")
 const Escenario := preload("res://zonas3d/garganta/escenario.gd")
@@ -290,6 +291,7 @@ func _crear_grupo() -> void:
 	grupo = load("res://zonas3d/grupo_3d.gd").new()
 	grupo.name = "Grupo"
 	add_child(grupo)
+	grupo.pasos_superficie = suelo_de_pasos                    # sus pasos, con el suelo de Kael (sonido.gd, T-083)
 	grupo.preparar(self, kael, nombres)
 	grupo.colocar(Vector3.BACK)                                # detrás de Kael, hacia el sur (de donde se viene)
 
@@ -532,8 +534,9 @@ func _tirar_palanca() -> void:
 	tirando = true
 	_parar_kael()
 	boton_accion.visible = false
-	Sonido.efecto("palanca")                           # y el puente que baja a lo lejos (sonido.gd)
-	Sonido.efecto("puente_baja", {"retraso": 0.5})
+	Sonido.efecto("palanca")                           # y, desde donde están, el puente que baja y la puerta que se abre
+	Sonido.efecto("puente_baja", {"retraso": 0.5, "pos": (T.BISAGRA + T.APOYO) * 0.5})                       # (sonido.gd)
+	Sonido.efecto("puerta_abre", {"retraso": 1.3, "pos": T.PUERTA + Vector3(0, 1.5, 0)})
 	var eje: Node3D = palanca["eje"]
 	var tp := eje.create_tween()
 	tp.tween_property(eje, "rotation:x", deg_to_rad(55.0), 0.45).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
@@ -664,13 +667,50 @@ func _salir() -> void:
 	Recursos.cambiar_escena(Progreso.MAPA)
 
 
-# Sonido 3D: pendiente del especialista de sonido (docs/diseno/garganta_3d.md, «Sonido»). Lo previsto, con la API de
-# sonido.gd que ya usa Pastos Verdes 3D:
-#   Sonido.oyente_3d(kael, cam)
-#   Sonido.pasos_3d(kael, <"madera" en los puentes colgantes, el levadizo y las estaciones del ascensor; si no, "piedra">)
-#   Sonido.fuente_3d(self, "cascada", Vector3(3.6, -20, Z_NORTE + 2))   y el viento del abismo, a lo largo de su eje.
+# Sonido 3D (sonido.gd, T-083 tanda 3): se escucha desde Kael, mirando como la cámara; sus pasos según el suelo (los de
+# Lya y Garon, igual: _crear_grupo); la cascada a lo largo de su caída (suena desde el punto a la altura de quien
+# escucha) y el viento del abismo a lo largo de su eje, más un poco bajo los puentes colgantes (ahí se está encima del
+# vacío); las gotas de la mazmorra en la roca más cercana y el eco de la garganta (se quita solo al salir).
 func _sonido_3d() -> void:
-	pass
+	Sonido.oyente_3d(kael, cam)
+	Sonido.pasos_3d(kael, suelo_de_pasos)
+	Sonido.fuente_linea(self, "cascada_grande", Vector3(3.6, T.TOPE - 4.0, T.Z_NORTE + 0.8), Vector3(3.6, T.HONDO + 10.0, T.Z_NORTE + 2.8))
+	var x_eje := (T.X_BORDE_O + T.X_BORDE_E) * 0.5
+	Sonido.fuente_linea(self, "viento_abismo", Vector3(x_eje, T.BAJO + 3.0, T.Z_PRESA_N), Vector3(x_eje, T.BAJO + 3.0, T.Z_NORTE + 2.0))
+	Sonido.fuente_linea(self, "viento_abismo", Vector3(T.X_CAMINO_O, T.ALTO - 2.5, T.PUENTES[0][0]),
+		Vector3(T.X_CAMINO_O, T.ALTO - 2.5, T.PUENTES[1][1]), -6.0)
+	Sonido.detalles_3d(self, _punto_gota)
+	Sonido.eco(self, "garganta")
+
+
+# El suelo que pisa quien está en «p» (sus pasos, sonido.gd): tablas en los puentes colgantes, el levadizo y las
+# estaciones del ascensor; roca en lo demás (cornisas, escaleras talladas, la arena y el nido).
+func suelo_de_pasos(p: Vector3) -> String:
+	if p.y > T.ALTO - 1.5 and absf(p.x - T.X_CAMINO_O) < T.ANCHO_PUENTE * 0.5 + 0.3:
+		for b in T.PUENTES:
+			if p.z <= b[0] and p.z >= b[1]:
+				return "madera"
+	if absf(p.z - T.LEVADIZO_Z) < T.LEVADIZO_ANCHO * 0.5 and p.x > T.BISAGRA.x - 0.2 and p.x < T.APOYO.x + 0.3:
+		return "madera"
+	for e in [T.ASCENSOR_ARRIBA, T.ASCENSOR_ABAJO]:
+		if _dist_plana(p, e) < 1.6 and absf(p.y - e.y) < 1.0:
+			return "madera"
+	return "piedra"
+
+
+# Dónde cae una gota (los detalles de la mazmorra, sonido.gd): en la pared de roca más cercana a quien escucha («o»),
+# algo por delante o por detrás (u) y por encima (v); u y v, números al azar de 0 a 1 que da sonido.gd. En el nido,
+# del acantilado de la cornisa baja.
+func _punto_gota(o: Vector3, u: float, v: float) -> Vector3:
+	var z := clampf(o.z + (u - 0.5) * 14.0, T.Z_NORTE + 2.0, T.Z_FIN_CAMINO)
+	var x: float
+	if o.y < T.BAJO - 2.0:
+		x = T.borde_este(z) - 0.3
+	elif o.x < (T.X_BORDE_O + T.X_BORDE_E) * 0.5:
+		x = T.muro_oeste(z) + 0.3
+	else:
+		x = T.muro_este(z) - 0.3
+	return Vector3(x, o.y + 0.5 + v * 3.0, z)
 
 
 # ================================================================= pantalla
