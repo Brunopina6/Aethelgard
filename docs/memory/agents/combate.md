@@ -450,3 +450,61 @@ no tira del generador global ni cambia tiempos, y las artes no salen en la huell
 - **Animaciones (opcional):** gestos de Lya para la Lumbre de Retorno y el Segundo Aliento.
 - **Narrativa / coordinador:** `prueba_mando` y `prueba_teclado` (paso 4, Tilo) en la integración.
 - **Siguiente encargo:** Zarzalín en el combate.
+
+## 2026-11-09, 18:00 · T-097: Zarzalín enganchado al combate
+
+**Encargo** (coordinador, 09/11, el siguiente al HUD, en la misma rama): enganchar la escena de animaciones
+(`enemigos/zarzalin/zarzalin_3d.gd`, de `eb8bd94`) al combate. **Sin tocar** `enemigos/**`, `sonido.gd` ni `zonas3d/**`.
+
+**1. Commits:** `8be73f8` (`combate.gd`) y `f77153f` (`prueba_zarzalin_combate.gd`, su `.uid` y `lista_pruebas.txt`).
+
+**2. Qué hace ya** (observado en el código y comprobado ejecutando, aislado, 09/11)
+- **Modelo:** `MODELOS["zarzalin"]` con el encuadre ×1,25 que propuso animaciones (`vp` 1175 × 525, 1,5 m de vista
+  mirando a 0,48 m, `barra_y` 40) y el centro del cuerpo a 0,5 m (clave nueva `centro_3d`; los demás siguen a 0,85).
+  Respaldo 2D, el Slime, si falta el GLB.
+- **Ficha:** «Zarzalín», 80 PV, 11 de ataque, velocidad 14, 20 de experiencia y 12 monedas. Personalidad nueva
+  «embiste» (`_turno_zarzalin`, constantes en `ZARZALIN`):
+  - **aviso** (40 % si no está cargando ni recuperándose): baja el hocico y da dos golpes de pezuña (`avisar()`); sale
+    «⚠ ¡Embestida!», el cartel dice a quién va y su vida lleva «⚠ Cargando». Ese turno no hace daño;
+  - **embestida** en su turno siguiente, a quien avisó (×1,8; Defender la deja en la mitad, como cualquier golpe);
+  - **recupera el aliento** el turno después (no ataca): nunca dos ataques fuertes seguidos;
+  - si no, **colmillo lateral** (golpe corto, ×1).
+- **Ataque** (`_anim_zarzalin`): galopa (`correr()`), se planta donde sus colmillos llegan al héroe en el impacto
+  (centro − 30 − 0,632 · px_m − alcance · px_m, a la altura de sus pies), `await atacar(ataque, al_golpear)` resuelve
+  el golpe **una sola vez** en el ancla del clip (daño, sonido del golpe y reacción a la vez), y vuelve galopando. El
+  rig no se mueve durante el clip (el avance lo lleva el clip). Tras el aviso, la embestida entra desde la carga.
+- **Entrada** de un salto al empezar el combate (con un fundido de 0,15 s, porque el clip empieza 0,85 m por detrás);
+  **derrota** con su clip (`morir()`), antes del desvanecido de siempre; **huida** dándose la vuelta y galopando.
+- **Encuentros:** grupo 10 (Zarzalín solo), en los encuentros al azar de 1 y 2 héroes (`AL_AZAR_POR_TAMANO`), que son
+  los de Pastos Verdes en la versión experimental. Se tira el dado igual (un `randi()`): la huella no cambia.
+- La invocación de Érebo funciona con él sin cambios (su doble es el mismo modelo, a 0,92 m).
+
+**3. Pruebas** (datos aislados; la partida real y la carpeta real de datos, sin cambios)
+- **Nueva `prueba_zarzalin_combate`** (automática): Kael solo, nivel 1, solo con ataques: entra de un salto; el aviso
+  (una señal `aviso`, «⚠ Cargando», sin daño), la embestida (un impacto y un cambio de PV) y la recuperación (sin
+  golpe); el colmillo (un impacto, un cambio de PV); defendiendo, la embestida quita la mitad o menos; Kael gana y
+  Zarzalín cae con su derrota. Y huir con Kael y Lya (no da experiencia). SUPERADA
+  (`D:\REBELUM_diagnostico\pruebas\2026-11-09_174411`).
+- **`prueba_grupos_combate`** juega ya el grupo 10 en Pastos Verdes 3D, con vuelta a la región y guardado: Kael solo,
+  victoria en 27 s; Kael y Lya, en 31 s.
+- **Batería completa** (`D:\REBELUM_diagnostico\pruebas\2026-11-09_174617\resumen.md`): **54 SUPERADAS, 2 FALLIDAS,
+  32 MANUALES y 0 NO SEGURAS**. La huella, SUPERADA (igual a la referencia). Las dos FALLIDAS son las mismas de antes
+  (`prueba_mando` y `prueba_teclado`, paso 4 con Tilo, de la integración).
+- **Capturas** con ventana (`D:\REBELUM_diagnostico\combate\2026-11-09\zarzalin\`): `01_entrada`,
+  `02_colmillo_lateral` (el impacto en Kael), `03_aviso` («⚠ ¡Embestida!» y «Cargando»), `04_embestida_espinosa` (el
+  impacto, con Kael en guardia) y `05_derrota`; y `hoja_zarzalin_combate.png`.
+
+**4. Límites**
+- **Pendiente en Redmi:** el coste de su ventana 3D (×1,25: unos 347.000 píxeles por fotograma a 0,75, según
+  animaciones) y sus texturas 2K comprimidas. No se usa el teléfono.
+- **Equilibrio:** 80 PV y 11 de ataque son una primera propuesta; los combates con guion no prueban la estrategia de
+  un jugador. Kael nivel 1 gana con ataques en los casos probados.
+- **Sonido:** sin voz ni golpes propios (el catálogo no tiene la familia «zarzalin»); suena el golpe de siempre. Las
+  señales `pezuna` e `impacto` del modelo son sus anclas, para sonido.
+- La embestida aterriza un poco más allá del héroe (lo avisó animaciones): se ve como una embestida, pero solapa.
+- La escala ×1,25 es la propuesta de animaciones; la decisión es del usuario o del coordinador.
+
+**5. Peticiones**
+- **Sonido (`sonido.gd`):** la voz de Zarzalín (`clave` «zarzalin»: ataque, herido, caída) y la tierra de la pezuña
+  con la señal `pezuna`.
+- **Coordinador:** decidir la escala y el botín propuesto en la ficha (Corteza espinosa), que no he añadido.
