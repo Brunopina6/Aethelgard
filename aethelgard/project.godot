@@ -14,7 +14,7 @@ config/name="Aethelgard"
 run/main_scene="res://carga.tscn"
 config/quit_on_go_back=false
 config/features=PackedStringArray("4.7", "GL Compatibility")
-config/icon="res://icon.svg"
+config/icon="res://marca/icono_rebelum.png"
 run/main_scene.prueba3d="res://prototipos/sendero_puente.tscn"
 
 [autoload]
