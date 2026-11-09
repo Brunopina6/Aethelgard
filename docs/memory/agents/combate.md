@@ -337,3 +337,116 @@ pruebas y la lista exacta de enganches.
   - **M3:** Escarcha y la coraza (`_quitar_pv`; el golpe devastador pasa a `_quitar_pv`).
   - **M4:** los III, Brasa y tomos.
   - **E1 a E3:** los enemigos nuevos, cuando el usuario decida las debilidades.
+
+## 2026-11-09, 17:40 · T-099, y la parte de T-100 y T-101 que va en el HUD: PM por héroe, motivos, Érebo y señas
+
+**Encargo** (coordinador, 09/11): el HUD de combate. Interrumpido por un límite de uso y reanudado; al reanudar
+confirmé mi trabajo y después integré `integracion-experimental` (`eb8bd94`: arte de Oakhaven, Zarzalín, sonido t3,
+licencias) con `merge --no-ff`.
+- **Base:** `area-combate` @ `808a836`, importada con datos aislados
+  (`D:\REBELUM_diagnostico\importaciones\combate_20261109_130548`; tras el merge, `…\combate_20261109_172316`).
+- **Referencia del usuario:** la Prueba v136 (`555fc29`), con los PM solo en la cabecera del héroe activo. El HUD de
+  `808a836` es ese mismo: de ahí salen las capturas «antes».
+- **Sin tocar:** `sonido.gd`, `audio/**`, `enemigos/**`, `.dtl`, `zonas3d/**`, `mapa*`, `ciudad_oakhaven.*`,
+  `ciudades/**`, `progreso.gd`, `diario.gd`, `fondo_combate.gd` y `equipo_extra.gd`.
+- **Sin confirmar en la copia:** `aethelgard/pruebas/prueba_orden_pv03.gd.uid` (lo creó la importación; es de
+  narrativa).
+
+**1. Commits** (en `area-combate`, sin publicar)
+- `1e7806e` · código: `menu_combate.gd`, `combate.gd`, `artes.gd`, `estilo.gd` y `vfx/sena_arte.gd` (nuevo).
+- `7dbd3af` · pruebas: `prueba_hud_combate.gd` y `prueba_hud_fotos.gd` (nuevas), `prueba_artes.gd`,
+  `prueba_artes_combate.gd` y `lista_pruebas.txt`.
+- `21eb3ba` · merge de `integracion-experimental`. Un conflicto en `lista_pruebas.txt`: se quedan las dos líneas del
+  HUD y las de Oakhaven y Zarzalín; quité tres líneas antiguas repetidas (`prueba_artes`, `prueba_equipo` y
+  `prueba_artes_combate`, que ya estaban más arriba con su texto al día).
+- `a4e2347` · los `.uid` de mis tres archivos nuevos. Y el de este informe.
+
+**2. Qué se ve ya** (observado en el código y comprobado ejecutando, aislado, 09/11)
+- **PM por héroe (T-099):** el bloque del grupo (abajo a la derecha) va en columnas con su etiqueta encima:
+  **PV · PM · ATB**. Cada héroe presente, Garon incluido: nombre, estados, PV, la cifra `actual/máximo` de PM con su
+  **barra azul** debajo (`#4D8EF0`, distinto del celeste de Kael, que es el de su ATB llena) y la barra ATB.
+  - Se ve todo el combate: con el menú cerrado y con el turno de un enemigo.
+  - La cifra cambia al momento; la barra baja de golpe dejando un rastro claro que se recoge en medio segundo, o sube
+    en 0,3 s (Éter). Cambia también si cambia el máximo.
+  - 0 PM: la cifra se apaga a medias y la barra queda vacía. Caído: PV, PM y sus barras en gris (también su ATB).
+  - Colores: PV crema (naranja por debajo del 30 %), PM azul, ATB crema y del color del héroe al llenarse, Armonía
+    dorada abajo a la izquierda. Los colores nuevos, también en `estilo.gd` (`PM` y `PM_CLARO`).
+  - La cabecera «PM 34/34» del héroe activo se queda como estaba (junto a los costes de los submenús).
+- **Motivos de lo apagado (T-100):**
+  - **Órdenes:** a la derecha de la fila, siempre a la vista: «Necesitas 6 PM» (MAGIA, ESGRIMA, EMBUIR: lo más
+    barato), «Armonía al 45 %», «Lya ha caído» o «Nadie puede invocar» (INVOCACIÓN), «No quedan objetos», «No se puede
+    huir».
+  - **Submenús:** la explicación de la fila elegida dice el motivo: «Necesitas 8 PM: tienes 0.» (magias, Esgrima,
+    Embuir y artes; el coste sale en naranja) y «No te queda ninguno.» (objetos).
+  - **Compás del Alba:** «Kael va solo: no hay otro aliado.», «No queda otro aliado en pie.», «Lya ya espera su turno.»
+    o «Lya y Garon ya esperan su turno.».
+  - **Con el mando y el teclado, ↑ ↓ ya no se saltan las filas apagadas:** se eligen (guion gris en las órdenes, letra
+    gruesa gris en los submenús) y A / Intro solo suena a error. Con el dedo, tocarla la elige y enseña el motivo. Si
+    todas están apagadas, sale elegida la primera, con su motivo.
+- **Érebo en el HUD (T-101):** junto a «ARMONÍA», «45 %», **«INVOCACIÓN LISTA»** (late en dorado con la barra) o
+  «LYA HA CAÍDO» (naranja). Sin Lya en el grupo (Kael solo) no se la nombra: solo el porcentaje, y la orden dice
+  «Nadie puede invocar». Las reglas no cambian: `_estado_invocacion()` = Armonía llena y Lya en pie, lo mismo que antes
+  decía `_mostrar_menu`. **La cinemática no se ha tocado.**
+- **La seña de cada arte (T-100):** siluetas dibujadas con líneas y polígonos (`vfx/sena_arte.gd`), sin partículas ni
+  luces: se leen igual en el perfil bajo. El sonido se pide una vez, en el fotograma en que el arte se aplica
+  (`arte_alba`, `arte_ocaso`, `renacer`, `arte_lumbre` y `aliento`; tras el merge ya están en el catálogo de sonido).
+  - **Compás del Alba:** Kael se vuelve hacia el aliado y conjura con su clip de siempre (`mage_soell_cast_7`); un anillo
+    con cuatro marcas, como la esfera de un reloj, gira sobre el aliado y marca el ritmo (cada tiempo enciende una
+    marca), y al cerrarse sube un destello.
+  - **Peso del Ocaso:** el mismo anillo, violeta, gira al revés y baja aplastando a cada enemigo; sus marcas se apagan.
+  - **Lumbre de Retorno:** Lya se vuelve hacia el caído; una brasa vuela de ella hasta él (0,45 s) y, al llegar,
+    vuelve: columna de luz cálida, la llama del farol sobre su cabeza, «¡Kael vuelve!» y su fila del HUD se ilumina.
+  - **Segundo Aliento:** una hoja por turno sube en espiral alrededor de cada aliado y sale «Aliento: 3 turnos» una vez;
+    junto a la hoja del HUD, los turnos que le quedan (3, 2, 1). Al empezar cada turno sube una hoja; al acabarse,
+    «Aliento se acaba».
+  - La onda de suelo de antes se quita en el Alba, la Lumbre y el Aliento (la sustituye la silueta); las partículas de
+    siempre se quedan. Nada del perfil alto baja.
+
+**3. La huella:** igual a la referencia (`prueba_combate_huella` SUPERADA, dos pasadas, en la batería de abajo). El HUD
+no tira del generador global ni cambia tiempos, y las artes no salen en la huella: no hace falta referencia nueva.
+
+**4. Pruebas** (datos aislados; la partida real, la carpeta real de datos y el proyecto, sin cambios)
+- **Nueva `prueba_hud_combate`** (automática): grupos de 1, 2 y 3 (filas, etiquetas, nada recoge toques; el bloque no
+  pisa órdenes, explicaciones, vidas de enemigos ni zonas de objetivo); PM con Fuego, Juicio, Embuir, Éter, el máximo,
+  0 PM y Lya caída, a la vista con el turno de un enemigo y el menú cerrado; motivos (MAGIA, ESGRIMA, EMBUIR, OBJETO,
+  HUIR contra un jefe, magias, Esgrima, Embuir, objetos y el Compás) con el mando y con el dedo; Érebo (sin Lya, 45 %,
+  lista, Lya caída) y sus reglas; señas del Compás (y el giro de Kael), Ocaso, Lumbre y Aliento, con su sonido una vez
+  y a tiempo (±1 fotograma).
+- **Mutaciones** (restauradas desde el archivo confirmado): sin actualizar la cifra de PM y sin el motivo de
+  INVOCACIÓN, la prueba sale FALLIDA con 41 fallos (`D:\REBELUM_diagnostico\pruebas\2026-11-09_173750`).
+- **Nueva `prueba_hud_fotos`** (con ventana): 22 capturas del mismo guion con semilla fija; vale para antes y después.
+- **Batería completa tras el merge** (`D:\REBELUM_diagnostico\pruebas\2026-11-09_172357\resumen.md`): **53 SUPERADAS,
+  2 FALLIDAS, 32 MANUALES y 0 NO SEGURAS**. Entre las SUPERADAS: `prueba_combate_huella`, `prueba_hud_combate`,
+  `prueba_artes`, `prueba_artes_combate`, `prueba_grupos_combate`, `prueba_incorporacion`, `prueba_equilibrio`,
+  `prueba_ia`, `prueba_menu_magia`, `prueba_menu_nuevo`, `prueba_huir`, `prueba_garon`, `prueba_centinela`,
+  `prueba_controles_nuevos` y `prueba_equipo_combate`.
+- **Las dos FALLIDAS no son de combate:** `prueba_mando` y `prueba_teclado`, paso 4 «Intro / A junto a Tilo no abre el
+  diálogo» (Pastos Verdes, antes de cualquier combate). Mi rama solo difiere de `eb8bd94` en mis 13 archivos de
+  combate, y la pasada `2026-11-09_172149` (otra copia, 17:21) falla igual; una de las 17:33 (`…_173333`) ya pasa.
+  Viene de la integración (`c3f5692`: Tilo empieza PV-03). *Pendiente de verificar* en `integracion-experimental`.
+
+**5. Evidencias** (`D:\REBELUM_diagnostico\combate\2026-11-09\hud\`)
+- `antes\` y `despues\`: 22 capturas cada una, mismo combate y mismo momento (1280 × 720); `antes_movil\` y
+  `despues_movil\`, lo mismo con la calidad del móvil (40 % de partículas, sin luces 2D).
+- `comparar\` y `comparar_movil\`: cada par lado a lado, con el HUD del grupo y la Armonía ampliados debajo
+  (`comparar.ps1` las rehace). Las más útiles: `01_tres_menu_kael`, `06_tres_turno_enemigo` (menú cerrado),
+  `09_garon_tras_juicio`, `10_lya_erebo_listo`, `11_kael_0pm_lya_caida`, `12_mando_sobre_magia`, `13_kael_0pm_magia`,
+  `15_mando_sobre_compas`, `05_tres_compas_anillo`, `16_peso_del_ocaso`, `18_lumbre_quien_vuelve`,
+  `20_aliento_turnos`, `21_solo_menu` y `22_solo_compas`.
+- Incidente: la pasada de capturas de las 17:33 (`…_173356`) se cortó tras la primera captura sin ningún error; la
+  repetí (`…_173556`, 22 capturas).
+
+**6. Límites**
+- **Pendiente en Redmi:** si el HUD se lee de un vistazo (letras de 17 a 32 px; las etiquetas, 19 px ≈ 11 dp), el
+  coste del bloque nuevo y de las señas, y si las señas se leen en su pantalla. No se usa el teléfono.
+- **Sonidos:** se piden por nombre y a tiempo (comprobado con la señal); **no se han oído**.
+- **Gesto de Lya:** su FBX no trae clip de conjuro; usa el gesto por código «conjuro», vuelta hacia el caído. Un gesto
+  propio (ofrecer el farol, el soplo del Aliento) lo haría animaciones.
+- **Cambio de manejo:** ↑ ↓ pasan ahora por las filas apagadas (antes se las saltaban): con INVOCACIÓN apagada, llegar a
+  OBJETO cuesta una pulsación más. Las pruebas de mando y teclado lo aguantan.
+- Los combates con guion no prueban la estrategia de un jugador.
+
+**7. Siguiente paso y peticiones**
+- **Animaciones (opcional):** gestos de Lya para la Lumbre de Retorno y el Segundo Aliento.
+- **Narrativa / coordinador:** `prueba_mando` y `prueba_teclado` (paso 4, Tilo) en la integración.
+- **Siguiente encargo:** Zarzalín en el combate.
