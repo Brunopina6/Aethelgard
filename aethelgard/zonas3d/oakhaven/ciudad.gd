@@ -1,0 +1,390 @@
+extends RefCounted
+# Oakhaven 3D (T-103): el decorado de la ciudad. El mismo trazado que la Oakhaven 2D (ciudades/oakhaven.gd: una casilla
+# es un metro; x hacia el este, z hacia el sur, como las filas del mapa), con los modelos que hizo gráficos en Blender
+# para la ciudad (T-089; modelos/*.glb, ya en su sitio de la ciudad o, los sueltos, desde su esquina) y el relleno de
+# casas y faroles que propuso (ciudades/oakhaven_piezas.gd, RELLENO).
+# La hora azul de la ciudad: cielo índigo, luz fría del oeste y el fuego de los faroles guiando por la Calle Mayor.
+# Lo que se usa (la posadera, Aldric, la puerta de la taberna) está en zonas3d/oakhaven_3d.gd.
+
+const Oak := preload("res://ciudades/oakhaven.gd")
+const Piezas2D := preload("res://ciudades/oakhaven_piezas.gd")
+const Roca := preload("res://zonas3d/garganta/roca.gd")
+const Materiales := preload("res://zonas3d/garganta/materiales.gd")
+const MODELOS := "res://zonas3d/oakhaven/modelos/"
+# Piezas con su sitio dentro del modelo (se ponen en el origen) y piezas sueltas (desde la esquina de su casilla).
+const UNICAS := ["puerta_sur", "plaza", "taberna", "concejo", "botica", "guardia", "mercado", "patio_cuervo", "arbol"]
+const ALTO_EDIFICIO := 7.0
+# Cantidades por perfil (bajo, medio, alto): densidad de adoquines, matas de hierba y flores.
+const ADOQUINES := {"bajo": 0.55, "medio": 0.8, "alto": 1.0}
+const MATAS := {"bajo": 260, "medio": 520, "alto": 900}
+const FLORES := {"bajo": 120, "medio": 260, "alto": 420}
+
+var region: Node3D
+var mat: Materiales
+var perfil: Dictionary
+var nombre_perfil := "alto"
+var lotes: Roca.Lotes
+var bloqueos: Array = []          # Rect2 (en casillas) que no se pisan: edificios y casas
+var faroles: Array = []           # posición de la llama de cada farol (las luces reales, el sonido)
+var luces: Array = []             # OmniLight3D de los faroles (perfil alto): tiemblan
+var _t := 0.0
+var tiempos := {}
+
+
+func _init(r: Node3D, m: Materiales, p: Dictionary, nombre: String) -> void:
+	region = r
+	mat = m
+	perfil = p
+	nombre_perfil = nombre if ADOQUINES.has(nombre) else "alto"
+	lotes = Roca.Lotes.new()
+
+
+func construir() -> void:
+	seed(4711)
+	for paso in [_suelo, _modelos, _relleno, _adoquines, _vegetacion, _faroles]:
+		var t0 := Time.get_ticks_usec()
+		paso.call()
+		tiempos[String(paso.get_method())] = (Time.get_ticks_usec() - t0) / 1000.0
+	lotes.cerrar(region)
+
+
+# ¿Es pisable la casilla (x, z) según el trazado? (calles, plaza, patios y jardines; no los edificios ni las casas)
+func bloqueado(x: float, z: float, margen := 0.25) -> bool:
+	for r in bloqueos:
+		var g: Rect2 = (r as Rect2).grow(margen)
+		if g.has_point(Vector2(x, z)):
+			return true
+	return false
+
+
+static func lugar_en(x: float, z: float, pisables := true) -> String:
+	for l in Oak.LUGARES:
+		if bool(l.get("pisable", false)) == pisables and not l.get("en_alto", false) and (l["rect"] as Rect2).has_point(Vector2(x, z)):
+			return l["id"]
+	return ""
+
+
+# ================================================================= suelo
+
+# Una malla de 1 m con el color de cada sitio: empedrado gris en calles y plaza, hierba en jardines y huertos, tierra
+# pisada a la orilla de las calles. Con su colisión (una caja delgada: el suelo es llano).
+func _suelo() -> void:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var tam: Vector2i = Oak.TAM
+	var colorea := func(x: float, z: float) -> Color:
+		var id := lugar_en(x, z)
+		var n := Roca.n2(x * 0.21, z * 0.21)
+		if id in ["calle_mayor", "plaza", "calle_cuervo", "calle_mercado", "calle_arbol", "puerta_sur", "concejo_portico",
+				"plazuela_botica", "soportal_guardia", "pie_torre", "calle_torre", "mercado"]:
+			return Color(0.40, 0.38, 0.37).lerp(Color(0.46, 0.42, 0.36), 0.5 + 0.5 * n)
+		var borde := 9.0
+		for l in Oak.LUGARES:
+			if l.get("pisable", false) and not l.get("en_alto", false):
+				var r: Rect2 = (l["rect"] as Rect2).grow(1.2)
+				if r.has_point(Vector2(x, z)):
+					borde = 0.0
+		var hierba := Color(0.24, 0.36, 0.17).lerp(Color(0.33, 0.45, 0.20), 0.5 + 0.5 * n)
+		return hierba.lerp(Color(0.38, 0.33, 0.25), 0.55) if borde < 1.0 else hierba
+	for z in tam.y:
+		for x in tam.x:
+			var p := [Vector3(x, 0, z), Vector3(x + 1, 0, z), Vector3(x, 0, z + 1), Vector3(x + 1, 0, z + 1)]
+			for i in [0, 1, 2, 2, 1, 3]:
+				var v: Vector3 = p[i]
+				st.set_color(colorea.call(v.x, v.z))
+				st.set_normal(Vector3.UP)
+				st.add_vertex(v)
+	var mi := MeshInstance3D.new()
+	mi.mesh = st.commit()
+	mi.material_override = mat.sillar()
+	mi.name = "Suelo"
+	region.add_child(mi)
+	var cuerpo := StaticBody3D.new()
+	cuerpo.name = "SueloChoque"
+	region.add_child(cuerpo)
+	var col := CollisionShape3D.new()
+	var caja := BoxShape3D.new()
+	caja.size = Vector3(tam.x + 40.0, 0.2, tam.y + 40.0)
+	col.shape = caja
+	col.position = Vector3(tam.x * 0.5, -0.1, tam.y * 0.5)
+	cuerpo.add_child(col)
+
+
+# ================================================================= edificios (los modelos de Blender)
+
+func _modelo(id: String) -> Node3D:
+	var ruta := MODELOS + id + ".glb"
+	if not ResourceLoader.exists(ruta):
+		push_warning("Oakhaven 3D: falta el modelo «%s»" % ruta)
+		return null
+	var n: Node3D = (load(ruta) as PackedScene).instantiate()
+	n.name = id
+	for g in n.find_children("*", "GeometryInstance3D", true, false):
+		(g as GeometryInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if perfil.get("sombras", false) \
+			else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	return n
+
+
+func _modelos() -> void:
+	for id in UNICAS:
+		var n := _modelo(id)
+		if n != null:
+			region.add_child(n)
+	# los edificios no se pisan: una caja de choque por cada uno (la huella del trazado) y su bloqueo
+	for l in Oak.LUGARES:
+		if l.get("pisable", false):
+			continue
+		var r: Rect2 = l["rect"]
+		bloqueos.append(r)
+		_caja_choque(r, ALTO_EDIFICIO)
+	# la fuente de la plaza (en el modelo de la plaza): no se atraviesa
+	var cuerpo := StaticBody3D.new()
+	cuerpo.position = Vector3(Oak.PLAZA.x, 0, Oak.PLAZA.y)
+	region.add_child(cuerpo)
+	var col := CollisionShape3D.new()
+	var cil := CylinderShape3D.new()
+	cil.radius = 1.6
+	cil.height = 2.0
+	col.shape = cil
+	col.position.y = 1.0
+	cuerpo.add_child(col)
+	bloqueos.append(Rect2(Oak.PLAZA.x - 1.5, Oak.PLAZA.y - 1.5, 3.0, 3.0))
+
+
+func _caja_choque(r: Rect2, alto: float) -> void:
+	var cuerpo := StaticBody3D.new()
+	cuerpo.position = Vector3(r.position.x + r.size.x * 0.5, alto * 0.5, r.position.y + r.size.y * 0.5)
+	region.add_child(cuerpo)
+	var col := CollisionShape3D.new()
+	var caja := BoxShape3D.new()
+	caja.size = Vector3(r.size.x, alto, r.size.y)
+	col.shape = caja
+	cuerpo.add_child(col)
+
+
+# Las casas, los faroles y la ropa tendida del relleno de gráficos: cada uno desde la esquina de su casilla.
+func _relleno() -> void:
+	for d in Piezas2D.RELLENO:
+		var id: String = d["id"]
+		if id == "farol":
+			continue                                        # los pone _faroles, con su fuego
+		var r: Rect2i = d["rect"]
+		var n := _modelo(id)
+		if n == null:
+			continue
+		n.position = Vector3(r.position.x, 0, r.position.y)
+		region.add_child(n)
+		if not d.get("suelto", false):
+			bloqueos.append(Rect2(r))
+			_caja_choque(Rect2(r), ALTO_EDIFICIO)
+
+
+# ================================================================= empedrado, hierba y flores
+
+# Adoquines irregulares por las calles y la plaza (como la Vía del Peregrino de la Garganta), más ralos en el perfil
+# bajo, en MultiMesh por tramos de 12 m.
+func _adoquines() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 909
+	var m := mat.detalle(Color.WHITE, 1.3, 1.0).duplicate() as StandardMaterial3D
+	m.vertex_color_use_as_albedo = true
+	var forma := _adoquin(rng, 7 if nombre_perfil == "bajo" else 9)
+	forma.surface_set_material(0, m)
+	var densidad: float = ADOQUINES[nombre_perfil]
+	var piezas: Array = []
+	for l in Oak.LUGARES:
+		if not l["id"] in ["calle_mayor", "plaza", "calle_cuervo", "puerta_sur", "calle_arbol", "calle_mercado", "concejo_portico"]:
+			continue
+		var r: Rect2 = l["rect"]
+		var z := r.position.y + 0.2
+		var fila := 0
+		while z < r.end.y:
+			var x := r.position.x + (0.22 if fila % 2 == 0 else 0.0) + 0.2
+			while x < r.end.x:
+				if rng.randf() < densidad and not bloqueado(x, z, 0.1):
+					var e := rng.randf_range(0.9, 1.15)
+					var t := Transform3D(Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(e, rng.randf_range(0.8, 1.1), e)),
+						Vector3(x + rng.randf_range(-0.06, 0.06), -0.015, z + rng.randf_range(-0.06, 0.06)))
+					var g := rng.randf_range(0.52, 0.68)
+					var c := Color(g, g * 0.97, g * 0.92)
+					if rng.randf() < 0.15:
+						c = c.lerp(Color(0.42, 0.48, 0.32), rng.randf_range(0.25, 0.5))
+					piezas.append([t, c])
+				x += 0.44
+			z += 0.44
+			fila += 1
+	_por_tramos("Adoquines", forma, piezas)
+
+
+func _adoquin(rng: RandomNumberGenerator, lados: int) -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var radios: Array = []
+	for i in lados:
+		radios.append(0.2 * rng.randf_range(0.8, 1.1))
+	var arriba := 0.045
+	var canto := 0.03
+	var cima := Vector3(0, arriba + 0.02, 0)
+	for i in lados:
+		var a0 := TAU * i / lados
+		var a1 := TAU * (i + 1) / lados
+		var d0 := Vector3(cos(a0), 0, sin(a0))
+		var d1 := Vector3(cos(a1), 0, sin(a1))
+		var r0: float = radios[i]
+		var r1: float = radios[(i + 1) % lados]
+		var in0 := d0 * (r0 - canto) + Vector3(0, arriba, 0)
+		var in1 := d1 * (r1 - canto) + Vector3(0, arriba, 0)
+		var out0 := d0 * r0 + Vector3(0, arriba - canto, 0)
+		var out1 := d1 * r1 + Vector3(0, arriba - canto, 0)
+		var pie0 := d0 * r0 * 1.04 + Vector3(0, -0.06, 0)
+		var pie1 := d1 * r1 * 1.04 + Vector3(0, -0.06, 0)
+		for v in [cima, in0, in1, in0, out1, in1, in0, out0, out1, out0, pie1, out1, out0, pie0, pie1]:
+			st.add_vertex(v)
+	st.generate_normals()
+	return st.commit()
+
+
+# Matas de hierba y flores en jardines y huertos (no en las calles ni dentro de las casas), con el viento de la hierba.
+func _vegetacion() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 1212
+	var hoja := _mata()
+	hoja.surface_set_material(0, mat.hierba_verde())
+	var flor := SphereMesh.new()
+	flor.radius = 0.06
+	flor.height = 0.1
+	flor.radial_segments = 5
+	flor.rings = 2
+	var mflor := StandardMaterial3D.new()
+	mflor.vertex_color_use_as_albedo = true
+	mflor.roughness = 1.0
+	flor.material = mflor
+	var matas: Array = []
+	var flores: Array = []
+	var colores := [Color(0.72, 0.56, 0.86), Color(0.95, 0.92, 0.82), Color(0.96, 0.62, 0.70), Color(0.98, 0.84, 0.36),
+		Color(0.52, 0.62, 0.95)]
+	var intentos := 0
+	while (matas.size() < MATAS[nombre_perfil] or flores.size() < FLORES[nombre_perfil]) and intentos < 20000:
+		intentos += 1
+		var x := rng.randf_range(1.0, Oak.TAM.x - 1.0)
+		var z := rng.randf_range(1.0, Oak.TAM.y - 1.0)
+		if lugar_en(x, z) != "" or bloqueado(x, z, 0.4):
+			continue
+		var p := Vector3(x, 0, z)
+		if matas.size() < MATAS[nombre_perfil]:
+			var e := rng.randf_range(0.6, 1.2)
+			var tono := rng.randf_range(0.8, 1.1)
+			matas.append([Transform3D(Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(e, e, e)), p), Color(tono, tono, tono * 0.9)])
+		if flores.size() < FLORES[nombre_perfil] and rng.randf() < 0.6:
+			var c: Color = colores[rng.randi() % colores.size()]
+			for k in rng.randi_range(2, 5):
+				flores.append([Transform3D(Basis(), p + Vector3(rng.randf_range(-0.3, 0.3), rng.randf_range(0.18, 0.32), rng.randf_range(-0.3, 0.3))), c])
+	_por_tramos("Matas", hoja, matas)
+	_por_tramos("Flores", flor, flores)
+
+
+func _mata() -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for k in 5:
+		var a := k * TAU / 5.0
+		var d := Vector3(cos(a), 0, sin(a))
+		var lado := Vector3(-d.z, 0, d.x) * 0.05
+		var punta := d * 0.18 + Vector3(0, 0.4, 0)
+		for v in [-lado, lado, punta]:
+			st.set_normal(Vector3.UP)
+			st.add_vertex(v)
+	return st.commit()
+
+
+func _por_tramos(nombre: String, malla: Mesh, piezas: Array, tramo := 12.0) -> void:
+	var grupos := {}
+	for pz in piezas:
+		var o: Vector3 = (pz[0] as Transform3D).origin
+		var k := Vector2i(floori(o.x / tramo), floori(o.z / tramo))
+		if not grupos.has(k):
+			grupos[k] = []
+		grupos[k].append(pz)
+	for k in grupos:
+		var lista: Array = grupos[k]
+		var centro := Vector3.ZERO
+		for pz in lista:
+			centro += (pz[0] as Transform3D).origin
+		centro /= lista.size()
+		var mm := MultiMesh.new()
+		mm.transform_format = MultiMesh.TRANSFORM_3D
+		mm.use_colors = true
+		mm.mesh = malla
+		mm.instance_count = lista.size()
+		for i in lista.size():
+			var t: Transform3D = lista[i][0]
+			mm.set_instance_transform(i, Transform3D(t.basis, t.origin - centro))
+			mm.set_instance_color(i, lista[i][1])
+		var mmi := MultiMeshInstance3D.new()
+		mmi.multimesh = mm
+		mmi.position = centro
+		mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mmi.name = "%s_%d_%d" % [nombre, k.x, k.y]
+		region.add_child(mmi)
+
+
+# ================================================================= faroles
+
+# Los faroles del relleno (uno cada 5 m por la Calle Mayor): el modelo, su llama, el halo pintado en el suelo y, en el
+# perfil alto, luz de verdad en los más cercanos al camino de la entrada (hasta 4).
+func _faroles() -> void:
+	var cerca_del_camino := func(p: Vector3) -> bool: return absf(p.x - 40.0) < 6.0 and p.z > 20.0
+	for d in Piezas2D.RELLENO:
+		if d["id"] != "farol":
+			continue
+		var r: Rect2i = d["rect"]
+		var n := _modelo("farol")
+		if n != null:
+			n.position = Vector3(r.position.x, 0, r.position.y)
+			region.add_child(n)
+		var llama := Vector3(r.position.x + 0.5, 3.0, r.position.y + 0.5)
+		faroles.append(llama)
+		_llama(llama, 0.32, llama.x + llama.z)
+		_halo(Vector3(llama.x, 0.0, llama.z), llama, 5.0, 1.4)
+		bloqueos.append(Rect2(r.position.x + 0.3, r.position.y + 0.3, 0.4, 0.4))
+		if perfil.get("luces_faroles", false) and luces.size() < 4 and cerca_del_camino.call(llama):
+			var o := OmniLight3D.new()
+			o.light_color = Color(1.0, 0.72, 0.42)
+			o.light_energy = 1.4
+			o.omni_range = 7.0
+			o.position = llama
+			region.add_child(o)
+			luces.append(o)
+
+
+func _llama(p: Vector3, alto: float, fase: float) -> MeshInstance3D:
+	var q := QuadMesh.new()
+	q.size = Vector2(alto * 0.62, alto)
+	var mi := MeshInstance3D.new()
+	mi.mesh = q
+	mi.material_override = mat.llama(fase, 1.0)
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mi.position = p
+	mi.name = "Llama"
+	region.add_child(mi)
+	return mi
+
+
+func _halo(suelo: Vector3, aire: Vector3, ancho: float, tam_aire: float) -> void:
+	var pm := PlaneMesh.new()
+	pm.size = Vector2(ancho, ancho)
+	lotes.poner(pm, Transform3D(Basis(), suelo + Vector3(0, 0.03, 0)), mat.halo_suelo(Materiales.FUEGO))
+	var q := QuadMesh.new()
+	q.size = Vector2(tam_aire, tam_aire)
+	var brillo := MeshInstance3D.new()
+	brillo.mesh = q
+	brillo.material_override = mat.halo_aire(Materiales.FUEGO)
+	brillo.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	brillo.position = aire
+	region.add_child(brillo)
+
+
+func animar(delta: float) -> void:
+	_t += delta
+	for i in luces.size():
+		(luces[i] as OmniLight3D).light_energy = 1.4 * (0.88 + 0.08 * sin(_t * 9.0 + i * 1.7) + 0.04 * sin(_t * 23.0 + i))
