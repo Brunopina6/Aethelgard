@@ -1,7 +1,7 @@
 extends SceneTree
 # C0 · Huella del combate: la red de seguridad de T-091, T-092 y T-093 (docs/diseno/combate_ampliaciones.md, §6).
 #
-# Juega, con una semilla fija, ocho combates de 1, 2 y 3 héroes conducidos por un guion (ataques, las magias de
+# Juega, con una semilla fija, nueve combates de 1, 2 y 3 héroes conducidos por un guion (ataques, las 12 magias de
 # siempre, defensa, objetos, Esgrima, Embuir, Érebo, huida, derrota y Gorthor con su decisión) y anota su «huella»:
 # cada turno, cada texto del cartel, cada cambio de PV y PM con su fotograma, el final, la experiencia, el oro y los
 # objetos. Comprueba que la huella es la de pruebas/referencias/huella_combate.txt y, con «dos_pasadas», que dos
@@ -15,11 +15,11 @@ extends SceneTree
 # sus partículas (que tiran del generador global) cuentan otro tiempo y la huella sale distinta.
 # Cada combate tiene su propia semilla (semilla + 1000 × su número): «solo=E3» da la misma huella de E3 que la lista
 # entera.
-# Fuera de la huella: Infierno (Fuego III) y Cólera del Cielo (Rayo III). Sus meteoros y rayos de adorno caen en
-# momentos que sortea un RandomNumberGenerator nuevo (en Godot 4.7 empieza al azar si no se le da semilla: comprobado
-# el 09/11), y sus partículas y el rayo 3D tiran del generador global: el orden de las tiradas cambia de una pasada a
-# otra (con Infierno, 3 huellas distintas en 6 pasadas). El cambio de dos líneas que lo arregla está en
-# docs/diseno/combate_enganches.md (C0); con él, las dos entran en la huella.
+# Infierno (Fuego III) y Cólera del Cielo (Rayo III) van en E9, desde C0 (09/11). Antes se quedaban fuera: sus
+# meteoros y rayos de adorno caían en momentos que sorteaba un RandomNumberGenerator nuevo (en Godot 4.7 empieza al azar
+# si no se le da semilla), y sus partículas y el rayo 3D tiran del generador global: con Infierno, 3 huellas distintas
+# en 6 pasadas. Con C0, combate.gd siembra ese generador con randi() (docs/diseno/combate_enganches.md, §1): en el
+# juego siguen al azar y aquí salen de la semilla. E1 a E8 no cambian con C0: ninguno lanza esas dos magias.
 #
 # Argumentos (después de --): semilla=N · salida=<carpeta> (escribe ahí huella_combate.txt) · dos_pasadas o
 # pasadas=N (para buscar lo que no es fijo) · solo=E1,E3 · sin_referencia (para sacar una referencia nueva) ·
@@ -70,6 +70,10 @@ const ESCENARIOS := [
 		"guion": {"Kael": [["magia", "Fuego", 1, 0], ["atacar", 0], ["magia", "Rayo", 2, 0], ["defender"]],
 			"Lya": [["magia", "Agua", 1, 0], ["magia", "Cura", 1, "herido"], ["invocar", 0], ["magia", "Cura", 2, 0]],
 			"Garon": [["embuir", "Fuego"], ["esgrima", "Juicio", 0], ["esgrima", "Giro", 0]]}},
+	# Desde C0: las dos magias de nivel III que faltaban (con sus adornos sacados de la semilla del combate).
+	{"id": "E9_nivel10_supremas", "activos": ["Kael", "Lya"], "grupo": 4, "nivel": 10, "zona": "desierto",
+		"guion": {"Kael": [["magia", "Fuego", 3, 0], ["defender"]],
+			"Lya": [["defender"], ["magia", "Rayo", 3, 0], ["magia", "Cura", 2, 0]]}},
 ]
 
 var P

@@ -319,7 +319,14 @@ var efectos_3d_activos := 0
 
 
 func _ready() -> void:
-	randomize()
+	var semilla := -1                              # pruebas: -- semilla=N (C0); en el juego, al azar como siempre
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("semilla="):
+			semilla = int(a.substr(8))
+	if semilla >= 0:
+		seed(semilla)
+	else:
+		randomize()
 	# modo móvil: en Android (o probando con -- movil) los efectos son más ligeros
 	movil = OS.has_feature("mobile") or "movil" in OS.get_cmdline_user_args()
 	if movil:
@@ -3347,6 +3354,7 @@ func _lluvia_meteoros(objs: Array, impacto_en: Callable) -> void:
 	_fogonazo(Color(1.0, 0.3, 0.05), 0.25, 1.4)
 	_luz(Color(1.0, 0.4, 0.1), 2.0, 12.0, 2.0, Vector2(300, 300))
 	var rng := RandomNumberGenerator.new()
+	rng.seed = randi()                             # C0: sale de la semilla del combate (en el juego, igual de al azar)
 	for i in 6:                                    # meteoros de adorno (no hacen daño)
 		var p := Vector2(rng.randf_range(-150, 650), rng.randf_range(380, 560))
 		get_tree().create_timer(rng.randf_range(0.0, 0.9)).timeout.connect(func():
@@ -3524,7 +3532,7 @@ func _tormenta(objs: Array, impacto_en: Callable) -> void:
 	t.tween_property(oscuro, "color:a", 0.45, 0.3)
 	await t.finished
 	var rng := RandomNumberGenerator.new()
-	rng.randomize()
+	rng.seed = randi()                             # C0: sale de la semilla del combate (en el juego, igual de al azar)
 	for i in 5:                                    # rayos de adorno alrededor
 		var p := Vector2(rng.randf_range(-150, 650), rng.randf_range(400, 560))
 		get_tree().create_timer(rng.randf_range(0.0, 0.9)).timeout.connect(func():
