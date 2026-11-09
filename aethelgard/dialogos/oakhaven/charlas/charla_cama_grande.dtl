@@ -1,0 +1,13 @@
+join kael (vivo) left
+join lya (vivo) right
+update kael [extra_data="ligero"]
+kael: Garon, cada noche dices «duermo en el suelo».
+garon: Y duermo en el suelo.
+update lya [extra_data="duda"]
+lya: Esta mañana estabas en la cama grande. Abrazado a la almohada.
+garon: Comprobaba el colchón.
+update kael [extra_data="sorpresa"]
+kael: ¿Toda la noche?
+garon: Es un colchón grande.
+leave lya
+leave kael

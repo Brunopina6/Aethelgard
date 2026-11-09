@@ -2,9 +2,9 @@ join kael (vivo_pv) left
 join lya (vivo_pv) right
 update lya [extra_data="inquieta"]
 lya: ¡Kael! ¿De verdad pensabas irte sin mí?
-update kael [extra_data="ligero"]
+update kael [extra_data="ligero+risa"]
 kael: Pensaba dejarte dormir. Es distinto.
-update lya [extra_data="decidida"]
+update lya [extra_data="decidida+enfado"]
 lya: Te dije «ten cuidado». No «vete solo».
 update kael [extra_data="brazalete"]
 kael: Matices.

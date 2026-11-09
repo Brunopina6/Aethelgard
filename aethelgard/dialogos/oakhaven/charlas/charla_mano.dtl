@@ -1,0 +1,14 @@
+join kael (vivo) left
+join lya (vivo) right
+garon: Esa mano. La escondes cuando brilla.
+update kael [extra_data="brazalete"]
+kael: Es la mano de comer. Hay que cuidarla.
+update lya [extra_data="preocupada"]
+lya: Kael… ¿te duele?
+update kael [extra_data="ligero"]
+kael: No. Brilla cuando le da la gana. Como un farol con mal genio.
+garon: Si un día duele, lo dices.
+update kael [extra_data="decidido"]
+kael: Seréis los primeros. Palabra.
+leave lya
+leave kael
