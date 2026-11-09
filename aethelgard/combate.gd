@@ -1457,7 +1457,8 @@ func _marcar_aviso(f: Dictionary, si: bool) -> void:
 	f.erase("aviso_nodo")
 	if si and f.has("rig"):
 		var s := _sena_arte("aviso", f, {"dur": 9999.0})
-		s.position = _centro(f) + Vector2(0, -(_suelo_de(f).y - _centro(f).y) - 40.0)
+		# encima de «⚠ Cargando» y de la vida, sin taparlos (la señal vive en «escena», escalada: se pasa a sus medidas)
+		s.position = (_ancla_vida(f) + Vector2(60, -40 - 24 * TAM_ESCENA) - escena.position) / TAM_ESCENA
 		f["aviso_nodo"] = s
 
 
