@@ -3,7 +3,11 @@
 # todos con el MISMO lienzo: el alto del original más MARGEN arriba (para el pelo de las poses que suben la cabeza),
 # los pies en el borde de abajo y el centro donde estaba el centro del original. Así, al cambiar de pose en el diálogo
 # nada se desplaza, y con la escala del .dch compensada (×624/620) el personaje sale del mismo tamaño que antes.
-#   blender -b -P finalizar.py -- <original.png> <carpeta_crudos> <poses> <carpeta_salida> <prefijo> [pose=nombre,...]
+#   blender -b -P finalizar.py -- <original.png> <carpeta_crudos> <poses> <carpeta_salida> <prefijo> [pose=nombre,...] [afinar=fino,local]
+# «afinar» (T-084, tanda 2; solo Lya): enfoque fino (radio 1 px) y contraste local (radio 6 px) tras el color, en alfa
+# premultiplicado (sin halos). El original de Lya es más nítido y contrastado que lo que da este render (alta frecuencia
+# ×0,56 y contraste ×0,82 sin afinar); con afinar=0.6,0.4 queda en ×1,00 y ×0,93. El de Kael no lo necesita (sus
+# renders ya igualaban a su original) y sin «afinar» todo sale exactamente como antes.
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np
@@ -12,7 +16,14 @@ import imgutil as U
 
 argv = sys.argv[sys.argv.index("--") + 1:]
 orig = U.cargar(argv[0]); carpeta = argv[1]; poses = argv[2].split(","); salida = argv[3]; prefijo = argv[4]
-renombrar = dict(p.split("=") for p in argv[5].split(",")) if len(argv) > 5 and argv[5] else {}
+extra = [a for a in argv[5:] if a]
+renombrar = {}
+AFINAR = None
+for a in extra:
+    if a.startswith("afinar="):
+        AFINAR = tuple(float(x) for x in a[7:].split(","))
+    else:
+        renombrar.update(dict(p.split("=") for p in a.split(",")))
 MARGEN = 4
 os.makedirs(salida, exist_ok=True)
 
@@ -46,6 +57,29 @@ def color(im):
     return o
 
 
+def _caja(im, k):
+    pad = np.pad(im, ((k, k), (k, k), (0, 0)), mode='edge')
+    acc = np.zeros_like(im)
+    for dy in range(-k, k + 1):
+        for dx in range(-k, k + 1):
+            acc += pad[k + dy:k + dy + im.shape[0], k + dx:k + dx + im.shape[1]]
+    return acc / (2 * k + 1) ** 2
+
+
+def afinar(im, fino, local):
+    alfa = im[:, :, 3:4]
+    pre = np.concatenate([im[:, :, :3] * alfa, alfa], 2)
+    base = im[:, :, :3]
+
+    def desenf(k):                                   # normalizado por el alfa: el borde no se mezcla con el vacío
+        d = _caja(pre, k)
+        return d[:, :, :3] / np.maximum(d[:, :, 3:4], 1e-4)
+    out = base + fino * (base - desenf(1)) + local * (base - desenf(6))
+    o = im.copy()
+    o[:, :, :3] = np.where(alfa > 1e-4, np.clip(out, 0, 1), 0)
+    return o
+
+
 red = {n: reducido(n) for n in poses}
 cx = (x0 + x1) / 2.0
 media = 0
@@ -61,6 +95,8 @@ for n, im in red.items():
     if n == "control":
         continue
     rec = color(im[y0 - MARGEN:y1, lx0:lx0 + W])
+    if AFINAR is not None:
+        rec = afinar(rec, AFINAR[0], AFINAR[1])
     p = os.path.join(salida, "%s_%s.png" % (prefijo, renombrar.get(n, n)))
     U.guardar(rec, p)
     print("RETRATO", p, rec.shape[1], "x", rec.shape[0])
