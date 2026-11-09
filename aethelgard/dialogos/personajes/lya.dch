@@ -13,20 +13,31 @@
 &"portraits": {
 "normal": {
 "export_overrides": {
-"image": "\"res://dialogos/retratos/lya.png\""
+"image": "\"res://dialogos/retratos/lya_reposo.png\""
 },
 "mirror": false,
 "offset": Vector2(0, 0),
-"scale": 1.0,
+"scale": 1.0064516,
 "scene": ""
 },
 "vivo": {
 "export_overrides": {
-"image": "\"res://dialogos/retratos/lya.png\""
+"image": "\"res://dialogos/retratos/lya_reposo.png\"",
+"poses": "{\"preocupada\": \"res://dialogos/retratos/lya_preocupada.png\", \"decidida\": \"res://dialogos/retratos/lya_decidida.png\", \"duda\": \"res://dialogos/retratos/lya_duda.png\"}"
 },
 "mirror": false,
 "offset": Vector2(0, 70),
-"scale": 1.12,
+"scale": 1.1272258,
+"scene": "res://dialogos/retrato_vivo.tscn"
+},
+"vivo_pv": {
+"export_overrides": {
+"image": "\"res://dialogos/retratos/lya_reposo.png\"",
+"poses": "{\"preocupada\": \"res://dialogos/retratos/lya_preocupada.png\", \"decidida\": \"res://dialogos/retratos/lya_decidida.png\", \"duda\": \"res://dialogos/retratos/lya_duda.png\"}"
+},
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1.0064516,
 "scene": "res://dialogos/retrato_vivo.tscn"
 }
 },

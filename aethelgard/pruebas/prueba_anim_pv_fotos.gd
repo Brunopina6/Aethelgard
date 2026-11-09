@@ -5,12 +5,17 @@ extends SceneTree
 # (misión desde cero y Kael solo):
 #   Godot --path aethelgard --script res://pruebas/prueba_anim_pv_fotos.gd --fixed-fps 30 -- <carpeta> 3d sin_prologo [etiqueta=antes]
 # En cada frase imprime qué hace cada personaje 3D («ESTADO»): su animación, hacia dónde mira respecto a quien habla
-# (grados; 0 = le mira) y si se ha movido durante la frase. FALLO si un diálogo no sale o no termina.
+# (grados; 0 = le mira) y si se ha movido durante la frase. FALLO si un diálogo no sale o no termina, o si alguien con
+# cuerpo en la región (Kael, Lya, Garon o Tilo) habla sin estar en la escena 3D (T-084, tanda 2: Lya llega antes de
+# PV-03 y Garon espera junto a Tilo antes de PV-05). Con «sin_fotos» no guarda capturas (se puede pasar sin ventana).
 
 const REGION := "res://zonas3d/pastos_verdes_3d.tscn"
 
+const CON_CUERPO := ["Kael", "Lya", "Garon", "Tilo"]
+
 var salida := ""
 var etiqueta := "antes"
+var fotos := true
 var D
 var P
 var fallos: Array = []
@@ -21,7 +26,9 @@ func _initialize() -> void:
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("etiqueta="):
 			etiqueta = a.substr(9)
-	DisplayServer.window_set_size(Vector2i(1280, 720))
+	fotos = not "sin_fotos" in OS.get_cmdline_user_args()
+	if fotos:
+		DisplayServer.window_set_size(Vector2i(1280, 720))
 	_probar.call_deferred()
 
 
@@ -75,6 +82,9 @@ func _revelado() -> bool:
 
 
 func _foto(nombre: String) -> void:
+	if not fotos:
+		await process_frame
+		return
 	await RenderingServer.frame_post_draw
 	root.get_texture().get_image().save_png("%s/%s_%s.png" % [salida, etiqueta, nombre])
 
@@ -101,23 +111,35 @@ func _probar() -> void:
 	await _segundos(1.0)
 	await _foto("pv02_despues")
 	await _primer_plano(r, "pv02_cerca")
-	# PV-03: en el camino; después, Lya llega corriendo por detrás
+	# Garon ya espera junto a Tilo desde que se entra (T-084, tanda 2), sin ir con el grupo
+	var esperan: Array = r.grupo.esperando.keys() if r.grupo != null else []
+	print("ESPERAN al entrar: ", esperan, " · grupo: ", (r.grupo.nodos().map(func(x): return String(x.name)) if r.grupo != null else []))
+	if not "Garon" in esperan:
+		_fallo("Garon no espera junto a Tilo al entrar")
+	# PV-03: en el camino. Lya llega corriendo por detrás ANTES de hablar (T-084, tanda 2)
 	var q: Vector3 = r.SENDERO[2]
 	r._colocar_kael(Vector3(q.x, r.altura(q.x, q.z), q.z))
+	if not await _hasta(func(): return r._escena_pendiente == "pv_03" or D.current_timeline != null, 10.0):
+		_fallo("PV-03 no empieza en el camino")
+	await _llegada(r, "pv03_llegada", 1.4)
 	await _dialogo(r, "pv_03")
-	await _llegada(r, "pv03_llegada", 4.0)
+	await _segundos(1.0)
+	await _foto("pv03_despues")
 	await _primer_plano(r, "pv03_cerca")
-	# PV-05: junto a Tilo; después, Garon se une
+	# PV-05: junto a Tilo (Garon ya está a su lado); después, Garon se pone en la fila
 	var t: Vector3 = r.tilo.global_position + Vector3(1.0, 0, 0.6)
 	r._colocar_kael(Vector3(t.x, r.altura(t.x, t.z), t.z))
 	await _segundos(2.5)                           # Lya llega a su sitio detrás de Kael
 	await _foto("pv05_antes")
+	await _primer_plano(r, "pv05_antes_cerca")
 	if not await _hasta(func(): return r.boton_accion.visible and r.boton_accion.text == "Hablar con Tilo", 10.0):
 		_fallo("junto a Tilo no aparece «Hablar con Tilo»")
 		return _fin()
 	r._accion()
 	await _dialogo(r, "pv_05")
-	await _llegada(r, "pv05_llegada", 4.0)
+	await _llegada(r, "pv05_union", 3.0)
+	if r.grupo == null or r.grupo.nodos().map(func(x): return String(x.name)) != ["Lya", "Garon"] or not r.grupo.esperando.is_empty():
+		_fallo("tras PV-05, el grupo no es Lya y Garon (o alguien sigue esperando)")
 	await _primer_plano(r, "pv05_cerca")
 	_fin()
 
@@ -165,16 +187,17 @@ func _llegada(r, nombre: String, segundos: float) -> void:
 		await _segundos(0.2)
 		k += 1
 		await _foto("%s_%02d" % [nombre, k])
-	for m in (r.grupo.miembros if r.grupo != null else []):
+	for m in (r.grupo.miembros + r.grupo.esperando.values() if r.grupo != null else []):
 		var nodo = m["nodo"]
-		print("LLEGADA %s · %s: estado «%s», animación %s, a %.1f m de Kael" % [nombre, m["nombre"], m["estado"],
+		print("LLEGADA %s · %s%s: estado «%s», animación %s, a %.1f m de Kael" % [nombre, m["nombre"],
+			" (espera)" if r.grupo.esperando.has(m["nombre"]) else "", m["estado"],
 			nodo.anim.current_animation, _plana(nodo.global_position, r.kael.global_position)])
 
 
 func _actores(r) -> Dictionary:
 	var a := {"Kael": r.kael, "Tilo": r.tilo}
 	if r.grupo != null:
-		for m in r.grupo.miembros:
+		for m in r.grupo.miembros + r.grupo.esperando.values():
 			a[m["nombre"]] = m["nodo"]
 	return a
 
@@ -218,6 +241,8 @@ func _estado(r, id: String, n: int, quien: String, pos0: Dictionary) -> void:
 		var movido := _plana(nodo.global_position, pos0.get(k, nodo.global_position))
 		partes.append("%s[%s, mira a quien habla %s, movido %.2f m]" % [k, anim, mira, movido])
 	print("ESTADO %s frase %02d (habla %s%s): %s" % [id, n, quien, "" if habla != null else ", que no está en la escena", " · ".join(partes)])
+	if habla == null and quien in CON_CUERPO:
+		_fallo("%s frase %d: habla %s y no está en la escena 3D" % [id, n, quien])
 
 
 func _fin() -> void:

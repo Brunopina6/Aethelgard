@@ -1,12 +1,15 @@
-join kael (normal) left
-join lya (normal) right
+join kael (vivo_pv) left
+join lya (vivo_pv) right
 garon: Llegáis tarde.
+update kael [extra_data="sorpresa"]
 kael: ¿Garon? ¿Has venido andando o te han traído en carro?
 garon: A caballo, antes del alba. Nadie sale de noche. Vosotros salisteis.
 garon: Volvéis conmigo a Oakhaven.
+update lya [extra_data="preocupada"]
 lya: Están desapareciendo aldeas, Garon.
 garon: Por eso. Fuera de la muralla no os puedo proteger.
 tilo: Aquí nadie va a ninguna parte sin saludar antes al viejo.
+update kael [extra_data="duda"]
 kael: ¿Qué viejo?
 tilo: El centinela del mirador. Los peregrinos lo saludaban antes de cruzar.
 tilo: Cuarenta años con el ojo apagado… y esta madrugada se le encendió.

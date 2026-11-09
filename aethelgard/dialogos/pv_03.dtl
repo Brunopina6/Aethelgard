@@ -1,10 +1,16 @@
-join kael (normal) left
-join lya (normal) right
+join kael (vivo_pv) left
+join lya (vivo_pv) right
+update lya [extra_data="inquieta"]
 lya: ¡Kael! ¿De verdad pensabas irte sin mí?
+update kael [extra_data="ligero"]
 kael: Pensaba dejarte dormir. Es distinto.
+update lya [extra_data="decidida"]
 lya: Te dije «ten cuidado». No «vete solo».
+update kael [extra_data="brazalete"]
 kael: Matices.
+update lya [extra_data="firme"]
 lya: El bosque está al noreste. Y yo sé el camino.
+update kael [extra_data="duda"]
 kael: Yo también. Más o menos. Bastante menos.
 leave kael
 leave lya

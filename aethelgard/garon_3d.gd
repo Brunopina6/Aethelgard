@@ -99,6 +99,8 @@ func _init() -> void:
 	ruta_modelo = "res://garon.fbx"
 	rutas_extra = ["res://Meshy_AI_Crimson_Helm_Guardian_20261103_animated_mixamo_All_animation.fbx", "res://garon.glb"]
 	usa_vara = false        # lleva sus espadas, no el cetro de maga_3d.gd (si no, se queda colgando)
+	vel_andar = 1.09        # sus clips sin patinar (marcha() de maga_3d.gd; prueba_anim_pies.gd)
+	vel_correr = 3.64
 
 
 func _ready() -> void:
