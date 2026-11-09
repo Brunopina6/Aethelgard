@@ -139,7 +139,8 @@ func _acercar(si: bool) -> void:
 
 
 func _contar() -> void:
-	acciones += 1
+	if D.current_timeline != null:              # Dialogic avisa de la acción aunque no haya diálogo; solo cuenta con uno abierto
+		acciones += 1
 
 
 # Lee el diálogo abierto hasta el final con Intro / A; cada pulsación, una acción como mucho.
@@ -274,7 +275,8 @@ func _region() -> void:
 	await _esperar(2)
 	_evento("aceptar", false)
 	await _esperar(1)
-	if D.current_timeline == null:
+	# Desde c3f5692, Tilo abre PV-03: Lya llega corriendo y el diálogo empieza ~1,2 s después.
+	if not await _hasta(func(): return D.current_timeline != null, 5.0):
 		_fallo("4: Intro / A junto a Tilo no abre el diálogo")
 	else:
 		if acciones != 0:

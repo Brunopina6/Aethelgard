@@ -110,11 +110,18 @@ func _crear_pantalla() -> void:
 	cenizas.color_ramp = rampa
 	capa.add_child(cenizas)
 
-	var titulo := _etiqueta("Aethelgard", M.fuente(M.FUENTE_NOMBRE, 0, 600), 112, M.LUZ_CLARA)
-	titulo.position = Vector2(0, 200)
-	capa.add_child(titulo)
+	# El logotipo de REBELUM (T-098). Va en modo aditivo: su cielo está restado y sus bordes funden a negro,
+	# así que solo suman la luz de las letras, el cristal y el ala, sin dejar un recuadro.
+	var logo := TextureRect.new()
+	logo.texture = load("res://marca/logo_rebelum.webp")
+	logo.material = aditivo
+	logo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	logo.position = Vector2(370, 14)
+	logo.size = Vector2(540, 381)
+	capa.add_child(logo)
 	var sub := _etiqueta("CÓNCLAVE DE LAS CENIZAS", M.fuente(M.FUENTE_ORDEN, 9, 0), 22, Color(M.ORO, 0.9))
-	sub.position = Vector2(0, 352)
+	sub.position = Vector2(0, 372)
 	capa.add_child(sub)
 
 	linea_fondo = ColorRect.new()

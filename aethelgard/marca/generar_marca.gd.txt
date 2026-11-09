@@ -1,0 +1,57 @@
+extends SceneTree
+# Prepara el icono y el logotipo de REBELUM a partir de la imagen del usuario.
+func _media(img: Image, y0: int, y1: int) -> Color:
+	var c := Color(0, 0, 0); var n := 0
+	for y in range(y0, y1):
+		for x in range(0, img.get_width(), 8):
+			c += img.get_pixel(x, y); n += 1
+	return c / n
+func _init() -> void:
+	var args := OS.get_cmdline_user_args()
+	var src := Image.load_from_file(args[0])
+	var out: String = args[1]
+	src.convert(Image.FORMAT_RGB8)
+	var logo := src.get_region(Rect2i(30, 20, 1388, 980))       # la palabra entera y el emblema
+	var arriba := _media(logo, 0, 6); var abajo := _media(logo, 974, 980)
+	# Cuadrado: el logotipo centrado y el cielo prolongado arriba y abajo con su color.
+	var lado := 1388
+	var cua := Image.create(lado, lado, false, Image.FORMAT_RGB8)
+	var y0 := (lado - 980) / 2
+	for y in range(lado):
+		var col := arriba if y < y0 + 490 else abajo
+		cua.fill_rect(Rect2i(0, y, lado, 1), col)
+	cua.blit_rect(logo, Rect2i(0, 0, 1388, 980), Vector2i(0, y0))
+	for k in range(24):                                          # funde las costuras
+		var a := float(k) / 24.0
+		for y in [y0 + k, y0 + 979 - k]:
+			for x in range(lado):
+				var bordecol: Color = arriba if y < lado / 2 else abajo
+				cua.set_pixel(x, y, bordecol.lerp(cua.get_pixel(x, y), a))
+	var i1024 := cua.duplicate(); i1024.resize(1024, 1024, Image.INTERPOLATE_LANCZOS); i1024.save_png(out + "/icono_rebelum.png")
+	var i192 := cua.duplicate(); i192.resize(192, 192, Image.INTERPOLATE_LANCZOS); i192.save_png(out + "/icono_rebelum_192.png")
+	# Adaptativo: fondo liso y el logotipo dentro de la zona segura (el círculo central).
+	var fondo := Image.create(432, 432, false, Image.FORMAT_RGB8)
+	for y in range(432):
+		fondo.fill_rect(Rect2i(0, y, 432, 1), arriba.lerp(abajo, clamp((float(y) - 66.0) / 300.0, 0.0, 1.0)))
+	fondo.save_png(out + "/icono_rebelum_fondo_432.png")
+	var frente := Image.create(432, 432, false, Image.FORMAT_RGBA8); frente.fill(Color(0, 0, 0, 0))
+	var peq := cua.duplicate(); peq.resize(300, 300, Image.INTERPOLATE_LANCZOS); peq.convert(Image.FORMAT_RGBA8)
+	for y in range(300):
+		for x in range(300):
+			var d: float = min(min(x, 299 - x), min(y, 299 - y))
+			var p: Color = peq.get_pixel(x, y); p.a = clamp(d / 22.0, 0.0, 1.0); peq.set_pixel(x, y, p)
+	frente.blend_rect(peq, Rect2i(0, 0, 300, 300), Vector2i(66, 66)); frente.save_png(out + "/icono_rebelum_frente_432.png")
+	var prueba := fondo.duplicate(); prueba.convert(Image.FORMAT_RGBA8); prueba.blend_rect(frente, Rect2i(0, 0, 432, 432), Vector2i.ZERO); prueba.save_png(out + "/_vista_adaptativo.png")
+	# Logotipo para la pantalla de carga (ancho 1024).
+	var lc := logo.duplicate(); lc.resize(1024, 723, Image.INTERPOLATE_LANCZOS)
+	# Para mezclarlo en modo aditivo: se resta el cielo y los bordes se funden a negro (negro = invisible).
+	var cielo := Color(0.05, 0.07, 0.16)
+	for y in range(723):
+		for x in range(1024):
+			var c: Color = lc.get_pixel(x, y)
+			var f: float = clamp(min(min(x, 1023 - x), min(y, 722 - y)) / 90.0, 0.0, 1.0)
+			c = Color(max(c.r - cielo.r, 0.0), max(c.g - cielo.g, 0.0), max(c.b - cielo.b, 0.0)) * (f * f * (3.0 - 2.0 * f))
+			lc.set_pixel(x, y, Color(c.r, c.g, c.b, 1.0))
+	lc.save_webp(out + "/logo_rebelum.webp", false, 0.92)
+	print("hecho; cielo arriba ", arriba, " abajo ", abajo)
+	quit()

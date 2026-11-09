@@ -17,6 +17,7 @@ extends SceneTree
 # a la cascada, grieta y nido) con la mazmorra, la cascada, el viento, las gotas y el eco; los pasos de roca y de tablas
 # con el eco y sin él (para comparar); la palanca con el puente y la puerta desde donde están; y unas gotas.
 #   «mezclas=2» o «mezclas=3»: solo las mezclas de esa tanda (con «efectos=…»).
+# Tanda 4: las bestias del bestiario, una mezcla por ataque con los tiempos de su ficha («mezclas=4»).
 
 const PROCEDENCIA := "docs/audio/efectos_procedencia.csv"
 const GARGANTA3D := "res://zonas3d/garganta_3d.tscn"
@@ -121,6 +122,49 @@ const EVENTOS := {
 	"taberna": "El bullicio de la Taberna del Cuervo Oxidado, desde la calle (por cercanía)",
 	"cuervo": "El letrero del cuervo de hierro que chirría con el viento (de vez en cuando, por cercanía)",
 }
+# tanda 4 (T-097): las seis bestias del bestiario (solo en el catálogo; las engancha combate)
+const EVENTOS_BESTIAS := {
+	"zarzalin_aviso_embestida": "Zarzalín avisa la embestida: resopla al bajar el hocico (señal «aviso», 0,27 s del clip)",
+	"zarzalin_pezuna": "Zarzalín: cada golpe de pezuña del aviso (señal «pezuna», 0,47 y 0,73 s)",
+	"zarzalin_embestida": "Zarzalín: impacto de la embestida espinosa (0,57 s; 0,17 s desde la carga)",
+	"zarzalin_aviso_colmillo": "Zarzalín: gira la cabeza para el colmillo lateral (al empezar el ataque)",
+	"zarzalin_colmillo": "Zarzalín: impacto del colmillo lateral (0,47 s)",
+	"zarzalin_herido": "Zarzalín recibe un golpe físico", "zarzalin_caida": "El golpe que tumba a Zarzalín",
+	"zarzalin_derrumbe": "Zarzalín cae de lado (clip «derrota»; el cuerpo toca la tierra a 0,60 s)",
+	"zarzalin_entrada": "Zarzalín entra de un salto entre la maleza (clip «entrada»)",
+	"cencerrante_aviso_alarma": "El Cencerrante toma impulso: la cuerda se tensa (toque de alarma)",
+	"cencerrante_alarma": "El Cencerrante repica: toque de alarma (0,73 s)",
+	"cencerrante_aviso_campanada": "El Cencerrante carga de lado con el marco (campanada baja)",
+	"cencerrante_campanada": "Impacto de la campanada baja (0,53 s)",
+	"cencerrante_herido": "El Cencerrante recibe un golpe físico", "cencerrante_caida": "El golpe que tumba al Cencerrante",
+	"cencerrante_entrada": "El Cencerrante se presenta: un toque lejano",
+	"velaria_aviso_destello": "Velaria repliega las alas para concentrar la luz (destello de velo)",
+	"velaria_destello": "Velaria abre las alas y expulsa el destello (0,70 s)",
+	"velaria_aviso_corte": "Velaria se eleva (corte de ala)", "velaria_corte": "Impacto del corte de ala (0,50 s)",
+	"velaria_herido": "Velaria recibe un golpe físico", "velaria_caida": "El golpe que tumba a Velaria",
+	"velaria_entrada": "Velaria llega aleteando",
+	"custodio_aviso_portazo": "El Custodio recoge el brazo: roce de losas (portazo de cal)",
+	"custodio_portazo": "Impacto del portazo de cal (0,83 s)",
+	"custodio_aviso_martillo": "El Custodio carga el peso atrás (martillo de piedra)",
+	"custodio_martillo": "Impacto del martillo de piedra (0,83 s)",
+	"custodio_herido": "El Custodio recibe un golpe físico", "custodio_caida": "El Custodio se derrumba (y cae su llave)",
+	"custodio_entrada": "El Custodio despierta: la piedra se arrastra y da un paso",
+	"hilandera_aviso_mordida": "La Hilandera alza el frente y chasquea (mordida resonante)",
+	"hilandera_mordida": "Impacto de la mordida resonante (0,73 s)",
+	"hilandera_aviso_trama": "La Hilandera alza las placas (trama de eco)",
+	"hilandera_trama": "El pulso de la trama de eco, a todo el grupo, una vez (0,83 s)",
+	"hilandera_herido": "La Hilandera recibe un golpe físico", "hilandera_caida": "El golpe que tumba a la Hilandera",
+	"hilandera_entrada": "La Hilandera llega correteando",
+	"posadero_aviso_cierre": "El Posadero alza los brazos como un dintel: vigas y llaves (cierre de posada)",
+	"posadero_cierre": "Impacto del cierre de posada: portazo grave y vigas (0,97 s)",
+	"posadero_aviso_llave": "El Posadero gira la llave en la cerradura (llave del umbral)",
+	"posadero_llave": "Impacto de la llave del umbral: barrido y cerrojo (0,87 s)",
+	"posadero_herido": "El Posadero recibe un golpe físico", "posadero_caida": "El Posadero se derrumba: vigas, llaves y la puerta",
+	"posadero_entrada": "El Posadero se presenta: la puerta de la posada se abre",
+	"quieto_kael": "Kael lleva un rato quieto en la exploración 3D: se recoloca el cuero y suelta el aire (muy bajo)",
+	"quieto_lya": "Lya lleva un rato quieta: sorbe por la nariz y se ajusta la tela (muy bajo, desde su sitio)",
+	"quieto_garon": "Garon lleva un rato quieto: mueve el equipo y respira hondo (muy bajo, desde su sitio)",
+}
 const DOS_D_CASILLA := 64.0                                # zona.gd, T
 
 var Son
@@ -187,6 +231,8 @@ func _grabar_todo() -> void:
 			await _tanda2()
 		if "3" in mezclas:
 			await _tanda3()
+		if "4" in mezclas:
+			await _tanda4()
 		AudioServer.remove_bus_effect(0, AudioServer.get_bus_effect_count(0) - 1)
 		_indice()
 		for f in fallos:
@@ -226,6 +272,7 @@ func _grabar_todo() -> void:
 	await _escena("mezcla_cofre", [[0.0, "cofre"], [0.3, "tesoro"]], "Abrir un cofre: la tapa y el premio")
 	await _tanda2()
 	await _tanda3()
+	await _tanda4()
 	AudioServer.remove_bus_effect(0, AudioServer.get_bus_effect_count(0) - 1)
 	_indice()
 	for f in fallos:
@@ -560,7 +607,7 @@ func _medir(w: AudioStreamWAV, archivo: String, efecto: String, evento: String) 
 			var pr: Array = procedencia.get(der, ["", ""])
 			fuente = pr[0].get_file() + (" + " + pr[1] if pr[1] != "" else "")
 			licencia = _licencia(pr[0])
-	filas.append([archivo + ".wav", efecto, EVENTOS.get(efecto, evento) if efecto != "" else evento,
+	filas.append([archivo + ".wav", efecto, EVENTOS.get(efecto, EVENTOS_BESTIAS.get(efecto, evento)) if efecto != "" else evento,
 		_juego(efecto) if efecto != "" else "", fuente, licencia, pico_db, rms_db, dur])
 
 
@@ -633,3 +680,41 @@ func _indice() -> void:
 		f.store_string("\n".join(t) + "\n")
 		f.close()
 	print("INDICE %s/indice.md (%d muestras)" % [dir, filas.size()])
+
+
+# ================================================================= tanda 4
+
+# Las bestias del bestiario: una mezcla por ataque con los tiempos de su ficha (s desde el principio del clip): el aviso
+# al empezar, el impacto con el golpe de siempre (o el del escudo si Kael se defiende) y, después, Kael le devuelve el
+# golpe (su voz de herido) o lo tumba (caída). Zarzalín, con su aviso de verdad (clip «aviso_embestida»: resoplido a
+# 0,27 s y pezuñas a 0,47 y 0,73) y la embestida desde la carga (impacto 0,17 s después).
+func _tanda4() -> void:
+	await _escena("bestia_zarzalin_embestida", [[0.267, "zarzalin_aviso_embestida"], [0.467, "zarzalin_pezuna"],
+		[0.733, "zarzalin_pezuna"], [1.767, "zarzalin_embestida"], [1.767, "golpe_defendido"], [3.1, "golpe"], [3.1, "zarzalin_herido"]],
+		"Zarzalín: aviso (resoplido y dos pezuñas), embestida contra Kael que se defiende; Kael le devuelve el golpe (herido)")
+	await _escena("bestia_zarzalin_colmillo", [[0.0, "zarzalin_aviso_colmillo"], [0.47, "zarzalin_colmillo"], [0.47, "golpe"],
+		[1.8, "golpe_critico"], [1.8, "zarzalin_caida"], [2.21, "zarzalin_derrumbe"]],
+		"Zarzalín: colmillo lateral (impacto a 0,47 s); Kael lo tumba con un crítico (caída) y cae de lado (derrumbe)")
+	await _escena("bestia_zarzalin_entrada", [[0.0, "emboscada"], [1.2, "zarzalin_entrada"]], "Empieza el encuentro y Zarzalín entra de un salto")
+	var ataques := [
+		["cencerrante", "alarma", 0.73, false, "campanada", 0.53, "El Cencerrante: toque de alarma (refuerza, sin golpe) y campanada baja"],
+		["velaria", "destello", 0.70, true, "corte", 0.50, "Velaria: destello de velo y corte de ala"],
+		["custodio", "portazo", 0.83, true, "martillo", 0.83, "El Custodio de Cal: portazo de cal y martillo de piedra"],
+		["hilandera", "mordida", 0.73, true, "trama", 0.83, "La Hilandera del Eco: mordida resonante y trama de eco (a todo el grupo, una vez)"],
+	]
+	for a in ataques:
+		var b: String = a[0]
+		var g1 := [[0.0, b + "_aviso_" + a[1]], [a[2], b + "_" + a[1]]]
+		if a[3]:
+			g1.append([a[2], "golpe"])
+		g1 += [[a[2] + 1.3, "golpe"], [a[2] + 1.3, b + "_herido"]]
+		await _escena("bestia_%s_%s" % [b, a[1]], g1, "%s · primer ataque: aviso, impacto y Kael le devuelve el golpe (herido)" % a[6])
+		await _escena("bestia_%s_%s" % [b, a[4]], [[0.0, b + "_aviso_" + a[4]], [a[5], b + "_" + a[4]], [a[5], "golpe"],
+			[a[5] + 1.3, "golpe_critico"], [a[5] + 1.3, b + "_caida"]],
+			"%s · segundo ataque: aviso, impacto y Kael lo tumba (caída)" % a[6])
+	await _escena("bestia_posadero_cierre", [[0.0, "jefe"], [2.0, "posadero_entrada"], [4.2, "posadero_aviso_cierre"],
+		[5.17, "posadero_cierre"], [5.17, "golpe_defendido"], [6.5, "golpe"], [6.5, "posadero_herido"]],
+		"El Posadero Hueco (jefe opcional): presentación, entrada, cierre de posada contra Kael que se defiende y herido")
+	await _escena("bestia_posadero_llave", [[0.0, "posadero_aviso_llave"], [0.87, "posadero_llave"], [0.87, "golpe"],
+		[2.2, "golpe_critico"], [2.2, "posadero_caida"], [4.2, "victoria"]],
+		"El Posadero: llave del umbral; Kael lo tumba (caída) y victoria")
