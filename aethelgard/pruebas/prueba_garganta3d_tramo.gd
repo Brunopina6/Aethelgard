@@ -7,6 +7,8 @@ extends SceneTree
 #   3. En mitad del puente, empujando hacia los lados (ui_left y ui_right): Kael no sale del tablero ni cae.
 #   4. El puente se mece solo a la vista: dos puentes con su sombreado de vaivén, la colisión quieta.
 #   5. La escena trae lo nuevo del tramo: la caída con su bruma, las llamas, las cintas de la entrada y los helechos.
+#   6. Kael se mece con el puente (su modelo, no su posición) y deja de mecerse al bajar.
+#   7. Los comentarios de narrativa: al llegar, la cascada del fondo de cerca y el cofre del nido.
 # Uso: --headless --path aethelgard --script res://pruebas/prueba_garganta3d_tramo.gd --fixed-fps 30 -- 3d garganta3d sin_prologo
 # No toca ninguna partida: progreso.gd no guarda durante las pruebas. Los encuentros se quitan (v.pasos = 0).
 
@@ -71,7 +73,7 @@ func _process(_d: float) -> bool:
 	frames += 1
 	if v != null and is_instance_valid(v):
 		v.pasos = 0
-		if fase != "cargar" and fase != "fin":
+		if not fase in ["cargar", "fin", "cascada", "comentarios"]:      # (en la grieta, Kael está abajo a propósito)
 			_vigilar()
 	match fase:
 		"cargar":
@@ -136,6 +138,29 @@ func _process(_d: float) -> bool:
 		"vaiven":
 			if frames - f_fase == 45:
 				_comprobar_vaiven()
+				var m: Vector3 = v._mecidos.get(v.kael, Vector3.ZERO)
+				if m.length() < 0.001:
+					_mal("en mitad del puente, el modelo de Kael no se mece con las tablas")
+				else:
+					print("OK mecerse: en mitad del puente el modelo de Kael va con las tablas (%s m)" % m.snapped(Vector3.ONE * 0.001))
+				_poner(Vector3(T.X_CAMINO_O, 0, 26.0))
+				_fase("fuera_del_puente")
+		"fuera_del_puente":
+			if frames - f_fase == 10:
+				var m: Vector3 = v._mecidos.get(v.kael, Vector3.ZERO)
+				if m.length() > 0.0001:
+					_mal("fuera del puente, el modelo de Kael sigue desplazado %s" % m)
+				else:
+					print("OK mecerse: fuera del puente el modelo de Kael vuelve a su sitio")
+				_poner(Vector3(11.4, -8.0, -36.0))            # la grieta: a menos de 12 m de la cascada del fondo
+				_fase("cascada")
+		"cascada":
+			if frames - f_fase == 10:
+				v._abrir_cofre()
+				_fase("comentarios")
+		"comentarios":
+			if frames - f_fase == 60:
+				_comprobar_comentarios()
 				_fase("fin")
 				print("Altura mínima de Kael en todo el recorrido: %.2f m" % y_min)
 				print("FALLOS: %d" % fallos)
@@ -206,3 +231,30 @@ func _comprobar_vaiven() -> void:
 		_mal("%d cuerpos de colisión se han movido" % movidos)
 	else:
 		print("OK vaivén: %d puentes se mecen en el dibujo; los %d cuerpos que chocan siguen quietos" % [v.piezas.puentes.size(), colision_inicial.size()])
+
+
+func _poner(p: Vector3) -> void:
+	var q := PhysicsRayQueryParameters3D.create(p + Vector3(0, 2, 0), p - Vector3(0, 4, 0))
+	var r: Dictionary = v.get_world_3d().direct_space_state.intersect_ray(q)
+	if not r.is_empty():
+		p.y = r["position"].y
+	v._colocar_kael(p)
+	v._ultima = p
+
+
+# Los comentarios de narrativa enganchados en la región (dialogos/comentarios.gd): al llegar (a los 2,5 s), la cascada
+# a menos de 12 m (la primera vez) y el cofre del nido (1,2 s después de abrirlo).
+func _comprobar_comentarios() -> void:
+	var C = load("res://dialogos/comentarios.gd")
+	var d: Dictionary = C.dichos()
+	for m in ["llegar:garganta", "cascada_garganta"]:
+		if not d.has("@" + m):
+			_mal("no salió el comentario «%s»" % m)
+	var cofre := false
+	for f in C.MOMENTOS["cofre"]["frases"]:
+		if d.has(f["texto"]):
+			cofre = true
+	if not cofre:
+		_mal("no salió el comentario del cofre")
+	if fallos == 0:
+		print("OK comentarios: al llegar, la cascada de cerca y el cofre (%d dichos)" % int(d.get("@cuenta", 0)))
