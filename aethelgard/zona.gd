@@ -2137,7 +2137,7 @@ func _crear_ui() -> void:
 		fila.position = Vector2(18, 98)
 		fila.add_theme_constant_override("separation", 10)
 		ui.add_child(fila)
-		for d in [["TIENDA", _abrir_tienda, "TIENDA"], ["POSADA (%d)" % PRECIO_POSADA, _posada, "POSADA"]]:
+		for d in [["TIENDA", _abrir_tienda, "TIENDA"], ["POSADA (%d)" % PRECIO_POSADA, _boton_posada, "POSADA"]]:
 			var b := Button.new()
 			b.text = d[0]
 			b.custom_minimum_size = Vector2(170, 48)
@@ -2377,6 +2377,11 @@ func _abrir_tienda(pestana := "Objetos") -> void:
 
 
 # Posada: se paga y el grupo recupera todos los PV y PM.
+# El botón POSADA: descansar. Una ciudad puede preguntar antes (ciudad_oakhaven.gd: «¿Qué va a ser?»).
+func _boton_posada() -> void:
+	_posada()
+
+
 func _posada() -> void:
 	if not _pagar_posada():
 		Sonido.efecto("ui_error")                          # sonido.gd

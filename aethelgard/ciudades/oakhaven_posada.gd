@@ -61,6 +61,27 @@ static func _p():
 	return load("res://progreso.gd")
 
 
+# La pregunta del botón POSADA, «¿Qué va a ser?», como texto de Dialogic (DialogicTimeline.from_text): el precio de la
+# noche, el de ahora (la noche gratis cuenta). Señales: oak:dormir (descansar al acabar el diálogo), oak:sopa (comer) y
+# oak:rumor (la posadera cuenta uno al acabar). Lo usa ciudad_oakhaven.gd y lo puede usar igual el Oakhaven 3D.
+static func menu_dialogo() -> String:
+	var noche := "Dormir (invita la casa)" if _p().estado(Oak.NOMBRE, "noche_gratis") else "Dormir (%d monedas)" % PRECIO_DORMIR
+	return "\n".join(PackedStringArray([
+		"join posadera (normal) center",
+		"posadera: ¿Qué va a ser?",
+		"- " + noche,
+		"\t[signal arg=\"oak:dormir\"]",
+		"- Sopa del día (%d monedas)" % PRECIO_COMER,
+		"\t[signal arg=\"oak:sopa\"]",
+		"\tposadera: Marchando. Y la cuchara, de vuelta a la mesa.",
+		"- Un rumor",
+		"\t[signal arg=\"oak:rumor\"]",
+		"\tposadera: Acércate, que en las mesas se oye de todo.",
+		"- Nada, gracias",
+		"\tposadera: Pues aquí estoy, para cuando quieras.",
+		"leave posadera"]))
+
+
 # Los servicios con su precio de ahora (dormir es gratis si la posadera invita).
 static func servicios() -> Array:
 	var r: Array = []
