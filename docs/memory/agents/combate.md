@@ -597,3 +597,102 @@ cambian nada sin coraza ni guardia, y no tiran del generador global. No hace fal
 - **Sonido:** un efecto propio para la Guardia (`guardia`: escudo que se planta) y, si se quiere, uno al cubrir.
 - **Animaciones (opcional):** un gesto de Garon «cubrir» (escudo al frente, un paso hacia el aliado).
 - **Siguiente, si se aprueba:** M4 (los III: Hora Dorada, Invierno Guardián, Última Brasa y los tomos) y C2.
+
+## 2026-11-09, 19:20 · Arreglos de la coraza, M4 (los III y los tomos), C2 (armas especiales) y las voces de sonido t5
+
+**Encargo** (coordinador, 09/11; el usuario delegó las decisiones, reversibles): arreglar los dos detalles de la
+tanda anterior; después M4 y C2 con el mismo acabado (motivos, fichas, pruebas); y, al integrar `6adc4d9`, las voces de
+sonido t5 y el sonido propio de la Guardia. Huella igual o regenerada con justificación en un commit aparte.
+- **Merges** (`--no-ff`): `d3e5116` (`6adc4d9`): conflicto solo en `lista_pruebas.txt` (se quedan las dos partes); aparté
+  al scratchpad dos `.uid` sueltos de narrativa que la importación había creado con otro identificador (los buenos son
+  los de la integración). `e58c546` (`dca4c1c`, la de la APK de prueba v293), limpio: no toca mis archivos de combate;
+  aparté antes un `.uid` suelto, idéntico al que traía. Importada después con datos aislados
+  (`D:\REBELUM_diagnostico\importaciones\combate_20261109_224422`), sin `.uid` nuevos.
+- **Interrupción:** un límite de uso cortó la batería de las 19:00 (23 pruebas, sin resumen); la repetí entera tras el
+  último merge.
+
+**1. Commits** (en `area-combate`, sin publicar)
+- `8e3174c` · arreglos: `combate.gd` (`_cura_devorar` y el golpe parado entero) y su prueba.
+- `4fc38f6` · M4 y C2: `artes.gd`, `equipo_extra.gd`, `combate.gd` y `vfx/sena_arte.gd`.
+- `f13d556` · pruebas: `prueba_m4_c2.gd` (nueva) y la de Escarcha con el III.
+- `ebae3ed` · **la huella, referencia nueva, aparte y justificada** (ver § 3).
+- `55e8ee2`, `f7cc79e` · `.uid`; `f4e7617` · `prueba_m4_fotos.gd`.
+- `028f74c` · voces de sonido t5 y la Guardia con «guardia»; `ce84503` · `prueba_voces_combate.gd` (nueva).
+- Y el de este informe.
+
+**2. Qué hace ya** (observado en el código y comprobado ejecutando, aislado, 09/11)
+- **Arreglos:**
+  - **El mordisco de Gorthor** (Devorar) se cura el 60 % de lo que de verdad mordió: lo que paró la coraza no cuenta
+    (el impacto apunta «absorbido»; `_cura_devorar`). Sin coraza, como siempre.
+  - **Un golpe que la coraza para entero** no tiñe de rojo (tinte frío), ni hace la reacción de dolor, ni sale «¡0!».
+- **M4, los niveles III** (`ACTIVOS` a 3; se aprenden a los niveles 16, 20 y 18, el aviso «aprende» al subir):
+  - **Hora Dorada** (Kael, 30 PM): llena la barra de los demás aliados; entran una vez en la cola y tienen un turno
+    cada uno (sin turnos dobles). Anillo dorado sobre cada uno y un destello dorado. Con Kael solo: «Kael va solo: no
+    hay otro aliado.».
+  - **Invierno Guardián** (Kael, 32 PM): corazas del 30 % a todos, en un cristal más azul; **quien la rompe queda
+    Congelado** (el enemigo que actúa, `atacante_actual`).
+  - **Última Brasa** (Lya, 34 PM): una llama baja sobre cada aliado y queda en su icono del HUD; **quien cae se levanta
+    una vez** con el 30 % (columna de luz, «¡Kael se levanta!», sonido «brasa» y su fila iluminada). El segundo golpe
+    mortal ya lo tumba.
+  - **Tomos:** `Artes.dar_tomo(id)` para el código del mundo: enseña el III a quien usa la familia, una vez, con su aviso
+    («Lya aprende Última Brasa.»). **Falta ponerlos en el mundo** (petición abajo).
+  - **Diario:** fichas nuevas «Hora Dorada», «Invierno» y «Tomos» (y ya salía «Brasa»).
+  - **Accesorios** (HECHOS M3 y M4): la Lágrima de ámbar empieza con coraza (15 %) y la Brasa en frasco con Brasa (25 %).
+- **C2, armas especiales** (HECHOS C2; se consiguen con `Extra.conseguir(id)`):
+  - **Fauces de Gorthor** (Garon): se cura el 15 % del daño físico que hace («+N»).
+  - **Guardiana de Ámbar** (Kael): en guardia, devuelve el golpe («Réplica»).
+  - **Gemelas de la Muralla** (Garon): reciben el golpe de un aliado con menos del 30 % de vida (`_cubre_gemelas`,
+    también sin la Guardia).
+  - **Rama del Árbol Milenario** (Lya): al empezar, Aliento de 2 turnos al aliado más herido.
+  - **Hoja sin Nombre** (Kael): +1 de ataque por recuerdo visto (Progreso «lore_visto»), en combate.
+  - **Báculo del Peregrino:** ya alargaba el Aliento.
+  - **Recompensas** (decisión del coordinador): la primera victoria contra Gorthor da las **Fauces** (se le perdone o
+    no) y la del nido de la Garganta, la **Lágrima de ámbar**; lo dice el cartel.
+- **Voces (sonido t5):** el esfuerzo de Kael al saltar y el de Lya al golpear, el alivio si una Poción cura PV, y el
+  gesto de victoria de uno de los que siguen en pie. La Guardia suena «guardia». La Cura (magia protegida, D-048) no
+  pide alivio.
+
+**3. La huella:** con C2 cambia, **solo por diseño**, y la regeneré en un commit aparte (`ebae3ed`): en E8 (combate fijo
+«garganta_gorthor») sale una línea más, «02229 · Has conseguido Fauces de Gorthor.», tras el reparto. E1 a E9, línea a
+línea, iguales a la anterior; dos pasadas iguales en un proceso (SHA-256 `65bb9817…`,
+`D:\REBELUM_diagnostico\pruebas\2026-11-09_184233`). Los arreglos, M4, el resto de C2 y las voces no la cambian (las
+voces usan el generador propio de `sonido.gd`).
+
+**4. Pruebas** (datos aislados; la partida real y la carpeta real de datos, sin cambios)
+- **Nueva `prueba_m4_c2`:** aprendizaje (16, 20, 18), fichas, tomos (una vez); Hora Dorada (motivo con Kael solo; una
+  entrada y un turno por aliado; su sonido una vez); Invierno (coraza helada; quien la rompe, Congelado; «barrera_rota»
+  una vez); Última Brasa (se levanta una vez con el 30 %; «brasa» una vez; la segunda vez cae); Lágrima y Brasa en
+  frasco; Fauces, Guardiana, Gemelas, Rama, Hoja sin Nombre y las Fauces al vencer a Gorthor. Zona «ceniza» (nivel 34),
+  para que con héroes de nivel 20 nadie huya solo.
+- **Nueva `prueba_voces_combate`:** cada voz se pide una vez (con la señal `voz_pedida`); ni el Éter ni la Cura piden
+  alivio.
+- **`prueba_escarcha_guardia`:** los dos arreglos y la Guardia con «guardia».
+- **Batería completa final**, tras el merge de `dca4c1c` (`D:\REBELUM_diagnostico\pruebas\2026-11-09_224444\resumen.md`):
+  **69 SUPERADAS, 0 FALLIDAS, 36 MANUALES y 0 NO SEGURAS**; la partida real, la carpeta real de datos y el proyecto, sin
+  cambios (había 205 Godot de otras copias, vigilados). Dentro, SUPERADAS: la huella (con la referencia nueva),
+  `prueba_m4_c2`, `prueba_voces_combate`, `prueba_escarcha_guardia`, `prueba_hud_combate`, `prueba_zarzalin_combate`,
+  `prueba_grupos_combate`, `prueba_incorporacion`, `prueba_equilibrio`, `prueba_ia`, `prueba_menu_magia`, `prueba_garon`,
+  `prueba_huir`, `prueba_centinela`, `prueba_mando` y `prueba_teclado`.
+- **Capturas antes y después** (`D:\REBELUM_diagnostico\combate\2026-11-09\m4_c2\`): `antes\` (proyecto de `8e3174c`
+  exportado con `git archive`, datos aislados), `despues\`, `comparar\` y `hoja_antes_despues.png`: la pestaña del Alba
+  con la Hora Dorada; la Hora Dorada; el Invierno; la coraza helada rota (después, Grimfang «Congelado»); la Última
+  Brasa (después, las llamas); Kael cae con Brasa (antes cae; después se levanta con «¡Kael se levanta!»); y las Fauces.
+
+**5. Límites**
+- **Pendiente en Redmi:** la lectura de las señas nuevas y su coste. No se usa el teléfono.
+- **Los tomos y las armas no están todavía en el mundo** (salvo las Fauces y la Lágrima, que dan Gorthor y el nido): sin
+  código del mundo que llame a `dar_tomo` y `conseguir`, un jugador no los encuentra.
+- **La Hoja sin Nombre** suma su ataque en combate; el menú Grupo no lo enseña (lo calcula `grupo.gd`, que no es mío).
+- **Las armas especiales se ven como su malla de siempre:** `tinte` y `color_brillo` esperan a `material_arma.gd`
+  (gráficos).
+- La captura «antes» de M4 se hizo fuera del ejecutor; en ella, lanzar dos III seguidos con `_lanzar_arte` (sin pasar
+  por el menú) deja los PM de Kael en negativo: es la prueba, no el juego (el menú no lo permite).
+- Los sonidos y las voces se piden a tiempo; **no se han oído**. Los combates con guion no prueban la estrategia.
+
+**6. Peticiones**
+- **Mundo (narrativa / gráficos, quien lleve las zonas):** colocar los tres tomos con `load("res://artes.gd").dar_tomo(id)`
+  (`tomo_alba`, `tomo_escarcha`, `tomo_lumbre`) y las armas y accesorios que faltan con
+  `load("res://equipo_extra.gd").conseguir(id)` en los sitios de su campo «donde».
+- **Gráficos:** `tinte` y `color_brillo` en `material_arma.gd` (las armas especiales).
+- **Grupo (`grupo.gd`, si se quiere ver en el menú):** el ataque de la Hoja sin Nombre.
+- **Sonido / animaciones:** ya pedidos por el coordinador (la Guardia y el gesto de cubrir).
