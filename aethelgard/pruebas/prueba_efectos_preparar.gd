@@ -122,6 +122,9 @@ const F_VIGAS := "S23/BluezoneCorp - Forest Textures/Bluezone_BC0279_forest_tree
 const F_LLAVES := "S20/Badlands Sound - Moving Loops/Moving Loops, Set of Car Keys, Small Movements, Subtle, Loopable.wav"
 const F_PORTAZO := "S24/Rogue Waves - Creaking Door/DOORCreak_Wooden Door, Door Slams, Impacts, 3_RogueWaves_CreakingDoor.wav"
 const F_VIGA_CAE := "S19/Rock The Speakerbox - Broken/BROKEN - CK - BEAM Wood Ceiling Drop On Concrete.wav"
+const F_CUERO_LENTO := "S20/Systematic-Sound - Sound Themes - Modern Cloth Foley 01/SFX CLOTH Foley Jacket Leather Rough Movement Slow Rustle.wav"
+const F_RESPIRA_H := "S20/Articulated Sounds - Human Male Breathe/HUMAN BREATH Male_Deep Opened Mouth Breath with S Formed Lips Long Exhale_F.wav"
+const F_EQUIPO_SOLDADO := "S18/Gamemaster Audio - Footstep and Foley Sounds/foley_soldier_gear_equipment_metal_cloth_heavy_movement_light_08.wav"
 
 # [derivado, fuente, desde (s), hasta (s, -1 = el final), opciones]
 # opciones: norm ("pico" o "rms"), db (objetivo en dBFS), techo (pico máximo con «rms»), fi / fo (fundidos en s),
@@ -464,6 +467,19 @@ const RECETAS := [
 			[F_LLAVES, 3.90, 4.60, 0.20, 0.0], [F_VIGA_CRUJE, 2.88, 3.60, 0.0, -6.0]]}],
 	["bestias/posadero_entrada", "S17/SoundMorph - Portals/Door - Medieval Open 16.wav", 0.12, 1.80, {"norm": "pico", "db": -2.0, "fo": 0.4,
 		"capas": [[F_LLAVES, 3.90, 4.60, 0.60, 0.0], ["S20/Wav Junction Sound Effects - Doors/0002_Door_Thick_Open_Close_Squeaky.wav", 0.12, 0.90, 1.45, -4.0]]}],
+	# ================================================================ tanda 4: los héroes, quietos en la exploración
+	# Muy discretos: Kael se recoloca el cuero y suelta el aire; Lya sorbe por la nariz y se ajusta la tela; Garon mueve
+	# el equipo (metal y correas) y respira hondo.
+	["heroes/kael_quieto_1", F_CUERO_LENTO, 6.47, 7.25, {"norm": "pico", "db": -3.0, "fi": 0.08, "fo": 0.3,
+		"capas": [[F_RESPIRA_H, 1.45, 2.42, 0.25, -8.0]]}],
+	["heroes/kael_quieto_2", F_CUERO_LENTO, 10.10, 10.80, {"norm": "rms", "db": -25.0, "techo": -3.0, "fi": 0.08, "fo": 0.3}],
+	["heroes/lya_quieto_1", "S24/UberDuo - Inhale – Tanja – Character Playset/HMNBrth_Human, Adult, Female, Sniff, Nose 7_UberDuo_INHL.wav", 0.05, 0.55, {"norm": "pico", "db": -3.0, "fo": 0.15,
+		"capas": [[F_ALETEO, 10.12, 10.39, 0.30, -6.0]]}],
+	["heroes/lya_quieto_2", F_ALETEO, 10.10, 10.45, {"norm": "pico", "db": -3.0, "fi": 0.03, "fo": 0.15}],
+	["heroes/garon_quieto_1", F_EQUIPO_SOLDADO, 0.0, 0.70, {"norm": "pico", "db": -3.0, "fo": 0.25, "tono": 0.94,
+		"capas": [[F_RESPIRA_H, 7.0, 8.2, 0.30, -10.0]]}],
+	["heroes/garon_quieto_2", F_EQUIPO_SOLDADO, 0.50, 1.05, {"norm": "pico", "db": -3.0, "fo": 0.25,
+		"capas": [[F_CUERO_LENTO, 14.05, 14.60, 0.0, -6.0]]}],
 ]
 
 # PROPUESTA de sonido para las 12 magias (T-083, tanda 2): NO se integran (D-048: su presentación está protegida). Solo
