@@ -520,6 +520,13 @@ vida, un jadeo 0,7 s después (una vez hasta que se cure); y `Sonido.voz(o, "ata
 esfuerzo cuando el que ataca es un héroe. Comprobado en un combate de verdad (`prueba_efectos`, parte «heroes»): el golpe
 del limo hace quejarse a Kael; la magia sigue sin pedir voces.
 
+**La Guardia de Garon** (`guardia`, nuevo; combate lo pide por este nombre y hasta ahora sonaba `defensa`): se planta
+tras el escudo, metálico, firme y breve. `combate/guardia` (0,63 s): Double Trouble «Medieval Armor and Impacts,
+Plate_Impact_Hard_02» (×0,95) con «Weapon_Impact_Parry_01» (−8 dB) y SmartSoundFX «Medieval, ARMOR Body Drop Chain
+Leather Short 02» (−10 dB): Sonniss GDC 2017 y 2020. Efectos · −14 dB · prioridad 2 (como la defensa) · uno a la vez.
+Salida: −25 dBFS de RMS aprox. (medido −23,3 a −12 dB; la defensa, −26,9). En combate: `_sonar("guardia")` donde hoy
+dice `_sonar("defensa")` al ponerse en guardia.
+
 **Líneas para combate** (`combate.gd`; no lo he tocado, combate lo está editando):
 
 ```gdscript
@@ -541,13 +548,13 @@ presentación es la decisión aparte de D-048. Muestras: `D:\REBELUM_diagnostico
 (cada voz sola, un combate seguido con golpes, poción y victoria, y las tres victorias).
 ### La entrada, la cornisa y los puentes de la Garganta 3D (tanda 5, para quien lleve `garganta_3d.gd`)
 
-Dos efectos nuevos que **no son bucles**: suenan de vez en cuando (`"cada"` en su `tres_d`) en el punto de su línea más
+Dos efectos nuevos (gráficos los engancha en `garganta_3d.gd`) que **no son bucles**: suenan de vez en cuando (`"cada"` en su `tres_d`) en el punto de su línea más
 cercano a quien escucha, y nada si está más lejos que `max` (`Sonido.fuente_linea` los reconoce solo). Bus Ambiente,
 prioridad 0, con el eco de la garganta que ya hay. Sin tocar `zonas3d/**` (lo pule gráficos en `area-garganta3d`).
 
 | Efecto | Qué | Archivos | Original (biblioteca) | Licencia | dB · cada · 3D | Salida (RMS) |
 |---|---|---|---|---|---|---|
-| `cuerda_cruje` | Las cuerdas de los puentes colgantes crujen | `ambiente/cuerda_cruje_1…3` | Rogue Waves «AMBNaut_Atmos, EXT Marina, boats, rope creaking» (+ un gozne de Jake Fielding, −12 dB, en la 3.ª) | Sonniss GDC 2024 | −14 · cada 3-8 s · 4 m de referencia, hasta 25 m | −35,1 (a 4 m) |
+| `puente_cruje` | Los puentes colgantes crujen: las cuerdas (1-3) y las tablas de madera (4-5) | `ambiente/puente_cruje_1…5` | Rogue Waves «AMBNaut_Atmos, EXT Marina, boats, rope creaking» (+ un gozne de Jake Fielding en la 3.ª) · Matt Script «Old wood floor creak» · Coll Anderson «EFX CTM Floor Board Creak 03 A» (con una cuerda debajo) | Sonniss GDC 2024 y 2019 | −14 · cada 3-8 s · 4 m de referencia, hasta 25 m | −35,1 (a 4 m) |
 | `viento_cuerdas` | El viento silba en las cuerdas de la cornisa y los puentes (ráfagas de 5,5 s) | `ambiente/viento_cuerdas_1…2` | Ivo Vicic «Bora wind: 38 Wind_hurricane_wires_whistle» | Sonniss GDC 2018 | −8 · cada 9-18 s · 6 m, hasta 40 m | −31,9 |
 
 **Líneas propuestas** para `_sonido_3d()` de `zonas3d/garganta_3d.gd` (trazado.gd: `X_CAMINO_O`, `X_BORDE_O`, `ALTO`,
@@ -555,7 +562,7 @@ prioridad 0, con el eco de la garganta que ya hay. Sin tocar `zonas3d/**` (lo pu
 
 ```gdscript
 for p in T.PUENTES:                                    # las cuerdas de cada puente colgante, a la altura de la mano
-	Sonido.fuente_linea(self, "cuerda_cruje", Vector3(T.X_CAMINO_O, T.ALTO + 0.8, p[0]), Vector3(T.X_CAMINO_O, T.ALTO + 0.8, p[1]))
+	Sonido.fuente_linea(self, "puente_cruje", Vector3(T.X_CAMINO_O, T.ALTO + 0.8, p[0]), Vector3(T.X_CAMINO_O, T.ALTO + 0.8, p[1]))
 # el viento en las cuerdas, por el borde de la cornisa desde la entrada hasta el último puente
 Sonido.fuente_linea(self, "viento_cuerdas", Vector3(T.X_BORDE_O, T.ALTO - 1.0, 40.0), Vector3(T.X_BORDE_O, T.ALTO - 1.0, T.PUENTES[1][1]))
 ```
