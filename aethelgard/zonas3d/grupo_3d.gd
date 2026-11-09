@@ -9,9 +9,19 @@ extends Node3D
 #     atrás, y anda o corre según su velocidad. Cuando está cerca, se para y al rato se vuelve hacia él.
 #   - Si el de delante viene hacia él (al dar media vuelta), se aparta a un lado para dejarle pasar.
 #   - Si el de delante aparece en otro sitio, o se queda muy lejos (más de PERDIDO), se coloca detrás de él.
+#   - Andan o corren según su velocidad real, con el ritmo que deja el pie apoyado quieto en el suelo (marcha() de
+#     maga_3d.gd, T-084 tanda 2): se acercan andando los últimos pasos (VEL_ACERCARSE) y corren a la marcha normal.
 # No tienen colisión: no estorban a Kael ni a los toques en el suelo. Las comprobaciones del suelo son las de Kael
 # (prototipos/vista3d.gd): escalón máximo, pendiente máxima, nada a la altura de las rodillas y las zonas prohibidas
 # de la escena (_prohibido).
+# Quien todavía no va con el grupo puede esperar en un sitio de la región (esperar(), p. ej. Garon junto a Tilo antes de
+# PV-05): está en la escena, en su reposo, mira a quien habla y no lo cuenta nodos(); mientras espera, Kael no lo
+# atraviesa. seguir() (o unir()) lo pone en la fila desde donde está.
+# Pasos: si la región da «pasos_superficie» (posición → «piedra», «hierba»…) antes de crearlos, cada uno lleva los suyos
+# (Sonido.pasos_3d, como Kael).
+# API (la usan pastos_verdes_3d.gd y otras regiones 3D): preparar, colocar, unir, esperar, seguir, nodos, miembros y
+# pasos_superficie. Lo que la región ofrece: _prohibido(p) (si lo tiene), su mundo físico y, para las miradas, sus
+# personajes como propiedades con el nombre en minúsculas (p. ej. «tilo»).
 # Tamaños: los del combate (combate.gd, MODELOS: Lya a 0,6 y Kael y Garon a 0,67).
 # Su coste se mide con el banco GRUPO de la región (zonas3d/pastos_verdes_3d.gd).
 
@@ -25,7 +35,9 @@ const VEL_ANDAR := 4.2           # las de Kael (prototipos/vista3d.gd: VELOCIDAD
 const VEL_CORRER := 7.56
 const VEL_MAX := 8.7
 const ALCANCE := 2.0             # m/s de más por cada metro que se queda atrás
-const CORRE_SI := 6.0            # pasa a correr por encima de esta velocidad...
+const VEL_ACERCARSE := 1.3       # lo más despacio que se acerca (antes, 2,52: llegaba corriendo y se paraba en seco);
+                                 # a esta velocidad, andando con el pie quieto en el suelo (T-084, tanda 2)
+const CORRE_SI := 6.0            # sin marcha() (otro modelo): pasa a correr por encima de esta velocidad...
 const ANDA_SI := 5.2             # ...y vuelve a andar por debajo de esta (así no parpadea entre las dos)
 const SUBE_MAX := 0.5            # escalón máximo, como Kael
 const PENDIENTE_MAX := 40.0      # grados, como Kael
@@ -37,6 +49,8 @@ const UNIR_HOLGURA := 1.3        # al unirse alguien, metros libres a su alreded
 var escena: Node3D               # la región: _prohibido(p) y el mundo físico
 var kael: Node3D
 var miembros: Array = []         # uno por acompañante, en orden: el primero sigue a Kael y cada uno al anterior
+var esperando := {}              # nombre → los mismos datos que en «miembros»: está en la región, sin seguir a nadie
+var pasos_superficie := Callable()   # posición → suelo («piedra», «hierba»…): si la región la da, llevan pasos
 var _previa := {}                # posición de cada uno (Kael incluido) en el fotograma anterior
 var _vel := {}                   # velocidad de cada uno en el suelo (m/s)
 
@@ -50,38 +64,113 @@ func preparar(region: Node3D, lider: Node3D, nombres: Array) -> void:
 
 
 # Se une alguien en mitad de la escena (la misión): aparece en un sitio libre cerca de «desde», va el último de la fila
-# y anda hasta su sitio detrás del de delante.
-func unir(n: String, desde: Vector3) -> void:
+# y anda hasta su sitio detrás del de delante. Con «exacto», aparece en el mismo «desde» si ahí se puede estar (Lya
+# llegando por el camino en PV-03). Si estaba esperando en la región (esperar()), no aparece: sigue desde donde está.
+func unir(n: String, desde: Vector3, exacto := false) -> void:
+	if esperando.has(n):
+		seguir(n)
+		return
 	for m in miembros:
 		if m["nombre"] == n:
 			return
 	if not _anadir(n):
 		return
 	var m: Dictionary = miembros[miembros.size() - 1]
+	var ocupados := _ocupados(m["nodo"])
+	var p := Vector3.INF
+	if exacto:
+		var y := _suelo(desde, desde.y)
+		if not is_nan(y) and _libre(Vector3(desde.x, y, desde.z), ocupados, UNIR_HOLGURA):
+			p = Vector3(desde.x, y, desde.z)
 	# Aparece con algo de holgura: ni encima de quien estaba en «desde» (Tilo, al unirse Garon) ni pegado a Kael o al
 	# resto (con 0,75 m, Garon salía a 1 m de Kael con una espada cruzada a la altura de sus piernas; T-084).
-	var p := _sitio_libre(desde, Vector3.BACK, 1.4, _ocupados(m["nodo"]) + [desde], UNIR_HOLGURA)
+	if p == Vector3.INF:
+		p = _sitio_libre(desde, Vector3.BACK, 1.4, ocupados + [desde], UNIR_HOLGURA)
 	_reiniciar(m, p, m["lider"].global_position - p)
 	_previa.erase(m["nodo"])
 
 
+# Alguien de la región que aún no va con el grupo espera en «sitio», mirando hacia «mirada» (T-084, tanda 2). Está en la
+# escena con su reposo de exploración y mira a quien habla en los diálogos, pero no sigue a nadie ni cuenta en nodos().
+# Mientras espera tiene un cilindro de choque, como Tilo: Kael no lo atraviesa. Devuelve su nodo (o null sin modelo).
+func esperar(n: String, sitio: Vector3, mirada := Vector3.ZERO) -> Node3D:
+	if esperando.has(n):
+		return esperando[n]["nodo"]
+	for m in miembros:
+		if m["nombre"] == n:
+			return m["nodo"]                         # ya va con el grupo
+	var m := _crear(n)
+	if m.is_empty():
+		return null
+	m["lider"] = null
+	esperando[n] = m
+	var y := _suelo(sitio, sitio.y)
+	_reiniciar(m, Vector3(sitio.x, sitio.y if is_nan(y) else y, sitio.z), mirada)
+	var cuerpo := StaticBody3D.new()
+	cuerpo.name = "Choque"
+	var forma := CollisionShape3D.new()
+	var cil := CylinderShape3D.new()
+	cil.radius = 0.35
+	cil.height = 1.7
+	forma.shape = cil
+	forma.position.y = 0.85
+	cuerpo.add_child(forma)
+	m["nodo"].add_child(cuerpo)
+	return m["nodo"]
+
+
+# Quien esperaba se une a la fila (el último) desde donde está, sin aparecer en otro sitio. False si no esperaba.
+func seguir(n: String) -> bool:
+	if not esperando.has(n):
+		return false
+	var m: Dictionary = esperando[n]
+	esperando.erase(n)
+	var choque: Node = m["nodo"].get_node_or_null("Choque")
+	if choque != null:
+		choque.get_parent().remove_child(choque)     # fuera ya del mundo físico: no estorba a sus propios pasos
+		choque.queue_free()
+	m["lider"] = miembros[miembros.size() - 1]["nodo"] if not miembros.is_empty() else kael
+	m["ultimo"] = m["lider"].global_position
+	m["cola"].clear()
+	m["t_quieto"] = 0.0
+	m["mira"] = false
+	miembros.append(m)
+	_previa.erase(m["nodo"])
+	return true
+
+
 func _anadir(n: String) -> bool:
-	if not RUTAS.has(n) or not ResourceLoader.exists(RUTAS[n]):
+	var m := _crear(n)
+	if m.is_empty():
 		return false
 	var delante: Node3D = miembros[miembros.size() - 1]["nodo"] if not miembros.is_empty() else kael
+	m["lider"] = delante
+	m["ultimo"] = delante.global_position
+	miembros.append(m)
+	return true
+
+
+# El personaje con su modelo, sus datos de seguimiento y su reposo de exploración; {} si no hay modelo.
+func _crear(n: String) -> Dictionary:
+	if not RUTAS.has(n) or not ResourceLoader.exists(RUTAS[n]):
+		return {}
 	var nodo = load(RUTAS[n]).new()
 	nodo.name = n
 	add_child(nodo)
 	if nodo.get("anim") == null or nodo.get("skel") == null:   # sin modelo no sale (como en el combate)
 		nodo.queue_free()
-		return false
+		return {}
 	nodo.scale = Vector3.ONE * ESCALA.get(n, 1.0)
 	# «estado» empieza en «?» (ninguno) para que el primer _poner_estado(m, "") ponga de verdad el reposo de
 	# exploración: con «» de partida no hacía nada y Garon se quedaba con la guardia de combate de garon_3d.gd (las
 	# dos espadas hacia delante) al aparecer y al empezar la región, hasta que andaba por primera vez (T-084).
-	var m := {"nombre": n, "nodo": nodo, "lider": delante, "cola": [], "ultimo": delante.global_position,
+	var m := {"nombre": n, "nodo": nodo, "lider": null, "cola": [], "ultimo": nodo.global_position,
 		"estado": "?", "apartar": null, "t_apartar": 0.0, "dir": Vector3.ZERO, "t_quieto": 0.0, "mira": false,
-		"reposo": ""}
+		"reposo": "", "v": 0.0}
+	# Sus pasos, con el mismo suelo que los de Kael (la región dice cuál). Uno por personaje: solo se crean aquí.
+	var son = get_node_or_null("/root/Sonido")
+	if son != null and pasos_superficie.is_valid() and son.has_method("pasos_3d"):
+		son.pasos_3d(nodo, pasos_superficie)
 	# Garon, quieto, se queda en guardia de combate con las dos espadas apuntando adelante (a Lya). Al explorar
 	# usa la guardia tranquila de garon_3d.gd (el principio de «Juicio», con las espadas bajas).
 	if nodo.has_method("_guardia_viva") and nodo.anim.has_animation("Juicio"):
@@ -91,8 +180,7 @@ func _anadir(n: String) -> bool:
 			calma.loop_mode = Animation.LOOP_LINEAR   # en bucle, como su guardia de combate (si no, a los 3,2 s se
 			lib.add_animation("Calma", calma)         # quedaba parado del todo: sin el vaivén del peso) (T-084)
 		m["reposo"] = "Calma"
-	miembros.append(m)
-	return true
+	return m
 
 
 func nodos() -> Array:
@@ -156,7 +244,7 @@ func _seguir(m: Dictionary, i: int, delta: float) -> void:
 		return
 	if d > SEPARACION:
 		var v_lider: float = _vel.get(lider, Vector3.ZERO).length()
-		var vel := clampf(v_lider + ALCANCE * (d - SEPARACION), VEL_ANDAR * 0.6, VEL_MAX)
+		var vel := clampf(v_lider + ALCANCE * (d - SEPARACION), VEL_ACERCARSE, VEL_MAX)
 		if _por_el_rastro(m, vel, delta, lp):
 			return
 	_quieto(m, delta, lp)
@@ -220,13 +308,23 @@ func _mover(m: Dictionary, inicio: Vector3, pos: Vector3, delta: float) -> void:
 	nodo.global_position = pos
 	var paso := Vector3(pos.x - inicio.x, 0.0, pos.z - inicio.z)
 	var v := paso.length() / delta
+	m["v"] = v
 	m["t_quieto"] = 0.0
 	m["mira"] = false
-	var estado := "andar"
-	if v > (ANDA_SI if m["estado"] == "correr" else CORRE_SI):
-		estado = "correr"
-	_poner_estado(m, estado)
-	nodo.anim.speed_scale = clampf(v / (VEL_CORRER if estado == "correr" else VEL_ANDAR), 0.75, 1.25)
+	if nodo.has_method("marcha"):
+		# Andar o correr y su ritmo, por la velocidad real: el pie apoyado se queda quieto en el suelo (T-084, tanda 2).
+		# Antes: andar hasta 6 m/s con el ritmo entre ×0,75 y ×1,25 de un clip de 1,1-1,5 m/s (patinaba ×3).
+		var clip: String = nodo.marcha(v)
+		if clip == "":
+			_poner_estado(m, "")                          # tan despacio que no da un paso: su reposo
+		else:
+			m["estado"] = clip
+	else:
+		var estado := "andar"
+		if v > (ANDA_SI if m["estado"] == "correr" else CORRE_SI):
+			estado = "correr"
+		_poner_estado(m, estado)
+		nodo.anim.speed_scale = clampf(v / (VEL_CORRER if estado == "correr" else VEL_ANDAR), 0.75, 1.25)
 	if paso.length() > 0.001:
 		var dir := paso.normalized()
 		if m["dir"] == Vector3.ZERO or m["dir"].angle_to(dir) > deg_to_rad(12.0):
@@ -237,6 +335,7 @@ func _mover(m: Dictionary, inicio: Vector3, pos: Vector3, delta: float) -> void:
 func _quieto(m: Dictionary, delta: float, lp: Vector3) -> void:
 	var nodo = m["nodo"]
 	var pos: Vector3 = nodo.global_position
+	m["v"] = 0.0
 	_poner_estado(m, "")
 	m["t_quieto"] += delta
 	if not m["cola"].is_empty() and _despejado(pos, lp):   # cerca y sin nada en medio: el rastro antiguo sobra
@@ -259,7 +358,10 @@ func _poner_estado(m: Dictionary, estado: String) -> void:
 		"correr":
 			m["nodo"].correr()
 		_:
-			m["nodo"].reposo()
+			if m["nodo"].has_method("parar_marcha"):
+				m["nodo"].parar_marcha()             # sin un paso de más al pararse (maga_3d.gd)
+			else:
+				m["nodo"].reposo()
 			if m["reposo"] != "":
 				m["nodo"].play(m["reposo"], 0.3)
 
@@ -268,7 +370,8 @@ func _reiniciar(m: Dictionary, p: Vector3, mirada: Vector3) -> void:
 	var nodo = m["nodo"]
 	nodo.global_position = p
 	m["cola"].clear()
-	m["ultimo"] = m["lider"].global_position
+	m["ultimo"] = m["lider"].global_position if m["lider"] != null else p   # (quien espera no sigue a nadie)
+	m["v"] = 0.0
 	m["apartar"] = null
 	m["t_quieto"] = 0.0
 	m["mira"] = false
@@ -282,6 +385,8 @@ func _reiniciar(m: Dictionary, p: Vector3, mirada: Vector3) -> void:
 # ---------------------------------------------------------------- miradas en los diálogos (T-084)
 
 const MIRAR_HASTA := 12.0        # metros: más lejos, no se vuelve (no es una conversación con él)
+const MIRAR_ESPERA := 6.0        # quien espera en la región solo se vuelve si la conversación es a su lado (Garon junto
+                                 # a Tilo no sigue PV-03 desde 10 m: mira el camino)
 const GIRO_MIRADA := 0.45        # segundos que tarda en volverse
 var _hablante := ""              # quien hablaba la última vez que se miró (una vez por cambio de interlocutor)
 
@@ -302,18 +407,20 @@ func _mirar_al_que_habla() -> void:
 	var habla: Node3D = _nodo_de(quien)
 	if habla == null:
 		return
-	for n in [kael] + nodos():
+	var esperan: Array = esperando.values()
+	for n in [kael] + nodos() + esperan.map(func(e): return e["nodo"]):
 		if n == habla:
 			continue
 		var m = null
-		for mm in miembros:
+		for mm in miembros + esperan:
 			if mm["nodo"] == n:
 				m = mm
 		if m != null and m["estado"] != "":
 			continue                                  # andando: mira por dónde va
 		var hacia: Vector3 = habla.global_position - n.global_position
 		hacia.y = 0.0
-		if hacia.length() < 0.3 or hacia.length() > MIRAR_HASTA:
+		var hasta := MIRAR_ESPERA if m != null and m["lider"] == null else MIRAR_HASTA
+		if hacia.length() < 0.3 or hacia.length() > hasta:
 			continue
 		n.mirar(hacia, GIRO_MIRADA)
 		if m != null:
@@ -331,6 +438,8 @@ func _nodo_de(quien: String) -> Node3D:
 	for m in miembros:
 		if m["nombre"] == quien:
 			return m["nodo"]
+	if esperando.has(quien):
+		return esperando[quien]["nodo"]
 	var otro = escena.get(quien.to_lower()) if escena != null else null
 	if otro is Node3D and is_instance_valid(otro):
 		return otro
@@ -390,10 +499,17 @@ func _atras_de(lider: Node3D, pos: Vector3) -> Vector3:
 
 func _ocupados(menos: Node3D) -> Array:
 	var r: Array = [kael.global_position]
-	for n in nodos():
+	for n in nodos() + esperando.values().map(func(e): return e["nodo"]):
 		if n != menos:
 			r.append(n.global_position)
 	return r
+
+
+func _libre(q: Vector3, ocupados: Array, holgura: float) -> bool:
+	for o in ocupados:
+		if _plana(o, q) < holgura:
+			return false
+	return true
 
 
 # Un sitio a «dist» de «desde» hacia «dir» (o girando poco a poco a los lados) donde se pueda estar: suelo andable,
@@ -408,12 +524,7 @@ func _sitio_libre(desde: Vector3, dir: Vector3, dist: float, ocupados: Array, ho
 			q.y = y
 			if not _despejado(desde, q):
 				continue
-			var libre := true
-			for o in ocupados:
-				if _plana(o, q) < holgura:
-					libre = false
-					break
-			if libre:
+			if _libre(q, ocupados, holgura):
 				return q
 	if holgura > 0.75:                                # sin sitio con tanta holgura: como antes
 		return _sitio_libre(desde, dir, dist, ocupados, 0.75)
