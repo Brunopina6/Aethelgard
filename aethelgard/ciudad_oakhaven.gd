@@ -29,7 +29,15 @@ extends "res://zona.gd"
 #     está cerrado). Si alguno tiene tiene_estado(<id del cofre>), la ciudad no pone su destello provisional. A una
 #     pieza con encender(si: bool) (un farol de la ronda) se le llama al cargar y al encenderlo.
 #   - Si el módulo trae la constante AMBIENTE (Color), la ciudad la usa para su luz ambiente (el arte va horneado a la
-#     hora azul).
+#     hora azul), y sin hierba alta. Con LUZ_JUGADOR ({"energia", "escala"}), la luz de Kael es un farol de mano.
+#   - Con RELLENO (las casas, farolas y tendederos que gráficos dibujó para no tapar ninguna calle con su tejado), las
+#     casas y farolas son esas, no las que se reparten al azar; el resto es jardín (setos y flores; los árboles, en los
+#     huecos de JARDINES si el módulo o la maqueta los traen).
+#   - Con muneco_de(id, imagen), los vecinos que tienen muñeco propio lo llevan, sin «tinte».
+#   - Lo que ya pinta el dibujo de un lugar (PINTADO_EN: el barril, el letrero, los faroles de la ronda, el sello…) no
+#     lleva provisional: un punto vacío para usarlo. Los faroles de la ronda se emparejan con los del dibujo por su
+#     sitio (de norte a sur), no por el número, y el destello del cofre de las raíces es el estado
+#     «cofre_raices_abierto» del Árbol.
 # Las pruebas pueden poner otro módulo con Engine «oakhaven_arte_prueba» (su ruta: prueba_oakhaven usa uno falso).
 #
 # Estado: solo claves que ya existen en la partida (ver ciudades/oakhaven.gd). Nada se guarda en Engine que sea un recurso:
@@ -61,11 +69,31 @@ const OBJETOS_OAK := {
 	"oak_escalera": {"tam": Vector2i(64, 48), "origen": Vector2(32, 40), "sombra": 0.0, "choque": 0.0},
 	"oak_puerta": {"tam": Vector2i(56, 88), "origen": Vector2(28, 84), "sombra": 0.0, "choque": 0.0},
 }
+# Piezas, notas y detalles que ya vienen pintados en el dibujo de un lugar: [lugar, ancla del dibujo que lo confirma].
+const PINTADO_EN := {
+	"oak_barril": ["patio_cuervo", "barril"], "oak_torre": ["torre", "puerta"], "oak_ronda_bajar": ["ronda", "subida"],
+	"oak_grieta": ["grieta", "grieta"], "oak_farol_1": ["ronda", "farol_1"], "oak_farol_2": ["ronda", "farol_2"],
+	"oak_farol_3": ["ronda", "farol_3"], "nota_oak_bando": ["plaza", "tablon"], "nota_oak_cuervo": ["taberna", "letrero"],
+	"nota_oak_anillos": ["arbol", "anillos"], "nota_oak_guardia": ["guardia", "libro"],
+	"nota_oak_velas": ["patio_velas", "velas"], "oak_sello": ["crematorio", "sello"], "oak_tapiz": ["concejo", "tapiz"],
+}
+const MAQUETA_ARTE := "res://ciudades/oakhaven_arte/maqueta_oakhaven.gd"   # JARDINES, si el módulo no los trae
+const Comentarios := preload("res://dialogos/comentarios.gd")   # lo que dicen los héroes al explorar (narrativa)
+const LLEGADA_COMENTARIO := 2.8           # s tras entrar: después del fundido y del aviso de la ciudad
+const QUIETO_COMENTARIO := 14.0           # s sin moverse (ni diálogo, ni menú) para que alguien diga algo
+const PAUSA_COMENTARIOS := 45.0           # s entre dos comentarios por estar quietos
+const ARBOLES := ["cerezo", "q_arbol", "q_otono", "q_pino"]
 
 var arte = null                           # ciudades/oakhaven_piezas.gd, si existe
 var nodos_lugar := {}                     # id de LUGARES → dibujo de gráficos (antes de entrar en mundo_y)
 var nodos_casas: Array = []               # dibujos de gráficos de las casas del relleno (antes de entrar en mundo_y)
 var farolas: Array = []                   # dónde van las farolas de las calles (casillas)
+var con_relleno := false                  # las casas y farolas son las del RELLENO de gráficos
+var vecinos: Array = []                   # Oak.NPCS con el muñeco propio de cada uno, si lo hay (_npcs)
+var llegada_t := LLEGADA_COMENTARIO       # cuenta atrás del comentario al llegar (< 0: ya pasó)
+var quieto_t := 0.0                       # tiempo sin moverse
+var comentario_pendiente := ""            # momento que espera a que acabe un aviso o un diálogo (el del cofre)
+var comentario_t := 0.0
 var musica_nodo = null                    # el autoload Musica (musica.gd)
 var musica_conoce := true                 # musica.gd ya sabe qué suena en esta escena
 var piezas: Array = []                    # [nodo, datos de Oak.PIEZAS, punto en píxeles]
@@ -123,6 +151,19 @@ func _exit_tree() -> void:
 		D.timeline_ended.disconnect(_al_acabar_dialogo)
 
 
+# La luz de Kael: con el arte a la hora azul, un farol de mano (la de zona.gd alumbra como de día).
+func _crear_iluminacion() -> void:
+	super._crear_iluminacion()
+	var l = _constante_arte("LUZ_JUGADOR")
+	if luz_jugador != null and l is Dictionary and l.has("energia") and l.has("escala"):
+		luz_jugador.energy = float(l["energia"])
+		luz_jugador.texture_scale = float(l["escala"])
+
+
+func _constante_arte(nombre: String) -> Variant:
+	return arte.get_script_constant_map().get(nombre) if arte != null else null
+
+
 static func _tiene_funcion(s: Script, nombre: String) -> bool:
 	for m in s.get_script_method_list():
 		if m["name"] == nombre:
@@ -142,6 +183,7 @@ func _leer_lugar() -> void:
 	if arte != null and arte.get_script_constant_map().get("AMBIENTE") is Color:   # la hora azul del arte de gráficos
 		estilo = estilo.duplicate()
 		estilo["ambiente"] = arte.get_script_constant_map()["AMBIENTE"]
+		estilo["hierba_alta"] = 0.0               # el arte pinta su suelo; la hierba alta lo taparía
 	es_ciudad = true
 	semilla = 1000 + Oak.INDICE * 7919
 
@@ -223,7 +265,13 @@ func _generar_disposicion() -> void:
 # Casas de 3 a 6 casillas de ancho y 3 o 4 de alto en el relleno, con un hueco de jardín a la derecha y debajo (así no
 # se tocan); lo que queda es jardín: muro invisible con plantas.
 func _poner_casas(rng: RandomNumberGenerator) -> void:
+	var relleno = _constante_arte("RELLENO")
+	con_relleno = relleno is Array and not relleno.is_empty()
+	if con_relleno:
+		_poner_relleno(relleno)
 	for y in range(1, ALTO - 1):
+		if con_relleno:
+			break
 		for x in range(1, ANCHO - 1):
 			if muros[y * ANCHO + x] != LIBRE:
 				continue
@@ -256,6 +304,31 @@ func _poner_casas(rng: RandomNumberGenerator) -> void:
 				jardines.append(Vector2i(x, y))
 
 
+# Las casas, farolas y tendederos del RELLENO de gráficos (dibujados para no tapar calles, plaza ni nada que se use).
+# Una casa que pisara algo de la ciudad no se pone (avisa); las farolas y los tendederos no son muro.
+func _poner_relleno(relleno: Array) -> void:
+	for c in relleno:
+		var r: Rect2i = c.get("rect", Rect2i())
+		if c.get("suelto", false):
+			if c.get("id", "") == "farol":
+				farolas.append(Vector2(r.position) + Vector2(0.5, 0.5))
+			else:
+				var n := _arte(c["id"], r)
+				if n != null:
+					nodos_casas.append(n)
+			continue
+		if not _libre(r.position.x, r.position.y, r.size.x, r.size.y):
+			push_warning("Oakhaven: la casa del relleno %s pisa algo de la ciudad; no se pone" % r)
+			continue
+		var casa := _arte(c["id"], r)
+		if casa == null:
+			continue
+		nodos_casas.append(casa)
+		for yy in r.size.y:
+			for xx in r.size.x:
+				muros[(r.position.y + yy) * ANCHO + r.position.x + xx] = 3
+
+
 func _libre(x: int, y: int, w: int, h: int) -> bool:
 	if x + w > ANCHO - 1 or y + h > ALTO - 1:
 		return false
@@ -282,9 +355,11 @@ func _decorar(rng: RandomNumberGenerator) -> void:
 		if rng.randf() >= (0.6 if junto else 0.3) or _cerca_de_algo(Vector2(c) + Vector2(0.5, 0.5), 2.2):
 			continue
 		var tipo := _al_azar(pesos, rng)
-		if junto:
+		if junto or (con_relleno and tipo in ARBOLES):   # con el arte, los árboles solo en los huecos de JARDINES
 			tipo = ["q_arbusto_flor", "q_arbusto", "q_arbusto_flor", "q_flores"][rng.randi() % 4]
 		colocados.append({"tipo": tipo, "pos": (Vector2(c) + Vector2(rng.randf_range(0.2, 0.8), rng.randf_range(0.3, 0.9))) * T})
+	if con_relleno:
+		_arboles_de_jardin()
 	for zona_hierba in [["raices", 12], ["colina", 10]]:
 		var r := _rect(zona_hierba[0])
 		var puestas := 0
@@ -297,6 +372,8 @@ func _decorar(rng: RandomNumberGenerator) -> void:
 				continue
 			colocados.append({"tipo": "q_flores" if puestas % 2 == 0 else "q_flores_amarillas", "pos": p * T})
 			puestas += 1
+	if con_relleno:
+		return                                     # las farolas son las del RELLENO (_poner_relleno)
 	var candidatas: Array = []
 	for l in Oak.LUGARES:
 		if not l["id"].begins_with("calle_"):
@@ -322,6 +399,23 @@ func _decorar(rng: RandomNumberGenerator) -> void:
 	for p in candidatas:
 		if _pisable(p) and not _cerca_de_algo(p, 1.6):
 			farolas.append(p)                      # se ponen en _crear_objetos (las de gráficos o las de zona.gd)
+
+
+# Árboles en los huecos que gráficos eligió para que no tapen fachadas ni calles (JARDINES: [tipo, x, y]), del módulo o,
+# si no los trae, de su maqueta. Solo los que caen en un jardín de esta ciudad.
+func _arboles_de_jardin() -> void:
+	var lista = _constante_arte("JARDINES")
+	if not lista is Array and ResourceLoader.exists(MAQUETA_ARTE):
+		lista = load(MAQUETA_ARTE).get_script_constant_map().get("JARDINES")
+	if not lista is Array:
+		return
+	var en_jardin := {}
+	for c in jardines:
+		en_jardin[c] = true
+	for j in lista:
+		var p := Vector2(float(j[1]), float(j[2]))
+		if en_jardin.has(Vector2i(floori(p.x), floori(p.y))) and not _cerca_de_algo(p, 1.5):
+			colocados.append({"tipo": j[0], "pos": p * T})
 
 
 func _al_azar(pesos: Dictionary, rng: RandomNumberGenerator) -> String:
@@ -436,10 +530,33 @@ func _arte(id: String, rect: Rect2i) -> Node2D:
 		return null
 	var n = arte.crear_pieza(id, rect, T)
 	if not n is Node2D:
-		return null
+		n = _hueco_si_pintado(id)
+		if n == null:
+			return null
 	if n.position == Vector2.ZERO:
 		n.position = Vector2(rect.position) * T
 	return n
+
+
+# Si el dibujo de su lugar ya pinta esta pieza, nota o detalle (PINTADO_EN), un punto vacío en lugar del provisional.
+func _hueco_si_pintado(id: String) -> Node2D:
+	if not PINTADO_EN.has(id):
+		return null
+	var dibujo = _dibujo_de_lugar(PINTADO_EN[id][0])
+	var anclas = dibujo.get("anclas") if dibujo != null else null
+	if not anclas is Dictionary or not anclas.has(PINTADO_EN[id][1]):
+		return null
+	var hueco := Node2D.new()
+	hueco.name = "pintado_" + id
+	return hueco
+
+
+func _dibujo_de_lugar(id: String) -> Node2D:
+	if nodos_lugar.has(id):
+		return nodos_lugar[id]
+	if id == "arbol" and arbol != null and not arbol_provisional:
+		return arbol
+	return null
 
 
 static func _rect_punto(c: Vector2) -> Rect2i:
@@ -598,9 +715,34 @@ func _actualizar_piezas() -> void:
 	var abiertos: Dictionary = Engine.get_meta("cofres_abiertos", {})
 	for n in _nodos_con_estados():
 		for i in [1, 2, 3]:
-			n.call("poner_estado", "farol_%d" % i, Progreso.estado(Oak.NOMBRE, "farol_%d" % i))
+			var f := "farol_%d" % i
+			n.call("poner_estado", _farol_del_dibujo(n, f), Progreso.estado(Oak.NOMBRE, f))
 		for c in Oak.COFRES:
 			n.call("poner_estado", c["id"], not abiertos.has(c["id"]))
+			n.call("poner_estado", _estado_abierto(c["id"]), abiertos.has(c["id"]))
+
+
+# El estado del dibujo para el farol «farol_N» de la partida. Se emparejan por su sitio, de norte a sur: el farol N de
+# la partida es la pieza oak_farol_N (ciudades/oakhaven.gd) y el dibujo numera los suyos con su propio orden (en el de
+# gráficos, el 1 es el del norte y en la partida, el del sur). Sin anclas (otro módulo), el mismo nombre.
+func _farol_del_dibujo(n: Node, estado: String) -> String:
+	var anclas = n.get("anclas")
+	if not anclas is Dictionary or not anclas.has("farol_1"):
+		return estado
+	var de_partida: Array = Oak.PIEZAS.filter(func(p): return p["id"].begins_with("oak_farol_"))
+	de_partida.sort_custom(func(a, b): return a["casilla"].y < b["casilla"].y)
+	var del_dibujo: Array = ["farol_1", "farol_2", "farol_3"].filter(func(k): return anclas.has(k))
+	del_dibujo.sort_custom(func(a, b): return anclas[a].y < anclas[b].y)
+	for i in mini(de_partida.size(), del_dibujo.size()):
+		if de_partida[i]["id"].trim_prefix("oak_") == estado:
+			return del_dibujo[i]
+	return estado
+
+
+# El estado del dibujo que dice que un cofre está abierto («oak_cofre_raices» → «cofre_raices_abierto», el destello
+# entre las hojas del Árbol, que se ve mientras NO está puesto).
+static func _estado_abierto(id_cofre: String) -> String:
+	return id_cofre.trim_prefix("oak_") + "_abierto"
 
 
 # Los dibujos de lugares de gráficos que tienen estados (pieza.gd: poner_estado y tiene_estado).
@@ -617,7 +759,7 @@ func _nodos_con_estados() -> Array:
 
 func _arte_tiene_estado(nombre: String) -> bool:
 	for n in _nodos_con_estados():
-		if n.has_method("tiene_estado") and n.call("tiene_estado", nombre):
+		if n.has_method("tiene_estado") and (n.call("tiene_estado", nombre) or n.call("tiene_estado", _estado_abierto(nombre))):
 			return true
 	return false
 
@@ -834,8 +976,53 @@ func _process(delta: float) -> void:
 	_siguiente_aviso()
 	_arbol_translucido(delta)
 	_mirar_arbol(delta)
+	_comentarios(delta)
 	if velo_patio != null:
 		velo_patio.modulate.a = move_toward(velo_patio.modulate.a, 0.0 if _patio_visible() else 1.0, delta * 2.0)
+
+
+# Lo que dicen los héroes al explorar (dialogos/comentarios.gd): al llegar, tras abrir un cofre y al quedarse quietos.
+# Nunca durante un diálogo, un fundido o con el menú abierto; si empieza un diálogo, el comentario se quita.
+func _comentarios(delta: float) -> void:
+	if ui == null or jugador == null:
+		return
+	var ocupado: bool = saliendo or viajando or barra_activa or _en_dialogo()
+	if _en_dialogo():
+		for n in ui.get_children():
+			if n.name.begins_with("comentario"):
+				n.queue_free()
+	if llegada_t >= 0.0:
+		llegada_t -= delta
+		if llegada_t < 0.0:
+			_comentar("llegar:oakhaven")
+	if comentario_pendiente != "":
+		comentario_t -= delta
+		if comentario_t <= 0.0 and not ocupado:
+			_comentar(comentario_pendiente)
+			comentario_pendiente = ""
+	if quieto_t < 0.0:                             # pausa tras un comentario por estar quietos
+		quieto_t = minf(quieto_t + delta, 0.0)
+		return
+	if ocupado or tiene_destino or jugador.velocity.length() > 5.0:
+		quieto_t = 0.0                             # moverse reinicia la espera
+		return
+	quieto_t += delta
+	if quieto_t >= QUIETO_COMENTARIO:
+		quieto_t = -PAUSA_COMENTARIOS if _comentar("quieto") else 0.0
+
+
+# Enseña un comentario si toca (y si no hay otro en pantalla). Devuelve si salió.
+func _comentar(momento: String) -> bool:
+	if saliendo or viajando or _en_dialogo():
+		return false
+	for n in ui.get_children():
+		if n.name.begins_with("comentario"):
+			return false
+	var c := Comentarios.elegir(momento)
+	if c.is_empty():
+		return false
+	Comentarios.mostrar(ui, c)
+	return true
 
 
 # En las raíces, la cámara sube hasta el borde de arriba de la ciudad para que se vea la copa del Árbol entera (sin
@@ -872,8 +1059,20 @@ func _arbol_translucido(delta: float) -> void:
 
 # ================================================================= vecinos, piezas y notas
 
+# Los vecinos de ciudades/oakhaven.gd; los que tienen muñeco propio en el arte (muneco_de) lo llevan, ya sin «tinte».
 func _npcs() -> Array:
-	return Oak.NPCS
+	if vecinos.is_empty():
+		var con_munecos := arte != null and _tiene_funcion(arte, "muneco_de")
+		for d in Oak.NPCS:
+			var v: Dictionary = d
+			if con_munecos:
+				var ruta: String = arte.muneco_de(d["id"], d["imagen"])
+				if ruta != d["imagen"] and ResourceLoader.exists(ruta):
+					v = d.duplicate()
+					v["imagen"] = ruta
+					v.erase("tinte")
+			vecinos.append(v)
+	return vecinos
 
 
 func _dialogo_npc(n: Array) -> String:
@@ -1045,6 +1244,8 @@ func _abrir_cofre(c: Array) -> void:
 	t.tween_callback(brillo.queue_free)
 	if r["nota"] != "":
 		_avisar("Nueva nota en el Diario: «%s»" % Oak.nota(r["nota"])["nombre"], "pagina")
+	comentario_pendiente = "cofre"                 # alguien del grupo lo comenta, tras el premio
+	comentario_t = 1.2
 	_guardar()
 
 

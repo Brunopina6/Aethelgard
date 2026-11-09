@@ -507,7 +507,7 @@ func _torre_y_faroles(z) -> void:
 		if not P.estado("oakhaven", "farol_%d" % i) or not ("Farol encendido (%d de 3)." % i) in z.aviso.text:
 			_fallo("5: el farol %d no se enciende («%s»)" % [i, z.aviso.text])
 		var e = _pieza(z, id)
-		if not _luz_de_farol(e[0]):
+		if not _luz_de_farol(z, e):
 			_fallo("5: el farol %d encendido no da luz" % i)
 		z._comprobar_cerca()
 		if z.pieza_cerca != null and z.pieza_cerca[1]["id"] == id:
@@ -643,7 +643,7 @@ func _salir_y_volver(z, base: Array) -> Variant:
 		_fallo("8: al volver, las misiones no siguen hechas")
 	var luces := 0
 	for e in z.piezas:
-		if e[1]["id"].begins_with("oak_farol_") and _luz_de_farol(e[0]):
+		if e[1]["id"].begins_with("oak_farol_") and _luz_de_farol(z, e):
 			luces += 1
 	if luces != 3:
 		_fallo("8: al volver, %d faroles de la ronda dan luz (3)" % luces)
@@ -740,8 +740,14 @@ func _lavanda(z) -> Variant:
 	return z
 
 
-# ¿Da luz este farol? El provisional (la farola de zona.gd) lleva su PointLight2D; el de gráficos, encender().
-func _luz_de_farol(n: Node) -> bool:
+# ¿Da luz este farol? El provisional (la farola de zona.gd) lleva su PointLight2D; el de gráficos, encender(); si lo
+# pinta el dibujo de la ronda (un punto vacío, PINTADO_EN), su farol encendido en ese dibujo (emparejado por su sitio).
+func _luz_de_farol(z, e: Array) -> bool:
+	var n: Node = e[0]
+	if n.name.begins_with("pintado_"):
+		var ronda = z.nodos_lugar.get("ronda")
+		var estado: String = z._farol_del_dibujo(ronda, e[1]["id"].trim_prefix("oak_")) if ronda != null else ""
+		return ronda != null and ronda.estados.has(estado) and ronda.estados[estado]["si"].any(func(x): return x.visible)
 	if n.get("encendida") != null:                 # el falso del apartado 11 (y uno de gráficos que lo apunte)
 		return n.get("encendida")
 	if n.has_method("encender"):
@@ -795,8 +801,10 @@ func _con_arte(z) -> void:
 			_fallo("11: no está el dibujo de «%s»" % id)
 	if por_id.has("taberna") and por_id["taberna"][0].position != Vector2(11, 19) * T:
 		_fallo("11: el dibujo de la taberna no está en la esquina de su huella (%s)" % (por_id["taberna"][0].position / T))
-	if por_id.get("farol", []).size() != farolas_sin:
-		_fallo("11: hay %d farolas de gráficos y %d sitios de farola" % [por_id.get("farol", []).size(), farolas_sin])
+	# (el módulo falso no trae RELLENO: sus farolas son las que reparte la ciudad, no las del arte de verdad)
+	if por_id.get("farol", []).size() != z.farolas.size() or z.con_relleno:
+		_fallo("11: hay %d farolas de gráficos y %d sitios de farola (antes, con el arte de verdad, %d)" \
+			% [por_id.get("farol", []).size(), z.farolas.size(), farolas_sin])
 	var casas: Array = por_id.get("casa_4x4", [])
 	if casas.is_empty():
 		_fallo("11: no se pide ninguna casa de 4 × 4 al arte")
