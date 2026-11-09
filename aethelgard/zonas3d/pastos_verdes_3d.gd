@@ -640,7 +640,11 @@ func _accion() -> void:
 	match cerca:
 		"tilo":
 			_mirar_a(tilo, kael.global_position)
-			if not P.hito("pv_05"):
+			if not P.hito("pv_03"):
+				# se puede llegar hasta Tilo sin pisar el punto de PV-03 (a 4 m del sendero, con un radio de 3,5):
+				# primero llega Lya, como en el orden de la misión (T-086, hallazgo de narrativa)
+				_escena_mision("pv_03")
+			elif not P.hito("pv_05"):
 				_escena_mision("pv_05")
 			elif not P.ganado(COMBATE_CENTINELA):
 				_empezar_dialogo("pv_tilo")

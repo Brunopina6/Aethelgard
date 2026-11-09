@@ -1,0 +1,137 @@
+{
+ "id": "ronda",
+ "rect": [
+  76,
+  28,
+  2,
+  14
+ ],
+ "sprites": [
+  {
+   "capa": "cuerpo",
+   "archivo": "ronda_cuerpo.webp",
+   "pos": [
+    4850,
+    1728
+   ],
+   "tam": [
+    220,
+    1181
+   ],
+   "orden": 1792.0,
+   "tipo": "objeto"
+  },
+  {
+   "capa": "farol_1_on",
+   "archivo": "ronda_farol_1_on.webp",
+   "pos": [
+    5003,
+    1856
+   ],
+   "tam": [
+    23,
+    47
+   ],
+   "orden": 1793.28,
+   "tipo": "objeto",
+   "estado": "farol_1"
+  },
+  {
+   "capa": "farol_2_on",
+   "archivo": "ronda_farol_2_on.webp",
+   "pos": [
+    5003,
+    2048
+   ],
+   "tam": [
+    23,
+    47
+   ],
+   "orden": 1793.28,
+   "tipo": "objeto",
+   "estado": "farol_2"
+  },
+  {
+   "capa": "farol_3_on",
+   "archivo": "ronda_farol_3_on.webp",
+   "pos": [
+    5003,
+    2304
+   ],
+   "tam": [
+    23,
+    47
+   ],
+   "orden": 1793.28,
+   "tipo": "objeto",
+   "estado": "farol_3"
+  }
+ ],
+ "anclas": {
+  "farol_1": [
+   5014.39990234375,
+   1878.4000549316406
+  ],
+  "farol_2": [
+   5014.39990234375,
+   2070.4000549316406
+  ],
+  "farol_3": [
+   5014.39990234375,
+   2326.4000549316406
+  ],
+  "subida": [
+   4896.0,
+   2656.0
+  ],
+  "cofre": [
+   4896.0,
+   1824.0
+  ]
+ },
+ "efectos": [
+  {
+   "tipo": "halo",
+   "ancla": "farol_1",
+   "radio": 1.4,
+   "fuerza": 0.55,
+   "estado": "farol_1",
+   "delante": 6.0
+  },
+  {
+   "tipo": "halo",
+   "ancla": "farol_2",
+   "radio": 1.4,
+   "fuerza": 0.55,
+   "estado": "farol_2",
+   "delante": 6.0
+  },
+  {
+   "tipo": "halo",
+   "ancla": "farol_3",
+   "radio": 1.4,
+   "fuerza": 0.55,
+   "estado": "farol_3",
+   "delante": 6.0
+  }
+ ],
+ "choques": [],
+ "marco": [
+  4727,
+  1700,
+  5193,
+  3013
+ ],
+ "suelo": {
+  "archivo": "ronda_suelo.png",
+  "pos": [
+   4797,
+   1730
+  ],
+  "tam": [
+   392,
+   1248
+  ],
+  "escala": 4
+ }
+}

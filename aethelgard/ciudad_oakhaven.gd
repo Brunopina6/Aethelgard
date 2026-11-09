@@ -105,6 +105,12 @@ func _ready() -> void:
 	musica_nodo = get_node_or_null("/root/Musica")
 	musica_conoce = musica_nodo == null or load("res://musica.gd").contexto_de(self) == "ciudad"
 	_actualizar_posada()
+	# Sonido de la ciudad (sonido.gd, tanda 3): el bullicio en la puerta de la taberna y el letrero del cuervo, que suenan
+	# por cercanía, y la campana lejana al llegar.
+	var rt := _rect("taberna")
+	Sonido.fuente_2d(self, "taberna", Vector2(rt.get_center().x, rt.end.y) * T, jugador)
+	Sonido.fuente_2d(self, "cuervo", Vector2(rt.position.x + 2.0, rt.end.y + 0.5) * T, jugador)
+	Sonido.efecto("campana", {"retraso": 1.5})
 
 
 func _exit_tree() -> void:
@@ -950,6 +956,7 @@ func _usar_pieza(e: Array) -> void:
 	_avisar(texto, "" if p.has("lleva_a") else "examinar", true)
 	if primera_vista:
 		_avisar(_texto_vista("oak_vista_torre"))
+		Sonido.efecto("campana", {"retraso": 0.8})  # arriba, la campana de la torre (tanda 3 de sonido)
 	_avisar(aviso_senal, _efecto_de(p["senal"]))
 	_actualizar_piezas()
 	if aviso_senal != "" or primera_vista or p["senal"] != "":
@@ -1095,6 +1102,8 @@ static func _efecto_de(s: String) -> String:
 		return ""
 	if s == "oak:pip_pagar":
 		return "monedas"
+	if s.begins_with("oak:farol_"):                # Kael enciende un farol de la ronda (tanda 3 de sonido)
+		return "farol"
 	if s.ends_with("_aceptados") or s == "oak:lavanda_pedida":
 		return "pagina"
 	if s.ends_with("_hechos") or s == "oak:lavanda_entregada":

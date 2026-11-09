@@ -1,6 +1,6 @@
 extends SceneTree
-# M1 y M2 en un combate de verdad, sin tocar combate.gd: juega con pruebas/combate_con_artes.gd (combate.gd con los
-# enganches de docs/diseno/combate_enganches.md, §2.1) y comprueba el código de esos enganches antes de aplicarlo:
+# M1 y M2 en un combate de verdad (combate.tscn, con los enganches de docs/diseno/combate_enganches.md aplicados en
+# combate.gd el 09/11; antes jugaba con una subclase de pruebas, pruebas/combate_con_artes.gd, ya borrada):
 #   A. Kael (nivel 9) y Lya (nivel 10) contra dos Slimes:
 #      1. el menú de magia de Kael tiene I · II y la pestaña del Alba; el Compás del Alba gasta 6 PM, carga la Armonía
 #         +0,15 y Lya entra UNA vez en la cola y tiene UN turno antes de que vuelva Kael;
@@ -9,6 +9,8 @@ extends SceneTree
 #      4. Lumbre de Retorno: Kael caído vuelve con el 25 % de sus PV, la barra a 0 y fuera de la cola, y vuelve a actuar.
 #   B. Kael solo (nivel 3): la pestaña del Alba tiene el Compás apagado, con su motivo, y elegirlo no hace nada.
 #   C. Kael y Lya a nivel 1: el menú de magia de Lya es el de hoy (sin pestañas; Fuego, Agua, Rayo y Cura).
+#   D. Kael solo, a un punto de experiencia del nivel 3: al ganar, «Kael aprende Compás del Alba» (el aviso de las
+#      artes al subir de nivel, A8), después del de subir y una sola vez.
 # Ganar o huir así no prueba la estrategia de un jugador: solo que el código de los enganches funciona.
 # No toca la partida de verdad: no guarda (sin «desde_mapa») y apunta a su propio archivo.
 
@@ -23,7 +25,8 @@ var frames := 0
 var f_inicio := 0
 var f_fin := -1
 var escenario := ""
-var pendientes := ["A", "B", "C"]
+var pendientes := ["A", "B", "C", "D"]
+var carteles: Array = []                         # D: los textos del cartel, en orden
 var fallos: Array = []
 var paso := 0
 var espera := 0
@@ -62,20 +65,26 @@ func _empezar(e: String) -> void:
 	for d in [datos, entradas, turnos, en_cola_antes, atb_antes, pv_antes, sube, retrasos]:
 		d.clear()
 	_limpiar()
+	carteles.clear()
 	G.datos()
-	var niveles: Dictionary = {"A": {"Kael": 9, "Lya": 10}, "B": {"Kael": 3}, "C": {"Kael": 1, "Lya": 1}}[e]
+	var niveles: Dictionary = {"A": {"Kael": 9, "Lya": 10}, "B": {"Kael": 3}, "C": {"Kael": 1, "Lya": 1},
+		"D": {"Kael": 2}}[e]
 	Engine.set_meta("grupo_activo", niveles.keys())
 	for n in niveles:
 		G.datos()[n]["nivel"] = niveles[n]
+		G.datos()[n]["exp"] = 0
+		G.datos()[n]["libros"] = {}
 		G.datos()[n]["pv"] = -1
 		G.datos()[n]["pm"] = -1
+	if e == "D":                                  # a un punto del nivel 3: cualquier victoria lo sube
+		G.datos()["Kael"]["exp"] = G.exp_para(2) - 1
 	Engine.set_meta("zona", "desierto" if e == "A" else "llanura")   # sin «zona limpia»: los Slimes no huyen solos
 	Engine.set_meta("tipo_combate", "normal")
-	Engine.set_meta("grupo_combate", 7 if e == "B" else 8)
-	c = Node2D.new()
-	c.name = "combate"
-	c.set_script(load("res://pruebas/combate_con_artes.gd"))
+	Engine.set_meta("grupo_combate", {"B": 7, "D": 9}.get(e, 8))   # D: un Grimfang (no huye: la victoria da experiencia)
+	c = load("res://combate.tscn").instantiate()
 	root.add_child(c)
+	if e == "D":
+		c.enemigos[0]["hp"] = 1                   # el primer golpe gana
 	seed(20261109)                                # como la huella: después de _ready
 	for en in c.enemigos:
 		en["atb"] = randf() * 30.0
@@ -113,12 +122,23 @@ func _process(_d: float) -> bool:
 				_turno_b(c.actor)
 			"C":
 				_turno_c(c.actor)
+			"D":
+				c._menu_objetivo("atacar", "")      # ataca hasta ganar
+				c._confirmar_objetivo(c.enemigos.filter(func(x): return x["hp"] > 0)[0])
+				paso = 1
 	if c.estado == "fin" and f_fin < 0:
 		f_fin = frames
 	var acabado: bool = f_fin >= 0 and (c.menu.heroe_actual.get("nombre", "") == "Fin" or frames - f_fin > 900)
 	if acabado or frames - f_inicio > MAX_FOTOGRAMAS:
 		_ok(c.estado == "fin", "el combate no terminó (paso %d, estado %s)" % [paso, c.estado])
-		_ok(paso >= int({"A": 5, "B": 1, "C": 1}[escenario]), "se quedó en el paso %d" % paso)
+		_ok(paso >= int({"A": 5, "B": 1, "C": 1, "D": 1}[escenario]), "se quedó en el paso %d" % paso)
+		if escenario == "D":
+			var sube := carteles.find("¡Kael sube al nivel 3!")
+			var aprende := carteles.find("Kael aprende Compás del Alba")
+			_ok(sube >= 0 and aprende > sube and carteles.count("Kael aprende Compás del Alba") == 1,
+				"el aviso de las artes al subir de nivel no sale bien: %s" % [carteles])
+			_ok(not carteles.any(func(t): return str(t).contains("Peso del Ocaso") or str(t).contains("Lumbre")),
+				"al subir al 3 avisa de algo más que el Compás: %s" % [carteles])
 		c.queue_free()
 		c = null
 		Engine.time_scale = 1.0
@@ -128,6 +148,8 @@ func _process(_d: float) -> bool:
 
 # Lo que pasa entre turnos: quién entra en la cola, PV que suben, barras que bajan mientras Kael lanza y Kael que vuelve.
 func _vigilar() -> void:
+	if carteles.is_empty() or carteles.back() != c.registro.text:
+		carteles.append(c.registro.text)
 	var lanza_kael: bool = c.estado == "accion" and c.actor is Dictionary and c.actor.get("nombre", "") == "Kael"
 	for f in c.heroes + c.enemigos:
 		var n: String = f["nombre"]
@@ -268,6 +290,7 @@ func _terminar() -> void:
 		print("OK A: Compás (una entrada en la cola, un turno de Lya, 6 PM, Armonía +0,15), Segundo Aliento, Peso del Ocaso y Lumbre de Retorno")
 		print("OK B: Compás apagado con Kael solo, con su motivo")
 		print("OK C: el menú de magia de Lya a nivel 1, como hoy")
+		print("OK D: al subir al nivel 3, «Kael aprende Compás del Alba», una vez y tras «sube al nivel 3»")
 	for f in fallos:
 		print("FALLO: ", f)
 	print("FALLOS: %d" % fallos.size())

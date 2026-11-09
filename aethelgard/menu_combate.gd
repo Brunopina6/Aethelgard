@@ -11,6 +11,8 @@ extends Control
 
 signal atras
 
+const Artes := preload("res://artes.gd")       # iconos de las familias nuevas y de los estados (T-091)
+
 # Paleta de la Biblia de arte
 const SOMBRA := Color("0B1220")
 const ORO := Color("E8C46A")
@@ -35,6 +37,8 @@ const TAM_NOMBRE := 60
 const TAM_ELEGIDA := 45
 const TAM_ORDEN := 38
 const TAM_SUB := 36
+const TAM_SUB_MIN := 26          # un nombre largo (Cólera del Cielo, Lumbre de Retorno) no baja de aquí
+const HUECO_COSTE := 14.0        # entre el nombre y el coste de la derecha
 const TAM_DESC := 24
 const TAM_GRUPO := 28
 const TAM_ARMONIA := 22
@@ -49,6 +53,8 @@ const FUENTE_ORDEN_FUERTE := "res://fuentes/SairaCondensed-Medium.ttf"
 var f_nombre: Font
 var f_orden: Font
 var f_fuerte: Font
+var f_orden_junta: Font          # las mismas con menos espacio entre letras: nombres largos de los submenús
+var f_fuerte_junta: Font
 var f_numero: Font               # condensada sin espacio extra (PV, números flotantes)
 var glow_tex: GradientTexture2D
 var mat_aditivo: CanvasItemMaterial
@@ -85,6 +91,8 @@ func _ready() -> void:
 	f_nombre = fuente(FUENTE_NOMBRE, 0, 600)
 	f_orden = fuente(FUENTE_ORDEN, 6, 0)
 	f_fuerte = fuente(FUENTE_ORDEN_FUERTE, 6, 0)
+	f_orden_junta = fuente(FUENTE_ORDEN, 2, 0)
+	f_fuerte_junta = fuente(FUENTE_ORDEN_FUERTE, 2, 0)
 	f_numero = fuente(FUENTE_ORDEN_FUERTE, 1, 0)
 	var g := Gradient.new()
 	g.offsets = PackedFloat32Array([0.0, 1.0])
@@ -233,6 +241,19 @@ func preparar(heroes: Array) -> void:
 		var n := _etiqueta(h["nombre"], f_nombre, TAM_GRUPO + 4, LUZ_CLARA)
 		n.position = Vector2(X_TEXTO, y - 4)
 		add_child(n)
+		var est := Control.new()                    # iconos de estado (artes.gd): coraza, Aliento y Brasa
+		est.position = Vector2(935, y + 6)          # entre el nombre y los PV
+		est.size = Vector2(66, 18)
+		est.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var quien: Dictionary = h
+		est.draw.connect(func():
+			var k := 0
+			for e in Artes.estados_de(quien):
+				est.draw_set_transform(Vector2(k * 22.0, 0))
+				Artes.dibujar_estado(est, e, Vector2(18, 18))
+				k += 1
+			est.draw_set_transform(Vector2.ZERO))
+		add_child(est)
 		var pv := _etiqueta("", f_numero, TAM_GRUPO, LUZ_CLARA)
 		pv.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		pv.size = Vector2(150, 40)
@@ -254,7 +275,8 @@ func preparar(heroes: Array) -> void:
 		relleno.size = Vector2(0, 3)
 		relleno.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(relleno)
-		grupo.append({"heroe": h, "nombre": n, "pv": pv, "fondo": fondo, "relleno": relleno, "brillo": brillo, "color": c})
+		grupo.append({"heroe": h, "nombre": n, "pv": pv, "fondo": fondo, "relleno": relleno, "brillo": brillo, "color": c,
+			"estados": est, "firma": ""})
 
 
 func actualizar_grupo(actor) -> void:
@@ -273,6 +295,10 @@ func actualizar_grupo(actor) -> void:
 		g["relleno"].size.x = g["fondo"].size.x * clampf(h["atb"] / 100.0, 0.0, 1.0)
 		g["relleno"].color = g["color"] if lleno else Color(LUZ_CLARA, 0.55)
 		g["brillo"].visible = lleno
+		var firma := str(Artes.estados_de(h))      # los iconos de estado se redibujan solo si cambian (o si cae)
+		if g["firma"] != firma:
+			g["firma"] = firma
+			g["estados"].queue_redraw()
 	if not heroe_actual.is_empty():
 		lbl_pm.text = "PM %d/%d" % [heroe_actual["mp"], heroe_actual["mp_max"]]
 
@@ -356,22 +382,33 @@ func _construir(items: Array, alto: float, pestanas: Array = [], pestana := 0) -
 	_pestana = pestana
 	var y := Y_FILAS
 	if not pestanas.is_empty():                     # pestañas I · II · III de las magias
+		var x := X_TEXTO - 12.0                     # I · II · III miden 96 px; las de familia (artes.gd), 64 y su icono
 		for i in pestanas.size():
 			var p: Dictionary = pestanas[i]
+			var ancho := float(p.get("ancho", 96.0))
 			var nodo := Control.new()
-			nodo.position = Vector2(X_TEXTO - 12 + i * 100.0, y)
-			nodo.size = Vector2(96, FILA_SUB)
+			nodo.position = Vector2(x, y)            # sin artes, las mismas x de siempre (808, 908 y 1008)
+			nodo.size = Vector2(ancho, FILA_SUB)
 			nodo.gui_input.connect(_toque_pestana.bind(p))
 			capa_filas.add_child(nodo)
+			x += ancho + 4.0
 			var l := _etiqueta(p["texto"], f_fuerte if i == pestana else f_orden, TAM_SUB, LUZ_CLARA if i == pestana else GRIS)
 			l.size = nodo.size
 			l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 			nodo.add_child(l)
+			if p.has("icono"):                      # pestaña de una familia nueva: su icono, más vivo si está elegida
+				var ic := Control.new()
+				ic.position = (nodo.size - Vector2(34, 34)) * 0.5
+				ic.size = Vector2(34, 34)
+				ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				ic.modulate = Color(1, 1, 1, 1.0 if i == pestana else 0.55)
+				ic.draw.connect(_dibujar_icono.bind(ic, p["icono"]))
+				nodo.add_child(ic)
 			if i == pestana:
 				var raya := ColorRect.new()
 				raya.color = Color(ORO, 0.9)
-				raya.position = Vector2(30, FILA_SUB - 10)
+				raya.position = Vector2((nodo.size.x - 36.0) * 0.5, FILA_SUB - 10)   # centrada (con 96 px, x = 30)
 				raya.size = Vector2(36, 2)
 				raya.mouse_filter = Control.MOUSE_FILTER_IGNORE
 				nodo.add_child(raya)
@@ -411,6 +448,8 @@ func _construir(items: Array, alto: float, pestanas: Array = [], pestana := 0) -
 			r.position = Vector2(nodo.size.x - MARGEN_TOQUE - 160, 0)
 			nodo.add_child(r)
 			f["der"] = r
+		if alto != FILA and not it.get("aviso", false):
+			_ajustar_nombre(f, str(it["texto"]), x_texto, str(it.get("derecha", "")))
 		if it.get("tipo", "") == "carta":            # flechas ◂ ▸ con zona de toque grande
 			var lado: String = carta_lado.get(heroe_actual.get("nombre", ""), "a")
 			f["lado"] = lado
@@ -437,6 +476,23 @@ func _construir(items: Array, alto: float, pestanas: Array = [], pestana := 0) -
 		_elegir(primera, false)
 	else:
 		_pintar()
+
+
+# Que el nombre de una fila de submenú no pise su coste («Cólera del Cielo» y «32 PM», o las artes: «Lumbre de Retorno»
+# y «14 PM»). Si no cabe con el estilo de siempre, primero se juntan las letras (2 px en vez de 6) y, si aún no cabe, se
+# baja el tamaño hasta TAM_SUB_MIN. Los nombres que caben (casi todos) no cambian. Se mide con la fuente de la elegida,
+# que es la más ancha.
+func _ajustar_nombre(f: Dictionary, texto: String, x_texto: float, derecha: String) -> void:
+	var libre: float = f["nodo"].size.x - MARGEN_TOQUE - x_texto
+	if derecha != "":
+		libre -= f_orden.get_string_size(derecha, HORIZONTAL_ALIGNMENT_LEFT, -1, TAM_SUB - 6).x + HUECO_COSTE
+	if f_fuerte.get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, TAM_SUB).x <= libre:
+		return
+	f["junta"] = true
+	var tam := TAM_SUB
+	while tam > TAM_SUB_MIN and f_fuerte_junta.get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, tam).x > libre:
+		tam -= 1
+	f["tam"] = tam
 
 
 # Entrada: las líneas aparecen deslizándose una detrás de otra (menos de medio segundo).
@@ -483,8 +539,11 @@ func _pintar() -> void:
 			l.add_theme_font_override("font", f_fuerte if elegida and not apagado else f_orden)
 		else:                                        # submenús: mismo tamaño, la elegida en blanco
 			l.text = texto
-			l.add_theme_font_size_override("font_size", TAM_SUB)
-			l.add_theme_font_override("font", f_fuerte if elegida and not apagado else f_orden)
+			l.add_theme_font_size_override("font_size", f.get("tam", TAM_SUB))
+			if f.get("junta", false):                # nombre largo: letras más juntas (_ajustar_nombre)
+				l.add_theme_font_override("font", f_fuerte_junta if elegida and not apagado else f_orden_junta)
+			else:
+				l.add_theme_font_override("font", f_fuerte if elegida and not apagado else f_orden)
 		l.add_theme_color_override("font_color", color)
 		if f.has("der"):
 			f["der"].add_theme_color_override("font_color", GRIS_APAGADO if apagado else (LUZ_CLARA if elegida else GRIS))
@@ -515,6 +574,8 @@ func _process(_d: float) -> void:
 func _dibujar_icono(c: Control, icono) -> void:
 	if icono is Texture2D:
 		c.draw_texture_rect(icono, Rect2(Vector2.ZERO, c.size), false)
+		return
+	if Artes.dibujar_icono(c, str(icono), c.size):  # Alba, Escarcha y Lumbre (artes.gd)
 		return
 	var col: Color = COLOR_ELEMENTO.get(icono, LUZ_CLARA)
 	var m := c.size * 0.5
