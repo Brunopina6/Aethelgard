@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://b8th53sr8fpso"]
 
-[ext_resource type="Script" uid="uid://cjo63mgt0h3gx" path="res://mapa.gd" id="1_mapa"]
+[ext_resource type="Script" uid="uid://dfhkvv5tjdco3" path="res://mapa_arte/mapa_arte.gd" id="1_mapa"]
 
 [node name="mapa" type="Node2D" unique_id=149859224]
 script = ExtResource("1_mapa")
