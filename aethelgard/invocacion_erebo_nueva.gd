@@ -145,6 +145,8 @@ func _secuencia(ctx: Dictionary) -> void:
 	plano(hombro + u * 0.2, objetivo_mano, 0.0, 34.0)
 	plano(hombro, objetivo_mano, 1.2, 30.0)
 	erebo.deslizar(e1, 0.8)
+	var medio := (pecho + e1 + arriba * 0.9) * 0.5
+	_plano_p8 = [medio + lado_b * 2.4, medio]                 # P8: al agarrar, corte al plano lateral (_al_contacto)
 	var exito_mano := exito
 	await _hasta_fin(erebo.extraer_abierto.bind(exito_mano, 1.2, _al_contacto.bind(pecho)))
 	if saltada(): return
@@ -160,10 +162,7 @@ func _secuencia(ctx: Dictionary) -> void:
 		await _salida_nueva(pies)
 		return
 
-	# P8 · Arrancar (6,8-8,2 s) ya ha pasado dentro de extraer_abierto; plano lateral mientras se aparta con el orbe
-	var medio := (pecho + e1 + arriba * 0.9) * 0.5
-	plano(medio + lado_b * 2.4, medio, 0.0, 38.0)
-	_vaciar()
+	# P8 · Arrancar (6,8-8,2 s) ya ha pasado dentro de extraer_abierto, con el plano lateral; se aparta con el orbe
 	var e2 := e1 + u * 0.6
 	erebo.deslizar(e2, 0.7)
 	erebo.mirar((-u + lado_a * 1.4).normalized(), 0.5)          # se vuelve hacia la cámara para presentar el orbe
@@ -183,6 +182,7 @@ func _secuencia(ctx: Dictionary) -> void:
 
 
 var _e1 := Vector3.ZERO
+var _plano_p8: Array = []
 
 
 # El contacto: cámara lenta, pausa de impacto, onda en el pecho y el enemigo se arquea.
@@ -194,6 +194,11 @@ func _al_contacto(pecho: Vector3) -> void:
 	if _objetivo.has_method("herida"):
 		_objetivo.herida()
 	await congelar(0.35, 0.12)
+	get_tree().create_timer(0.25).timeout.connect(func():     # los dedos se cierran dentro: corte al lateral (P8)
+		if not saltada() and not _plano_p8.is_empty():
+			plano(_plano_p8[0], _plano_p8[1], 0.0, 38.0)
+			if resultado.get("exito", false):
+				_vaciar())                                      # «vacío»: el enemigo se queda sin fuerzas mientras tira
 
 
 func _al_estallar() -> void:
