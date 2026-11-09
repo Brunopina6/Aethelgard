@@ -454,7 +454,7 @@ func _motivos() -> void:
 			I.gastar(o)
 	c._mostrar_menu()
 	await _esperar(4)
-	_ok(_motivo_orden("ESGRIMA") == "Necesitas 6 PM" and _motivo_orden("EMBUIR") == "Necesitas 5 PM",
+	_ok(_motivo_orden("ESGRIMA") == "Necesitas 4 PM" and _motivo_orden("EMBUIR") == "Necesitas 5 PM",
 		"Garon sin PM: «%s» y «%s»" % [_motivo_orden("ESGRIMA"), _motivo_orden("EMBUIR")])
 	_ok(_motivo_orden("OBJETO") == "No quedan objetos", "sin objetos: «%s»" % _motivo_orden("OBJETO"))
 	c._menu_esgrima()

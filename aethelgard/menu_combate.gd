@@ -406,7 +406,7 @@ func actualizar_grupo(actor) -> void:
 		g["relleno"].size.x = g["fondo"].size.x * clampf(h["atb"] / 100.0, 0.0, 1.0)
 		g["relleno"].color = g["color"] if lleno else (Color(LUZ_CLARA, 0.55) if vivo else Color(GRIS_APAGADO, 0.35))
 		g["brillo"].visible = lleno
-		var firma := str(Artes.estados_de(h)) + str(h.get("aliento", 0))   # los iconos, solo si cambian (o si cae)
+		var firma := str(Artes.estados_de(h)) + str(h.get("aliento", 0)) + str(h.get("barrera", 0))   # solo si cambian
 		if g["firma"] != firma:
 			g["firma"] = firma
 			g["estados"].queue_redraw()

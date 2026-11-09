@@ -198,7 +198,7 @@ func _turno_a(h: Dictionary) -> void:
 				c._defender()
 				return
 			c._menu_magia(0)
-			_ok(_pestanas() == ["I", "II", "Alba"], "las pestañas de Kael (nivel 9) son %s" % [_pestanas()])
+			_ok(_pestanas() == ["I", "II", "Alba", "Escarcha"], "las pestañas de Kael (nivel 9) son %s" % [_pestanas()])
 			c._menu_magia(4)
 			_ok(_textos() == ["Compás del Alba", "Peso del Ocaso"], "la pestaña del Alba tiene %s" % [_textos()])
 			_ok(not c.menu.filas[0]["item"]["apagado"], "el Compás sale apagado con Lya en pie")
