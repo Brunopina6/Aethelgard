@@ -509,3 +509,41 @@ con el puente si es barato, y los enganches de narrativa y de sonido en `gargant
 2. Que la generación (peñas, sillares, dovelas) se haga una vez y se guarde: la carga vuelve a lo de antes.
 3. Medir en un hueco sin carga y en el Redmi (perfil bajo). Si hace falta, sacar las vetas del bajo y juntar las llamas.
 4. Luego, T-103 (Oakhaven 3D), como ha dicho el coordinador.
+
+## 2026-11-09 23:10 · T-102, optimización: roca guardada, peñas reutilizadas y piezas por tramos
+
+Unión previa de `integracion-experimental` @ `dca4c1c` → `4eb98e4`. Nota: un primer intento (hacia las 19:00) se cortó
+a mitad de una medida alterna que había dejado los archivos «de antes» en disco: por eso se perdió lo hecho. Ahora se
+confirma antes de medir y la medida restaura con `try/finally`.
+
+**Qué se ha hecho** (`873bb33`, `85db81a`; comprobado ejecutando, aislado)
+- **Roca guardada:** cada malla de roca (26) y la colisión de los suelos se guardan en `user://cache_garganta/` la
+  primera vez por perfil (1,4 MB en alto) y se leen después. Si falta o no se lee, se genera como antes. Hay que subir
+  `VERSION_CACHE` si cambia la roca. Se apaga con «sin_cache» (`medir_garganta3d`).
+- **Peñas:** 6 formas hechas una vez, giradas y escaladas (antes, una desde cero por peña).
+- **Por tramos:** Vía del Peregrino y senda baja en MultiMesh de 12 m (antes, una de 70 m dibujada siempre); enlosado
+  de la arena en cuatro cuartos.
+- `construir()` apunta lo que tarda cada paso (`escenario.tiempos`); `medir_garganta3d … conteo` lo escribe, con
+  `etiqueta=` para varias cargas en la misma pasada.
+
+**Medidas** (PC, alternas: dos rondas antes `4eb98e4` / después `873bb33`)
+- **Carga de la región** (`D:\REBELUM_diagnostico\garganta3d\2026-11-09\optimizar_ab2\cargas.txt`):
+
+  | Perfil | Antes | Después, primera vez (caché fría) | Después, segunda vez (caché caliente) |
+  |---|---|---|---|
+  | alto | 2,10-2,77 s | 2,18-2,22 s | 1,60-1,61 s (−0,5 s) |
+  | bajo | 1,74-1,85 s | 1,76-1,87 s | 1,37-1,40 s (−0,4 s) |
+
+  La primera vez cuesta igual que antes: lo que se ahorra en peñas se gasta en guardar.
+- **Dibujo por vista** (`...\optimizar_dibujo\comparacion_dibujo.txt`):
+  - primitivas: −7 k a −29 k en las vistas de juego (−4 a −15 %); igual en las vistas de toda la garganta;
+  - llamadas de dibujo: −3 a +10 en las vistas de juego, +29 en las de toda la garganta (se ven más tramos);
+  - GPU del PC: igual o algo menos (alto 1,6 → 1,2-1,5 ms).
+- **Mismo aspecto y misma colisión.** `prueba_garganta3d` y `prueba_garganta3d_tramo` superadas; la segunda, leyendo
+  ya la caché que dejó la primera (`...\optimizar\2026-11-09_*`).
+
+**Límites:**
+- **Pendiente en Redmi:** si las ~10 llamadas de dibujo más pesan más que los ~20 k vértices menos. Si pesan, tramos
+  de 18-24 m.
+- **La caché vive en `user://`,** fuera de las partidas: no toca `partida.save`. Si el usuario borra los datos de la
+  app, se regenera sola.
