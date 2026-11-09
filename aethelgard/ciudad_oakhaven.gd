@@ -1221,6 +1221,7 @@ func _usar_pieza(e: Array) -> void:
 	var p: Dictionary = e[1]
 	if not Oak.cumple(p["si"]):
 		_avisar(p["texto_sin"], "examinar", true)
+		_avisos_hallazgo(Hallazgos.al_examinar(Oak.INDICE, "pieza:" + p["id"]), 0.0)   # (hallazgos.gd)
 		return
 	var primera_vista: bool = p["id"] == "oak_torre" and not Progreso.estado(Oak.NOMBRE, "vista_torre")
 	var aviso_senal := Oak.aplicar_senal(p["senal"]) if p["senal"] != "" else ""
@@ -1414,6 +1415,17 @@ func _al_acabar_dialogo() -> void:
 	if cambios:
 		cambios = false
 		_guardar()
+
+
+# Los avisos de un hallazgo (hallazgos.gd), en la cola de avisos de la ciudad: uno detrás de otro, tras el que esté.
+func _avisos_hallazgo(textos: Array, _desde: float) -> void:
+	if textos.is_empty():
+		return
+	for t in textos:
+		_avisar(t)
+	Sonido.efecto("tesoro", {"retraso": 0.3})
+	_poner_oro()
+	_guardar()
 
 
 # El rumor de la posadera (ciudades/oakhaven_posada.gd), en su caja de diálogo: una frase hecha al momento.
