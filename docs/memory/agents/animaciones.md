@@ -905,3 +905,101 @@ En `D:\REBELUM_diagnostico\animaciones\2026-11-09\erebo\`:
 - **Para el ejecutor (`pruebas/ejecutar_pruebas.ps1`, del coordinador):** `\bFALLO\b` se busca sin distinguir mayúsculas,
   así que cualquier «fallo» en minúsculas de una línea normal marca la prueba como FALLIDA. Si se quiere, `-cmatch` en
   ese patrón; mientras tanto, las pruebas no deben escribir «fallo» salvo para declarar uno.
+
+## 2026-11-09 23:50 · T-097, segunda bestia: Cencerrante preparado para el combate (modelo, clips y escena)
+
+**Versión de partida:** `area-animaciones` @ `187fb08`, unida con `integracion-experimental` @ `45a49e6` (`a27713e`,
+`--no-ff`, sin conflictos). Todo lo comprobado es del 2026-11-09, entre las 23:10 y las 23:50, con datos aislados; la
+carpeta real de datos no cambió en ninguna ejecución. **Sin Redmi. No toco `combate.gd`:** el enganche es de combate.
+
+**Commits** en `area-animaciones`, sin publicar: `2d0f8ed` (modelo, escena, guion y guion de Blender), `ddfa667` (las
+pruebas y `lista_pruebas.txt`), `83670c6` (`docs/recursos.md` y `docs/versiones/licencias_pendientes.txt`) y el de este
+informe.
+
+### 1. El modelo del usuario (*comprobado ejecutando*, Blender 5.2.3 y Godot 4.7.2)
+- `cencerrante.blend` y `cencerrante.glb` del bestiario (`D:\REBELUM_diagnostico\entradas\2026-11-09_bestiario\`): una
+  malla de 6.288 triángulos (1,52 m de alto, 0,86 de ancho y 0,38 de fondo, pies en y = 0), un material y un esqueleto
+  de **9 huesos** (root, body, bell y muslo, espinilla y pie de cada lado). Mira a -Y en Blender y a +Z en Godot, como
+  Zarzalín: con `FRENTE_ENEMIGO` queda de 3/4 mirando a los héroes (53°).
+- Clips del usuario, sin tocar: `reposo` (1,07 s), `toque_de_alarma` (1,4 s; la campana toma impulso y **repica a
+  0,733 s**, el valor de la ficha), `campanada_baja` (1,17 s; el marco carga hacia delante 0,48 m y **golpea a
+  0,533 s**) y `recibir_golpe` (0,6 s).
+- Material de Compatibility (`StandardMaterial3D`): color, normales y rugosidad y metal (canal B), a doble cara.
+- El reposo del usuario sube y baja la raíz 2 cm, y los pies con ella: no lo cambio (es su clip), pero se nota de cerca.
+
+### 2. Clips nuevos (Blender 5.2.3 por script, sobre una copia)
+`enemigos/cencerrante/fuentes_blender/crear_clips.py` (con `.gdignore`; el método del de Zarzalín: giros sobre una pose
+base y la raíz apoyada en el suelo con la malla deformada) añade:
+- `derrota` (1,2 s): las patas ceden, la campana da un último golpe y el marco **cae de espaldas** (lejos de los
+  héroes), rebota y se queda;
+- `entrada` (1,2 s): **dos saltos** desde 0,85 m por detrás, la campana se balancea al caer y queda en reposo;
+- `correr` (0,53 s, en bucle): anda **a saltitos** en el sitio, una pata y otra, con la campana meciéndose (para el
+  acercamiento del combate).
+
+El `.blend` del usuario sigue igual (SHA-256 `bd2d3464dd502a11…`). La copia con los clips nuevos y el GLB exportado están
+fuera del historial, en `D:\REBELUM_diagnostico\bestiario\2026-11-09\cencerrante\blender\` y `exportado\`.
+
+### 3. Texturas (la medida de Garon, `D:\REBELUM_diagnostico\optimizacion\2026-11-09_texturas\`)
+Las tres 2K van **comprimidas para la GPU**: 10,7 MB en total (sin comprimir serían unos 48). Las normales, con
+`normal_map=1`. **El color también:** en un primer plano de la campana (0,75 m de alto de vista, más cerca que cualquier
+cámara del juego), sin comprimir frente a comprimida, diferencia media **1,3/255**, máxima 24/255; el 0,5 % de los
+píxeles cambia más de 8/255 y el 0,013 % más de 16/255. A simple vista son iguales (lámina en § 6).
+
+### 4. La escena y su API (para combate)
+`enemigos/cencerrante/cencerrante_3d.tscn` (o `cencerrante_3d.gd` con `.new()` y `ruta_modelo`), con lo que el combate
+ya llama a un enemigo 3D (`reposo`, `correr`/`andar`, `herida`, `morir`, `cansada`, `revivir`, `victoria`, `mirar`,
+`mirar_frente`, `punto_magia`, `ALTURA` = 1,52 m, `anim`, `skel`, `pivote`…) y además:
+- `atacar("campanada_baja", al_impactar)` (con `await`): **un único impacto** a 0,533 s (señal `impacto` y
+  `al_impactar`, una vez, también si algo corta el clip); vuelve al reposo y emite `ataque_terminado`.
+- `avisar("toque_de_alarma")` (con `await`): **señal `aviso` una vez, en el repique** (0,733 s), y vuelve al reposo.
+  La regla de la ficha (el siguiente golpe de un aliado reforzado, o el suyo si está solo, con una sola activación) es
+  del combate.
+- `recibir_golpe()`, `derrota()` y `entrada()` (emiten `clip_terminado`).
+- `alcance("campanada_baja")` = **0,379 m** (lo que adelanta la boca de la campana en el impacto), `tiempo_impacto()`,
+  `campana()` (la boca de la campana) y `CENTRO` = 0,95 m (la campana: números y destellos).
+- Un golpe recibido no corta ni el ataque ni el toque ni la entrada.
+- **Encuadre propuesto (inferencia, sin medir clip a clip como con Zarzalín):** a escala ×1,0 es casi tan alto como Kael
+  (lámina en § 6). Una ventana 3D de unos 840 × 560 px, con 2,0 m de alto de vista y el centro a 0,8 m (280 px/m, como
+  Grimfang), cabe la carga hacia delante y la caída de espaldas.
+
+### 5. Pruebas
+- **Nueva `prueba_cencerrante_modelo`** (automática; en `lista_pruebas.txt`). Comprueba:
+  - los 7 clips; en bucle solo reposo y correr; cada clip gira los 9 huesos;
+  - campanada, toque, golpe y entrada acaban en el reposo y los bucles cierran (0,00°); texturas comprimidas;
+  - el impacto, una vez y en su ancla (0,533 s; el clip va por 0,532), también con 1 s de pausa a medias y con un golpe
+    recibido a medias; el aviso, una vez y en el repique (0,733 s);
+  - la derrota de espaldas (raíz a 88°, el marco hacia atrás), que no ataca ni avisa; revivir; la entrada desde 0,84 m
+    atrás; liberado a mitad de un ataque; creado con `.new()`.
+
+  **FALLOS: 0.**
+- **Nueva `prueba_cencerrante_fotos`** (con ventana): lo mismo y las capturas. FALLOS: 0.
+- Con el ejecutor (23:22): `prueba_cencerrante_modelo`, `prueba_zarzalin_modelo`, `prueba_escenas` y
+  **`prueba_combate_huella`**, SUPERADAS (`D:\REBELUM_diagnostico\bestiario\2026-11-09\cencerrante\pruebas\2026-11-09_232252\resumen.md`).
+- **Aviso: `prueba_integridad` se cae a veces al salir desde que está Cencerrante** (código -1073741819, sin mensaje y
+  con «FALLOS: 0» ya escrito): 4 de 15 pasadas.
+  - Sin la escena de Cencerrante: 0 de 17. Sin la de Zarzalín (y con la de Cencerrante): 0 de 6. Cargando solo las dos
+    escenas, sin el resto del proyecto: 0 de 8.
+  - Solo pasa con las dos bestias y el resto del proyecto cargados a la vez, al cerrar Godot sin ventana. No he
+    encontrado la causa: no es un uid repetido, ni la cámara del `.blend` (el GLB no la lleva).
+  - Registros en `D:\REBELUM_diagnostico\bestiario\2026-11-09\cencerrante\pruebas_integridad_ab\`.
+
+### 6. Evidencias
+En `D:\REBELUM_diagnostico\bestiario\2026-11-09\cencerrante\`:
+- `laminas\secuencia_clips.png`: junto a Kael (la escala), el toque (impulso y repique), la campanada (impulso e
+  impacto), el golpe recibido, la entrada, el andar y la derrota;
+- `laminas\color_sin_comprimir_izq_comprimido_centro_diferencia_x8_dcha.png`;
+- `capturas\` (cada clip en varios momentos, con la luz y la cámara del combate) y los registros de las pruebas.
+
+### 7. Límites
+- **Sin enganchar al combate** y **pendiente en Redmi** (no he medido rendimiento).
+- El encuadre es una propuesta sin medir clip a clip; la escala la decide el coordinador.
+- El sonido (bronce hueco y cuerda) no está: `aviso` e `impacto` son sus anclas.
+- La caída de `prueba_integridad` al salir (§ 5).
+
+### 8. Siguiente paso y cambios en archivos de otros
+- **Combate (`combate.gd`):** las entradas de `MODELOS` y `ENEMIGOS` con el encuadre de § 4 y el centro a 0,95 m; la
+  campanada con `atacar()`, colocándolo a `alcance()` del objetivo; el toque con `avisar()` y la regla de una sola
+  activación; y su prueba de combate.
+- **Coordinador (`prueba_integridad` y el ejecutor):** decidir qué hacer con la caída al salir: repetir la prueba una
+  vez si el código es -1073741819 y la salida ya dice «FALLOS: 0», o buscar la causa con un Godot con símbolos.
+- **Sonido:** el bronce y la cuerda, con las señales `aviso` e `impacto`.
