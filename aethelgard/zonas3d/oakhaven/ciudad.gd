@@ -45,6 +45,7 @@ func construir() -> void:
 		var t0 := Time.get_ticks_usec()
 		paso.call()
 		tiempos[String(paso.get_method())] = (Time.get_ticks_usec() - t0) / 1000.0
+	_cerrar_fundidos()
 	lotes.cerrar(region)
 
 
@@ -86,12 +87,16 @@ func _suelo() -> void:
 					borde = 0.0
 		var hierba := Color(0.24, 0.36, 0.17).lerp(Color(0.33, 0.45, 0.20), 0.5 + 0.5 * n)
 		return hierba.lerp(Color(0.38, 0.33, 0.25), 0.55) if borde < 1.0 else hierba
+	var colores := []                                   # un color por vértice de la rejilla (se calcula una vez)
+	for z in tam.y + 1:
+		for x in tam.x + 1:
+			colores.append(colorea.call(float(x), float(z)))
 	for z in tam.y:
 		for x in tam.x:
 			var p := [Vector3(x, 0, z), Vector3(x + 1, 0, z), Vector3(x, 0, z + 1), Vector3(x + 1, 0, z + 1)]
 			for i in [0, 1, 2, 2, 1, 3]:
 				var v: Vector3 = p[i]
-				st.set_color(colorea.call(v.x, v.z))
+				st.set_color(colores[int(v.z) * (tam.x + 1) + int(v.x)])
 				st.set_normal(Vector3.UP)
 				st.add_vertex(v)
 	var mi := MeshInstance3D.new()
@@ -99,6 +104,25 @@ func _suelo() -> void:
 	mi.material_override = mat.sillar()
 	mi.name = "Suelo"
 	region.add_child(mi)
+	# fuera de la muralla: prado oscuro hasta donde alcanza la vista y el camino que sale de la Puerta del Sur
+	var prado := PlaneMesh.new()
+	prado.size = Vector2(tam.x + 120.0, tam.y + 110.0)
+	var mp := MeshInstance3D.new()
+	mp.mesh = prado
+	mp.material_override = mat.detalle(Color(0.20, 0.30, 0.15), 0.4, 0.5)
+	mp.position = Vector3(tam.x * 0.5, -0.03, tam.y * 0.5 + 25.0)
+	mp.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mp.name = "Prado"
+	region.add_child(mp)
+	var camino := PlaneMesh.new()
+	camino.size = Vector2(4.0, 40.0)
+	var mc := MeshInstance3D.new()
+	mc.mesh = camino
+	mc.material_override = mat.detalle(Color(0.40, 0.34, 0.26), 0.8, 0.5)
+	mc.position = Vector3(Oak.SALIDA_X, -0.01, tam.y + 20.0)
+	mc.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mc.name = "Camino"
+	region.add_child(mc)
 	var cuerpo := StaticBody3D.new()
 	cuerpo.name = "SueloChoque"
 	region.add_child(cuerpo)
@@ -129,7 +153,7 @@ func _modelos() -> void:
 	for id in UNICAS:
 		var n := _modelo(id)
 		if n != null:
-			region.add_child(n)
+			_fundir(n)
 	# los edificios no se pisan: una caja de choque por cada uno (la huella del trazado) y su bloqueo
 	for l in Oak.LUGARES:
 		if l.get("pisable", false):
@@ -173,7 +197,7 @@ func _relleno() -> void:
 		if n == null:
 			continue
 		n.position = Vector3(r.position.x, 0, r.position.y)
-		region.add_child(n)
+		_fundir(n)
 		if not d.get("suelto", false):
 			bloqueos.append(Rect2(r))
 			_caja_choque(Rect2(r), ALTO_EDIFICIO)
@@ -297,7 +321,7 @@ func _mata() -> ArrayMesh:
 	return st.commit()
 
 
-func _por_tramos(nombre: String, malla: Mesh, piezas: Array, tramo := 12.0) -> void:
+func _por_tramos(nombre: String, malla: Mesh, piezas: Array, tramo := 24.0) -> void:
 	var grupos := {}
 	for pz in piezas:
 		var o: Vector3 = (pz[0] as Transform3D).origin
@@ -341,7 +365,7 @@ func _faroles() -> void:
 		var n := _modelo("farol")
 		if n != null:
 			n.position = Vector3(r.position.x, 0, r.position.y)
-			region.add_child(n)
+			_fundir(n)
 		var llama := Vector3(r.position.x + 0.5, 3.0, r.position.y + 0.5)
 		faroles.append(llama)
 		_llama(llama, 0.32, llama.x + llama.z)
@@ -374,6 +398,8 @@ func _halo(suelo: Vector3, aire: Vector3, ancho: float, tam_aire: float) -> void
 	var pm := PlaneMesh.new()
 	pm.size = Vector2(ancho, ancho)
 	lotes.poner(pm, Transform3D(Basis(), suelo + Vector3(0, 0.03, 0)), mat.halo_suelo(Materiales.FUEGO))
+	if nombre_perfil != "alto":                  # el resplandor en el aire, solo en el alto (una llamada de dibujo por farol)
+		return
 	var q := QuadMesh.new()
 	q.size = Vector2(tam_aire, tam_aire)
 	var brillo := MeshInstance3D.new()
@@ -388,3 +414,101 @@ func animar(delta: float) -> void:
 	_t += delta
 	for i in luces.size():
 		(luces[i] as OmniLight3D).light_energy = 1.4 * (0.88 + 0.08 * sin(_t * 9.0 + i * 1.7) + 0.04 * sin(_t * 23.0 + i))
+
+
+# ================================================================= los modelos, juntos (pocas llamadas de dibujo)
+
+# Los glb de gráficos traen cada pieza aparte (la taberna, 400 mallas): dibujados tal cual eran miles de llamadas de
+# dibujo. Aquí se juntan por trozos de ciudad (TROZO m) y por material. Los materiales de color plano (casi todos) pasan
+# su color a los vértices y comparten uno solo, con el grano de la piedra (materiales.gd, sillar): así una calle entera
+# es una o dos llamadas. Los que tienen imagen, brillo propio o transparencia conservan su material.
+const TROZO := 12.0
+var _fundidos := {}               # clave «trozo|material» → [SurfaceTool, Material, con_color]
+
+
+func _fundir(n: Node3D) -> void:
+	region.add_child(n)                                         # (en el árbol, para leer la transformación de cada pieza)
+	for mi in n.find_children("*", "MeshInstance3D", true, false):
+		var m3 := mi as MeshInstance3D
+		if m3.mesh == null:
+			continue
+		var t: Transform3D = region.global_transform.affine_inverse() * m3.global_transform
+		var trozo := Vector2i(floori(t.origin.x / TROZO), floori(t.origin.z / TROZO))
+		for s in m3.mesh.get_surface_count():
+			var mat_s: Material = m3.get_active_material(s)
+			var plano := mat_s is BaseMaterial3D and (mat_s as BaseMaterial3D).albedo_texture == null \
+				and not (mat_s as BaseMaterial3D).emission_enabled \
+				and (mat_s as BaseMaterial3D).transparency == BaseMaterial3D.TRANSPARENCY_DISABLED
+			var destino: Material = mat.sillar() if plano else mat_s
+			var clave := "%d_%d|%d" % [trozo.x, trozo.y, destino.get_instance_id()]
+			if not _fundidos.has(clave):
+				var st := SurfaceTool.new()
+				st.begin(Mesh.PRIMITIVE_TRIANGLES)
+				_fundidos[clave] = [st, destino, plano]
+			var st: SurfaceTool = _fundidos[clave][0]
+			var arr: Array = m3.mesh.surface_get_arrays(s)
+			var v: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+			var nr: PackedVector3Array = arr[Mesh.ARRAY_NORMAL]
+			var uv = arr[Mesh.ARRAY_TEX_UV]
+			var idx = arr[Mesh.ARRAY_INDEX]
+			var color: Color = (mat_s as BaseMaterial3D).albedo_color if plano else Color.WHITE
+			var nb := t.basis.inverse().transposed()
+			var orden: PackedInt32Array = idx if idx != null else PackedInt32Array(range(v.size()))
+			for i in orden:
+				st.set_color(color)
+				if nr.size() > i:
+					st.set_normal((nb * nr[i]).normalized())
+				if not plano and uv != null and (uv as PackedVector2Array).size() > i:   # (los de color plano no usan UV)
+					st.set_uv(uv[i])
+				st.add_vertex(t * v[i])
+	n.queue_free()
+
+
+func _cerrar_fundidos() -> void:
+	# (las sombras de los edificios, solo donde el perfil lo pida: en el medio dibujarlas dos veces no cabe en el Mali)
+	var con_sombra: bool = perfil.get("sombras_edificios", nombre_perfil == "alto")
+	var sombra := GeometryInstance3D.SHADOW_CASTING_SETTING_ON if con_sombra else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	for clave in _fundidos:
+		var d: Array = _fundidos[clave]
+		var mi := MeshInstance3D.new()
+		mi.mesh = _con_lod(d[0] as SurfaceTool, d[1])
+		mi.material_override = d[1]
+		mi.cast_shadow = sombra
+		mi.name = "Edificios_" + String(clave).get_slice("|", 0)
+		region.add_child(mi)
+	_fundidos.clear()
+
+
+# La malla juntada con sus niveles de detalle (LOD): Godot dibuja una versión con menos triángulos cuando el trozo se ve
+# pequeño (lejos). Los genera el mismo simplificador que usa la importación de modelos. Si la versión de Godot no lo
+# ofrece, la malla sin LOD.
+var lods_hechos := 0
+var simplificados := 0
+const SIMPLIFICAR := {"bajo": 0.4, "medio": 0.6}   # parte de los triángulos que se quedan (el alto, todos)
+const ERROR_LOD := 0.02                           # error máximo de la simplificación (fracción del tamaño del trozo)
+
+
+func _con_lod(st: SurfaceTool, m: Material) -> ArrayMesh:
+	st.index()                                       # vértices compartidos: el simplificador los necesita
+	var arrays := st.commit_to_arrays()
+	# perfiles medio y bajo: la malla ya simplificada (meshoptimizer, el de la importación). El alto, entera.
+	var reduccion: float = SIMPLIFICAR.get(nombre_perfil, 1.0)
+	if reduccion < 1.0:
+		var idx: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
+		var nuevo: PackedInt32Array = st.generate_lod(ERROR_LOD, maxi(3, int(idx.size() * reduccion) / 3 * 3))
+		if nuevo.size() >= 3 and nuevo.size() < idx.size():
+			arrays[Mesh.ARRAY_INDEX] = nuevo
+			simplificados += 1
+	var im := ImporterMesh.new()
+	im.add_surface(Mesh.PRIMITIVE_TRIANGLES, arrays, [], {}, m)
+	var args := -1
+	for d in ClassDB.class_get_method_list("ImporterMesh"):
+		if d["name"] == "generate_lods":
+			args = (d["args"] as Array).size()
+	if args == 3:
+		im.call("generate_lods", 25.0, 60.0, [])
+		lods_hechos += 1
+	elif args == 2:
+		im.call("generate_lods", 25.0, [])
+		lods_hechos += 1
+	return im.get_mesh()

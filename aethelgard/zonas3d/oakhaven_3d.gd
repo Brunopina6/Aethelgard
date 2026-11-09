@@ -28,7 +28,7 @@ const PUERTA_TABERNA := Vector3(16.0, 0.0, 25.9)   # en la Calle del Cuervo, ant
 const RADIO_ACCION := 1.8
 const BARKS_DIST := 7.0                    # a menos de esto, la taberna «se oye» (oakhaven_vida.gd, VOCES)
 # Zonas de cámara: [x0, x1, z0, z1, inclinación, distancia mínima, distancia máxima]
-const CAMARA_CIUDAD := [44.0, 12.0, 22.0]
+const CAMARA_CIUDAD := [52.0, 12.0, 19.0]       # más desde arriba: las casas del sur no tapan la calle
 const CAMARA_POSADA := [52.0, 9.0, 12.0]
 
 var perfil: Dictionary = {}
