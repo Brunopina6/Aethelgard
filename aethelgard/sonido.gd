@@ -53,6 +53,11 @@ extends Node
 #   3D). Se quita sola al cambiar de escena.
 # - Fuentes 2D (fuente_2d): un sonido del mundo en una escena 2D (la taberna de Oakhaven, el letrero del cuervo) que suena
 #   más cuanto más cerca de quien anda, en bucle o de vez en cuando.
+# Tanda 4 (T-097): las seis bestias del bestiario, solo en el catálogo (BESTIAS): aviso e impacto de cada ataque, herido,
+#   caída y entrada; sus voces van por FAMILIAS como las de la tanda 2. Las engancha combate (docs/audio/inventario_sonidos.md).
+# - Héroes quietos (tanda 4): el nodo de pasos de cada personaje 3D (Pasos3D) hace, si lleva un rato parado, un gesto muy
+#   discreto suyo (QUIETO: Kael, Lya y Garon distintos), uno a la vez entre los tres, por Efectos y con prioridad 0. No hace
+#   falta tocar ninguna escena: va donde ya hay pasos_3d (Pastos Verdes y la Garganta 3D).
 
 const ARCHIVO := "user://ajustes.cfg"
 const BUSES := ["Musica", "Efectos", "Interfaz", "Ambiente"]
@@ -67,7 +72,12 @@ const EF := "res://audio/efectos/"
 const VOCES := {"Efectos": 10, "Interfaz": 4, "Ambiente": 4}
 const ATENUAR_DB := 8.0                                    # lo que bajan las prioridades 0-2 mientras suena una 4
 const FUNDIDO_CORTE := 0.1                                 # s: al cambiar de escena o cortar
-const MAX_GRUPO := {"voz": 2}                              # cuántos de un mismo grupo suenan a la vez como mucho
+const MAX_GRUPO := {"voz": 2, "quieto": 1}                 # cuántos de un mismo grupo suenan a la vez como mucho
+# Los héroes quietos en la exploración 3D (tanda 4; Pasos3D): tras «primero» s parados (al azar entre los dos), un gesto
+# discreto de su personaje; mientras sigan parados, otro cada «entre» s. Andar lo reinicia. Kael es el que escucha (o el
+# nodo «Kael»); Lya y Garon, por el nombre de su nodo.
+const QUIETO := {"primero": [7.0, 14.0], "entre": [22.0, 40.0]}
+const QUIETO_DE := {"Kael": "quieto_kael", "Lya": "quieto_lya", "Garon": "quieto_garon"}
 const VOCES_3D := 8                                        # reproductores 3D de una escena (efectos con «pos»)
 # Un efecto en el espacio sin «en_3d» en el catálogo: a «unidad» metros suena a su volumen, la mitad cada vez que se
 # dobla la distancia, y callado más allá de «max». «filtro»: dB que pierde lo agudo a lo lejos (Godot: −24).
@@ -144,6 +154,63 @@ const EFECTOS := {
 	"ambar_ataque": {"a": "voces/piedra_ataque_", "n": 2, "db": -11.0, "tono_fijo": 1.12, "tono": 0.04, "p": 2, "max": 1, "espera": 0.3, "grupo": "voz"},
 	"ambar_herido": {"a": "voces/ambar_herido_", "n": 2, "db": -8.0, "tono": 0.05, "p": 2, "max": 1, "espera": 0.25, "grupo": "voz"},
 	"ambar_caida": {"a": "voces/ambar_caida", "db": -5.0, "p": 3, "max": 1, "espera": 0.5, "grupo": "voz"},
+	# ---- las seis bestias del bestiario (tanda 4, T-097; solo el catálogo: las engancha combate). Por bestia:
+	# <bestia>_aviso_<ataque>: la preparación, al empezar el ataque (acaba antes del impacto) · <bestia>_<ataque>: el
+	# impacto, en el instante del golpe, junto al Sonido.golpe() de siempre (que dice si el héroe se defiende) ·
+	# _herido y _caida: su voz, con Sonido.recibe() (FAMILIAS) · _entrada: al presentarse. Prioridades: avisos 3 (el
+	# jugador tiene que oírlos), impactos 2 y voces como las de la tanda 2 (herido 2, caída 3). El Posadero (jefe
+	# opcional) suena por encima: 2-3 dB más y prioridad 3 en todo. No hay «_ataque»: el aviso hace ese papel.
+	# Zarzalín: el aviso de la embestida va en la señal «aviso» de zarzalin_3d.gd (el hocico ya está bajo) y una pezuña
+	# en cada señal «pezuna(n)»; el derrumbe, al empezar su clip «derrota» (el cuerpo toca la tierra a 0,60 s).
+	"zarzalin_aviso_embestida": {"a": "bestias/zarzalin_aviso_embestida", "db": -12.0, "tono": 0.04, "p": 3, "max": 1, "espera": 0.5},
+	"zarzalin_pezuna": {"a": "bestias/zarzalin_pezuna_", "n": 2, "db": -11.0, "tono": 0.05, "p": 3, "max": 2, "espera": 0.15},
+	"zarzalin_embestida": {"a": "bestias/zarzalin_embestida", "db": -10.0, "tono": 0.04, "p": 2, "max": 2, "espera": 0.1},
+	"zarzalin_aviso_colmillo": {"a": "bestias/zarzalin_aviso_colmillo", "db": -3.0, "tono": 0.04, "p": 3, "max": 1, "espera": 0.4},
+	"zarzalin_colmillo": {"a": "bestias/zarzalin_colmillo", "db": -11.0, "tono": 0.05, "p": 2, "max": 2, "espera": 0.1},
+	"zarzalin_herido": {"a": "bestias/zarzalin_herido_", "n": 2, "db": -10.0, "tono": 0.06, "p": 2, "max": 1, "espera": 0.25, "grupo": "voz"},
+	"zarzalin_caida": {"a": "bestias/zarzalin_caida", "db": -7.0, "tono": 0.03, "p": 3, "max": 2, "espera": 0.1, "grupo": "voz"},
+	"zarzalin_derrumbe": {"a": "bestias/zarzalin_derrumbe", "db": -7.0, "tono": 0.03, "p": 2, "max": 2, "espera": 0.3},
+	"zarzalin_entrada": {"a": "bestias/zarzalin_entrada", "db": -6.0, "p": 3, "max": 1, "espera": 1.0},
+	"cencerrante_aviso_alarma": {"a": "bestias/cencerrante_aviso_alarma", "db": -6.0, "tono": 0.04, "p": 3, "max": 1, "espera": 0.5},
+	"cencerrante_alarma": {"a": "bestias/cencerrante_alarma", "db": -7.0, "tono": 0.03, "p": 2, "max": 2, "espera": 0.1},
+	"cencerrante_aviso_campanada": {"a": "bestias/cencerrante_aviso_campanada", "db": -10.0, "tono": 0.04, "p": 3, "max": 1, "espera": 0.4},
+	"cencerrante_campanada": {"a": "bestias/cencerrante_campanada", "db": -4.0, "tono": 0.03, "p": 2, "max": 2, "espera": 0.1},
+	"cencerrante_herido": {"a": "bestias/cencerrante_herido_", "n": 2, "db": -6.0, "tono": 0.05, "p": 2, "max": 1, "espera": 0.25, "grupo": "voz"},
+	"cencerrante_caida": {"a": "bestias/cencerrante_caida", "db": -4.0, "p": 3, "max": 2, "espera": 0.1, "grupo": "voz"},
+	"cencerrante_entrada": {"a": "bestias/cencerrante_entrada", "db": -7.0, "p": 3, "max": 1, "espera": 1.0},
+	"velaria_aviso_destello": {"a": "bestias/velaria_aviso_destello", "db": -2.5, "tono": 0.04, "p": 3, "max": 1, "espera": 0.5},
+	"velaria_destello": {"a": "bestias/velaria_destello", "db": -11.0, "tono": 0.04, "p": 2, "max": 2, "espera": 0.1},
+	"velaria_aviso_corte": {"a": "bestias/velaria_aviso_corte", "db": -11.0, "tono": 0.05, "p": 3, "max": 1, "espera": 0.4},
+	"velaria_corte": {"a": "bestias/velaria_corte", "db": -13.0, "tono": 0.05, "p": 2, "max": 2, "espera": 0.1},
+	"velaria_herido": {"a": "bestias/velaria_herido_", "n": 2, "db": -9.5, "tono": 0.06, "p": 2, "max": 1, "espera": 0.25, "grupo": "voz"},
+	"velaria_caida": {"a": "bestias/velaria_caida", "db": -8.0, "p": 3, "max": 2, "espera": 0.1, "grupo": "voz"},
+	"velaria_entrada": {"a": "bestias/velaria_entrada", "db": -8.0, "p": 3, "max": 1, "espera": 1.0},
+	"custodio_aviso_portazo": {"a": "bestias/custodio_aviso_portazo", "db": -13.0, "tono": 0.03, "p": 3, "max": 1, "espera": 0.5},
+	"custodio_portazo": {"a": "bestias/custodio_portazo", "db": -10.0, "tono": 0.04, "p": 2, "max": 2, "espera": 0.1},
+	"custodio_aviso_martillo": {"a": "bestias/custodio_aviso_martillo", "db": -13.0, "tono": 0.03, "p": 3, "max": 1, "espera": 0.5},
+	"custodio_martillo": {"a": "bestias/custodio_martillo", "db": -8.0, "tono": 0.03, "p": 2, "max": 2, "espera": 0.1},
+	"custodio_herido": {"a": "bestias/custodio_herido_", "n": 2, "db": -9.0, "tono": 0.05, "p": 2, "max": 1, "espera": 0.25, "grupo": "voz"},
+	"custodio_caida": {"a": "bestias/custodio_caida", "db": -8.0, "p": 3, "max": 2, "espera": 0.1, "grupo": "voz"},
+	"custodio_entrada": {"a": "bestias/custodio_entrada", "db": -13.0, "p": 3, "max": 1, "espera": 1.0},
+	"hilandera_aviso_mordida": {"a": "bestias/hilandera_aviso_mordida", "db": -10.0, "tono": 0.05, "p": 3, "max": 1, "espera": 0.5},
+	"hilandera_mordida": {"a": "bestias/hilandera_mordida", "db": -7.0, "tono": 0.04, "p": 2, "max": 2, "espera": 0.1},
+	"hilandera_aviso_trama": {"a": "bestias/hilandera_aviso_trama", "db": -12.0, "tono": 0.03, "p": 3, "max": 1, "espera": 0.5},
+	"hilandera_trama": {"a": "bestias/hilandera_trama", "db": -12.0, "tono": 0.02, "p": 2, "max": 1, "espera": 0.3},
+	"hilandera_herido": {"a": "bestias/hilandera_herido_", "n": 2, "db": -9.0, "tono": 0.06, "p": 2, "max": 1, "espera": 0.25, "grupo": "voz"},
+	"hilandera_caida": {"a": "bestias/hilandera_caida", "db": -6.0, "p": 3, "max": 2, "espera": 0.1, "grupo": "voz"},
+	"hilandera_entrada": {"a": "bestias/hilandera_entrada", "db": -6.0, "p": 3, "max": 1, "espera": 1.0},
+	"posadero_aviso_cierre": {"a": "bestias/posadero_aviso_cierre", "db": -1.5, "tono": 0.03, "p": 3, "max": 1, "espera": 0.5},
+	"posadero_cierre": {"a": "bestias/posadero_cierre", "db": -5.0, "tono": 0.03, "p": 3, "max": 1, "espera": 0.3},
+	"posadero_aviso_llave": {"a": "bestias/posadero_aviso_llave", "db": -1.5, "tono": 0.03, "p": 3, "max": 1, "espera": 0.5},
+	"posadero_llave": {"a": "bestias/posadero_llave", "db": -9.0, "tono": 0.03, "p": 3, "max": 1, "espera": 0.3},
+	"posadero_herido": {"a": "bestias/posadero_herido_", "n": 2, "db": -2.0, "tono": 0.05, "p": 3, "max": 1, "espera": 0.25, "grupo": "voz"},
+	"posadero_caida": {"a": "bestias/posadero_caida", "db": -9.0, "p": 3, "max": 1, "espera": 1.0, "grupo": "voz"},
+	"posadero_entrada": {"a": "bestias/posadero_entrada", "db": -3.0, "p": 3, "max": 1, "espera": 1.0},
+	# ---- los héroes quietos en la exploración 3D (tanda 4): un gesto muy discreto de vez en cuando (Pasos3D, QUIETO);
+	# uno a la vez entre los tres (grupo «quieto»), prioridad 0 (lo primero que cede)
+	"quieto_kael": {"a": "heroes/kael_quieto_", "n": 2, "db": -12.0, "tono": 0.04, "p": 0, "max": 1, "espera": 1.0, "grupo": "quieto"},
+	"quieto_lya": {"a": "heroes/lya_quieto_", "n": 2, "db": -18.0, "tono": 0.04, "p": 0, "max": 1, "espera": 1.0, "grupo": "quieto"},
+	"quieto_garon": {"a": "heroes/garon_quieto_", "n": 2, "db": -10.5, "tono": 0.04, "p": 0, "max": 1, "espera": 1.0, "grupo": "quieto"},
 	# ---- cofres, puertas, objetos, recompensas y momentos de la misión
 	"cofre": {"a": "mundo/cofre_", "n": 3, "db": -7.0, "tono": 0.05, "p": 3, "max": 1, "espera": 0.3},
 	"tesoro": {"a": "mundo/tesoro", "db": -8.0, "p": 3, "max": 1, "espera": 0.3},
@@ -235,7 +302,25 @@ const SUELOS := {"hierba": "hierba", "hierba_oscura": "hojas", "tierra": "grava"
 const CUADROS_PASO := [1, 6]
 
 # Voz de cada enemigo: por su clave en combate.gd (ENEMIGOS) o, si no se sabe, por su dibujo (MODELOS).
-const FAMILIAS := {"slime": "limo", "grimfang": "goblin", "gorthor": "gorthor", "guardian": "piedra", "golem_ambar": "ambar"}
+const FAMILIAS := {"slime": "limo", "grimfang": "goblin", "gorthor": "gorthor", "guardian": "piedra", "golem_ambar": "ambar",
+	# las bestias del bestiario (tanda 4): su clave en combate.gd, con el nombre de la ficha o el corto
+	"zarzalin": "zarzalin", "cencerrante": "cencerrante", "velaria": "velaria", "custodio_cal": "custodio", "custodio": "custodio",
+	"hilandera_eco": "hilandera", "hilandera": "hilandera", "posadero_hueco": "posadero", "posadero": "posadero"}
+# Los efectos de cada bestia (tanda 4), por familia: [avisos], [impactos] y los demás (para las pruebas y el inventario).
+const BESTIAS := {
+	"zarzalin": [["zarzalin_aviso_embestida", "zarzalin_aviso_colmillo"], ["zarzalin_embestida", "zarzalin_colmillo"],
+		["zarzalin_pezuna", "zarzalin_herido", "zarzalin_caida", "zarzalin_derrumbe", "zarzalin_entrada"]],
+	"cencerrante": [["cencerrante_aviso_alarma", "cencerrante_aviso_campanada"], ["cencerrante_alarma", "cencerrante_campanada"],
+		["cencerrante_herido", "cencerrante_caida", "cencerrante_entrada"]],
+	"velaria": [["velaria_aviso_destello", "velaria_aviso_corte"], ["velaria_destello", "velaria_corte"],
+		["velaria_herido", "velaria_caida", "velaria_entrada"]],
+	"custodio": [["custodio_aviso_portazo", "custodio_aviso_martillo"], ["custodio_portazo", "custodio_martillo"],
+		["custodio_herido", "custodio_caida", "custodio_entrada"]],
+	"hilandera": [["hilandera_aviso_mordida", "hilandera_aviso_trama"], ["hilandera_mordida", "hilandera_trama"],
+		["hilandera_herido", "hilandera_caida", "hilandera_entrada"]],
+	"posadero": [["posadero_aviso_cierre", "posadero_aviso_llave"], ["posadero_cierre", "posadero_llave"],
+		["posadero_herido", "posadero_caida", "posadero_entrada"]],
+}
 const FAMILIA_MODELO := {"slime": "limo", "grimfang": "goblin", "hollin": "goblin", "hollin_a": "goblin", "hollin_b": "goblin",
 	"gorthor3d": "gorthor", "gorthor": "gorthor", "guardian": "piedra"}
 # Qué suena junto al líquido de una zona 2D (zona.gd, ESTILOS «agua»): de momento solo el agua de verdad (el hielo, el
@@ -554,6 +639,15 @@ func sonando(bus := "") -> int:
 	var n := 0
 	for p in _todas():
 		if p.playing and (bus == "" or String(p.bus) == bus):
+			n += 1
+	return n
+
+
+# Cuántos de un grupo (MAX_GRUPO) suenan ahora (sin contar los que ya se apagan).
+func grupo_sonando(grupo: String) -> int:
+	var n := 0
+	for p in _todas():
+		if p.playing and p.get_meta("grupo", "") == grupo and not p.get_meta("apagando", false):
 			n += 1
 	return n
 
@@ -924,10 +1018,39 @@ class Pasos3D extends Node:
 	var pasos := 0                               # pisadas (para las pruebas)
 	var sonados := 0                             # pisadas que han sonado
 	var ultimo: Node = null                      # el reproductor del último paso que sonó (para las pruebas)
+	var _parado := 0.0                           # s seguidos sin andar
+	var _toca_gesto := -1.0                      # a los cuántos s parado toca el próximo gesto (-1: sin elegir)
+	var gestos := 0                              # gestos de quieto que han sonado (para las pruebas)
 
 	func _ready() -> void:
 		_ant = cuerpo.global_position
 		_buscar_pies()
+
+	# Parado: tras un rato, un gesto discreto de su personaje (QUIETO); si ya suena el de otro, se espera un poco.
+	func _quieto(delta: float) -> void:
+		var nombre := _gesto()
+		if nombre == "":
+			return
+		_parado += delta
+		if _toca_gesto < 0.0:
+			_toca_gesto = son._rng.randf_range(son.QUIETO["primero"][0], son.QUIETO["primero"][1])
+		if _parado < _toca_gesto:
+			return
+		if son.grupo_sonando("quieto") > 0:
+			_toca_gesto = _parado + 1.5
+			return
+		var op := {}
+		if not son.es_oyente(cuerpo) and son.hay_oyente():
+			op = {"pos": cuerpo.global_position + Vector3(0, 1.2, 0), "en_3d": son.PASO_3D}
+		if son.efecto(nombre, op) != null:
+			gestos += 1
+		_toca_gesto = _parado + son._rng.randf_range(son.QUIETO["entre"][0], son.QUIETO["entre"][1])
+
+	# El gesto de este personaje: el que escucha es Kael; Lya y Garon, por el nombre de su nodo; los demás, ninguno.
+	func _gesto() -> String:
+		if son.QUIETO_DE.has(String(cuerpo.name)):
+			return son.QUIETO_DE[String(cuerpo.name)]
+		return son.QUIETO_DE["Kael"] if son.es_oyente(cuerpo) else ""
 
 	# Los huesos de los pies (si el modelo aún no estaba, se vuelve a mirar cada segundo; mientras, por distancia).
 	func _buscar_pies() -> void:
@@ -959,7 +1082,10 @@ class Pasos3D extends Node:
 			for f in pies:
 				f["baja"] = false
 			_acum = 0.0
+			_quieto(delta)
 			return
+		_parado = 0.0
+		_toca_gesto = -1.0
 		if pies.size() == 2 and is_instance_valid(skel):
 			for f in pies:
 				var pie: Vector3 = (skel.global_transform * skel.get_bone_global_pose(f["i"])).origin

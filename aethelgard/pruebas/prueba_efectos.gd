@@ -42,6 +42,13 @@ extends SceneTree
 #      del cuervo (de vez en cuando, solo cerca), la campana una vez y la ola de faroles.
 #  15. Efectos en el espacio (parte «espacio»): con «pos» suenan desde ese punto con su distancia de referencia; sin
 #      escucha 3D suenan normal; el máximo de voces 3D.
+# Tanda 4 (T-097):
+#  16. Las bestias del bestiario (parte «bestias»): cada efecto de BESTIAS existe, carga (QOA, mono, 48 kHz) y suena una
+#      vez aunque se pida dos veces, por Efectos; los avisos acaban antes del impacto de su ficha y tienen prioridad 3;
+#      la voz sale de su familia (herido y caída con Sonido.recibe), no tienen «_ataque»; el Posadero suena por encima
+#      (más prioridad y, con dos voces sonando, la suya entra).
+#  17. Los héroes quietos (parte «quietos»): Kael, Lya y Garon parados suenan con su gesto (cada uno el suyo), nunca dos
+#      a la vez, por Efectos y con prioridad 0; andando, ninguno.
 
 const REGION := "res://zonas3d/pastos_verdes_3d.tscn"
 const GARGANTA3D := "res://zonas3d/garganta_3d.tscn"
@@ -166,6 +173,10 @@ func _probar() -> void:
 		await _artes()
 	if _parte("oakhaven"):
 		await _oakhaven()
+	if _parte("bestias"):
+		await _bestias()
+	if _parte("quietos"):
+		await _quietos()
 	if _parte("garganta3d"):
 		await _garganta3d()
 	print("OK efectos: ", ", ".join(hechos))
@@ -1456,3 +1467,127 @@ func _garganta3d() -> void:
 		_fallo("12: en el combate sigue la cascada")
 	await _escena_vacia()
 	hechos.append("Garganta 3D (oyente, cascada a %.0f m, vientos, eco, %s, gotas %d, efectos de la 2D una vez)" % [d_cascada, info, gotas])
+
+
+# ================================================================= tanda 4
+
+# 16. Las seis bestias del bestiario (solo el catálogo: combate las engancha). Impacto de cada ataque según su ficha (s
+# desde el principio del clip): el aviso que suena al empezar el ataque acaba antes (con 0,1 s de margen).
+const IMPACTO_FICHA := {"zarzalin_aviso_colmillo": 0.47, "cencerrante_aviso_alarma": 0.73, "cencerrante_aviso_campanada": 0.53,
+	"velaria_aviso_destello": 0.70, "velaria_aviso_corte": 0.50, "custodio_aviso_portazo": 0.83, "custodio_aviso_martillo": 0.83,
+	"hilandera_aviso_mordida": 0.73, "hilandera_aviso_trama": 0.83, "posadero_aviso_cierre": 0.97, "posadero_aviso_llave": 0.87}
+
+
+func _bestias() -> void:
+	await _escena_vacia()
+	var n := 0
+	for fam in Son.BESTIAS:
+		var grupos: Array = Son.BESTIAS[fam]
+		for k in 3:
+			for nombre in grupos[k]:
+				n += 1
+				var d: Dictionary = Son.EFECTOS.get(nombre, {})
+				if d.is_empty():
+					_fallo("16: falta «%s» en el catálogo" % nombre)
+					continue
+				var rutas: Array = []
+				for i in int(d.get("n", 1)):
+					rutas.append(Son.EF + d["a"] + (str(i + 1) if d.has("n") else "") + ".wav")
+				for ruta in rutas:
+					var s = load(ruta) if ResourceLoader.exists(ruta) else null
+					if not s is AudioStreamWAV or s.format != AudioStreamWAV.FORMAT_QOA or s.stereo or s.mix_rate != 48000:
+						_fallo("16: %s no carga como QOA mono a 48 kHz" % ruta)
+					elif k == 0 and IMPACTO_FICHA.has(nombre) and s.get_length() > float(IMPACTO_FICHA[nombre]) + 0.1:
+						_fallo("16: el aviso «%s» dura %.2f s y su impacto llega a %.2f s" % [nombre, s.get_length(), IMPACTO_FICHA[nombre]])
+				_limpiar()
+				var p = Son.efecto(nombre)
+				var q = Son.efecto(nombre)
+				if p == null or q != null or _n(nombre) != 1:
+					_fallo("16: «%s» pedido dos veces en el mismo instante suena %d veces" % [nombre, _n(nombre)])
+				elif String(p.bus) != "Efectos":
+					_fallo("16: «%s» no va por Efectos (%s)" % [nombre, p.bus])
+				var pr := int(d.get("p", 1))
+				if k == 0 and pr != 3:
+					_fallo("16: el aviso «%s» tiene prioridad %d (esperaba 3)" % [nombre, pr])
+				if fam == "posadero" and pr < 3:
+					_fallo("16: «%s» (el jefe opcional) tiene prioridad %d: debe sonar por encima" % [nombre, pr])
+		# la voz por su familia: herido y caída con recibe(); sin voz de «ataque» (el aviso hace ese papel)
+		var q := {"hero": false, "clave": fam, "nombre": fam, "hp": 5}
+		if Son.familia(q) != fam:
+			_fallo("16: la clave «%s» no lleva a su familia (%s)" % [fam, Son.familia(q)])
+		_limpiar()
+		Son.recibe(q)
+		q["hp"] = 0
+		await _juego(0.4)
+		Son.recibe(q)
+		if _n(fam + "_herido") != 1 or _n(fam + "_caida") != 1:
+			_fallo("16: %s: herido %d, caída %d (esperaba 1 y 1)" % [fam, _n(fam + "_herido"), _n(fam + "_caida")])
+		if Son.voz(q, "ataque") != null:
+			_fallo("16: %s tiene voz de «ataque»" % fam)
+	for clave in ["custodio_cal", "hilandera_eco", "posadero_hueco"]:
+		if Son.familia({"clave": clave}) == "":
+			_fallo("16: la clave de la ficha «%s» no tiene familia" % clave)
+	# el Posadero por encima: con dos voces de otras bestias sonando (el máximo), su voz entra; la de otra bestia, no
+	_limpiar()
+	Son.voz({"hero": false, "clave": "velaria", "nombre": "V"}, "herido")
+	Son.voz({"hero": false, "clave": "zarzalin", "nombre": "Z"}, "herido")
+	var po = Son.voz({"hero": false, "clave": "posadero", "nombre": "P"}, "herido")
+	if po == null:
+		_fallo("16: con dos voces sonando, la del Posadero no entra")
+	_limpiar()
+	Son.voz({"hero": false, "clave": "posadero", "nombre": "P"}, "herido")
+	Son.voz({"hero": false, "clave": "custodio", "nombre": "C"}, "caida")
+	if Son.voz({"hero": false, "clave": "zarzalin", "nombre": "Z"}, "herido") != null:
+		_fallo("16: una voz de herido quita la del Posadero")
+	_limpiar()
+	hechos.append("bestias (%d efectos de 6 bestias: cargan, una vez, avisos antes del impacto, voces por familia, el Posadero por encima)" % n)
+
+# 17. Los héroes quietos en la exploración 3D: un gesto discreto de cada uno al rato de pararse, uno a la vez.
+func _quietos() -> void:
+	await _escena_vacia()
+	_limpiar()
+	var sup := func(_p): return "hierba"
+	var cuerpos := {}
+	for nombre in ["Kael", "Lya", "Garon"]:
+		var n3 := Node3D.new()
+		n3.name = nombre
+		root.add_child(n3)
+		cuerpos[nombre] = Son.pasos_3d(n3, sup)
+	var a_la_vez := 0
+	var desde := -1                                           # sin ventana el driver es mudo y nada acaba solo: un
+	for i in int(45.0 * 30):                                  # gesto se da por acabado a los 2 s (duran 1,6 como mucho)
+		await process_frame
+		var ahora: int = Son.grupo_sonando("quieto")
+		a_la_vez = maxi(a_la_vez, ahora)
+		if ahora > 0 and desde < 0:
+			desde = i
+		elif ahora > 0 and i - desde >= 60:
+			for p in Son._todas():
+				if p.get_meta("grupo", "") == "quieto":
+					p.stop()
+			desde = -1
+	for nombre in cuerpos:
+		var g: int = cuerpos[nombre].gestos
+		var efecto: String = Son.QUIETO_DE[nombre]
+		if g < 1 or _n(efecto) < 1:
+			_fallo("17: %s parado 45 s no hace ningún gesto (%d; descartes %s)" % [nombre, g, str(Son.descartes)])
+		elif g > 3:
+			_fallo("17: %s hace %d gestos en 45 s (demasiados: no es discreto)" % [nombre, g])
+		var d: Dictionary = Son.EFECTOS[efecto]
+		if int(d.get("p", 1)) != 0 or String(d.get("bus", "Efectos")) != "Efectos":
+			_fallo("17: «%s» no va por Efectos con prioridad 0" % efecto)
+	if a_la_vez > 1:
+		_fallo("17: suenan %d gestos de quieto a la vez (uno como mucho)" % a_la_vez)
+	# andando, ninguno: Garon se mueve sin parar 30 s
+	var garon: Node3D = cuerpos["Garon"].cuerpo
+	var antes: int = cuerpos["Garon"].gestos
+	for i in int(30.0 * 30):
+		garon.position.x += 2.0 / 30.0
+		await process_frame
+	if cuerpos["Garon"].gestos != antes:
+		_fallo("17: Garon andando hace gestos de quieto")
+	var info := "%d/%d/%d gestos" % [cuerpos["Kael"].gestos, cuerpos["Lya"].gestos, antes]
+	for nombre in cuerpos:
+		cuerpos[nombre].cuerpo.queue_free()
+	_limpiar()
+	hechos.append("quietos (Kael, Lya y Garon: %s en 45 s, uno a la vez; andando, ninguno)" % info)
