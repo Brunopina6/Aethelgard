@@ -1,0 +1,2 @@
+Origen: https://github.com/pbakaus/impeccable (.agent/skills/impeccable), revisión f37ae34f2aba, licencia Apache-2.0.
+Modificado para REBELUM el 2026-11-09: quitado el bloque allowed-tools (autorizaba ejecutar npx impeccable y sus scripts sin pedir permiso), sin la carpeta scripts/ (análisis de páginas web) y con una nota inicial. Las referencias van sin cambios.

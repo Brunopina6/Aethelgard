@@ -1,0 +1,2 @@
+Origen: https://github.com/vercel-labs/skills (skills/find-skills/SKILL.md), revisión d3701c11b110, licencia MIT.
+Instalada el 2026-11-09 a mano (sin npx), con una nota inicial de seguridad.
