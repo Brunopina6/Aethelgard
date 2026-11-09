@@ -14,11 +14,14 @@ const CONTACTO_MAX := 0.03       # metros entre la punta de la mano y el pecho, 
 
 var fallos: Array = []
 var fotos := ""
+var video := false                # con «video» (y fotos=): un fotograma de cada dos (15 por segundo) para montar el vídeo
 var _n_foto := 0
 
 
 func _initialize() -> void:
 	for a in OS.get_cmdline_user_args():
+		if a == "video":
+			video = true
 		if a.begins_with("fotos="):
 			fotos = a.substr(6)
 			DirAccess.make_dir_recursive_absolute(fotos)
@@ -65,7 +68,8 @@ func _process_modification() -> void:
 
 
 func _teatro(forzar: String, jefe: bool, saltar_en: float) -> void:
-	var nombre := "%s%s%s" % [forzar, " jefe" if jefe else "", (" saltada a %.1f s" % saltar_en) if saltar_en >= 0.0 else ""]
+	# (el caso de la mano vacía no se escribe «fallo»: el ejecutor toma esa palabra como un fallo de la prueba)
+	var nombre := "%s%s%s" % ["éxito" if forzar == "exito" else "mano vacía", " jefe" if jefe else "", (" saltada a %.1f s" % saltar_en) if saltar_en >= 0.0 else ""]
 	var vp := SubViewport.new()
 	vp.size = Vector2i(1280, 720)
 	vp.own_world_3d = true
@@ -130,7 +134,7 @@ func _teatro(forzar: String, jefe: bool, saltar_en: float) -> void:
 	while not termina["si"] and fotogramas[0] < 30 * 25:
 		await process_frame
 		fotogramas[0] += 1
-		if fotos != "" and fotogramas[0] % 15 == 0 and saltar_en < 0.0:
+		if fotos != "" and fotogramas[0] % (2 if video else 15) == 0 and saltar_en < 0.0:
 			await RenderingServer.frame_post_draw
 			vp.get_texture().get_image().save_jpg(fotos.path_join("%s_%s_%s_%04d.jpg" % ["actual" if actual else "nueva", forzar, "jefe" if jefe else "normal", fotogramas[0]]), 0.88)
 		if saltar_en >= 0.0 and fotogramas[0] == int(saltar_en * 30):
