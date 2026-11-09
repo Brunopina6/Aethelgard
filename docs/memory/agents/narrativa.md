@@ -1352,3 +1352,167 @@ Copia `D:\Aethelgard_narrativa`, rama `area-narrativa`.
 - **Quien lleve `garganta.gd` (2D):** las mismas notas, en `CASILLA_2D`.
 - **Siguiente paso de narrativa:** con tu decisión sobre la pregunta, moverla donde digas; más notas cuando haya
   lugares nuevos.
+
+## 2026-11-09, 23:45 — El botón POSADA pregunta, Oakhaven suena viva y los tomos y el equipo se encuentran en el mundo
+
+**Encargo del coordinador** (tras unir `45a49e6`):
+1. La pregunta de la posadera pasa al botón POSADA: «¿Qué va a ser? Dormir / Sopa / Rumor», con su prueba.
+2. Las cuatro líneas de sonido de Oakhaven vivo (tanda 6) en `ciudad_oakhaven.gd`.
+3. Poner en el mundo los tomos y el equipo de combate que aún no se podían encontrar.
+   - En los sitios de su «donde», solo en las zonas 2D, en las ciudades y en Pastos Verdes 3D.
+   - La Garganta 3D, documentada para gráficos.
+   - Con aviso, guardado compatible y pruebas, y sin canon nuevo.
+
+Copia `D:\Aethelgard_narrativa`, rama `area-narrativa`.
+
+### 1. Archivos y commits
+| Commit | Qué |
+|---|---|
+| `ee75734` | Unión `--no-ff` de `integracion-experimental` @ `45a49e6` (sin conflictos) |
+| `9e22fa8` | El botón POSADA y el sonido de Oakhaven (detalle abajo) |
+| `e4d23fd` | Los hallazgos: `hallazgos.gd` (nuevo), `zona.gd`, `ciudad_oakhaven.gd`, `pruebas/prueba_hallazgos.gd` (nueva) y su línea en `lista_pruebas.txt` |
+| `1363843` | Los `.uid` de `hallazgos.gd` y de su prueba |
+| (este) | Este informe |
+
+Contenido de `9e22fa8`:
+- `zona.gd`: el botón POSADA llama a `_boton_posada()`.
+- `ciudades/oakhaven_posada.gd`: `menu_dialogo()`.
+- `ciudad_oakhaven.gd`: la pregunta y el sonido.
+- `ciudades/oakhaven.gd`: la señal `oak:dormir`, y la pregunta ya no está en el turno de la posadera.
+- Fuera `oak_posadera_servicios.dtl`, su `.uid` y su registro en `project.godot`.
+- `prueba_posadera_servicios`, reescrita; `prueba_ciudad_datos` y `lista_pruebas.txt`, al día.
+
+**1. El botón POSADA** (comprobado ejecutando, aislado).
+- **Qué hace.** Pulsarlo ya no cobra la noche. La posadera pregunta «¿Qué va a ser?» con cuatro opciones:
+  - **Dormir:** el texto dice el precio de ahora: «Dormir (30 monedas)» o, con la noche gratis, «Dormir (invita la
+    casa)». Al acabar la pregunta se descansa como siempre: cobra, cura, y sale la charla o la escena al despertar.
+  - **Sopa del día (10 monedas)** y **Un rumor:** como antes.
+  - **Nada, gracias.**
+- **Por qué así.** Ya no depende de hablar con ella ni de terminar su misión, y la pregunta deja de estar en su turno.
+- **Cómo está hecho.**
+  - La pregunta es texto de Dialogic que se monta al momento (`oakhaven_posada.gd`, `menu_dialogo()`), y así el precio
+    es el de ese momento. El Oakhaven 3D la puede usar igual.
+  - `zona.gd` tiene ahora `_boton_posada()`, que por defecto descansa (las demás zonas, igual que antes); Oakhaven lo
+    cambia.
+  - `_posada()` sigue siendo «descansar», y así siguen funcionando las pruebas que lo llaman (`prueba_efectos`,
+    `prueba_oakhaven`).
+  - El texto del botón sigue diciendo «POSADA (30)» o «POSADA (gratis)».
+
+**2. Sonido de Oakhaven vivo:**
+- **Las cuatro líneas del inventario,** en `_ready`, junto a la taberna y el cuervo: el murmullo de la plaza, la fuente
+  y el mercado, por cercanía, y `Sonido.fijar_momento(self, "tarde")`.
+- **La fuente** suena donde está la del dibujo (su ancla, una casilla más abajo, al pie). Sin arte, en el centro de la
+  plaza.
+- **Al despertar en la posada,** `Sonido.fijar_momento(self, "dia")`: pájaros de día en vez del grillo. Cuadra con la
+  «mañana» de los vecinos.
+
+**3. Los hallazgos** (`hallazgos.gd`; los textos, en §3). Son once, cada uno en el sitio que dice su diseño:
+| Hallazgo | Da | Dónde y cómo |
+|---|---|---|
+| `hall_hoja_sin_nombre` | Hoja sin Nombre (Kael) | Gran Bosque Verde: al examinar la «Armadura del árbol» |
+| `hall_diente_grimfang` | Diente de Grimfang | Gran Bosque Verde: cofre propio junto al campamento |
+| `hall_baculo_peregrino` | Báculo del Peregrino (Lya) | Garganta 2D: al examinar el «Pilar del peregrino» (en 3D, documentado) |
+| `hall_guardiana_ambar` | Guardiana de Ámbar (Kael) | Cumbres de Ciclópea: al examinar la «Estatua sin brazo» |
+| `hall_pluma_arpia` | Pluma de arpía | Ciclópea: cofre propio en las ruinas |
+| `hall_tomo_escarcha` | Tomo de la Escarcha | Ciclópea: cofre propio adonde mira la estatua (al norte de las ruinas) |
+| `hall_tomo_alba` | Tomo del Alba | Mar de Arena de Calid: al examinar la «Máquina enterrada» |
+| `hall_tomo_lumbre` | Tomo de la Lumbre | Valle de los Ecos: cofre propio junto al agua más al centro («el agua más quieta») |
+| `hall_brasa_frasco` | Brasa en frasco | Valle de los Ecos: cofre propio (mientras no se llegue al Abismo de Ceniza) |
+| `hall_rama_milenaria` | Rama del Árbol Milenario (Lya) | Oakhaven: al examinar el pie del Árbol |
+| `hall_gemelas_muralla` | Gemelas de la Muralla (Garon) | Oakhaven: al examinar el barril del patio del Cuervo (fuera del favor del barril) |
+
+- **Lo que no se pone aquí** (`hallazgos.gd`, `FUERA`):
+  - la Gota de la cascada y la Cinta de Lumi: su Arboleda Mítica aún no existe;
+  - el Farol y la Moneda: ya están en las tiendas;
+  - la Lágrima de ámbar y las Fauces de Gorthor: ya las da `combate.gd`.
+- **En Pastos Verdes 3D, nada:** ningún objeto lo tiene como «donde».
+- **Guardado:** cada hallazgo, una vez, apuntado en «cofres_abiertos» como `hall_…`. Así no hace falta clave nueva y
+  una partida antigua puede encontrarlos todos.
+  - El equipo va a «equipables» (`equipo_extra.gd`, `conseguir`), y el tomo enseña su nivel III (`artes.gd`,
+    `dar_tomo`).
+  - Si ya tenías el objeto, se apunta igual y lo dice.
+- **Los cofres son propios:** su id es el del hallazgo, no su posición. Así no se confunden con los cofres de siempre
+  ni con una partida antigua que ya los abrió.
+- **Avisos:** primero el texto del sitio y luego lo que se consigue («Tomo del Alba. Kael aprende Hora Dorada.»), uno
+  tras otro, con el sonido del tesoro. Después se guarda la partida.
+- **Garganta 3D:** la llamada exacta está en la cabecera de `hallazgos.gd`, en `_examinar(1)`, el del pilar del
+  peregrino.
+
+### 2. Pruebas
+- **Importaciones aisladas:** `D:\REBELUM_diagnostico\importaciones\narrativa_20261109_231508\` (tras unir
+  `45a49e6`) y `...\narrativa_20261109_232315\`, salida 0.
+  - Antes de la primera, `prueba_efectos` y `prueba_teclado` fallaban en mi copia: faltaba importar los sonidos y los
+    recursos que trajo la unión. Después pasaron.
+- **`prueba_posadera_servicios`** (reescrita, comprobado ejecutando, aislado), FALLOS 0:
+  - el botón de verdad abre la pregunta sin cobrar, y hablar con la posadera ya no la saca;
+  - «Dormir» cobra 30, cura y lleva a la escena al despertar; con la noche gratis, la opción lo anuncia y no cobra;
+  - la sopa (10, PV sí y PM no);
+  - dos rumores seguidos;
+  - «Nada»;
+  - sin monedas.
+- **`prueba_hallazgos`** (nueva, auto, comprobado ejecutando, aislado), FALLOS 0:
+  - los datos: 11 hallazgos; los 17 objetos del equipo y tomos tienen sitio o están explicados; cada uno está en el
+    lugar de su «donde»;
+  - encontrar: una vez; el tomo enseña; «ya lo tenías»;
+  - una partida antigua sin «cofres_abiertos», y lo encontrado se lee al guardar y cargar;
+  - en el juego, como un jugador (al lado, el botón y pulsar), los once en sus seis lugares;
+  - los cofres, en suelo libre, y el del Valle, junto al agua (en la pasada, en la casilla (39,5, 28,5)).
+- **Pruebas afectadas por el botón** (aislado): `prueba_oakhaven`, `prueba_ciudad_datos`, `prueba_oakhaven_posada`,
+  `prueba_charlas_posada`, `prueba_mando`, `prueba_teclado`, `prueba_efectos`, `prueba_integridad` y
+  `prueba_posadera_servicios`, superadas (`D:\REBELUM_diagnostico\narrativa\2026-11-09\boton_posada\`).
+- **Batería completa** (aislado, sobre `1363843`): **SUPERADAS 71 · FALLIDAS 1 · MANUALES 36 · NO SEGURAS 0**
+  (`D:\REBELUM_diagnostico\narrativa\2026-11-09\bateria_hallazgos\2026-11-09_232346\resumen.md`).
+  - La partida real, su carpeta y el proyecto, sin cambios.
+  - **La fallida no es de este trabajo:** `prueba_zona3d`, con el mensaje «sigue el botón de banco «DIAG»».
+    - La prueba comprueba que en la región no quede ningún botón de `BOTONES_BANCO` (`["DIAG", "ARB"]`).
+    - Pero `45a49e6` (integración: «botones DIAG y MEDIO en el panel de medidas») crea a propósito un botón «DIAG»
+      nuevo en `pastos_verdes_3d.gd`, `_crear_panel_rnd`.
+    - Lo he visto en el código; no lo he ejecutado en la copia de integración.
+    - Arreglo propuesto, a decidir por quien lleve la región: que la prueba distinga el DIAG del prototipo del de las
+      medidas en el móvil (por ejemplo, con un nombre de nodo propio para los nuevos), o llamar de otra forma al botón
+      nuevo.
+
+### 3. Evidencias
+**Textos de los hallazgos** (los que llevan texto de sitio; los cofres sin texto solo dicen lo que se consigue):
+| Hallazgo | Texto del sitio |
+|---|---|
+| Hoja sin Nombre | Entre las raíces, junto a la armadura, una hoja a la que alguien raspó el nombre. |
+| Báculo del Peregrino | Al pie del pilar, apoyado en la piedra, un báculo gastado por muchas manos. |
+| Guardiana de Ámbar | A los pies de la estatua, medio enterrada, una espada con la guarda de ámbar. |
+| Tomo de la Escarcha | Adonde mira la estatua, un cofre helado con un libro dentro. |
+| Tomo del Alba | Entre los tubos de la máquina, envuelto en tela, un libro con un sol en la tapa. |
+| Tomo de la Lumbre | Junto al agua más quieta, un cofre con un libro que no se ha mojado. |
+| Rama del Árbol Milenario | Al pie del Árbol, una rama verde que el viento ha dejado caer. No se seca. |
+| Gemelas de la Muralla | Detrás del barril, envueltas en un trapo, dos espadas cortas de la Guardia. |
+
+**La pregunta del botón** (la posadera, con su retrato de siempre):
+| Frase | Intención |
+|---|---|
+| ¿Qué va a ser? | Directa y amable: el negocio es el negocio |
+| Marchando. Y la cuchara, de vuelta a la mesa. | Contenta (tras la sopa) |
+| Acércate, que en las mesas se oye de todo. | Baja la voz (antes del rumor) |
+| Pues aquí estoy, para cuando quieras. | Sin insistir («Nada») |
+
+### 4. Continuidad y canon
+- **Los textos de los sitios solo describen lo que ya dicen los objetos y los detalles:**
+  - la hoja raspada (equipo_extra.gd);
+  - la armadura del árbol, el pilar, la estatua que mira al pico y la máquina (detalles de `progreso.gd`);
+  - la rama que no se seca;
+  - la Guardia, que ya nombra el texto de las Gemelas.
+- **Nada de Érebo,** de lo pendiente de D-073 ni de Final Fantasy X: la prueba lo mira palabra por palabra.
+- **Hitos, misiones y recompensas existentes no cambian:**
+  - el favor del barril sigue igual: las Gemelas salen al examinarlo fuera de ese paso;
+  - las Fauces y la Lágrima siguen en `combate.gd`.
+
+### 5. Límites y propuestas pendientes
+- **Garganta 3D:** la llamada documentada para gráficos (`hallazgos.gd`); hasta que la pongan, el Báculo solo se
+  encuentra en la Garganta 2D.
+- **Arboleda Mítica (T-090):** cuando exista, la Gota y la Cinta de Lumi, con el mismo módulo.
+- **Las Fauces de Gorthor:** su «donde» sigue pendiente del usuario (si se le perdona o no); hoy las da `combate.gd`.
+- **Pendiente en Redmi:** el menú de la posada, los avisos de hallazgo y el sonido de la plaza.
+
+### 6. Siguiente paso y cambios en archivos de otros
+- **Gráficos (`garganta_3d.gd`):** en `_examinar(1)`, la llamada de `hallazgos.gd`, y un objeto para el báculo.
+- **Coordinador:** el cambio en `zona.gd` (`_boton_posada`) es pequeño y retrocompatible; revisarlo al integrar.
+- **Quien lleve Pastos Verdes 3D:** `prueba_zona3d` y el botón DIAG nuevo de `45a49e6` (§2).
+- **Siguiente paso de narrativa:** la Arboleda, cuando exista; y más hallazgos con los lugares nuevos.
