@@ -85,6 +85,7 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 | [D-071](#d-071) | Ambición: todas las ciudades mejoradas, muchos sitios nuevos y magias nuevas | Aprobada |
 | [D-072](#d-072) | Más contenido: equipo, enemigos, compañeros, secretos, grutas y posadas, con inspiración solo de principios | Aprobada |
 | [D-073](#d-073) | Decisiones de la noche del 08 al 09/11, para que el usuario las revise | Aprobada en el encargo |
+| [D-074](#d-074) | La Garganta del Diablo pasa a 3D como mazmorra (cambia el plan 3D, que la dejaba en 2D) | Aprobada |
 | [D-H01 a D-H15](#6-diseño-ya-implementado-del-3010-al-0511) | Diseño ya implementado antes de Git | Aprobada (historial) |
 
 ## 1. Reglas de trabajo, Git y versiones
@@ -1321,6 +1322,18 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
     - la abuela de Lumi;
     - los centinelas que se apartan ante Kael;
     - «El Costillar» como apodo de Sunken City.
+
+### D-074
+**La Garganta del Diablo pasa a 3D, como mazmorra**
+- **Fecha y estado:** 2026-11-09. Aprobada [usuario]: «Garganta del diablo hay que empezar a crearla en 3d como en
+  pastos verdes solo que garganta del diablo es una mazmorra».
+- **Qué cambia:** el plan 3D (`docs/plan_migracion_3d.md`) dejaba `garganta.gd` en 2D, sin cambios 3D, hasta después
+  de la alfa. Ahora se crea su versión 3D con el patrón de Pastos Verdes ([T-095](TASKS.md#t-095)).
+- **Cómo** (decidido por el coordinador):
+  - se conservan la estructura y el progreso de la 2D;
+  - entra por `modo3d.gd` (`REGIONES`), sin tocar `mapa.gd`;
+  - mientras sea una maqueta, solo con el argumento `-- garganta3d`; la 2D sigue en las APK hasta que la 3D supere
+    las pruebas.
 
 ## 6. Diseño ya implementado del 30/10 al 05/11
 

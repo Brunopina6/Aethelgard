@@ -70,6 +70,7 @@
 | [T-092](#t-092) | Equipo nuevo: accesorios y armas especiales (encargo del 08/11, 23:35) | En curso (fase 1: datos) | Alta |
 | [T-093](#t-093) | Enemigos nuevos, con identidad táctica | Diseño hecho; espera decisiones del usuario | Alta |
 | [T-094](#t-094) | Compañeros de viaje: propuesta y versión que no cambie el canon | Propuesta hecha; decide el usuario | Media |
+| [T-095](#t-095) | La Garganta del Diablo en 3D, como mazmorra (petición del 09/11) | En curso (diseño y maqueta) | Alta |
 
 ## Continuidad
 
@@ -780,3 +781,17 @@
   - una propuesta de compañeros (quiénes son, de dónde salen, qué aportan), marcada como propuesta para la biblia;
   - el grupo jugable (Kael, Lya y Garon) no cambia sin la decisión del usuario;
   - mientras, solo acompañantes que no toquen el canon (un guía o un NPC que acompaña un tramo), si encajan.
+
+### T-095
+**La Garganta del Diablo en 3D, como mazmorra**
+- **Estado:** en curso desde el 09/11: fase 0 (diseño) y fase 1 (maqueta jugable), en `D:\Aethelgard_garganta3d`, rama
+  `area-garganta3d` (desde `c74b872`). **Prioridad:** alta. Decisión: [D-074](DECISIONS.md#d-074).
+- **Petición** [usuario, 09/11]: «Garganta del diablo hay que empezar a crearla en 3d como en pastos verdes solo que
+  garganta del diablo es una mazmorra».
+- **Criterio de aceptación:**
+  - la misma estructura y el mismo progreso que la 2D (piezas, palanca y puente, ascensor, guardados, cofre del nido,
+    combates fijos y Gorthor, con los mismos identificadores);
+  - dirección visual de mazmorra propia;
+  - el perfil bajo a 30 FPS en el Mali-G57;
+  - el recorrido completo probado (`prueba_garganta3d`);
+  - la 2D como alternativa: la 3D entra por `modo3d.gd` y, mientras esté en maqueta, solo con `-- garganta3d`.

@@ -12,6 +12,15 @@ pidió no preguntar ([MEMORIA_CHAT.md](MEMORIA_CHAT.md)). **La memoria describe 
      programa del PC y debe centrarse mucho en lo visual y el lore.
 - **Decisiones de la noche, para que el usuario las revise:** [D-073](DECISIONS.md#d-073).
 
+## Reanudado el 09/11 (después del límite de uso)
+
+- **Nueva petición:** la Garganta del Diablo en 3D, como mazmorra ([T-095](TASKS.md#t-095),
+  [D-074](DECISIONS.md#d-074)). Especialista de gráficos en `D:\Aethelgard_garganta3d`, rama `area-garganta3d`
+  (desde `c74b872`): diseño y maqueta jugable, activable con `-- garganta3d`.
+- **Reanudados con su contexto:** el mapamundi (fase 2) y animaciones (tanda 2).
+- **Pendientes de reanudar cuando haya memoria libre:** sonido (tanda 2), combate (fase 1) y narrativa (fase 1).
+- Dejaron muy poco a medias: dos archivos sin confirmar en total.
+
 ## Relevo por límite de uso (09/11, hacia la 01:15)
 
 - Se alcanzó el límite de uso de la sesión. Se pararon los cinco especialistas en marcha. Lo que hicieran quedó en
