@@ -23,6 +23,10 @@ extends SceneTree
 #   9. Guardar y cargar: se vuelve a la ciudad, al mismo sitio y con todo igual.
 #  10. «Lavanda para el Árbol»: Rosa la pide; en Pastos Verdes 3D sale el ramito, se coge una vez; se entrega a Rosa y
 #      Doña Encina da las gracias.
+#  11. El camino del arte de gráficos, con un módulo falso (pruebas/oakhaven_arte_falso.gd, Engine «oakhaven_arte_prueba»):
+#      los dibujos van a su sitio, bajo los edificios y las casas con dibujo hay muro invisible, se pisa lo mismo que sin
+#      arte, no se pinta la provisional de lo que tiene dibujo, los estados (faroles y cofres) y el ambiente.
+# Lo que comprueba del dibujo provisional (la luz de los faroles) solo lo mira si el farol es el provisional.
 # Imprime «FALLOS: n» y sale con 1 si hay alguno.
 
 const Oak := preload("res://ciudades/oakhaven.gd")
@@ -256,13 +260,16 @@ func _probar() -> void:
 	if z != null:
 		z = await _guardar_y_cargar(z)
 	if z != null:
-		await _lavanda(z)
+		z = await _lavanda(z)
+	if z != null:
+		await _con_arte(z)
 	_terminar()
 
 
 func _terminar() -> void:
 	_borrar()
 	Engine.remove_meta("archivo_partida_prueba")
+	Engine.remove_meta("oakhaven_arte_prueba")
 	print("OK Oakhaven jugada: ", ", ".join(PackedStringArray(hechos)))
 	for t in fallos:
 		print("FALLO: ", t)
@@ -500,11 +507,7 @@ func _torre_y_faroles(z) -> void:
 		if not P.estado("oakhaven", "farol_%d" % i) or not ("Farol encendido (%d de 3)." % i) in z.aviso.text:
 			_fallo("5: el farol %d no se enciende («%s»)" % [i, z.aviso.text])
 		var e = _pieza(z, id)
-		var luz := false
-		for h in e[0].get_children():
-			if h is PointLight2D and h.visible:
-				luz = true
-		if not luz:
+		if not _luz_de_farol(e[0]):
 			_fallo("5: el farol %d encendido no da luz" % i)
 		z._comprobar_cerca()
 		if z.pieza_cerca != null and z.pieza_cerca[1]["id"] == id:
@@ -640,10 +643,8 @@ func _salir_y_volver(z, base: Array) -> Variant:
 		_fallo("8: al volver, las misiones no siguen hechas")
 	var luces := 0
 	for e in z.piezas:
-		if e[1]["id"].begins_with("oak_farol_"):
-			for h in e[0].get_children():
-				if h is PointLight2D and h.visible:
-					luces += 1
+		if e[1]["id"].begins_with("oak_farol_") and _luz_de_farol(e[0]):
+			luces += 1
 	if luces != 3:
 		_fallo("8: al volver, %d faroles de la ronda dan luz (3)" % luces)
 	if z.velo_patio.modulate.a > 0.1:
@@ -693,7 +694,7 @@ func _guardar_y_cargar(z) -> Variant:
 
 
 # 10. «Lavanda para el Árbol», con Pastos Verdes 3D.
-func _lavanda(z) -> void:
+func _lavanda(z) -> Variant:
 	await _hablar(z, "rosa")                        # npc_rosa
 	if await _hablar(z, "rosa") != Oak.ruta_dialogo("oak_rosa_lavanda") or not P.estado("oakhaven", "lavanda"):
 		_fallo("10: Rosa no pide la lavanda")
@@ -703,12 +704,12 @@ func _lavanda(z) -> void:
 	change_scene_to_file(REGION)
 	if not await _hasta(func(): return _escena() == REGION and current_scene.get("kael") != null, 120.0):
 		_fallo("10: no se abre Pastos Verdes 3D")
-		return
+		return null
 	await _esperar(20)
 	var r = current_scene
 	if r.lavanda == null:
 		_fallo("10: en Pastos Verdes no está el ramito de lavanda")
-		return
+		return null
 	r._colocar_kael(r.lavanda.global_position + Vector3(0.9, 0, 0.4))
 	await _esperar(4)
 	r._comprobar_cerca()
@@ -725,7 +726,7 @@ func _lavanda(z) -> void:
 	change_scene_to_file(CIUDAD)
 	if not await _hasta(func(): return _en(CIUDAD), 60.0):
 		_fallo("10: no se vuelve a la ciudad")
-		return
+		return null
 	await _esperar(10)
 	z = current_scene
 	var pociones: int = inv.cantidad("Poción")
@@ -736,3 +737,95 @@ func _lavanda(z) -> void:
 	if not P.estado("oakhaven", "encina_gracias"):
 		_fallo("10: Doña Encina no da las gracias")
 	hechos.append("Lavanda para el Árbol (con Pastos Verdes 3D)")
+	return z
+
+
+# ¿Da luz este farol? El provisional (la farola de zona.gd) lleva su PointLight2D; el de gráficos, encender().
+func _luz_de_farol(n: Node) -> bool:
+	if n.get("encendida") != null:                 # el falso del apartado 11 (y uno de gráficos que lo apunte)
+		return n.get("encendida")
+	if n.has_method("encender"):
+		return true                                # (lo dibuja gráficos: aquí no se puede ver)
+	for h in n.get_children():
+		if h is PointLight2D and h.visible:
+			return true
+	return false
+
+
+# 11. El camino del arte de gráficos, con un módulo falso que apunta lo que se le pide.
+func _con_arte(z) -> void:
+	var sin_arte: PackedByteArray = z.muros.duplicate()
+	var farolas_sin: int = z.farolas.size()
+	Engine.set_meta("oakhaven_arte_prueba", "res://pruebas/oakhaven_arte_falso.gd")
+	Engine.set_meta("pos_zona_ok", false)
+	var vieja: int = z.get_instance_id()
+	change_scene_to_file(CIUDAD)
+	if not await _hasta(func(): return _en(CIUDAD) and current_scene.get_instance_id() != vieja, 60.0):
+		_fallo("11: con el arte falso no se abre la ciudad")
+		return
+	await _esperar(10)
+	z = current_scene
+	var Falso = load("res://pruebas/oakhaven_arte_falso.gd")
+	if z.arte != Falso:
+		_fallo("11: la ciudad no usa el módulo de arte de la prueba")
+		return
+	# lo que se pisa es lo mismo; bajo los edificios con dibujo (y las casas), muro invisible
+	var cambia := 0
+	for i in sin_arte.size():
+		if (sin_arte[i] == 0) != (z.muros[i] == 0):
+			cambia += 1
+	if cambia > 0:
+		_fallo("11: con arte se pisan %d casillas distintas" % cambia)
+	for id in ["taberna", "crematorio"]:
+		var r: Rect2 = Oak.LUGARES.filter(func(l): return l["id"] == id)[0]["rect"]
+		for y in range(int(r.position.y), int(r.end.y)):
+			for x in range(int(r.position.x), int(r.end.x)):
+				if z.muros[y * z.ANCHO + x] != 3:
+					_fallo("11: bajo el dibujo de %s no hay muro invisible (%d, %d)" % [id, x, y])
+					break
+	# cada dibujo, en mundo_y y en su sitio
+	var por_id := {}
+	for n in z.mundo_y.get_children():
+		if n.get("id") != null and n.get("rect") != null:
+			if not por_id.has(n.id):
+				por_id[n.id] = []
+			por_id[n.id].append(n)
+	for id in ["taberna", "crematorio", "ronda", "arbol", "oak_farol_1", "oak_torre", "nota_oak_cuervo", "oak_sello"]:
+		if not por_id.has(id):
+			_fallo("11: no está el dibujo de «%s»" % id)
+	if por_id.has("taberna") and por_id["taberna"][0].position != Vector2(11, 19) * T:
+		_fallo("11: el dibujo de la taberna no está en la esquina de su huella (%s)" % (por_id["taberna"][0].position / T))
+	if por_id.get("farol", []).size() != farolas_sin:
+		_fallo("11: hay %d farolas de gráficos y %d sitios de farola" % [por_id.get("farol", []).size(), farolas_sin])
+	var casas: Array = por_id.get("casa_4x4", [])
+	if casas.is_empty():
+		_fallo("11: no se pide ninguna casa de 4 × 4 al arte")
+	for c in casas:
+		for y in range(c.rect.position.y, c.rect.end.y):
+			for x in range(c.rect.position.x, c.rect.end.x):
+				if z.muros[y * z.ANCHO + x] != 3:
+					_fallo("11: bajo una casa con dibujo no hay muro invisible (%d, %d)" % [x, y])
+	# lo que tiene dibujo no lleva el provisional; los estados y el ambiente
+	if z.arbol == null or z.arbol.get("id") != "arbol" or z.arbol_provisional:
+		_fallo("11: el Árbol no es el dibujo de gráficos")
+	if _pieza(z, "oak_farol_1")[0].get("id") != "oak_farol_1" or not _pieza(z, "oak_farol_1")[0].encendida:
+		_fallo("11: el farol 1 no es el dibujo de gráficos o no se le enciende (ya estaba encendido)")
+	for nt in z.notas:
+		if nt[1]["id"] == "nota_oak_cuervo" and nt[0].get("id") != "nota_oak_cuervo":
+			_fallo("11: el letrero del cuervo sigue siendo el provisional")
+	var ronda = por_id.get("ronda", [null])[0]
+	if ronda != null:
+		if not ronda.estados.get("farol_1", false) or ronda.estados.get("oak_cofre_ronda", null) != true:
+			_fallo("11: la ronda no recibe sus estados (%s)" % [ronda.estados])
+		if ronda.estados.get("oak_cofre_raices", null) != false:
+			_fallo("11: la ronda no sabe que el cofre de las raíces está abierto (%s)" % [ronda.estados])
+	if z.destellos.has("oak_cofre_ronda"):
+		_fallo("11: el cofre de la ronda lleva el destello provisional y el de gráficos")
+	var ambiente: CanvasModulate = null
+	for n in z.get_children():
+		if n is CanvasModulate:
+			ambiente = n
+	if ambiente == null or ambiente.color != Falso.AMBIENTE:
+		_fallo("11: la luz ambiente no es la del arte (%s)" % (ambiente.color if ambiente else "nada"))
+	Engine.remove_meta("oakhaven_arte_prueba")
+	hechos.append("el camino del arte (falso)")
