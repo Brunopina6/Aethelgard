@@ -55,6 +55,9 @@ extends Node
 #   más cuanto más cerca de quien anda, en bucle o de vez en cuando.
 # Tanda 4 (T-097): las seis bestias del bestiario, solo en el catálogo (BESTIAS): aviso e impacto de cada ataque, herido,
 #   caída y entrada; sus voces van por FAMILIAS como las de la tanda 2. Las engancha combate (docs/audio/inventario_sonidos.md).
+# - Héroes quietos (tanda 4): el nodo de pasos de cada personaje 3D (Pasos3D) hace, si lleva un rato parado, un gesto muy
+#   discreto suyo (QUIETO: Kael, Lya y Garon distintos), uno a la vez entre los tres, por Efectos y con prioridad 0. No hace
+#   falta tocar ninguna escena: va donde ya hay pasos_3d (Pastos Verdes y la Garganta 3D).
 
 const ARCHIVO := "user://ajustes.cfg"
 const BUSES := ["Musica", "Efectos", "Interfaz", "Ambiente"]
@@ -69,7 +72,12 @@ const EF := "res://audio/efectos/"
 const VOCES := {"Efectos": 10, "Interfaz": 4, "Ambiente": 4}
 const ATENUAR_DB := 8.0                                    # lo que bajan las prioridades 0-2 mientras suena una 4
 const FUNDIDO_CORTE := 0.1                                 # s: al cambiar de escena o cortar
-const MAX_GRUPO := {"voz": 2}                              # cuántos de un mismo grupo suenan a la vez como mucho
+const MAX_GRUPO := {"voz": 2, "quieto": 1}                 # cuántos de un mismo grupo suenan a la vez como mucho
+# Los héroes quietos en la exploración 3D (tanda 4; Pasos3D): tras «primero» s parados (al azar entre los dos), un gesto
+# discreto de su personaje; mientras sigan parados, otro cada «entre» s. Andar lo reinicia. Kael es el que escucha (o el
+# nodo «Kael»); Lya y Garon, por el nombre de su nodo.
+const QUIETO := {"primero": [7.0, 14.0], "entre": [22.0, 40.0]}
+const QUIETO_DE := {"Kael": "quieto_kael", "Lya": "quieto_lya", "Garon": "quieto_garon"}
 const VOCES_3D := 8                                        # reproductores 3D de una escena (efectos con «pos»)
 # Un efecto en el espacio sin «en_3d» en el catálogo: a «unidad» metros suena a su volumen, la mitad cada vez que se
 # dobla la distancia, y callado más allá de «max». «filtro»: dB que pierde lo agudo a lo lejos (Godot: −24).
@@ -198,6 +206,11 @@ const EFECTOS := {
 	"posadero_herido": {"a": "bestias/posadero_herido_", "n": 2, "db": -2.0, "tono": 0.05, "p": 3, "max": 1, "espera": 0.25, "grupo": "voz"},
 	"posadero_caida": {"a": "bestias/posadero_caida", "db": -9.0, "p": 3, "max": 1, "espera": 1.0, "grupo": "voz"},
 	"posadero_entrada": {"a": "bestias/posadero_entrada", "db": -3.0, "p": 3, "max": 1, "espera": 1.0},
+	# ---- los héroes quietos en la exploración 3D (tanda 4): un gesto muy discreto de vez en cuando (Pasos3D, QUIETO);
+	# uno a la vez entre los tres (grupo «quieto»), prioridad 0 (lo primero que cede)
+	"quieto_kael": {"a": "heroes/kael_quieto_", "n": 2, "db": -12.0, "tono": 0.04, "p": 0, "max": 1, "espera": 1.0, "grupo": "quieto"},
+	"quieto_lya": {"a": "heroes/lya_quieto_", "n": 2, "db": -18.0, "tono": 0.04, "p": 0, "max": 1, "espera": 1.0, "grupo": "quieto"},
+	"quieto_garon": {"a": "heroes/garon_quieto_", "n": 2, "db": -10.5, "tono": 0.04, "p": 0, "max": 1, "espera": 1.0, "grupo": "quieto"},
 	# ---- cofres, puertas, objetos, recompensas y momentos de la misión
 	"cofre": {"a": "mundo/cofre_", "n": 3, "db": -7.0, "tono": 0.05, "p": 3, "max": 1, "espera": 0.3},
 	"tesoro": {"a": "mundo/tesoro", "db": -8.0, "p": 3, "max": 1, "espera": 0.3},
@@ -630,6 +643,15 @@ func sonando(bus := "") -> int:
 	return n
 
 
+# Cuántos de un grupo (MAX_GRUPO) suenan ahora (sin contar los que ya se apagan).
+func grupo_sonando(grupo: String) -> int:
+	var n := 0
+	for p in _todas():
+		if p.playing and p.get_meta("grupo", "") == grupo and not p.get_meta("apagando", false):
+			n += 1
+	return n
+
+
 func calla(bus: String) -> bool:
 	var i := AudioServer.get_bus_index(bus)
 	return volumen(bus) == 0 or i < 0 or AudioServer.is_bus_mute(i) or AudioServer.is_bus_mute(0)
@@ -996,10 +1018,39 @@ class Pasos3D extends Node:
 	var pasos := 0                               # pisadas (para las pruebas)
 	var sonados := 0                             # pisadas que han sonado
 	var ultimo: Node = null                      # el reproductor del último paso que sonó (para las pruebas)
+	var _parado := 0.0                           # s seguidos sin andar
+	var _toca_gesto := -1.0                      # a los cuántos s parado toca el próximo gesto (-1: sin elegir)
+	var gestos := 0                              # gestos de quieto que han sonado (para las pruebas)
 
 	func _ready() -> void:
 		_ant = cuerpo.global_position
 		_buscar_pies()
+
+	# Parado: tras un rato, un gesto discreto de su personaje (QUIETO); si ya suena el de otro, se espera un poco.
+	func _quieto(delta: float) -> void:
+		var nombre := _gesto()
+		if nombre == "":
+			return
+		_parado += delta
+		if _toca_gesto < 0.0:
+			_toca_gesto = son._rng.randf_range(son.QUIETO["primero"][0], son.QUIETO["primero"][1])
+		if _parado < _toca_gesto:
+			return
+		if son.grupo_sonando("quieto") > 0:
+			_toca_gesto = _parado + 1.5
+			return
+		var op := {}
+		if not son.es_oyente(cuerpo) and son.hay_oyente():
+			op = {"pos": cuerpo.global_position + Vector3(0, 1.2, 0), "en_3d": son.PASO_3D}
+		if son.efecto(nombre, op) != null:
+			gestos += 1
+		_toca_gesto = _parado + son._rng.randf_range(son.QUIETO["entre"][0], son.QUIETO["entre"][1])
+
+	# El gesto de este personaje: el que escucha es Kael; Lya y Garon, por el nombre de su nodo; los demás, ninguno.
+	func _gesto() -> String:
+		if son.QUIETO_DE.has(String(cuerpo.name)):
+			return son.QUIETO_DE[String(cuerpo.name)]
+		return son.QUIETO_DE["Kael"] if son.es_oyente(cuerpo) else ""
 
 	# Los huesos de los pies (si el modelo aún no estaba, se vuelve a mirar cada segundo; mientras, por distancia).
 	func _buscar_pies() -> void:
@@ -1031,7 +1082,10 @@ class Pasos3D extends Node:
 			for f in pies:
 				f["baja"] = false
 			_acum = 0.0
+			_quieto(delta)
 			return
+		_parado = 0.0
+		_toca_gesto = -1.0
 		if pies.size() == 2 and is_instance_valid(skel):
 			for f in pies:
 				var pie: Vector3 = (skel.global_transform * skel.get_bone_global_pose(f["i"])).origin
