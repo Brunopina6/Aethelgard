@@ -99,8 +99,10 @@ func _fotos() -> void:
 			_vista(v, alto)
 			await _esperar(2)
 			await _foto(dir.path_join("%s_reposo_%s.png" % [h.to_lower(), v]))
+		if args.has("porte"):
+			await _porte(c, h, dir)
 		for clip in c.esperas.clips:
-			if args.has("clip") and args["clip"] != clip:
+			if (args.has("clip") and args["clip"] != clip) or args.has("solo_porte"):
 				continue
 			var a: Animation = c.anim.get_animation("esperas/" + clip)
 			for v in VISTAS:
@@ -126,3 +128,27 @@ func _fotos() -> void:
 		c.queue_free()
 		await _esperar(4)
 	quit(0)
+
+
+# Con «porte»: el porte de cada héroe al andar y al correr (maga_3d.gd, ESTILOS), de lado y en las mismas fases del
+# clip, sin él (antes) y con él (después): <héroe>_porte_<andar|correr>_<antes|despues>_<n>.png
+func _porte(c, h: String, dir: String) -> void:
+	_vista("lado", ESCALA[h])
+	for como in ["andar", "correr"]:
+		var v := 1.3 if como == "andar" else 4.2
+		for cual in ["antes", "despues"]:
+			c.marcha(v * ESCALA[h])
+			await _esperar(20)
+			if cual == "antes":
+				c.gestos.quitar("porte_" + como, 0.0)
+			else:
+				c.gestos.poner("porte_" + como, 1.0, 0.0)
+			var largo: float = c.anim.current_animation_length
+			for k in 4:
+				c.anim.seek(largo * k / 4.0, true)
+				c.anim.speed_scale = 0.0
+				await _esperar(3)
+				await _foto(dir.path_join("%s_porte_%s_%s_%d.png" % [h.to_lower(), como, cual, k]))
+			c.anim.speed_scale = 1.0
+		c.parar_marcha()
+		await _esperar(15)

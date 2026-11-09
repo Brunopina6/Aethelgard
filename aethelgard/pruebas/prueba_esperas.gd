@@ -230,6 +230,9 @@ func _region() -> void:
 		_fallo("en la región no están los tres (%s)" % [cuerpos.keys()])
 	# quietos: cada uno, una espera; nunca dos empiezan a menos de SEPARACION_GRUPO
 	var empiezos := {}
+	var quieto0 := {}                       # lo que ya llevaban quietos al empezar a contar (desde que cargó la región)
+	for n in cuerpos:
+		quieto0[n] = cuerpos[n].esperas.t_quieto if cuerpos[n].get("esperas") != null else 0.0
 	var t := 0.0
 	var n_foto := 0
 	while t < 26.0 and (empiezos.size() < cuerpos.size() or (fotos != "" and t < 24.0)):
@@ -245,8 +248,8 @@ func _region() -> void:
 			if e == null:
 				continue
 			if e.actual != "" and not empiezos.has(n):
-				empiezos[n] = [t, e.actual]
-				print("REGIÓN: %s empieza «%s» a los %.1f s quieto" % [n, e.actual, t])
+				empiezos[n] = [t + quieto0[n], e.actual, t]
+				print("REGIÓN: %s empieza «%s» a los %.1f s quieto" % [n, e.actual, t + quieto0[n]])
 	for n in cuerpos:
 		if cuerpos[n].get("esperas") == null:
 			_fallo("REGIÓN: %s no tiene esperas" % n)
@@ -254,7 +257,7 @@ func _region() -> void:
 			_fallo("REGIÓN: %s no hace ninguna espera en 26 s quieto" % n)
 		elif empiezos[n][0] < 5.9:
 			_fallo("REGIÓN: %s empieza su espera demasiado pronto (%.1f s)" % [n, empiezos[n][0]])
-	var tiempos: Array = empiezos.values().map(func(x): return x[0])
+	var tiempos: Array = empiezos.values().map(func(x): return x[2])
 	tiempos.sort()
 	for i in range(1, tiempos.size()):
 		if tiempos[i] - tiempos[i - 1] < 2.9:
