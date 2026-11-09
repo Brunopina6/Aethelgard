@@ -155,3 +155,116 @@ fallidos están en `D:\REBELUM_diagnostico\mapamundi\2026-11-09\registros\_07195
   `load("res://mapa_arte/mapa_arte.gd").elegir("clasico", si)` y lea `…clasico_elegido()` para mostrar el estado
   (vale desde la próxima vez que se abra el mapa).
 - Garganta 3D: nada que hacer aquí; `_entrar` sigue preguntando a `modo3d.escena_de(i)`.
+
+## 2026-11-09 13:20 · T-089: el arte de Oakhaven (piezas horneadas en 3/4, módulo, vecinos, maqueta y modelos 3D)
+
+Rama `area-graficos` en `D:\Aethelgard_graficos`, desde `ab250c9` (con la fase 1 de narrativa). Sin tocar `zona.gd`,
+`ciudad_oakhaven.*`, `ciudades/oakhaven.gd`, `mapa.gd`, `progreso.gd`, `diario.gd`, `sonido.gd`, `combate.gd`,
+`zonas3d/**` ni `modo3d.gd`. Importación aislada al empezar: `D:\REBELUM_diagnostico\importaciones\graficos_20261109_082919\`.
+
+**Técnica** [código; comprobado ejecutando, 2026-11-09]
+- Modelos 3D hechos por código en Blender 5.2 (sin recursos externos ni servicios) y renderizados con Cycles a la hora
+  azul en la proyección EXACTA de la ciudad 2D: cámara ortográfica a 45° mirando al norte y píxel √2 más alto que
+  ancho, de modo que el punto (x, y, z) en casillas cae en el píxel (64·x, 64·(y − z)). Cada imagen se pega sin
+  reescalar: la escala con Kael, la perspectiva y las casillas casan (comprobado en la maqueta).
+- Luz pintada: cielo índigo y azul pizarra con un resto de rosa al oeste, una luz suave del oeste-suroeste y luces
+  cálidas de verdad en ventanas, puertas, faroles, velas y brasero (rebotan en muros y suelo). El crematorio, frío.
+- Por capas: cuerpo (ordena con su fachada), lo que cuelga y se mece (el cuervo, la ropa, el mortero), lo que se pisa
+  (raíces, escalera) y una calcomanía de suelo en alfa PREMULTIPLICADA (sombra suave + charcos de luz cálida), a 1/4.
+- En el juego, todo unshaded: comprobado que ni el CanvasModulate ni las luces 2D lo tocan (si no, se oscurecería dos
+  veces). Humo con UNA imagen por chimenea (ruido que sube), halos que suman luz con parpadeo, vaivén en el
+  sombreador, 14 luciérnagas. Si Kael pasa por detrás de un edificio, este se aclara en un círculo a su alrededor
+  (`jugador_pos`, que `zona.gd` solo actualiza con hierba alta: lo pone al día UNA pieza por escena, `pieza.gd`).
+- Copa del árbol con miles de hojas (partículas de Blender), raíces por «piel» procedural; tapiz, sello y anillos del
+  tocón pintados por código (numpy).
+
+**Piezas** (`ciudades/oakhaven_piezas.gd`: `crear_pieza(id, rect_casillas, tam_casilla) -> Node2D`, null sin arte;
+`ids()`, `rect_de(id)`, `tiene(id)`; otra huella → centrada abajo y aviso; otro tamaño de casilla → escala).
+| id (= lugar de `oakhaven.gd`) | Qué lleva | Capas y orden frente a Kael | Anclas |
+|---|---|---|---|
+| `taberna` | Planta baja de piedra, alto con entramado y vuelo, hastial sobre la puerta entreabierta con la luz de dentro, buhardilla, dos chimeneas, geranios, farol y el cuervo de hierro en su aro | cuerpo (y = 25), letrero (se mece) | humo, humo_chica, farol_puerta, puerta, letrero |
+| `crematorio` | Piedra hueso y pizarra, contrafuertes, ventanas en arco sin luz, óculo, escalinata y la puerta SELLADA con el sello rúnico del anillo partido; chimenea con humo blanco y frío (sale del faldón sur para que se vea) | cuerpo (y = 15) | humo, puerta, sello |
+| `arbol` | Árbol Milenario: tronco ensanchado, ramas, copa de hojas que sale por el borde del mapa (no cabe), raíces sobre el empedrado, el tocón con el anillo negro, tres farolillos y luciérnagas; destello del cofre de las raíces entre las hojas | raíces (se pisan), tronco (y = 9), copa (y = 9, se mece) | tronco, luciernagas, cofre_raices, anillos, encina, farolillo_1..3 |
+| `concejo` | Sillería, ventanas en arco, hastial con óculo, estandartes; el pórtico de columnas con faroles y el TAPIZ de los reyes con el niño recortado | cuerpo (y = 21), pórtico (y = 23: Kael pasa entre muro y columnas) | humo, puerta, tapiz, farol_portico_1/2 |
+| `torre` | Fuste de sillería, saeteras con luz, campanario con la campana, chapitel de pizarra y veleta, puerta con farol | cuerpo (y = 42) | puerta, farol_puerta, campana |
+| `ronda` | Adarve almenado con pretil y remate sur; 3 faroles apagados y, aparte, encendidos | adarve (ordena arriba: quien sube va encima), farol_n_on (estado `farol_n`) | farol_1..3, subida, cofre |
+| `mercado` | Tres puestos con toldos a rayas, género, cajas, sacos y guirnalda de farolillos | un puesto por capa, guirnalda | tienda |
+| `plaza` | Fuente con bellota de bronce, tablón de anuncios, carro de flores de Rosa | fuente, tablón, flores | fuente, tablon, flores |
+| `patio_cuervo`, `grieta`, `patio_velas`, `jardin_urnas`, `subida_colina` | Barriles; el muro del callejón con la raja de luz y hiedra; el altar con el anillo dorado y 9 velas; urnas y cipreses; la escalera de la colina | objetos / alfombra | barril; grieta, luz; velas; paseo; arriba, abajo |
+| `puerta_sur`, `botica`, `guardia` | Torreones y arco con rastrillo (Kael pasa por debajo); botica con vidrios verdes, mortero y hierbas; guardia con estandarte, soportal con el libro y patio con valla y brasero | torres (54,8) y arco (56); cuerpo y letrero; cuerpo, soportal (49) y patio (53) | farol_oeste/este, salida; puerta; puerta, brasero, libro |
+Sueltas, en el origen (las pone el relleno): `farol` (halo y charco de luz, sin PointLight2D), `ropa_tendida` y siete
+casas `casa_3x4 … casa_6x5` (entramado o piedra, teja o pizarra, ventanas con luz o cerradas, chimeneas con humo).
+Choques propios solo en objetos dentro de zonas pisables (fuente, puestos, barriles, columnas, urnas, altar…); los
+edificios usan la rejilla de muros de la ciudad.
+
+**Vecinos** [ejecutado]: muñecos 2D propios (`oakhaven_arte/munecos/`, `Piezas.muneco_de(id, imagen)`): posadera ←
+aldeana (vino; panecillos en la cesta), Bastián ← pícaro (azul y pardo), Doña Encina ← maga (verde musgo, bronce,
+pelo blanco), Albar ← caballero (gris ceniza y plata, pelo plateado). No es un tinte: cada color cambia por zonas de
+tono y la piel, los ojos y el dibujo se conservan; mismo estilo y tamaño. Ya no se tiñen. Un muñeco nuevo de verdad
+(modelo 3D) no se puede hacer digno sin un modelo base: los de `personajes/npc/` no tienen modelo en el proyecto.
+
+**Maqueta** (`oakhaven_arte/maqueta_oakhaven.gd/.tscn`, hereda `zona.gd` como hará la ciudad): trazado de
+`oakhaven.gd`, las piezas, el relleno propuesto (`RELLENO`: 31 casas, 16 farolas y 2 tendederos), jardines con la
+vegetación que ya tiene el juego, los vecinos, `AMBIENTE` (0,5 · 0,52 · 0,74) y `LUZ_JUGADOR` (0,32 · 1,9; la de hoy
+alumbra 400 px y es de día). Lección de la proyección: una casa tapa unas 7 casillas al norte de su huella, así que el
+relleno solo pone casas al norte de calles y plaza; al sur, jardines (la prueba lo vigila).
+
+**Coste** (estimado, SIN medir: había otros especialistas trabajando)
+- GPU: 69 texturas distintas, 8,30 Mpx = 31,6 MB en RGBA8 sin comprimir (las casas iguales comparten imagen). En
+  disco: 1,45 MB (WebP 94 y PNG). Comprimidas en VRAM (ETC2/ASTC, 8 bpp) serían unos 8 MB: sin probar su calidad.
+- Nodos: 2-22 por pieza (Concejo, el que más); la maqueta entera, 65 piezas y 495 nodos. A la vista a la vez, unas
+  6-12 piezas: 30-60 elementos de dibujo. Ninguna luz 2D (solo la de Kael, que ya existía), 14 partículas.
+- Por píxel: edificio ~12 operaciones; humo 2 lecturas de textura; halo ~10 operaciones; vaivén solo en vértices.
+  Sobredibujado estimado ~3× en lo más denso (casillas, calcomanía, edificio, efecto).
+
+**Archivos y commits** (todos nuevos salvo dos líneas de `lista_pruebas.txt` y dos filas de `docs/recursos.md`):
+`e43acc8` fuentes de Blender (`oakhaven_arte/fuente/`, con `.gdignore`) · `85d0cac` imágenes, calcomanías, ruido y
+`arte_datos.gd` · `0012483` `oakhaven_piezas.gd`, `pieza.gd` y sombreadores · `07e2dda` muñecos · `42016b9` maqueta y
+pruebas · `1c9c950` modelos 3D · `2b39965` procedencia · `3f9b04e` la foto del aclarado. Sin push.
+Sin confirmar (ajenos): `project.godot` (Dialogic apuntó solo los 4 personajes y 27 diálogos de narrativa al importar)
+y 34 `.uid` de archivos de narrativa.
+
+**Pruebas** [ejecutado, datos aislados, 2026-11-09]
+- Ejecutor oficial: `prueba_oakhaven_arte`, `prueba_ciudad_datos` y `prueba_escenas`: **3 SUPERADAS**; partida real y
+  carpeta real de datos sin cambios. Resumen: `D:\REBELUM_diagnostico\pruebas\2026-11-09_131552\resumen.md`.
+- `prueba_oakhaven_arte` (FALLOS: 0): 25 piezas; interfaz, huellas de canon, materiales sin luz, ni luces 2D ni
+  partículas de más, cuerpo que cubre su huella, traslado y escala, anclas, estados de la ronda y del destello, humo
+  dentro del mapa, relleno que no pisa ni TAPA calles, plaza, PNJ, piezas, notas, cofres ni detalles, y coste con tope.
+- `prueba_oakhaven_arte_fotos` (ventana, MANUAL): capturas antes y después sin errores en el registro.
+
+**Evidencias** (`D:\REBELUM_diagnostico\oakhaven\2026-11-09\arte\`): `antes\` (la ciudad de hoy), `despues\` (la
+maqueta: entrada, plaza, taberna, crematorio, árbol, mercado, torre y ronda, callejón y velas, ciudad entera, móvil
+20:9, la fachada ×2 y el aclarado detrás del Concejo), `comparacion\` (parejas y **`lamina_antes_despues.jpg`**),
+`modelos_glb\` (los 25 `.glb`) y `registros\` (horneados, importaciones y capturas).
+
+**Modelos 3D para el Oakhaven 3D** (lo pidió el coordinador): `oakhaven_arte/modelos/<id>.blend` (25, 4 MB, con
+`.gdignore`): mallas con modificadores, materiales de procedimiento, imágenes empaquetadas, luces, cielo y cámara, en
+su sitio de la ciudad (1 casilla = 1 m). Los `.glb` (modificadores aplicados, colores planos, sin las hojas sueltas)
+se rehacen con `fuente/exportar_modelos.py -- <ids> <carpeta .blend> <carpeta .glb>`. Reutilizables tal cual (bien
+por todos lados): árbol, fuente, puestos, barriles, urnas, altar y velas, faroles, tendedero, torreones, torre,
+ronda y escalera. Los edificios (taberna, crematorio, Concejo, botica, guardia, casas) solo tienen detalle en la
+fachada sur y el tejado: en 3D les faltan las otras tres fachadas y los interiores (la posada recorrible).
+
+**Límites**
+- Sin medidas (memoria de vídeo, tiempo por fotograma, carga) ni prueba en el Redmi: solo estimaciones.
+- La maqueta no es la ciudad: diálogos, misiones, cofres y la ronda en alto son de `ciudad_oakhaven.gd` (narrativa).
+- Dos piezas de canon tapan un sitio con su tejado (la regla de las 7 casillas): la botica tapa el tablón del bando
+  (36, 29) y el Concejo, el tocón de los anillos (45, 10). El aclarado los descubre cuando Kael se acerca.
+- Sin hacer: las dos viñetas pintadas (torre y raíces), la muralla del borde con arte propio (siguen las casillas de
+  `zona.gd`), suelo propio de la colina, retratos de Dialogic de los vecinos nuevos.
+- `.blend` y `.glb`: los materiales del `.glb` son colores planos; para 3D hay que hornear texturas o rehacerlos.
+
+**Siguiente paso y cambios en archivos de otros**
+- Narrativa (`ciudad_oakhaven.gd`): tras `super._crear_objetos()`, para cada `Oak.LUGARES`
+  `var p := Piezas.crear_pieza(d["id"], Rect2i(d["rect"]), T)` y, si no es null, `mundo_y.add_child(p)` (el Concejo
+  trae su pórtico; el árbol, sus raíces; la guardia, su soportal y su patio). Relleno: igual con `Piezas.RELLENO`
+  (casas → `muros = 2`; sueltas sin muro). `estilo["ambiente"] = Piezas.AMBIENTE`, `luz_jugador` con `LUZ_JUGADOR`,
+  `estilo["hierba_alta"] = 0` y sin las farolas de `zona.gd` (cada una lleva una PointLight2D). Vecinos:
+  `Piezas.muneco_de(id, imagen)` y el `tinte` solo si devuelve la de siempre. Estados: `ronda.poner_estado("farol_n",
+  true)`; `arbol.poner_estado("cofre_raices_abierto", true)` al abrir `oak_cofre_raices`. Muro de la grieta:
+  `muros = 2` en (20-22, 35) y (24-26, 35). Si se quieren a la vista: el tablón a (37, 23) y el tocón a (42, 10.5)
+  (se rehace la pieza en un minuto con `hornear.py`).
+- Coordinador: añadir `aethelgard/ciudades/oakhaven_arte/munecos/` a `docs/versiones/licencias_pendientes.txt`;
+  medir en un hueco sin otra carga (memoria de vídeo y fotograma en PC y Redmi) y decidir si las texturas grandes van
+  comprimidas en VRAM.
+- Oakhaven 3D: partir de los `.blend`; la posada necesita su interior.

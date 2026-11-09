@@ -61,6 +61,17 @@ const F_DERRUMBE := "S17/Mechanical Wave - Rock,Brick and Dirt - Part 02/Crumbli
 const F_SLIME := "C/08_creatures_monsters/slime_48kHz_16bit_"
 const F_AGUA_CC0 := "C/14_water_mud_slime/"
 
+# T-083, tanda 3: la Garganta 3D, las artes nuevas (T-091) y Oakhaven
+const F_CASCADA_GRANDE := "S23/Justsoundeffects - Streams and Rivers/WATRFall_Waterfall Roaring Rumble_03_JSE_SR.wav"
+const F_AULLIDO := "S16/Hzandbits - Howling Winds - Interior/Wind,Int,Howl,Tonal,Mumble.wav"
+const F_GOTA_CUEVA := "S24/InMotionAudio - Cave Design/WATRDrip_SingleDripDesign05_InMotionAudio_CaveDesign.wav"
+const F_ETERNIDAD := "S23/BluezoneCorp - Eternity - Ethereal Ambient/"
+const F_HIELO_DD := "S20/David Dumais Audio - Ice & Frost Magic 1/"
+const F_COPA := "S16/George Karagioules - The Source Collection SFX Pack/Wine Glass Hit Higher Pitch.wav"
+const F_FUEGO_GQ := "S18/Gregor Quendel – Designed Fire/"
+const F_CAMPANA_SUAVE := "S18/CB_Sounddesign – ACTIVATION UI & HUD Sound Effects Library/Bell_10_b.wav"
+const F_CHIRRIDO := "S17/SoundBits - Unsettling Creaks and Squeaks/Metal_Creak_13.wav"
+
 # [derivado, fuente, desde (s), hasta (s, -1 = el final), opciones]
 # opciones: norm ("pico" o "rms"), db (objetivo en dBFS), techo (pico máximo con «rms»), fi / fo (fundidos en s),
 # capas ([[fuente, desde, hasta, en (s), dB], ...] que se suman a la principal), pb (paso bajo en Hz: «lejos»),
@@ -231,6 +242,58 @@ const RECETAS := [
 	["mundo/brazalete", F_CAMPANAS, 0.6, 1.9, {"norm": "pico", "db": -3.0, "fi": 0.15, "fo": 0.6}],
 	["interfaz/libro_hoja", "C/13_paper_books/book_flip_48kHz_16bit_0.23s_02_s14.wav", 0.0, -1, {"norm": "pico", "db": -3.0, "fo": 0.04}],
 	["interfaz/libro_cerrar", "C/13_paper_books/book_close_48kHz_16bit_0.23s_01_s14.wav", 0.0, -1, {"norm": "pico", "db": -3.0, "fo": 0.04}],
+	# ---------------------------------------------------------------- tanda 3: la Garganta 3D (bucles para sonido 3D y gotas)
+	# la cascada grande que cae del muro del norte al abismo: un rugido grave y ancho (no el chorro pequeño de Pastos Verdes)
+	["ambiente/cascada_grande", F_CASCADA_GRANDE, 20.0, 52.0, {"norm": "rms", "db": -21.0, "techo": -2.0, "bucle": 2.0}],
+	# el viento del abismo: un aullido grave y tonal, como el aire que pasa por una rendija
+	["ambiente/viento_abismo", F_AULLIDO, 0.5, 32.5, {"norm": "rms", "db": -24.0, "techo": -3.0, "bucle": 2.0}],
+	# una gota de cueva con su cola de eco (la segunda, más grave: otra gota más grande)
+	["ambiente/gota_cueva_1", F_GOTA_CUEVA, 0.0, 2.2, {"norm": "pico", "db": -3.0, "fo": 1.2}],
+	["ambiente/gota_cueva_2", F_GOTA_CUEVA, 0.0, 2.2, {"norm": "pico", "db": -3.0, "fo": 1.2, "tono": 0.84}],
+	# ---------------------------------------------------------------- tanda 3: las artes (T-091; NO son las 12 magias de siempre)
+	# Alba: una campanilla que sube y un tic de reloj suave (el turno llega antes)
+	["combate/arte_alba", "S19/The Chris Alan - Gliss Bliss/Bell Guitar Gliss Up 01.wav", 0.0, 0.85, {"norm": "pico", "db": -2.0, "fo": 0.3,
+		"capas": [["S23/InspectorJ - Essentials 02 Clocks/CLOCKTick_InsJ_Clock-07_Ticking_Single-01.wav", 0.0, 0.25, 0.5, -8.0]]}],
+	# Ocaso: un tono que cae (marimba, más grave) y un golpe sordo (los enemigos pierden su turno)
+	["combate/arte_ocaso", "S19/The Chris Alan - Gliss Bliss/Marimba Gliss Down Fast 01.wav", 0.0, 0.8, {"norm": "pico", "db": -2.0, "fo": 0.35, "tono": 0.8,
+		"capas": [["S19/344 Audio - Low Frequency Elements/Explosive Hit 10 Filtered, Low End.wav", 0.0, 0.5, 0.6, -2.0]]}],
+	# Hora Dorada: un acorde cálido que crece, con campanillas
+	["combate/arte_hora_dorada", F_ETERNIDAD + "Bluezone_BC0273_eternity_synth_chord_002_01.wav", 0.0, 2.2, {"norm": "pico", "db": -2.0, "fi": 0.05, "fo": 0.9,
+		"capas": [[F_ETERNIDAD + "Bluezone_BC0273_eternity_synth_chimes_texture_001.wav", 2.8, 4.4, 0.25, -5.0]]}],
+	# Escarcha: la coraza de hielo se forma y cruje
+	["combate/arte_escarcha", F_HIELO_DD + "Magic_Spells_CastShort_Ice_General24.wav", 0.12, 1.25, {"norm": "pico", "db": -2.0, "fo": 0.4,
+		"capas": [["S18/Soundrangers - Foley Elements Ice and Snow/ice_freeze_crack_04.wav", 0.78, 1.05, 0.3, -5.0]]}],
+	# la coraza absorbe un golpe: un tintineo de cristal corto (dos golpes distintos de la misma copa)
+	["combate/barrera_absorbe_1", F_COPA, 1.06, 1.42, {"norm": "pico", "db": -3.0, "fo": 0.15}],
+	["combate/barrera_absorbe_2", F_COPA, 4.79, 5.15, {"norm": "pico", "db": -3.0, "fo": 0.15}],
+	# la coraza se rompe: cristal que estalla con hielo debajo
+	["combate/barrera_rota", "S17/Chris Skyes - Shards Broken Glass/Glass,Shards,Smash,Medium Impact,Lots of Large Shards.wav", 0.0, 0.85, {"norm": "pico", "db": -1.0, "fo": 0.2,
+		"capas": [[F_HIELO_DD + "Magic_Spells_Impact_Ice13.wav", 0.12, 0.9, 0.0, -4.0]]}],
+	# Lumbre (Segundo Aliento y Última Brasa): una subida cálida de fuego con una campana suave
+	["combate/arte_lumbre", F_FUEGO_GQ + "Designed Fire - Winds - Binaural, swoosh, waves 02.wav", 0.2, 2.3, {"norm": "pico", "db": -2.0, "fi": 0.1, "fo": 0.6,
+		"capas": [[F_CAMPANA_SUAVE, 0.0, 1.2, 1.25, -5.0]]}],
+	# Lumbre de Retorno: un soplo que se levanta, con brasas
+	["combate/renacer", "S19/Airborne Sound - Airy Whooshes/Whoosh,Sound Design,Airy,Full,Soft,Shudder,Very Slow,Aftershock.wav", 1.0, 2.9, {"norm": "pico", "db": -2.0, "fi": 0.2, "fo": 0.5,
+		"capas": [[F_FUEGO_GQ + "Designed Fire - Swooshes - Burst, evolving 34.wav", 1.9, 3.3, 0.35, -6.0]]}],
+	# Aliento (cura al empezar el turno): unas cuentas que tintinean con un soplo, muy suave
+	["combate/aliento", "S19/Eiravaein Works - Helina/Helinä,windchimes,Pacific,obsidian,beads,kelppods,noclapper,nowindcatcher,twine,release,gentle,shorttail,MidSide.wav", 0.05, 1.3, {"norm": "pico", "db": -4.0, "fi": 0.05, "fo": 0.5}],
+	# Brasa (el aliado caído se levanta): chisporroteo, una campana y una llamarada corta
+	["combate/brasa", "S18/The Sound Keeper - Small Fire/sm-fire-firewood-small-03-DPAmono.wav", 8.0, 9.3, {"norm": "pico", "db": -2.0, "fi": 0.05, "fo": 0.5,
+		"capas": [[F_CAMPANA_SUAVE, 0.0, 1.2, 0.12, -3.0], [F_FUEGO_GQ + "Designed Fire - Swooshes - Burst, evolving 34.wav", 2.0, 2.8, 0.0, -8.0]]}],
+	# esquiva (la Pluma de arpía): un silbido de aire
+	["combate/esquiva_1", "C/04_combat_melee/tin_whistle_whoosh_48kHz_16bit_0.37s_01_s32.wav", 0.0, -1, {"norm": "pico", "db": -3.0, "fo": 0.08}],
+	["combate/esquiva_2", "S19/Airborne Sound - Airy Whooshes/Whoosh,Sound Design,Airy,Full,Forceful,Soft.wav", 0.18, 0.62, {"norm": "pico", "db": -3.0, "fi": 0.02, "fo": 0.12}],
+	# ---------------------------------------------------------------- tanda 3: Oakhaven (los engancha narrativa en su escena)
+	# la campana lejana de la torre (unas campanadas de pueblo, con paso bajo: lejos)
+	["mundo/campana", "S23/Justsoundeffects - Urban Ambiences/AMBRlgn_Church Bells Ringing Village_JSE_UAG.wav", 7.2, 13.6, {"norm": "pico", "db": -3.0, "fi": 0.02, "fo": 1.6, "pb": 3500.0}],
+	# el bullicio de la taberna, oído desde la calle (con paso bajo: a través de la puerta y las paredes)
+	["ambiente/taberna", "S18/West Wolf - Restaurant Ambiences/RA_06_Restaurant_Dinner_Int_Walla_Crowd_50-75 People_Germany_Zoom H4.wav", 20.0, 52.0, {"norm": "rms", "db": -22.0, "techo": -3.0, "bucle": 2.0, "pb": 2600.0}],
+	# el letrero del cuervo de hierro oxidado que chirría con el viento (tres chirridos)
+	["mundo/cuervo_1", F_CHIRRIDO, 0.1, 1.1, {"norm": "pico", "db": -3.0, "fi": 0.08, "fo": 0.3}],
+	["mundo/cuervo_2", F_CHIRRIDO, 2.85, 3.95, {"norm": "pico", "db": -3.0, "fi": 0.08, "fo": 0.3}],
+	["mundo/cuervo_3", "S18/RZ Post - The Creepy Door/Creepy Door, Fast Metal Creak_02.wav", 0.05, 0.95, {"norm": "pico", "db": -3.0, "fi": 0.05, "fo": 0.3}],
+	# un farol que prende (una cerilla que se enciende y la llama que agarra)
+	["mundo/farol", "S20/InspectorJ - Party Pack/Party-Pack_Match_Ignite_02-03.wav", 0.0, 1.5, {"norm": "pico", "db": -2.0, "fo": 0.6}],
 ]
 
 # PROPUESTA de sonido para las 12 magias (T-083, tanda 2): NO se integran (D-048: su presentación está protegida). Solo

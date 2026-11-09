@@ -1,0 +1,147 @@
+{
+ "id": "guardia",
+ "rect": [
+  44,
+  45,
+  5,
+  4
+ ],
+ "sprites": [
+  {
+   "capa": "cuerpo",
+   "archivo": "guardia_cuerpo.webp",
+   "pos": [
+    2796,
+    2418
+   ],
+   "tam": [
+    360,
+    738
+   ],
+   "orden": 3136.0,
+   "tipo": "edificio"
+  },
+  {
+   "capa": "soportal",
+   "archivo": "guardia_soportal.webp",
+   "pos": [
+    2610,
+    2657
+   ],
+   "tam": [
+    210,
+    476
+   ],
+   "orden": 3136.0,
+   "tipo": "edificio"
+  },
+  {
+   "capa": "patio",
+   "archivo": "guardia_patio.webp",
+   "pos": [
+    2821,
+    3125
+   ],
+   "tam": [
+    323,
+    265
+   ],
+   "orden": 3388.8,
+   "tipo": "objeto"
+  }
+ ],
+ "anclas": {
+  "puerta": [
+   2976.0,
+   3168.0
+  ],
+  "farol": [
+   3030.39990234375,
+   3022.0799865722656
+  ],
+  "humo0": [
+   3011.287353515625,
+   2435.2000732421875
+  ],
+  "brasero": [
+   2892.800048828125,
+   3136.000099182129
+  ],
+  "libro": [
+   2720.0,
+   2912.0
+  ],
+  "farol_soportal": [
+   2726.39990234375,
+   2966.39990234375
+  ]
+ },
+ "efectos": [
+  {
+   "tipo": "halo",
+   "ancla": "farol",
+   "radio": 1.1,
+   "fuerza": 0.45
+  },
+  {
+   "tipo": "humo",
+   "ancla": "humo0",
+   "color": "calido",
+   "alto": 2.4,
+   "escala": 0.75
+  },
+  {
+   "tipo": "halo",
+   "ancla": "brasero",
+   "radio": 1.3,
+   "fuerza": 0.55,
+   "color": "vela"
+  },
+  {
+   "tipo": "halo",
+   "ancla": "farol_soportal",
+   "radio": 1.1,
+   "fuerza": 0.45
+  }
+ ],
+ "choques": [
+  {
+   "centro": [
+    45.2,
+    49.9
+   ],
+   "tam": [
+    0.8,
+    0.6
+   ]
+  },
+  {
+   "centro": [
+    48.1,
+    50.55
+   ],
+   "tam": [
+    1.1,
+    0.8
+   ]
+  }
+ ],
+ "marco": [
+  2387,
+  2389,
+  3300,
+  3543
+ ],
+ "suelo": {
+  "archivo": "guardia_suelo.png",
+  "pos": [
+   2413,
+   2427
+  ],
+  "tam": [
+   880,
+   1104
+  ],
+  "escala": 4
+ }
+}

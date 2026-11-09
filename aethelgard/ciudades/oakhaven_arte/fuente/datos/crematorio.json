@@ -1,0 +1,67 @@
+{
+ "id": "crematorio",
+ "rect": [
+  62,
+  7,
+  10,
+  8
+ ],
+ "sprites": [
+  {
+   "capa": "cuerpo",
+   "archivo": "crematorio_cuerpo.webp",
+   "pos": [
+    3948,
+    136
+   ],
+   "tam": [
+    680,
+    892
+   ],
+   "orden": 960.0,
+   "tipo": "edificio"
+  }
+ ],
+ "anclas": {
+  "humo": [
+   4518.39990234375,
+   284.79998779296864
+  ],
+  "puerta": [
+   4288.0,
+   992.0
+  ],
+  "sello": [
+   4288.0,
+   841.5999984741211
+  ]
+ },
+ "efectos": [
+  {
+   "tipo": "humo",
+   "ancla": "humo",
+   "color": "frio",
+   "alto": 4.2,
+   "escala": 1.2
+  }
+ ],
+ "choques": [],
+ "marco": [
+  3804,
+  108,
+  4792,
+  1152
+ ],
+ "suelo": {
+  "archivo": "crematorio_suelo.png",
+  "pos": [
+   3929,
+   121
+  ],
+  "tam": [
+   856,
+   984
+  ],
+  "escala": 4
+ }
+}
