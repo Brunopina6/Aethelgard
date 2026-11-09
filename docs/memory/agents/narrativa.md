@@ -243,3 +243,224 @@ La carpeta de la propuesta no se apunta (`.gdignore`).
 - Con `zona.gd`, `mapa.gd`, `progreso.gd` y `diario.gd` en la mano: `ciudad_oakhaven.gd` y los enganches de §5, y la
   prueba de la ciudad jugada (entrar, hablar con los ocho, una misión entera, un cofre, una nota, la posada y salir).
 - Cuando animaciones suelte los `.dtl`: el texto de T-086 (sesión anterior, §5).
+
+## 2026-11-09, 12:45 — Fase 2 de T-089: Oakhaven enganchada al juego
+
+**Encargo:** que Oakhaven se vea y se juegue. Desde el mapa, el lugar 0 abre una ciudad hecha a mano,
+`ciudad_oakhaven.tscn`, que hereda de `zona.gd` como la Garganta y usa los datos de la fase 1. Archivos asignados:
+`zona.gd` (métodos que se puedan sobrescribir), `ciudad_oakhaven.gd` y `.tscn`, la entrada del lugar 0 en `mapa.gd`,
+`progreso.gd` (`CIUDADES`, `notas_de()` y `ver_nota()`), la sección «Notas» de `diario.gd` y el ramito de lavanda de
+`zonas3d/pastos_verdes_3d.gd`. El arte lo hace gráficos aparte: aquí, el provisional.
+Copia `D:\Aethelgard_narrativa`, rama `area-narrativa`, desde `ab250c9`. Un límite de uso cortó la sesión a media
+tarea; se retomó desde los cambios sin confirmar, que se revisaron antes de seguir.
+
+### 1. Archivos y commits
+| Commit | Qué |
+|---|---|
+| `2be0bf1` | Los `.uid` de los archivos de la fase 1, que generó la importación pedida |
+| `acc8e74` | `zona.gd`: los métodos que una ciudad puede sobrescribir, sin cambiar lo que hacen las demás zonas |
+| `c69fba1` | `progreso.gd` (`CIUDADES`, `notas_de()`, `ver_nota()`) y `diario.gd` (sección «Notas») |
+| `59140ea` | `ciudad_oakhaven.gd`, `.tscn` y `.uid`; la entrada en `mapa.gd`; textos nuevos en `ciudades/oakhaven.gd` |
+| `32f6325` | `zonas3d/pastos_verdes_3d.gd`: solo el ramito de lavanda |
+| `557f5fe` | `prueba_oakhaven` y `prueba_oakhaven_fotos` (con sus `.uid` y su línea en la lista); `prueba_foco`, `prueba_escenas` y `prueba_ciudad_datos`, al día |
+| `ee438b7` | `ciudad_oakhaven.gd`, preparada para el arte de gráficos tal como lo está montando (casas, farolas, estados y ambiente) |
+| `d62fae3` | `prueba_oakhaven` prueba también el camino del arte, con `pruebas/oakhaven_arte_falso.gd` |
+| `77aabdc` | `prueba_foco_fotos` espera la ciudad nueva |
+| (este) | Este informe |
+
+**`zona.gd`** (observado en el código; las pruebas de las otras zonas siguen pasando):
+- `_poner_altar()` y `_adornar_altar()`, el altar y su orbe;
+- `_npcs()`: cada vecino puede traer `casilla` (en vez de `lugar`, respecto a la plaza), `tinte`, `escala` y `corto`
+  (para «Hablar con»); sin ellos, lo de siempre;
+- `_dialogo_npc()`, qué diálogo toca; al abrirse uno, el vecino pasa de turno (sus frases de respaldo, igual que
+  antes);
+- `_pagar_posada()` y `_tras_posada()`;
+- `_brillo_brazalete()`, el brillo, aparte;
+- el muro 3: muro invisible (choca, no se dibuja, no crece hierba), que solo pone una ciudad.
+- Las líneas de sonido no cambian.
+
+**`ciudad_oakhaven.gd`: qué se juega ya** (comprobado ejecutando, ver §2)
+- **Entrar desde el mapa:** «Entrar: Oakhaven» abre la ciudad. Kael aparece en la Puerta del Sur. Suena el ambiente
+  de ciudad (ver §5, `musica.gd`). Al salir por la puerta se vuelve al mapa.
+- **El trazado** de `ciudades/oakhaven.gd`:
+  - calles, plaza y patios empedrados; la colina, las raíces y el jardín de urnas, con hierba;
+  - la muralla, con la Puerta del Sur abierta (la del este, doble: la ronda va por encima);
+  - edificios de tejado (taberna, botica, Concejo, cuerpo de guardia) y de piedra (torre, crematorio);
+  - el resto, casas con jardines entre ellas. Los jardines no se pisan y tienen setos junto a las calles, para que
+    se note;
+  - unas 21 farolas en las calles, la plaza, la puerta, el soportal y el crematorio (en la Oakhaven generada había
+    unas 20), más los 3 faroles de la ronda.
+- **Los ocho vecinos**, en su casilla y con su muñeco provisional (tinte y escala). Su diálogo, por
+  `Oak.dialogo_de()`: lo de una misión en curso va primero; si no, se turnan.
+- **Las señales de Dialogic** (`oak:…`):
+  - misiones, pagos y recompensas, una sola vez;
+  - sus avisos salen al cerrar el diálogo, de uno en uno, con un efecto que ya existía (`pagina`, `tesoro`,
+    `ui_confirmar`, `monedas`);
+  - la partida se guarda al acabar el diálogo.
+- **La posada:**
+  - con la noche gratis de «Tres favores para el Cuervo», no cobra y el botón dice «POSADA (gratis)»;
+  - al despertar, la escena de los que están en el grupo; con la noche gratis, después, «Esta noche invita la
+    posadera.».
+- **Cuatro cofres** con id escrito y premio fijo. Los escondidos brillan mientras están cerrados: el de la ronda y el
+  de las raíces, entre las hojas. El de los requisados sigue cerrado (aviso de Aldric) hasta que Kael ha salido
+  (en 3D, PV-02); deja su nota en el Diario.
+- **Las piezas:**
+  - el barril (favor de la posadera);
+  - la torre: con un fundido, sube a la ronda; la primera vez, la vista;
+  - los tres faroles: «Encender» con la misión de Bastián; «Examinar» sin ella; encendidos dan luz y ya no se usan;
+  - la escalera para bajar;
+  - la grieta, que se pasa de lado en los dos sentidos.
+  - Lo de la ronda solo se usa estando en la ronda: desde el suelo, al pie de la torre, quedaba a menos de 90 px.
+- **El Patio de las Velas, a oscuras** hasta pasar la grieta. Desde el callejón solo se ve la luz de la grieta, y el
+  brazalete brilla cerca de ella mientras no se haya pasado.
+- **Las cinco notas** con casilla se examinan, dan su aviso y quedan en el Diario («Nueva nota en el Diario: «…»»).
+  No completan ningún acto. La sexta sale del cofre de los requisados.
+- **Los detalles de canon,** en su sitio nuevo: el sello, a la puerta del crematorio; el tapiz, en el pórtico. Siguen
+  siendo detalles: brazalete, Diario y página del acto I.
+- **El Árbol Milenario** en lugar del altar, provisional: el arce grande, único en la ciudad.
+  - «Examinar» a su pie da `TEXTO_ARBOL`.
+  - Su copa se vuelve translúcida si Kael pasa por detrás.
+  - En las raíces, la cámara sube para que se vea entera.
+- **Las dos vistas:** desde la torre (con texto distinto tras PV-07) y desde las raíces, la primera vez. De momento
+  son avisos; las viñetas están pedidas.
+- **Tras cada cambio de la partida** (cofre, nota, pieza, señal o posada) se guarda.
+- **La música:** `musica.gd` elige por la escena y aún no conoce esta. Mientras, la ciudad pide su contexto,
+  «ciudad». Cuando `musica.gd` la conozca, ese código no hará nada (ver §5).
+
+**El arte** (contrato con gráficos, completo en la cabecera de `ciudad_oakhaven.gd`):
+- si existe `ciudades/oakhaven_piezas.gd` con `crear_pieza(id, rect_casillas, tam_casilla)`, se le pide un dibujo
+  para:
+  - cada lugar de `LUGARES`, cada pieza, cada nota con casilla y cada detalle;
+  - cada casa del relleno (`casa_<ancho>x<alto>`) y cada farola de las calles (`farol`).
+- El nodo va a `mundo_y`. Si viene en (0, 0), se pone en la esquina de arriba a la izquierda de su huella; si no, se
+  respeta su posición.
+- Bajo el dibujo de un edificio o una casa, sus casillas pasan a muro invisible.
+- Hablar, examinar y usar se miden desde las casillas de los datos, no desde el dibujo.
+- Un `Node2D` vacío evita la provisional de una pieza que ya dibuja su lugar (el letrero en la taberna, los faroles en
+  la ronda…).
+- **Estados:** `poner_estado("farol_1"…"farol_3", encendido)` y `poner_estado(<id del cofre>, cerrado)`. Si un dibujo
+  pinta el destello de un cofre (`tiene_estado`), la ciudad no pone el suyo. A un farol con `encender(si)` se le
+  llama.
+- Si el módulo trae `AMBIENTE`, es la luz ambiente de la ciudad.
+- **Comprobado con un módulo falso** (`prueba_oakhaven`, apartado 11), porque el de verdad aún no está publicado.
+- Visto sin tocarlo (solo lectura, 12:25): el borrador de gráficos en `D:\Aethelgard_graficos`, sin confirmar, ya usa
+  esta forma: `Pieza` con `poner_estado` y `tiene_estado`, `AMBIENTE` y piezas `casa_4x4` y `farol`. Ver §5.
+
+**`progreso.gd` y `diario.gd`:**
+- `CIUDADES = {0: "res://ciudades/oakhaven.gd"}`;
+- `notas_de(lugar)` lee `NOTAS` del módulo;
+- `ver_nota(id)` apunta en `lore_visto` solo las notas de una ciudad y nunca completa un acto. `Oak.ver_nota()` pasa
+  por ella.
+- Ni claves nuevas ni cambios en guardar, cargar o sus protecciones.
+- En el Diario, la sección «Notas» va bajo los actos, con las leídas («nombre · lugar» y el texto). No aparece hasta
+  leer la primera.
+
+**`pastos_verdes_3d.gd`:** el ramito sale junto al camino, antes del puente, si Rosa lo pidió y no se ha cogido.
+- «Coger la lavanda» aplica la señal una vez, avisa, lo quita y guarda.
+- Provisional (espigas moradas y un destello) y sin choque.
+- Nada más de la región cambia.
+
+**Textos nuevos que ve el jugador** (todos en `ciudades/oakhaven.gd`, revisados por `prueba_ciudad_datos`: D-033,
+D-073 y largo de aviso)
+| Dónde | Texto |
+|---|---|
+| Vista desde la torre (antes de PV-07) | «Al sureste, un brillo morado. Al norte, la niebla.» |
+| Vista desde la torre (tras PV-07) | «Al sureste, un brillo morado. Al norte, la niebla. Y arriba, la ciudad flotante.» |
+| Vista desde las raíces | «Desde las raíces se ve la ciudad entera. Los faroles se encienden en ola.» |
+| Al despertar con la noche gratis | «Esta noche invita la posadera.» |
+| Nota nueva | «Nueva nota en el Diario: «‹nombre›»» (como la página nueva de los detalles) |
+| Botones | «Subir el barril», «Subir», «Bajar», «Encender», «Pasar», «Examinar» (de los datos) y «Coger la lavanda» (3D) |
+
+### 2. Pruebas
+- **Importación aislada** (lo pedido, antes de empezar): `D:\REBELUM_diagnostico\importaciones\narrativa_20261109_082934\importacion.log`,
+  salida 0.
+  - Creó los `.uid` de los archivos de la fase 1 (confirmados, `2be0bf1`).
+  - Añadió en `project.godot` los 4 personajes y los 27 diálogos de Oakhaven (`dialogic/directories`). Ese archivo no
+    es mío: lo dejé como estaba (ver §5). Con `registrar_dialogic()`, el juego funciona igual con ellos o sin ellos;
+    las pruebas se pasaron sin ellos, como está confirmado.
+  - Dos importaciones más (`narrativa_20261109_121920` y `_123130`) dieron los `.uid` de los guiones nuevos.
+- **`prueba_oakhaven`** (comprobado ejecutando, aislado, 2026-11-09): **SUPERADA, FALLOS: 0**, en 6-14 s.
+  - Recorre los once apartados de su cabecera: entrar, trazado, los ocho vecinos, Pip y los favores, la posada, la
+    torre y los faroles, la grieta, los cofres, la nota y el Diario, salir y volver, guardar y cargar, la lavanda con
+    Pastos Verdes 3D y el camino del arte con el módulo falso.
+  - Usa su propia partida (`user://prueba_oakhaven.save`).
+- **Repaso pedido** (comprobado ejecutando, aislado, 2026-11-09 a las 12:16): **13 de 13 SUPERADAS**
+  (`D:\REBELUM_diagnostico\pruebas\2026-11-09_121605\resumen.md`).
+  - `prueba_ciudad_datos`, `prueba_oakhaven`, `prueba_foco`, `prueba_escenas`, `prueba_musica`,
+    `prueba_guardado_protegido`, `prueba_dialogo_interfaz`, `prueba_mapamundi` y `prueba_efectos`;
+  - además, `prueba_partida`, `prueba_guardado`, `prueba_cofre` y `prueba_dialogo`.
+  - `prueba_foco` (6, la ciudad) y `prueba_escenas` ahora entran en `ciudad_oakhaven.tscn`. `prueba_musica` sigue usando
+    `zona.tscn` con el lugar 0, que no cambia.
+- **Batería completa** (comprobado ejecutando, aislado, 2026-11-09, sobre `557f5fe`): **SUPERADAS 43 · FALLIDAS 0 ·
+  MANUALES 26 · NO SEGURAS 0** (`D:\REBELUM_diagnostico\pruebas\2026-11-09_122212\resumen.md`).
+  - La partida real, su carpeta y el proyecto, sin cambios. Había otros Godot abiertos, de otras copias.
+  - En la fase 1 fueron 40 y 23. Las nuevas son `prueba_oakhaven` y `prueba_oakhaven_fotos`, más las que otras áreas
+    añadieron entre medias.
+- **Tras los cambios del arte** (`ee438b7` y `d62fae3`), sobre `d62fae3`:
+  - las seis de la ciudad, **SUPERADAS** (`prueba_oakhaven`, `prueba_ciudad_datos`, `prueba_foco`, `prueba_escenas`,
+    `prueba_musica` y `prueba_precalentado`; `2026-11-09_123215`);
+  - `prueba_foco_fotos`, con ventana: 8 capturas, la de la ciudad ya en la nueva (`2026-11-09_123621`).
+- **Capturas con ventana** en `D:\REBELUM_diagnostico\oakhaven\2026-11-09\`:
+  - `antes\`: cinco, de `zona.tscn` con el lugar 0, sobre `ab250c9`;
+  - `despues\`: dieciocho, entrando desde el mapa, sobre `d62fae3`;
+  - `comparacion_antes_despues.png`: las cinco tomas comunes, lado a lado.
+
+### 3. Evidencias
+- **Capturas:** las rutas de §2. La lámina compara entrada, plaza, norte (el altar frente al Árbol), la ciudad entera
+  y un diálogo.
+  - En `despues\` están, además: el Cuervo, el callejón con el patio a oscuras, el patio al pasar la grieta, el
+    crematorio, la ronda apagada y encendida, el Árbol y su copa translúcida, el mercado, el Diario con «Notas», la
+    posada gratis, su escena y el ramito en Pastos Verdes 3D.
+- **Cómo se ve** (revisado a ojo, en el PC):
+  - una ciudad densa de calles empedradas entre casas, en vez del prado con casas sueltas de antes;
+  - los lugares de canon se reconocen: la taberna con su cuervo de hierro, el crematorio de piedra con la puerta
+    sellada y el Árbol al norte.
+  - Es arte provisional: tejados y piedra de `zona.gd`, objetos dibujados por código y la ilustración de un arce.
+
+### 4. Límites y pendientes de decisión
+- **Partidas guardadas dentro de la Oakhaven de antes** (`escena_guardada = zona.tscn` y lugar 0): al cargarlas se abre
+  la zona generada de siempre, hasta salir al mapa y volver a entrar. Lo resolvería una línea al cargar, en
+  `progreso.gd` (`restaurar()`) o en `carga.gd`. No los toco: son la carga de la partida. Ver §5.
+- **`musica.gd`** no es mío. Mientras no tenga su línea, la ciudad pide la música con `Musica.pedir("ciudad")`.
+- **Sin medir en el Redmi:**
+  - unas 25 luces de llama (21 farolas, 3 faroles y las velas) y la del Árbol; en la Oakhaven generada, unas 20;
+  - el coste de las casas y los jardines.
+  - Con el arte de gráficos, las farolas serán las suyas, sin luces 2D según su cabecera.
+- **Muñecos y retratos provisionales,** como en la fase 1. Bastián no va «de farol en farol»: está quieto.
+- **Vistas:** de momento, avisos. Las viñetas pintadas están pedidas.
+- **Sin cambios** en lo que espera al usuario (n.º 1, Olvido; 2, la Cripta; 3, Aldea Rocío; 5, Pip guía): sigue la
+  versión neutra.
+
+### 5. Siguiente paso y cambios en archivos de otros
+- **`musica.gd`** (pedido, de sonido o del coordinador): en `contexto_de()`, junto a los demás casos,
+  `"res://ciudad_oakhaven.tscn": return "ciudad"`. Con eso, lo de la ciudad no hace nada.
+  - Después, conviene que `prueba_musica` pase también por `ciudad_oakhaven.tscn`.
+- **Partidas antiguas en Oakhaven** (propuesta, del coordinador): en `progreso.gd` `restaurar()`, si
+  `escena == "res://zona.tscn"` y el lugar guardado es el 0, volver a `"res://ciudad_oakhaven.tscn"` con
+  `pos_zona_ok = false`, para entrar por la puerta: las posiciones de antes no valen en el trazado nuevo.
+  - La ciudad ya se protege de una posición que no sea calle: pone a Kael en la puerta.
+- **`project.godot`** (del coordinador): confirmar o no lo que añade la importación en `dialogic/directories` (4
+  personajes y 27 diálogos). Con o sin ello funciona igual.
+- **Para gráficos** (`oakhaven_piezas.gd`):
+  - **Ids que pide la ciudad:** los de `LUGARES`, `PIEZAS`, `NOTAS` (con casilla) y los detalles `oak_sello` y
+    `oak_tapiz`; `casa_<ancho>x<alto>` para cada casa del relleno (de 3 a 6 de ancho y de 3 a 4 de alto); `farol` para
+    cada farola de calle.
+  - Para lo que ya pinte un lugar (letrero, faroles de la ronda, sello), un `Node2D` vacío.
+  - **Tamaños,** en casillas de 64 px (de `LUGARES`):
+    - Edificios: taberna 10 × 6 (fachada al sur, a la Calle del Cuervo), crematorio 10 × 8 (puerta sellada al sur, en
+      (67, 15,5)), Concejo 9 × 5 (pórtico de 9 × 2 al sur), botica 5 × 5, cuerpo de guardia 5 × 4, torre 4 × 4 (puerta
+      al sur, en (73,5, 42)).
+    - Árbol: tronco 4 × 4 con el pie en (40, 9). La copa provisional mide unas 5,3 × 8,8 casillas. En las raíces, la
+      cámara sube hasta el borde de la ciudad para enseñarla.
+  - **Piezas y notas,** por su casilla: barril (12, 29); tres faroles en la ronda (76,5; 38,5, 34,5 y 31,5), con
+    `encender(si)` o los estados `farol_N` de la ronda; escalera (76,5, 41,5); grieta (23, 35), una casilla del muro
+    del callejón; tablón (36, 29); letrero del cuervo (13, 25,5); raíz cortada (45, 10); atril con el libro
+    (42,5, 46,5); altar de las velas (25,5, 38). Detalles: sello (67, 16) y tapiz (47, 22).
+  - **Viñetas:** `oak_vista_torre` y `oak_vista_raices`. Hoy son avisos. Propuesta: que `crear_pieza` las devuelva con
+    su id y la ciudad las enseñe 4-6 s, saltables con un toque.
+  - **En 3D:** el ramito de lavanda.
+- **Para sonido** (lo de la fase 1, sigue pendiente): campana lejana, bullicio de taberna, el chirrido del cuervo de
+  hierro y un farol que prende. Hoy suenan efectos que ya existían.
+- **Siguiente paso de narrativa:** cuando gráficos publique su módulo, repasar las capturas con el arte de verdad y
+  pasar `prueba_oakhaven`. Cuando el usuario decida n.º 1, 2, 3 y 5, adoptar la propuesta
+  (`dialogos/oakhaven/propuesta/`, fase 1).

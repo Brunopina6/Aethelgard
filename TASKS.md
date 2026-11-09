@@ -64,17 +64,17 @@
 | [T-086](#t-086) | Narrativa: el diálogo inicial y la misión de Pastos Verdes | Revisión hecha; falta aplicarla | Media |
 | [T-087](#t-087) | Combate: estabilidad con uno, dos y tres héroes y eventos sonoros de ataque e impacto | Pendiente | Media |
 | [T-088](#t-088) | GitHub: rama de integración y ramas por área, con revisión antes de cada push | En curso (tanda 1 subida) | Alta |
-| [T-089](#t-089) | Mejorar todas las ciudades del juego (encargo del 08/11, 23:05) | En curso: Oakhaven (datos integrados; enganche y arte en marcha) | Alta |
+| [T-089](#t-089) | Mejorar todas las ciudades del juego (encargo del 08/11, 23:05) | En curso: Oakhaven 2D jugable (`808a836`); el arte en marcha y el objetivo, el 3D (T-103) | Alta |
 | [T-090](#t-090) | Muchos sitios nuevos que explorar, coherentes con el canon y el mapamundi | Diseño hecho (fase 0) | Alta |
-| [T-091](#t-091) | Magias nuevas, sin cambiar las existentes | En curso (fase 1: datos y red de seguridad) | Alta |
-| [T-092](#t-092) | Equipo nuevo: accesorios y armas especiales (encargo del 08/11, 23:35) | En curso (fase 1: datos) | Alta |
+| [T-091](#t-091) | Magias nuevas, sin cambiar las existentes | Alba y Lumbre jugables (`808a836`); Escarcha pendiente | Alta |
+| [T-092](#t-092) | Equipo nuevo: accesorios y armas especiales (encargo del 08/11, 23:35) | Ranura Accesorio jugable (`808a836`); armas especiales pendientes | Alta |
 | [T-093](#t-093) | Enemigos nuevos, con identidad táctica | Diseño hecho; espera decisiones del usuario | Alta |
 | [T-094](#t-094) | Compañeros de viaje: propuesta y versión que no cambie el canon | Propuesta hecha; decide el usuario | Media |
 | [T-095](#t-095) | La Garganta del Diablo en 3D, como mazmorra (petición del 09/11) | Maqueta integrada; se elige en Ajustes (v136) | Alta |
 | [T-096](#t-096) | Dos skills de Claude: Godot (Atlas Agent Teams) y Blender Animation (Dominations) | Hecha (`129b517`) | Alta |
 | [T-097](#t-097) | El bestiario: Zarzalín y las otras cinco bestias como enemigos jugables | Pendiente | Alta |
 | [T-098](#t-098) | El nombre REBELUM en la pantalla de carga y el icono nuevo de la app | Pendiente | Alta |
-| [T-099](#t-099) | Barra de PM de cada personaje en el HUD de combate | Pendiente | Alta |
+| [T-099](#t-099) | Barra de PM de cada personaje en el HUD de combate | En curso (combate, desde las 13:05) | Alta |
 | [T-100](#t-100) | Artes jugables (continúa T-091) y la técnica de guardia de Garon | Pendiente | Alta |
 | [T-101](#t-101) | La invocación de Érebo, una cinemática que merezca verse | Pendiente | Alta |
 | [T-102](#t-102) | Pulir la Garganta del Diablo 3D como mazmorra, con acabado de juego | Pendiente | Alta |
@@ -767,6 +767,15 @@
   - narrativa la engancha al juego (`ciudad_oakhaven.gd`, que hereda de `zona.gd`, la entrada desde el mapa y las notas
     en el Diario);
   - gráficos hace su arte en `ciudades/oakhaven_arte/` y lo da por `ciudades/oakhaven_piezas.gd` (`crear_pieza`).
+- **Fase 2, integrada** (`95f61c3` y `808a836`, 09/11 a las 13:10). Comprobado ejecutando, aislado:
+  - **Qué se juega:** `ciudad_oakhaven.tscn`, una ciudad hecha a mano que hereda de `zona.gd`, con los ocho vecinos,
+    las cuatro misiones, la posada con noche gratis, los cofres con id escrito, la torre, los faroles, la grieta, el
+    Patio de las Velas y el Árbol Milenario.
+  - **Partidas antiguas:** las guardadas en la Oakhaven generada abren la nueva por su entrada (`progreso.restaurar()`,
+    `prueba_restaurar_escenas`).
+  - **Batería:** 51 superadas, 0 fallidas (`D:\REBELUM_diagnostico\pruebas\2026-11-09_125552\`).
+  - **Capturas:** `D:\REBELUM_diagnostico\oakhaven\2026-11-09\`.
+  - **Pendiente:** el arte (gráficos) y el paso a 3D ([T-103](#t-103)); esta versión queda como referencia funcional.
 - **Petición** [usuario, 08/11, 23:05]: «quiero que mejores todas ciudades del juego quiero un juego ambicioso».
 - **Criterio de aceptación:**
   - inventario de las ciudades que existen (2D y 3D) y de lo que tiene cada una;

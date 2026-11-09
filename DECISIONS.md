@@ -1311,6 +1311,17 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
   se cae al cerrar (0xC0000005). Se guarda su ruta.
 - **Oakhaven:** el arte se entrega en un módulo aparte (`crear_pieza`). Así narrativa y gráficos trabajan en paralelo
   sin tocar los mismos archivos.
+- **Partidas antiguas (13:00):** una partida guardada en la Oakhaven generada abre la ciudad hecha a mano, por su entrada.
+  Una de la Garganta 2D abre la 3D si está elegida. `prueba_guardado_protegido` acepta la ciudad nueva para una
+  partida en Oakhaven.
+- **`project.godot`:** se confirma el registro de Dialogic de los personajes y diálogos de Oakhaven, que la importación
+  añade sola.
+- **Combate fase 2 (`808a836`):**
+  - Compás del Alba desde el nivel 3, Peso del Ocaso desde el 9, Lumbre de Retorno desde el 4 y Segundo Aliento desde
+    el 10;
+  - libros a la venta (350 y 450);
+  - dos accesorios a la venta (Farol de peregrino, 220; Moneda del Águila, 450).
+  - Todo se puede cambiar si el usuario lo prefiere de otra forma.
 - **Combate: lo adoptado del diseño** (`docs/diseno/combate_ampliaciones.md`, rama `area-combate`):
   - pestañas por familia en el menú de magia;
   - la ranura se llama «Accesorio»; nada de «Quiebrasello»;

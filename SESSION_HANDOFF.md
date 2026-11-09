@@ -19,6 +19,15 @@ pidió no preguntar ([MEMORIA_CHAT.md](MEMORIA_CHAT.md)). **La memoria describe 
   (desde `c74b872`): diseño y maqueta jugable, activable con `-- garganta3d`.
 - **Mapamundi pintado: integrado** (`a04a9d2`) con el selector en Ajustes (`14aea04`). Batería: 40 superadas, 0
   fallidas. Falta medirlo. La memoria describe `integracion-experimental` @ `14aea04`.
+- **09/11, 13:10, integrado y subido** (`integracion-experimental` @ `808a836`, batería con 51 superadas y 0
+  fallidas):
+  - Oakhaven 2D jugable, hecha a mano;
+  - las partidas antiguas, redirigidas;
+  - combate fase 2: Alba y Lumbre jugables, ranura Accesorio y la huella con C0;
+  - las fichas de las artes en el Diario.
+
+  **Trabajan:** combate (HUD: barra de PM, motivos, Érebo visible y señas de las artes), narrativa (texto de T-086),
+  gráficos (arte de Oakhaven), sonido (tanda 3) y animaciones (Zarzalín). La memoria describe `808a836`.
 - **Objetivo vigente para todas las ciudades, pueblos y posadas: 3D jugable al nivel de Pastos Verdes**
   ([D-076](DECISIONS.md#d-076), [T-103](TASKS.md#t-103)). Primero, el tramo pulido de la Garganta
   ([T-102](TASKS.md#t-102)); después, el primer recorrido 3D de Oakhaven con su posada. Va cuando termine lo que está
