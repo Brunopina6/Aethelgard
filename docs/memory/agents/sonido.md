@@ -395,3 +395,122 @@ Sin confirmar, porque no son míos: `aethelgard/project.godot` (Dialogic apunta 
 - **Coordinador**: decidir el eco al escucharlo (y si se pone también en la Garganta 2D: sería `Sonido.eco(self,
   "garganta")` en `garganta.gd`); medir la Garganta 3D en el Redmi; confirmar o descartar los `.uid` y
   `project.godot` de la importación.
+
+## 2026-11-09, 18:00 · T-097 (sonido) y T-083, tanda 4: las seis bestias del bestiario y los héroes quietos
+
+Rama `area-sonido`. Antes de empezar, integrado `integracion-experimental` (`eb8bd94`) con `merge --no-ff` (`acf08b1`,
+como pidió el coordinador) e importado con datos aislados (`D:\REBELUM_diagnostico\importaciones\sonido_20261109_172218`;
+solo apareció `prueba_orden_pv03.gd.uid`, que no es mío y no confirmo). La tanda se paró una vez por un límite de uso del
+coordinador y se retomó donde estaba. **No he podido escuchar nada**: las pruebas dicen qué suena, cuántas veces, por
+qué bus y a qué nivel sale, no cómo suena. **No se ha usado el Redmi** (norma nueva del usuario): lo que lo necesita
+está marcado «pendiente en Redmi».
+
+### 1. Qué se ha hecho
+
+- **Las seis bestias, solo en el catálogo** (no he tocado `combate.gd`, `enemigos/**`, los `.dtl`,
+  `ciudad_oakhaven.gd`, `zonas3d/**` ni `mapa*`): 51 derivados en `audio/efectos/bestias/` y 44 efectos en
+  `sonido.gd`, con nombres por bestia y evento: `<bestia>_aviso_<ataque>` (la preparación, al empezar el ataque; acaba
+  antes del impacto de la ficha), `<bestia>_<ataque>` (el impacto, en el instante del golpe, junto al `Sonido.golpe()`
+  de siempre, que dice si el héroe se defiende), `<bestia>_herido` y `<bestia>_caida` (su voz, sola con
+  `Sonido.recibe()` por `FAMILIAS`) y `<bestia>_entrada`. Zarzalín tiene además `zarzalin_pezuna` (cada señal
+  `pezuna(n)` de `zarzalin_3d.gd`) y `zarzalin_derrumbe` (al empezar su clip `derrota`; el cuerpo toca la tierra a
+  0,60 s, fotograma 19). La tabla con cada nombre, para quién, en qué instante, original, bus, dB, prioridad y nivel
+  medido, y el código para pedirlos: `docs/audio/inventario_sonidos.md` (tanda 4).
+- **Tiempos**: los de las fichas y los de los GLB del bestiario (leídos con un guion propio en Python, sin instalar
+  nada): la postura de aviso de cada ataque se sostiene hasta poco antes del impacto (p. ej. el Cencerrante 0,3-0,6 s,
+  impacto 0,73; el Posadero 0,5-0,77, impacto 0,97). Los de Zarzalín, de `zarzalin_3d.gd` (animaciones): aviso a
+  0,267 s, pezuñas a 0,467 y 0,733, embestida 0,167 s desde la carga.
+- **Prioridades y volúmenes**: avisos prioridad 3 (el jugador tiene que oírlos), impactos 2, voces como la tanda 2
+  (herido 2, caída 3, grupo «voz»); el Posadero (jefe opcional) 2-3 dB más y prioridad 3 en todo. Sin voz de «ataque»:
+  el aviso hace ese papel. `Sonido.BESTIAS` lista los efectos de cada bestia.
+- **Licencias**: todo de los paquetes GDC de Sonniss 2016-2024 (PDF en la carpeta de cada paquete; releídos el 09/11
+  los de 2020 y 2024: uso y modificación en juegos sin atribución, no venderlos tal cual, no entrenar IA). Ninguna
+  fuente CC0 nueva; nada de 2015, TomMusic, «Helton Yan's Pixel Combat» ni Suno. Fila de `docs/recursos.md` al día.
+- **Héroes quietos** (lo que pidió el coordinador si quedaba margen): `Pasos3D` (el nodo de pasos que ya tiene cada
+  personaje 3D) cuenta el tiempo parado; a los 7-14 s suena un gesto muy discreto del personaje y, mientras siga
+  parado, otro cada 22-40 s: Kael se recoloca el cuero y suelta el aire; Lya sorbe por la nariz y se ajusta la tela;
+  Garon mueve el equipo y respira hondo. Uno a la vez entre los tres, por Efectos, prioridad 0, los compañeros desde su
+  sitio. No hace falta tocar ninguna escena (va donde ya hay `pasos_3d`: Pastos Verdes y la Garganta 3D).
+
+### 2. Archivos y commits (rama `area-sonido`)
+
+| Commit | Qué |
+|---|---|
+| `acf08b1` | Merge de `integracion-experimental` (`eb8bd94`) |
+| `2f419df` | 51 derivados `audio/efectos/bestias/` (+ `.import`), `pruebas/prueba_efectos_preparar.gd` (recetas), `docs/audio/efectos_procedencia.csv` |
+| `ae93921` | `sonido.gd`: catálogo de las bestias, `FAMILIAS`, `BESTIAS` |
+| `d5d4ee7` | `pruebas/prueba_efectos.gd` (parte «bestias»), `pruebas/prueba_efectos_senal.gd` («mezclas=4»), `pruebas/lista_pruebas.txt` |
+| `78ae103` | `docs/audio/inventario_sonidos.md`, `docs/recursos.md` |
+| `5a1d108` | 6 derivados `audio/efectos/heroes/`, recetas y CSV |
+| `404a315` | `sonido.gd`: gestos de los héroes quietos (`QUIETO`, `Pasos3D`, `grupo_sonando`) |
+| `ff786ae` | `pruebas/prueba_efectos.gd` (parte «quietos»), `pruebas/prueba_efectos_senal.gd` |
+| `b9507f8` | `docs/audio/inventario_sonidos.md`, `docs/recursos.md` (héroes quietos) |
+| (este) | `docs/memory/agents/sonido.md` |
+
+Sin confirmar, porque no es mío: `aethelgard/pruebas/prueba_orden_pv03.gd.uid` (lo generó Godot al importar).
+
+### 3. Pruebas (todas con datos aislados)
+
+- `prueba_efectos`, partes «catalogo», «bestias», «quietos» y «voces» (09/11, sin ventana): **0 fallos**. Catálogo:
+  143 efectos, 220 archivos (QOA, mono, 48 kHz; ni saturan ni son mudos). Bestias: los 44 efectos cargan y suenan una
+  vez aunque se pidan dos, por Efectos; los avisos acaban antes de su impacto (la prueba cazó el del martillo del
+  Custodio, que duraba 1,00 s: recortado a 0,82); herido y caída por familia, sin «_ataque»; el Posadero entra con dos
+  voces sonando y una voz de otra bestia no quita la suya. Quietos: 3/2/2 gestos en 45 s, nunca dos a la vez; andando,
+  ninguno (sin ventana el driver es mudo y nada acaba solo: la prueba da cada gesto por acabado a los 2 s).
+- `prueba_efectos_senal` (con ventana, el driver real, con el ejecutor y `-Lista` propia): **0 fallos**, 57
+  grabaciones (`D:\REBELUM_diagnostico\pruebas\2026-11-09_173632\`) y 3 de los gestos (`…\2026-11-09_174602\`). La
+  primera pasada (17:33) se cortó sola tras 49 grabaciones, sin error en los registros (había 8 Godot de otras copias,
+  algunos con ventana); la segunda, igual pero con los niveles ya ajustados, terminó entera. Lanzarla a mano con `&`
+  (sin el ejecutor) también se cortó: uso siempre el ejecutor.
+- `prueba_efectos_preparar -- <biblioteca> comprobar`: **146 de 146 originales intactos**.
+- **Batería completa** (automáticas, 09/11 a las 17:47, con `b9507f8`): **55 superadas, 2 fallidas, 31 manuales, 0 no
+  seguras**; `partida.save` real y carpeta real de datos, sin cambios. Resumen:
+  `D:\REBELUM_diagnostico\pruebas\2026-11-09_174741\resumen.md`. Pasan `prueba_efectos` (entera, con «bestias» y
+  «quietos»), `prueba_audio`, `prueba_musica`, `prueba_garganta3d`, `prueba_anim_pies` y `prueba_combate_huella`.
+  - **Las dos fallidas no son de sonido**: `prueba_mando` y `prueba_teclado` fallan en el mismo punto, «Intro / A junto
+    a Tilo no abre el diálogo». Llegan con el merge: `c3f5692` (en `eb8bd94`) cambió lo que pasa al hablar con Tilo
+    antes de PV-03, y nada de esta tanda toca diálogos ni Pastos Verdes (los gestos de quieto solo suenan). Pendiente de
+    confirmar en `integracion-experimental` por quien lleve narrativa o el coordinador.
+  - «Proyecto: cambiado»: era este informe, que escribí mientras corría la pasada (sin confirmar entonces).
+  - Había 86 Godot de otras copias durante la pasada.
+
+### 4. Evidencias
+
+- **Muestras para escuchar**, con su índice y una guía de qué escuchar:
+  `D:\REBELUM_diagnostico\sonido_muestras\2026-11-09_bestiario\indice.md` (cada efecto solo y una mezcla por ataque con
+  los tiempos de su ficha: aviso, impacto con el golpe de siempre y la voz al recibir el contragolpe o al caer; el
+  Posadero con su presentación y la victoria) y `…\heroes_quietos\indice.md` (los tres gestos).
+- **Niveles a la salida** (Master, todo al 100 %, 09/11, tras un ajuste): avisos −26,4 a −28,4 dBFS de RMS; impactos
+  −24,4 a −25,9 (Posadero −22,3 y −22,9); herido −27,4 a −28,3 (Posadero −24,8); caídas −25,0 a −25,7 (Posadero
+  −22,2); entradas −25,9 a −28,6; pezuña −29,8; derrumbe −28,9. El golpe de siempre sale a −27,7 y las voces de la
+  tanda 2 de −23 a −31. Mezclas: picos de −2,5 a −6,2 dBFS (ninguna satura). Gestos de quieto: −34,7 a −36,9 (los
+  pasos, −32 a −39). Primer ajuste: pezuña −2 dB, alarma, campanada, herido del Cencerrante, corte, herido, caída y
+  entrada de Velaria, aviso del martillo y caída del Custodio, mordida −1 y trama −2 de la Hilandera, los avisos del
+  Posadero −1,5 (tenían picos de −1,4 dBFS).
+
+### 5. Límites
+
+- **Escucha**: nadie lo ha oído. Lo más dudoso, por elegirlo sin oírlo: si el resoplido (caballo) y los gruñidos y
+  chillidos (cerdo) suenan a jabalí y no a granja; el cencerro de percusión (una «cowbell» moderna, más grave) en la
+  campanada baja; Velaria (un paraguas que se abre y una vela de barco); la trama de eco (una caracola más grave con un
+  golpe subsónico); las llaves del Posadero (unas llaves de coche); los gestos de los héroes (una respiración y un
+  sorbido pueden sobrar en un diálogo).
+- **Pendiente en Redmi**: lo grave (la trama de eco, el portazo y la viga del Posadero, el martillo del Custodio) casi
+  no sale por un altavoz de móvil; hay que oírlo allí. Rendimiento: los gestos añaden una cuenta por personaje y
+  fotograma (nada medido; no tocaba).
+- **Enganche**: los efectos de las bestias no suenan en el juego hasta que combate los pida; los he comprobado por el
+  catálogo y en mezclas grabadas, no en un combate de verdad. Los avisos de las cinco bestias que aún no tienen escena
+  suponen que suenan al empezar el clip del ataque.
+- **Gestos**: no los he oído en una escena de verdad con ventana; suenan también en diálogos y cinemáticas si los
+  personajes están quietos (muy bajos).
+
+### 6. Siguiente paso y cambios en archivos de otros
+
+- **Combate** (`combate.gd`, Zarzalín): las líneas de «Cómo pedirlos» del inventario (tanda 4): conectar `aviso`,
+  `pezuna`, `impacto` de `zarzalin_3d.gd` a sus efectos, `zarzalin_aviso_colmillo` al llamar a `atacar`, `derrumbe` al
+  llamar a `morir()`, `entrada` a `entrada()`, y la `clave` «zarzalin» en `ENEMIGOS` para que `Sonido.recibe()` dé su
+  voz. Las demás bestias, igual cuando tengan escena.
+- **Animaciones**: si las otras cinco bestias emiten una señal `aviso` (la postura sostenida) como Zarzalín, el aviso
+  puede ir ahí en vez de al empezar el clip; los sonidos ya acaban antes del impacto en los dos casos.
+- **Usuario**: escuchar el índice de muestras (guía al final del índice).
+- **Coordinador**: confirmar o descartar `prueba_orden_pv03.gd.uid`.
