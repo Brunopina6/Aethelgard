@@ -78,6 +78,8 @@ func _ready() -> void:
 
 
 func _ir_a_pestana(p: String) -> void:
+	if p != pestana:
+		Sonido.efecto("libro_hoja")                  # se pasa la hoja (sonido.gd, T-083; abrir el Diario ya suena)
 	pestana = p
 	marco.scroll_vertical = 0
 	_pintar()
@@ -86,6 +88,7 @@ func _ir_a_pestana(p: String) -> void:
 func _cerrar() -> void:
 	if is_queued_for_deletion():
 		return
+	Sonido.efecto("libro_cerrar")                    # el libro se cierra (sonido.gd, T-083)
 	cerrado.emit()
 	queue_free()
 

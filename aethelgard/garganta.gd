@@ -238,6 +238,7 @@ func _tirar_palanca() -> void:
 	Progreso.poner_estado(NOMBRE, "palanca")
 	Sonido.efecto("palanca")                           # y, poco después, el puente que baja a lo lejos (sonido.gd)
 	Sonido.efecto("puente_baja", {"retraso": 0.5})
+	Sonido.efecto("puerta_abre", {"retraso": 1.3})     # y la puerta sellada de P3, que se abre lejos (T-083)
 	for p in piezas:
 		match p["tipo"]:
 			"palanca":
