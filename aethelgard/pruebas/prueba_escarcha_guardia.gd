@@ -131,6 +131,7 @@ func _probar() -> void:
 	await _escarcha()
 	await _guardia()
 	await _varios_impactos()
+	await _arreglos()
 	_limpiar()
 	Engine.remove_meta("archivo_partida_prueba")
 	print("OK: ", "; ".join(hechos))
@@ -369,3 +370,32 @@ func _heroes_esperan() -> void:
 	for i in range(c.cola.size() - 1, -1, -1):
 		if c.cola[i].get("hero", false):
 			c.cola.remove_at(i)
+
+
+# Arreglos del 09/11: el mordisco de Gorthor no se cura con lo que paró la coraza, y un golpe parado entero no tiñe de
+# rojo ni hace la reacción de dolor.
+func _arreglos() -> void:
+	_combate({"Kael": 20}, 5, "jefe")
+	await _esperar(30)
+	var g: Dictionary = c.enemigos[0]
+	var kael := _heroe("Kael")
+	A.poner_barrera(kael, 0.30)
+	g["devora"] = true
+	g["absorbido"] = 0
+	await c._animar_golpe(g, kael, 40, "")
+	g["devora"] = false
+	var paro: int = int(g.get("absorbido", 0))
+	_ok(paro > 0 and paro <= 40, "arreglo: el impacto no apunta lo que paró la coraza (%d)" % paro)
+	g["hp"] = g["hp_max"] - 100
+	_ok(c._cura_devorar(g, 40) == int((40 - paro) * 0.6), "arreglo: el mordisco se cura %d (esperado %d)" % [c._cura_devorar(g, 40), int((40 - paro) * 0.6)])
+	g["absorbido"] = 0
+	_ok(c._cura_devorar(g, 40) == 24, "arreglo: sin coraza, el mordisco ya no cura el 60 %% (%d)" % c._cura_devorar(g, 40))
+	await _esperar(40)
+	kael["barrera"] = 500
+	var real: int = c._quitar_pv(kael, 30)
+	c._golpe_visual(kael, real, "")
+	await _esperar(1)
+	var mod: Color = kael["rig"].modulate
+	_ok(real == 0 and mod.r < 1.0 and mod.b > 1.0, "arreglo: un golpe parado entero tiñe %s (debería ser frío)" % mod)
+	await _cerrar()
+	hechos.append("arreglos: el mordisco no se cura con lo absorbido; parado entero, frío")

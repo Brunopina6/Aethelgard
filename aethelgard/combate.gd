@@ -1299,9 +1299,11 @@ func _turno_enemigo(f: Dictionary) -> void:
 		var mordisco: int = int(f["atk"] * 1.6 * mult) + randi_range(-2, 3)
 		registro.text = "¡%s devora a %s!" % [f["nombre"], presa["nombre"]]
 		f["devora"] = true                           # su mordisco suena al morder (sonido.gd, T-083)
+		f["absorbido"] = 0
 		await _animar_golpe(f, presa, mordisco, "")
 		f["devora"] = false
-		var cura: int = mini(int(mordisco * 0.6), f["hp_max"] - f["hp"])
+		# se cura con lo que de verdad mordió: lo que paró la coraza de Escarcha no cuenta (sin coraza, igual que siempre)
+		var cura: int = _cura_devorar(f, mordisco)
 		if cura > 0 and f["hp"] > 0 and not ultimo_esquivado:   # si la presa lo esquiva (pluma), no se cura
 			f["hp"] += cura
 			_numero_flotante(f, "+%d" % cura, C_CURA)
@@ -1345,6 +1347,12 @@ func _turno_enemigo(f: Dictionary) -> void:
 		registro.text = "%s ataca a %s" % [f["nombre"], objetivo["nombre"]]
 		await _animar_golpe(f, objetivo, dano, "")
 	_fin_turno_enemigo(f)
+
+
+# Devorar (Gorthor, segunda fase): se cura el 60 % de lo que de verdad mordió. Lo que paró la coraza de Escarcha
+# («absorbido», que apunta el impacto de _animar_golpe) no cuenta; sin coraza, el 60 % del mordisco, como siempre.
+func _cura_devorar(f: Dictionary, mordisco: int) -> int:
+	return mini(maxi(0, int((mordisco - int(f.get("absorbido", 0))) * 0.6)), f["hp_max"] - f["hp"])
 
 
 func _elegir_objetivo(p: String, vivos: Array) -> Dictionary:
@@ -2926,6 +2934,7 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 			if origen.get("devora", false):
 				Sonido.voz(origen, "devorar")              # el mordisco de Gorthor
 		var real: int = _quitar_pv(objetivo, dano)     # lo que llega a los PV (con coraza de Escarcha, menos; M3)
+		origen["absorbido"] = dano - real              # lo que paró la coraza (el mordisco de Gorthor no se cura con eso)
 		if magia == "":
 			Sonido.recibe(objetivo)                    # la voz del enemigo golpeado: herido o caída (sonido.gd)
 		if embuido:
@@ -3455,7 +3464,7 @@ func _golpe_visual(objetivo: Dictionary, dano: int, magia: String, critico := fa
 				objetivo["quemadura"] = RONDAS_QUEMADURA
 				_encender_llama(objetivo)
 		_:
-			if critico:
+			if critico and dano > 0:
 				_destello(centro, Color(1.0, 0.85, 0.4), 1.8)
 				_numero_flotante(objetivo, "¡%d!" % dano, C_DANO, 58)
 				registro.text = "¡Golpe crítico!"
@@ -3466,9 +3475,9 @@ func _golpe_visual(objetivo: Dictionary, dano: int, magia: String, critico := fa
 				_temblor(3.0)
 			else:                                      # todo lo paró la coraza de Escarcha (M3): ya lo dice «❄»
 				_temblor(2.0)
-			rig.modulate = Color(1.6, 0.3, 0.3)
+			rig.modulate = Color(1.6, 0.3, 0.3) if dano > 0 else Color(0.8, 0.95, 1.45)   # parado entero: frío, no rojo
 	_actualizar()
-	if objetivo["hp"] > 0 and not objetivo["animando"]:
+	if objetivo["hp"] > 0 and not objetivo["animando"] and dano > 0:   # parado entero por la coraza: sin dolor
 		_cara(objetivo, "dolor")
 		_reproducir(objetivo, "hurt")
 		if MODELOS[objetivo["modelo"]].has("anims"):     # pose de herido un momento
