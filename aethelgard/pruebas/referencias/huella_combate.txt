@@ -1,10 +1,12 @@
 # Huella del combate (C0 de T-091 a T-093): la referencia de pruebas/prueba_combate_huella.gd.
-# Sacada el 2026-11-09 sobre area-combate @ 555fc29 con C0 aplicado en combate.gd (el commit que trae esta versión),
-# Godot 4.7.2, --headless --fixed-fps 30, semilla 20261109. Comprobado ejecutando, aislado: dos pasadas en un proceso
-# dan exactamente esto (SHA-256 del texto sin esta cabecera:
-# 3372b413669351f3ff8dbc3c8e402e0a427b5835be1d301bfcd11a0d4fa2196a), y E9 da lo mismo en otros dos procesos.
-# Historia: la primera (2386761, SHA a33fdae7...) tenía E1 a E8. Con C0 se añade E9 (Infierno y Cólera del Cielo);
-# E1 a E8 siguen idénticos, línea a línea, a los de la primera.
+# Sacada el 2026-11-09 sobre area-combate @ f13d556 (M4 y C2 enganchados), Godot 4.7.2, --headless --fixed-fps 30,
+# semilla 20261109. Comprobado ejecutando, aislado: dos pasadas en un proceso dan exactamente esto (SHA-256 del texto
+# sin esta cabecera: 65bb98176a64175fafee348dffa83137b8c6814533e4980553ec0e99cb5fa84c;
+# D:\REBELUM_diagnostico\pruebas\2026-11-09_184233).
+# Historia: la primera (2386761, SHA a33fdae7...) tenía E1 a E8. Con C0 se añade E9 (Infierno y Cólera del Cielo;
+# 555fc29, SHA 3372b413...). Con C2 (09/11, 4fc38f6), la primera victoria contra Gorthor da las Fauces de Gorthor: en
+# E8 (combate fijo «garganta_gorthor») sale UNA línea más, el cartel «Has conseguido Fauces de Gorthor.» en el
+# fotograma 2229, tras el reparto. Nada más cambia: E1 a E9, línea a línea, iguales a la anterior.
 # No cuentan las líneas que empiezan por «#» ni las vacías.
 # Formato: «== combate · grupo · nivel · zona · tipo · semilla» y una línea por suceso con su fotograma: ▶ turno de un
 # héroe y lo que hace (guion de la prueba), ▷ turno de un enemigo, · cartel, Δ cambios de PV y PM, ■ fin y ◆ decisión.
@@ -516,6 +518,7 @@ partida · combates_ganados {  } · decisiones {  } · Armonía 0.75 · velocida
 02179   Δ Lya PV 79→122 PM 30→60
 02210 · ¡Garon sube al nivel 8!
 02210   Δ Garon PV 204→210 PM 1→24
+02229 · Has conseguido Fauces de Gorthor.
 fin · victoria · fotograma 2086 (69.5 s de juego)
 final · Kael PV 162/162 PM 30/30 ATQ 18 VEL 23 DEF 9 · Lya PV 122/122 PM 60/60 ATQ 10 VEL 26 DEF 7 · Garon PV 210/210 PM 24/24 ATQ 50 VEL 16 DEF 12 · Gorthor el Devorador PV 0/460 ATQ 25 VEL 14
 grupo · Kael nivel 8 exp 230 pv 162 pm 30 puntos 3 · Lya nivel 8 exp 230 pv 122 pm 60 puntos 3 · Garon nivel 8 exp 230 pv 210 pm 24 puntos 3
