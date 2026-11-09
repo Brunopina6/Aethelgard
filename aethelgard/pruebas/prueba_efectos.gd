@@ -49,6 +49,10 @@ extends SceneTree
 #      (más prioridad y, con dos voces sonando, la suya entra).
 #  17. Los héroes quietos (parte «quietos»): Kael, Lya y Garon parados suenan con su gesto (cada uno el suyo), nunca dos
 #      a la vez, por Efectos y con prioridad 0; andando, ninguno.
+# Tanda 5:
+#  18. Las voces de los héroes (parte «heroes»): Kael, Lya y Garon con su esfuerzo, herido, jadeo (una vez con poca
+#      vida, otra tras curarse), alivio y victoria; prioridad 1 (victoria 3), una a la vez; en un combate de verdad, el
+#      golpe de un enemigo hace quejarse al héroe y la magia sigue sin pedir voces.
 
 const REGION := "res://zonas3d/pastos_verdes_3d.tscn"
 const GARGANTA3D := "res://zonas3d/garganta_3d.tscn"
@@ -177,6 +181,8 @@ func _probar() -> void:
 		await _bestias()
 	if _parte("quietos"):
 		await _quietos()
+	if _parte("heroes"):
+		await _heroes()
 	if _parte("garganta3d"):
 		await _garganta3d()
 	print("OK efectos: ", ", ".join(hechos))
@@ -826,8 +832,9 @@ func _voces() -> void:
 	# la API: los héroes no tienen voz; una voz por enemigo; dos a la vez como mucho; la furia, más fuerte
 	parte = "voces: API"
 	_limpiar()
-	if Son.voz({"hero": true, "modelo": "kael3d", "nombre": "Kael"}, "ataque") != null:
-		_fallo("8: un héroe tiene voz")
+	if Son.voz({"hero": true, "modelo": "x", "nombre": "Nadie"}, "ataque") != null:
+		_fallo("8: un héroe sin familia (FAMILIAS_HEROE) tiene voz")
+	_limpiar()
 	var a := {"hero": false, "clave": "grimfang", "nombre": "A"}
 	var b := {"hero": false, "clave": "slime", "nombre": "B"}
 	var d := {"hero": false, "clave": "guardian", "nombre": "C"}
@@ -1591,3 +1598,91 @@ func _quietos() -> void:
 		cuerpos[nombre].cuerpo.queue_free()
 	_limpiar()
 	hechos.append("quietos (Kael, Lya y Garon: %s en 45 s, uno a la vez; andando, ninguno)" % info)
+
+# ================================================================= tanda 5
+
+# 18. Las voces de los héroes en combate (no verbales).
+func _heroes() -> void:
+	await _escena_vacia()
+	for nombre in ["Kael", "Lya", "Garon"]:
+		var fam: String = Son.FAMILIAS_HEROE[nombre]
+		var h := {"hero": true, "nombre": nombre, "modelo": "x", "hp": 100, "hp_max": 100}
+		for ev in ["esfuerzo", "herido", "jadeo", "alivio", "victoria"]:
+			var d: Dictionary = Son.EFECTOS.get(fam + "_" + ev, {})
+			if d.is_empty():
+				_fallo("18: falta «%s_%s»" % [fam, ev])
+				continue
+			var esperada := 3 if ev == "victoria" else 1
+			if int(d.get("p", 1)) != esperada or d.get("grupo", "") != "voz_heroe" or String(d.get("bus", "Efectos")) != "Efectos":
+				_fallo("18: «%s_%s» no va por Efectos con prioridad %d y grupo voz_heroe" % [fam, ev, esperada])
+			if int(d.get("p", 1)) >= int(Son.EFECTOS["golpe"]["p"]) and ev != "victoria":
+				_fallo("18: «%s_%s» no queda por debajo de los golpes" % [fam, ev])
+		_limpiar()
+		Son.voz(h, "ataque")
+		if _n(fam + "_esfuerzo") != 1:
+			_fallo("18: %s al lanzarse: esfuerzo %d (esperaba 1)" % [nombre, _n(fam + "_esfuerzo")])
+		_limpiar()
+		h["hp"] = 80
+		Son.recibe(h)
+		await _juego(1.0)
+		if _n(fam + "_herido") != 1 or _n(fam + "_jadeo") != 0:
+			_fallo("18: %s con 80 %% de vida: herido %d, jadeo %d (esperaba 1 y 0)" % [nombre, _n(fam + "_herido"), _n(fam + "_jadeo")])
+		_limpiar()
+		h["hp"] = 20
+		Son.recibe(h)
+		await _juego(1.0)
+		Son._ultimo.clear()
+		Son.recibe(h)
+		await _juego(1.0)
+		if _n(fam + "_jadeo") != 1:
+			_fallo("18: %s con poca vida y dos golpes: jadeo %d (esperaba 1)" % [nombre, _n(fam + "_jadeo")])
+		_limpiar()
+		Son.voz(h, "alivio")
+		Son._ultimo.clear()
+		Son.recibe(h)
+		await _juego(1.0)
+		if _n(fam + "_alivio") != 1 or _n(fam + "_jadeo") != 1:
+			_fallo("18: %s: alivio %d y, otra vez con poca vida, jadeo %d (esperaba 1 y 1)" % [nombre, _n(fam + "_alivio"), _n(fam + "_jadeo")])
+		_limpiar()
+		h["hp"] = 0
+		Son.recibe(h)
+		if _n(fam + "_herido") != 1:
+			_fallo("18: %s cae y no se queja (herido %d)" % [nombre, _n(fam + "_herido")])
+	# una voz de héroe a la vez; la victoria, de uno que siga en pie
+	_limpiar()
+	Son.voz({"hero": true, "nombre": "Kael", "hp": 9}, "ataque")
+	Son.voz({"hero": true, "nombre": "Lya", "hp": 9}, "ataque")
+	if Son.grupo_sonando("voz_heroe") != 1:
+		_fallo("18: suenan %d voces de héroes a la vez (una como mucho)" % Son.grupo_sonando("voz_heroe"))
+	_limpiar()
+	var v: String = Son.victoria_heroes([{"hero": true, "nombre": "Kael", "hp": 0}, {"hero": true, "nombre": "Garon", "hp": 50}])
+	await _juego(1.2)
+	if v != "garon_victoria" or _n("garon_victoria") != 1:
+		_fallo("18: la victoria no la celebra quien sigue en pie (%s, %d)" % [v, _n("garon_victoria")])
+	if Son.victoria_heroes([{"hero": true, "nombre": "Kael", "hp": 0}]) != "":
+		_fallo("18: celebra la victoria un héroe caído")
+	# combate de verdad (grupo 7, el limo): el golpe del limo hace quejarse a Kael; una magia no pide voces
+	var c = await _nuevo_combate(7)
+	var hk: Dictionary = c.heroes[0]
+	var e: Dictionary = c.enemigos[0]
+	_sin_vida(hk)
+	_sin_vida(e)
+	_limpiar()
+	await c._animar_golpe(e, hk, 1, "")
+	await _juego(0.4)
+	var fk: String = Son.familia(hk)
+	if fk == "" or _n(fk + "_herido") != 1:
+		_fallo("18: el limo golpea a %s y no se queja (%s)" % [hk.get("nombre", "?"), str(Son.contador)])
+	_limpiar()
+	await c._animar_golpe(hk, e, 1, "")
+	await _juego(0.4)
+	var esfuerzo := _n(fk + "_esfuerzo")
+	_limpiar()
+	await c._animar_golpe(hk, e, 1, "Agua")
+	await _juego(0.4)
+	if _suma(fk + "_") != 0:
+		_fallo("18: la magia de %s pide su voz (%s): el catálogo mágico no cambia" % [hk.get("nombre", "?"), str(Son.contador)])
+	c.queue_free()
+	await _esperar(3)
+	_limpiar()
+	hechos.append("voces de los héroes (Kael, Lya y Garon: esfuerzo, herido, jadeo, alivio y victoria; una a la vez; en combate, el golpe del limo hace quejarse a %s y su ataque físico da %d esfuerzo)" % [hk.get("nombre", "?"), esfuerzo])

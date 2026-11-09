@@ -18,6 +18,7 @@ extends SceneTree
 # con el eco y sin él (para comparar); la palanca con el puente y la puerta desde donde están; y unas gotas.
 #   «mezclas=2» o «mezclas=3»: solo las mezclas de esa tanda (con «efectos=…»).
 # Tanda 4: las bestias del bestiario, una mezcla por ataque con los tiempos de su ficha («mezclas=4»).
+# Tanda 5: las voces de los héroes en un combate seguido, con los golpes y la victoria («mezclas=5»).
 
 const PROCEDENCIA := "docs/audio/efectos_procedencia.csv"
 const GARGANTA3D := "res://zonas3d/garganta_3d.tscn"
@@ -161,7 +162,12 @@ const EVENTOS_BESTIAS := {
 	"posadero_llave": "Impacto de la llave del umbral: barrido y cerrojo (0,87 s)",
 	"posadero_herido": "El Posadero recibe un golpe físico", "posadero_caida": "El Posadero se derrumba: vigas, llaves y la puerta",
 	"posadero_entrada": "El Posadero se presenta: la puerta de la posada se abre",
-	"quieto_kael": "Kael lleva un rato quieto en la exploración 3D: se recoloca el cuero y suelta el aire (muy bajo)",
+	"kael_esfuerzo": "Kael se lanza al ataque (esfuerzo, joven e impulsivo)", "kael_herido": "Kael recibe un golpe físico",
+	"kael_jadeo": "Kael jadea: le queda poca vida", "kael_alivio": "Kael se cura (poción)", "kael_victoria": "Kael celebra la victoria",
+	"lya_esfuerzo": "Lya se lanza al ataque (esfuerzo, cálida y ligera)", "lya_herido": "Lya recibe un golpe físico",
+	"lya_jadeo": "Lya jadea: le queda poca vida", "lya_alivio": "Lya se cura (poción)", "lya_victoria": "Lya celebra la victoria (una risa breve)",
+	"garon_esfuerzo": "Garon se lanza al ataque (esfuerzo, grave y veterano)", "garon_herido": "Garon recibe un golpe físico",
+	"garon_jadeo": "Garon jadea: le queda poca vida", "garon_alivio": "Garon se cura (poción)", "garon_victoria": "Garon celebra la victoria (una risa contenida)",	"quieto_kael": "Kael lleva un rato quieto en la exploración 3D: se recoloca el cuero y suelta el aire (muy bajo)",
 	"quieto_lya": "Lya lleva un rato quieta: sorbe por la nariz y se ajusta la tela (muy bajo, desde su sitio)",
 	"quieto_garon": "Garon lleva un rato quieto: mueve el equipo y respira hondo (muy bajo, desde su sitio)",
 }
@@ -233,6 +239,8 @@ func _grabar_todo() -> void:
 			await _tanda3()
 		if "4" in mezclas:
 			await _tanda4()
+		if "5" in mezclas:
+			await _tanda5()
 		AudioServer.remove_bus_effect(0, AudioServer.get_bus_effect_count(0) - 1)
 		_indice()
 		for f in fallos:
@@ -273,6 +281,7 @@ func _grabar_todo() -> void:
 	await _tanda2()
 	await _tanda3()
 	await _tanda4()
+	await _tanda5()
 	AudioServer.remove_bus_effect(0, AudioServer.get_bus_effect_count(0) - 1)
 	_indice()
 	for f in fallos:
@@ -718,3 +727,16 @@ func _tanda4() -> void:
 	await _escena("bestia_posadero_llave", [[0.0, "posadero_aviso_llave"], [0.87, "posadero_llave"], [0.87, "golpe"],
 		[2.2, "golpe_critico"], [2.2, "posadero_caida"], [4.2, "victoria"]],
 		"El Posadero: llave del umbral; Kael lo tumba (caída) y victoria")
+
+# ================================================================= tanda 5
+
+# Las voces de los héroes en un combate seguido: cada uno se lanza (esfuerzo y golpe), el enemigo golpea a Lya (golpe y
+# quejido) y a Garon, que queda con poca vida (quejido y jadeo), Garon bebe una poción (alivio) y victoria (uno celebra).
+func _tanda5() -> void:
+	await _escena("heroes_combate", [[0.0, "kael_esfuerzo"], [0.45, "golpe"], [1.5, "lya_esfuerzo"], [1.9, "golpe"],
+		[3.0, "garon_esfuerzo"], [3.5, "golpe"], [4.6, "golpe"], [4.6, "lya_herido"], [6.0, "golpe"], [6.0, "garon_herido"],
+		[6.7, "garon_jadeo"], [8.4, "pocion"], [8.6, "garon_alivio"], [10.0, "golpe_critico"], [10.0, "goblin_caida"],
+		[10.8, "victoria"], [11.6, "kael_victoria"]],
+		"Combate: Kael, Lya y Garon se lanzan; el enemigo golpea a Lya y a Garon (que jadea con poca vida); Garon bebe una poción (alivio); victoria y Kael lo celebra")
+	await _escena("heroes_victorias", [[0.0, "victoria"], [0.8, "lya_victoria"], [3.5, "victoria"], [4.3, "garon_victoria"]],
+		"La victoria con el gesto de Lya y, después, con el de Garon")
