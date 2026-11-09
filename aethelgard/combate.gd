@@ -401,6 +401,8 @@ func _ready() -> void:
 		if pe != null and pe.has_method("entrada"):
 			e["rig"].modulate.a = 0.0
 			create_tween().tween_property(e["rig"], "modulate:a", 1.0, 0.15)
+			_sonidos_bestia(e, pe)
+			_sonar(str(e.get("clave", "")) + "_entrada")   # al empezar su clip de entrada (sonido.gd, tanda 4)
 			pe.entrada()
 	_iniciar_musica()
 	_actualizar()
@@ -1223,6 +1225,7 @@ func _siguiente_turno() -> void:
 		if f.get("defendiendo", false):          # la defensa dura hasta su siguiente turno
 			f["defendiendo"] = false
 			f["rig"].modulate = Color(1, 1, 1)
+		_quitar_guardia(f["nombre"])             # la guardia de Garon, también (sin guardia, nada)
 		_tic_estados_heroe(f)                    # Segundo Aliento y Cinta de Lumi (sin ellos, nada)
 		_mostrar_menu()
 	else:
@@ -1292,7 +1295,7 @@ func _turno_enemigo(f: Dictionary) -> void:
 			return
 	# segunda fase de Gorthor: Devorar (muerde al más débil y se cura con parte del daño)
 	if f.get("fase2", false) and not f.get("cargando", false) and randf() < 0.35:
-		var presa := _elegir_objetivo("cobarde", vivos)
+		var presa := _cubre(_elegir_objetivo("cobarde", vivos))
 		var mordisco: int = int(f["atk"] * 1.6 * mult) + randi_range(-2, 3)
 		registro.text = "¡%s devora a %s!" % [f["nombre"], presa["nombre"]]
 		f["devora"] = true                           # su mordisco suena al morder (sonido.gd, T-083)
@@ -1317,7 +1320,7 @@ func _turno_enemigo(f: Dictionary) -> void:
 		await get_tree().create_timer(1.2).timeout
 		_fin_turno_enemigo(f)
 		return
-	var objetivo = _elegir_objetivo(p, vivos)
+	var objetivo = _cubre(_elegir_objetivo(p, vivos))   # (si Garon le cubre, va a Garon)
 	if f.get("cargando", false):                # descarga: golpe fuerte a todo el grupo
 		f["cargando"] = false
 		registro.text = "¡%s desata su golpe devastador!" % f["nombre"]
@@ -1325,10 +1328,15 @@ func _turno_enemigo(f: Dictionary) -> void:
 		f["descarga"] = true                         # Grimfang / Gorthor: golpe fuerte a dos manos
 		await _animar_golpe(f, objetivo, fuerte, "")
 		f["descarga"] = false
-		for h in vivos:
-			if h != objetivo and h["hp"] > 0:
+		for h0 in vivos:
+			if h0 != objetivo and h0["hp"] > 0:
+				var h: Dictionary = _cubre(h0, false)  # el golpe a quien Garon cubre lo recibe Garon (otro impacto más)
+				if h["hp"] <= 0:
+					continue
 				var d2: int = maxi(1, fuerte - int(h.get("def", 0) / 2.0))
-				h["hp"] = maxi(0, h["hp"] - d2)
+				if h.get("defendiendo", false) and not is_same(h, h0):
+					d2 = maxi(1, int(d2 * 0.5))         # Garon en guardia: a la mitad, como al defender
+				d2 = _quitar_pv(h, d2)                 # (con coraza, lo que llega a los PV)
 				_golpe_visual(h, d2, "")
 		Sonido.golpe(true)                           # la onda del golpe alcanza a los demás (sonido.gd)
 		_temblor(14.0)
@@ -1377,6 +1385,7 @@ func _turno_zarzalin(f: Dictionary, vivos: Array, mult: float) -> void:
 		var objetivo = f.get("objetivo_carga", null)
 		if objetivo == null or objetivo["hp"] <= 0:
 			objetivo = _elegir_objetivo("agresivo", vivos)
+		objetivo = _cubre(objetivo)                  # Garon puede cubrir al que avisó (recibe él la embestida, a la mitad)
 		f.erase("objetivo_carga")
 		registro.text = "¡%s embiste a %s!" % [f["nombre"], objetivo["nombre"]]
 		f["ataque_3d"] = "embestida_espinosa"
@@ -1395,7 +1404,7 @@ func _turno_zarzalin(f: Dictionary, vivos: Array, mult: float) -> void:
 		else:
 			await get_tree().create_timer(1.0).timeout
 		return
-	var objetivo := _elegir_objetivo("agresivo", vivos)
+	var objetivo := _cubre(_elegir_objetivo("agresivo", vivos))
 	registro.text = "%s ataca a %s" % [f["nombre"], objetivo["nombre"]]
 	f["ataque_3d"] = "colmillo_lateral"
 	await _animar_golpe(f, objetivo, int(f["atk"] * mult) + randi_range(-2, 3), "")
@@ -1698,7 +1707,7 @@ func _es_garon(f) -> bool:
 
 
 func _menu_garon() -> void:
-	var minimo := 999
+	var minimo: int = GUARDIA["coste"]               # la Guardia (T-100) también va en ESGRIMA
 	for t in TECNICAS_GARON.values():
 		minimo = mini(minimo, t["coste"])
 	menu.abrir(actor, [
@@ -1739,6 +1748,12 @@ func _menu_esgrima() -> void:
 	for it in items:
 		if it["icono"] == null:
 			it.erase("icono")
+	var paga_g := _puede_pagar(GUARDIA["coste"])       # la Guardia, detrás de las de ataque
+	var motivo := "" if not _cubribles().is_empty() else GUARDIA["motivo"]
+	if motivo == "" and not paga_g:
+		motivo = Artes.motivo_pm(GUARDIA["coste"], actor["mp"])
+	items.append({"texto": GUARDIA["nombre"], "accion": _elegir_guardia, "derecha": "%d PM" % GUARDIA["coste"],
+		"apagado": motivo != "", "falta_pm": not paga_g, "desc": GUARDIA["desc"] if motivo == "" else motivo})
 	menu.submenu(items)
 
 
@@ -1748,6 +1763,79 @@ func _elegir_tecnica(n: String) -> void:
 	else:
 		_pedir_objetivo(enemigos.filter(func(e): return e["hp"] > 0), func(f): _tecnica_garon(n, f), _menu_esgrima,
 			"TOCA UN ENEMIGO")
+
+
+# ---------------------------------------------------------------- Garon: la Guardia (T-100)
+# Garon cubre a un aliado hasta su siguiente turno: se pone en guardia (Defender: los golpes le hacen la mitad) y los
+# golpes que van a ese aliado los recibe él. Encaja con los ataques anunciados: si Zarzalín avisa que va a embestir a
+# Kael, Garon le cubre y la embestida le da a él, a la mitad. Con varios golpes (el devastador de un jefe, a todos), el
+# del aliado cubierto también va a Garon. Se acaba al empezar el turno siguiente de Garon, si Garon cae o si cae el
+# aliado. No toca el ATB ni las 12 magias: es una técnica más de ESGRIMA, con su coste.
+const GUARDIA := {"nombre": "Guardia", "coste": 4, "color": Color("C9D2E0"), "motivo": "No hay a quién cubrir.",
+	"desc": "Cubre a un aliado hasta su turno: los golpes a él los recibe Garon, a la mitad."}
+
+
+func _cubribles() -> Array:
+	return heroes.filter(func(h): return h["hp"] > 0 and not is_same(h, actor))
+
+
+func _elegir_guardia() -> void:
+	if _cubribles().is_empty() or not _puede_pagar(GUARDIA["coste"]):
+		return
+	_pedir_objetivo(_cubribles(), _guardia, _menu_esgrima, "TOCA A UN ALIADO")
+
+
+func _guardia(obj: Dictionary) -> void:
+	_ocultar_menu()
+	estado = "accion"
+	var quien = actor
+	_gastar_pm(quien, GUARDIA["coste"])
+	_quitar_guardia(quien["nombre"])
+	obj["guardia_de"] = quien["nombre"]
+	quien["defendiendo"] = true                      # en guardia: como Defender, hasta su turno siguiente
+	quien["rig"].modulate = COLOR_DEFENSA
+	_actualizar()
+	registro.text = "%s cubre a %s" % [quien["nombre"], obj["nombre"]]
+	var p = _p3d(quien)                              # el gesto: se vuelve hacia el aliado y da un paso en guardia
+	if p != null and p.has_method("mirar"):
+		var dx: float = _centro(obj).x - _centro(quien).x
+		p.mirar(Vector3(signf(dx) * 0.9, 0.0, 0.45), 0.2)
+		if p.has_method("avanzar"):
+			p.avanzar(0.8)
+	_sonar("defensa")                                # una vez, al ponerse en guardia (sonido: pedido «guardia» propio)
+	_sena_arte("guardia", obj, {"desde": _centro(quien) - _centro(obj)})
+	_numero_flotante(obj, "Guardia", GUARDIA["color"], 30)
+	await get_tree().create_timer(0.7).timeout
+	if p != null and p.has_method("mirar_frente"):
+		p.mirar_frente(0.25)
+		p.reposo()
+	await get_tree().create_timer(0.2).timeout
+	_terminar_turno()
+
+
+# El objetivo de un golpe enemigo, o Garon si le está cubriendo y sigue en pie. «avisar»: el texto «¡Cubre!» sobre
+# Garon (no en los golpes de más de un ataque a todos, que ya lo dicen con el número).
+var cubiertos := 0                               # golpes que la Guardia ha llevado a Garon en este combate
+
+
+func _cubre(obj: Dictionary, avisar := true) -> Dictionary:
+	var de := str(obj.get("guardia_de", ""))
+	if de == "" or obj["hp"] <= 0:
+		return obj
+	for h in heroes:
+		if h["nombre"] == de and h["hp"] > 0 and not is_same(h, obj):
+			cubiertos += 1
+			if avisar:
+				_numero_flotante(h, "¡Cubre a %s!" % obj["nombre"], GUARDIA["color"], 30, Vector2(-40, -40))
+			return h
+	return obj
+
+
+# Quita la guardia que daba «nombre» (al empezar su turno o al caer). Sin guardia, no hace nada.
+func _quitar_guardia(nombre: String) -> void:
+	for h in heroes:
+		if str(h.get("guardia_de", "")) == nombre:
+			h.erase("guardia_de")
 
 
 func _menu_embuir() -> void:
@@ -2024,8 +2112,8 @@ func _lanzar_arte(fam: String, nv: int, objs: Array) -> void:
 			_sena_arte("aliento", f, {"hojas": int(x["aliento"])})
 			if i == 0:                                # lo que dura, una vez (es igual para todos; el HUD lo cuenta)
 				_numero_flotante(f, "Aliento: %d turnos" % int(x["aliento"]), Artes.COLOR_ESTADO["aliento"], 30)
-		elif x.has("barrera"):
-			_onda(_suelo_de(f), Color(col, 0.9), 20.0, 160.0, 0.7, 8.0)
+		elif x.has("barrera"):                       # M3: la coraza de hielo se forma alrededor (y el HUD dice cuánto aguanta)
+			_sena_arte("escarcha", f)
 			_numero_flotante(f, "❄ %d" % x["barrera"], col, 30)
 		elif x.has("brasa"):
 			_onda(_suelo_de(f), Color(col, 0.9), 20.0, 160.0, 0.7, 8.0)
@@ -2069,8 +2157,11 @@ func _sena_arte(tipo: String, f: Dictionary, extra := {}) -> Node2D:
 	var s = SenaArte.new()
 	s.tipo = tipo
 	s.color = {"alba": Artes.COLOR["Alba"], "ocaso": COLOR_OCASO, "lumbre": Artes.COLOR["Lumbre"],
-		"aliento": Artes.COLOR_ESTADO["aliento"], "hoja": Artes.COLOR_ESTADO["aliento"]}.get(tipo, Color.WHITE)
-	s.dur = {"alba": 1.5, "ocaso": 1.4, "lumbre": SENA_VIAJE_LUMBRE + 1.4, "aliento": 1.6, "hoja": 1.0}.get(tipo, 1.4)
+		"aliento": Artes.COLOR_ESTADO["aliento"], "hoja": Artes.COLOR_ESTADO["aliento"], "escarcha": Artes.COLOR["Escarcha"],
+		"escarcha_golpe": Artes.COLOR["Escarcha"], "escarcha_rota": Artes.COLOR["Escarcha"],
+		"guardia": GUARDIA["color"]}.get(tipo, Color.WHITE)
+	s.dur = {"alba": 1.5, "ocaso": 1.4, "lumbre": SENA_VIAJE_LUMBRE + 1.4, "aliento": 1.6, "hoja": 1.0, "escarcha": 1.5,
+		"escarcha_golpe": 0.45, "escarcha_rota": 0.9, "guardia": 1.4}.get(tipo, 1.4)
 	s.alto = clampf((_suelo_de(f).y - _centro(f).y) * 2.0, 120.0, 340.0)
 	for k in extra:
 		s.set(k, extra[k])
@@ -2381,14 +2472,39 @@ func _terminar_turno(carga := true) -> void:
 
 # Quita PV a un luchador. Los jefes con "fases" avisan al bajar del 50 % (el cambio de fase llega
 # antes del siguiente turno) y los de "ultimo_aliento" se quedan con 1 PV, de rodillas.
-func _quitar_pv(f: Dictionary, d: int) -> void:
+# Con M3, a un héroe con coraza de Escarcha el golpe le llega primero a la coraza (artes.gd absorber): se ve, suena
+# y, si se rompe, se rompe con su seña. Devuelve lo que llega a los PV (sin coraza, «d», como siempre).
+func _quitar_pv(f: Dictionary, d: int) -> int:
+	if f.get("hero", false) and int(f.get("barrera", 0)) > 0 and d > 0:
+		var r: Dictionary = Artes.absorber(f, d)
+		_coraza_golpeada(f, r)
+		d = int(r["resto"])
 	f["hp"] = maxi(0, f["hp"] - d)
+	if f.get("hero", false) and f["hp"] <= 0:           # la Guardia se acaba si cae Garon o el aliado que cubre
+		_quitar_guardia(f["nombre"])
+		f.erase("guardia_de")
 	if f.get("fases", false) and not f.get("fase2", false) and f["hp"] > 0 and f["hp"] <= f["hp_max"] * 0.5:
 		f["fase2"] = true
 		f["fase2_pendiente"] = true
 	if f.get("ultimo_aliento", false) and f["hp"] <= 0 and not f.get("decidido", false):
 		f["hp"] = 1
 		f["rendido"] = true
+	return d
+
+
+# La coraza de un héroe recibe un golpe (M3): lo que absorbe sale en hielo («❄ 12») con su sonido; si se rompe, salta en
+# esquirlas («¡Coraza rota!») con el suyo. Una vez por golpe, en el mismo instante en que se resuelve.
+func _coraza_golpeada(f: Dictionary, r: Dictionary) -> void:
+	if int(r.get("absorbido", 0)) <= 0:
+		return
+	_numero_flotante(f, "❄ %d" % int(r["absorbido"]), C_HIELO, 34, Vector2(-70, 10))
+	if r.get("rota", false):
+		_sonar(Artes.SONIDO_ESTADO["rota"])
+		_sena_arte("escarcha_rota", f)
+		_numero_flotante(f, "¡Coraza rota!", C_HIELO, 28, Vector2(-40, -50))
+	else:
+		_sonar(Artes.SONIDO_ESTADO["absorbe"])
+		_sena_arte("escarcha_golpe", f)
 
 
 # ---------------------------------------------------------------- jefes
@@ -2809,13 +2925,13 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 			Sonido.golpe(critico, objetivo.get("defendiendo", false))
 			if origen.get("devora", false):
 				Sonido.voz(origen, "devorar")              # el mordisco de Gorthor
-		_quitar_pv(objetivo, dano)
+		var real: int = _quitar_pv(objetivo, dano)     # lo que llega a los PV (con coraza de Escarcha, menos; M3)
 		if magia == "":
 			Sonido.recibe(objetivo)                    # la voz del enemigo golpeado: herido o caída (sonido.gd)
 		if embuido:
-			_golpe_visual(objetivo, dano, _efecto_embuir(origen, objetivo), critico)
+			_golpe_visual(objetivo, real, _efecto_embuir(origen, objetivo), critico)
 		else:
-			_golpe_visual(objetivo, dano, magia, critico)
+			_golpe_visual(objetivo, real, magia, critico)
 		if congela and objetivo["hp"] > 0:
 			_congelar(objetivo)
 	if magia != "" and _p3d(origen) != null:
@@ -3064,6 +3180,19 @@ func _anim_ataque_3d(o: Dictionary, obj: Dictionary, impacto: Callable, metodo: 
 	o["animando"] = false
 
 
+# Sonidos de una bestia del bestiario (sonido.gd, tanda 4, «Cómo pedirlos»), por su clave y con las señales de su
+# modelo: el aviso al bajar el hocico, cada golpe de pezuña y el impacto (en el mismo instante en que se resuelve el
+# daño, junto al Sonido.golpe de siempre). Su voz de herido o caída la da Sonido.recibe por su «clave».
+func _sonidos_bestia(e: Dictionary, p) -> void:
+	var clave := str(e.get("clave", ""))
+	if p.has_signal("aviso"):
+		p.aviso.connect(func(a: String): _sonar("%s_aviso_%s" % [clave, a.get_slice("_", 0)]))
+	if p.has_signal("pezuna"):
+		p.pezuna.connect(func(_n: int): _sonar(clave + "_pezuna"))
+	if p.has_signal("impacto"):
+		p.impacto.connect(func(a: String): _sonar("%s_%s" % [clave, a.get_slice("_", 0)]))
+
+
 # Zarzalín ataca (T-097): galopa hasta el héroe, se planta donde sus colmillos llegan a él en el impacto del clip
 # (propuesta de animaciones: los pies a centro − 30 − 0,632·px_m − alcance·px_m, y a la altura de los pies del objetivo),
 # y atacar(ataque, al_golpear) llama al golpe UNA vez en su ancla. Durante el clip el rig no se mueve (el clip lleva el
@@ -3086,7 +3215,8 @@ func _anim_zarzalin(o: Dictionary, obj: Dictionary, impacto: Callable, ataque: S
 	t1.tween_property(rig, "position", destino, 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	await t1.finished
 	p.mirar(ida, 0.1)
-	Sonido.voz(o, "ataque")                            # se lanza: su voz (sonido.gd; si no tiene, nada)
+	if ataque == "colmillo_lateral":                 # las bestias no tienen voz de «ataque»: su aviso hace ese papel
+		_sonar(str(o.get("clave", "")) + "_aviso_colmillo")   # (la embestida avisa con la señal «aviso», un turno antes)
 	var golpes := [0]
 	var al_golpear := func():
 		golpes[0] += 1
@@ -3330,10 +3460,12 @@ func _golpe_visual(objetivo: Dictionary, dano: int, magia: String, critico := fa
 				_numero_flotante(objetivo, "¡%d!" % dano, C_DANO, 58)
 				registro.text = "¡Golpe crítico!"
 				_temblor(10.0)
-			else:
+			elif dano > 0:
 				_destello(centro, Color(1.0, 0.95, 0.85), 1.0)
 				_numero_flotante(objetivo, str(dano), Color.WHITE)
 				_temblor(3.0)
+			else:                                      # todo lo paró la coraza de Escarcha (M3): ya lo dice «❄»
+				_temblor(2.0)
 			rig.modulate = Color(1.6, 0.3, 0.3)
 	_actualizar()
 	if objetivo["hp"] > 0 and not objetivo["animando"]:
@@ -4023,6 +4155,9 @@ func _restablecer_color(f: Dictionary) -> void:
 		else:
 			f["defendiendo"] = false
 			rig.modulate = Color(0.6, 0.6, 0.68)
+			if not f["hero"] and _p3d(f).has_method("avisar") and not f.get("derrumbe", false):
+				f["derrumbe"] = true                   # una bestia: su derrumbe, una vez, al empezar la derrota
+				_sonar(str(f.get("clave", "")) + "_derrumbe")
 			_p3d(f).morir()
 			if not f["hero"]:                          # enemigo 3D: cae y luego se desvanece
 				var t := create_tween()
@@ -4144,6 +4279,11 @@ func _repartir_exp(ganan: bool) -> void:
 		Sonido.efecto("monedas")                   # sonido.gd
 	if ResourceLoader.exists("res://inventario.gd"):
 		load("res://inventario.gd").ganar_oro(oro)
+		var botin: Array = Extra.botin_de(enemigos)    # las bestias dejan su material (Zarzalín: Corteza espinosa)
+		for b in botin:
+			load("res://inventario.gd").agregar_objeto(b)
+		if not botin.is_empty():
+			registro.text += "   +" + ", ".join(botin)
 	# progreso.gd: más experiencia si van por debajo del nivel de la zona, muy poca si van 5 por encima;
 	# los jefes dan mucho. Todos suben: los caídos ganan la mitad.
 	var Progreso = load("res://progreso.gd")
