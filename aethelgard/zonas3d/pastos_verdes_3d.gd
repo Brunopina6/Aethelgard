@@ -86,7 +86,12 @@ var _cine_notas := 0                     # campanas que ya han sonado
 var _cine_capa: CanvasLayer
 var _cine_franjas: Array = []
 var _cine_saltar: Button
-var cerca := ""                          # "tilo", "estela" o ""
+var cerca := ""                          # "tilo", "estela", "cofre", "lavanda" o ""
+# «Lavanda para el Árbol» (Oakhaven, T-089; ciudades/oakhaven.gd): el ramito que se coge aquí, cerca del puesto de Tilo.
+# Solo está si Rosa lo ha pedido y aún no se ha cogido (null si no).
+const OAKHAVEN := "res://ciudades/oakhaven.gd"
+const LAVANDA_CERCA := Vector3(4.0, 0, 1.0)     # junto al camino, antes del puente; lejos de Tilo, Garon y el centinela
+var lavanda: Node3D
 var dialogo_actual := ""
 var _recorrido := 0.0                    # metros andados desde el último paso
 var _ultima := Vector3.ZERO
@@ -622,6 +627,9 @@ func _comprobar_cerca() -> void:
 	elif cofre != null and not cofre_abierto() and _dist_plana(p, cofre.global_position) < RADIO_ACCION:
 		cerca = "cofre"
 		boton_accion.text = "Abrir cofre"
+	elif lavanda != null and _dist_plana(p, lavanda.global_position) < RADIO_ACCION:
+		cerca = "lavanda"
+		boton_accion.text = "Coger la lavanda"
 	boton_accion.visible = cerca != ""
 
 
@@ -653,6 +661,25 @@ func _accion() -> void:
 						_mostrar_aviso("Nueva página en el Diario: «%s»" % acto["escena"]))
 		"cofre":
 			_abrir_cofre()
+		"lavanda":
+			_coger_lavanda()
+
+
+# El ramito de «Lavanda para el Árbol»: se coge una sola vez (ciudades/oakhaven.gd, aplicar_senal) y se lleva a Rosa.
+func _coger_lavanda() -> void:
+	var Oak = load(OAKHAVEN)
+	var texto: String = Oak.aplicar_senal(Oak.LAVANDA["senal"])
+	if lavanda != null:
+		lavanda.queue_free()
+		lavanda = null
+	cerca = ""
+	boton_accion.visible = false
+	if texto == "":
+		return
+	Sonido.efecto("examinar")    # sonido.gd
+	_mostrar_aviso(texto, 3.0)
+	guardar_posicion()
+	load("res://progreso.gd").guardar(scene_file_path)
 
 
 func _mirar_a(n: Node3D, objetivo: Vector3) -> void:
@@ -680,6 +707,33 @@ func _crear_personajes() -> void:
 	tilo = _crear_tilo(_sitio_junto_al_camino(Vector3(2.8, 0, -4.2)))
 	estela = _crear_estela(_sitio_junto_al_camino(Vector3(-6.5, 0, 6.0)))
 	cofre = _crear_cofre(_sitio_cofre())
+	if not en_banco() and load(OAKHAVEN).lavanda_disponible():
+		lavanda = _crear_lavanda(_sitio_junto_al_camino(LAVANDA_CERCA))
+
+
+# El ramito de lavanda (provisional, sin modelo: pedido a gráficos): unas espigas moradas atadas, con un destello.
+# No choca: no estorba al grupo.
+func _crear_lavanda(p: Vector3) -> Node3D:
+	var ramo := Node3D.new()
+	ramo.position = p
+	add_child(ramo)
+	var tallo := CylinderMesh.new()
+	tallo.top_radius = 0.008
+	tallo.bottom_radius = 0.012
+	tallo.height = 0.34
+	var espiga := CapsuleMesh.new()
+	espiga.radius = 0.028
+	espiga.height = 0.16
+	var verde := _mat_simple(Color(0.36, 0.5, 0.3))
+	var morado := _mat_simple(Color(0.58, 0.44, 0.82))
+	for i in 7:
+		var a := TAU * i / 7.0
+		var fuera := Vector3(cos(a), 0.0, sin(a))                   # abiertas en abanico, hacia fuera
+		var giro := Vector3(fuera.z * 0.22, 0.0, -fuera.x * 0.22)
+		_pieza(ramo, tallo, verde, fuera * 0.07 + Vector3(0, 0.17, 0), giro)
+		_pieza(ramo, espiga, morado, fuera * 0.12 + Vector3(0, 0.4, 0), giro)
+	_destello(ramo, Vector3(0, 0.45, 0), 0.5)
+	return ramo
 
 
 # Los que están ahora en el grupo (grupo.gd, activos: la misma fuente que el combate, los menús y la partida) siguen a
