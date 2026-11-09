@@ -1524,16 +1524,44 @@ func _mostrar_menu() -> void:
 	var coste_min := 999
 	for h in _hechizos(actor):
 		coste_min = min(coste_min, h[2]["coste"])
-	var lya_viva := heroes.any(func(h): return h["nombre"] == "Lya" and h["hp"] > 0)   # Érebo lo invoca Lya
+	var inv := _estado_invocacion()                  # Érebo lo invoca Lya, con la Armonía llena
 	menu.abrir(actor, [
 		{"tipo": "carta", "texto": "ATACAR", "accion": func(): _menu_objetivo("atacar", ""),
 			"texto_b": "DEFENDER", "accion_b": _defender},
-		{"texto": "MAGIA", "accion": _menu_magia, "apagado": coste_min == 999 or not _puede_pagar(coste_min)},
-		{"tipo": "invocacion", "texto": "INVOCACIÓN", "accion": _invocar, "apagado": armonia < 1.0 or not lya_viva},
-		{"texto": "OBJETO", "accion": _menu_pocion, "apagado": _cantidad_objeto("Poción") + _cantidad_objeto("Éter") <= 0},
-		{"texto": "HUIR", "accion": _escapar, "apagado": Engine.get_meta("tipo_combate", "normal") != "normal"},
+		{"texto": "MAGIA", "accion": _menu_magia, "apagado": coste_min == 999 or not _puede_pagar(coste_min),
+			"motivo": "No sabe magias" if coste_min == 999 else "Necesitas %d PM" % coste_min},
+		{"tipo": "invocacion", "texto": "INVOCACIÓN", "accion": _invocar, "apagado": not inv["lista"],
+			"motivo": inv["motivo"]},
+		_orden_objeto(),
+		_orden_huir(),
 	])
 	_pruebas_menu()
+
+
+# OBJETO y HUIR, iguales en el menú de todos (con su motivo si están apagadas, T-100).
+func _orden_objeto() -> Dictionary:
+	return {"texto": "OBJETO", "accion": _menu_pocion, "apagado": _cantidad_objeto("Poción") + _cantidad_objeto("Éter") <= 0,
+		"motivo": "No quedan objetos"}
+
+
+func _orden_huir() -> Dictionary:
+	return {"texto": "HUIR", "accion": _escapar, "apagado": Engine.get_meta("tipo_combate", "normal") != "normal",
+		"motivo": "No se puede huir"}
+
+
+# ¿Se puede invocar a Érebo ahora? (T-101: la orden INVOCACIÓN y el HUD de la Armonía lo explican). Las reglas son las de
+# siempre y no cambian: la Armonía llena y Lya en pie. «motivo»: por qué no, junto a la orden; «hud»: lo que se lee
+# junto a «ARMONÍA». Sin Lya en el grupo no se la nombra (Kael solo, antes de conocerla).
+func _estado_invocacion() -> Dictionary:
+	var lya: Array = heroes.filter(func(h): return h["nombre"] == "Lya")
+	var por_ciento := "%d %%" % roundi(clampf(armonia, 0.0, 1.0) * 100.0)
+	if lya.is_empty():
+		return {"lista": false, "motivo": "Nadie puede invocar", "hud": por_ciento}
+	if lya[0]["hp"] <= 0:
+		return {"lista": false, "motivo": "Lya ha caído", "hud": "LYA HA CAÍDO", "caida": true}
+	if armonia < 1.0:
+		return {"lista": false, "motivo": "Armonía al " + por_ciento, "hud": por_ciento}
+	return {"lista": true, "motivo": "", "hud": "INVOCACIÓN LISTA"}
 
 
 func _pruebas_menu() -> void:
@@ -1599,10 +1627,12 @@ func _menu_garon() -> void:
 	menu.abrir(actor, [
 		{"tipo": "carta", "texto": "ATACAR", "accion": func(): _menu_objetivo("atacar", ""),
 			"texto_b": "DEFENDER", "accion_b": _defender},
-		{"texto": "ESGRIMA", "accion": _menu_esgrima, "apagado": not _puede_pagar(minimo)},
-		{"texto": "EMBUIR", "accion": _menu_embuir, "apagado": not _puede_pagar(EMBUIR["coste"])},
-		{"texto": "OBJETO", "accion": _menu_pocion, "apagado": _cantidad_objeto("Poción") + _cantidad_objeto("Éter") <= 0},
-		{"texto": "HUIR", "accion": _escapar, "apagado": Engine.get_meta("tipo_combate", "normal") != "normal"},
+		{"texto": "ESGRIMA", "accion": _menu_esgrima, "apagado": not _puede_pagar(minimo),
+			"motivo": "Necesitas %d PM" % minimo},
+		{"texto": "EMBUIR", "accion": _menu_embuir, "apagado": not _puede_pagar(EMBUIR["coste"]),
+			"motivo": "Necesitas %d PM" % EMBUIR["coste"]},
+		_orden_objeto(),
+		_orden_huir(),
 	])
 	for a in OS.get_cmdline_user_args():          # pruebas: -- esgrima=Giro / embuir=Fuego (en cada turno de Garon)
 		if a.begins_with("embuir=") and actor.get("embuir", "") == "":
@@ -1625,8 +1655,10 @@ func _menu_esgrima() -> void:
 	var items: Array = []
 	for n in TECNICAS_GARON:
 		var t: Dictionary = TECNICAS_GARON[n]
+		var paga := _puede_pagar(t["coste"])
 		items.append({"texto": n, "accion": _elegir_tecnica.bind(n), "icono": actor.get("embuir", "") if actor.get("embuir", "") != "" else null,
-			"derecha": "%d PM" % t["coste"], "apagado": not _puede_pagar(t["coste"]), "desc": t["desc"]})
+			"derecha": "%d PM" % t["coste"], "apagado": not paga, "falta_pm": not paga,
+			"desc": t["desc"] if paga else Artes.motivo_pm(t["coste"], actor["mp"])})
 	for it in items:
 		if it["icono"] == null:
 			it.erase("icono")
@@ -1644,11 +1676,13 @@ func _elegir_tecnica(n: String) -> void:
 func _menu_embuir() -> void:
 	estado = "magia"
 	var items: Array = []
+	var paga := _puede_pagar(EMBUIR["coste"])
 	for el in EMBUIR["elementos"]:
 		var activo: bool = actor.get("embuir", "") == el
-		items.append({"texto": el, "accion": _embuir.bind(el), "icono": el, "apagado": not _puede_pagar(EMBUIR["coste"]),
+		items.append({"texto": el, "accion": _embuir.bind(el), "icono": el, "apagado": not paga, "falta_pm": not paga,
 			"derecha": "%d PM" % EMBUIR["coste"],
-			"desc": DESC_EMBUIR[el] + (" (activo: %d turnos)" % actor.get("embuir_turnos", 0) if activo else " Dura 3 turnos, +20 % de daño.")})
+			"desc": (DESC_EMBUIR[el] + (" (activo: %d turnos)" % actor.get("embuir_turnos", 0) if activo else " Dura 3 turnos, +20 % de daño."))
+				if paga else Artes.motivo_pm(EMBUIR["coste"], actor["mp"])})
 	menu.submenu(items)
 
 
@@ -1796,9 +1830,10 @@ func _menu_magia(nivel := 0) -> void:
 	else:
 		for h in por_nivel[nivel - 1]:
 			var d: Dictionary = h[2]
+			var paga := _puede_pagar(d["coste"])
 			items.append({"texto": d["nombre"], "accion": _elegir_hechizo.bind(h[0], h[1]), "icono": h[0],
-				"derecha": "PM ∞" if MODO_PRUEBAS else "%d PM" % d["coste"], "apagado": not _puede_pagar(d["coste"]),
-				"desc": _desc_magia(h[0], d)})
+				"derecha": "PM ∞" if MODO_PRUEBAS else "%d PM" % d["coste"], "apagado": not paga, "falta_pm": not paga,
+				"desc": _desc_magia(h[0], d) if paga else Artes.motivo_pm(d["coste"], actor["mp"])})
 	menu.submenu(items, pestanas, p["activa"])
 
 
@@ -1865,6 +1900,10 @@ func _elegir_arte(fam: String, nv: int, sola := false) -> void:
 
 # Lanza un arte: gasta los PM, anima a quien lanza (el círculo de siempre con el color de su familia), aplica el efecto
 # (artes.gd), suena una vez y acaba el turno (la Armonía +0,15, como cualquier acción).
+# Su seña (T-100): el gesto (se vuelve hacia el aliado al que va y conjura con su clip de siempre: el de Kael es
+# «mage_soell_cast_7»), la silueta (vfx/sena_arte.gd, dibujada: se lee igual con las partículas del móvil) y el sonido,
+# los tres en el momento en que el arte se aplica, una sola vez. En la Lumbre de Retorno, la brasa vuela primero y el
+# caído vuelve al llegar: su fila del HUD se ilumina y sale «¡Kael vuelve!».
 func _lanzar_arte(fam: String, nv: int, objs: Array) -> void:
 	_ocultar_menu()
 	estado = "accion"
@@ -1876,40 +1915,92 @@ func _lanzar_arte(fam: String, nv: int, objs: Array) -> void:
 	quien["animando"] = true
 	var circulo := _carga_magia(quien, fam, 1.0 + 0.3 * (nv - 1))
 	var p = _p3d(quien)
+	var se_vuelve := _gesto_arte(quien, objs, d)
 	if p != null:
 		await p.lanzar_magia()
 	else:
 		await get_tree().create_timer(0.5).timeout
+	var col: Color = Artes.COLOR[fam]
+	if d.has("revive"):                              # la brasa vuela de quien lanza al caído; al llegar, se aplica
+		for f in objs:
+			_sena_arte("lumbre", f, {"desde": _centro(quien) - _centro(f), "viaje": SENA_VIAJE_LUMBRE})
+		await get_tree().create_timer(SENA_VIAJE_LUMBRE).timeout
 	var extra := int(quien.get("efectos", {}).get("apoyo_turnos", 0.0))   # Báculo del Peregrino (C2)
 	var hechos: Array = Artes.aplicar(fam, nv, objs, cola, ATB_MAX, extra)
 	_sonar(Artes.sonido(fam, nv))                    # una vez, al aplicarse (si sonido.gd ya lo tiene)
-	var col: Color = Artes.COLOR[fam]
 	if fam == "Alba" and nv == 2:
 		_fogonazo(Color(0.55, 0.35, 0.8), 0.25, 1.2)   # Peso del Ocaso: la pantalla se tiñe de violeta
-	for x in hechos:
+	for i in hechos.size():
+		var x: Dictionary = hechos[i]
 		var f: Dictionary = x["f"]
-		_onda(_suelo_de(f), Color(col, 0.9), 20.0, 160.0, 0.7, 8.0)
 		_particulas(_centro(f) + Vector2(0, 60), Color(col, 1.0), Color(col, 0.0), 26, 1.0, Vector2(40, 120), 60.0,
 			Vector2(0, -1), 30.0, Vector2(0, -60), 0.07)
 		if x.has("atb"):
+			_sena_arte("ocaso" if x["atb"] < 0.0 or not f.get("hero", false) else "alba", f)
 			_numero_flotante(f, "Retraso" if x["atb"] < 0.0 else "¡Antes!", col, 32)
 		elif x.has("pv"):
 			_revivir_visual(f)
 			_numero_flotante(f, "+%d" % x["pv"], C_CURA)
+			_numero_flotante(f, "¡%s vuelve!" % f["nombre"], menu.ORO, 36, Vector2(-40, -52))
+			menu.destacar_heroe(f, col)
 		elif x.has("aliento"):
-			_numero_flotante(f, "Aliento", col, 30)
+			_sena_arte("aliento", f, {"hojas": int(x["aliento"])})
+			if i == 0:                                # lo que dura, una vez (es igual para todos; el HUD lo cuenta)
+				_numero_flotante(f, "Aliento: %d turnos" % int(x["aliento"]), Artes.COLOR_ESTADO["aliento"], 30)
 		elif x.has("barrera"):
+			_onda(_suelo_de(f), Color(col, 0.9), 20.0, 160.0, 0.7, 8.0)
 			_numero_flotante(f, "❄ %d" % x["barrera"], col, 30)
 		elif x.has("brasa"):
+			_onda(_suelo_de(f), Color(col, 0.9), 20.0, 160.0, 0.7, 8.0)
 			_numero_flotante(f, "Brasa", col, 30)
 	_actualizar()
 	_quitar_carga(circulo)
 	await get_tree().create_timer(0.9).timeout
 	if p != null:
 		p.fin_magia()
+		if se_vuelve:
+			p.mirar_frente(0.3)
 	await get_tree().create_timer(0.3).timeout
 	quien["animando"] = false
 	_terminar_turno()
+
+
+const SenaArte := preload("res://vfx/sena_arte.gd")
+const SENA_VIAJE_LUMBRE := 0.45                      # lo que tarda la brasa de la Lumbre en llegar al caído
+const COLOR_OCASO := Color(0.7, 0.5, 0.96)
+
+
+# El gesto de un arte (T-100): hacia un aliado (el Compás, la Lumbre de Retorno), quien lanza se vuelve hacia él; a
+# todo el grupo (Segundo Aliento), hacia delante. Las que van a los enemigos, como las magias: mirando al frente.
+# Devuelve si se ha vuelto (para que mire otra vez al frente al acabar).
+func _gesto_arte(quien: Dictionary, objs: Array, d: Dictionary) -> bool:
+	var p = _p3d(quien)
+	if p == null or not p.has_method("mirar") or objs.is_empty() or not objs[0].get("hero", false):
+		return false
+	if d["todos"]:
+		p.mirar(Vector3(0.25, 0.0, 1.0), 0.3)
+		return true
+	if is_same(objs[0], quien):
+		return false
+	var dx: float = _centro(objs[0]).x - _centro(quien).x
+	p.mirar(Vector3(signf(dx) * 0.9, 0.0, 0.45) if absf(dx) > 30.0 else Vector3(0.0, 0.0, 1.0), 0.25)
+	return true
+
+
+# La silueta de un arte sobre un luchador (vfx/sena_arte.gd). «extra»: propiedades del efecto (desde, viaje, hojas...).
+func _sena_arte(tipo: String, f: Dictionary, extra := {}) -> Node2D:
+	var s = SenaArte.new()
+	s.tipo = tipo
+	s.color = {"alba": Artes.COLOR["Alba"], "ocaso": COLOR_OCASO, "lumbre": Artes.COLOR["Lumbre"],
+		"aliento": Artes.COLOR_ESTADO["aliento"], "hoja": Artes.COLOR_ESTADO["aliento"]}.get(tipo, Color.WHITE)
+	s.dur = {"alba": 1.5, "ocaso": 1.4, "lumbre": SENA_VIAJE_LUMBRE + 1.4, "aliento": 1.6, "hoja": 1.0}.get(tipo, 1.4)
+	s.alto = clampf((_suelo_de(f).y - _centro(f).y) * 2.0, 120.0, 340.0)
+	for k in extra:
+		s.set(k, extra[k])
+	s.position = _centro(f)
+	s.z_index = 6
+	escena.add_child(s)
+	return s
 
 
 # Lumbre de Retorno: el 3D se levanta (revivir(), que ya tienen los tres modelos); el 2D deshace la pose de caído de
@@ -1934,11 +2025,21 @@ func _tic_estados_heroe(f: Dictionary) -> void:
 		if con_aliento:
 			_sonar(Artes.SONIDO_ESTADO["aliento"])
 		_actualizar()
+	if con_aliento:                                  # T-100: el turno de Aliento gastado se ve (una hoja sube y el HUD
+		_sena_arte("hoja", f)                        # cuenta uno menos); al acabarse, se dice
+		_actualizar()
+		if int(f.get("aliento", 0)) <= 0:
+			create_tween().tween_callback(func(): _numero_flotante(f, "Aliento se acaba", Color(0.8, 0.85, 0.75), 24)).set_delay(0.5)
 
 
 # Sonidos nuevos (artes y accesorios): solo si ya están en el catálogo de sonido.gd. Mientras no estén, silencio (y
-# sin el aviso de Sonido.efecto por un nombre que no conoce).
+# sin el aviso de Sonido.efecto por un nombre que no conoce). La señal «sonido_pedido» sale siempre: con ella las pruebas
+# comprueban que cada uno se pide una sola vez y en su momento, también antes de que exista el archivo.
+signal sonido_pedido(nombre: String)
+
+
 func _sonar(nombre: String) -> void:
+	sonido_pedido.emit(nombre)
 	if Sonido.EFECTOS.has(nombre):
 		Sonido.efecto(nombre)
 
@@ -2053,7 +2154,7 @@ func _menu_pocion() -> void:
 		var o: Dictionary = OBJETOS_COMBATE[nombre]
 		var n := _cantidad_objeto(nombre)
 		var it := {"texto": nombre, "accion": _menu_objeto_aliado.bind(nombre), "apagado": n <= 0,
-			"derecha": "×%d" % n, "desc": "Recupera %d %s a un aliado." % [o["cura"], o["que"]]}
+			"derecha": "×%d" % n, "desc": "Recupera %d %s a un aliado." % [o["cura"], o["que"]] if n > 0 else "No te queda ninguno."}
 		if ResourceLoader.exists(o["imagen"]):
 			it["icono"] = load(o["imagen"])
 		items.append(it)
@@ -3845,13 +3946,14 @@ func _temblor(fuerza: float) -> void:
 	t.tween_property(capa, "offset", Vector2.ZERO, 0.03)
 
 
-func _numero_flotante(f: Dictionary, texto: String, color: Color, tam := TAM_NUMERO) -> void:
+func _numero_flotante(f: Dictionary, texto: String, color: Color, tam := TAM_NUMERO, desvio := Vector2.ZERO) -> void:
 	var l := _etiqueta(texto, tam, color)
 	l.add_theme_constant_override("outline_size", 8)
 	if f.has("centro_ofs"):                       # personajes 3D: encima del cuerpo
 		l.position = _a_pantalla(_centro(f) + Vector2(-28, -115))
 	else:
 		l.position = _a_pantalla(f["pos"] + Vector2(100, _alto_barra(f))) + Vector2(0, 50)
+	l.position += desvio                          # dos textos a la vez sobre el mismo (la Lumbre: «+42» y «¡Kael vuelve!»)
 	capa.add_child(l)
 	var t := create_tween()
 	t.set_parallel(true)
@@ -3978,6 +4080,7 @@ func _volver_al_mapa() -> void:
 
 func _actualizar() -> void:
 	menu.actualizar_grupo(actor)
+	menu.poner_invocacion(_estado_invocacion())      # Érebo en el HUD (T-101): si se puede invocar y, si no, por qué
 	for e in enemigos:
 		var vivo: bool = e["hp"] > 0
 		e["lbl_hp"].visible = vivo
