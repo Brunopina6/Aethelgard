@@ -44,6 +44,12 @@ directories/dch_directory={
 "tilo": "res://dialogos/personajes/tilo.dch"
 }
 directories/dtl_directory={
+"charla_cama_grande": "res://dialogos/oakhaven/charlas/charla_cama_grande.dtl",
+"charla_conocerse": "res://dialogos/oakhaven/charlas/charla_conocerse.dtl",
+"charla_mano": "res://dialogos/oakhaven/charlas/charla_mano.dtl",
+"charla_miedo_garon": "res://dialogos/oakhaven/charlas/charla_miedo_garon.dtl",
+"charla_miedo_kael": "res://dialogos/oakhaven/charlas/charla_miedo_kael.dtl",
+"charla_miedo_lya": "res://dialogos/oakhaven/charlas/charla_miedo_lya.dtl",
 "npc_aldric": "res://dialogos/npc_aldric.dtl",
 "npc_pip": "res://dialogos/npc_pip.dtl",
 "npc_rosa": "res://dialogos/npc_rosa.dtl",

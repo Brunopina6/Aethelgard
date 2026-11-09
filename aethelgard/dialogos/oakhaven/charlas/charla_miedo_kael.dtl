@@ -1,0 +1,14 @@
+join kael (vivo) left
+join lya (vivo) right
+update lya [extra_data="duda"]
+lya: Bastián dice que encendiste los faroles de la ronda muy despacio.
+update kael [extra_data="ligero"]
+kael: A mí la niebla ni me roza. Ya lo sabes.
+update kael [extra_data="brazalete"]
+kael: Imagina que un día se os lleva a todos y a mí me deja. Vaya suerte, ¿eh?
+update lya [extra_data="preocupada"]
+lya: Kael… Pues enciende faroles. Muchos. Y no te quedes solo.
+update kael [extra_data="decidido"]
+kael: …Prometido.
+leave lya
+leave kael

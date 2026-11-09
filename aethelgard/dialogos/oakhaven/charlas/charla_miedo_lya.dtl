@@ -1,0 +1,14 @@
+join kael (vivo) left
+join lya (vivo) right
+update kael [extra_data="duda"]
+kael: Estás muy callada. Eso me da miedo hasta a mí.
+update lya [extra_data="duda"]
+lya: Pensaba en Tilo. Tantos años cuidando de una estatua.
+update lya [extra_data="preocupada"]
+lya: Me da miedo eso: llegar tarde a alguien. Curar es fácil. Llegar, no.
+update kael [extra_data="decidido"]
+kael: Entonces voy yo delante y tú llegas conmigo. Problema resuelto.
+update lya [extra_data="decidida"]
+lya: …Tonto. Gracias.
+leave lya
+leave kael
