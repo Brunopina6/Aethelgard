@@ -106,9 +106,9 @@ pidió no preguntar ([MEMORIA_CHAT.md](MEMORIA_CHAT.md)). **La memoria describe 
 
 ## Pendiente del usuario (mañana)
 
-- **Instalar la Prueba v109** (la más reciente; incluye todo lo de la v98 y la v77): está en la release privada
-  «09/11/2026 · Prueba v109» de `Aethelgard-pruebas` (versionCode 109, commit `4414ebf`, SHA-256 `5ad69ae3…`,
-  comprobado). Qué probar, en las notas de la v109 y de la v98. El Redmi no
+- **Instalar la Prueba v136** (la más reciente; incluye todo lo de las v109, v98 y v77): está en la release privada
+  «09/11/2026 · Prueba v136» de `Aethelgard-pruebas` (versionCode 136, commit `555fc29`, SHA-256 `e1f1bc5d…`,
+  comprobado). Novedad: la Garganta del Diablo 3D, que se elige en Ajustes. Qué probar, en sus notas. El Redmi no
   estaba conectado para copiarla a Descargas. Qué probar, en sus notas: el mapamundi pintado (y compararlo con «De
   siempre» en Ajustes), el prólogo con el botón nuevo, las voces de los enemigos y el táctil.
 - **Escuchar las muestras** y elegir la victoria, los golpes, el cofre y el tesoro (el especialista duda de ellos).
