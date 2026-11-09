@@ -214,3 +214,126 @@ pruebas y la lista exacta de enganches.
    `aliento`, `barrera_absorbe`, `barrera_rota`, `brasa` y `esquiva`.
 4. **Gráficos:** `tinte` y `color_brillo` en `material_arma.gd` (C2).
 5. **Para el usuario,** además de las de §7 del diseño: ¿Peso del Ocaso con M1, o más tarde?
+
+## 2026-11-09, 12:50 · Fase 2 de T-091 y T-092: C0, M1, M2 y C1 enganchados al juego
+
+**Encargo** (coordinador, 09/11): enganchar C0, M1, M2 y C1 con `docs/diseno/combate_enganches.md`.
+- **Base:** `area-combate` @ `555fc29` (= `integracion-experimental`: mi fase 1, mapamundi, sonido y animaciones en sus
+  tandas 1 y 2, Garganta 3D y Oakhaven fase 1). Importada con datos aislados
+  (`D:\REBELUM_diagnostico\importaciones\combate_20261109_084817`; otra, para los `.uid` nuevos, `…_123009`).
+- **Decisiones aplicadas:** C0 aprobado; Peso del Ocaso con M1; `ACTIVOS` = Alba 2, Escarcha 0, Lumbre 2;
+  `HECHOS = ["C1"]`.
+- **Archivos tocados:** `combate.gd`, `menu_combate.gd`, `menus.gd`, `tienda.gd`, `inventario.gd`, `artes.gd`,
+  `equipo_extra.gd` y pruebas. **Sin tocar:** `grupo.gd` (no hizo falta), `diario.gd`, `progreso.gd`, `sonido.gd`,
+  `audio/**`, `zonas3d/**`, `mapa*`, `zona.gd`, `ciudad_oakhaven.*`, `ciudades/**` y las filas de Ajustes de `menus.gd`.
+- **Sin confirmar en la copia:** `project.godot` (los directorios de Dialogic de Oakhaven) y 43 `.uid` de narrativa y de
+  la Garganta 3D. Los dejó la importación; no son míos y no los confirmo (son los «44 cambios» que vio el coordinador).
+
+**1. Commits** (todos en `area-combate`):
+- `30780e5` · **C0**: `combate.gd` (3 líneas), la huella con E9 y su referencia nueva.
+- `653d7b6` · **M1 y M2**: `combate.gd`, `menu_combate.gd`, `menus.gd` (Habilidades), `tienda.gd` (libros), `artes.gd`;
+  `prueba_artes_combate` con `combate.tscn`; se borra `pruebas/combate_con_artes.gd`.
+- `a3c4432` · **C1**: `inventario.gd`, `combate.gd`, `tienda.gd`, `menus.gd` y `equipo_extra.gd`; `prueba_equipo_combate`.
+  (El asunto dice `HECHOS = [C1]`: PowerShell 5.1 se comió las comillas. No lo reescribo.)
+- `5e3bf18` · **Menú de combate**: nombres largos sin pisar el coste; `prueba_controles_nuevos` y `prueba_combate_fotos`.
+- `075946e` · `prueba_huir`: el clic llega a HUIR sin ventana y la prueba comprueba que se huye.
+- Este informe y el estado de `docs/diseno/combate_enganches.md` (§7): el commit siguiente.
+
+**2. Qué se juega ya** (observado en el código y comprobado ejecutando, aislado, 09/11)
+- **Kael, Alba** (pestaña con el sol, detrás de I · II · III):
+  - Compás del Alba, desde el nivel 3: 6 PM; un aliado gana media barra. Sale apagado si no hay otro aliado en pie o si
+    ya espera su turno.
+  - Peso del Ocaso, desde el nivel 9: 15 PM; los enemigos pierden 40 de barra, los jefes 20.
+- **Lya, Lumbre** (pestaña con el farol):
+  - Lumbre de Retorno, desde el nivel 4: 14 PM; levanta a un caído con el 25 % de sus PV, la barra a 0 y fuera de la
+    cola; el modelo 3D se levanta.
+  - Segundo Aliento, desde el nivel 10: 16 PM; tres turnos de cada aliado, un 8 % de PV al empezar su turno; icono de
+    hoja junto al nombre.
+- **Libros** en todas las tiendas: Peso del Ocaso (350) y Segundo Aliento (450).
+- **Al subir de nivel:** «Kael aprende Compás del Alba». **Habilidades** enseña las artes con su nivel.
+- **Accesorio:** la octava ranura del menú Grupo.
+  - Se venden el Farol de peregrino (Oakhaven, 220: empieza con 35 de barra) y la Moneda del Águila (Sunken City, 450:
+    +25 % de monedas, una vez).
+  - Enganchados y probados, pero todavía sin cómo conseguirlos (los dará el mundo con `conseguir(id)`): Diente de
+    Grimfang (crítico de 0,12 a 0,20, la misma tirada), Gota de la cascada alta (+2 PM al acabar el turno), Cinta de Lumi
+    (+5 % de PV al empezar el turno) y Pluma de arpía (esquiva el 12 % de los golpes físicos).
+- **Sonidos de las artes y de la esquiva:** solo si están en el catálogo de `sonido.gd`. Hoy no están: no suenan ni
+  avisan.
+- **Garon** no tiene artes; las 12 magias, Esgrima, Embuir, Érebo, la Armonía y el ATB, sin cambios (la huella).
+
+**3. La huella**
+- **Sobre `555fc29`, antes de tocar nada:** igual a la referencia (8 de 8, SHA `a33fdae7…`), también con la pasada de
+  los enganches (`D:\REBELUM_diagnostico\pruebas\2026-11-09_084905`). Las tandas de animación y sonido no la cambiaron:
+  no hizo falta otra referencia por eso.
+- **C0** (comprobado ejecutando, aislado):
+  - sin las dos líneas de `rng.seed = randi()`, E9 dio 5 huellas distintas en 6 pasadas; cambió hasta el daño
+    (Guardián 180 → 106 o 110) (`D:\REBELUM_diagnostico\combate\2026-11-09\ejecuciones\20261109_115849_huella_e9_sin_c0`);
+  - con ellas, 3 pasadas iguales en un proceso (`…_115830_huella_e9b`) y lo mismo en todas las pasadas posteriores.
+- **E9** (nivel 10, grupo 4): Lya se defiende, Kael lanza Infierno y Lya, Cólera del Cielo. Va en un combate nuevo y no
+  en E4, para que E1 a E8 sigan comparándose línea a línea con la primera referencia.
+- **Referencia nueva:** la de antes más E9, SHA `3372b413…` (`D:\REBELUM_diagnostico\pruebas\2026-11-09_115925`).
+- **Con M1, M2 y C1 enganchados y sin usarlos, la huella es la misma:** 9 de 9 (`…\pruebas\2026-11-09_122651` y la
+  batería).
+
+**4. Pruebas** (datos aislados; la partida real y la carpeta real de datos, sin cambios)
+- **Nuevas:**
+  - `prueba_equipo_combate`: Farol, Gota, Cinta, Moneda, Pluma (con la esquiva forzada al 100 %) y Diente en combates de
+    verdad; los atributos no cambian; la tienda de cada lugar; los libros de las artes (para quién, precio, enseñan).
+  - `prueba_controles_nuevos`: con teclado, mando y toques, MAGIA, la pestaña del Alba (Q / L1 vuelve), el Compás sobre
+    Lya; la fila Accesorio se ve sin desplazar, ↓ desde Amuleto, Intro / A pone y quita el Farol, ← a su ◀, y se toca.
+  - `prueba_combate_fotos` (con ventana): las capturas.
+- `prueba_artes_combate`, ya con `combate.tscn`, y su escenario D: el aviso «aprende» al subir al 3.
+- **Mutaciones** (`…\ejecuciones\20261109_122918_mutacion_equipo`, restauradas): sin la Gota o sin la esquiva,
+  `prueba_equipo_combate` FALLIDA. Las pruebas no están vacías.
+- **Batería completa** (`D:\REBELUM_diagnostico\pruebas\2026-11-09_123210\resumen.md`): **49 SUPERADAS, 0 FALLIDAS**,
+  28 MANUALES y 0 NO SEGURAS. La partida real, la carpeta real de datos y el proyecto, sin cambios; 28 Godot de otras
+  copias, vigilados. Dentro, la huella: 9 de 9 iguales a la referencia.
+- **Las pedidas por el coordinador,** en esa batería: `prueba_menu_magia`, `prueba_equilibrio`, `prueba_ia`, `prueba_mando`,
+  `prueba_teclado`, `prueba_foco`, `prueba_grupos_combate` y `prueba_incorporacion` (242 s), SUPERADAS.
+- **`prueba_huir` arreglada** (`075946e`): sin ventana, su clic caía fuera y salía SUPERADA sin huir (en la batería, el
+  combate seguía en «menu»). Ahora huye y lo comprueba (`…\pruebas\2026-11-09_124326`).
+
+**5. Capturas con ventana** (`D:\REBELUM_diagnostico\combate\2026-11-09\capturas\`, 15, 1280 × 720):
+- 01 y 01b, la pestaña I y la III de Kael con el sol del Alba detrás; 02, la pestaña del Alba;
+- 03 y 04, el Compás (elegir a Lya y «¡Antes!»);
+- 05, la pestaña de la Lumbre; 06 y 07, Segundo Aliento y su hoja junto a los nombres;
+- 08 y 09, la Lumbre de Retorno (Kael en el suelo y de pie);
+- 10, el menú Grupo con «Accesorio: Farol de peregrino» y su efecto; 11, Habilidades; 12, Objetos;
+- 13, la tienda con los libros; 14, el Equipo de Oakhaven con el Farol el primero.
+- **Antes del ajuste** (`…\capturas_antes_del_ajuste\`): «Compás del Alba» sobre «I · 6 PM», y lo mismo con «Cólera del
+  Cielo» y «32 PM», que **ya pasaba antes de las artes** (01b).
+
+**6. Hallazgos**
+- **Nombres largos sobre el coste** en los submenús (también con Cólera del Cielo, de antes). Arreglado en
+  `menu_combate.gd`: se juntan las letras y, si hace falta, baja el tamaño (no menos de 26). Los que caben no cambian.
+- **Menú Grupo:** la octava ranura no cabía. Panel de 640, 3 px entre filas y «Arma: solo espadas.» junto al título.
+- **Sin ventana, la ventana raíz mide 100 × 100** (comprobado con una sonda). Los toques y clics simulados tienen que
+  pasar por `root.get_final_transform()`; si no, no tocan nada.
+  - `prueba_huir` no tocaba HUIR (arreglada). Pendiente de verificar: `prueba_menu_nuevo` y `prueba_mirador` también
+    hacen clics en coordenadas del juego.
+- **Sin ventana**, al pasar el ratón simulado sobre una fila, `DisplayServer.mouse_get_button_state()` escribe un
+  `ERROR` (no implementado en el modo sin ventana). No rompe nada ni cuenta como fallo.
+- **Con teclado y mando, ↑ ↓ se saltan las filas apagadas:** el motivo («Nadie ha caído.») solo se lee tocándolas. Pasa
+  igual con las magias de siempre.
+- **`conseguir(id)` no mira `HECHOS`:** el código del mundo solo debe dar lo disponible (`disponible(id)`).
+
+**7. Límites**
+- Nada medido en el Redmi: no se pedía; los menús nuevos dibujan unos pocos iconos por código.
+- **Los sonidos nuevos no existen todavía:** no se ha oído nada.
+- **Los combates con guion** no prueban la estrategia de un jugador ni el equilibrio de las artes.
+- **La Pluma** se probó con la esquiva forzada al 100 %; el 12 %, solo en `prueba_equipo`.
+- **Diente, Gota, Cinta y Pluma** no se pueden conseguir todavía en el juego.
+
+**8. Pendiente y peticiones**
+- **Narrativa (`diario.gd`, línea 119, pestaña Combate):** `for f in FICHAS:` → `for f in FICHAS +
+  load("res://artes.gd").fichas_activas():`. Hoy añade «Ritmo» y «Aliento».
+- **Sonido:** `arte_alba`, `arte_ocaso`, `arte_lumbre`, `renacer`, `aliento` y `esquiva` (los demás, con M3 y M4).
+  `combate.gd` ya los pide por esos nombres en cuanto estén en `Sonido.EFECTOS`.
+- **Mundo (T-089, T-090):** cofres y secretos con `load("res://equipo_extra.gd").conseguir(id)` (Diente, Gota, Cinta y
+  Pluma), comprobando antes `disponible(id)`.
+- **Siguiente, en orden:**
+  - **C2:** las armas especiales. Necesita `tinte` y `color_brillo` en `material_arma.gd` (gráficos), `arma_de` y
+    `grupo.gd`, y la decisión del usuario sobre las Fauces de Gorthor.
+  - **M3:** Escarcha y la coraza (`_quitar_pv`; el golpe devastador pasa a `_quitar_pv`).
+  - **M4:** los III, Brasa y tomos.
+  - **E1 a E3:** los enemigos nuevos, cuando el usuario decida las debilidades.
