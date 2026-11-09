@@ -4,7 +4,8 @@ extends SceneTree
 #   1. Los datos: de 3 a 5 en la Garganta y de 2 a 3 en Pastos Verdes; ids «nota_» sin repetir entre todos los lugares;
 #      cada texto, en dos líneas del aviso de las zonas 3D (1000 px a 30 px) y sin nada de Érebo (D-033), de lo que
 #      espera decisión del usuario (D-073) ni de Final Fantasy X; las de la Garganta, en una cornisa de su trazado y a
-#      más de RADIO + 0,5 m de lo que ya se usa allí (ascensor, palanca, pilar, cofre, detalle de los puentes, puerta).
+#      más de RADIO + 0,5 m de lo que ya se usa allí (ascensores, palanca, pilar, cofre, detalle de los puentes, puerta y
+#      guardados), y entre ellas.
 #   2. El Diario: una nota leída de cada lugar sale en «Notas» con su lugar (también Pastos Verdes, que no está en
 #      LUGARES); las no leídas, no.
 #   3. En Pastos Verdes 3D: las tres, junto al camino y lejos de Tilo, la estela, el cofre, la lavanda y el centinela;
@@ -114,18 +115,24 @@ func _datos() -> void:
 			_fallo("1: %s ocupa %d líneas en el aviso" % [n["id"], aviso.get_line_count()])
 		print("NOTA %s | %d letras | %d línea(s) | %s" % [n["id"], n["texto"].length(), aviso.get_line_count(), n["texto"]])
 	aviso.free()
-	var usados := {"ascensor": TG.ASCENSOR_ARRIBA, "palanca": TG.PALANCA, "pilar": TG.PILAR_PEREGRINO,
-		"cofre del nido": TG.COFRE_NIDO, "detalle de los puentes": TG.DETALLE_PUENTES, "puerta": TG.PUERTA}
+	# lo que ya se usa en garganta_3d.gd (_piezas_al_alcance), con su misma tolerancia de altura (2,5 m)
+	var usados := {"ascensor de arriba": TG.ASCENSOR_ARRIBA, "ascensor de abajo": TG.ASCENSOR_ABAJO, "palanca": TG.PALANCA,
+		"pilar": TG.PILAR_PEREGRINO, "cofre del nido": TG.COFRE_NIDO, "detalle de los puentes": TG.DETALLE_PUENTES,
+		"puerta": TG.PUERTA + Vector3(0, 0, 1.2), "guardado 1": TG.GUARDADO_1, "guardado 2": TG.GUARDADO_2}
 	for n in NG.NOTAS:
 		var q: Vector3 = n["pos"]
 		if not q.y in [TG.ALTO, TG.BAJO, TG.NIDO] or q.z < TG.Z_NORTE or q.z > TG.Z_FIN_CAMINO:
 			_fallo("1: %s no está en una cornisa de la Garganta (%s)" % [n["id"], q])
 		for k in usados:
 			var u: Vector3 = usados[k]
-			if absf(u.y - q.y) < 1.0 and Vector2(u.x - q.x, u.z - q.z).length() < NG.RADIO + 0.5:
+			if absf(u.y - q.y) < 2.5 and Vector2(u.x - q.x, u.z - q.z).length() < NG.RADIO + 0.5:
 				_fallo("1: %s está pegada a %s (sus botones se pisarían)" % [n["id"], k])
 		if not NG.CASILLA_2D.has(n["id"]):
 			_fallo("1: %s no dice dónde iría en la Garganta 2D" % n["id"])
+		for m in NG.NOTAS:
+			var o: Vector3 = m["pos"]
+			if m != n and absf(o.y - q.y) < 2.5 and Vector2(o.x - q.x, o.z - q.z).length() < NG.RADIO + 0.5:
+				_fallo("1: %s y %s están pegadas" % [n["id"], m["id"]])
 
 
 # 2. El Diario.
