@@ -28,8 +28,24 @@ extends SceneTree
 #  10. Interfaz y mundo: el Diario (pasar hoja solo si cambia, cerrar), el brazalete (una vez por detalle) y el altar.
 #      Garganta: la puerta suena al abrirse (tras la palanca), el ascensor ya viaja y el nido (emboscada y cofre raro).
 #  11. Aleatorio: los efectos no tocan el generador global (randi() sale igual con y sin sonidos).
+# Tanda 3 (T-083):
+#  12. La Garganta 3D (partes «garganta3d»): se escucha desde Kael; la cascada grande y el viento del abismo suenan en
+#      bucle por Ambiente y siguen a quien escucha (la cascada, a su altura; el viento, a lo largo del abismo y bajo los
+#      puentes); el eco está en Efectos y Ambiente y se quita al salir; pasos de roca en la cornisa y de tablas en un
+#      puente colgante, también los de Lya y Garon (un nodo de pasos cada uno, desde su pie, en el espacio, y más bajos
+#      que los de Kael); las gotas caen en la pared de roca; guardar, la puerta, el ascensor sin fuerza, la palanca (con
+#      el puente y la puerta, desde donde están), el ascensor, el cofre raro y examinar suenan una vez aunque se pulse
+#      dos veces; la emboscada, una, y en el combate ya no hay eco.
+#  13. Artes (parte «artes»): los efectos que pide artes.gd existen, suenan una vez, por Efectos y con su prioridad;
+#      el Aliento, uno a la vez; la coraza que absorbe, dos a la vez como mucho; la esquiva.
+#  14. Oakhaven (parte «oakhaven»): fuentes 2D de la taberna (bucle, más cuanto más cerca, callada lejos, con fundido) y
+#      del cuervo (de vez en cuando, solo cerca), la campana una vez y la ola de faroles.
+#  15. Efectos en el espacio (parte «espacio»): con «pos» suenan desde ese punto con su distancia de referencia; sin
+#      escucha 3D suenan normal; el máximo de voces 3D.
 
 const REGION := "res://zonas3d/pastos_verdes_3d.tscn"
+const GARGANTA3D := "res://zonas3d/garganta_3d.tscn"
+const T3 := preload("res://zonas3d/garganta/trazado.gd")
 const PARTIDA := "user://prueba_efectos.save"
 
 var fallos: Array = []
@@ -144,6 +160,14 @@ func _probar() -> void:
 		await _interfaz()
 	if _parte("azar"):
 		_azar()
+	if _parte("espacio"):
+		await _espacio()
+	if _parte("artes"):
+		await _artes()
+	if _parte("oakhaven"):
+		await _oakhaven()
+	if _parte("garganta3d"):
+		await _garganta3d()
 	print("OK efectos: ", ", ".join(hechos))
 	print("FALLOS: %d" % fallos.size())
 	quit(1 if fallos.size() > 0 else 0)
@@ -175,7 +199,8 @@ func _catalogo() -> void:
 			if not s is AudioStreamWAV or s.format != AudioStreamWAV.FORMAT_QOA or s.stereo or s.mix_rate != 48000:
 				_fallo("1: %s no es QOA mono a 48 kHz" % ruta)
 				continue
-			var bucle: bool = d.has("tres_d") or d.has("dos_d")
+			# bucles: los emisores 3D y las fuentes 2D, salvo las que suenan de vez en cuando («cada»: el cuervo)
+			var bucle: bool = (d.has("tres_d") or d.has("dos_d")) and not d.get("dos_d", {}).has("cada")
 			if (s.loop_mode == AudioStreamWAV.LOOP_FORWARD) != bucle:
 				_fallo("1: %s %s debería ser un bucle" % [ruta, "no" if bucle else "sí y no"])
 			var w := AudioStreamWAV.load_from_file(ProjectSettings.globalize_path(ruta))   # el derivado, sin comprimir
@@ -228,8 +253,9 @@ func _api() -> void:
 	for x in Son._todas():
 		if x.playing and x.get_meta("efecto", "") == "paso_hierba":
 			iguales += 1
-	if iguales > 2:
-		_fallo("2: suenan %d pasos de hierba a la vez (máximo 2)" % iguales)
+	var max_pasos := int(Son.EFECTOS["paso_hierba"]["max"])     # 3 desde la tanda 3 (Kael, Lya y Garon)
+	if iguales > max_pasos:
+		_fallo("2: suenan %d pasos de hierba a la vez (máximo %d)" % [iguales, max_pasos])
 	hechos.append("una vez, variantes (%d) y tono %.3f-%.3f" % [vistas.size(), tonos[0], tonos[tonos.size() - 1]])
 
 	# 3. voces y prioridades
@@ -991,3 +1017,442 @@ func _azar() -> void:
 		_fallo("11: los efectos cambian el generador aleatorio global (%s ≠ %s)" % [str(sin_sonido), str(con_sonido)])
 	_limpiar()
 	hechos.append("aleatorio propio")
+
+
+# ================================================================= tanda 3
+
+const ARTES := ["arte_alba", "arte_ocaso", "arte_hora_dorada", "arte_escarcha", "arte_lumbre", "renacer", "aliento",
+	"barrera_absorbe", "barrera_rota", "brasa", "esquiva"]
+
+
+func _sonando_de(nombre: String) -> int:
+	var n := 0
+	for x in Son._todas():
+		if x.playing and x.get_meta("efecto", "") == nombre:
+			n += 1
+	return n
+
+
+# Una escena 3D mínima con su cámara (la que escucha si no hay oyente de personaje).
+func _escena_3d() -> void:
+	var raiz := Node3D.new()
+	raiz.name = "Espacio"
+	var cam := Camera3D.new()
+	cam.name = "Cam"
+	raiz.add_child(cam)
+	cam.owner = raiz
+	var ps := PackedScene.new()
+	ps.pack(raiz)
+	raiz.free()
+	change_scene_to_packed(ps)
+	await _esperar(3)
+	current_scene.get_node("Cam").make_current()
+	await _esperar(1)
+
+
+# 15. Efectos en el espacio.
+func _espacio() -> void:
+	await _escena_vacia()
+	_limpiar()
+	var p = Son.efecto("gota", {"pos": Vector3(3, 0, 0)})
+	if p == null or p is AudioStreamPlayer3D:
+		_fallo("15: sin escucha 3D, un efecto con «pos» no suena normal (%s)" % str(p))
+	await _escena_3d()
+	_limpiar()
+	var q = Son.efecto("puente_baja", {"pos": Vector3(0, 0, -20)})
+	if not q is AudioStreamPlayer3D or q.get_parent() != current_scene:
+		_fallo("15: con «pos» y una cámara 3D, el efecto no suena desde un reproductor 3D de la escena (%s)" % str(q))
+	elif absf(q.unit_size - 14.0) > 0.01 or q.global_position.distance_to(Vector3(0, 0, -20)) > 0.01 or q.max_db > 0.0 \
+			or q.attenuation_filter_db != 0.0 or String(q.bus) != "Efectos":
+		_fallo("15: el puente que baja no suena desde su sitio con su «en_3d» (unidad %.1f, en %s)" % [q.unit_size, q.global_position])
+	var g = Son.efecto("gota", {"pos": Vector3(2, 0, 0)})
+	if not g is AudioStreamPlayer3D or absf(g.unit_size - float(Son.EN_3D["unidad"])) > 0.01 or String(g.bus) != "Ambiente":
+		_fallo("15: una gota en el espacio no lleva la distancia por defecto ni su bus")
+	if Son.registro.is_empty() or not Son.registro[Son.registro.size() - 1][4] is Vector3:
+		_fallo("15: el registro no apunta dónde sonó")
+	# como mucho VOCES_3D a la vez; sin hueco, lo menos importante no quita nada
+	_limpiar()
+	var nombres := ["cofre", "tesoro", "palanca", "puente_baja", "guardado", "posada", "misterio", "union", "nivel",
+		"carga_jefe", "pagina", "examinar"]
+	for i in nombres.size():
+		Son.efecto(nombres[i], {"pos": Vector3(i, 0, -5)})
+	var en_3d := 0
+	for x in Son._voces3d:
+		if is_instance_valid(x) and x.playing:
+			en_3d += 1
+	if en_3d != Son.VOCES_3D:
+		_fallo("15: doce efectos en el espacio ocupan %d voces 3D (esperaba %d)" % [en_3d, Son.VOCES_3D])
+	if _n("examinar") != 0 or _n("pagina") != 0:
+		_fallo("15: sin voces 3D libres, algo menos importante quita una (examinar %d, página %d)" % [_n("examinar"), _n("pagina")])
+	await _escena_vacia()
+	var vivos: int = Son._voces3d.filter(func(x): return is_instance_valid(x)).size()
+	if vivos != 0:
+		_fallo("15: quedan %d reproductores 3D de la escena anterior" % vivos)
+	hechos.append("efectos en el espacio (%d voces 3D)" % en_3d)
+
+
+# 13. Las artes nuevas (artes.gd pide sus efectos por estos nombres; combate.gd los engancha).
+func _artes() -> void:
+	await _escena_vacia()
+	var A = load("res://artes.gd")
+	var pide: Array = []
+	for fam in A.SONIDO_LANZAR:
+		for n in A.SONIDO_LANZAR[fam]:
+			if not n in pide:
+				pide.append(n)
+	for k in A.SONIDO_ESTADO:
+		if not A.SONIDO_ESTADO[k] in pide:
+			pide.append(A.SONIDO_ESTADO[k])
+	for n in ARTES + pide:
+		if not Son.EFECTOS.has(n):
+			_fallo("13: falta «%s» en el catálogo (lo piden artes.gd o combate.gd)" % n)
+	for n in ARTES:
+		if not Son.EFECTOS.has(n):
+			continue
+		_limpiar()
+		var p = Son.efecto(n)
+		var q = Son.efecto(n)
+		var d: Dictionary = Son.EFECTOS[n]
+		if p == null or q != null or _n(n) != 1:
+			_fallo("13: «%s» pedido dos veces en el mismo instante suena %d veces" % [n, _n(n)])
+			continue
+		if String(p.bus) != "Efectos":
+			_fallo("13: «%s» no va por Efectos (%s)" % [n, p.bus])
+		var esperada := 1 if n in ["aliento", "barrera_absorbe"] else (2 if n == "esquiva" else 3)
+		if int(d.get("p", 1)) != esperada:
+			_fallo("13: «%s» tiene prioridad %d (esperaba %d)" % [n, int(d.get("p", 1)), esperada])
+	_limpiar()
+	for i in 3:
+		Son._ultimo.erase("aliento")
+		Son.efecto("aliento")
+	if _sonando_de("aliento") != 1:
+		_fallo("13: suenan %d Alientos a la vez (uno como mucho)" % _sonando_de("aliento"))
+	_limpiar()
+	for i in 4:
+		Son._ultimo.erase("barrera_absorbe")
+		Son.efecto("barrera_absorbe")
+	if _sonando_de("barrera_absorbe") > 2 or _n("barrera_absorbe") != 4:
+		_fallo("13: la coraza que absorbe: %d a la vez (máximo 2), %d de 4" % [_sonando_de("barrera_absorbe"), _n("barrera_absorbe")])
+	_limpiar()
+	Son.efecto("barrera_absorbe")
+	await _juego(0.03)
+	if Son.efecto("barrera_absorbe") != null:
+		_fallo("13: la coraza que absorbe suena dos veces en menos de 0,05 s")
+	_limpiar()
+	hechos.append("artes (%d efectos; los %d que pide artes.gd están)" % [ARTES.size(), pide.size()])
+
+
+# 14. Oakhaven: fuentes 2D (taberna y cuervo), la campana y la ola de faroles. Una ciudad de mentira con casillas de
+# 64 px y quien anda.
+func _oakhaven() -> void:
+	await _escena_vacia()
+	_limpiar()
+	var c := Node2D.new()
+	c.name = "OakhavenFalsa"
+	root.add_child(c)
+	var quien := Node2D.new()
+	c.add_child(quien)
+	var t := 64.0
+	var puerta := Vector2(16, 25) * t
+	var letrero := Vector2(13, 25.5) * t
+	quien.position = puerta + Vector2(0, 1) * t
+	var tab = Son.fuente_2d(c, "taberna", puerta, quien)
+	var cue = Son.fuente_2d(c, "cuervo", letrero, quien)
+	if tab == null or cue == null:
+		_fallo("14: no se crean las fuentes de la taberna y del cuervo")
+		c.queue_free()
+		return
+	if tab.bus != &"Ambiente" or tab.stream == null or tab.stream.loop_mode != AudioStreamWAV.LOOP_FORWARD:
+		_fallo("14: la taberna no es un bucle por Ambiente")
+	if Son.fuente_2d(c, "golpe", puerta, quien) != null or Son.fuente_2d(c, "rio_2d", puerta, quien) != null:
+		_fallo("14: fuente_2d acepta un efecto que no es una fuente del mundo")
+	await _juego(0.2)
+	var al_entrar: float = tab.volume_db
+	var niveles := []
+	var sonando := []
+	for casillas in [1.0, 5.0, 13.0]:
+		quien.position = puerta + Vector2(0, casillas) * t
+		await _juego(1.4)
+		niveles.append(tab.volume_db)
+		sonando.append(tab.playing)
+	print("TABERNA a 1, 5 y 13 casillas: %s dB, sonando %s (al entrar %.1f dB)" % [str(niveles.map(func(v): return snappedf(v, 0.1))),
+		str(sonando), al_entrar])
+	var db: float = Son.EFECTOS["taberna"]["db"]
+	if not (sonando[0] and sonando[1]) or sonando[2]:
+		_fallo("14: la taberna suena cerca y no lejos: %s" % str(sonando))
+	elif absf(niveles[0] - db) > 1.0 or niveles[1] > niveles[0] - 4.0:
+		_fallo("14: la taberna no suena más cuanto más cerca (%s dB)" % str(niveles))
+	if al_entrar > niveles[0] - 3.0:
+		_fallo("14: la taberna empieza de golpe (%.1f dB a los 0,2 s)" % al_entrar)
+	# el cuervo: cerca, de vez en cuando; lejos, nunca
+	quien.position = letrero + Vector2(1.5, 0) * t
+	Son.reiniciar_contadores()
+	await _juego(30.0)
+	var cerca_n := _n("cuervo")
+	quien.position = letrero + Vector2(20, 0) * t
+	Son.reiniciar_contadores()
+	await _juego(25.0)
+	var lejos_n := _n("cuervo")
+	if cerca_n < 2 or cerca_n > 8 or lejos_n != 0:
+		_fallo("14: el cuervo chirría %d veces en 30 s cerca y %d en 25 s lejos" % [cerca_n, lejos_n])
+	if cue.stream != null and cue.stream.loop_mode == AudioStreamWAV.LOOP_FORWARD:
+		_fallo("14: el cuervo suena en bucle")
+	# la campana, una vez; la ola de faroles (cinco seguidos: tres a la vez como mucho)
+	_limpiar()
+	Son.efecto("campana")
+	Son.efecto("campana")
+	if _n("campana") != 1 or String(Son.EFECTOS["campana"].get("bus", "")) != "Ambiente":
+		_fallo("14: la campana suena %d veces (o no va por Ambiente)" % _n("campana"))
+	for i in 5:
+		Son.efecto("farol", {"retraso": 0.15 * i, "db": -2.0 * i})
+	var max_a_la_vez := 0
+	for f in 40:
+		await process_frame
+		max_a_la_vez = maxi(max_a_la_vez, _sonando_de("farol"))
+	if _n("farol") != 5 or max_a_la_vez > 3:
+		_fallo("14: la ola de faroles: suenan %d de 5, %d a la vez (máximo 3)" % [_n("farol"), max_a_la_vez])
+	c.queue_free()
+	await _esperar(3)
+	hechos.append("Oakhaven (taberna %s dB a 1/5/13 casillas, cuervo %d veces cerca y %d lejos, campana y faroles)" % [
+		str(niveles.map(func(v): return snappedf(v, 0.1))), cerca_n, lejos_n])
+
+
+# Kael en «p», con la y del suelo de debajo (como prueba_garganta3d).
+func _poner3(r, p: Vector3) -> void:
+	var q := PhysicsRayQueryParameters3D.create(p + Vector3(0, 2.0, 0), p - Vector3(0, 6.0, 0))
+	var hit: Dictionary = r.get_world_3d().direct_space_state.intersect_ray(q)
+	if not hit.is_empty():
+		p.y = hit["position"].y
+	r._colocar_kael(p)
+	r._ultima = p
+
+
+func _efectos_bus() -> Dictionary:
+	var d := {}
+	for b in ["Efectos", "Ambiente", "Musica", "Interfaz"]:
+		d[b] = AudioServer.get_bus_effect_count(AudioServer.get_bus_index(b))
+	return d
+
+
+# 12. La Garganta 3D.
+func _garganta3d() -> void:
+	await _escena_vacia()
+	var efectos_antes := _efectos_bus()
+	for k in ["mazmorras", "combates_ganados", "cofres_abiertos", "lore_visto"]:
+		Engine.set_meta(k, {})
+	# Gorthor ya vencido: así la arena (donde se mira la cascada de cerca) no empieza su combate
+	Engine.set_meta("combates_ganados", {"garganta_gorthor": true})
+	Engine.set_meta("pos_3d_ok", false)
+	Engine.set_meta("hitos", {"pv_02": true, "pv_03": true, "pv_05": true})   # Lya y Garon en el grupo
+	if Engine.has_meta("grupo_activo"):
+		Engine.remove_meta("grupo_activo")
+	change_scene_to_file(GARGANTA3D)
+	if not await _hasta(func(): return _en_escena(GARGANTA3D), 120.0):
+		_fallo("12: no se abre la Garganta 3D")
+		return
+	await _esperar(20)
+	var r = current_scene
+	parte = "garganta3d: oyente, bucles y eco"
+	var oy = r.get_node_or_null("Oyente")
+	if oy == null or not oy.is_current() or oy.sigue != r.kael:
+		_fallo("12: no se escucha desde Kael")
+	var cascada = r.get_node_or_null("Sonido_cascada_grande")
+	var vientos: Array = r.get_children().filter(func(x): return x is AudioStreamPlayer3D and x.get_meta("efecto", "") == "viento_abismo")
+	if cascada == null or vientos.size() != 2:
+		_fallo("12: falta la cascada o los dos vientos del abismo (%s, %d)" % [str(cascada), vientos.size()])
+		return
+	for x in [cascada] + vientos:
+		if not x.playing or x.bus != &"Ambiente" or x.stream.loop_mode != AudioStreamWAV.LOOP_FORWARD:
+			_fallo("12: «%s» no suena en bucle por Ambiente" % x.name)
+	var con_eco: Array = Son.eco_activo()
+	var efectos_dentro := _efectos_bus()
+	if con_eco != ["Efectos", "Ambiente"] or efectos_dentro["Efectos"] != efectos_antes["Efectos"] + 1 \
+			or efectos_dentro["Ambiente"] != efectos_antes["Ambiente"] + 1 or efectos_dentro["Musica"] != efectos_antes["Musica"] \
+			or efectos_dentro["Interfaz"] != efectos_antes["Interfaz"]:
+		_fallo("12: el eco no está (solo) en Efectos y Ambiente (%s; efectos %s → %s)" % [str(con_eco), str(efectos_antes), str(efectos_dentro)])
+	# la cascada suena desde su caída a la altura de quien escucha; el viento, desde el eje del abismo
+	_poner3(r, Vector3(-8.5, 0, -31.0))                    # la arena
+	await _esperar(4)
+	var o: Vector3 = Son.posicion_oyente()
+	if absf(cascada.global_position.y - o.y) > 0.8 or absf(cascada.global_position.x - 3.6) > 0.01:
+		_fallo("12: la cascada no suena a la altura de quien escucha (%s; oyente %s)" % [cascada.global_position, o])
+	var eje = vientos[0] if absf(vientos[0].global_position.x - T3.X_CAMINO_O) > 1.0 else vientos[1]
+	if absf(eje.global_position.z - o.z) > 0.8 or absf(eje.global_position.x - (T3.X_BORDE_O + T3.X_BORDE_E) * 0.5) > 0.01:
+		_fallo("12: el viento del abismo no se pone frente a quien escucha (%s; oyente %s)" % [eje.global_position, o])
+	var d_cascada: float = o.distance_to(cascada.global_position)
+	# pasos: un nodo por personaje; Kael en la cornisa (roca) y por un puente colgante (tablas); Lya y Garon, desde su pie
+	parte = "garganta3d: pasos"
+	var cuerpos := {"Kael": r.kael}
+	if r.grupo != null:
+		for m in r.grupo.miembros:
+			cuerpos[m["nombre"]] = m["nodo"]
+	if cuerpos.size() != 3:
+		_fallo("12: en la Garganta no van Lya y Garon (%s)" % str(cuerpos.keys()))
+	for n in cuerpos:
+		var nodos: Array = cuerpos[n].get_children().filter(func(x): return String(x.name).begins_with("Pasos"))
+		if nodos.size() != 1:
+			_fallo("12: %s lleva %d nodos de pasos (uno)" % [n, nodos.size()])
+	_poner3(r, Vector3(T3.X_CAMINO_O, 0, 25.0))
+	if r.grupo != null:
+		r.grupo.colocar(Vector3.BACK)
+	await _esperar(10)
+	_limpiar()
+	for n in cuerpos:
+		var pn = cuerpos[n].get_node_or_null("Pasos")
+		if pn != null:
+			pn.pasos = 0
+	r.destino = r._ajustar_destino(Vector3(T3.X_CAMINO_O, 0, 12.5))
+	for f in 300:
+		r.pasos = 0
+		await process_frame
+		if r.destino == null and f > 60:
+			break
+	for f in 45:                                           # que lleguen los de detrás
+		r.pasos = 0
+		await process_frame
+	var kael_madera := 0
+	var kael_piedra := 0
+	var kael_otro := 0
+	var comp := 0
+	var comp_lejos := 0
+	for x in Son.registro:
+		if not String(x[1]).begins_with("paso_"):
+			continue
+		if x[4] == null:
+			if x[1] == "paso_madera":
+				kael_madera += 1
+			elif x[1] == "paso_piedra":
+				kael_piedra += 1
+			else:
+				kael_otro += 1
+		else:
+			comp += 1
+			var pie: Vector3 = x[4]
+			if absf(pie.x - T3.X_CAMINO_O) > 1.6 or pie.y < T3.ALTO - 2.5 or pie.y > T3.ALTO + 1.0:
+				comp_lejos += 1
+	var info := "Kael %d de tablas y %d de roca; compañeros %d en el espacio" % [kael_madera, kael_piedra, comp]
+	print("GARGANTA3D pasos: ", info)
+	if kael_madera < 3 or kael_piedra < 1 or kael_otro != 0:
+		_fallo("12: por la cornisa y un puente, los pasos de Kael: %s (otros %d)" % [info, kael_otro])
+	if comp < 3 or comp_lejos > 0:
+		_fallo("12: los pasos de Lya y Garon no suenan desde su pie en el espacio (%d, %d fuera del camino)" % [comp, comp_lejos])
+	var total_pasos := 0
+	var por_cuerpo := []
+	for n in cuerpos:
+		var pn = cuerpos[n].get_node_or_null("Pasos")
+		if pn == null:
+			continue
+		total_pasos += int(pn.pasos)
+		por_cuerpo.append("%s %d/%d" % [n, int(pn.sonados), int(pn.pasos)])
+		if n == "Kael":
+			if pn.ultimo != null and pn.ultimo is AudioStreamPlayer3D:
+				_fallo("12: los pasos de Kael (quien escucha) suenan en el espacio")
+		elif int(pn.pasos) > 0 and (pn.ultimo == null or not pn.ultimo is AudioStreamPlayer3D
+				or absf(pn.ultimo.unit_size - float(Son.PASO_3D["unidad"])) > 0.01):
+			_fallo("12: los pasos de %s no son de un reproductor 3D con la distancia de los pasos" % n)
+		if n != "Kael" and absf(float(pn.db) - float(Son.DB_PASOS.get(n, 0.0))) > 0.001:
+			_fallo("12: los pasos de %s no llevan su volumen (%.1f dB)" % [n, float(pn.db)])
+	var sonados := kael_madera + kael_piedra + kael_otro + comp
+	print("GARGANTA3D pisadas que suenan por cuerpo: ", ", ".join(por_cuerpo))
+	if sonados > total_pasos or sonados < total_pasos * 0.85:
+		_fallo("12: %d pisadas y %d pasos que suenan (ni duplicados ni perdidos: %s)" % [total_pasos, sonados, ", ".join(por_cuerpo)])
+	if not is_instance_valid(r) or current_scene != r or r.saliendo:
+		_fallo("12: la Garganta se ha ido durante la prueba (¿un encuentro?)")
+		return
+	# las gotas caen en la roca
+	parte = "garganta3d: gotas"
+	_limpiar()
+	var gotas := 0
+	var en_roca := 0
+	for k in 4:
+		Son._ultimo.clear()
+		Son._det_t = 0.0
+		await _esperar(2)
+		for x in Son.registro:
+			if String(x[1]).begins_with("gota") and x[4] is Vector3:
+				gotas += 1
+				var gp: Vector3 = x[4]
+				var muro: float = T3.muro_oeste(gp.z) if gp.x < 0.0 else T3.muro_este(gp.z)
+				if absf(gp.x - muro) < 1.0:
+					en_roca += 1
+		Son.registro.clear()
+	if gotas < 3 or en_roca != gotas:
+		_fallo("12: las gotas: %d en el espacio, %d en la pared de roca" % [gotas, en_roca])
+	# los efectos de la 2D, una vez cada uno (dos pulsaciones seguidas)
+	parte = "garganta3d: efectos de la 2D"
+	var acciones := [["guardado_1", ["guardado"]], ["puerta", ["cerrada"]], ["ascensor_arriba", ["atascado"]]]
+	for a in acciones:
+		_limpiar()
+		r._bloqueo = 0.0
+		r.cerca = a[0]
+		r._accion()
+		r._accion()
+		r._bloqueo = 0.0
+		r.cerca = a[0]
+		r._accion()                                        # sin el bloqueo de la pulsación: la espera del efecto
+		for k in a[1]:
+			if _n(k) != 1:
+				_fallo("12: «%s» suena %d veces (una)" % [k, _n(k)])
+		if _n("ascensor") != 0:
+			_fallo("12: sin la palanca, suena el ascensor")
+	_poner3(r, T3.PALANCA + Vector3(-1.6, 0, 1.0))
+	await _esperar(3)
+	_limpiar()
+	r._bloqueo = 0.0
+	r.cerca = "palanca"
+	r._accion()
+	r._accion()
+	await _juego(1.8)
+	for k in ["palanca", "puente_baja", "puerta_abre"]:
+		if _n(k) != 1:
+			_fallo("12: la palanca: «%s» suena %d veces (una)" % [k, _n(k)])
+	for x in Son.registro:
+		if x[1] == "puente_baja" and (not x[4] is Vector3 or x[4].distance_to((T3.BISAGRA + T3.APOYO) * 0.5) > 0.1):
+			_fallo("12: el puente no suena desde el levadizo (%s)" % str(x[4]))
+		if x[1] == "puerta_abre" and (not x[4] is Vector3 or x[4].distance_to(T3.PUERTA + Vector3(0, 1.5, 0)) > 0.1):
+			_fallo("12: la puerta no suena desde la puerta (%s)" % str(x[4]))
+		if x[1] == "palanca" and x[4] != null:
+			_fallo("12: la palanca (junto a Kael) suena en el espacio")
+	await _hasta(func(): return not r.tirando, 30.0)
+	_limpiar()
+	r._bloqueo = 0.0
+	r.cerca = "ascensor_arriba"
+	r._accion()
+	r._accion()
+	if _n("ascensor") != 1 or _n("atascado") != 0:
+		_fallo("12: con la palanca, el ascensor: viaje %d, atascado %d" % [_n("ascensor"), _n("atascado")])
+	await _hasta(func(): return not r.viajando, 30.0)
+	if not is_instance_valid(r) or current_scene != r or r.saliendo:
+		_fallo("12: la Garganta se ha ido durante la prueba (¿un encuentro?)")
+		return
+	_limpiar()
+	r._abrir_cofre()
+	await _juego(0.5)
+	r._abrir_cofre()
+	await _juego(0.5)
+	if _n("cofre") != 1 or _n("tesoro") != 1:
+		_fallo("12: el cofre raro: cofre %d, premio %d" % [_n("cofre"), _n("tesoro")])
+	_limpiar()
+	r._bloqueo = 0.0
+	r.cerca = "detalle_p2"
+	r._accion()
+	r._accion()
+	if _n("examinar") != 1:
+		_fallo("12: examinar los pilares suena %d veces" % _n("examinar"))
+	# la emboscada, una vez; en el combate, sin eco
+	parte = "garganta3d: emboscada"
+	await _juego(0.5)
+	_limpiar()
+	r._encuentro()
+	if not await _hasta(func(): return _en_escena("res://combate.tscn"), 60.0):
+		_fallo("12: la emboscada no lleva al combate")
+		return
+	await _esperar(5)
+	if _n("emboscada") != 1:
+		_fallo("12: la emboscada suena %d veces" % _n("emboscada"))
+	if not Son.eco_activo().is_empty() or _efectos_bus() != efectos_antes:
+		_fallo("12: en el combate sigue el eco de la Garganta (%s; %s)" % [str(Son.eco_activo()), str(_efectos_bus())])
+	if is_instance_valid(cascada):
+		_fallo("12: en el combate sigue la cascada")
+	await _escena_vacia()
+	hechos.append("Garganta 3D (oyente, cascada a %.0f m, vientos, eco, %s, gotas %d, efectos de la 2D una vez)" % [d_cascada, info, gotas])
