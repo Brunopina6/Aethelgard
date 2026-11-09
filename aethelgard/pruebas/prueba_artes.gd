@@ -232,10 +232,18 @@ func _objetivos() -> void:
 	var kael := _heroe("Kael", 100, 100)
 	var solo: Array = A.objetivos("Alba", 1, kael, [kael], [], [])
 	_ok(solo.is_empty(), "4: el Compás se lanza sobre Kael solo")
-	_ok(A.motivo_apagado("Alba", 1, kael, [kael], [], []) == A.MOTIVO["sin_otro"], "4: sin motivo con Kael solo")
+	_ok(A.motivo_apagado("Alba", 1, kael, [kael], [], []) == "Kael va solo: no hay otro aliado.", "4: sin motivo con Kael solo")
 	var lya := _heroe("Lya", 80, 80, 40, 30.0)
 	_ok(A.objetivos("Alba", 1, kael, [kael, lya], [], []) == [lya], "4: el Compás no va a Lya")
-	_ok(A.motivo_apagado("Alba", 1, kael, [kael, lya], [], [lya]) == A.MOTIVO["esperan"], "4: sin motivo si Lya ya espera")
+	_ok(A.motivo_apagado("Alba", 1, kael, [kael, lya], [], [lya]) == "Lya ya espera su turno.", "4: sin motivo si Lya ya espera")
+	var garon := _heroe("Garon", 150, 150, 10, 100.0)
+	_ok(A.motivo_apagado("Alba", 1, kael, [kael, lya, garon], [], [lya]) == "Lya y Garon ya esperan su turno.",
+		"4: el motivo no nombra a los dos que esperan: «%s»" % A.motivo_apagado("Alba", 1, kael, [kael, lya, garon], [], [lya]))
+	lya["hp"] = 0
+	garon["hp"] = 0
+	_ok(A.motivo_apagado("Alba", 1, kael, [kael, lya, garon], [], []) == A.MOTIVO["sin_otro"], "4: sin motivo si los demás han caído")
+	lya["hp"] = 80
+	_ok(A.motivo_apagado("Alba", 1, kael, [kael, lya], [], [lya]) == "Lya ya espera su turno.", "4: Lya en pie otra vez")
 	lya["hp"] = 0
 	_ok(A.objetivos("Alba", 1, kael, [kael, lya], [], []).is_empty(), "4: el Compás va a una caída")
 	_ok(A.objetivos("Lumbre", 1, kael, [kael, lya], [], []) == [lya], "4: Lumbre de Retorno no va a la caída")
@@ -373,7 +381,11 @@ func _menu() -> void:
 		and not filas[0]["apagado"] and filas[0]["desc"] == A.DESCRIPCION["Compás del Alba"], "6: la fila del Compás: %s" % [filas])
 	_ok(filas[1]["apagado"] and filas[1]["derecha"] == "15 PM", "6: el Ocaso se puede pagar con 10 PM")
 	var solo: Array = A.filas_familia("Alba", 1, kael, [kael], [], [])
-	_ok(solo[0]["apagado"] and solo[0]["desc"] == A.MOTIVO["sin_otro"], "6: el Compás de Kael solo no dice por qué")
+	_ok(solo[0]["apagado"] and solo[0]["desc"] == "Kael va solo: no hay otro aliado.", "6: el Compás de Kael solo no dice por qué")
+	_ok(filas[1]["desc"] == "Necesitas 15 PM: tienes 10." and filas[1]["falta_pm"] and not filas[0]["falta_pm"],
+		"6: el Ocaso sin PM no dice por qué: %s" % [filas[1]])
+	_ok(A.texto_estado({"hp": 10, "aliento": 2}, "aliento") == "2" and A.texto_estado({"hp": 10}, "aliento") == ""
+		and A.texto_estado({"hp": 10, "barrera": 5}, "barrera") == "", "6: los turnos del Aliento junto a su icono")
 	var pruebas: Array = A.filas_familia("Lumbre", 1, lya, [kael, lya], [], [], true)
 	_ok(pruebas[0]["derecha"] == "PM ∞" and pruebas[0]["apagado"], "6: con PM infinitos o sin caídos: %s" % [pruebas])
 	# iconos: se dibujan en el draw de un Control (si el modo sin ventana dibuja)
