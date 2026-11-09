@@ -642,7 +642,8 @@ func _crear_capas() -> void:
 			if mu != 0:
 				var abajo := muros[(y + 1) * ANCHO + x] if y + 1 < ALTO else 0
 				var col := (0 if mu == 1 else 2) + (1 if abajo != mu else 0)
-				if mu == 1 and estilo.has("linde"):
+				# 3 = muro invisible: solo lo usan las ciudades hechas a mano (ciudad_oakhaven.gd), bajo su dibujo
+				if mu == 3 or (mu == 1 and estilo.has("linde")):
 					col = 4
 				elif mu == 2 and abajo == mu:
 					col = 5 if _filas_tejado_arriba(x, y) < _filas_tejado_abajo(x, y) else 6
@@ -948,10 +949,20 @@ func _crear_objetos() -> void:
 		var sp_o := _poner_objeto(o["tipo"], o["pos"])
 		if o["tipo"] == "cofre" and not _cofre_abierto(_id_cofre(o["pos"])):
 			cofres.append([sp_o, _id_cofre(o["pos"]), false])
-	altar = _poner_objeto("altar", meta * T)
+	altar = _poner_altar()
 	if es_ciudad:
 		_poner_npcs()
 	_poner_detalles()
+	_adornar_altar()
+
+
+# El altar o monumento del final del camino. Una ciudad hecha a mano pone el suyo (ciudad_oakhaven.gd: el Árbol).
+func _poner_altar() -> Node2D:
+	return _poner_objeto("altar", meta * T)
+
+
+# El orbe de luz que flota sobre el altar.
+func _adornar_altar() -> void:
 	var orbe := Sprite2D.new()
 	orbe.texture = luz_tex
 	orbe.material = mat_aditivo
@@ -998,20 +1009,25 @@ func _brazalete() -> void:
 			brillados.erase(id)
 		elif dist < RADIO_BRAZALETE and not brillados.has(id) and not Progreso.visto(id):
 			brillados[id] = true
-			Sonido.efecto("brazalete")                   # un brillo que se oye, muy bajo (sonido.gd, T-083)
-			var b := Sprite2D.new()
-			b.texture = luz_tex
-			b.material = mat_aditivo
-			b.modulate = Color(1.0, 0.86, 0.42, 0.0)
-			b.position = Vector2(-14, -44)               # muñeca izquierda de Kael
-			b.scale = Vector2(0.04, 0.04)
-			b.z_index = 5
-			jugador.add_child(b)
-			var t := create_tween()
-			t.tween_property(b, "modulate:a", 1.0, 0.15)
-			t.parallel().tween_property(b, "scale", Vector2(0.16, 0.16), 0.25)
-			t.tween_property(b, "modulate:a", 0.0, 0.5)
-			t.tween_callback(b.queue_free)
+			_brillo_brazalete()
+
+
+# El brillo en la muñeca de Kael (también lo usa la grieta de Oakhaven: ciudad_oakhaven.gd).
+func _brillo_brazalete() -> void:
+	Sonido.efecto("brazalete")                   # un brillo que se oye, muy bajo (sonido.gd, T-083)
+	var b := Sprite2D.new()
+	b.texture = luz_tex
+	b.material = mat_aditivo
+	b.modulate = Color(1.0, 0.86, 0.42, 0.0)
+	b.position = Vector2(-14, -44)               # muñeca izquierda de Kael
+	b.scale = Vector2(0.04, 0.04)
+	b.z_index = 5
+	jugador.add_child(b)
+	var t := create_tween()
+	t.tween_property(b, "modulate:a", 1.0, 0.15)
+	t.parallel().tween_property(b, "scale", Vector2(0.16, 0.16), 0.25)
+	t.tween_property(b, "modulate:a", 0.0, 0.5)
+	t.tween_callback(b.queue_free)
 
 
 # Textura y material de la hierba, compartidos por la zona y el fondo del combate.
@@ -1105,7 +1121,7 @@ func _hay_hierba(p: Vector2) -> bool:
 	if c.x < 0 or c.y < 0 or c.x >= ANCHO or c.y >= ALTO:
 		return false
 	var mu := muros[c.y * ANCHO + c.x]
-	if mu == 2 or (mu == 1 and not estilo.has("linde")):
+	if mu == 2 or mu == 3 or (mu == 1 and not estilo.has("linde")):
 		return false
 	return _peso(camino_v, p / T) < 0.25 and _peso(agua_v, p / T) < 0.1
 
@@ -2204,17 +2220,25 @@ const NPCS := [
 const RADIO_NPC := 95.0
 
 
+# Los vecinos de la ciudad. Una ciudad hecha a mano pone los suyos (ciudad_oakhaven.gd), y cada uno puede traer:
+# «casilla» (dónde está, en vez de «lugar», que es respecto a la plaza), «tinte», «escala» y «corto» (para «Hablar con»).
+func _npcs() -> Array:
+	return NPCS
+
+
 func _poner_npcs() -> void:
-	for d in NPCS:
+	for d in _npcs():
 		if not ResourceLoader.exists(d["imagen"]):
 			continue
 		var tex: Texture2D = load(d["imagen"])
-		var p: Vector2 = (plaza + d["lugar"]) * T
+		var p: Vector2 = (d["casilla"] if d.has("casilla") else plaza + d["lugar"]) * T
+		var k: float = 0.5 * d.get("escala", 1.0)
 		var s := Sprite2D.new()
 		s.texture = tex
 		s.centered = false
 		s.offset = Vector2(-tex.get_width() * 0.5, -tex.get_height())
-		s.scale = Vector2.ONE * 0.5
+		s.scale = Vector2.ONE * k
+		s.modulate = d.get("tinte", Color.WHITE)
 		s.position = p
 		mundo_y.add_child(s)
 		var sombra := Sprite2D.new()
@@ -2230,8 +2254,8 @@ func _poner_npcs() -> void:
 		cuerpo.add_child(forma)
 		s.add_child(cuerpo)
 		var t := create_tween().set_loops()        # respira
-		t.tween_property(s, "scale:y", 0.51, 1.2 + randf() * 0.4).set_trans(Tween.TRANS_SINE)
-		t.tween_property(s, "scale:y", 0.5, 1.2 + randf() * 0.4).set_trans(Tween.TRANS_SINE)
+		t.tween_property(s, "scale:y", k * 1.02, 1.2 + randf() * 0.4).set_trans(Tween.TRANS_SINE)
+		t.tween_property(s, "scale:y", k, 1.2 + randf() * 0.4).set_trans(Tween.TRANS_SINE)
 		npcs.append([s, d, 0])
 
 
@@ -2261,7 +2285,7 @@ func _comprobar_cerca() -> void:
 			mejor = dd
 			npc_cerca = n
 	if npc_cerca != null:
-		boton_examinar.text = "Hablar con " + npc_cerca[1]["nombre"].get_slice(" ", 0)
+		boton_examinar.text = "Hablar con " + npc_cerca[1].get("corto", npc_cerca[1]["nombre"].get_slice(" ", 0))
 		boton_examinar.visible = true
 	else:
 		boton_examinar.text = "Examinar"
@@ -2284,7 +2308,8 @@ func _accion() -> void:
 					Sonido.efecto("misterio", {"retraso": 0.2})
 					_mostrar_aviso("Nueva página en el Diario: «%s»" % acto["escena"]))
 		return
-	if npc_cerca != null and _empezar_dialogo(npc_cerca[1].get("dialogo", "")):
+	if npc_cerca != null and _empezar_dialogo(_dialogo_npc(npc_cerca)):
+		npc_cerca[2] += 1                              # la próxima vez, otro (los de Oakhaven se turnan)
 		return
 	if npc_cerca != null:
 		var frases: Array = npc_cerca[1]["frases"]
@@ -2293,6 +2318,12 @@ func _accion() -> void:
 	else:
 		Sonido.efecto("examinar")                          # examinar el altar o monumento (sonido.gd, T-083)
 		_mostrar_aviso(lugar["texto"])
+
+
+# Qué diálogo de Dialogic toca con este vecino ("" = sus frases de siempre). Una ciudad hecha a mano lo elige según la
+# partida y las veces que se le ha hablado (ciudad_oakhaven.gd).
+func _dialogo_npc(n: Array) -> String:
+	return n[1].get("dialogo", "")
 
 
 # Diálogos con Dialogic (addons/dialogic). Si el plugin no está, se usan los avisos de siempre.
@@ -2338,8 +2369,7 @@ func _abrir_tienda(pestana := "Objetos") -> void:
 
 # Posada: se paga y el grupo recupera todos los PV y PM.
 func _posada() -> void:
-	var inv = load("res://inventario.gd")
-	if not inv.gastar_oro(PRECIO_POSADA):
+	if not _pagar_posada():
 		Sonido.efecto("ui_error")                          # sonido.gd
 		_mostrar_aviso("No tienes monedas suficientes (la posada cuesta %d)." % PRECIO_POSADA)
 		return
@@ -2350,7 +2380,18 @@ func _posada() -> void:
 	t.tween_property(fundido, "color", Color(0, 0, 0, 0.9), 0.5)
 	t.tween_interval(0.6)
 	t.tween_property(fundido, "color:a", 0.0, 0.6)
+	t.tween_callback(_tras_posada)
 	_mostrar_aviso("Descansáis en la posada. PV y PM recuperados.")
+
+
+# Cobra la noche: false si no hay monedas. Una ciudad puede invitar (ciudad_oakhaven.gd: la noche gratis).
+func _pagar_posada() -> bool:
+	return load("res://inventario.gd").gastar_oro(PRECIO_POSADA)
+
+
+# Al amanecer, tras descansar. Una ciudad puede poner aquí su escena (ciudad_oakhaven.gd).
+func _tras_posada() -> void:
+	pass
 
 
 func _poner_oro() -> void:
