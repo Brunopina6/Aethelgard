@@ -1809,6 +1809,8 @@ func _guardia(obj: Dictionary) -> void:
 	if p != null and p.has_method("mirar_frente"):
 		p.mirar_frente(0.25)
 		p.reposo()
+		if p.has_method("cubrir"):                # y se queda plantado, cubriendo, hasta que acaba la Guardia
+			p.cubrir(Vector3.ZERO)                # (de cara a los enemigos, entre ellos y el aliado)
 	await get_tree().create_timer(0.2).timeout
 	_terminar_turno()
 
@@ -1833,6 +1835,10 @@ func _cubre(obj: Dictionary, avisar := true) -> Dictionary:
 
 # Quita la guardia que daba «nombre» (al empezar su turno o al caer). Sin guardia, no hace nada.
 func _quitar_guardia(nombre: String) -> void:
+	for g in heroes:                                # el gesto de cubrir de Garon (garon_3d.gd), fuera
+		var pg = _p3d(g) if g["nombre"] == nombre else null
+		if pg != null and pg.has_method("fin_cubrir"):
+			pg.fin_cubrir()
 	for h in heroes:
 		if str(h.get("guardia_de", "")) == nombre:
 			h.erase("guardia_de")
