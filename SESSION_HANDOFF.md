@@ -19,6 +19,20 @@ pidió no preguntar ([MEMORIA_CHAT.md](MEMORIA_CHAT.md)). **La memoria describe 
   (desde `c74b872`): diseño y maqueta jugable, activable con `-- garganta3d`.
 - **Mapamundi pintado: integrado** (`a04a9d2`) con el selector en Ajustes (`14aea04`). Batería: 40 superadas, 0
   fallidas. Falta medirlo. La memoria describe `integracion-experimental` @ `14aea04`.
+- **09/11, punto de control por el límite de uso.** Subido y comprobado con `git ls-remote`:
+  `integracion-experimental` @ `eb8bd94`, `area-narrativa` @ `01eca69`, `area-sonido` @ `778ea75`,
+  `area-animaciones` @ `f6dc571` y `area-graficos` @ `9cc0cbd` (revisión previa sin alertas: nada grande, prohibido
+  ni secreto).
+  - **Integrado:** arte de Oakhaven (T-089), Zarzalín preparado para el combate (T-097), tanda 3 de sonido, texto de
+    T-086 y el orden de PV-03.
+  - **Corregido:** la unión `68aa383` dejó marcas de conflicto en `docs/recursos.md` y `prueba_combate_huella`
+    duplicada; arreglado en `a9b4b07`. Licencias pendientes de Zarzalín y de los muñecos de Oakhaven en `eb8bd94`.
+  - **Pendiente de verificar:** la batería completa sobre `eb8bd94`.
+  - **Detenidos por el límite de uso**, con su trabajo sin confirmar en sus copias: combate (HUD: barra de PM, motivos,
+    Érebo visible; `D:\Aethelgard_combate`) y sonido tanda 4 (las seis bestias; `D:\Aethelgard_sonido`). Se reanudan
+    leyendo su copia y su informe.
+  - **Siguiente:** batería aislada; memoria completa (TASKS, DECISIONS, MEMORIA_CHAT); reanudar combate y sonido;
+    después T-102 (Garganta), T-103 (Oakhaven 3D), T-101 (Érebo) y la APK de ruta corta.
 - **09/11, 13:10, integrado y subido** (`integracion-experimental` @ `808a836`, batería con 51 superadas y 0
   fallidas):
   - Oakhaven 2D jugable, hecha a mano;
