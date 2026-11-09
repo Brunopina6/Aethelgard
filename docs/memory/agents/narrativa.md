@@ -647,3 +647,185 @@ depende del texto): `D:\REBELUM_diagnostico\narrativa\2026-11-09\continuidad\202
   `.dtl` y falle si una frase pasa de dos líneas. Necesitaría su línea en `lista_pruebas.txt`.
 - **Siguiente paso de narrativa:** con la decisión sobre los gestos, si animaciones los pone, repetir
   `prueba_prologo` (espera `duda|reposo` y `preocupada|reposo` en los segundos globos: habría que ajustarla).
+
+## 2026-11-09, 18:10 — Personalidad: el arte de Oakhaven enganchado, la voz de los héroes y sus comentarios al explorar
+
+**Encargo:** (1) enganchar el arte 2D de Oakhaven de gráficos en `ciudad_oakhaven.gd`, con los muñecos de la posadera,
+Bastián, Doña Encina y Albar, sin romper vecinos, misiones, posada, cofres ni partidas antiguas; (2) guía de voz de
+Kael, Lya y Garon y pulir solo lo que la contradiga; (3) comentarios breves de los héroes al explorar, enganchados donde
+haya un punto seguro y el resto documentado, coordinando la intención de cada línea con animaciones. Copia
+`D:\Aethelgard_narrativa`, rama `area-narrativa`, desde `01eca69`, con `integracion-experimental` (`eb8bd94`) unida
+antes de empezar.
+
+### 1. Archivos y commits
+| Commit | Qué |
+|---|---|
+| `d590693` | Unión `--no-ff` de `integracion-experimental` @ `eb8bd94` (sin conflictos) |
+| `85a8fb3` | `ciudad_oakhaven.gd` con el arte de verdad; `pruebas/prueba_oakhaven_ciudad_arte.gd` (nueva); `prueba_oakhaven.gd` al día; una línea en `lista_pruebas.txt` |
+| `34aa447` | `docs/narrativa/voces_heroes.md` (nueva) y una línea de Lya en `dialogos/pv_07.dtl` |
+| `1723941` | `dialogos/comentarios.gd` (nuevo), su enganche en `ciudad_oakhaven.gd`, `pruebas/prueba_comentarios.gd` (nueva), `prueba_oakhaven_fotos.gd` (captura 19) y una línea en `lista_pruebas.txt` |
+| (este) | Este informe |
+
+Sin confirmar y ajeno: `aethelgard/pruebas/prueba_orden_pv03.gd.uid`, que generó la importación (la prueba es de otra
+área). Sin push.
+
+**1. El arte en la ciudad** (observado en el código y comprobado ejecutando). La ciudad ya pedía el arte con el contrato
+`crear_pieza`, así que con el módulo de gráficos en su sitio ya salían sus edificios; faltaba casi todo lo demás, y había
+tres fallos que solo se ven con el arte de verdad:
+- **Tejados sobre las calles.** Las casas se repartían al azar (de 3 a 6 × 3 o 4) y en 3/4 una casa tapa unas siete
+  casillas al norte: la plaza y varias calles quedaban bajo tejados (`antes\2_plaza.png`, `antes\4_ciudad_entera.png`).
+  Además, las de 3 de alto no tienen dibujo y salían con el tejado provisional. Ahora, si el módulo trae `RELLENO`,
+  las casas, farolas y tendederos son los suyos (31 casas, 16 farolas y 2 tendederos, con muro invisible debajo) y el
+  resto es jardín: setos y flores al azar, y los árboles solo en los huecos de `JARDINES` de gráficos que caen en jardín (25).
+- **Dibujos duplicados.** Lo que ya pinta un lugar (el barril, el letrero del cuervo, los tres faroles y la escalera
+  de la ronda, la puerta de la torre, la grieta, el tablón, el atril, el altar de las velas, la raíz cortada, el sello y
+  el tapiz) salía también en provisional encima, con las farolas de `zona.gd` y su luz 2D en la ronda
+  (`antes\11_ronda_encendida.png`). Ahora es un punto vacío (`PINTADO_EN`), y se sigue usando desde su casilla.
+- **Faroles de la ronda cruzados.** El dibujo numera sus faroles de norte a sur y la partida, de sur a norte
+  (`oak_farol_1` está en y = 38,5): al encender el 1 se encendía en el dibujo el del otro extremo. Ahora se emparejan
+  por su sitio (`_farol_del_dibujo`); la prueba lo comprueba con los tres.
+- Además: el destello del cofre de las raíces es el del Árbol (`cofre_raices_abierto`) y ya no lleva el provisional
+  encima; sin hierba alta; la luz de Kael es un farol de mano (`LUZ_JUGADOR`); y los cuatro vecinos llevan su muñeco
+  propio sin tinte (`muneco_de`). Los otros cuatro (Aldric, Selene, Pip y Rosa) no cambian.
+- **Sin tocar:** el trazado (se pisa lo mismo: lo comprueban `prueba_oakhaven`, apartado 2, y la prueba nueva), los
+  vecinos y sus diálogos, misiones, posada, cofres, notas, guardado y los archivos de gráficos. Con el módulo falso de
+  las pruebas (sin `RELLENO`, sin anclas) todo sigue como antes.
+
+**2. Las voces.** Repasadas todas las líneas de los tres héroes (prólogo, PV-02 a PV-07, PV-14 y las tres escenas de la
+posada). Casi todas encajan ya con la voz de la biblia v2 (§2.5). Solo cambia una (§3).
+
+**3. Los comentarios.** `dialogos/comentarios.gd` guarda seis momentos, con una frase de cada héroe (21 frases con dos
+respuestas) y, para cada una, su intención, su gesto de retrato y su espera 3D de animaciones. Enganchados en Oakhaven:
+al llegar, tras abrir un cofre y al quedarse quieto. Los demás quedan listos (§6).
+
+### 2. Pruebas
+- **Importación aislada** tras la unión: `D:\REBELUM_diagnostico\importaciones\narrativa_20261109_172749\` (salida 0).
+- **Antes de cambiar nada** (aislado, sobre `d590693`): `prueba_oakhaven`, `prueba_oakhaven_arte`,
+  `prueba_restaurar_escenas` y `prueba_guardado_protegido`, SUPERADAS
+  (`D:\REBELUM_diagnostico\narrativa\2026-11-09\oakhaven_arte\2026-11-09_172830\resumen.md`).
+- **Con el arte enganchado** (aislado, sobre lo que fue `85a8fb3`): 12 de 12 SUPERADAS (`prueba_oakhaven`,
+  `prueba_oakhaven_ciudad_arte`, `prueba_oakhaven_arte`, `prueba_restaurar_escenas`, `prueba_guardado_protegido`,
+  `prueba_ciudad_datos`, `prueba_foco`, `prueba_escenas`, `prueba_musica`, `prueba_precalentado`, `prueba_cofre` y
+  `prueba_guardado`): `...\oakhaven_arte\2026-11-09_173928\resumen.md`.
+- **Con los comentarios** (aislado, sobre lo que fue `1723941`): 7 de 7 SUPERADAS (`prueba_ruta_alpha`,
+  `prueba_dialogo`, `prueba_dialogo_interfaz`, `prueba_prologo`, `prueba_oakhaven`, `prueba_oakhaven_ciudad_arte` y
+  `prueba_comentarios`): `D:\REBELUM_diagnostico\narrativa\2026-11-09\comentarios\2026-11-09_174733\resumen.md`.
+- **Batería completa** (aislado, sobre `1723941`): **SUPERADAS 57 · FALLIDAS 2 · MANUALES 31 · NO SEGURAS 0** (`D:\REBELUM_diagnostico\narrativa\2026-11-09\bateria_voces\2026-11-09_174927\resumen.md`). Partida real y carpeta real, sin cambios. «Proyecto: cambiado» es este informe, que escribí mientras corría (`git status`: solo `narrativa.md`).
+  - **Las dos FALLIDAS no son de este trabajo:** `prueba_mando` y `prueba_teclado`, apartado 4, «Intro / A junto a Tilo no abre el diálogo». Hablan con Tilo antes de PV-03 y, desde `c3f5692` (integración: hablar con Tilo antes de PV-03 empieza PV-03), eso abre la escena de Lya y no el diálogo de Tilo. No toco Pastos Verdes ni esas pruebas. Arreglo propuesto en §6.
+- **Pruebas nuevas:**
+  - `prueba_oakhaven_ciudad_arte` (auto): módulo, ambiente, hierba y luz; las 31 casas del RELLENO con muro invisible y
+    sus 16 farolas; **ninguna luz 2D en el mundo** salvo la de Kael; solo se pisa lo que es calle, plaza o patio; nada
+    pintado dos veces y todo en su casilla; muñecos y tintes; los tres faroles de la ronda emparejados por su sitio; el
+    destello del cofre de las raíces (se ve cerrado, se apaga al abrirlo); árboles solo en jardín. Imprime el coste:
+    **2857 nodos en el mundo, 65 piezas de gráficos y unos 1,3-1,5 s de entrada** en el PC (con la carga de la escena;
+    sin medir el antes con el mismo método, y sin medir en el Redmi).
+  - `prueba_comentarios` (auto): una frase de cada héroe por momento; cada frase en una o dos líneas de su caja
+    (medidas con la fuente de verdad: 13 de una línea y 8 de dos); 70 letras como mucho; gestos y esperas de la
+    lista; ninguna palabra vetada (Érebo, corazón, recuerdo, memoria y nombres de Final Fantasy X, por palabra entera);
+    solo hablan los del grupo y la respuesta solo si está quien responde; turnos y sin repetir; en Oakhaven, el de
+    llegar, el del cofre y el de estar quieto, sin tapar el botón de examinar, y un diálogo lo quita; los hitos no
+    cambian.
+- **Capturas con ventana** (aislado, 1280 × 720): `prueba_oakhaven_fotos`, antes y después (§3).
+- **Ojo, del ejecutor:** en la primera pasada con `-Manual`, `prueba_oakhaven_fotos` paró tras 5 capturas sin error
+  (16 s; antes de mis cambios). Lanzada a mano con datos aislados, hace las 19 en 45 s. No lo he investigado más.
+
+### 3. Evidencias
+**Capturas** en `D:\REBELUM_diagnostico\oakhaven\2026-11-09_arte\`:
+- `antes\` (sobre `d590693`, el arte ya unido pero sin enganchar) y `despues\` (sobre `1723941`): las mismas 18 tomas
+  de `prueba_oakhaven_fotos` (entrada, plaza, norte, ciudad entera, diálogo, barrio del Cuervo, callejón, Patio de las
+  Velas, colina, ronda apagada y encendida, raíces, detrás del Árbol, mercado, Diario, posada y su escena, lavanda en
+  Pastos Verdes 3D) y, solo en `despues\`, `19_comentario.png` (Kael: «¿Para mí? No hacía falta.»).
+- Láminas, antes a la izquierda y después a la derecha: `lamina_antes_despues_1.png` (plaza, ciudad entera, barrio
+  del Cuervo), `_2.png` (ronda apagada y encendida, raíces) y `_3.png` (diálogo, Patio de las Velas, mercado).
+- Lo que se ve (revisado a ojo en el PC): la plaza y las calles despejadas, con el tablón y la fuente de gráficos;
+  la fachada de la taberna con el cuervo y la posadera con su vestido vino; la ronda solo con sus faroles; Doña Encina
+  con su muñeco junto a las raíces, ya sin una casa delante; jardines con setos, flores y árboles entre las casas.
+
+**Antes y después de cada frase cambiada** (medidas como en T-086):
+| Archivo | Quién | Antes | Después | Por qué |
+|---|---|---|---|---|
+| `pv_07.dtl:8` | Lya | Kael, te está mirando. | Kael… te está mirando. | Su marca: «Kael…» cuando se preocupa (biblia v2 §2.5). Mismo gesto (`preocupada`), mismas letras |
+
+Ninguna otra línea de los tres contradice su voz. Las que podían parecerlo y se quedan:
+- Garon, «Por eso. Fuera de la muralla no os puedo proteger.» (`pv_05`): es su frase más larga, y está bien que lo sea:
+  es la que le duele (así lo dice la guía).
+- Lya, «Buenas noches, Garon. Buenas noches, cama grande.»: es humor, pero tierno y fuera de peligro, como pide su voz.
+
+**Guía de voz:** `docs/narrativa/voces_heroes.md`.
+
+**Intenciones de los comentarios (para animaciones).** Ninguna lleva gesto de retrato en pantalla (en 2D no hay
+retrato): la columna «gesto» vale si un día salen con él; «espera», el clip de `animaciones/esperas/<héroe>.res` que le
+pega en 3D (los nombres son los de `esperas.py` de animaciones, aún sin confirmar en su rama).
+| Momento | Quién | Frase | Intención | Gesto | Espera 3D |
+|---|---|---|---|---|---|
+| Llegar a Oakhaven | Kael | Oakhaven. Huele a pan y a mecha recién encendida. | Alivio de volver; lo dice como quien no lo dice | `ligero` | `espera_vigilar` |
+| | Lya | Mira cuántos faroles. Aquí la niebla lo tiene difícil. | Cálida; se tranquiliza a sí misma | — | `espera_cetro` |
+| | Garon | Puerta, muralla, guardia. Todo en su sitio. | Pasa revista sin pararse | `firme` | `espera_hombros` |
+| Lugar nuevo | Kael | Sitio nuevo. Que alguien apunte que llegué primero. | Bravuconería de broma; curiosidad | `ligero` | `espera_vigilar` |
+| | Lya | Nunca había estado aquí. Quédate cerca, ¿vale? | Curiosa y protectora a la vez | `inquieta` | `espera_pelo` |
+| | Garon | Dos salidas. Recordadlas. | Instinto de soldado | `firme` | `espera_hombros` |
+| Llegar a la Garganta | Kael | La Garganta del Diablo. Con ese nombre, seguro que es acogedora. | Ironía para quitarse el miedo | `ligero` | `espera_empunadura` |
+| | Lya | Se oye el agua desde aquí… Id despacio. | Atenta; pide prudencia sin dramatizar | `preocupada` | `espera_cetro` |
+| | Garon | Cornisa estrecha. En fila. Yo, delante. | Órdenes cortas; se pone en el peligro | `firme` | `espera_apoyarse` |
+| Cascada de la Garganta | Kael | Vale. Lo admito. Es precioso. | Se le escapa el asombro y lo despacha rápido | `sorpresa` | `espera_vigilar` |
+| | Lya | Quédate un momento. Hay cosas que no se ven dos veces. | Contemplativa; le pide que lo guarde | — | `espera_pelo` |
+| | Garon | Bonita. Y resbaladiza. Lejos del borde. | Lo admira a su modo y protege | `firme` | `espera_espalda` |
+| Cofre | Kael | ¿Para mí? No hacía falta. → Garon: No era para ti. | Broma y contento de verdad → seco, le sigue el juego | `ligero` | `espera_brazalete` → `espera_hombros` |
+| | Lya | Lo apunto yo. Tú luego no te acuerdas. | Ordenada, con cariño burlón | `decidida` | `espera_cetro` |
+| | Garon | Mira el fondo. Siempre queda algo. | Consejo de veterano | — | `espera_apoyarse` |
+| Quietos | Kael | ¿Seguimos? El mundo no se explora solo. → Lya: Kael… respira. | Impaciente → le frena con ternura | `decidido` → `duda` | `espera_impaciencia` → `espera_pelo` |
+| | Kael | Este brazalete pesa más cuando no hago nada. | Lo que le pesa, dicho de lado | `brazalete` | `espera_brazalete` |
+| | Lya | Esta flor no viene en ningún libro. Me la apunto. | Curiosidad de estudiosa | `duda` | `espera_flor` |
+| | Garon | Parar enfría los hombros. Andando. | Ni el descanso le gusta largo | `firme` | `espera_hombros` |
+
+- **Para animaciones:** cuando un héroe 3D haga una espera, puede pedir el comentario del momento «quieto» de ese
+  héroe (`Comentarios.MOMENTOS["quieto"]`, filtrando por «quien» y por «espera») para que frase y gesto vayan juntos;
+  o al revés, al salir un comentario, lanzar su «espera». Propuesta: la espera empieza y, a 0,6 s, sale la frase.
+
+### 4. Continuidad
+- **Quién habla:** `Comentarios.elegir()` solo elige entre `grupo.gd activos()`: Kael solo hasta PV-03, Lya desde
+  PV-03 y Garon desde PV-05. Una respuesta solo sale si quien responde está. Comprobado ejecutando
+  (`prueba_comentarios`, apartados 2 y 3: en Oakhaven con Kael y Lya, nunca habló Garon).
+- **Partida:** los comentarios no escriben nada en la partida; lo dicho se apunta en Engine «comentarios_dichos» (un
+  diccionario de textos, no un recurso), que se pierde al cerrar el juego. Los hitos no cambian (comprobado).
+- `prueba_ruta_alpha`, `prueba_prologo`, `prueba_dialogo` y `prueba_dialogo_interfaz` SUPERADAS con el cambio de PV-07.
+- **Canon:** nada de Érebo ni de lo que guarda; nada de Final Fantasy X; nada del pasado que la biblia v2 solo propone
+  (la guía lo marca como propuesta y no se dice en pantalla). «Este brazalete pesa más cuando no hago nada» no añade
+  nada al canon: el brazalete ya es un misterio en el prólogo.
+
+### 5. Límites y propuestas pendientes de decisión
+- **Sin ver en el Redmi** (pendiente en Redmi): el arte con las 31 casas, la luz y el coste (2857 nodos en el mundo;
+  la memoria de vídeo la estimó gráficos en unos 31,6 MB sin comprimir); y si la caja del comentario (26 px) se lee bien
+  en el teléfono.
+- **Árboles:** salen de `JARDINES` de la maqueta de gráficos (`oakhaven_arte/maqueta_oakhaven.gd`), porque el módulo no
+  los trae. Propuesta en §6.
+- **Comentarios solo por sesión:** al volver a abrir el juego se pueden repetir. Guardarlos en la partida sería una
+  clave nueva: lo decide el coordinador (no hace falta para que funcionen).
+- **Sin sonido** al salir un comentario: es a propósito (no compite con los avisos). Si sonido quiere un susurro de
+  página, el punto es `Comentarios.mostrar()`.
+- **Propuesta de texto** (no aplicada): ninguna más en los diálogos de los tres.
+
+### 6. Siguiente paso y cambios en archivos de otros
+- **Gráficos** (`ciudades/oakhaven_piezas.gd`): pasar `JARDINES` de la maqueta al módulo (la ciudad ya lo busca ahí
+  primero) y, si quiere, renombrar los faroles de la ronda de sur a norte (la ciudad funciona igual con los dos
+  órdenes).
+- **Garganta 3D** (`zonas3d/garganta_3d.gd`, de quien lleve la Garganta), con
+  `const Comentarios := preload("res://dialogos/comentarios.gd")`:
+  - al final de `_ready()`: un temporizador de 2,5 s que llame a `_comentar("llegar:garganta")`;
+  - en `_process`, la primera vez que Kael quede a menos de unos 12 m de la línea de la cascada (la de
+    `Sonido.fuente_linea(... "cascada_grande" ...)`): `_comentar("cascada_garganta")`;
+  - al final de `_abrir_cofre()`: `_comentar("cofre")` con 1,2 s de retraso;
+  - `_comentar(m)`: si no está `ocupado()`, `var c := Comentarios.elegir(m)` y, si no está vacío,
+    `Comentarios.mostrar(<su CanvasLayer de interfaz>, c)`.
+- **Pastos Verdes 3D** (`zonas3d/pastos_verdes_3d.gd`): lo mismo para «cofre» y «quieto» (no para llegar: ya lo dice
+  PV-02). Con las esperas de animaciones, «quieto» puede salir del héroe que hace la espera.
+- **`zona.gd`** (del coordinador): al entrar por primera vez en un lugar (`_ready`, si el lugar no estaba visitado) y
+  en `_abrir_cofre`, las mismas dos llamadas («llegar:lugar_nuevo» y «cofre»).
+- **Animaciones:** confirmar los nombres de las esperas (los tomé de su `esperas.py`, sin confirmar en su rama) y la
+  propuesta de sincronía de §3.
+- **Coordinador, `prueba_mando` y `prueba_teclado`** (apartado 4): antes de hablar con Tilo, `P.poner_hito("pv_03")` y `G.unir("Lya")` (o pasar por el punto de PV-03), o aceptar que salga PV-03; con eso vuelven a abrir `pv_tilo`/PV-05 con Intro / A.
+- **Coordinador:** las dos líneas nuevas de `lista_pruebas.txt` (`prueba_oakhaven_ciudad_arte` y
+  `prueba_comentarios`).
+- **Siguiente paso de narrativa:** cuando se enganchen la Garganta y Pastos Verdes, repasar con capturas que el
+  comentario no tape nada en 3D; y, con la decisión del usuario sobre la biblia v3, ampliar los momentos (al ganar un
+  combate difícil, al ver la ciudad del cielo de PV-07) con la misma guía.

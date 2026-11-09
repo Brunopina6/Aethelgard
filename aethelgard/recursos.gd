@@ -286,7 +286,7 @@ func _process(_d: float) -> void:
 	var quieto := false
 	var esc := get_tree().current_scene
 	if esc != null and esc.scene_file_path != ESCENA_COMBATE and not cambiando:
-		if not get_tree().get_nodes_in_group("menu_quieto").is_empty():
+		if get_tree().has_group("menu_quieto"):                 # sin crear una lista cada fotograma
 			quieto = true
 		var d = get_node_or_null("/root/Dialogic")
 		if d != null and d.current_timeline != null and "current_state" in d and d.current_state == d.States.IDLE:

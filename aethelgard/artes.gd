@@ -54,9 +54,12 @@ const DESCRIPCION := {
 	"Segundo Aliento": "Tres turnos: cada aliado recupera vida al empezar su turno.",
 	"Última Brasa": "Si un aliado cae, se levanta una vez con algo de vida.",
 }
-# Por qué una fila sale apagada (además de por los PM, que ya enseña el coste).
-const MOTIVO := {"sin_otro": "Necesita a otro aliado en pie.", "esperan": "Ya esperan su turno.",
-	"sin_caidos": "Nadie ha caído.", "sin_nadie": "No hay a quién."}
+# Por qué una fila sale apagada (T-100: con nombres, para que se entienda sin pensar). «%s»: quien lanza o los aliados.
+#   solo: no hay más héroes en el combate · sin_otro: los hay, pero ninguno en pie · espera / esperan: los que quedan en
+#   pie ya esperan su turno (uno o varios) · pm: no le llegan los PM (el coste y los que tiene).
+const MOTIVO := {"solo": "%s va solo: no hay otro aliado.", "sin_otro": "No queda otro aliado en pie.",
+	"espera": "%s ya espera su turno.", "esperan": "%s ya esperan su turno.", "sin_caidos": "Nadie ha caído.",
+	"sin_nadie": "No hay a quién.", "pm": "Necesitas %d PM: tienes %d."}
 # Sonidos (sonido.gd, catálogo pendiente del especialista de sonido): uno por lanzamiento, cuando se aplica el efecto,
 # y los de los estados. Hasta que existan, combate.gd no los pide.
 const SONIDO_LANZAR := {"Alba": ["arte_alba", "arte_ocaso", "arte_hora_dorada"],
@@ -207,15 +210,24 @@ static func objetivos(familia: String, nv: int, actor: Dictionary, heroes: Array
 	return []
 
 
-# Por qué no se puede lanzar ahora ("" si se puede, sin contar los PM).
+# Por qué no se puede lanzar ahora ("" si se puede, sin contar los PM). Con el Compás: «Kael va solo: no hay otro
+# aliado.», «No queda otro aliado en pie.», «Lya ya espera su turno.» o «Lya y Garon ya esperan su turno.».
 static func motivo_apagado(familia: String, nv: int, actor: Dictionary, heroes: Array, enemigos: Array, cola: Array,
 		atb_max := 100.0) -> String:
 	if not objetivos(familia, nv, actor, heroes, enemigos, cola, atb_max).is_empty():
 		return ""
 	match String(datos(familia, nv)["a"]):
 		"aliado_otro", "aliados_otros":
-			var otros := heroes.filter(func(h): return not is_same(h, actor) and h["hp"] > 0)
-			return MOTIVO["sin_otro"] if otros.is_empty() else MOTIVO["esperan"]
+			var otros := heroes.filter(func(h): return not is_same(h, actor))
+			var en_pie := otros.filter(func(h): return h["hp"] > 0)
+			if otros.is_empty():
+				return MOTIVO["solo"] % str(actor.get("nombre", "Kael"))
+			if en_pie.is_empty():
+				return MOTIVO["sin_otro"]
+			var nombres: Array = en_pie.map(func(h): return str(h["nombre"]))
+			if nombres.size() == 1:
+				return MOTIVO["espera"] % nombres[0]
+			return MOTIVO["esperan"] % (", ".join(nombres.slice(0, nombres.size() - 1)) + " y " + nombres[-1])
 		"caido":
 			return MOTIVO["sin_caidos"]
 	return MOTIVO["sin_nadie"]
@@ -223,6 +235,11 @@ static func motivo_apagado(familia: String, nv: int, actor: Dictionary, heroes: 
 
 static func puede_pagar(actor: Dictionary, familia: String, nv: int, modo_pruebas := false) -> bool:
 	return modo_pruebas or int(actor.get("mp", 0)) >= int(datos(familia, nv)["coste"])
+
+
+# «Necesitas 6 PM: tienes 2.» (lo usan también las magias de siempre, Esgrima y Embuir en combate.gd).
+static func motivo_pm(coste: int, mp: int) -> String:
+	return MOTIVO["pm"] % [coste, mp]
 
 
 # ================================================================= efectos
@@ -368,6 +385,13 @@ static func estados_de(f: Dictionary) -> Array:
 	return r
 
 
+# Lo que se lee junto al icono de un estado en el HUD (T-100): los turnos que le quedan al Aliento. "" si nada.
+static func texto_estado(f: Dictionary, estado: String) -> String:
+	if estado == "aliento" and int(f.get("aliento", 0)) > 0:
+		return str(int(f["aliento"]))
+	return ""
+
+
 static func sonido(familia: String, nv: int) -> String:
 	return SONIDO_LANZAR[familia][clampi(nv, 1, 3) - 1]
 
@@ -411,11 +435,14 @@ static func filas_familia(familia: String, nivel_usable_: int, actor: Dictionary
 	for n in range(1, mini(nivel_usable_, 3) + 1):
 		var d := datos(familia, n)
 		var motivo := motivo_apagado(familia, n, actor, heroes, enemigos, cola, atb_max)
+		var paga := puede_pagar(actor, familia, n, modo_pruebas)
+		if motivo == "" and not paga:                 # T-100: también por qué, cuando lo que falta son PM
+			motivo = motivo_pm(int(d["coste"]), int(actor.get("mp", 0)))
 		# A la derecha, solo el coste, como las de siempre (con «I ·» delante, los nombres largos pisaban el coste: capturas
 		# del 09/11); el nivel se ve por el orden de las filas, en Habilidades y en la tienda.
 		r.append({"texto": d["nombre"], "icono": familia, "familia": familia, "nivel": n,
 			"derecha": "PM ∞" if modo_pruebas else "%d PM" % d["coste"],
-			"apagado": motivo != "" or not puede_pagar(actor, familia, n, modo_pruebas),
+			"apagado": motivo != "", "falta_pm": not paga,
 			"desc": motivo if motivo != "" else DESCRIPCION[d["nombre"]]})
 	return r
 

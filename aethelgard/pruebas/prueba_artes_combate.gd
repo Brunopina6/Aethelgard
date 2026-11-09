@@ -261,7 +261,7 @@ func _turno_b(h: Dictionary) -> void:
 	_ok(_pestanas() == ["I", "Alba"], "las pestañas de Kael solo (nivel 3) son %s" % [_pestanas()])
 	c._menu_magia(4)
 	var f: Dictionary = c.menu.filas[0]["item"] if not c.menu.filas.is_empty() else {}
-	_ok(f.get("texto", "") == "Compás del Alba" and f.get("apagado", false) and f.get("desc", "") == A.MOTIVO["sin_otro"],
+	_ok(f.get("texto", "") == "Compás del Alba" and f.get("apagado", false) and f.get("desc", "") == "Kael va solo: no hay otro aliado.",
 		"el Compás de Kael solo: %s" % [f])
 	var pm: int = h["mp"]
 	c._elegir_hechizo("Alba", 1)

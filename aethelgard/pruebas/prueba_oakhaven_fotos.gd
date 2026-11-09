@@ -6,8 +6,8 @@ extends SceneTree
 # Escribe en <carpeta> (.png): 1_entrada, 2_plaza, 3_norte, 4_ciudad_entera y 5_dialogo; en la ciudad hecha a mano,
 # también sus rincones (6_barrio_cuervo a 14_mercado: el Cuervo, el callejón y la grieta, el Patio de las Velas, la colina
 # del crematorio, la ronda apagada y encendida, el Árbol y su copa translúcida, el mercado), el Diario con las notas
-# (15_diario_notas), la posada con la noche gratis y su escena (16_ y 17_) y, con «3d», el ramito de lavanda en Pastos
-# Verdes 3D (18_lavanda_pastos).
+# (15_diario_notas), la posada con la noche gratis y su escena (16_ y 17_), un comentario de los héroes al explorar
+# (19_comentario) y, con «3d», el ramito de lavanda en Pastos Verdes 3D (18_lavanda_pastos).
 # Las de la ciudad hecha a mano usan partidas sintéticas (nada se guarda: las pruebas no escriben la partida).
 
 const MAPA := "res://mapa.tscn"
@@ -188,6 +188,17 @@ func _rincones(z) -> void:
 		await _foto("17_escena_posada")
 		D.end_timeline(true)
 		await _esperar(10)
+	# un comentario de los héroes al explorar (dialogos/comentarios.gd), con su respuesta si está quien responde
+	await _ir(z, Vector2(40, 30))
+	for n in z.ui.get_children():
+		if n.name.begins_with("comentario"):
+			n.free()
+	var Com = load("res://dialogos/comentarios.gd")
+	var c: Dictionary = Com.MOMENTOS["cofre"]["frases"][0].duplicate(true)
+	c["momento"] = "cofre"
+	Com.mostrar(z.ui, c)
+	await _esperar(20)
+	await _foto("19_comentario")
 	if load("res://modo3d.gd").activo():            # «Lavanda para el Árbol»: el ramito en Pastos Verdes 3D
 		P.poner_hito("pv_02")                       # (sin PV-02 al entrar)
 		P.poner_estado("oakhaven", "lavanda")
