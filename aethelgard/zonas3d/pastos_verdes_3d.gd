@@ -208,7 +208,12 @@ func _crear_panel_rnd(capa: CanvasLayer) -> void:
 	bg.focus_mode = Control.FOCUS_NONE
 	bg.pressed.connect(func(): _empezar_banco(BANCO_GRUPO))
 	capa.add_child(bg)
-	for b in [["DIAG", 268, BANCO_DIAG], ["MEDIO", 332, BANCO_MEDIO]]:   # medidas en el móvil (09/11)
+	# DIAG y MEDIO (medidas en el móvil, 09/11): ocultos; salen solo con el panel RND abierto, para no llenar la región.
+	var rnd: Button = null
+	for n in capa.get_children():
+		if n is Button and n.text == "RND":
+			rnd = n
+	for b in [["DIAG", 268, BANCO_DIAG], ["MEDIO", 332, BANCO_MEDIO]]:
 		var nb := Button.new()
 		nb.text = b[0]
 		nb.position = Vector2(1160, b[1])
@@ -216,6 +221,9 @@ func _crear_panel_rnd(capa: CanvasLayer) -> void:
 		nb.focus_mode = Control.FOCUS_NONE
 		var casos: Array = b[2]
 		nb.pressed.connect(func(): _empezar_banco(casos))
+		nb.visible = false
+		if rnd != null:
+			rnd.pressed.connect(func(): nb.visible = panel_rnd.visible)   # tras _alternar_panel, que ya lo cambió
 		capa.add_child(nb)
 
 
