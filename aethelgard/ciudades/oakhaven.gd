@@ -197,7 +197,8 @@ const ESCENAS_POSADA := [
 ]
 
 # Charlas de posada (narrativa, 09/11): conversaciones breves de los héroes al descansar en el Cuervo, una por noche en
-# lugar de la escena de siempre: la más nueva sin ver de las que ya están desbloqueadas («hito», uno que ya existe) y
+# lugar de la escena de siempre: la más nueva sin ver de las que ya están desbloqueadas («hito», uno que ya existe, o «si»,
+# una condición como las de los vecinos) y
 # cuyo «grupo» está entero en el grupo activo. En la lista, de la más antigua a la más nueva (orden de la historia).
 # Lo visto se guarda como estado de la ciudad («charla_…» en «mazmorras», ya en la partida): una partida antigua no
 # lo tiene y vale «sin ver». Los diálogos, en dialogos/oakhaven/charlas/ (con el gesto de cada frase); «intenciones»,
@@ -226,6 +227,15 @@ const CHARLAS_POSADA := [
 	{"id": "charla_miedo_kael", "hito": "oak_faroles", "grupo": ["Kael", "Lya"], "tema": "El miedo de Kael",
 		"intenciones": ["Lya: lo saca con cuidado", "Kael: desvía", "Kael: el miedo, envuelto en chiste",
 			"Lya: no le deja escapar", "Kael: lo acepta en serio"]},
+	# las de la Garganta del Diablo: se desbloquean con sus combates fijos («combates_ganados»), no con un hito
+	{"id": "charla_puentes", "si": "ganado:garganta_nido", "grupo": ["Kael", "Lya", "Garon"], "tema": "Las cuerdas de los puentes",
+		"intenciones": ["Kael: le pilla, encantado", "Garon: la misma excusa de siempre, sin pestañear",
+			"Lya: le sigue el juego", "Garon: seco, sin ceder", "Kael: une las dos excusas y se ríe",
+			"Garon: le devuelve el golpe; es su forma de reírse"]},
+	{"id": "charla_gorthor", "si": "ganado:garganta_gorthor", "grupo": ["Kael", "Lya", "Garon"], "tema": "Delante de Gorthor",
+		"intenciones": ["Lya: aún con el susto", "Kael: lo convierte en chiste",
+			"Garon: le deja sin escapatoria; lo dice con respeto", "Kael: lo admite a medias",
+			"Lya: le da las gracias y le riñe a la vez", "Kael: tierno y terco"]},
 ]
 
 # ================================================================= misiones pequeñas
@@ -365,13 +375,14 @@ const SENALES := ["oak:pip_pagar", "oak:favores_aceptados", "oak:favor_barril", 
 	"oak:favor_cucharon", "oak:favores_hechos", "oak:faroles_aceptados", "oak:farol_1", "oak:farol_2", "oak:farol_3",
 	"oak:faroles_hechos", "oak:lavanda_pedida", "oak:lavanda_cogida", "oak:lavanda_entregada", "oak:encina_gracias",
 	"oak:torre", "oak:grieta", "oak:vista_raices"]
-# Condiciones con nombre (las demás: hito:, estado:, decision:k=v, grupo:, oro:n y modo:3d/2d; «!» las niega).
+# Condiciones con nombre (las demás: hito:, estado:, decision:k=v, grupo:, oro:n, modo:3d/2d y ganado:<combate fijo>,
+# uno de «combates_ganados», como garganta_gorthor; «!» las niega).
 const CONDICIONES := {
 	"kael_salio": "Kael ya ha salido de Oakhaven: tras PV-02 con la exploración 3D; sin ella, siempre (empieza fuera)",
 	"faroles_encendidos": "los tres faroles de la ronda encendidos",
 	"favores_listos": "el barril, las flores y el cucharón",
 }
-const TIPOS_CONDICION := ["hito", "estado", "decision", "grupo", "oro", "modo", "cond"]
+const TIPOS_CONDICION := ["hito", "estado", "decision", "grupo", "oro", "modo", "cond", "ganado"]
 const PLURAL := {"Poción": "Pociones", "Éter": "Éter", "Incienso de Ceniza": "Inciensos de Ceniza"}
 
 
@@ -460,7 +471,7 @@ static func charla_posada() -> String:
 	var activos: Array = load("res://grupo.gd").activos()
 	for i in range(CHARLAS_POSADA.size() - 1, -1, -1):
 		var c: Dictionary = CHARLAS_POSADA[i]
-		if not P.hito(c["hito"]) or charla_vista(c["id"]):
+		if (c.has("hito") and not P.hito(c["hito"])) or (c.has("si") and not cumple(c["si"])) or charla_vista(c["id"]):
 			continue
 		if c["grupo"].all(func(q): return q in activos):
 			return c["id"]
@@ -541,6 +552,8 @@ static func cumple(cond: Variant) -> bool:
 			return load("res://inventario.gd").oro() >= int(valor)
 		"modo":
 			return load("res://modo3d.gd").activo() == (valor == "3d")
+		"ganado":
+			return P.ganado(valor)
 		"cond":
 			match valor:
 				"kael_salio":
