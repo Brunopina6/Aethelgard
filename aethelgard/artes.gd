@@ -65,12 +65,13 @@ const SONIDO_ESTADO := {"absorbe": "barrera_absorbe", "rota": "barrera_rota", "a
 const LIBROS := [["Alba", 2, 350], ["Escarcha", 2, 400], ["Lumbre", 2, 450]]
 const TOMOS := {"tomo_alba": ["Alba", 3], "tomo_escarcha": ["Escarcha", 3], "tomo_lumbre": ["Lumbre", 3]}
 # Fichas del Diario (diario.gd): solo cómo funcionan, sin historia.
-const FICHAS := {
-	"Ritmo": "El Alba adelanta el turno de un aliado o retrasa a los enemigos. Cada hechizo mueve la barra una vez.",
-	"Barrera": "Una coraza de hielo absorbe el daño hasta romperse. No se suma: se queda la mayor.",
-	"Aliento": "Durante tres turnos, el aliado recupera vida al empezar cada uno de sus turnos.",
-	"Brasa": "Si el aliado cae en este combate, se levanta una vez con algo de vida.",
-}
+# Con el formato de diario.gd FICHAS ([título, texto]) más la familia y el nivel que la traen al juego.
+const FICHAS := [
+	["Ritmo", "El Alba adelanta el turno de un aliado o retrasa a los enemigos.", "Alba", 1],
+	["Aliento", "Tres turnos: el aliado recupera vida al empezar cada uno de sus turnos.", "Lumbre", 2],
+	["Barrera", "Una coraza de hielo absorbe el daño hasta romperse. No se suma.", "Escarcha", 1],
+	["Brasa", "Si el aliado cae, se levanta una vez con algo de vida.", "Lumbre", 3],
+]
 # Estados de los héroes, en el orden en que se dibujan sus iconos junto al nombre.
 const ESTADOS := ["barrera", "aliento", "brasa"]
 const COLOR_ESTADO := {"barrera": Color("BFE6FF"), "aliento": Color("B8E07A"), "brasa": Color("FF9A4A")}
@@ -162,6 +163,15 @@ static func nuevas_al_subir(heroe: String, d: Dictionary, antes: int, ahora: int
 
 static func libros_en_venta() -> Array:
 	return LIBROS.filter(func(l): return int(l[1]) <= int(ACTIVOS.get(l[0], 0)))
+
+
+# Fichas del Diario de lo que ya está en el juego, como diario.gd FICHAS: [título, texto].
+static func fichas_activas() -> Array:
+	var r: Array = []
+	for f in FICHAS:
+		if int(f[3]) <= int(ACTIVOS.get(f[2], 0)):
+			r.append([f[0], f[1]])
+	return r
 
 
 # ================================================================= a quién va y por qué no

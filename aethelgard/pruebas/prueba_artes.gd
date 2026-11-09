@@ -175,6 +175,11 @@ func _aprendizaje() -> void:
 	_ok(esc == ([["Escarcha", 1]] if A.ACTIVOS["Escarcha"] >= 1 else []), "2: al subir a 6, el aviso de Escarcha: %s" % [esc])
 	var venta: Array = A.libros_en_venta()
 	_ok(venta.all(func(l): return l[1] <= A.ACTIVOS[l[0]]), "2: se vende un libro sin enganchar")
+	var fichas: Array = A.fichas_activas()
+	_ok(fichas.all(func(f): return f.size() == 2 and String(f[1]).length() <= 75), "2: una ficha del Diario no tiene su forma")
+	var titulos: Array = fichas.map(func(f): return f[0])
+	_ok(("Ritmo" in titulos) == (A.ACTIVOS["Alba"] >= 1) and ("Barrera" in titulos) == (A.ACTIVOS["Escarcha"] >= 1)
+		and ("Brasa" in titulos) == (A.ACTIVOS["Lumbre"] >= 3), "2: el Diario explica algo que no está en el juego: %s" % [titulos])
 	_hecho("2: umbrales, libros, tomos, lo enganchado y el aviso al subir")
 
 
