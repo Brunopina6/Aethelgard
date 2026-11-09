@@ -40,6 +40,19 @@ extends Node
 # - Aleatorio: todo lo del sonido usa su propio generador (_rng), nunca randf()/randi()/shuffle()/pick_random() globales:
 #   así no cambia la secuencia del combate cuando una prueba fija su semilla.
 # - Para las pruebas: contador (veces que ha sonado cada efecto), descartes y registro (lo último que sonó).
+# Tanda 3 (T-083):
+# - Efectos en el espacio: Sonido.efecto(nombre, {"pos": Vector3}) suena desde ese punto de una escena 3D (un reproductor
+#   3D de la escena, VOCES_3D como mucho, con las mismas reglas de prioridad, máximo, espera, pausa y silencio). La
+#   distancia de referencia sale de «en_3d» del catálogo (o de la petición). Sin nadie que escuche en 3D, suena normal.
+# - Pasos de los compañeros (Lya, Garon): con alguien que escucha en 3D, salen de su pie (en el espacio: a un lado o
+#   detrás, y más bajos cuanto más lejos) y llevan su volumen (DB_PASOS); sin él, 3 dB por debajo. Los del personaje que
+#   escucha (Kael) siguen sin posición.
+# - Detalles en el espacio: en una escena que lo pide (detalles_3d), las gotas de la mazmorra caen en un punto (la pared
+#   de roca más cercana) y no «dentro de la cabeza».
+# - Eco de un lugar (eco): una reverberación en los buses Efectos y Ambiente mientras esa escena es la actual (la Garganta
+#   3D). Se quita sola al cambiar de escena.
+# - Fuentes 2D (fuente_2d): un sonido del mundo en una escena 2D (la taberna de Oakhaven, el letrero del cuervo) que suena
+#   más cuanto más cerca de quien anda, en bucle o de vez en cuando.
 
 const ARCHIVO := "user://ajustes.cfg"
 const BUSES := ["Musica", "Efectos", "Interfaz", "Ambiente"]
@@ -55,6 +68,26 @@ const VOCES := {"Efectos": 10, "Interfaz": 4, "Ambiente": 4}
 const ATENUAR_DB := 8.0                                    # lo que bajan las prioridades 0-2 mientras suena una 4
 const FUNDIDO_CORTE := 0.1                                 # s: al cambiar de escena o cortar
 const MAX_GRUPO := {"voz": 2}                              # cuántos de un mismo grupo suenan a la vez como mucho
+const VOCES_3D := 8                                        # reproductores 3D de una escena (efectos con «pos»)
+# Un efecto en el espacio sin «en_3d» en el catálogo: a «unidad» metros suena a su volumen, la mitad cada vez que se
+# dobla la distancia, y callado más allá de «max». «filtro»: dB que pierde lo agudo a lo lejos (Godot: −24).
+const EN_3D := {"unidad": 3.0, "max": 40.0, "filtro": -12.0}
+# Los pasos de los compañeros desde su pie: a 2,5 m de quien escucha (a la altura de su cabeza, sobre Kael) suenan a su
+# volumen; detrás de Kael (2-3 m) quedan unos 1-3 dB por debajo y más bajos si se quedan atrás; lo agudo apenas cambia.
+const PASO_3D := {"unidad": 2.5, "max": 25.0, "filtro": -6.0}
+# Volumen de los pasos de cada compañero (por el nombre de su nodo, grupo_3d.gd): Lya pisa más ligera que Garon.
+const DB_PASOS := {"Lya": -2.0, "Garon": 0.0}
+const DB_COMPANERO_SIN_POSICION := -3.0                    # sin nadie que escuche en 3D: algo por debajo de Kael
+# Eco de cada lugar (eco()): una reverberación por bus (cuánto se oye: «humedo» de 0 a 1; lo directo baja un poco,
+# «seco», para que lo largo y fuerte no suba de pico). «sala», «amortiguar», «abrir» y «graves» son los de
+# AudioEffectReverb (room_size, damping, spread, hipass); «previo_ms» y «rebote», el retardo antes del eco y cuánto se
+# repite (predelay_msec, predelay_feedback): la pared de enfrente devuelve el golpe. Medido el 09/11 (con el driver real,
+# un paso de roca): la cola queda unos 27 dB por debajo del golpe entre 0,1 y 0,4 s y 36 dB entre 0,4 y 1 s (con 0,16
+# de «humedo» quedaba a 36 y 48 dB: no se oía). Con 0,45, la palanca sube unos 2 dB de pico.
+const ECO := {
+	"garganta": {"sala": 0.85, "amortiguar": 0.3, "abrir": 0.9, "graves": 0.15, "previo_ms": 60.0, "rebote": 0.3,
+		"seco": 0.92, "buses": {"Efectos": 0.45, "Ambiente": 0.35}},
+}
 
 # a: archivo (sin .wav, dentro de audio/efectos/) o prefijo con n variantes (a + "1"… a + "n"); codigo: tono de los
 # menús hecho por código (menu_combate.gd, sonidos_ui). db: volumen. tono: variación (± fracción). p: prioridad
@@ -62,15 +95,17 @@ const MAX_GRUPO := {"voz": 2}                              # cuántos de un mism
 # max: cuántos a la vez. espera: s mínimos entre dos iguales. cruza: sigue al cambiar de escena. tres_d: emisor 3D.
 # dos_d: emisor 2D por cercanía (agua de las zonas). grupo: comparte el límite MAX_GRUPO (las voces de los enemigos).
 # tono_fijo: multiplica siempre el tono (el Gólem de ámbar usa el ataque de la piedra, más agudo).
+# en_3d: distancia de referencia cuando suena en el espacio (efecto con «pos»; si no lo dice, EN_3D).
+# Pasos: tres a la vez como mucho (Kael, Lya y Garon pueden pisar casi juntos; con dos se cortaban colas).
 const EFECTOS := {
 	# ---- pasos
-	"paso_hierba": {"a": "pasos/hierba_", "n": 6, "db": -15.0, "tono": 0.06, "p": 0, "max": 2, "espera": 0.09},
-	"paso_piedra": {"a": "pasos/piedra_", "n": 6, "db": -14.0, "tono": 0.06, "p": 0, "max": 2, "espera": 0.09},
-	"paso_hojas": {"a": "pasos/hojas_", "n": 5, "db": -15.0, "tono": 0.06, "p": 0, "max": 2, "espera": 0.09},
-	"paso_nieve": {"a": "pasos/nieve_", "n": 5, "db": -15.0, "tono": 0.06, "p": 0, "max": 2, "espera": 0.09},
-	"paso_grava": {"a": "pasos/grava_", "n": 5, "db": -16.0, "tono": 0.06, "p": 0, "max": 2, "espera": 0.09},
-	"paso_arena": {"a": "pasos/arena_", "n": 4, "db": -14.0, "tono": 0.06, "p": 0, "max": 2, "espera": 0.09},
-	"paso_madera": {"a": "pasos/madera_", "n": 4, "db": -13.0, "tono": 0.06, "p": 0, "max": 2, "espera": 0.09},
+	"paso_hierba": {"a": "pasos/hierba_", "n": 6, "db": -15.0, "tono": 0.06, "p": 0, "max": 3, "espera": 0.09},
+	"paso_piedra": {"a": "pasos/piedra_", "n": 6, "db": -14.0, "tono": 0.06, "p": 0, "max": 3, "espera": 0.09},
+	"paso_hojas": {"a": "pasos/hojas_", "n": 5, "db": -15.0, "tono": 0.06, "p": 0, "max": 3, "espera": 0.09},
+	"paso_nieve": {"a": "pasos/nieve_", "n": 5, "db": -15.0, "tono": 0.06, "p": 0, "max": 3, "espera": 0.09},
+	"paso_grava": {"a": "pasos/grava_", "n": 5, "db": -16.0, "tono": 0.06, "p": 0, "max": 3, "espera": 0.09},
+	"paso_arena": {"a": "pasos/arena_", "n": 4, "db": -14.0, "tono": 0.06, "p": 0, "max": 3, "espera": 0.09},
+	"paso_madera": {"a": "pasos/madera_", "n": 4, "db": -13.0, "tono": 0.06, "p": 0, "max": 3, "espera": 0.09},
 	# ---- combate: ataques físicos, impactos y defensa (las magias no cambian: no tienen sonido aquí)
 	"golpe": {"a": "combate/golpe_", "n": 4, "db": -5.0, "tono": 0.05, "p": 2, "max": 3, "espera": 0.04},
 	"golpe_critico": {"a": "combate/critico_", "n": 2, "db": -5.0, "tono": 0.04, "p": 3, "max": 2, "espera": 0.04},
@@ -118,15 +153,35 @@ const EFECTOS := {
 	"misterio": {"a": "mundo/misterio", "db": -10.0, "p": 3, "max": 1, "espera": 2.0},
 	"palanca": {"a": "mundo/palanca", "db": -6.0, "p": 3, "max": 1, "espera": 0.5},
 	"atascado": {"a": "mundo/atascado", "db": -9.0, "tono": 0.04, "p": 2, "max": 1, "espera": 0.3},
-	"puente_baja": {"a": "mundo/puente_baja", "db": -9.0, "p": 3, "max": 1, "espera": 1.0},
+	# (en la Garganta 3D suena desde el levadizo: ya viene «lejos» del archivo, así que a lo lejos no pierde más agudos)
+	"puente_baja": {"a": "mundo/puente_baja", "db": -9.0, "p": 3, "max": 1, "espera": 1.0,
+		"en_3d": {"unidad": 14.0, "max": 90.0, "filtro": 0.0}},
 	"ascensor": {"a": "mundo/ascensor", "db": -6.0, "tono": 0.03, "p": 2, "max": 1, "espera": 0.5},
 	"cerrada": {"a": "mundo/cerrada", "db": -8.0, "tono": 0.04, "p": 2, "max": 1, "espera": 0.4},
 	"guardado": {"a": "mundo/guardado", "db": -9.0, "p": 3, "max": 1, "espera": 1.0},
 	"posada": {"a": "mundo/posada", "db": -9.0, "p": 3, "max": 1, "espera": 1.0},
 	"portal": {"a": "mundo/portal", "db": -6.0, "p": 3, "max": 1, "espera": 1.0, "cruza": true},
 	"entrar": {"a": "mundo/entrar", "db": -12.0, "tono": 0.05, "p": 2, "max": 1, "espera": 0.5, "cruza": true},
-	"puerta_abre": {"a": "mundo/puerta_abre", "db": -9.0, "p": 3, "max": 1, "espera": 1.0},
+	"puerta_abre": {"a": "mundo/puerta_abre", "db": -9.0, "p": 3, "max": 1, "espera": 1.0,
+		"en_3d": {"unidad": 20.0, "max": 90.0, "filtro": 0.0}},
 	"brazalete": {"a": "mundo/brazalete", "db": -17.0, "tono": 0.03, "p": 1, "max": 1, "espera": 1.5},
+	# ---- Oakhaven (tanda 3; los pide narrativa: docs/audio/inventario_sonidos.md, «Cómo pedirlos»)
+	"campana": {"a": "mundo/campana", "bus": "Ambiente", "db": -12.0, "p": 1, "max": 1, "espera": 6.0},
+	"farol": {"a": "mundo/farol", "db": -6.0, "tono": 0.06, "p": 2, "max": 3, "espera": 0.08},
+	# ---- las artes nuevas (tanda 3, T-091: Alba, Escarcha y Lumbre; NO son las 12 magias de siempre, que no suenan).
+	# Una vez por lanzamiento (prioridad 3) y los estados: Aliento (cura al empezar el turno, muy bajo), la coraza que
+	# absorbe (dos a la vez como mucho, cada 0,05 s) y se rompe, la Brasa que levanta al caído, y la esquiva (pluma).
+	"arte_alba": {"a": "combate/arte_alba", "db": -11.0, "p": 3, "max": 1, "espera": 0.3},
+	"arte_ocaso": {"a": "combate/arte_ocaso", "db": -10.0, "p": 3, "max": 1, "espera": 0.3},
+	"arte_hora_dorada": {"a": "combate/arte_hora_dorada", "db": -9.0, "p": 3, "max": 1, "espera": 0.5},
+	"arte_escarcha": {"a": "combate/arte_escarcha", "db": -9.0, "tono": 0.03, "p": 3, "max": 1, "espera": 0.3},
+	"arte_lumbre": {"a": "combate/arte_lumbre", "db": -9.0, "p": 3, "max": 1, "espera": 0.3},
+	"renacer": {"a": "combate/renacer", "db": -9.0, "p": 3, "max": 1, "espera": 0.5},
+	"aliento": {"a": "combate/aliento", "db": -13.0, "tono": 0.04, "p": 1, "max": 1, "espera": 0.3},
+	"barrera_absorbe": {"a": "combate/barrera_absorbe_", "n": 2, "db": -8.0, "tono": 0.05, "p": 1, "max": 2, "espera": 0.05},
+	"barrera_rota": {"a": "combate/barrera_rota", "db": -9.0, "tono": 0.04, "p": 3, "max": 1, "espera": 0.2},
+	"brasa": {"a": "combate/brasa", "db": -11.0, "p": 3, "max": 1, "espera": 0.5},
+	"esquiva": {"a": "combate/esquiva_", "n": 2, "db": -9.0, "tono": 0.05, "p": 2, "max": 2, "espera": 0.08},
 	# ---- interfaz (los tonos de siempre, hechos por código, y unos pocos de la biblioteca)
 	"ui_tic": {"codigo": "tic", "bus": "Interfaz", "db": -6.0, "p": 1, "max": 2, "espera": 0.03},
 	"ui_confirmar": {"codigo": "confirmar", "bus": "Interfaz", "db": -6.0, "p": 1, "max": 2, "espera": 0.05},
@@ -145,11 +200,22 @@ const EFECTOS := {
 	# el río de las zonas 2D (el mismo bucle): a todo volumen a «cerca» casillas de la orilla o menos, callado a «lejos»
 	"rio_2d": {"a": "ambiente/rio", "bus": "Ambiente", "db": -5.0, "dos_d": {"cerca": 1.5, "lejos": 9.0}},
 	"cascada": {"a": "ambiente/cascada", "bus": "Ambiente", "db": 3.0, "tres_d": {"unidad": 8.0, "max": 45.0}},
+	# la Garganta 3D (tanda 3): la cascada grande que cae al abismo (se oye en toda la garganta, de lejos solo el
+	# rumor grave) y el viento del abismo a lo largo de su eje (garganta_3d.gd, _sonido_3d)
+	"cascada_grande": {"a": "ambiente/cascada_grande", "bus": "Ambiente", "db": 0.0, "tres_d": {"unidad": 10.0, "max": 120.0}},
+	"viento_abismo": {"a": "ambiente/viento_abismo", "bus": "Ambiente", "db": -2.5, "tres_d": {"unidad": 8.0, "max": 70.0}},
+	# Oakhaven (tanda 3): el bullicio de la taberna (bucle) y el letrero del cuervo (de vez en cuando, «cada» s), por
+	# cercanía en la escena 2D (fuente_2d): a todo volumen a «cerca» casillas o menos, callado a «lejos»
+	# (medido el 09/11: a −6 dB, junto a la puerta apenas asomaba sobre el ambiente de la ciudad; a −2, unos 3 dB por encima)
+	"taberna": {"a": "ambiente/taberna", "bus": "Ambiente", "db": -2.0, "dos_d": {"cerca": 2.0, "lejos": 11.0}},
+	"cuervo": {"a": "mundo/cuervo_", "n": 3, "bus": "Ambiente", "db": -12.0, "tono": 0.06, "p": 0, "max": 1, "espera": 1.5,
+		"dos_d": {"cerca": 2.0, "lejos": 12.0, "cada": [4.0, 11.0]}},
 	"rafaga_hierba": {"a": "ambiente/rafaga_hierba_", "n": 4, "bus": "Ambiente", "db": -14.0, "tono": 0.05, "p": 0, "max": 1, "espera": 3.0},
 	"rafaga_arbol": {"a": "ambiente/rafaga_arbol_", "n": 4, "bus": "Ambiente", "db": -14.0, "tono": 0.05, "p": 0, "max": 1, "espera": 3.0},
 	"pajaro": {"a": "ambiente/pajaro", "bus": "Ambiente", "db": -18.0, "tono": 0.08, "p": 0, "max": 1, "espera": 4.0},
 	"hojas": {"a": "ambiente/hojas_", "n": 2, "bus": "Ambiente", "db": -16.0, "tono": 0.06, "p": 0, "max": 1, "espera": 3.0},
 	"gota": {"a": "ambiente/gota_", "n": 3, "bus": "Ambiente", "db": -16.0, "tono": 0.1, "p": 0, "max": 2, "espera": 0.5},
+	"gota_cueva": {"a": "ambiente/gota_cueva_", "n": 2, "bus": "Ambiente", "db": -14.0, "tono": 0.08, "p": 0, "max": 2, "espera": 0.5},
 }
 
 # Detalles de la naturaleza por contexto de Musica: cada cuánto (s, al azar entre los dos) y qué puede sonar.
@@ -158,7 +224,7 @@ const DETALLES := {
 	"ciudad": {"cada": [14.0, 28.0], "efectos": ["pajaro"]},
 	"bosque": {"cada": [8.0, 18.0], "efectos": ["rafaga_arbol", "rafaga_arbol", "hojas"]},
 	"viento": {"cada": [10.0, 22.0], "efectos": ["rafaga_hierba"]},
-	"mazmorra": {"cada": [4.0, 11.0], "efectos": ["gota"]},
+	"mazmorra": {"cada": [4.0, 11.0], "efectos": ["gota", "gota", "gota_cueva"]},
 }
 
 # Suelo de las zonas 2D (zona.gd, ESTILOS: «suelo» y «camino») → paso.
@@ -193,6 +259,11 @@ var reloj := 0.0                                           # s de juego (los tie
 var _escena: Node = null
 var _gen := 0                                              # sube en cada cambio de escena
 var _oyente: Node3D = null
+var _voces3d: Array = []                                   # AudioStreamPlayer3D de la escena actual (efectos con «pos»)
+var _det3d_escena: Node = null                             # la escena que pide los detalles en el espacio (detalles_3d)
+var _det3d_donde := Callable()
+var _eco: Array = []                                       # [bus, AudioEffectReverb] puestos por eco()
+var _eco_escena: Node = null
 var _voz_de := {}                                          # enemigo → [su última voz, su orden] (una voz por enemigo)
 var _det_ctx := ""
 var _det_t := 0.0
@@ -344,8 +415,9 @@ static func _wav(m: PackedFloat32Array, hz: int) -> AudioStreamWAV:
 
 # Hace sonar un efecto del catálogo. Opciones: db (más o menos volumen), tono (multiplica), retraso (s; se anula si
 # cambia la escena), en (nodo dueño: el reproductor es hijo suyo y muere con él), variante (índice fijo, sin
-# variación de tono ni de volumen; lo usan las pruebas de señal). Devuelve el reproductor, o null si no suena
-# (efecto que no existe, silencio, pausa, repetido demasiado pronto o sin voz libre).
+# variación de tono ni de volumen; lo usan las pruebas de señal), pos (Vector3: suena desde ese punto de la escena 3D,
+# con «en_3d» del catálogo o de la petición; sin nadie que escuche en 3D, suena normal). Devuelve el reproductor, o null
+# si no suena (efecto que no existe, silencio, pausa, repetido demasiado pronto o sin voz libre).
 func efecto(nombre: String, op := {}) -> Node:
 	var d: Dictionary = EFECTOS.get(nombre, {})
 	if d.is_empty():
@@ -367,7 +439,8 @@ func efecto(nombre: String, op := {}) -> Node:
 	if calla(bus):
 		return _descartar(nombre, "silencio")
 	var ahora := reloj                                     # tiempo de juego: igual a 30 que a 60 FPS y en las pruebas
-	if ahora - float(_ultimo.get(nombre, -1000.0)) < float(d.get("espera", 0.05)):
+	var clave: String = op.get("clave", nombre)            # la espera, por efecto (o por quien lo pide: los pasos)
+	if ahora - float(_ultimo.get(clave, -1000.0)) < float(d.get("espera", 0.05)):
 		return _descartar(nombre, "repetido")
 	var fija := op.has("variante")
 	var ruta := _elegir(nombre, d, int(op.get("variante", -1)))
@@ -378,10 +451,13 @@ func efecto(nombre: String, op := {}) -> Node:
 	var grupo: String = d.get("grupo", "")
 	if grupo != "" and not _hueco_grupo(grupo, prioridad):
 		return _descartar(nombre, "grupo")
-	var p := _voz(nombre, bus, prioridad, int(d.get("max", 2)), op.get("en"))
+	var pos = op.get("pos")
+	if not (pos is Vector3 and hay_escucha_3d()):
+		pos = null
+	var p = _voz(nombre, bus, prioridad, int(d.get("max", 2)), op.get("en"), pos, op.get("en_3d", d.get("en_3d", EN_3D)))
 	if p == null:
 		return _descartar(nombre, "sin_voz")
-	_ultimo[nombre] = ahora
+	_ultimo[clave] = ahora
 	var tono := float(d.get("tono", 0.0))
 	var vol := float(d.get("db", 0.0)) + float(op.get("db", 0.0))
 	var pitch := float(d.get("tono_fijo", 1.0)) * float(op.get("tono", 1.0))
@@ -405,7 +481,7 @@ func efecto(nombre: String, op := {}) -> Node:
 		_bajar_hasta[bus] = ahora + stream.get_length() / maxf(pitch, 0.01)
 		_atenuar(bus, prioridad, p)
 	contador[nombre] = int(contador.get(nombre, 0)) + 1
-	registro.append([ahora, nombre, ruta, bus])
+	registro.append([ahora, nombre, ruta, bus, pos])
 	if registro.size() > 300:
 		registro.pop_front()
 	return p
@@ -551,20 +627,23 @@ func _stream(ruta: String) -> AudioStream:
 	return s
 
 
-# Un reproductor para el efecto: con dueño, uno nuevo hijo suyo; si no, uno del bus. Respeta «max» (si ya suenan
-# tantos, se reutiliza el más viejo de ellos) y las prioridades (si no hay hueco, se quita el menos importante).
-func _voz(nombre: String, bus: String, prioridad: int, maximo: int, dueno) -> AudioStreamPlayer:
+# Un reproductor para el efecto: con «pos», uno 3D de la escena (_voz3d); con dueño, uno nuevo hijo suyo; si no, uno
+# del bus. Respeta «max» (si ya suenan tantos, se reutiliza el más viejo de ellos) y las prioridades (si no hay hueco,
+# se quita el menos importante).
+func _voz(nombre: String, bus: String, prioridad: int, maximo: int, dueno, pos = null, en_3d := {}) -> Node:
 	var mismos: Array = []
 	for p in _todas():
 		if p.playing and p.get_meta("efecto", "") == nombre:
 			mismos.append(p)
 	if mismos.size() >= maximo:
 		mismos.sort_custom(func(a, b): return int(a.get_meta("t", 0)) < int(b.get_meta("t", 0)))
-		var viejo: AudioStreamPlayer = mismos[0]
-		if dueno == null and viejo in _voces.get(bus, []):
+		var viejo: Node = mismos[0]
+		if dueno == null and pos == null and viejo in _voces.get(bus, []):
 			viejo.stop()
 			return viejo
 		_apagar(viejo, 0.0)
+	if pos is Vector3:
+		return _voz3d(bus, prioridad, pos, en_3d)
 	if dueno is Node and is_instance_valid(dueno):
 		var q := AudioStreamPlayer.new()
 		q.bus = bus
@@ -588,6 +667,43 @@ func _voz(nombre: String, bus: String, prioridad: int, maximo: int, dueno) -> Au
 	return null
 
 
+# Un reproductor 3D de la escena actual en «pos» (efectos en el espacio). Se crean al pedirlos, VOCES_3D como mucho, y
+# mueren con la escena. Sin hueco, se quita el menos importante (y más viejo) si no lo es más que el nuevo.
+func _voz3d(bus: String, prioridad: int, pos: Vector3, t: Dictionary) -> AudioStreamPlayer3D:
+	var escena := get_tree().current_scene
+	if escena == null or not escena.is_inside_tree():
+		return null
+	_voces3d = _voces3d.filter(func(x): return is_instance_valid(x) and x.is_inside_tree())
+	var q: AudioStreamPlayer3D = null
+	for x in _voces3d:
+		if not x.playing:
+			q = x
+			break
+	if q == null and _voces3d.size() < VOCES_3D:
+		q = AudioStreamPlayer3D.new()
+		q.name = "Sonido3D_%d" % _voces3d.size()
+		q.attenuation_model = AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
+		q.doppler_tracking = AudioStreamPlayer3D.DOPPLER_TRACKING_DISABLED
+		q.process_mode = Node.PROCESS_MODE_PAUSABLE
+		escena.add_child(q)
+		_voces3d.append(q)
+	if q == null:
+		for x in _voces3d:
+			if q == null or int(x.get_meta("p", 0)) < int(q.get_meta("p", 0)) or (
+					int(x.get_meta("p", 0)) == int(q.get_meta("p", 0)) and int(x.get_meta("t", 0)) < int(q.get_meta("t", 0))):
+				q = x
+		if q == null or int(q.get_meta("p", 0)) > prioridad:
+			return null
+		q.stop()
+	q.bus = StringName(bus)
+	q.unit_size = float(t.get("unidad", EN_3D["unidad"]))
+	q.max_distance = float(t.get("max", EN_3D["max"]))
+	q.max_db = 0.0                                         # más cerca que «unidad» no sube por encima de su volumen
+	q.attenuation_filter_db = float(t.get("filtro", EN_3D["filtro"]))
+	q.global_position = pos
+	return q
+
+
 # Límite de un grupo (MAX_GRUPO): si ya suenan tantos, se quita el menos importante (y más viejo) si no lo es más que el
 # nuevo; si todos lo son, el nuevo no suena.
 func _hueco_grupo(grupo: String, prioridad: int) -> bool:
@@ -597,7 +713,7 @@ func _hueco_grupo(grupo: String, prioridad: int) -> bool:
 			lista.append(p)
 	if lista.size() < int(MAX_GRUPO.get(grupo, 99)):
 		return true
-	var peor: AudioStreamPlayer = null
+	var peor: Node = null
 	for p in lista:
 		if peor == null or int(p.get_meta("p", 0)) < int(peor.get_meta("p", 0)) or (
 				int(p.get_meta("p", 0)) == int(peor.get_meta("p", 0)) and int(p.get_meta("t", 0)) < int(peor.get_meta("t", 0))):
@@ -618,10 +734,13 @@ func _todas() -> Array:
 			vivos.append(q)
 	_propios = vivos
 	r.append_array(vivos)
+	for q in _voces3d:
+		if is_instance_valid(q):
+			r.append(q)
 	return r
 
 
-func _atenuar(bus: String, _prioridad: int, excepto: AudioStreamPlayer) -> void:
+func _atenuar(bus: String, _prioridad: int, excepto: Node) -> void:
 	for p in _todas():
 		if p != excepto and p.playing and String(p.bus) == bus and int(p.get_meta("p", 0)) < 3:
 			var t := create_tween()
@@ -629,7 +748,7 @@ func _atenuar(bus: String, _prioridad: int, excepto: AudioStreamPlayer) -> void:
 			p.set_meta("tween", t)
 
 
-func _apagar(p: AudioStreamPlayer, fundido: float) -> void:
+func _apagar(p: Node, fundido: float) -> void:
 	_parar_fundido(p)
 	if fundido <= 0.0 or not p.playing:
 		p.stop()
@@ -641,7 +760,7 @@ func _apagar(p: AudioStreamPlayer, fundido: float) -> void:
 	p.set_meta("apagando", true)                           # ya se va: no cuenta para el límite de su grupo
 
 
-func _parar_fundido(p: AudioStreamPlayer) -> void:
+func _parar_fundido(p: Node) -> void:
 	p.remove_meta("apagando")
 	if p.has_meta("tween"):
 		var t = p.get_meta("tween")
@@ -659,19 +778,27 @@ func _process(delta: float) -> void:
 	_detalles(delta)
 
 
-# Cambio de escena: lo de Efectos y Ambiente que no «cruza» se apaga y lo programado ya no suena.
+# Cambio de escena: lo de Efectos y Ambiente que no «cruza» se apaga y lo programado ya no suena. El eco y los detalles
+# en el espacio de la escena anterior se quitan.
 func _al_cambiar_escena() -> void:
 	_gen += 1
 	_voz_de.clear()                                        # los enemigos de antes ya no existen
+	_voces3d = _voces3d.filter(func(x): return is_instance_valid(x) and x.is_inside_tree())
 	for p in _todas():
 		if p.playing and String(p.bus) != "Interfaz" and not p.get_meta("cruza", false):
 			_apagar(p, FUNDIDO_CORTE)
 	_emisores = _emisores.filter(func(x): return is_instance_valid(x))
 	if _oyente != null and not is_instance_valid(_oyente):
 		_oyente = null
+	if not _eco.is_empty() and _eco_escena != _escena:
+		quitar_eco()
+	if _det3d_escena != null and _det3d_escena != _escena:
+		_det3d_escena = null
+		_det3d_donde = Callable()
 
 
-# De vez en cuando, un detalle de la naturaleza según el lugar (DETALLES). Nunca en pausa ni en combate.
+# De vez en cuando, un detalle de la naturaleza según el lugar (DETALLES). Nunca en pausa ni en combate. Si la escena
+# lo pide (detalles_3d), suena en un punto del espacio.
 func _detalles(delta: float) -> void:
 	var m = get_node_or_null("/root/Musica")
 	var ctx: String = m.contexto if m != null else ""
@@ -684,8 +811,22 @@ func _detalles(delta: float) -> void:
 	_det_t -= delta
 	if _det_t <= 0.0:
 		var lista: Array = dd["efectos"]
-		efecto(lista[_rng.randi_range(0, lista.size() - 1)])
+		var nombre: String = lista[_rng.randi_range(0, lista.size() - 1)]
+		var op := {}
+		if _det3d_donde.is_valid() and is_instance_valid(_det3d_escena) and _det3d_escena == _escena:
+			var q = _det3d_donde.call(posicion_oyente(), _rng.randf(), _rng.randf())
+			if q is Vector3:
+				op["pos"] = q
+		efecto(nombre, op)
 		_det_t = _rng.randf_range(dd["cada"][0], dd["cada"][1])
+
+
+# Los detalles de la naturaleza (DETALLES) de esta escena 3D suenan en un punto: «donde» recibe la posición de quien
+# escucha y dos números al azar entre 0 y 1 (del generador del sonido) y devuelve dónde (Vector3; si no, suena normal).
+# La Garganta 3D: cada gota cae en la pared de roca más cercana. Se olvida al cambiar de escena.
+func detalles_3d(escena: Node, donde: Callable) -> void:
+	_det3d_escena = escena
+	_det3d_donde = donde
 
 
 # Android: al pasar la app a segundo plano se pausa todo; al volver, sigue.
@@ -710,22 +851,26 @@ func pausar(si: bool) -> void:
 # Pasos de un personaje 3D: suenan cuando un pie toca el suelo (los huesos LeftFoot / RightFoot del esqueleto), solo
 # si avanza. «superficie» recibe la posición y dice el suelo («hierba», «piedra»…). Sin esqueleto, por distancia.
 # Vale para varios personajes a la vez (Kael, Lya, Garon…), uno por cuerpo: pedirlo dos veces para el mismo cuerpo
-# devuelve el que ya tenía (no se duplican). db: más bajo para quien no es el que escucha (los compañeros, −3 dB).
-# Dos pasos del mismo suelo con menos de 0,09 s entre ellos suenan como uno («espera» del catálogo).
-func pasos_3d(cuerpo: Node3D, superficie: Callable, db := 0.0) -> Node:
+# devuelve el que ya tenía (no se duplican). db: su volumen; sin decirlo, el de DB_PASOS por el nombre del nodo (Lya,
+# Garon) o 0. Los de quien no es el que escucha (los compañeros) suenan desde su pie, en el espacio (PASO_3D: más bajos
+# cuanto más lejos); sin oyente 3D, 3 dB más bajos (DB_COMPANERO_SIN_POSICION).
+# Dos pasos del mismo cuerpo con menos de 0,09 s entre ellos suenan como uno («espera» del catálogo, por cuerpo: los
+# pasos de dos personajes que pisan a la vez suenan los dos).
+func pasos_3d(cuerpo: Node3D, superficie: Callable, db := NAN) -> Node:
 	if cuerpo == null:
 		return null
+	var vol: float = db if not is_nan(db) else float(DB_PASOS.get(String(cuerpo.name), 0.0))
 	for h in cuerpo.get_children():
 		if h is Pasos3D:
 			h.superficie = superficie
-			h.db = db
+			h.db = vol
 			return h
 	var n := Pasos3D.new()
 	n.name = "Pasos"
 	n.son = self
 	n.cuerpo = cuerpo
 	n.superficie = superficie
-	n.db = db
+	n.db = vol
 	cuerpo.add_child(n)
 	return n
 
@@ -775,7 +920,9 @@ class Pasos3D extends Node:
 	var _t_ultimo := 0.0
 	var _t := 0.0
 	var _buscar_en := 0.0
-	var pasos := 0
+	var pasos := 0                               # pisadas (para las pruebas)
+	var sonados := 0                             # pisadas que han sonado
+	var ultimo: Node = null                      # el reproductor del último paso que sonó (para las pruebas)
 
 	func _ready() -> void:
 		_ant = cuerpo.global_position
@@ -814,7 +961,8 @@ class Pasos3D extends Node:
 			return
 		if pies.size() == 2 and is_instance_valid(skel):
 			for f in pies:
-				var y: float = (skel.global_transform * skel.get_bone_global_pose(f["i"])).origin.y - p.y
+				var pie: Vector3 = (skel.global_transform * skel.get_bone_global_pose(f["i"])).origin
+				var y: float = pie.y - p.y
 				f["min"] = minf(y, float(f["min"]) + delta * 0.05)      # lo más bajo de la vuelta (se adapta despacio)
 				var vy: float = (y - float(f["y"])) / delta
 				f["y"] = y
@@ -822,45 +970,61 @@ class Pasos3D extends Node:
 					f["baja"] = true
 				elif f["baja"] and vy > -0.05 and y < float(f["min"]) + ALTO_SUELO:
 					f["baja"] = false
-					_pisar(p)
+					_pisar(p, pie)
 		else:                                        # sin esqueleto: un paso cada zancada (más larga al correr)
 			_acum += d
 			var zancada := clampf(_vel * 0.33, 0.7, 2.2)
 			if _acum >= zancada:
 				_acum -= zancada
-				_pisar(p)
+				_pisar(p, p)
 
-	func _pisar(p: Vector3) -> void:
+	# Un pie toca el suelo en «pie». Los del que escucha (Kael), sin posición; los de los compañeros, desde su pie (con
+	# un oyente 3D) o algo más bajos (sin él). Cada paso pide un solo efecto; la espera mínima entre dos pasos es de
+	# cada cuerpo («clave»): dos personajes que pisan a la vez suenan los dos (antes se perdía casi la mitad).
+	func _pisar(p: Vector3, pie: Vector3) -> void:
 		if _t - _t_ultimo < ENTRE_PASOS:
 			return
 		_t_ultimo = _t
 		pasos += 1
-		son.efecto("paso_" + String(superficie.call(p)), {"db": db + (2.0 if _vel > 5.5 else 0.0)})
+		var nombre := "paso_" + String(superficie.call(p))
+		var op := {"db": db + (2.0 if _vel > 5.5 else 0.0), "clave": nombre + "@" + str(get_instance_id())}
+		if not son.es_oyente(cuerpo):
+			if son.hay_oyente():
+				op["pos"] = pie
+				op["en_3d"] = son.PASO_3D
+			elif son.DB_PASOS.has(String(cuerpo.name)):
+				op["db"] += son.DB_COMPANERO_SIN_POSICION
+		var r = son.efecto(nombre, op)
+		if r != null:
+			ultimo = r
+			sonados += 1
 
 
 # ================================================================= ambiente 3D
 
 # Emisor fijo (la cascada) con el bucle del efecto, por el bus Ambiente. Empieza en un punto al azar del bucle.
-func fuente_3d(padre: Node3D, nombre: String, pos: Vector3) -> AudioStreamPlayer3D:
-	var e := _emisor(padre, nombre, AudioStreamPlayer3D.new())
+# db: más o menos que el volumen del catálogo (el mismo bucle en dos sitios).
+func fuente_3d(padre: Node3D, nombre: String, pos: Vector3, db := 0.0) -> AudioStreamPlayer3D:
+	var e := _emisor(padre, nombre, AudioStreamPlayer3D.new(), db)
 	if e != null:
 		e.position = pos
 	return e
 
 
-# Emisor a lo largo de un segmento (un río): cada fotograma se pone en el punto del cauce más cercano a quien escucha.
-func fuente_linea(padre: Node3D, nombre: String, a: Vector3, b: Vector3) -> AudioStreamPlayer3D:
+# Emisor a lo largo de un segmento (un río, la caída de una cascada, el eje de un abismo): cada fotograma se pone en el
+# punto del segmento más cercano a quien escucha.
+func fuente_linea(padre: Node3D, nombre: String, a: Vector3, b: Vector3, db := 0.0) -> AudioStreamPlayer3D:
 	var f := FuenteLineal.new()
 	f.a = a
 	f.b = b
 	f.son = self
-	var e := _emisor(padre, nombre, f)
+	var e := _emisor(padre, nombre, f, db)
 	if e != null:
 		e.position = a.lerp(b, 0.5)
 	return e
 
 
-func _emisor(padre: Node3D, nombre: String, e: AudioStreamPlayer3D) -> AudioStreamPlayer3D:
+func _emisor(padre: Node3D, nombre: String, e: AudioStreamPlayer3D, db := 0.0) -> AudioStreamPlayer3D:
 	var d: Dictionary = EFECTOS.get(nombre, {})
 	var s := _stream(EF + String(d.get("a", "")) + ".wav") if d.has("tres_d") else null
 	if padre == null or s == null:
@@ -869,9 +1033,11 @@ func _emisor(padre: Node3D, nombre: String, e: AudioStreamPlayer3D) -> AudioStre
 		return null
 	var t: Dictionary = d["tres_d"]
 	e.name = "Sonido_" + nombre
+	if padre.has_node(NodePath(e.name)):                   # el mismo bucle dos veces (el viento del abismo y el de los
+		e.name = "Sonido_%s_%d" % [nombre, padre.get_child_count()]   # puentes): cada uno con su nombre
 	e.stream = s
 	e.bus = &"Ambiente"
-	e.volume_db = float(d.get("db", 0.0))
+	e.volume_db = float(d.get("db", 0.0)) + db
 	e.unit_size = float(t.get("unidad", 5.0))
 	e.max_distance = float(t.get("max", 40.0))
 	e.attenuation_model = AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
@@ -883,6 +1049,51 @@ func _emisor(padre: Node3D, nombre: String, e: AudioStreamPlayer3D) -> AudioStre
 	_emisores.append(e)
 	contador[nombre] = int(contador.get(nombre, 0)) + 1
 	return e
+
+
+# Eco del lugar (ECO[nombre]) mientras «escena» sea la escena actual: una reverberación (AudioEffectReverb) al final de
+# los buses que dice ECO (Efectos y Ambiente; nunca la música ni la interfaz). Se quita sola al cambiar de escena, o con
+# quitar_eco(). Pedirlo otra vez lo cambia (no se suman dos).
+func eco(escena: Node, nombre: String) -> void:
+	quitar_eco()
+	var c: Dictionary = ECO.get(nombre, {})
+	if c.is_empty() or escena == null:
+		return
+	var buses: Dictionary = c["buses"]
+	for bus in buses:
+		var i := AudioServer.get_bus_index(bus)
+		if i < 0:
+			continue
+		var r := AudioEffectReverb.new()
+		r.room_size = float(c["sala"])
+		r.damping = float(c["amortiguar"])
+		r.spread = float(c["abrir"])
+		r.hipass = float(c["graves"])
+		r.predelay_msec = float(c["previo_ms"])
+		r.predelay_feedback = float(c["rebote"])
+		r.dry = float(c.get("seco", 1.0))
+		r.wet = float(buses[bus])
+		r.resource_name = "Eco_" + nombre
+		AudioServer.add_bus_effect(i, r)
+		_eco.append([bus, r])
+	_eco_escena = escena
+
+
+func quitar_eco() -> void:
+	for par in _eco:
+		var i := AudioServer.get_bus_index(par[0])
+		if i < 0:
+			continue
+		for k in range(AudioServer.get_bus_effect_count(i) - 1, -1, -1):
+			if AudioServer.get_bus_effect(i, k) == par[1]:
+				AudioServer.remove_bus_effect(i, k)
+	_eco.clear()
+	_eco_escena = null
+
+
+# Los buses que llevan ahora el eco de un lugar (para las pruebas).
+func eco_activo() -> Array:
+	return _eco.map(func(x): return x[0])
 
 
 # Se escucha desde «sigue» (a la altura de la cabeza), mirando hacia donde mira la cámara: lo que está a la derecha
@@ -904,6 +1115,21 @@ func posicion_oyente() -> Vector3:
 		return _oyente.global_position
 	var c := get_viewport().get_camera_3d()
 	return c.global_position if c != null else Vector3.ZERO
+
+
+# Hay alguien que escucha desde un personaje (oyente_3d) en la escena de ahora.
+func hay_oyente() -> bool:
+	return _oyente != null and is_instance_valid(_oyente) and _oyente.is_inside_tree()
+
+
+# «cuerpo» es el personaje desde el que se escucha (sus pasos no van en el espacio: están en sus oídos).
+func es_oyente(cuerpo: Node) -> bool:
+	return hay_oyente() and _oyente.sigue == cuerpo
+
+
+# Un efecto con «pos» se puede oír en el espacio: hay un oyente 3D o una cámara 3D en la pantalla.
+func hay_escucha_3d() -> bool:
+	return hay_oyente() or get_viewport().get_camera_3d() != null
 
 
 class Oyente extends AudioListener3D:
@@ -1071,3 +1297,131 @@ class Agua2D extends AudioStreamPlayer2D:
 		distancia = maxf(0.0, sqrt(mejor) - 0.5)       # el agua empieza media casilla antes de su vértice
 		punto = mp * t
 		objetivo = cerca / maxf(distancia, cerca) * (1.0 - smoothstep(lejos * 0.65, lejos, distancia))
+
+
+# ================================================================= fuentes del mundo en escenas 2D (tanda 3)
+
+# Un sonido del mundo en una escena 2D (Oakhaven: la taberna, el letrero del cuervo): suena desde «pos» (px, en el
+# padre), a la izquierda o a la derecha según dónde quede en la pantalla. Volumen por la distancia a «quien» (el que
+# anda; sin él, la cámara 2D): todo a «cerca» casillas o menos, la mitad cada vez que se dobla la distancia y callado,
+# sin sonar, hacia «lejos» («dos_d» del catálogo; «casilla»: px por casilla). Si el catálogo dice «cada» ([mín, máx] s),
+# no es un bucle: de vez en cuando suena una de sus variantes (el cuervo que chirría); si no, el bucle con un fundido
+# (la taberna). Por el bus del catálogo (Ambiente), con la pausa, el silencio y el cambio de escena de siempre (es hija
+# de la escena y muere con ella). Devuelve el emisor, o null si el efecto no es de este tipo.
+func fuente_2d(padre: Node2D, nombre: String, pos: Vector2, quien: Node2D = null, casilla := 64.0) -> Node:
+	var d: Dictionary = EFECTOS.get(nombre, {})
+	if padre == null or not d.has("dos_d") or nombre in AGUA_2D.values():
+		push_warning("Sonido: no se puede crear la fuente 2D «%s»" % nombre)
+		return null
+	var c: Dictionary = d["dos_d"]
+	var e := Fuente2D.new()
+	e.name = "Sonido_" + nombre
+	e.son = self
+	e.nombre = nombre
+	e.quien = quien
+	e.casilla = casilla
+	e.position = pos
+	e.bus = StringName(d.get("bus", "Ambiente"))
+	e.base_db = float(d.get("db", 0.0))
+	e.cerca = float(c.get("cerca", 1.5))
+	e.lejos = float(c.get("lejos", 9.0))
+	e.cada = c.get("cada", [])
+	e.attenuation = 0.0                                    # el volumen lo pone Fuente2D (por casillas)
+	e.max_distance = 1.0e6
+	e.volume_db = -80.0
+	e.process_mode = Node.PROCESS_MODE_PAUSABLE
+	e.set_meta("efecto", nombre)
+	if e.cada.is_empty():
+		e.stream = _stream(EF + String(d["a"]) + ".wav")
+		if e.stream == null:
+			e.free()
+			return null
+		contador[nombre] = int(contador.get(nombre, 0)) + 1
+	padre.add_child(e)
+	_emisores.append(e)
+	return e
+
+
+# Una vez de una fuente 2D intermitente (el cuervo): su variante, su tono y su volumen por la distancia («nivel»
+# lineal), con las reglas de efecto() (pausa, silencio, espera).
+func _sonar_fuente(e: AudioStreamPlayer2D, nombre: String, nivel: float) -> bool:
+	var d: Dictionary = EFECTOS.get(nombre, {})
+	var bus: String = d.get("bus", "Ambiente")
+	var motivo := ""
+	if pausado:
+		motivo = "pausa"
+	elif calla(bus):
+		motivo = "silencio"
+	elif reloj - float(_ultimo.get(nombre, -1000.0)) < float(d.get("espera", 0.05)):
+		motivo = "repetido"
+	if motivo != "":
+		_descartar(nombre, motivo)
+		return false
+	var ruta := _elegir(nombre, d, -1)
+	var s := _stream(ruta)
+	if s == null:
+		_descartar(nombre, "sin_archivo")
+		return false
+	_ultimo[nombre] = reloj
+	var tono := float(d.get("tono", 0.0))
+	e.stream = s
+	e.pitch_scale = 1.0 + _rng.randf_range(-tono, tono)
+	e.volume_db = float(d.get("db", 0.0)) + linear_to_db(maxf(nivel, 0.0001)) + _rng.randf_range(-0.7, 0.7)
+	e.play()
+	contador[nombre] = int(contador.get(nombre, 0)) + 1
+	registro.append([reloj, nombre, ruta, bus, null])
+	if registro.size() > 300:
+		registro.pop_front()
+	return true
+
+
+class Fuente2D extends AudioStreamPlayer2D:
+	const FUNDIDO := 0.8                   # s de nada a todo (y de todo a nada) en los bucles
+	var son
+	var nombre := ""
+	var quien: Node2D
+	var casilla := 64.0
+	var base_db := 0.0
+	var cerca := 1.5
+	var lejos := 9.0
+	var cada: Array = []                   # [mín, máx] s entre dos veces (intermitente); vacío: bucle
+	var nivel := 0.0
+	var objetivo := 0.0
+	var distancia := 99.0                  # casillas hasta quien anda
+	var veces := 0                         # cuántas veces ha sonado (intermitente)
+	var _t := 0.0
+
+	func _ready() -> void:
+		if not cada.is_empty():
+			_t = son._rng.randf_range(0.5, float(cada[0]))   # la primera vez, enseguida (pero no al entrar)
+
+	func _process(delta: float) -> void:
+		var desde = _desde()
+		if desde == null:
+			return
+		distancia = global_position.distance_to(desde) / casilla
+		objetivo = cerca / maxf(distancia, cerca) * (1.0 - smoothstep(lejos * 0.65, lejos, distancia))
+		if not cada.is_empty():
+			_t -= delta
+			if _t <= 0.0:
+				_t = son._rng.randf_range(float(cada[0]), float(cada[1]))
+				if objetivo > 0.01 and son._sonar_fuente(self, nombre, objetivo):
+					veces += 1
+			return
+		nivel = move_toward(nivel, objetivo, delta / FUNDIDO)
+		if nivel > 0.003:
+			volume_db = base_db + linear_to_db(nivel)
+			if not playing:
+				play(son._rng.randf_range(0.0, maxf(0.0, stream.get_length() - 1.0)))
+		elif playing:
+			stop()
+			volume_db = -80.0
+
+	# Desde dónde se mide: quien anda o, si no hay, el centro de la cámara 2D.
+	func _desde():
+		if is_instance_valid(quien):
+			return quien.global_position
+		var c: Camera2D = null
+		if is_inside_tree():
+			c = get_viewport().get_camera_2d()
+		return c.get_screen_center_position() if c != null else null
