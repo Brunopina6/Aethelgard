@@ -33,7 +33,7 @@ extends Node
 # - Voces de los enemigos (tanda 2): Sonido.voz(enemigo, "ataque" | "herido" | "caida" | …) elige la familia de cada
 #   enemigo (FAMILIAS: limo, goblin, gorthor, piedra, ámbar) y suena una vez por evento real: «ataque» al lanzarse,
 #   «herido» o «caida» cuando un golpe físico ya le ha quitado los PV (Sonido.recibe). Una voz por enemigo (la nueva
-#   corta la suya anterior) y como mucho MAX_GRUPO["voz"] a la vez entre todos. Los héroes no tienen voz. Las magias no
+#   corta la suya anterior) y como mucho MAX_GRUPO["voz"] a la vez entre todos. Los héroes, desde la tanda 5, la suya (FAMILIAS_HEROE). Las magias no
 #   piden voces (su presentación está protegida: va en la propuesta de magias, docs/audio/inventario_sonidos.md).
 # - Agua de las zonas 2D: agua_zona(zona) pone el río en el agua más cercana a quien anda; suena al acercarse, con un
 #   fundido, y se calla lejos (Agua2D).
@@ -58,6 +58,8 @@ extends Node
 # - Héroes quietos (tanda 4): el nodo de pasos de cada personaje 3D (Pasos3D) hace, si lleva un rato parado, un gesto muy
 #   discreto suyo (QUIETO: Kael, Lya y Garon distintos), uno a la vez entre los tres, por Efectos y con prioridad 0. No hace
 #   falta tocar ninguna escena: va donde ya hay pasos_3d (Pastos Verdes y la Garganta 3D).
+# Tanda 5: las voces no verbales de Kael, Lya y Garon en combate (FAMILIAS_HEROE): esfuerzo, herido, jadeo con poca vida,
+#   alivio y victoria; por debajo de los golpes (prioridad 1, una a la vez). Cómo pedirlas: docs/audio/inventario_sonidos.md.
 
 const ARCHIVO := "user://ajustes.cfg"
 const BUSES := ["Musica", "Efectos", "Interfaz", "Ambiente"]
@@ -72,7 +74,7 @@ const EF := "res://audio/efectos/"
 const VOCES := {"Efectos": 10, "Interfaz": 4, "Ambiente": 4}
 const ATENUAR_DB := 8.0                                    # lo que bajan las prioridades 0-2 mientras suena una 4
 const FUNDIDO_CORTE := 0.1                                 # s: al cambiar de escena o cortar
-const MAX_GRUPO := {"voz": 2, "quieto": 1}                 # cuántos de un mismo grupo suenan a la vez como mucho
+const MAX_GRUPO := {"voz": 2, "quieto": 1, "voz_heroe": 1}               # cuántos de un mismo grupo suenan a la vez como mucho
 # Los héroes quietos en la exploración 3D (tanda 4; Pasos3D): tras «primero» s parados (al azar entre los dos), un gesto
 # discreto de su personaje; mientras sigan parados, otro cada «entre» s. Andar lo reinicia. Kael es el que escucha (o el
 # nodo «Kael»); Lya y Garon, por el nombre de su nodo.
@@ -206,6 +208,25 @@ const EFECTOS := {
 	"posadero_herido": {"a": "bestias/posadero_herido_", "n": 2, "db": -2.0, "tono": 0.05, "p": 3, "max": 1, "espera": 0.25, "grupo": "voz"},
 	"posadero_caida": {"a": "bestias/posadero_caida", "db": -9.0, "p": 3, "max": 1, "espera": 1.0, "grupo": "voz"},
 	"posadero_entrada": {"a": "bestias/posadero_entrada", "db": -3.0, "p": 3, "max": 1, "espera": 1.0},
+	# ---- las voces de los héroes en combate (tanda 5; no verbales). Por debajo de los golpes y de las voces de los
+	# enemigos: prioridad 1 (lo primero que cede si faltan voces) y una a la vez entre los tres (grupo «voz_heroe»); la
+	# de victoria, prioridad 3 (no baja con la fanfarria) y muy corta. Las piden voz() y recibe() (esfuerzo al lanzarse,
+	# herido o caída al recibir un golpe físico, jadeo si queda con poca vida), voz(h, "alivio") y victoria_heroes().
+	"kael_esfuerzo": {"a": "heroes/kael_esfuerzo_", "n": 3, "db": -16.5, "tono": 0.04, "p": 1, "max": 1, "espera": 0.3, "grupo": "voz_heroe"},
+	"kael_herido": {"a": "heroes/kael_herido_", "n": 2, "db": -14.0, "tono": 0.05, "p": 1, "max": 1, "espera": 0.3, "grupo": "voz_heroe"},
+	"kael_jadeo": {"a": "heroes/kael_jadeo_", "n": 2, "db": -10.5, "tono": 0.03, "p": 1, "max": 1, "espera": 2.0, "grupo": "voz_heroe"},
+	"kael_alivio": {"a": "heroes/kael_alivio_", "n": 2, "db": -12.5, "tono": 0.03, "p": 1, "max": 1, "espera": 0.5, "grupo": "voz_heroe"},
+	"kael_victoria": {"a": "heroes/kael_victoria_", "n": 2, "db": -8.5, "tono": 0.03, "p": 3, "max": 1, "espera": 1.0, "grupo": "voz_heroe"},
+	"lya_esfuerzo": {"a": "heroes/lya_esfuerzo_", "n": 3, "db": -14.5, "tono": 0.04, "p": 1, "max": 1, "espera": 0.3, "grupo": "voz_heroe"},
+	"lya_herido": {"a": "heroes/lya_herido_", "n": 3, "db": -17.0, "tono": 0.05, "p": 1, "max": 1, "espera": 0.3, "grupo": "voz_heroe"},
+	"lya_jadeo": {"a": "heroes/lya_jadeo_", "n": 2, "db": -19.0, "tono": 0.03, "p": 1, "max": 1, "espera": 2.0, "grupo": "voz_heroe"},
+	"lya_alivio": {"a": "heroes/lya_alivio_1", "db": -13.0, "tono": 0.04, "p": 1, "max": 1, "espera": 0.5, "grupo": "voz_heroe"},
+	"lya_victoria": {"a": "heroes/lya_victoria_1", "db": -12.0, "tono": 0.03, "p": 3, "max": 1, "espera": 1.0, "grupo": "voz_heroe"},
+	"garon_esfuerzo": {"a": "heroes/garon_esfuerzo_", "n": 3, "db": -16.0, "tono": 0.03, "p": 1, "max": 1, "espera": 0.3, "grupo": "voz_heroe"},
+	"garon_herido": {"a": "heroes/garon_herido_", "n": 2, "db": -13.5, "tono": 0.04, "p": 1, "max": 1, "espera": 0.3, "grupo": "voz_heroe"},
+	"garon_jadeo": {"a": "heroes/garon_jadeo_", "n": 2, "db": -15.0, "tono": 0.03, "p": 1, "max": 1, "espera": 2.0, "grupo": "voz_heroe"},
+	"garon_alivio": {"a": "heroes/garon_alivio_1", "db": -12.5, "tono": 0.03, "p": 1, "max": 1, "espera": 0.5, "grupo": "voz_heroe"},
+	"garon_victoria": {"a": "heroes/garon_victoria_1", "db": -9.0, "tono": 0.02, "p": 3, "max": 1, "espera": 1.0, "grupo": "voz_heroe"},
 	# ---- los héroes quietos en la exploración 3D (tanda 4): un gesto muy discreto de vez en cuando (Pasos3D, QUIETO);
 	# uno a la vez entre los tres (grupo «quieto»), prioridad 0 (lo primero que cede)
 	"quieto_kael": {"a": "heroes/kael_quieto_", "n": 2, "db": -12.0, "tono": 0.04, "p": 0, "max": 1, "espera": 1.0, "grupo": "quieto"},
@@ -321,7 +342,12 @@ const BESTIAS := {
 	"posadero": [["posadero_aviso_cierre", "posadero_aviso_llave"], ["posadero_cierre", "posadero_llave"],
 		["posadero_herido", "posadero_caida", "posadero_entrada"]],
 }
-const FAMILIA_MODELO := {"slime": "limo", "grimfang": "goblin", "hollin": "goblin", "hollin_a": "goblin", "hollin_b": "goblin",
+# Tanda 5: las voces de los héroes (no verbales) por su nombre en combate.gd; «ataque» es su esfuerzo. Con menos de
+# JADEO_VIDA de su vida máxima, tras un golpe jadean (una vez hasta curarse).
+const FAMILIAS_HEROE := {"Kael": "kael", "Lya": "lya", "Garon": "garon"}
+const EVENTO_HEROE := {"ataque": "esfuerzo"}
+const JADEO_VIDA := 0.3
+const FAMILIA_MODELO :=  {"slime": "limo", "grimfang": "goblin", "hollin": "goblin", "hollin_a": "goblin", "hollin_b": "goblin",
 	"gorthor3d": "gorthor", "gorthor": "gorthor", "guardian": "piedra"}
 # Qué suena junto al líquido de una zona 2D (zona.gd, ESTILOS «agua»): de momento solo el agua de verdad (el hielo, el
 # abismo, la lava y el veneno, nada).
@@ -349,6 +375,7 @@ var _det3d_escena: Node = null                             # la escena que pide 
 var _det3d_donde := Callable()
 var _eco: Array = []                                       # [bus, AudioEffectReverb] puestos por eco()
 var _eco_escena: Node = null
+var _jadeo_de := {}                                        # héroe → ya ha jadeado con poca vida (tanda 5)
 var _voz_de := {}                                          # enemigo → [su última voz, su orden] (una voz por enemigo)
 var _det_ctx := ""
 var _det_t := 0.0
@@ -579,15 +606,24 @@ func golpe(critico := false, defendido := false, db := 0.0) -> void:
 
 
 # La voz de un enemigo de combate (un diccionario de combate.gd): «ataque», «herido», «caida», «muerte» (si su familia no
-# la tiene, la de caída) o «devorar». Los héroes no tienen voz. Una voz por enemigo: la nueva corta la suya de antes.
+# la tiene, la de caída) o «devorar». Los héroes (tanda 5, por su nombre): «ataque» es su esfuerzo; «alivio»,
+# «victoria» y «jadeo» también; si no hay «caida», la de herido. Una voz por enemigo: la nueva corta la suya de antes.
 # Con «furia» (menos del 30 % de vida, combate.gd), su ataque suena más fuerte y más grave.
 func voz(quien: Dictionary, evento: String) -> Node:
-	if quien.is_empty() or quien.get("hero", true):
+	if quien.is_empty() or not quien.has("hero"):
 		return null
 	var fam := familia(quien)
+	var heroe: bool = quien["hero"]
+	if heroe:                                          # tanda 5: «ataque» de un héroe es su esfuerzo
+		evento = EVENTO_HEROE.get(evento, evento)
 	var nombre := fam + "_" + evento
 	if fam != "" and not EFECTOS.has(nombre) and evento == "muerte":
 		nombre = fam + "_caida"
+	if fam != "" and not EFECTOS.has(nombre) and evento == "caida" and heroe:
+		nombre = fam + "_herido"                       # un héroe que cae se queja como herido (más grave)
+		evento = "herido"
+	if heroe and evento == "alivio":
+		_jadeo_de.erase(_clave_de(quien))              # curado: si vuelve a quedar con poca vida, vuelve a jadear
 	if fam == "" or not EFECTOS.has(nombre):
 		return null
 	var op := {}
@@ -606,11 +642,37 @@ func voz(quien: Dictionary, evento: String) -> Node:
 
 # Un golpe físico ya le ha restado los PV a «quien»: si sigue en pie, su voz de herido; si cae, la de caída. (Un jefe
 # que se queda de rodillas con 1 PV se queja como herido; su caída suena al arrodillarse, combate.gd _decidir.)
+# Tanda 5: un héroe se queja igual; y si el golpe le deja con poca vida (JADEO_VIDA de su máximo), jadea un momento
+# después, una vez (hasta que se cure: voz(h, "alivio")).
 func recibe(quien: Dictionary) -> void:
-	voz(quien, "caida" if int(quien.get("hp", 1)) <= 0 else "herido")
+	var hp := int(quien.get("hp", 1))
+	voz(quien, "caida" if hp <= 0 else "herido")
+	if quien.get("hero", false) and hp > 0:
+		var clave = _clave_de(quien)
+		var poca: bool = hp < float(quien.get("hp_max", hp)) * JADEO_VIDA
+		var fam := familia(quien)
+		if not poca:
+			_jadeo_de.erase(clave)
+		elif not _jadeo_de.has(clave) and EFECTOS.has(fam + "_jadeo"):
+			_jadeo_de[clave] = true
+			efecto(fam + "_jadeo", {"retraso": 0.7})
+
+
+# Tanda 5: el gesto de victoria de uno de los héroes que siguen en pie (al azar), un momento después de la fanfarria.
+func victoria_heroes(heroes: Array) -> String:
+	var vivos: Array = heroes.filter(func(h): return h is Dictionary and int(h.get("hp", 0)) > 0 \
+		and EFECTOS.has(familia(h) + "_victoria"))
+	if vivos.is_empty():
+		return ""
+	var h: Dictionary = vivos[_rng.randi_range(0, vivos.size() - 1)]
+	var nombre := familia(h) + "_victoria"
+	efecto(nombre, {"retraso": 0.8})
+	return nombre
 
 
 static func familia(quien: Dictionary) -> String:
+	if quien.get("hero", false):
+		return FAMILIAS_HEROE.get(String(quien.get("nombre", "")), "")
 	var clave := String(quien.get("clave", ""))
 	if FAMILIAS.has(clave):
 		return FAMILIAS[clave]
@@ -878,6 +940,7 @@ func _process(delta: float) -> void:
 func _al_cambiar_escena() -> void:
 	_gen += 1
 	_voz_de.clear()                                        # los enemigos de antes ya no existen
+	_jadeo_de.clear()
 	_voces3d = _voces3d.filter(func(x): return is_instance_valid(x) and x.is_inside_tree())
 	for p in _todas():
 		if p.playing and String(p.bus) != "Interfaz" and not p.get_meta("cruza", false):
