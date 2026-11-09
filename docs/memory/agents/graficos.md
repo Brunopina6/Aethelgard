@@ -399,3 +399,113 @@ medio y alto, todo.
    tiempos del PC.
 5. **Coordinador:** `prueba_mando` y `prueba_teclado` fallan desde la unión de `eb8bd94` (también en otras copias):
    revisar el diálogo de Tilo con Intro / A en `integracion-experimental`.
+
+
+## 2026-11-09 19:10 · T-102, segunda parte: el resto de la Garganta, Kael en el puente, comentarios y el agua de la caída
+
+Encargo del coordinador tras integrar la primera parte (`0366da1`): unir `integracion-experimental` (`--no-ff`, con el
+arreglo de mando y teclado `9f94601`) → `a5df880`; después, el mismo acabado en el resto del recorrido, que Kael se meza
+con el puente si es barato, y los enganches de narrativa y de sonido en `garganta_3d.gd`.
+
+### 1. Qué se ha hecho (observado en el código y comprobado ejecutando, aislado)
+
+- **Kael se mece con el puente.** El vaivén ya no usa el `TIME` del sombreado, sino un reloj que pone la región cada
+  fotograma (`piezas.mecer`). Con la misma cuenta (`piezas.vaiven_en`), el modelo de Kael, Lya y Garon (su nodo
+  `ajuste`, no su posición) se mueve con las tablas: hasta 4-5 cm de lado y 2 cm en vertical en el centro.
+  - El recorrido, la colisión, el guardado y `_prohibido` siguen usando la posición quieta.
+  - Coste: unas cuentas por personaje y fotograma, más 6 `set_shader_parameter`.
+- **Comentarios de narrativa** (`dialogos/comentarios.gd`, informe de narrativa §6):
+  - al llegar, a los 2,5 s;
+  - la primera vez que Kael queda a menos de 12 m de la cascada del fondo;
+  - 1,2 s después de abrir el cofre del nido.
+
+  Salen en la interfaz de la región solo si no hay nada en marcha (`ocupado()`, saliendo).
+- **Sonido:** en `_sonido_3d`, una `fuente_3d` de «cascada_grande» a −6 dB en la caída del primer puente
+  (x = −15, y = −2, z = 15,2). La línea de la cascada del fondo, igual que antes (ahora con sus constantes, que
+  comparte con el comentario).
+- **Resto del recorrido:**
+  - **arena de Gorthor:** enlosado de dovelas en anillos, en una sola malla. Teñidas de rojo junto al trono, algunas
+    rotas o con musgo, y el anillo partido de bronce embutido en el centro. Bordillo con su tono.
+  - **puerta sellada:** marco de sillares con su tono; sigue volviéndose medio transparente si tapa a Kael. Dos braseros
+    a los lados, fuera de donde se anda, con llama y calor en la roca: los dos huecos de fuego que quedaban.
+  - **levadizo:** cada tabla con su tono, y el estribo en sillares.
+  - **palanca:** pedestal de sillares.
+  - **cornisa baja:** senda de adoquines sueltos, sin colisión, y helechos al pie del muro y en la grieta (junto a la
+    cascada del fondo).
+  - **bajada al nido:** rellano, peldaños y pretil en sillares, con la misma colisión.
+  - La roca de todo el recorrido ya tenía el sombreado nuevo de la primera parte.
+- **Sin sombreados nuevos en esta parte.** `sillar()` y `madera_color()` son StandardMaterial3D con color por vértice,
+  así que no hace falta malioc; la primera parte ya lo midió.
+- **Intacto:** `trazado.gd`, los identificadores, los encuentros, el progreso y la 2D.
+
+### 2. Commits (rama `area-garganta3d`)
+
+- `a5df880`: unión de `integracion-experimental` (`0366da1`).
+- `ec77c4e`: vaivén de Kael, comentarios y el agua de la caída. Toca `materiales.gd`, `piezas.gd`, `garganta_3d.gd`, la
+  prueba del tramo y su `.uid`.
+- `5836b05`: resto del recorrido. Toca `escenario.gd`, `piezas.gd`, `materiales.gd` y `prueba_garganta3d_fotos.gd` (que
+  ahora anota llamadas, primitivas y GPU de cada vista).
+- `bdb6ac6`: unión de `integracion-experimental` (`6adc4d9`): el `.uid` de `prueba_garganta3d_tramo.gd`, en conflicto,
+  se queda con el de la integración.
+- `21f8832`: los crujidos de los puentes y el viento en las cuerdas, en `_sonido_3d`.
+- Este informe, en su propio commit.
+- **`.uid` ajenos apartados** (no confirmados): `dialogos/comentarios.gd.uid`, `pruebas/prueba_comentarios.gd.uid` y `pruebas/prueba_comentarios_3d.gd.uid`, en
+  `D:\REBELUM_respaldos\2026-11-09_uids\`.
+- **Importación aislada repetida** tras la unión: había sonidos nuevos sin importar.
+
+### 3. Pruebas
+
+- **`prueba_garganta3d_tramo`** (ampliada): SUPERADA. Además de lo de antes:
+  - en mitad del puente, el modelo de Kael va con las tablas (0,038; −0,012) m, y fuera del puente vuelve a su sitio;
+  - salen los tres comentarios: llegar, cascada y cofre.
+- **`prueba_garganta3d`** y **`prueba_comentarios`**: SUPERADAS.
+- **Batería completa aislada** sobre `5836b05`: SUPERADAS 60 · FALLIDAS 0 · MANUALES 33 · NO SEGURAS 0; `partida.save` real, carpeta real de datos
+  y proyecto sin cambios (`D:\REBELUM_diagnostico\garganta3d\2026-11-09\bateria_resto\2026-11-09_184409\resumen.md`).
+  Mando y teclado vuelven a pasar con el arreglo de la integración (`9f94601`).
+- **Tras unir `6adc4d9` y enganchar los sonidos de la tanda 5** (`21f8832`), 13 pruebas escogidas: Garganta (las dos),
+  efectos, audio, comentarios (2D y 3D), esperas, mando, teclado, cruceta, toque, escenas e integridad, todas
+  SUPERADAS; datos reales sin cambios (`D:\REBELUM_diagnostico\garganta3d\2026-11-09\bateria_sonidos\2026-11-09_185350\resumen.md`).
+  Sin avisos de efecto desconocido en la Garganta; **nada oído** (prueba muda).
+
+### 4. Evidencias (PC con RTX 3050 Laptop; no es el Redmi)
+
+- **Antes y después desde los mismos puntos** (`ec77c4e` → `5836b05`, 10 vistas por perfil):
+  `D:\REBELUM_diagnostico\garganta3d\2026-11-09\comparacion_resto_alto.jpg` y `comparacion_resto_bajo.jpg`.
+  - Capturas sueltas: `...\2026-11-09\resto_ab\fotos_antes_1\` y `fotos_despues_1\`.
+  - Las de antes de esta parte también están en `...\2026-11-09\resto_antes\`.
+- **Dibujo por vista** (dos pasadas alternas; `...\resto_ab\comparacion_dibujo.txt`):
+  - llamadas de dibujo: bajo +2 a +11 (puerta 76 → 87, arena 70 → 78); alto +0 a +14;
+  - primitivas: +14 a +16 k en todas las vistas. Son las mallas grandes de una pieza (la senda baja y las dovelas): se
+    dibujan aunque no se vean (pendiente: partirlas por tramos);
+  - GPU del PC: igual dentro del ruido (bajo ~0,6-0,7 ms, alto ~1,3-1,7 ms).
+- **Conteo** (`...\resto_ab\conteo.txt`), bajo/alto:
+  - mallas 198/215 → 207/224;
+  - MultiMesh 23 → 24;
+  - transparentes 56/63 → 60/67;
+  - triángulos 196 k/276 k → 202 k/283 k.
+- **Carga de la región:**
+  - sin ventana: bajo 1,65-1,89 → 1,73-1,77 s; alto 2,03-2,07 → 2,11-2,55 s;
+  - con ventana (una pasada): bajo 2,69 → 3,29 s; alto 3,12 → 3,88 s.
+  - Ruidoso, pero apunta a +0,1-0,6 s por la generación por código. Pendiente: guardar las mallas hechas.
+- **Tiempos por fotograma** (`medir_garganta3d`, una pasada de cada; `...\resto_ab\comparacion_medida.txt`):
+  - subieron 0,5-1,5 ms en todas las fases, también en «puentes», que en esta parte casi no cambia;
+  - con 4-12 Godot de otros especialistas en marcha no es concluyente: hay que repetirlo en un hueco sin carga;
+  - memoria de vídeo: +0,4-0,5 MB.
+
+### 5. Límites
+
+- **Pendiente en Redmi:** todo lo de la primera parte, más las ~5-14 llamadas de dibujo, los +15 k triángulos y la
+  carga.
+- **Los comentarios salen en las capturas** de `prueba_garganta3d_fotos`, abajo a la derecha. Es lo previsto, pero en
+  la vista 04 tapan algo del abismo: que lo mire narrativa.
+- **Kael se mece y el tablero también**, pero los pies pueden adelantarse 1-2 cm en los extremos de un tramo: no se ve
+  en las capturas.
+- Sonidos enganchados sin oírlos: el agua de la caída, `puente_cruje` en cada puente y `viento_cuerdas` por el borde
+  de la cornisa (las tres líneas de sonido, `docs/audio/inventario_sonidos.md`, tanda 5).
+
+### 6. Siguiente paso
+
+1. Partir por tramos la senda baja, la Vía del Peregrino y el enlosado de la arena, para que no se dibujen enteros.
+2. Que la generación (peñas, sillares, dovelas) se haga una vez y se guarde: la carga vuelve a lo de antes.
+3. Medir en un hueco sin carga y en el Redmi (perfil bajo). Si hace falta, sacar las vetas del bajo y juntar las llamas.
+4. Luego, T-103 (Oakhaven 3D), como ha dicho el coordinador.
