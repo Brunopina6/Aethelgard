@@ -1,0 +1,43 @@
+{
+ "id": "subida_colina",
+ "rect": [
+  64,
+  19,
+  2,
+  6
+ ],
+ "sprites": [
+  {
+   "capa": "escalera",
+   "archivo": "subida_colina_escalera.webp",
+   "pos": [
+    4095,
+    1203
+   ],
+   "tam": [
+    130,
+    398
+   ],
+   "orden": 1203,
+   "tipo": "objeto"
+  }
+ ],
+ "anclas": {
+  "arriba": [
+   4160.0,
+   1235.199951171875
+  ],
+  "abajo": [
+   4160.0,
+   1580.800048828125
+  ]
+ },
+ "efectos": [],
+ "choques": [],
+ "marco": [
+  4072,
+  1189,
+  4248,
+  1624
+ ]
+}

@@ -1,0 +1,63 @@
+{
+ "id": "grieta",
+ "rect": [
+  23,
+  35,
+  1,
+  1
+ ],
+ "sprites": [
+  {
+   "capa": "cuerpo",
+   "archivo": "grieta_cuerpo.webp",
+   "pos": [
+    1272,
+    2052
+   ],
+   "tam": [
+    463,
+    253
+   ],
+   "orden": 2304.0,
+   "tipo": "edificio"
+  }
+ ],
+ "anclas": {
+  "grieta": [
+   1504.0,
+   2272.0
+  ],
+  "luz": [
+   1504.0,
+   2233.599998474121
+  ]
+ },
+ "efectos": [
+  {
+   "tipo": "halo",
+   "ancla": "luz",
+   "radio": 0.8,
+   "fuerza": 0.5,
+   "color": "vela"
+  }
+ ],
+ "choques": [],
+ "marco": [
+  1229,
+  2028,
+  1779,
+  2368
+ ],
+ "suelo": {
+  "archivo": "grieta_suelo.png",
+  "pos": [
+   1246,
+   2043
+  ],
+  "tam": [
+   528,
+   316
+  ],
+  "escala": 4
+ }
+}

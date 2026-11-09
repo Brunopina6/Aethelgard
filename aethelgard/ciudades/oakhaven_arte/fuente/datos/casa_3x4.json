@@ -1,0 +1,63 @@
+{
+ "id": "casa_3x4",
+ "rect": [
+  0,
+  0,
+  3,
+  4
+ ],
+ "sprites": [
+  {
+   "capa": "cuerpo",
+   "archivo": "casa_3x4_cuerpo.webp",
+   "pos": [
+    -24,
+    -472
+   ],
+   "tam": [
+    240,
+    748
+   ],
+   "orden": 256.0,
+   "tipo": "edificio"
+  }
+ ],
+ "anclas": {
+  "puerta": [
+   70.4000015258789,
+   288.0
+  ],
+  "humo0": [
+   74.66603088378906,
+   -428.8000030517579
+  ]
+ },
+ "efectos": [
+  {
+   "tipo": "humo",
+   "ancla": "humo0",
+   "color": "calido",
+   "alto": 2.4,
+   "escala": 0.75
+  }
+ ],
+ "choques": [],
+ "marco": [
+  -147,
+  -500,
+  359,
+  410
+ ],
+ "suelo": {
+  "archivo": "casa_3x4_suelo.png",
+  "pos": [
+   -122,
+   -359
+  ],
+  "tam": [
+   476,
+   752
+  ],
+  "escala": 4
+ }
+}

@@ -1,0 +1,118 @@
+{
+ "id": "plaza",
+ "rect": [
+  35,
+  21,
+  11,
+  10
+ ],
+ "sprites": [
+  {
+   "capa": "fuente",
+   "archivo": "plaza_fuente.webp",
+   "pos": [
+    2446,
+    1475
+   ],
+   "tam": [
+    228,
+    297
+   ],
+   "orden": 1740.8,
+   "tipo": "objeto"
+  },
+  {
+   "capa": "tablon",
+   "archivo": "plaza_tablon.webp",
+   "pos": [
+    2249,
+    1674
+   ],
+   "tam": [
+    110,
+    176
+   ],
+   "orden": 1852.8,
+   "tipo": "objeto"
+  },
+  {
+   "capa": "flores",
+   "archivo": "plaza_flores.webp",
+   "pos": [
+    2725,
+    1701
+   ],
+   "tam": [
+    148,
+    133
+   ],
+   "orden": 1830.4,
+   "tipo": "objeto"
+  }
+ ],
+ "anclas": {
+  "fuente": [
+   2560.0,
+   1516.8000030517578
+  ],
+  "tablon": [
+   2304.0,
+   1759.9999771118164
+  ],
+  "flores": [
+   2816.0,
+   1734.4000244140625
+  ]
+ },
+ "efectos": [],
+ "choques": [
+  {
+   "centro": [
+    40.0,
+    26.0
+   ],
+   "tam": [
+    3.4,
+    3.0
+   ]
+  },
+  {
+   "centro": [
+    36.0,
+    28.8
+   ],
+   "tam": [
+    1.5,
+    0.3
+   ]
+  },
+  {
+   "centro": [
+    44.0,
+    28.1
+   ],
+   "tam": [
+    1.7,
+    0.8
+   ]
+  }
+ ],
+ "marco": [
+  2185,
+  1451,
+  2937,
+  1913
+ ],
+ "suelo": {
+  "archivo": "plaza_suelo.png",
+  "pos": [
+   2246,
+   1473
+  ],
+  "tam": [
+   684,
+   404
+  ],
+  "escala": 4
+ }
+}

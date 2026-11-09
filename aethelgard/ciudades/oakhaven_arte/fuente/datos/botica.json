@@ -1,0 +1,81 @@
+{
+ "id": "botica",
+ "rect": [
+  33,
+  35,
+  5,
+  5
+ ],
+ "sprites": [
+  {
+   "capa": "cuerpo",
+   "archivo": "botica_cuerpo.webp",
+   "pos": [
+    2092,
+    1771
+   ],
+   "tam": [
+    360,
+    809
+   ],
+   "orden": 2560.0,
+   "tipo": "edificio"
+  },
+  {
+   "capa": "letrero",
+   "archivo": "botica_letrero.webp",
+   "pos": [
+    2194,
+    2414
+   ],
+   "tam": [
+    41,
+    44
+   ],
+   "orden": 2611.2,
+   "tipo": "letrero",
+   "pivote": [
+    2214.39990234375,
+    2409.5999450683594
+   ]
+  }
+ ],
+ "anclas": {
+  "puerta": [
+   2304.0,
+   2592.0
+  ],
+  "humo0": [
+   2272.134765625,
+   1788.7999877929688
+  ]
+ },
+ "efectos": [
+  {
+   "tipo": "humo",
+   "ancla": "humo0",
+   "color": "calido",
+   "alto": 2.4,
+   "escala": 0.75
+  }
+ ],
+ "choques": [],
+ "marco": [
+  1968,
+  1743,
+  2596,
+  2714
+ ],
+ "suelo": {
+  "archivo": "botica_suelo.png",
+  "pos": [
+   1984,
+   1804
+  ],
+  "tam": [
+   608,
+   900
+  ],
+  "escala": 4
+ }
+}
