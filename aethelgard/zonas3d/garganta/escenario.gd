@@ -229,57 +229,61 @@ func _arena() -> void:
 		return Color(col.r, col.g, col.b, 0.3)
 	var lados := 40 if nombre_perfil == "bajo" else 64
 	_roca(Roca.disco(c, rr, 9, lados, alto, colorea), true)
-	# el enlosado de la vieja arena de los peregrinos, en anillos (algunas losas rotas o arrancadas)
-	var puntos: Array = []
-	var anillo := 1.0
-	while anillo < T.ARENA_RADIO - 0.7:
-		var n := maxi(5, roundi(TAU * anillo / 1.05))
-		var giro := randf() * TAU
+	# el enlosado de la vieja arena de los peregrinos (T-102): dovelas en anillos, como un gran círculo de piedra, algunas
+	# rotas o arrancadas y teñidas de rojo junto al trono; en el centro, el anillo partido de bronce embutido en el suelo.
+	# Antes, losas hexagonales sueltas. Una sola malla (una llamada de dibujo), sin colisión (el suelo es la roca).
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 3131
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var tramos_arco := 2 if nombre_perfil == "bajo" else 3
+	var anillo := 1.25
+	var ancho_anillo := 0.92
+	while anillo < T.ARENA_RADIO - 0.75:
+		var n := maxi(6, roundi(TAU * anillo / 1.0))
+		var giro := rng.randf() * TAU
 		for k in n:
-			if randf() < 0.07:
+			if rng.randf() < 0.06:
 				continue
-			var a := giro + TAU * k / n
-			var p := c + Vector3(cos(a), 0, sin(a)) * (anillo + randf_range(-0.06, 0.06))
-			puntos.append([p, a, anillo])
-		anillo += 0.98
-	var losa := CylinderMesh.new()
-	losa.top_radius = 0.47
-	losa.bottom_radius = 0.5
-	losa.height = 0.08
-	losa.radial_segments = 6
-	losa.rings = 1
-	var mlosa := mat.detalle(Color.WHITE, 1.2, 0.9).duplicate() as StandardMaterial3D
-	mlosa.vertex_color_use_as_albedo = true
-	losa.material = mlosa
-	var mm := MultiMesh.new()
-	mm.transform_format = MultiMesh.TRANSFORM_3D
-	mm.use_colors = true
-	mm.mesh = losa
-	mm.instance_count = puntos.size()
-	for k in puntos.size():
-		var p: Vector3 = puntos[k][0]
-		var b := Basis(Vector3.UP, -float(puntos[k][1]) + randf_range(-0.1, 0.1)).scaled(Vector3(randf_range(0.9, 1.05), 1, randf_range(0.82, 1.0)))
-		mm.set_instance_transform(k, Transform3D(b, Vector3(p.x, alto.call(p.x, p.z) + 0.02, p.z)))
-		var g := randf_range(0.44, 0.56)
-		var rojo := 0.18 * smoothstep(3.5, 0.0, float(puntos[k][2])) * randf()
-		mm.set_instance_color(k, Color(g + rojo, g * 0.95 - rojo * 0.3, g * 0.9 - rojo * 0.4))
-	var mmi := MultiMeshInstance3D.new()
-	mmi.multimesh = mm
-	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	region.add_child(mmi)
+			var a0 := giro + TAU * k / n + 0.025 / anillo * 1.5
+			var a1 := giro + TAU * (k + 1) / n - 0.025 / anillo * 1.5
+			var r0 := anillo - ancho_anillo * 0.5 + 0.03
+			var r1 := anillo + ancho_anillo * 0.5 - 0.03
+			var g := rng.randf_range(0.46, 0.58)
+			var rojo := 0.2 * smoothstep(4.0, 0.0, anillo) * rng.randf()
+			var col := Color(g + rojo, g * 0.95 - rojo * 0.3, g * 0.89 - rojo * 0.4)
+			if rng.randf() < 0.15:
+				col = col.lerp(Materiales.MUSGO * 1.2, rng.randf_range(0.2, 0.4))
+			var sube := rng.randf_range(0.0, 0.025)
+			_dovela(st, c, alto, a0, a1, r0, r1, tramos_arco, 0.05 + sube, col)
+		anillo += ancho_anillo
+	st.generate_normals()
+	var mlosa := mat.sillar()
+	var mi := MeshInstance3D.new()
+	mi.mesh = st.commit()
+	mi.material_override = mlosa
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mi.name = "EnlosadoDeLaArena"
+	region.add_child(mi)
+	var sello: ArrayMesh = load("res://zonas3d/garganta/piezas.gd").anillo_partido(0.62, 0.07, 40.0, 30, 6)
+	lotes.poner(sello, Transform3D(Basis(Vector3.RIGHT, -PI * 0.5), Vector3(c.x, alto.call(c.x, c.z) + 0.03, c.z)), mat.bronce())
 	# el pilar de roca que la sostiene sobre el abismo
 	var radio := func(y: float, a: float) -> Vector2:
 		var k := smoothstep(T.HONDO, T.ALTO, y)
 		var r := T.ARENA_RADIO * lerpf(0.62, 0.99, k) * (1.0 + 0.05 * Roca.n2(a * 2.0, y * 0.1))
 		return Vector2(r, r)
 	_roca(Roca.columna(c, radio, T.HONDO, T.ALTO + T.ARENA_ALTO - 0.04, dy * 1.3, lados, 5.0, _color_muro(-1000.0, 0.4)))
-	# bordillo de piedra en la mitad que da al abismo
-	var piedra := mat.piedra()
+	# bordillo de piedra en la mitad que da al abismo (T-102: cada piedra con su tono, algunas con musgo)
+	var lb := Roca.Lotes.new()
 	for i in 22:
 		var a := lerpf(-1.25, 1.35, float(i) / 21.0)       # del sur al norte por el este
 		var p := c + Vector3(cos(a), 0, sin(a)) * (T.ARENA_RADIO - 0.35)
-		Roca.caja(lotes, region, Vector3(p.x, T.ALTO + T.ARENA_ALTO + 0.12, p.z), Vector3(0.55, 0.36, 1.25), piedra,
-			Vector3(0, -a, 0), false)
+		var bm := BoxMesh.new()
+		bm.size = Vector3(0.55, 0.36 + rng.randf_range(-0.04, 0.05), 1.18)
+		lb.poner_color(bm, Transform3D(Basis.from_euler(Vector3(0, -a, 0)), Vector3(p.x, T.ALTO + T.ARENA_ALTO + 0.12, p.z)),
+			mat.sillar(), Materiales.tono_piedra(Color(0.50, 0.48, 0.47), rng))
+	for m in lb.cerrar(region):
+		m.name = "BordilloDeLaArena"
 
 
 # La aguja de roca junto al paso bajo: esconde la entrada de la grieta.
@@ -314,12 +318,17 @@ func _repisa_nido() -> void:
 		var p := c + Vector3(cos(a) * T.NIDO_RADIOS.x * 0.93, 0, sin(a) * T.NIDO_RADIOS.y * 0.93)
 		p.y = T.NIDO - 0.1
 		_piedra(p, randf_range(0.35, 0.8), gris)
-	# escalera: el rellano de arriba (al nivel de la cornisa baja) y 16 peldaños hacia el norte
-	var piedra := mat.piedra_tallada()
+	# escalera: el rellano de arriba (al nivel de la cornisa baja) y 16 peldaños hacia el norte (T-102: sillares con su
+	# tono, como la escalera de la presa; misma colisión)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 4040
+	var ls := Roca.Lotes.new()
+	var sillar := mat.sillar()
 	var x0: float = T.BAJADA_X[0]
 	var x1: float = T.BAJADA_X[1]
-	Roca.caja(lotes, region, Vector3((x0 + T.X_BORDE_E + 1.0) * 0.5, T.BAJO - 2.0, (T.BAJADA_RELLANO[0] + T.BAJADA_RELLANO[1]) * 0.5),
-		Vector3(T.X_BORDE_E + 1.0 - x0, 4.0, T.BAJADA_RELLANO[1] - T.BAJADA_RELLANO[0]), piedra)
+	_sillar(ls, sillar, Vector3((x0 + T.X_BORDE_E + 1.0) * 0.5, T.BAJO - 2.0, (T.BAJADA_RELLANO[0] + T.BAJADA_RELLANO[1]) * 0.5),
+		Vector3(T.X_BORDE_E + 1.0 - x0, 4.0, T.BAJADA_RELLANO[1] - T.BAJADA_RELLANO[0]), Vector3.ZERO,
+		Materiales.tono_piedra(Color(0.54, 0.51, 0.48), rng))
 	var z_arriba: float = T.BAJADA_Z[1]
 	var z_abajo: float = T.BAJADA_Z[0]
 	var huella := (z_arriba - z_abajo) / T.BAJADA_PELDANOS
@@ -328,13 +337,18 @@ func _repisa_nido() -> void:
 		var arriba := T.BAJO - subida * (k + 1)
 		var z := z_arriba - huella * (k + 0.5)
 		var fondo := T.NIDO - 2.5
-		Roca.caja(lotes, region, Vector3((x0 + x1) * 0.5, (arriba + fondo) * 0.5, z), Vector3(x1 - x0, arriba - fondo, huella + 0.03), piedra)
+		_sillar(ls, sillar, Vector3((x0 + x1) * 0.5, (arriba + fondo) * 0.5, z), Vector3(x1 - x0, arriba - fondo, huella + 0.03), Vector3.ZERO,
+			Materiales.tono_piedra(Color(0.54, 0.51, 0.48), rng))
 	# pretil del lado del abismo, inclinado como la escalera (el eje z local, hacia el sur y hacia arriba)
 	for k in 8:
 		var z := z_arriba - (z_arriba - z_abajo) * (k + 0.5) / 8.0
 		var arriba := T.BAJO - (T.BAJO - T.NIDO) * (k + 0.5) / 8.0
-		Roca.caja(lotes, region, Vector3(x0 - 0.18, arriba + 0.3, z), Vector3(0.36, 0.9, (z_arriba - z_abajo) / 8.0 + 0.04),
-			mat.piedra(), Vector3(-atan2(T.BAJO - T.NIDO, z_arriba - z_abajo), 0, 0), false)
+		var pb := BoxMesh.new()
+		pb.size = Vector3(0.36, 0.9, (z_arriba - z_abajo) / 8.0 + 0.04)
+		ls.poner_color(pb, Transform3D(Basis.from_euler(Vector3(-atan2(T.BAJO - T.NIDO, z_arriba - z_abajo), 0, 0)),
+			Vector3(x0 - 0.18, arriba + 0.3, z)), sillar, Materiales.tono_piedra(Color(0.47, 0.45, 0.46), rng))
+	for m in ls.cerrar(region):
+		m.name = "BajadaAlNido"
 
 
 func _muro_norte() -> void:
@@ -437,6 +451,8 @@ func _decorado() -> void:
 	_entrada()
 	_losas()
 	_helechos()
+	_senda_baja()
+	_helechos_bajos()
 	_piedras_sueltas()
 	_hierba_seca()
 	_pinos()
@@ -1290,3 +1306,124 @@ func _sillar(l: Roca.Lotes, m: Material, pos: Vector3, tam: Vector3, giro: Vecto
 	bs.size = tam
 	col.shape = bs
 	cuerpo.add_child(col)
+
+
+# ================================================================= T-102: el resto del recorrido
+
+# Una dovela del enlosado de la arena: sector de corona entre los ángulos a0..a1 y los radios r0..r1, «grueso» sobre el
+# suelo (alto(x, z)), con «tramos» divisiones del arco. Caras de arriba y cantos de fuera (los de dentro no se ven).
+func _dovela(st: SurfaceTool, c: Vector3, alto: Callable, a0: float, a1: float, r0: float, r1: float, tramos: int,
+		grueso: float, col: Color) -> void:
+	var punto := func(a: float, r: float, arriba: bool) -> Vector3:
+		var x := c.x + cos(a) * r
+		var z := c.z + sin(a) * r
+		return Vector3(x, float(alto.call(x, z)) + (grueso if arriba else -0.04), z)
+	for i in tramos:
+		var aa := lerpf(a0, a1, float(i) / tramos)
+		var ab := lerpf(a0, a1, float(i + 1) / tramos)
+		var p00: Vector3 = punto.call(aa, r0, true)
+		var p01: Vector3 = punto.call(ab, r0, true)
+		var p10: Vector3 = punto.call(aa, r1, true)
+		var p11: Vector3 = punto.call(ab, r1, true)
+		var q10: Vector3 = punto.call(aa, r1, false)
+		var q11: Vector3 = punto.call(ab, r1, false)
+		var q00: Vector3 = punto.call(aa, r0, false)
+		var q01: Vector3 = punto.call(ab, r0, false)
+		# (sentido horario visto desde fuera de cada cara: el de Godot)
+		for v in [p00, p10, p01, p10, p11, p01, p10, q11, p11, p10, q10, q11, p00, p01, q01, p00, q01, q00]:
+			st.set_color(col)
+			st.add_vertex(v)
+	for e in [[a0, -1.0], [a1, 1.0]]:                             # los dos cantos de los lados
+		var a: float = e[0]
+		var p0: Vector3 = punto.call(a, r0, true)
+		var p1: Vector3 = punto.call(a, r1, true)
+		var q0: Vector3 = punto.call(a, r0, false)
+		var q1: Vector3 = punto.call(a, r1, false)
+		var orden := [p0, p1, q0, q0, p1, q1] if e[1] > 0.0 else [p0, q0, p1, p1, q0, q1]
+		for v in orden:
+			st.set_color(col)
+			st.add_vertex(v)
+
+
+# Senda de la cornisa baja: adoquines sueltos y gastados por donde pasan los Grimfang y los peregrinos (más ralos que
+# la Vía del Peregrino de arriba). Sin colisión. Las mismas formas que _losas.
+func _senda_baja() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7307
+	var m := mat.detalle(Color.WHITE, 1.3, 1.0).duplicate() as StandardMaterial3D
+	m.vertex_color_use_as_albedo = true
+	var forma := _adoquin(rng, 7 if nombre_perfil == "bajo" else 9)
+	forma.surface_set_material(0, m)
+	var lista: Array = []
+	var z := T.Z_CORNISA_E - 1.0
+	var fila := 0
+	while z > T.GRIETA[0] + 1.0:
+		var lejos_de_piezas := absf(z - T.ASCENSOR_Z) > 2.2 and absf(z - T.PALANCA.z) > 1.6 and absf(z - T.LEVADIZO_Z) > 2.0 \
+			and not (z > T.BAJADA_RELLANO[0] - 0.5 and z < T.BAJADA_RELLANO[1] + 0.5)
+		if lejos_de_piezas:
+			var centro := T.X_CAMINO_E + 0.35 * sin(z * 0.13)
+			if z < T.PASO_BAJO[1] + 1.0 and z > T.PASO_BAJO[0] - 1.0:
+				centro = 12.4                                        # el paso bajo, entre el muro y la aguja
+			var x := -0.95 + (0.22 if fila % 2 == 0 else 0.0)
+			while x < 0.95:
+				var borde := absf(x) / 0.95
+				if rng.randf() > 0.15 + 0.5 * pow(borde, 2.0):
+					var p := Vector3(centro + x + rng.randf_range(-0.07, 0.07), 0, z + rng.randf_range(-0.07, 0.07))
+					var e := rng.randf_range(0.95, 1.2)
+					var t := Transform3D(Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(e, rng.randf_range(0.8, 1.1), e)),
+						Vector3(p.x, T.altura(p.x, p.z) - 0.02 - 0.02 * borde, p.z))
+					var g := rng.randf_range(0.5, 0.62)
+					lista.append([t, Color(g, g * 0.95, g * 0.9).lerp(Color(0.40, 0.44, 0.30), rng.randf_range(0.0, 0.3))])
+				x += 0.44
+		z -= 0.44
+		fila += 1
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.use_colors = true
+	mm.mesh = forma
+	mm.instance_count = lista.size()
+	for i in lista.size():
+		mm.set_instance_transform(i, lista[i][0])
+		mm.set_instance_color(i, lista[i][1])
+	var mmi := MultiMeshInstance3D.new()
+	mmi.multimesh = mm
+	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mmi.name = "SendaBaja"
+	region.add_child(mmi)
+
+
+# Helechos al pie del muro del este (la cornisa baja, en sombra y húmeda) y en la grieta, junto a la cascada del fondo.
+func _helechos_bajos() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 8821
+	var hoja := _malla_helecho()
+	hoja.surface_set_material(0, mat.hierba_verde())
+	var lista: Array = []
+	var cuantos: int = HELECHOS[nombre_perfil]
+	var intentos := 0
+	while lista.size() < cuantos and intentos < 600:
+		intentos += 1
+		var z := rng.randf_range(T.GRIETA[0] + 0.5, T.Z_CORNISA_E - 1.0)
+		if absf(z - T.ASCENSOR_Z) < 2.5 or absf(z - T.PALANCA.z) < 2.0 or (z > 17.0 and z < 22.0):
+			continue
+		var en_grieta := z < T.GRIETA[1]
+		if not en_grieta and rng.randf() < 0.45:                      # más en la grieta, junto al agua
+			continue
+		var x := T.muro_este(z) - rng.randf_range(0.5, 1.3)
+		var p := Vector3(x, T.altura(x, z), z)
+		var e := rng.randf_range(0.75, 1.3)
+		lista.append(Transform3D(Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(e, e * rng.randf_range(0.8, 1.15), e)), p))
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.use_colors = true
+	mm.mesh = hoja
+	mm.instance_count = lista.size()
+	for i in lista.size():
+		mm.set_instance_transform(i, lista[i])
+		var tono := rng.randf_range(0.75, 1.1)
+		mm.set_instance_color(i, Color(tono, tono, tono * 0.9))
+	var mmi := MultiMeshInstance3D.new()
+	mmi.multimesh = mm
+	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mmi.name = "HelechosBajos"
+	region.add_child(mmi)

@@ -1032,3 +1032,162 @@ para él, solo la intención (en 3D, cuando haya clip). Las intenciones también
   intenciones de `CHARLAS_POSADA` dicen cuál pide cada frase.
 - **Siguiente paso de narrativa:** con las capturas, revisar la charla en la caja; más charlas cuando haya más hitos
   (después de Pastos Verdes), con la misma guía de voz.
+
+## 2026-11-09, 19:05: Oakhaven vivo, la posada como datos para el 3D y dos charlas de la Garganta
+
+**Encargo del coordinador:**
+1. Confirmar en mi rama las líneas de `dialogic/directories` que añadió la importación (criterio aprobado: se registran
+   los diálogos nuevos).
+2. «Vecinos vivos»: frases breves al pasar cerca, de los ocho vecinos y de gente anónima. Cambian con la hora y con el
+   estado de las misiones, sin abrir diálogo y con un límite para no saturar. Con prueba.
+3. La posada para el Oakhaven 3D (T-103): dormir, comer y rumores que apunten a sitios que ya existen. Los datos, en un
+   módulo que usen igual el 2D y el 3D, sin tocar escenas 3D. Con prueba de datos.
+4. Si sobra tiempo, 2-3 charlas ligadas a hitos de la Garganta.
+
+El coordinador también aprobó guardar lo visto como estado de la ciudad en «mazmorras».
+
+Copia `D:\Aethelgard_narrativa`, rama `area-narrativa`, desde `d9e2a5e`.
+
+### 1. Archivos y commits
+| Commit | Qué |
+|---|---|
+| `bde0c05` | `project.godot`: las seis charlas en `dialogic/directories` |
+| `6aa5a94` | `ciudades/oakhaven_posada.gd` (nuevo) y `pruebas/prueba_oakhaven_posada.gd` (nueva) |
+| `986f471` | `ciudades/oakhaven_vida.gd` (nuevo); `ciudad_oakhaven.gd`, que pinta las frases y cobra la posada con el módulo; `pruebas/prueba_oakhaven_vida.gd` (nueva); las dos líneas en `lista_pruebas.txt` |
+| `8ff5afe` | Dos charlas de la Garganta: `charla_puentes.dtl` y `charla_gorthor.dtl`. En `ciudades/oakhaven.gd`, la condición `ganado:`, y las charlas pueden desbloquearse con «si». `prueba_charlas_posada`, al día. `project.godot` registra las dos |
+| `10332e9` | Los `.uid` de lo nuevo |
+| `8fede9b` | Arreglo: la respuesta de un comentario no se pisaba con los vecinos (§3); `prueba_oakhaven_vida` lo comprueba; `prueba_oakhaven_fotos` saca `22_voz_vecino` |
+| (este) | Este informe |
+
+Nada sin confirmar en mi copia.
+
+**1. Oakhaven vivo** (`ciudades/oakhaven_vida.gd`):
+- **Quién habla:** 43 frases. Son tres o cuatro por vecino (los ocho) y tres o cuatro por cada una de las cuatro voces
+  sin nombre: la taberna, un vendedor del mercado, unos niños en la plaza y un guardia.
+- **Qué cambia:**
+  - con las misiones que ya existen (los faroles, los favores, la lavanda, el secreto de Pip, la torre);
+  - con el grupo (Selene le habla a Lya si está);
+  - con la «franja».
+- **La franja.** El juego no tiene hora del día. Lo resuelvo así: al llegar es «anochecer», la hora azul del arte; tras
+  dormir en la posada es «manana», hasta salir de la ciudad. No se guarda nada nuevo.
+- **Límite para no saturar:**
+  - una frase en pantalla como mucho;
+  - 7 s de pausa entre dos frases, de quien sea, y 30 s antes de que la misma persona repita;
+  - cada frase, una vez por visita, hasta que se acaban las que tocan y se vuelve a empezar;
+  - nunca durante un diálogo, un fundido, un menú, ni a la vez que un comentario de los héroes; si empieza un
+    diálogo, la frase se quita.
+- **Cómo se ve:** una línea sobre la cabeza de quien habla, en blanco cálido y con contorno, sin luz ni ambiente que la
+  oscurezcan. Las voces sin nombre salen entre comillas, en cursiva y en ámbar.
+- **Distancia:** 3,2 casillas.
+- **Para el 3D:** los mismos datos sirven (`Vida.frase(id, franja, dichos)`), pintados con un Label3D.
+
+**2. La posada como datos** (`ciudades/oakhaven_posada.gd`):
+- `servicios()` da el precio de ahora: dormir vale 0 si la posadera invita.
+- `dormir()`:
+  - cobra el mismo precio que `zona.gd` (30) o gasta la noche gratis;
+  - cura al grupo;
+  - devuelve el texto y la escena al despertar (la charla que toque o la escena de siempre).
+- `comer()`, una **propuesta mía**: 10 monedas por la sopa del día, que recupera los PV y no los PM. La sopa cambia
+  con las misiones hechas. Su precio y su efecto los tienen que revisar combate y el coordinador.
+- `rumor()`: nueve rumores, contados de uno en uno.
+  - Apuntan a sitios que ya existen: Pastos Verdes, el Gran Bosque Verde, la Garganta, Sunken City, el Mar de Arena de
+    Calid, las Cumbres de Ciclópea, y tres secretos de la ciudad: el callejón de la grieta, el cofre de la ronda y el de
+    las raíces.
+  - Se saltan los que ya no tienen gracia: el sitio ya visto o el cofre ya abierto.
+  - Lo oído se guarda como estado de la ciudad («rumor_…»).
+  - Ninguno revela nada que el juego no diga ya: los textos salen de los del mapa y de los secretos de Oakhaven.
+- La ciudad 2D ya cobra con `pagar_noche()` del módulo; la noche gratis sigue saliendo igual.
+- Comer y los rumores no tienen todavía interfaz en 2D. Tenerla sería otra opción en el diálogo de la posadera (§5).
+
+**3. Charlas de la Garganta:**
+- `charla_puentes`: Garon cruzó los puentes «comprobando las cuerdas», la misma excusa que con el colchón. Sale tras
+  ganar `garganta_nido`.
+- `charla_gorthor`: Kael se quedó delante de Lya cuando rugió Gorthor. Sale tras ganar `garganta_gorthor`.
+- No había hitos de la Garganta, así que se desbloquean con sus combates fijos, que ya guarda `combates_ganados`. Para
+  eso, la condición nueva `ganado:` en `ciudades/oakhaven.gd`.
+
+### 2. Pruebas
+- **Importaciones aisladas:** `D:\REBELUM_diagnostico\importaciones\narrativa_20261109_183644\` (salida 0).
+- **Pruebas nuevas** (comprobado ejecutando, aislado):
+  - **`prueba_oakhaven_vida`**, FALLOS 0:
+    - los datos: ocho vecinos y cuatro voces; las voces, junto a una calle; cada frase mide menos de 620 px en su
+      etiqueta; condiciones y franjas válidas; sin palabras vetadas;
+    - qué toca: Aldric y Bastián cambian con los faroles y la posadera saluda por la mañana; Albar no repite hasta
+      decir las tres;
+    - en la ciudad: junto a la posadera sale su frase sobre la cabeza; después hay pausa y Bastián no habla enseguida;
+      un diálogo la quita; la posadera no repite sin su pausa; tras dormir, «¿Ya en pie? El pan acaba de salir.».
+  - **`prueba_oakhaven_posada`**, FALLOS 0:
+    - los datos: el precio de zona.gd; los lugares, secretos y cofres de los rumores existen;
+    - dormir: pagando, con la noche gratis, sin monedas y con la charla al despertar;
+    - comer: los PV sí y los PM no; la sopa cambia; sin monedas, no se come;
+    - rumores: los nueve en orden y sin repetir; se saltan los ya vistos; partida antigua sin «mazmorras»; lo oído se
+      lee al guardar y cargar;
+    - la ciudad 2D cobra con el módulo.
+- **`prueba_charlas_posada`,** con las ocho charlas: recorridas con Dialogic; tras el nido toca `charla_puentes` y
+  tras Gorthor, `charla_gorthor`.
+- **Pruebas de Oakhaven antes del commit** (aislado): 10 de 10 superadas
+  (`D:\REBELUM_diagnostico\narrativa\2026-11-09\vida_posada\2026-11-09_183355\resumen.md`).
+- **Batería completa** (aislado, sobre `10332e9`): **SUPERADAS 62 · FALLIDAS 0 · MANUALES 32 · NO SEGURAS 0** (`D:\REBELUM_diagnostico\narrativa\2026-11-09\bateria_vida\2026-11-09_183721\resumen.md`). La partida real, su carpeta y el proyecto, sin cambios.
+- **Tras el arreglo de `8fede9b`** (aislado): `prueba_comentarios`, `prueba_oakhaven_vida`, `prueba_oakhaven`, `prueba_charlas_posada`, `prueba_oakhaven_posada` y `prueba_integridad`, 6 de 6 SUPERADAS (`...\vida_arreglo\2026-11-09_184907\resumen.md`).
+
+### 3. Evidencias
+**Frases de los vecinos** (en `ciudades/oakhaven_vida.gd`, con su condición). Algunas:
+| Quién | Frase | Cuándo |
+|---|---|---|
+| Aldric | Tres faroles apagados en la muralla. Mal asunto. / Faroles encendidos, puerta cerrada. Así sí. | Antes y después de «Los faroles de la ronda» |
+| Bastián | ¡Ciento nueve! …Sí. Ciento nueve. / ¡Ciento doce! Los he contado dos veces. | Ídem |
+| Pip | Una moneda, un secreto. Oferta del día. / Lo del callejón, ni una palabra. | Antes y después de pagarle |
+| Rosa | Ojalá alguien pasara por los Pastos… / El Árbol huele a lavanda. ¡Gracias otra vez! | Lavanda pedida / entregada |
+| Posadera | Ese cucharón no vuelve solo, ¿eh? / ¿Ya en pie? El pan acaba de salir. | Con los favores / por la mañana |
+| Selene | Lya, cuida de ese. Corre demasiado. | Con Lya en el grupo |
+| Desde la taberna | «¡Eso no es cantar, es ladrar!» | Anochecer |
+| Un vendedor | «¡Manzanas de los Pastos! ¡Maduras, no verdes!» | Siempre (guiño a la charla de cómo se conocieron) |
+
+**Charlas de la Garganta,** con su intención y su gesto:
+| Charla | # | Quién | Frase | Intención | Gesto |
+|---|---|---|---|---|---|
+| Puentes | 1 | Kael | Garon, en los puentes de la Garganta ibas muy despacio. | Le pilla, encantado | `ligero` |
+| | 2 | Garon | Comprobaba las cuerdas. | La misma excusa de siempre, sin pestañear | — |
+| | 3 | Lya | ¿Todas? | Le sigue el juego | `duda` |
+| | 4 | Garon | Todas. | Seco, sin ceder | — |
+| | 5 | Kael | Primero el colchón, ahora las cuerdas. ¿Qué será lo siguiente? | Une las dos excusas y se ríe | `sorpresa` |
+| | 6 | Garon | Tu boca. A ver si aguanta callada una noche. | Le devuelve el golpe: es su forma de reírse | — |
+| Gorthor | 1 | Lya | Kael… cuando Gorthor rugió, no te moviste. | Aún con el susto | `preocupada` |
+| | 2 | Kael | Me quedé helado. Pero con estilo. | Lo convierte en chiste | `ligero` |
+| | 3 | Garon | Te quedaste delante de ella. Eso no es quedarse helado. | Le deja sin escapatoria; lo dice con respeto | — |
+| | 4 | Kael | …Bueno. Me pareció un buen sitio. | Lo admite a medias | `duda` |
+| | 5 | Lya | Gracias. Y no lo vuelvas a hacer. | Le da las gracias y le riñe a la vez | `firme` |
+| | 6 | Kael | Lo segundo no lo prometo. | Tierno y terco | `decidido` |
+
+**Capturas con ventana** (aislado, 1280 × 720, `D:\REBELUM_diagnostico\oakhaven\2026-11-09_arte\vida\`): `22_voz_vecino.png` (desde la taberna, por la mañana: «¿Quién se ha comido mi pan?», sobre la puerta y junto a la posadera), `19_comentario.png` y la charla en `20_` y `21_`.
+
+**Hallazgo y arreglo (`8fede9b`).** En la primera captura salían a la vez la voz de la taberna y la respuesta de Garon a un comentario de los héroes. La causa (observada en el código): Godot nombra «@PanelContainer@…» a la segunda caja que entra con el mismo nombre, y la ciudad buscaba «comentario». Ahora las cajas entran con nombre legible («comentario2»), y `prueba_oakhaven_vida` comprueba que ningún vecino habla mientras hay un comentario o su respuesta.
+
+### 4. Continuidad y canon
+- **Las frases de los vecinos y los rumores** solo nombran lo que ya existe: misiones, lugares del mapa, secretos de la
+  ciudad y textos ya dichos (los 112 faroles, el anillo negro del roble, el barco de Sunken City, los puentes y
+  «algo grande» que espera en la Garganta).
+- **Nada de lo que espera decisión del usuario** (D-073): la prueba lo veta palabra por palabra. Por eso «los críos»
+  pasó a «los niños», porque contiene «crio».
+- **Nada de Érebo** ni de Final Fantasy X.
+- **Las charlas de la Garganta:** solo hablan los tres y solo salen con los tres en el grupo. Kael defiende a Lya y no
+  se revela nada.
+
+### 5. Límites y propuestas pendientes
+- **«Comer»** (10 monedas, solo PV) es una propuesta. Que lo decidan combate y el coordinador antes de que el 3D lo
+  enseñe.
+- **Comer y los rumores no se ven aún en el 2D.** Propuesta: una pregunta en el diálogo de la posadera («¿Algo más?
+  Sopa / Rumores / Nada»), en un `.dtl` nuevo que llame al módulo con señales.
+- **La franja** sale de la visita, no de un reloj. Si un día hay hora del día, basta con pasar otra franja a
+  `Vida.frase`.
+- **Pendiente en Redmi:** cómo se leen las frases sobre las cabezas (24 px).
+
+### 6. Siguiente paso y cambios en archivos de otros
+- **Gráficos, para el Oakhaven 3D (T-103):**
+  - la posada: `Posada.servicios()`, `dormir()`, `comer()` y `rumor()`;
+  - los vecinos: `Vida.VECINOS` y `Vida.VOCES` (con su casilla, en las mismas coordenadas de casilla, 1 casilla = 1 m
+    en sus `.blend`), con `Vida.frase()` y las mismas pausas (`RADIO`, `PAUSA`, `PAUSA_QUIEN`);
+  - la escena al despertar: `dormir()["escena"]`.
+- **Coordinador y combate:** decidir lo de comer.
+- **Siguiente paso de narrativa:** la pregunta de la posadera en 2D, si se aprueba; y más frases de vecinos cuando
+  haya misiones nuevas.

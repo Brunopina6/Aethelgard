@@ -1,0 +1,13 @@
+join kael (vivo) left
+join lya (vivo) right
+update kael [extra_data="ligero"]
+kael: Garon, en los puentes de la Garganta ibas muy despacio.
+garon: Comprobaba las cuerdas.
+update lya [extra_data="duda"]
+lya: ¿Todas?
+garon: Todas.
+update kael [extra_data="sorpresa"]
+kael: Primero el colchón, ahora las cuerdas. ¿Qué será lo siguiente?
+garon: Tu boca. A ver si aguanta callada una noche.
+leave lya
+leave kael
