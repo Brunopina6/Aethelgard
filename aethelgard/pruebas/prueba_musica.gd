@@ -62,7 +62,7 @@ func _probar() -> void:
 # 1. Escenas, lugares y pistas.
 func _contextos() -> void:
 	var casos := {"res://carga.tscn": "carga", "res://combate.tscn": "combate", "res://mapa.tscn": "mapa",
-		"res://isla.tscn": "viento", "res://garganta.tscn": "mazmorra", "res://zonas3d/pastos_verdes_3d.tscn": "pradera",
+		"res://isla.tscn": "viento", "res://garganta.tscn": "mazmorra", "res://zonas3d/garganta_3d.tscn": "mazmorra", "res://zonas3d/pastos_verdes_3d.tscn": "pradera",
 		"res://escena_que_no_existe.tscn": "silencio"}
 	for ruta in casos:
 		var n := Node.new()

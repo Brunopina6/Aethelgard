@@ -393,6 +393,23 @@ func _pintar_ajustes() -> void:
 			fm.add_child(b)
 		cuerpo.add_child(fm)
 		cuerpo.add_child(_texto("Se nota la próxima vez que se abre el mapa.", 16, COLOR_SUAVE))
+		# La Garganta del Diablo en 3D (T-095), todavía en pruebas: aquí se elige para verla en el móvil.
+		var m3d = load("res://modo3d.gd")
+		var g3d: bool = m3d.elegida("garganta3d")
+		cuerpo.add_child(_texto("Garganta del Diablo", 26, COLOR_TITULO))
+		var fg := HBoxContainer.new()
+		fg.add_theme_constant_override("separation", 8)
+		for op in [[false, "2D (la de siempre)"], [true, "3D (en pruebas)"]]:
+			var en_3d: bool = op[0]
+			var bg := _boton(("● " if en_3d == g3d else "○ ") + op[1], 18, Vector2(240, 34),
+				"garganta:%s" % ("3d" if en_3d else "2d"))
+			bg.pressed.connect(func():
+				m3d.elegir("garganta3d", en_3d)
+				Sonido.efecto("ui_tic")
+				_pintar_de_nuevo())
+			fg.add_child(bg)
+		cuerpo.add_child(fg)
+		cuerpo.add_child(_texto("Se nota la próxima vez que se entra en la Garganta.", 16, COLOR_SUAVE))
 
 
 func _cambiar_volumen(bus: String, paso: int) -> void:
