@@ -52,6 +52,7 @@ prueba_posador    | auto     |                      | 240 | user://     | Posado
 prueba_andar      | auto     |                      | 150 | user://     | andar por una zona
 prueba_guardado   | auto     |                      | 150 | user://     | guardar y cargar con progreso.gd, en su propio archivo (user://prueba_guardado.save): no toca la partida (T-077)
 prueba_partida    | auto     | 3d sin_prologo       | 150 | user://     | protecciones del guardado (T-076) con partidas sintéticas: sesión sin cargar, cofre, misión, antigua, dañada, escritura fallida y corte
+prueba_ciudad_datos | auto   | 3d                   | 300 | user://     | datos de Oakhaven (T-089, fase 1: ciudades/oakhaven.gd): ids sin repetir, casillas, condiciones, recompensas modestas, notas, D-033 y versión neutra (D-073); lógica de misiones y cofres con partidas sintéticas; cada diálogo nuevo y de la propuesta recorrido entero con Dialogic (todas sus opciones, sus .dch, señales y tinte del retrato provisional)
 prueba_sendero    | ventana  | {salida}             | 240 | {salida}    | capturas del sendero 3D del prototipo
 prueba_vista3d    | ventana  | {salida}             | 240 | {salida}    | capturas de la cámara 3D del prototipo
 prueba_grupo3d_fotos | ventana | {salida} 3d sin_prologo | 300 | {salida} | capturas de Lya y Garon siguiendo a Kael en Pastos Verdes 3D (perfiles bajo y alto)
