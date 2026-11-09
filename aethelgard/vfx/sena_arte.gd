@@ -50,6 +50,8 @@ func _draw() -> void:
 			_escarcha_rota()
 		"guardia":
 			_guardia()
+		"aviso":
+			_aviso()
 		"brasa":
 			_brasa()
 
@@ -319,3 +321,19 @@ func _brasa() -> void:
 		draw_circle(Vector2(cos(a), sin(a)) * 95.0, 7.0, Color(color.lerp(Color.WHITE, 0.4), alfa))
 	draw_set_transform(Vector2.ZERO)
 	_llama(Vector2(0, y), 2.6 * late, alfa)
+
+
+# ---------------------------------------------------------------- aviso de un golpe preparado (enemigos)
+# Un triángulo con «!» sobre el enemigo que late, con contorno oscuro: se lee en cualquier fondo y en el perfil bajo.
+# Dura hasta que combate.gd lo quita (al golpear, caer o huir).
+func _aviso() -> void:
+	var late := 1.0 + 0.1 * sin(t * 7.0)
+	var aparece := smoothstep(0.0, 0.2, t)
+	var r := 26.0 * late * lerpf(0.6, 1.0, aparece)
+	var pts := PackedVector2Array([Vector2(0, -r), Vector2(r * 0.95, r * 0.7), Vector2(-r * 0.95, r * 0.7)])
+	draw_colored_polygon(pts, Color(color, 0.85 * aparece))
+	var cerrado := pts.duplicate()
+	cerrado.append(pts[0])
+	draw_polyline(cerrado, Color(SOMBRA, 0.8 * aparece), 4.0)
+	draw_line(Vector2(0, -r * 0.45), Vector2(0, r * 0.2), Color(SOMBRA, aparece), 5.0)
+	draw_circle(Vector2(0, r * 0.45), 3.2, Color(SOMBRA, aparece))
