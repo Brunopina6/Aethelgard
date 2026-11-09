@@ -87,6 +87,7 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 | [D-073](#d-073) | Decisiones de la noche del 08 al 09/11, para que el usuario las revise | Aprobada en el encargo |
 | [D-074](#d-074) | La Garganta del Diablo pasa a 3D como mazmorra (cambia el plan 3D, que la dejaba en 2D) | Aprobada |
 | [D-075](#d-075) | Recursos que aporta el usuario el 09/11: el bestiario, el paquete de dos espadas y el logotipo | Aprobada |
+| [D-076](#d-076) | **Todas las ciudades, pueblos y posadas pasan a 3D jugable**, al nivel de Pastos Verdes; la Garganta, pulida como mazmorra | Aprobada |
 | [D-H01 a D-H15](#6-diseño-ya-implementado-del-3010-al-0511) | Diseño ya implementado antes de Git | Aprobada (historial) |
 
 ## 1. Reglas de trabajo, Git y versiones
@@ -1369,9 +1370,27 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
   - contenido: cinco animaciones FBX y una espada corta;
   - licencia: «Permitted: commercial games…; Prohibited: resale, redistribution, or sharing of the raw asset files»;
   - uso: solo si hace falta, dentro del juego; los FBX originales no se suben a GitHub.
-- **El logotipo de REBELUM y una ilustración de paisaje:** son imágenes del usuario para la pantalla de carga y el
-  icono ([T-098](TASKS.md#t-098)). El logotipo pasa a ser el icono y el título; el paisaje, si encaja, el fondo de la
-  carga, con antes y después.
+- **El logotipo de REBELUM:** es una imagen del usuario para la pantalla de carga y el icono
+  ([T-098](TASKS.md#t-098)), y pasa a ser el icono y el título.
+- **La ilustración de paisaje** («Aventura entre Cascadas y Ruinas»): es la **referencia de detalle y composición**
+  para las ciudades y la Garganta en 3D ([D-076](#d-076)), no un fondo.
+
+### D-076
+**Todas las ciudades, pueblos y posadas en 3D jugable; la Garganta, pulida como mazmorra**
+- **Fecha y estado:** 2026-11-09, hacia las 12:35. Aprobada [usuario]: «Quiero que todas las ciudades, pueblos y
+  posadas de REBELUM sean escenarios 3D jugables, con el mismo nivel de acabado que Pastos Verdes».
+- **Qué cambia:**
+  - el objetivo de cada ciudad es el 3D jugable ([T-103](TASKS.md#t-103));
+  - el plan 3D (región a región) se amplía a todos los asentamientos;
+  - la Oakhaven 2D (T-089, fases 1 y 2) se conserva como referencia funcional, y sus datos (`ciudades/oakhaven.gd`:
+    trazado, vecinos, misiones, cofres, secretos y notas) son la base del 3D.
+- **La Garganta 3D** se pule por tramos, empezando por la entrada, la primera cornisa y el primer puente
+  ([T-102](TASKS.md#t-102)).
+- **La referencia de calidad es Pastos Verdes:** su cámara elevada en ¾, el seguimiento del grupo, la profundidad, los
+  materiales y la luz. La de detalle y composición, la ilustración «Aventura entre Cascadas y Ruinas».
+- **Perfiles:** el Redmi ajusta sombras, niebla, transparencias y detalle lejano; el perfil alto no se rebaja.
+- **Orden:** terminar lo que está en marcha; después, primero el tramo pulido de la Garganta y luego el primer
+  recorrido 3D de Oakhaven con su posada, cada uno con su APK y su ruta.
 
 ## 6. Diseño ya implementado del 30/10 al 05/11
 

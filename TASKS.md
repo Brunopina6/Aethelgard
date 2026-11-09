@@ -77,6 +77,8 @@
 | [T-099](#t-099) | Barra de PM de cada personaje en el HUD de combate | Pendiente | Alta |
 | [T-100](#t-100) | Artes jugables (continúa T-091) y la técnica de guardia de Garon | Pendiente | Alta |
 | [T-101](#t-101) | La invocación de Érebo, una cinemática que merezca verse | Pendiente | Alta |
+| [T-102](#t-102) | Pulir la Garganta del Diablo 3D como mazmorra, con acabado de juego | Pendiente | Alta |
+| [T-103](#t-103) | **Todas las ciudades, pueblos y posadas en 3D jugable**, al nivel de Pastos Verdes; primero Oakhaven y su posada | Pendiente | Alta |
 
 ## Continuidad
 
@@ -970,3 +972,46 @@
   - el resultado se aplica una vez, y la cámara, el sonido, los controles y el turno se recuperan.
 - **Entrega:** una APK con una ruta corta para ver la barra de PM, lanzar las artes nuevas y reproducir Érebo con una
   partida de prueba aislada.
+
+### T-102
+**Pulir la Garganta del Diablo 3D como mazmorra**
+- **Estado:** pendiente: va cuando termine lo que está en marcha. **Prioridad:** alta. Decisión:
+  [D-076](DECISIONS.md#d-076).
+- **Petición** [usuario, 09/11, hacia las 12:35]: continuar sobre `zonas3d/garganta_3d.tscn` y
+  `docs/diseno/garganta_3d.md`, entrando desde el mapamundi con «3D (en pruebas)».
+- **Primero, un tramo con acabado de juego**, visto desde la cámara real: la entrada, la primera cornisa y el primer
+  puente colgante.
+  - Capas de roca, salientes, piedra húmeda, madera gastada y el metal de los mecanismos.
+  - Niebla y luz que den profundidad al abismo, con luces cálidas que guíen.
+  - Ambiente de agua, viento y crujidos.
+- **Después,** el mismo acabado en las cornisas bajas, el ascensor, la palanca, el puente levadizo, el nido, la grieta
+  oculta y la arena de Gorthor.
+- **Criterio de aceptación:**
+  - encuentros, cofres, altares, vuelta del combate y carga de partidas anteriores, comprobados;
+  - capturas antes y después desde el mismo punto;
+  - carga y fluidez medidas con los mismos ajustes;
+  - perfiles de calidad distintos (sombras, niebla, transparencias y detalle lejano en el Redmi; el alto, intacto).
+
+### T-103
+**Todas las ciudades, pueblos y posadas en 3D jugable**
+- **Estado:** pendiente: va después del tramo pulido de la Garganta. **Prioridad:** alta. Decisión:
+  [D-076](DECISIONS.md#d-076).
+- **Petición** [usuario, 09/11]:
+  - «todas las ciudades, pueblos y posadas de REBELUM sean escenarios 3D jugables, con el mismo nivel de acabado que
+    Pastos Verdes»;
+  - la referencia de detalle y composición es la imagen «Aventura entre Cascadas y Ruinas»
+    (`D:\REBELUM_diagnostico\entradas\2026-11-09_imagenes\rebelum_paisaje.webp`).
+- **Cada lugar con su identidad, según el guion:** una ciudad con calles, habitantes y comercios; una posada con
+  interior 3D recorrible.
+  - Se conservan los sistemas y el progreso de las zonas que hay.
+  - Las maquetas 2D (como la de Oakhaven, T-089) son la referencia funcional.
+- **Primero, Oakhaven:**
+  - un recorrido completo y pulido desde la entrada hasta una zona central, un NPC y una posada;
+  - se entra en la posada, se habla, se usan sus servicios y se vuelve a la calle con el estado correcto.
+- **Después,** el resto de Oakhaven y ciudad por ciudad, cada una según su clima, arquitectura, habitantes e
+  historia, conservando rutas, misiones, tiendas y secretos aprobados. Las posadas, donde las ponga el guion.
+- **Cada hito:**
+  - se entra desde el flujo normal del juego y se recorre con la cámara y los controles reales;
+  - el grupo, las salidas y lo que se puede usar se ven;
+  - capturas antes y después y medidas de carga y fluidez;
+  - una APK con la ruta exacta para verlo, lo comprobado y lo que falta en el Redmi.

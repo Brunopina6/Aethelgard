@@ -19,6 +19,10 @@ pidió no preguntar ([MEMORIA_CHAT.md](MEMORIA_CHAT.md)). **La memoria describe 
   (desde `c74b872`): diseño y maqueta jugable, activable con `-- garganta3d`.
 - **Mapamundi pintado: integrado** (`a04a9d2`) con el selector en Ajustes (`14aea04`). Batería: 40 superadas, 0
   fallidas. Falta medirlo. La memoria describe `integracion-experimental` @ `14aea04`.
+- **Objetivo vigente para todas las ciudades, pueblos y posadas: 3D jugable al nivel de Pastos Verdes**
+  ([D-076](DECISIONS.md#d-076), [T-103](TASKS.md#t-103)). Primero, el tramo pulido de la Garganta
+  ([T-102](TASKS.md#t-102)); después, el primer recorrido 3D de Oakhaven con su posada. Va cuando termine lo que está
+  en marcha.
 - **09/11, 12:05, encargos nuevos** (T-096 a T-101; recursos en [D-075](DECISIONS.md#d-075)). Van después de integrar lo que está en
   marcha, en este orden:
   1. las skills de Godot y Blender Animation;
