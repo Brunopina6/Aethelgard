@@ -129,6 +129,8 @@ const F_JADEO_H := "S23/Pole Position Production - The Grunts Library/Male 1 - B
 const F_SALTO_M := "S23/Pole Position Production - The Grunts Library/Female 3 - Grunt - Jumping and Landing - Long - Ehrlund M1.wav"
 const F_GOLPE_M := "S23/Pole Position Production - The Grunts Library/Female 1 - Grunt - Getting Hit - Medium Intensity - Ehrlund M1.wav"
 const F_JADEO_M := "S24/UberDuo - Inhale – Tanja – Character Playset/HMNBrth_Human, Adult, Female, Panting, Nose, Loop_UberDuo_INHL.wav"
+const F_CUERDAS_PUERTO := "S24/Rogue Waves - Yacht & Marina/AMBNaut_Atmos, EXT Marina, boats, rope creaking,_RogueWaves_YachtMarina_11.wav"
+const F_VIENTO_CABLES := "S18/Ivo Vicic - Bora wind - European local wind/38 Wind_hurricane_wires_whistle.wav"
 const F_EQUIPO_SOLDADO :=  "S18/Gamemaster Audio - Footstep and Foley Sounds/foley_soldier_gear_equipment_metal_cloth_heavy_movement_light_08.wav"
 
 # [derivado, fuente, desde (s), hasta (s, -1 = el final), opciones]
@@ -518,6 +520,14 @@ const RECETAS := [
 	["heroes/garon_jadeo_2", F_JADEO_H, 18.00, 19.15, {"norm": "pico", "db": -3.0, "fi": 0.03, "fo": 0.3, "tono": 0.85}],
 	["heroes/garon_alivio_1", F_RESPIRA_H, 7.00, 8.60, {"norm": "pico", "db": -3.0, "fi": 0.05, "fo": 0.4, "tono": 0.9}],
 	["heroes/garon_victoria_1", "S19/Eiravaein Works - Kieuk/Kieuk,laughter,male,60s,OhioCarolina,heeing,restrained,chuckle,mouthclicks.wav", 0.95, 1.85, {"norm": "pico", "db": -3.0, "fi": 0.02, "fo": 0.25}],
+	# ================================================================ tanda 5 (si sobra margen): la entrada, la cornisa y los puentes de
+	# la Garganta 3D: las cuerdas de los puentes colgantes que crujen de vez en cuando y el viento que silba en ellas
+	["ambiente/cuerda_cruje_1", F_CUERDAS_PUERTO, 0.0, 0.50, {"norm": "pico", "db": -3.0, "fi": 0.02, "fo": 0.15}],
+	["ambiente/cuerda_cruje_2", F_CUERDAS_PUERTO, 1.20, 1.80, {"norm": "pico", "db": -3.0, "fi": 0.02, "fo": 0.15}],
+	["ambiente/cuerda_cruje_3", F_CUERDAS_PUERTO, 6.05, 6.90, {"norm": "pico", "db": -3.0, "fi": 0.02, "fo": 0.2,
+		"capas": [["S24/Jake Fielding - Squeaky Gates/DOORGate_Wooden Metal Hinge Creaks_Jake Fielding_Squeaky Gates.wav", 13.75, 14.15, 0.25, -12.0]]}],
+	["ambiente/viento_cuerdas_1", F_VIENTO_CABLES, 9.0, 14.5, {"norm": "rms", "db": -24.0, "techo": -3.0, "fi": 1.2, "fo": 1.5}],
+	["ambiente/viento_cuerdas_2", F_VIENTO_CABLES, 26.0, 31.5, {"norm": "rms", "db": -24.0, "techo": -3.0, "fi": 1.2, "fo": 1.5}],
 ]
 
 # PROPUESTA de sonido para las 12 magias (T-083, tanda 2): NO se integran (D-048: su presentación está protegida). Solo
