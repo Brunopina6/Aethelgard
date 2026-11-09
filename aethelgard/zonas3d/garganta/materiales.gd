@@ -615,6 +615,7 @@ uniform float vaiven = 0.05;                    // metros, de lado a lado, en el
 uniform float rebote = 0.022;                   // metros, arriba y abajo, en el centro
 uniform float fase = 0.0;
 uniform float rugosidad = 0.85;
+uniform float tiempo = 0.0;                     // lo pone la región cada fotograma (piezas.gd, mecer): Kael se mece igual
 varying vec3 pm;
 varying vec3 nm;
 void vertex() {
@@ -624,8 +625,8 @@ void vertex() {
 	float t = clamp((z_sur - w.z) / (z_sur - z_norte), 0.0, 1.0);
 	float k = 4.0 * t * (1.0 - t);
 	float colgado = 0.45 + 0.55 * clamp((y_ancla - w.y) / 1.3, 0.0, 1.0);
-	float lado = sin(TIME * 1.9 + fase) * 0.8 + sin(TIME * 3.3 + fase * 1.7) * 0.2;
-	float arriba = sin(TIME * 2.6 + fase * 1.3 + t * 2.5);
+	float lado = sin(tiempo * 1.9 + fase) * 0.8 + sin(tiempo * 3.3 + fase * 1.7) * 0.2;
+	float arriba = sin(tiempo * 2.6 + fase * 1.3 + t * 2.5);
 	VERTEX.x += lado * vaiven * k * colgado;
 	VERTEX.y += arriba * rebote * k;
 }

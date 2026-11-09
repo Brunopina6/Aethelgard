@@ -183,7 +183,7 @@ func puente_colgante(z_sur: float, z_norte: float, desgaste_sur: float, desgaste
 	for mi in hechas:
 		mi.extra_cull_margin = 0.3                                     # lo que se mece no se recorta antes de tiempo
 		mi.name = "PuenteColgante_%d" % int(z_sur)
-	puentes.append({"z_sur": z_sur, "z_norte": z_norte, "materiales": [m_tabla, m_cuerda, m_tela], "mallas": hechas})
+	puentes.append({"z_sur": z_sur, "z_norte": z_norte, "fase": fase, "materiales": [m_tabla, m_cuerda, m_tela], "mallas": hechas})
 	# pilares con el anillo partido en los dos extremos, con la cuerda atada en lo alto
 	for extremo in [[z_sur + 0.35, desgaste_sur, 1.0], [z_norte - 0.35, desgaste_norte, -1.0]]:
 		for lado in [-1.0, 1.0]:
@@ -213,6 +213,34 @@ func puente_colgante(z_sur: float, z_norte: float, desgaste_sur: float, desgaste
 			farol_colgado(Vector3(x + lado * 2.2, T.ALTO, z_sur + 0.35), fase + lado)
 
 
+# El vaivén de los puentes colgantes: la región lo llama cada fotograma con su reloj. Pone ese tiempo en el sombreado
+# de cada puente (madera, cuerda y telas) y así quien está encima se mece con las tablas (vaiven_en).
+const VAIVEN := 0.05              # los mismos que materiales.gd, puente()
+const REBOTE := 0.022
+
+
+func mecer(t: float) -> void:
+	for pu in puentes:
+		for m in pu["materiales"]:
+			(m as ShaderMaterial).set_shader_parameter("tiempo", t)
+
+
+# Cuánto se ha movido el tablero bajo «p» en el instante «t» (cero fuera de los puentes). Misma cuenta que el sombreado.
+func vaiven_en(p: Vector3, t: float) -> Vector3:
+	if p.y < T.ALTO - 1.5 or absf(p.x - T.X_CAMINO_O) > T.ANCHO_PUENTE * 0.5 + 0.2:
+		return Vector3.ZERO
+	for pu in puentes:
+		var zs: float = pu["z_sur"]
+		var zn: float = pu["z_norte"]
+		if p.z > zs or p.z < zn:
+			continue
+		var fase: float = pu["fase"]
+		var u := clampf((zs - p.z) / (zs - zn), 0.0, 1.0)
+		var k := 4.0 * u * (1.0 - u)
+		var lado := sin(t * 1.9 + fase) * 0.8 + sin(t * 3.3 + fase * 1.7) * 0.2
+		var arriba := sin(t * 2.6 + fase * 1.3 + u * 2.5)
+		return Vector3(lado * VAIVEN * k, arriba * REBOTE * k, 0.0)
+	return Vector3.ZERO
 # Un tramo de cuerda de «a» a «b» con color en los vértices, en el lote «l» (lo que se mece).
 func _cuerda(l: Roca.Lotes, a: Vector3, b: Vector3, r: float, m: Material, color: Color, lados := 5) -> void:
 	var largo := a.distance_to(b)

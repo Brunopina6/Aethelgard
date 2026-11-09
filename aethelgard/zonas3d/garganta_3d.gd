@@ -27,6 +27,7 @@ const Escenario := preload("res://zonas3d/garganta/escenario.gd")
 const Piezas := preload("res://zonas3d/garganta/piezas.gd")
 const Materiales := preload("res://zonas3d/garganta/materiales.gd")
 const Progreso := preload("res://progreso.gd")
+const Comentarios := preload("res://dialogos/comentarios.gd")   # lo que dicen los héroes al explorar (narrativa)
 
 const INDICE := 2                        # lugar del mapa (mapa.gd, INDICE_GARGANTA; modo3d.GARGANTA)
 const NOMBRE := "garganta"               # progreso.gd: mazmorras["garganta"], nivel de la zona y encuentros
@@ -48,6 +49,8 @@ const ID_PUENTES := "garganta_puentes"   # progreso.gd, DETALLES[2]
 const ID_PILAR := "garganta_pilar"
 const BOTONES_BANCO := ["PRUEBA", "DIAG", "TOPE", "ARB"]   # sus recorridos son los de Pastos Verdes: aquí no sirven
 const CAIDA_LEVADIZO := 2.6              # segundos que tarda en bajar
+const CASCADA_ARRIBA := Vector3(3.6, T.TOPE - 4.0, T.Z_NORTE + 0.8)     # la cascada del fondo (sonido y comentario)
+const CASCADA_ABAJO := Vector3(3.6, T.HONDO + 10.0, T.Z_NORTE + 2.8)
 
 var perfil: Dictionary = {}
 var nombre_perfil := "alto"
@@ -82,6 +85,10 @@ var _dist_jugador := 20.0                # la distancia que eligió el jugador (
 var _dist_puesta := 20.0
 var _desvio := Vector3.ZERO              # la cámara mira un momento hacia otro sitio (el puente que baja)
 var _silencio_dicho := false             # «La arena guarda silencio…», una vez por visita
+var capa_ui: CanvasLayer                 # la interfaz de la región (avisos, botón y comentarios)
+var _cascada_dicha := false              # el comentario de la cascada, la primera vez que se ve de cerca
+var _t_vaiven := 0.0                     # reloj del vaivén de los puentes colgantes (T-102)
+var _mecidos := {}                       # personaje → lo que se ha movido su modelo con el puente
 
 
 func _ready() -> void:
@@ -104,6 +111,7 @@ func _ready() -> void:
 	Engine.set_meta("zona", ZONA)
 	_sonido_3d()
 	_titulo_zona("Garganta del Diablo")
+	_programar_comentario("llegar:garganta", 2.5)          # narrativa: al llegar (una vez en la partida)
 	if not en_banco():
 		Progreso.guardar(scene_file_path)                      # guardado automático al entrar (como zona.gd)
 
@@ -328,6 +336,7 @@ func _process(delta: float) -> void:
 	_bloqueo = maxf(0.0, _bloqueo - delta)
 	if esc != null:
 		esc.animar(delta)                                      # el fuego de los faroles tiembla (T-102)
+	_mecer(delta)
 	if kael == null:
 		return
 	if en_banco():
@@ -364,6 +373,7 @@ func _process(delta: float) -> void:
 	if _comprobar_fijos():
 		return
 	_comprobar_cerca()
+	_mirar_cascada()
 
 
 func _seguir_polvo() -> void:
@@ -646,6 +656,7 @@ func _abrir_cofre() -> void:
 	_mostrar_aviso("¡Cofre raro! 300 monedas, 2 Éter y un Incienso de Ceniza.", 2.4)
 	guardar_posicion()
 	Progreso.guardar(scene_file_path)
+	_programar_comentario("cofre", 1.2)
 
 
 # ================================================================= guardado y salida
@@ -676,7 +687,9 @@ func _salir() -> void:
 func _sonido_3d() -> void:
 	Sonido.oyente_3d(kael, cam)
 	Sonido.pasos_3d(kael, suelo_de_pasos)
-	Sonido.fuente_linea(self, "cascada_grande", Vector3(3.6, T.TOPE - 4.0, T.Z_NORTE + 0.8), Vector3(3.6, T.HONDO + 10.0, T.Z_NORTE + 2.8))
+	Sonido.fuente_linea(self, "cascada_grande", CASCADA_ARRIBA, CASCADA_ABAJO)
+	# la caída del primer puente (T-102): el mismo sonido, más bajo, a la altura del puente
+	Sonido.fuente_3d(self, "cascada_grande", Vector3(T.muro_oeste(15.2) + 1.0, -2.0, 15.2), -6.0)
 	var x_eje := (T.X_BORDE_O + T.X_BORDE_E) * 0.5
 	Sonido.fuente_linea(self, "viento_abismo", Vector3(x_eje, T.BAJO + 3.0, T.Z_PRESA_N), Vector3(x_eje, T.BAJO + 3.0, T.Z_NORTE + 2.0))
 	Sonido.fuente_linea(self, "viento_abismo", Vector3(T.X_CAMINO_O, T.ALTO - 2.5, T.PUENTES[0][0]),
@@ -719,6 +732,7 @@ func _punto_gota(o: Vector3, u: float, v: float) -> Vector3:
 
 func _crear_interfaz() -> void:
 	var capa := CanvasLayer.new()
+	capa_ui = capa
 	capa.layer = 50
 	add_child(capa)
 	boton_accion = Button.new()
@@ -787,3 +801,59 @@ func _titulo_zona(nombre: String) -> void:
 	t.tween_property(l, "modulate:a", 1.0, 0.8)
 	t.tween_interval(2.0)
 	t.tween_property(l, "modulate:a", 0.0, 1.0)
+
+
+# ================================================================= T-102: vaivén, comentarios
+
+# Los puentes colgantes se mecen (piezas.gd, mecer) y quien está encima se mece con las tablas: se mueve su modelo
+# («ajuste»), no su posición, así que ni el recorrido ni la colisión notan nada. Cuesta unas cuentas por personaje.
+func _mecer(delta: float) -> void:
+	if piezas == null:
+		return
+	_t_vaiven += delta
+	piezas.mecer(_t_vaiven)
+	var quienes: Array = [kael]
+	if grupo != null:
+		for m in grupo.miembros:
+			quienes.append(m["nodo"])
+	for n in quienes:
+		if n == null or not is_instance_valid(n) or not ("ajuste" in n) or n.ajuste == null:
+			continue
+		var nuevo: Vector3 = piezas.vaiven_en(n.global_position, _t_vaiven)
+		var viejo: Vector3 = _mecidos.get(n, Vector3.ZERO)
+		if not nuevo.is_equal_approx(viejo):
+			n.ajuste.position += nuevo - viejo
+			_mecidos[n] = nuevo
+
+
+# La primera vez que Kael queda a menos de 12 m de la cascada del fondo, un héroe lo comenta (narrativa).
+func _mirar_cascada() -> void:
+	if _cascada_dicha:
+		return
+	var a := CASCADA_ARRIBA
+	var b := CASCADA_ABAJO
+	var p := kael.global_position
+	var t := clampf((p - a).dot(b - a) / (b - a).length_squared(), 0.0, 1.0)
+	if p.distance_to(a.lerp(b, t)) < 12.0:
+		_cascada_dicha = true
+		_comentar("cascada_garganta")
+
+
+func _programar_comentario(momento: String, segundos: float) -> void:
+	var t := Timer.new()
+	t.one_shot = true
+	t.wait_time = segundos
+	t.timeout.connect(func():
+		_comentar(momento)
+		t.queue_free())
+	add_child(t)
+	t.start()
+
+
+# Un comentario de los héroes (dialogos/comentarios.gd), si no hay nada en marcha y si toca.
+func _comentar(momento: String) -> void:
+	if ocupado() or saliendo or capa_ui == null:
+		return
+	var c: Dictionary = Comentarios.elegir(momento)
+	if not c.is_empty():
+		Comentarios.mostrar(capa_ui, c)
