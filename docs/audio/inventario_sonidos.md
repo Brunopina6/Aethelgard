@@ -570,6 +570,105 @@ Sonido.fuente_linea(self, "viento_cuerdas", Vector3(T.X_BORDE_O, T.ALTO - 1.0, 4
 Comprobado sin la escena de verdad (`prueba_efectos`, parte «cuerdas»: en 40 s, las cuerdas 8 veces y el viento al menos
 una, siempre en el punto de su línea más cercano y por Ambiente; a 80 m, nada). Con ventana, cada uno solo:
 `D:\REBELUM_diagnostico\sonido_muestras\2026-11-09_heroes_combate\garganta_cuerdas\`.
+## Tanda 6 (2026-11-09, noche): dos voces más claras, Oakhaven vivo y la mezcla por buses
+
+### Las dos voces que marqué como dudosas
+
+- **El esfuerzo de Kael** (`kael_esfuerzo_1…3`): ahora son tres esfuerzos cortos y enteros, de 0,26 a 0,36 s (The Chris
+  Alan, «Little Fighter Guy - Vocalizations: Punch Kick Chop_19, Jump Lift Push_09, Crash Bump Fall_01», Sonniss GDC
+  2018). Antes eran el arranque recortado de un grito largo. Salida: −30 dBFS de RMS.
+- **El jadeo de Lya** (`lya_jadeo_1…2`): ahora son respiraciones de la misma actriz que sus esfuerzos (Pole Position, «The
+  Grunts Library: Female 3 - Jumping and Landing», GDC 2023), con unos 8 dB de ganancia. Antes era una respiración nasal
+  con unos 36 dB de ganancia. Suelo de ruido medido entre respiraciones: −53,5 dBFS (antes, −30). Salida: −34,6.
+
+### Oakhaven vivo (2D ahora; las mismas fuentes valen en 3D, T-103)
+
+| Efecto | Qué | Archivos | Original (biblioteca) | Licencia | Bus · dB · cercanía |
+|---|---|---|---|---|---|
+| `plaza_murmullo` | El murmullo de la Plaza del Tapiz: un pueblo con voces y caballos, con paso bajo para que no se entiendan las palabras | `ambiente/plaza_murmullo` (bucle, 30 s) | Charlie Atanasyan, «Village medium in a canyon voices activity and horses» | Sonniss GDC 2017 | Ambiente · −5 · todo a 4 casillas, nada a 16 (3D: 8 m, hasta 50) |
+| `mercado_murmullo` | El mercado: voces tranquilas y pasos en tierra | `ambiente/mercado_murmullo` (bucle) | Charlie Atanasyan, «CHIL Market Village calm with voices…» | Sonniss GDC 2018 | Ambiente · −1 · 3 / 12 casillas (3D: 6 m, hasta 40) |
+| `fuente_plaza` | La fuente de la plaza | `ambiente/fuente_plaza` (bucle) | Articulated, «100 Fountains: FOUNTAIN Medium, Invigorating Network of Dribbles, Close» | Sonniss GDC 2017 | Ambiente · −10 · 1,5 / 8 casillas (3D: 3 m, hasta 25) |
+| `pajaro_ciudad` | Un pájaro de ciudad, de día | `ambiente/pajaro_ciudad_1…2` | Discover Oregon, «Robins 2015 Medlock Dawn Robins» | Sonniss GDC 2018 | Ambiente · −16 · detalle |
+| `grillo` | Un grillo, al atardecer y de noche | `ambiente/grillo` | justsoundeffects, «Single Cricket Night Countryside Italy» | Sonniss GDC 2020 | Ambiente · −14 · detalle |
+| `mochuelo` | Un mochuelo lejano, de noche | `ambiente/mochuelo_1…2` | Ivo Vicic, «Little owl, river, night, distant» | Sonniss GDC 2019 | Ambiente · −20 · detalle |
+
+- **La hora:** `Sonido.fijar_momento(escena, "dia" | "tarde" | "noche")`. Mientras esa escena sea la actual, los detalles
+  de su contexto son los de `DETALLES["ciudad_<momento>"]`:
+  - de día, pájaros y ráfagas;
+  - al atardecer, un pájaro, el grillo y ráfagas;
+  - de noche, el grillo y el mochuelo.
+  - En los tres, la campana lejana marca la hora de vez en cuando (cada 110-200 s; de noche, cada 180-300).
+  - Se olvida al cambiar de escena. Sin hora fijada, las ciudades suenan como siempre, ahora con algún pájaro de ciudad
+    más.
+- **Pasos sobre empedrado:** el camino de Oakhaven es «empedrado» y ya suena `paso_piedra`. En la biblioteca no hay
+  pasos sobre adoquines (busqué «cobble»), así que no he hecho uno nuevo.
+
+**Líneas para `ciudad_oakhaven.gd`**, en `_ready`, junto a la taberna y el cuervo (casillas de `T` = 64 px; las
+posiciones salen de `ciudades/oakhaven.gd`):
+
+```gdscript
+var pz := _rect("plaza")                                           # la Plaza del Tapiz y su fuente
+Sonido.fuente_2d(self, "plaza_murmullo", pz.get_center() * T, jugador)
+Sonido.fuente_2d(self, "fuente_plaza", pz.get_center() * T, jugador)   # si la fuente está en otro punto, ese
+Sonido.fuente_2d(self, "mercado_murmullo", _rect("mercado").get_center() * T, jugador)
+Sonido.fijar_momento(self, "tarde")                                # la hora azul del arte (con un reloj, la hora real)
+```
+
+**En 3D (T-103)**, las mismas fuentes como emisores en bucle: `Sonido.fuente_3d(self, "plaza_murmullo", pos)`, y lo
+mismo con la fuente y el mercado. También `Sonido.oyente_3d(kael, cam)` y `Sonido.fijar_momento(self, …)`.
+
+Comprobado sin ventana (`prueba_efectos`, parte «ciudad»):
+- al lado, la plaza suena a −2 dB y la fuente a −8 (los valores de esa pasada; hoy, −5 y −10);
+- lejos, se callan y dejan de sonar;
+- de noche, el grillo y el mochuelo, sin pájaros de día;
+- la campana suena una vez;
+- la hora se olvida al cambiar de escena;
+- la fuente vale como emisor 3D.
+
+### La mezcla por buses (combate y ciudad)
+
+`prueba_efectos_senal`, «mezclas=6», con ventana y el driver real, 09/11: se graban a la vez el Master y cada bus
+(Musica, Ambiente, Efectos e Interfaz). Primero, un combate de 15 s con su música (`musica_combate_normal.mp3` a −6 dB,
+como `combate.gd`), golpes, voces de héroes y enemigos, Zarzalín, poción y victoria. Después, 10 s en la Plaza del Tapiz,
+a 3 casillas de la fuente, con el ambiente de las ciudades, el murmullo, el mercado lejos, pasos, un farol, la campana y
+la interfaz. «Sobre el fondo»: cuánto quedan los efectos por encima de la música o del ambiente, en las ventanas de 0,1 s
+en que suenan.
+
+| Escena | Música | Ambiente | Efectos | Interfaz | Efectos sobre el fondo | Interfaz sobre el fondo | Pico del Master |
+|---|---|---|---|---|---|---|---|
+| Combate, hoy (música −6 dB) | −19,2 | — | −23,6 | −30,7 | mediana **−8,9 dB** (peor −26,9) | −12,7 dB | **−0,3 a −2,6 dBFS** (tres pasadas) |
+| B: música −10 dB | −23,9 | — | −23,1 | −31,5 | mediana −2,3 dB (peor −19,6) | −6,4 dB | −3,2 a −3,8 |
+| C: música −6 dB que se aparta | −25,6 | — | −23,3 | −32,2 | mediana **+7,4 dB** (peor −17,8) | −10,6 dB | −2,0 a −2,5 |
+| Plaza, primera medida (murmullo −2, fuente −8) | — | −29,6 | −34,4 | −31,0 | −4,2 dB | −1,0 dB | −7,5 |
+| Plaza, hoy (murmullo −5, fuente −10: **aplicado**) | — | −30,7 | −34,2 | −31,0 | −0,6 dB | +2,2 dB | −6,2 |
+
+C: la música se aparta con un compresor en el bus Musica que escucha al bus Efectos (umbral −32 dB, 4:1, ataque 8 ms,
+suelta 300 ms).
+
+**Lo que dice la medida:** en el combate, la música va por encima de los golpes y de las voces. Los efectos quedan, en
+la mediana, 9 dB por debajo de ella, y la interfaz, 13. Cuando coinciden un crítico, una voz y la música, el Master
+llega a −0,3 dBFS: casi satura. En la plaza, con los niveles de la primera medida, los pasos quedaban unos 4 dB por
+debajo del ambiente; con el murmullo y la fuente más bajos, quedan a la par.
+
+**Propuestas** (la de la plaza, aplicada; las demás, para decidir al escucharlas):
+1. **Combate, música −6 → −10 dB** (`combate.gd`, `musica.volume_db`, el archivo de combate). Es lo más sencillo: los
+   efectos ganan 6-7 dB respecto a la música y el pico baja a −3 dBFS. La música sigue sonando entera.
+2. **O, mejor para oír los golpes, la música que se aparta** (C):
+   - un `AudioEffectCompressor` con sidechain «Efectos» en el bus Musica (`default_bus_layout.tres`, o puesto por
+     `sonido.gd` solo en combate);
+   - los efectos pasan a quedar 7 dB por encima;
+   - la música baja sola unos 6 dB mientras hay golpes y vuelve en 0,3 s;
+   - hay que oírlo: si «bombea», ataque y suelta más lentos o ratio 3:1.
+3. **Una protección en el Master** (un `AudioEffectLimiter` a −1 dBFS) para que una suma rara no sature nunca. Es
+   prudente con 1 o 2, pero no necesaria con ellas (picos de −2 a −4).
+4. **Interfaz**: en el combate queda 13 dB bajo la música (6 dB con la propuesta 1). Son tonos agudos y cortos, que se
+   oyen más de lo que dice el RMS. Si al escucharlo se pierden, +3 dB a `ui_tic` y `ui_confirmar` solo en combate.
+5. **Plaza** (aplicado en `sonido.gd`): murmullo −2 → −5 dB y fuente −8 → −10 dB.
+
+Muestras (cada bus por separado, para escucharlo): `D:\REBELUM_diagnostico\sonido_muestras\2026-11-09_tanda6\indice.md`
+y los WAV `buses_*_<bus>.wav` en `D:\REBELUM_diagnostico\pruebas\2026-11-09_185932\prueba_efectos_senal\`.
+**Límite:** la medida es por nivel (RMS), no por bandas de frecuencia. Un efecto agudo se oye sobre una música grave
+aunque tengan el mismo RMS. Por eso las propuestas 1 y 2 hay que escucharlas.
 ## Candidatos aún sin usar
 
 - **Alternativas para escuchar y elegir:** `victory_…_01_s29` y `…_02_s29` (otra victoria), InspectorJ

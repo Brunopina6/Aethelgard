@@ -187,6 +187,8 @@ func _probar() -> void:
 		await _heroes()
 	if _parte("cuerdas"):
 		await _cuerdas()
+	if _parte("ciudad"):
+		await _ciudad_viva()
 	if _parte("garganta3d"):
 		await _garganta3d()
 	print("OK efectos: ", ", ".join(hechos))
@@ -1731,3 +1733,70 @@ func _cuerdas() -> void:
 	var silba: int = g.veces
 	await _escena_vacia()
 	hechos.append("cuerdas (en 40 s: cuerdas %d, viento %d; lejos, 0)" % [cruje, silba])
+
+# ================================================================= tanda 6
+
+# 20. Oakhaven vivo: una ciudad de mentira (casillas de 64 px) con quien anda y su cámara.
+func _ciudad_viva() -> void:
+	await _escena_vacia()
+	_limpiar()
+	var M = root.get_node("Musica")
+	M.pedir("ciudad")
+	var ciudad := Node2D.new()
+	root.add_child(ciudad)
+	var quien := Node2D.new()
+	ciudad.add_child(quien)
+	var cam := Camera2D.new()
+	quien.add_child(cam)
+	cam.make_current()
+	var t := 64.0
+	var plaza := Vector2(40.5, 26) * t
+	var p = Son.fuente_2d(ciudad, "plaza_murmullo", plaza, quien)
+	var m = Son.fuente_2d(ciudad, "mercado_murmullo", Vector2(54, 29.5) * t, quien)
+	var f = Son.fuente_2d(ciudad, "fuente_plaza", plaza + Vector2(0, 1) * t, quien)
+	if p == null or m == null or f == null:
+		_fallo("20: no se crean las fuentes de la plaza, el mercado o la fuente")
+		ciudad.queue_free()
+		return
+	quien.position = plaza + Vector2(0, 1.5) * t
+	await _juego(1.5)
+	var cerca_p: float = p.volume_db
+	var cerca_f: float = f.volume_db
+	quien.position = plaza + Vector2(0, 30) * t                # lejos de todo
+	await _juego(2.0)
+	if cerca_p <= -8.0 or cerca_f <= -14.0:
+		_fallo("20: junto a la fuente de la plaza no suenan lo bastante (plaza %.1f dB, fuente %.1f dB)" % [cerca_p, cerca_f])
+	if p.playing or f.playing or m.playing:
+		_fallo("20: lejos de la plaza y del mercado siguen sonando")
+	for x in [p, m, f]:
+		if String(x.bus) != "Ambiente":
+			_fallo("20: «%s» no va por Ambiente" % x.get_meta("efecto", "?"))
+	# la hora: de noche, grillo y mochuelo (ningún pájaro de día) y la campana; sin hora, lo de siempre
+	Son.fijar_momento(ciudad, "noche")
+	Son._momento_escena = current_scene                      # (la ciudad de mentira cuelga de root: vale la escena actual)
+	_limpiar()
+	await _juego(0.2)
+	Son._campana_t = 0.05
+	for i in 8:
+		Son._det_t = 0.0
+		Son._ultimo.clear()
+		await _juego(0.3)
+	if Son._det_ctx != "ciudad_noche":
+		_fallo("20: con la hora fijada a «noche», los detalles no son los de «ciudad_noche» (%s)" % Son._det_ctx)
+	if _n("pajaro") + _n("pajaro_ciudad") > 0 or _n("grillo") + _n("mochuelo") == 0:
+		_fallo("20: de noche suenan pájaros de día o no suena la noche (%s)" % str(Son.contador))
+	if _n("campana") != 1:
+		_fallo("20: la campana de la hora suena %d veces (esperaba 1)" % _n("campana"))
+	await _escena_vacia()
+	if Son.momento_actual() != "":
+		_fallo("20: la hora se queda al cambiar de escena")
+	# en 3D, las mismas fuentes como emisores en bucle
+	await _escena_3d()
+	var e = Son.fuente_3d(current_scene, "fuente_plaza", Vector3(0, 0, -3))
+	if not e is AudioStreamPlayer3D or not e.playing or String(e.bus) != "Ambiente":
+		_fallo("20: la fuente de la plaza no vale como emisor 3D (T-103)")
+	ciudad.queue_free()
+	M.pedir("silencio")
+	await _escena_vacia()
+	_limpiar()
+	hechos.append("ciudad viva (plaza %.1f dB y fuente %.1f dB al lado, callados lejos; de noche, grillo y mochuelo; la campana de la hora; la fuente en 3D)" % [cerca_p, cerca_f])

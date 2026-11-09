@@ -50,6 +50,8 @@ func _draw() -> void:
 			_escarcha_rota()
 		"guardia":
 			_guardia()
+		"brasa":
+			_brasa()
 
 
 # ---------------------------------------------------------------- anillo del Alba (y del Ocaso, al revés)
@@ -300,3 +302,20 @@ func _guardia() -> void:
 	draw_colored_polygon(pts, Color(color, 0.35 * alfa))
 	_contorno(pts, Color(color, alfa), 4.0)
 	draw_line(p + Vector2(0, -11) * e, p + Vector2(0, 13) * e, Color(0.62, 0.17, 0.17, alfa), 5.0)
+
+
+# ---------------------------------------------------------------- Última Brasa (M4)
+# Una llama grande baja sobre el pecho del aliado y se queda latiendo dentro de un aro de ascuas (la Brasa espera).
+func _brasa() -> void:
+	var k := clampf(t / dur, 0.0, 1.0)
+	var alfa := smoothstep(0.0, 0.15, k) * (1.0 - smoothstep(0.7, 1.0, k))
+	var y := lerpf(-alto * 0.95, -alto * 0.2, smoothstep(0.0, 0.45, k))
+	var late := 1.0 + 0.12 * sin(k * TAU * 3.0)
+	draw_set_transform(Vector2(0, alto * 0.45), 0.0, Vector2(1.0, 0.32))
+	draw_arc(Vector2.ZERO, 95.0, 0, TAU, 56, Color(SOMBRA, 0.35 * alfa), 10.0)
+	draw_arc(Vector2.ZERO, 95.0, 0, TAU, 56, Color(color, 0.85 * alfa), 5.0)
+	for i in 8:                                       # ascuas en el aro
+		var a := TAU * i / 8.0 + k * 2.0
+		draw_circle(Vector2(cos(a), sin(a)) * 95.0, 7.0, Color(color.lerp(Color.WHITE, 0.4), alfa))
+	draw_set_transform(Vector2.ZERO)
+	_llama(Vector2(0, y), 2.6 * late, alfa)

@@ -191,7 +191,9 @@ static func _ids_acto(a: Dictionary) -> Array:
 # Las ciudades hechas a mano tienen notas que se leen al examinarlas (un bando, un letrero, un libro...). El Diario las
 # enseña aparte, en «Notas»: no son detalles, no cuentan para las páginas de los actos y no hay ninguna que completar.
 # Se apuntan en «lore_visto» con su id («nota_…»): ninguna clave nueva en la partida.
-const CIUDADES := {0: "res://ciudades/oakhaven.gd"}   # índice en LUGARES de mapa.gd → módulo de la ciudad (NOTAS)
+# También los lugares con notas para encontrar (narrativa, 09/11): la Garganta (2) y Pastos Verdes (10, LUGAR_PASTOS).
+const CIUDADES := {0: "res://ciudades/oakhaven.gd", 2: "res://dialogos/notas/garganta.gd",
+	10: "res://dialogos/notas/pastos_verdes.gd"}   # índice del lugar (mapa.gd) → módulo con sus NOTAS
 
 
 static func notas_de(lugar: int) -> Array:
