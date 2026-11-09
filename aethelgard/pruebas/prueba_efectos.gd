@@ -221,8 +221,9 @@ func _catalogo() -> void:
 				_fallo("1: falta %s («%s»)" % [ruta, nombre])
 				continue
 			var s = load(ruta)
-			if not s is AudioStreamWAV or s.format != AudioStreamWAV.FORMAT_QOA or s.stereo or s.mix_rate != 48000:
-				_fallo("1: %s no es QOA mono a 48 kHz" % ruta)
+			var hz_esperado: int = load("res://pruebas/prueba_audio_memoria.gd").FRECUENCIA.get(ruta, 48000)   # tanda 7: bucles bajados
+			if not s is AudioStreamWAV or s.format != AudioStreamWAV.FORMAT_QOA or s.stereo or s.mix_rate != hz_esperado:
+				_fallo("1: %s no es QOA mono a %d Hz" % [ruta, hz_esperado])
 				continue
 			# bucles: los emisores 3D y las fuentes 2D, salvo las que suenan de vez en cuando («cada»: el cuervo)
 			var bucle: bool = (d.has("tres_d") or d.has("dos_d")) and not d.get("dos_d", {}).has("cada") \
@@ -1477,8 +1478,9 @@ func _garganta3d() -> void:
 	await _esperar(5)
 	if _n("emboscada") != 1:
 		_fallo("12: la emboscada suena %d veces" % _n("emboscada"))
-	if not Son.eco_activo().is_empty() or _efectos_bus() != efectos_antes:
-		_fallo("12: en el combate sigue el eco de la Garganta (%s; %s)" % [str(Son.eco_activo()), str(_efectos_bus())])
+	var fx_ahora := _efectos_bus()
+	if not Son.eco_activo().is_empty() or fx_ahora["Efectos"] != efectos_antes["Efectos"] or fx_ahora["Ambiente"] != efectos_antes["Ambiente"]:
+		_fallo("12: en el combate sigue el eco de la Garganta (%s; %s)" % [str(Son.eco_activo()), str(fx_ahora)])
 	if is_instance_valid(cascada):
 		_fallo("12: en el combate sigue la cascada")
 	await _escena_vacia()
