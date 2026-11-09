@@ -1,8 +1,10 @@
 extends SceneTree
-# Capturas del mapamundi (T-085) con ventana, con los MISMOS encuadres para el mapa actual y para la propuesta,
+# Capturas del mapamundi (T-085) con ventana, con los MISMOS encuadres para el mapa de siempre y para el pintado,
 # para compararlos. No cambia nada del juego: mueve a Kael y la cámara a mano y saca fotos.
 #   Godot --path aethelgard --script res://pruebas/prueba_mapamundi_fotos.gd --fixed-fps 30 -- <carpeta>
-#         [escena=res://mapa.tscn] sin_prologo
+#         [3d] [mapa_clasico] [agua_quieta] [escena=res://mapa.tscn] sin_prologo
+#   mapa.tscn es el mapa pintado; con «mapa_clasico», el de siempre (el «antes» de las comparaciones). Con «3d», la
+#   versión experimental (con Pastos Verdes, como en el móvil).
 # Escribe en <carpeta> (.png):
 #   1_juego_inicio          lo que se ve al abrir el mapa (Kael junto a Oakhaven, interfaz incluida), 1280×720
 #   2_mapa_entero_1a1       el mapa entero a escala 1:1 (2400×1350, cosido con 4 vistas; sin interfaz ni Kael)
@@ -14,33 +16,45 @@ extends SceneTree
 #   9_movil_20x9            ventana de 1600×720 (20:9, como un móvil HD+ alargado), con la cruceta táctil: con el
 #                           estirado «canvas_items» y el aspecto «keep» (project.godot) el juego ocupa 1280×720 en
 #                           el centro y quedan franjas negras de 160 px; la foto las reproduce.
+#   10_grupo_oakhaven       Oakhaven, el Portal, (Pastos Verdes) y el Gran Bosque ampliados ×1,6, con Kael donde
+#                           empieza: iconos y rótulos sin pisarse
+#   11_mapa_abajo_1a1       el borde de abajo del mapa a 1:1 (los últimos 120 px), sin interfaz ni Kael
 # y, si la escena lo tiene, terreno_original.png y zonas_original.png (las imágenes que genera mapa.gd).
 # Sin el contador de FPS de Recursos (es de depuración y la captura lo falsea). La etiqueta «Zona» se pone al día al
 # mover a Kael a mano (en el juego cambia al andar).
 #
-# Modo comparación (no abre el mapa):  ... -- <carpeta_salida> comparar=<carpeta_antes>,<carpeta_propuesta>
-#   escribe <n>.png y <n>.jpg con ANTES a la izquierda y PROPUESTA a la derecha (mismo encuadre), y mide lo «plano»
-#   del mapa entero a 1:1: % de bloques de 16×16 px cuya luminancia apenas varía (desviación < 2/255).
+# Modo comparación (no abre el mapa):  ... -- <carpeta_salida> comparar=<carpeta_antes>,<carpeta_despues>
+#       [prologo=<carpeta de prueba_prologo_fotos con etiqueta=antes y etiqueta=despues>]
+#   escribe <n>.png y <n>.jpg con ANTES a la izquierda y DESPUÉS a la derecha (mismo encuadre), mide lo «plano» del
+#   mapa entero a 1:1 (% de bloques de 16×16 px cuya luminancia apenas varía: desviación < 2/255) y monta la lámina
+#   lamina_antes_despues.jpg (inicio, costa, Oakhaven, Garganta y, si se da, el prólogo sobre el mapa).
 
 const NOMBRES := ["1_juego_inicio", "2_mapa_entero_1a1", "3_mapa_entero_pantalla", "4_costa_1x", "5_costa_3x",
-	"6_ciudad_oakhaven", "7_destino_garganta", "8_destino_cumbres", "9_movil_20x9"]
+	"6_ciudad_oakhaven", "7_destino_garganta", "8_destino_cumbres", "9_movil_20x9", "10_grupo_oakhaven",
+	"11_mapa_abajo_1a1"]
+const BANDERAS := ["sin_prologo", "3d", "mapa_clasico", "agua_quieta"]
+const LAMINA := [["1_juego_inicio", "Al abrir el mapa"], ["5_costa_3x", "Costa (×3)"],
+	["6_ciudad_oakhaven", "Oakhaven"], ["7_destino_garganta", "Garganta del Diablo"]]
 
-const ESCENA_ACTUAL := "res://mapa.tscn"
+const ESCENA_MAPA := "res://mapa.tscn"
 const COSTA := Vector2(830, 735)        # costa sur del Gran Bosque Verde (playa, mar poco hondo y mar hondo)
 
 var salida := ""
-var escena := ESCENA_ACTUAL
+var escena := ESCENA_MAPA
 var m                                   # la escena del mapa
 
 
 func _initialize() -> void:
 	var comparar := ""
+	var prologo := ""
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("escena="):
 			escena = a.substr(7)
 		elif a.begins_with("comparar="):
 			comparar = a.substr(9)
-		elif salida == "" and not "=" in a and a != "sin_prologo":
+		elif a.begins_with("prologo="):
+			prologo = a.substr(8)
+		elif salida == "" and not "=" in a and not a in BANDERAS:
 			salida = a
 	if salida == "":
 		print("FALLO: falta la carpeta de salida")
@@ -49,57 +63,128 @@ func _initialize() -> void:
 	DirAccess.make_dir_recursive_absolute(salida)
 	DisplayServer.window_set_size(Vector2i(1280, 720))
 	if comparar != "":
-		_comparar.call_deferred(comparar.split(",")[0], comparar.split(",")[1])
+		_comparar.call_deferred(comparar.split(",")[0], comparar.split(",")[1], prologo)
 	else:
 		_capturar.call_deferred()
 
 
-func _comparar(antes: String, propuesta: String) -> void:
+func _comparar(antes: String, despues: String, prologo: String) -> void:
 	await _esperar(3)
-	var titulo_f: Font = load("res://estilo.gd").normal()
 	for n in NOMBRES:
 		var a := Image.load_from_file("%s/%s.png" % [antes, n])
-		var b := Image.load_from_file("%s/%s.png" % [propuesta, n])
+		var b := Image.load_from_file("%s/%s.png" % [despues, n])
 		if a == null or b == null:
 			print("FALLO: falta ", n)
 			continue
-		var esc := 1.0 if a.get_width() <= 1600 else 0.5
-		var t := Vector2i(int(a.get_width() * esc), int(a.get_height() * esc))
-		var vp := SubViewport.new()
-		vp.size = Vector2i(t.x * 2 + 12, t.y + 46)
-		vp.disable_3d = true
-		vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
-		var fondo := ColorRect.new()
-		fondo.color = Color("0B0C26")
-		fondo.size = Vector2(vp.size)
-		vp.add_child(fondo)
+		var img: Image = await _pareja(a, b, 1.0 if a.get_width() <= 1600 else 0.5,
+			"ANTES · mapa de siempre (-- mapa_clasico)", "DESPUÉS · mapa pintado (mapa.tscn)")
+		img.save_png("%s/%s.png" % [salida, n])
+		img.save_jpg("%s/%s.jpg" % [salida, n], 0.88)
+		print("CAPTURA comparación ", n, " ", img.get_size())
+	for k in 2:
+		var img := Image.load_from_file("%s/2_mapa_entero_1a1.png" % (antes if k == 0 else despues))
+		if img != null:
+			print("MEDIDA %s: %s" % ["antes" if k == 0 else "después", _planitud(img)])
+	await _lamina(antes, despues, prologo)
+	quit(0)
+
+
+# Dos imágenes lado a lado, a la escala `esc`, con su título encima.
+func _pareja(a: Image, b: Image, esc: float, titulo_a: String, titulo_b: String) -> Image:
+	var titulo_f: Font = load("res://estilo.gd").normal()
+	var t := Vector2i(int(a.get_width() * esc), int(a.get_height() * esc))
+	var vp := SubViewport.new()
+	vp.size = Vector2i(t.x * 2 + 12, t.y + 46)
+	vp.disable_3d = true
+	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	var fondo := ColorRect.new()
+	fondo.color = Color("0B0C26")
+	fondo.size = Vector2(vp.size)
+	vp.add_child(fondo)
+	for k in 2:
+		var tr := TextureRect.new()
+		tr.texture = ImageTexture.create_from_image(a if k == 0 else b)
+		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tr.stretch_mode = TextureRect.STRETCH_SCALE
+		tr.position = Vector2(k * (t.x + 12), 46)
+		tr.size = Vector2(t)
+		vp.add_child(tr)
+		var l := Label.new()
+		l.text = titulo_a if k == 0 else titulo_b
+		l.add_theme_font_override("font", titulo_f)
+		l.add_theme_font_size_override("font_size", 24)
+		l.add_theme_color_override("font_color", Color("F2C86B") if k == 1 else Color("FFF6E3"))
+		l.position = Vector2(k * (t.x + 12) + 10, 6)
+		vp.add_child(l)
+	root.add_child(vp)
+	await RenderingServer.frame_post_draw
+	await RenderingServer.frame_post_draw
+	var img := vp.get_texture().get_image()
+	vp.queue_free()
+	return img
+
+
+# La lámina: una fila por encuadre (antes | después, a 640×360), con su nombre; al final, el prólogo sobre el mapa.
+func _lamina(antes: String, despues: String, prologo: String) -> void:
+	var filas: Array = []
+	for f in LAMINA:
+		filas.append(["%s/%s.png" % [antes, f[0]], "%s/%s.png" % [despues, f[0]], f[1]])
+	if prologo != "":
+		filas.append(["%s/antes_entrada_23.png" % prologo, "%s/despues_entrada_23.png" % prologo, "Prólogo: la entrada"])
+		filas.append(["%s/antes_frase_01.png" % prologo, "%s/despues_frase_01.png" % prologo, "Prólogo: primera frase"])
+	var celda := Vector2i(640, 360)
+	var ancho := celda.x * 2 + 36
+	var alto := 70 + filas.size() * (celda.y + 40)
+	var vp := SubViewport.new()
+	vp.size = Vector2i(ancho, alto)
+	vp.disable_3d = true
+	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	var fondo := ColorRect.new()
+	fondo.color = Color("0B0C26")
+	fondo.size = Vector2(vp.size)
+	vp.add_child(fondo)
+	var f_titulo: Font = load("res://estilo.gd").normal()
+	var cab := Label.new()
+	cab.text = "MAPAMUNDI (T-085) · ANTES: mapa de siempre (-- mapa_clasico) · DESPUÉS: mapa pintado (mapa.tscn)"
+	cab.add_theme_font_override("font", f_titulo)
+	cab.add_theme_font_size_override("font_size", 24)
+	cab.add_theme_color_override("font_color", Color("F2C86B"))
+	cab.position = Vector2(12, 18)
+	vp.add_child(cab)
+	var y := 70
+	var hechas := 0
+	for f in filas:
+		var a := Image.load_from_file(f[0])
+		var b := Image.load_from_file(f[1])
+		if a == null or b == null:
+			print("AVISO lámina: falta %s o %s" % [f[0], f[1]])
+			continue
+		var l := Label.new()
+		l.text = f[2]
+		l.add_theme_font_override("font", f_titulo)
+		l.add_theme_font_size_override("font_size", 20)
+		l.add_theme_color_override("font_color", Color("FFF6E3"))
+		l.position = Vector2(12, y + 4)
+		vp.add_child(l)
 		for k in 2:
 			var tr := TextureRect.new()
 			tr.texture = ImageTexture.create_from_image(a if k == 0 else b)
 			tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-			tr.stretch_mode = TextureRect.STRETCH_SCALE
-			tr.position = Vector2(k * (t.x + 12), 46)
-			tr.size = Vector2(t)
+			tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			tr.position = Vector2(12 + k * (celda.x + 12), y + 34)
+			tr.size = Vector2(celda)
 			vp.add_child(tr)
-			var l := Label.new()
-			l.text = "ANTES · mapa actual (mapa.tscn)" if k == 0 else "PROPUESTA · prototipo pintado (mapa_arte/prototipo_mapa.tscn)"
-			l.add_theme_font_override("font", titulo_f)
-			l.add_theme_font_size_override("font_size", 24)
-			l.add_theme_color_override("font_color", Color("F2C86B") if k == 1 else Color("FFF6E3"))
-			l.position = Vector2(k * (t.x + 12) + 10, 6)
-			vp.add_child(l)
-		root.add_child(vp)
-		await RenderingServer.frame_post_draw
-		await RenderingServer.frame_post_draw
-		var img := vp.get_texture().get_image()
-		img.save_png("%s/%s.png" % [salida, n])
-		img.save_jpg("%s/%s.jpg" % [salida, n], 0.88)
-		vp.queue_free()
-		print("CAPTURA comparación ", n, " ", img.get_size())
-	for k in 2:
-		var img := Image.load_from_file("%s/2_mapa_entero_1a1.png" % (antes if k == 0 else propuesta))
-		print("MEDIDA %s: %s" % ["antes" if k == 0 else "propuesta", _planitud(img)])
-	quit(0)
+		y += celda.y + 40
+		hechas += 1
+	vp.size = Vector2i(ancho, y + 10)
+	fondo.size = Vector2(vp.size)
+	root.add_child(vp)
+	await RenderingServer.frame_post_draw
+	await RenderingServer.frame_post_draw
+	var img := vp.get_texture().get_image()
+	vp.queue_free()
+	img.save_jpg(salida + "/lamina_antes_despues.jpg", 0.86)
+	print("CAPTURA lámina antes/después: %d filas, %s" % [hechas, img.get_size()])
 
 
 # Lo «plano»: % de bloques de 16×16 cuya luminancia apenas varía (desviación típica < 2/255) y desviación media.
@@ -167,10 +252,11 @@ func _solo_mapa(si: bool) -> void:
 
 
 # Coloca a Kael (y con él la cámara, que es su hija) y espera a que la cámara llegue.
-func _ir(pos: Vector2, zoom := 1.0) -> void:
+func _ir(pos: Vector2, zoom := 1.0, desvio := Vector2.ZERO) -> void:
 	m.jugador.position = pos
 	m.tiene_destino = false
 	m.camara.zoom = Vector2(zoom, zoom)
+	m.camara.offset = desvio
 	m.camara.reset_smoothing()
 	await _esperar(2)
 	m.camara.reset_smoothing()
@@ -203,13 +289,16 @@ func _capturar() -> void:
 		return
 	m = current_scene
 	await _esperar(20)
+	print("MAPA: %s · pintado %s · agua animada %s · lugares %d" % [escena, m.arte_activo() if m.has_method("arte_activo") else false,
+		m.get("agua_viva") == true, m.lugares.size()])
 	if m.get("terreno_tex") != null:
 		m.terreno_tex.get_image().save_png(salida + "/terreno_original.png")
 	if m.get("zonas_img") != null:
 		m.zonas_img.save_png(salida + "/zonas_original.png")
+	var inicio: Vector2 = m.LUGARES[0]["pos"] + Vector2(0, 55)
 
 	# 1. lo que se ve al abrir el mapa (posición inicial: 55 px bajo Oakhaven)
-	await _ir(m.LUGARES[0]["pos"] + Vector2(0, 55))
+	await _ir(inicio)
 	_interfaz(true)
 	await _foto("1_juego_inicio")
 
@@ -225,6 +314,9 @@ func _capturar() -> void:
 		entero.blit_rect(img, Rect2i(0, 0, 1280, 720), origen)
 	entero.save_png(salida + "/2_mapa_entero_1a1.png")
 	print("CAPTURA 2_mapa_entero_1a1 %dx%d" % [entero.get_width(), entero.get_height()])
+	# 11. el borde de abajo, a 1:1 (de la misma imagen cosida)
+	entero.get_region(Rect2i(0, int(tam.y) - 120, int(tam.x), 120)).save_png(salida + "/11_mapa_abajo_1a1.png")
+	print("CAPTURA 11_mapa_abajo_1a1 %dx120" % int(tam.x))
 
 	# 3. el mapa entero reducido a la pantalla
 	await _ir(tam * 0.5, 1280.0 / tam.x)
@@ -248,13 +340,19 @@ func _capturar() -> void:
 	_interfaz(true)
 	await _foto("8_destino_cumbres")
 
+	# 10. el grupo de Oakhaven ampliado, con Kael donde empieza y sin interfaz
+	await _ir(inicio, 1.6, Vector2(110, 15))
+	_interfaz(false)
+	await _foto("10_grupo_oakhaven")
+	_interfaz(true)
+
 	# 9. móvil alargado 20:9 (1600×720): con stretch «canvas_items» y aspecto «keep», franjas a los lados
 	var dpad = load("res://dpad.gd").new()             # la cruceta, como en el móvil (mapa.gd, _crear_ui)
 	dpad.position = Vector2(30, 440)
 	m.ui.add_child(dpad)
 	DisplayServer.window_set_size(Vector2i(1600, 720))
 	await _esperar(10)
-	await _ir(m.LUGARES[0]["pos"] + Vector2(0, 55), 1.0)
+	await _ir(inicio, 1.0)
 	_interfaz(true)
 	var img: Image = await _imagen()                     # la vista del juego (1280×720) ...
 	img.convert(Image.FORMAT_RGBA8)
