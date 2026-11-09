@@ -321,6 +321,7 @@ var res_efectos := 1.0                   # resolución de las ventanas 3D de las
 var res_personajes := 0.75               # resolución de las ventanas 3D de Kael y Lya
 var max_efectos_3d := 8                  # efectos 3D a la vez como mucho
 var efectos_3d_activos := 0
+var ultimo_esquivado := false            # el último golpe físico lo esquivó un héroe (Pluma de arpía, T-092)
 
 
 func _ready() -> void:
@@ -377,6 +378,8 @@ func _ready() -> void:
 			h["magia_extra"] = e["magia_extra"]
 			h["mult_fisico"] = e["mult_fisico"]
 			h["mult_magia"] = e["mult_magia"]
+			h["efectos"] = Extra.efectos_de(h["nombre"])           # accesorios (T-092); el equipo de hoy no da nada
+			h["atb"] = Extra.atb_inicial(h["efectos"], ATB_MAX)     # Farol de peregrino; sin él, 0 como siempre
 	_elegir_enemigos()
 	_crear_texturas()
 	_crear_interfaz()
@@ -1272,7 +1275,7 @@ func _turno_enemigo(f: Dictionary) -> void:
 		await _animar_golpe(f, presa, mordisco, "")
 		f["devora"] = false
 		var cura: int = mini(int(mordisco * 0.6), f["hp_max"] - f["hp"])
-		if cura > 0 and f["hp"] > 0:
+		if cura > 0 and f["hp"] > 0 and not ultimo_esquivado:   # si la presa lo esquiva (pluma), no se cura
 			f["hp"] += cura
 			_numero_flotante(f, "+%d" % cura, C_CURA)
 			_actualizar()
@@ -2174,6 +2177,9 @@ func _escapar() -> void:
 func _terminar_turno(carga := true) -> void:
 	estado = "accion"
 	actor["atb"] = 0.0
+	var pm_extra: int = Extra.pm_al_terminar(actor)            # Gota de la cascada alta (sin ella, 0)
+	if pm_extra > 0:
+		_numero_flotante(actor, "+%d PM" % pm_extra, Color(0.55, 1.0, 0.85), 30)
 	if actor.get("embuir_turnos", 0) > 0:         # Embuir dura 3 turnos de Garon (sin contar el que lo pone)
 		if actor.get("embuir_nuevo", false):
 			actor["embuir_nuevo"] = false
@@ -2602,7 +2608,7 @@ func _espera_invocacion(seg: float) -> void:
 # ================================================================= animaciones
 
 func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: String) -> void:
-	var critico: bool = magia == "" and randf() < PROB_CRITICO
+	var critico: bool = magia == "" and randf() < Extra.prob_critico(PROB_CRITICO, origen.get("efectos", {}))   # Diente: la misma tirada
 	if critico:
 		dano = int(dano * MULT_CRITICO)
 	if magia == "" and objetivo["hero"]:              # la defensa del héroe resta daño a los golpes
@@ -2610,10 +2616,17 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 	if objetivo.get("defendiendo", false):
 		dano = max(1, int(dano * 0.5))
 	var congela: bool = magia == "" and origen["hero"] and _lleva_frostfang(origen) and randf() < PROB_CONGELAR
+	# Pluma de arpía: un héroe esquiva un golpe físico (solo tira el dado con la pluma puesta: sin ella, nada cambia)
+	var esquiva: bool = magia == "" and objetivo["hero"] and Extra.esquiva(objetivo.get("efectos", {}))
+	ultimo_esquivado = esquiva
 	var embuido: bool = magia == "" and origen.get("embuir", "") != ""    # Garon con Embuir: +20 % y su elemento
 	if embuido:
 		dano = int(dano * (1.0 + EMBUIR["extra"]))
 	var impacto: Callable = func():
+		if esquiva:                                    # el golpe no llega: ni daño, ni golpe, ni voz de dolor
+			_sonar("esquiva")
+			_numero_flotante(objetivo, "¡Esquiva!", Color(0.85, 0.95, 1.0), 34)
+			return
 		if magia == "":                                # golpe físico resuelto: su sonido, una vez (sonido.gd, T-083)
 			Sonido.golpe(critico, objetivo.get("defendiendo", false))
 			if origen.get("devora", false):
@@ -3900,6 +3913,7 @@ func _repartir_exp(ganan: bool) -> void:
 	await get_tree().create_timer(1.0).timeout
 	var mult: float = load("res://progreso.gd").mult_exp(Engine.get_meta("zona", "llanura"),
 		Engine.get_meta("tipo_combate", "normal"), load("res://progreso.gd").nivel_grupo())
+	oro = Extra.oro_con_extra(oro, heroes.map(func(h): return h.get("efectos", {})))   # Moneda del Águila, una vez
 	registro.text = "+%d EXP   +%d monedas" % [int(round(total * mult)), oro]
 	if oro > 0:
 		Sonido.efecto("monedas")                   # sonido.gd

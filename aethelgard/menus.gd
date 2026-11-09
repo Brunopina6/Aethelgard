@@ -38,7 +38,7 @@ func _ready() -> void:
 	add_child(oscuro)
 	var panel := PanelContainer.new()
 	panel.position = Vector2(90, 40)
-	panel.custom_minimum_size = Vector2(1100, 600)
+	panel.custom_minimum_size = Vector2(1100, 640)    # 40 px de margen arriba y abajo (antes, 600: 72 abajo)
 	panel.add_theme_stylebox_override("panel", Estilo.ventana(0.88))
 	add_child(panel)
 	var todo := VBoxContainer.new()
@@ -61,7 +61,7 @@ func _ready() -> void:
 	cerrar.pressed.connect(_cerrar)
 	arriba.add_child(cerrar)
 	marco = ScrollContainer.new()
-	marco.custom_minimum_size = Vector2(1080, 520)
+	marco.custom_minimum_size = Vector2(1080, 560)    # con la ranura Accesorio (T-092), su efecto se ve sin desplazar
 	marco.follow_focus = true                      # con teclado o mando, la lista sigue al botón con el foco
 	todo.add_child(marco)
 	cuerpo = VBoxContainer.new()
@@ -199,9 +199,16 @@ func _pintar_grupo() -> void:
 
 	# derecha: equipo
 	var der := VBoxContainer.new()
-	der.add_theme_constant_override("separation", 6)
-	columnas.add_child(der)
-	der.add_child(_texto("Equipo", 26, COLOR_TITULO))
+	der.add_theme_constant_override("separation", 3)   # 3 y no 6: con la octava ranura (Accesorio, T-092) y el equipo de
+	columnas.add_child(der)                             # siempre, se ve entera sin desplazar la lista
+	var titulo := HBoxContainer.new()                 # «Equipo» y, a su lado, qué armas lleva (antes iba debajo de todo y,
+	titulo.add_theme_constant_override("separation", 18)   # con la octava ranura, se salía de la lista)
+	titulo.add_child(_texto("Equipo", 26, COLOR_TITULO))
+	var tipo: String = Grupo.tipo_arma(heroe)
+	var pista := _texto("Arma: solo %s." % ("espadas" if tipo == "espada" else "cetros"), 16, COLOR_SUAVE)
+	pista.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	titulo.add_child(pista)
+	der.add_child(titulo)
 	var lleva: Dictionary = Inv.equipo_de(heroe)
 	for r in Inv.RANURAS:
 		var f := HBoxContainer.new()
@@ -214,7 +221,7 @@ func _pintar_grupo() -> void:
 		atras.pressed.connect(func(): _cambiar(ranura, -1))
 		f.add_child(atras)
 		var id: String = lleva.get(r, "")
-		var nombre := _texto(Inv.objeto(id)["nombre"] if id != "" else "—", 20, COLOR_TEXTO)
+		var nombre := _texto(Inv.objeto(id).get("nombre", "—") if id != "" else "—", 20, COLOR_TEXTO)   # un id desconocido: «—»
 		nombre.custom_minimum_size = Vector2(220, 0)
 		f.add_child(nombre)
 		var adelante := _boton("▶", 18, Vector2(36, 34), "ranura:%s:1" % r)
@@ -223,8 +230,6 @@ func _pintar_grupo() -> void:
 		der.add_child(f)
 		if id != "" and Inv.resumen(id) != "":
 			der.add_child(_texto("      " + Inv.resumen(id), 16, COLOR_BIEN))
-	var tipo: String = Grupo.tipo_arma(heroe)
-	der.add_child(_texto("Arma: solo %s." % ("espadas" if tipo == "espada" else "cetros"), 16, COLOR_SUAVE))
 
 
 # Pasa al objeto anterior o siguiente que puede llevar en esa ranura (o a ninguno).
@@ -287,7 +292,7 @@ func _pintar_objetos() -> void:
 	for r in Inv.RANURAS:
 		for id in Inv.datos()["equipables"]:
 			var o: Dictionary = Inv.objeto(id)
-			if o["ranura"] != r:
+			if o.get("ranura", "") != r:               # (un id desconocido, de una versión más nueva, no sale)
 				continue
 			var f := HBoxContainer.new()
 			f.add_theme_constant_override("separation", 14)
@@ -302,7 +307,8 @@ func _pintar_objetos() -> void:
 			f.add_child(res)
 			var quien: String = Inv.quien_lleva(id)
 			var para := {"todos": "Todos", "espada": "Espadachines", "cetro": "Magos"}
-			f.add_child(_texto(("Lo lleva %s" % quien) if quien != "" else para[o["para"]], 18, COLOR_SUAVE))
+			var de_quien: String = ("Solo " + o["solo"]) if o.has("solo") else para.get(o["para"], "")   # armas especiales
+			f.add_child(_texto(("Lo lleva %s" % quien) if quien != "" else de_quien, 18, COLOR_SUAVE))
 			cuerpo.add_child(f)
 
 

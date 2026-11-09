@@ -151,14 +151,15 @@ func _pintar() -> void:
 					desc = "Sin encuentros durante %d pasos" % load("res://progreso.gd").PASOS_INCIENSO
 				_fila(o, desc, "Tienes %d" % Inv.cantidad(o), OBJETOS[o], func(): _comprar_objeto(o))
 		"Equipo":
-			for id in EQUIPO:
+			var precios := _precios_equipo()
+			for id in precios:
 				var ob: Dictionary = Inv.objeto(id)
 				if ob.is_empty():
 					continue
 				var tiene: bool = id in Inv.datos()["equipables"]
 				var para := {"todos": "Todos", "espada": "Espadachines", "cetro": "Magos"}
-				_fila(ob["nombre"], Inv.resumen(id), "Ya lo tienes" if tiene else para[ob["para"]],
-					EQUIPO[id], func(): _comprar_equipo(id), tiene)
+				_fila(ob["nombre"], Inv.resumen(id), "Ya lo tienes" if tiene else para.get(ob["para"], ""),
+					precios[id], func(): _comprar_equipo(id), tiene)
 		"Magias":
 			var romano := ["", "I", "II", "III"]
 			for l in LIBROS + Artes.libros_en_venta():    # las de siempre y, detrás, las artes ya en el juego
@@ -210,8 +211,16 @@ func _comprar_objeto(o: String) -> void:
 	_pintar()
 
 
+# Equipo de esta tienda: primero lo propio del lugar (índice de mapa.gd: los accesorios de equipo_extra.gd que ya están
+# en el juego, T-092: el Farol en Oakhaven y la Moneda del Águila en Sunken City) y después la lista común.
+func _precios_equipo() -> Dictionary:
+	var r: Dictionary = load("res://equipo_extra.gd").en_tienda(int(Engine.get_meta("lugar", {}).get("indice", -1)))
+	r.merge(EQUIPO)
+	return r
+
+
 func _comprar_equipo(id: String) -> void:
-	if Inv.gastar_oro(EQUIPO[id]):
+	if Inv.gastar_oro(_precios_equipo()[id]):
 		Inv.agregar(id)
 		Sonido.efecto("monedas")
 		_avisar("Has comprado %s. Equípalo en el menú Grupo." % Inv.objeto(id)["nombre"])
