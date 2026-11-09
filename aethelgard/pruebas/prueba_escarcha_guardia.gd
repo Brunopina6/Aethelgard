@@ -270,7 +270,7 @@ func _guardia() -> void:
 	await _esperar(3)
 	_ok(kael.get("guardia_de", "") == "Garon" and garon.get("defendiendo", false) and garon["mp"] == pm0 - 4,
 		"B: la Guardia no cubre a Kael, no pone a Garon en guardia o no gasta 4 PM")
-	_ok(_pedidos("defensa", desde).size() == 1 and not _senas("guardia").is_empty(), "B: la Guardia no suena una vez o no tiene seña")
+	_ok(_pedidos("guardia", desde).size() == 1 and _pedidos("defensa", desde).is_empty() and not _senas("guardia").is_empty(), "B: la Guardia no suena una vez («guardia») o no tiene seña")
 	_ok("guardia" in A.estados_de(kael), "B: el HUD no enseña el escudo junto a Kael")
 	await _hasta(_libre, 400)
 	# la embestida va a Garon, a la mitad; Kael no pierde nada
