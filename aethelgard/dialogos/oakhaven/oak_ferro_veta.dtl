@@ -1,0 +1,8 @@
+ferro: ¿Lo traes? A ver… Escucha. Canta. Treinta años sin oír uno así.
+ferro: Tú lo arrancaste de la piedra, tú decides. ¿Para la ciudad o para tu espada?
+- Que lo forje para la ciudad
+	[signal arg="oak:hierro_entregar"]
+	ferro: Rejas nuevas para la muralla. Toma tu paga. Y si sobra, te lo vendo.
+- Me lo quedo para mi espada
+	[signal arg="oak:hierro_kael"]
+	ferro: Bien dicho. Ven, te enseño a templarlo. Esto no se lo enseño a cualquiera.

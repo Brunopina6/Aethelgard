@@ -1,0 +1,9 @@
+join lya (vivo) right
+mirta: ¡Mis páginas! Aunque… están desordenadas. Y sin el principio no hay manera.
+update lya [extra_data="duda"]
+lya: Esta va primero: la hierba lunar se macera antes que la savia. Lo pone en el margen.
+mirta: ¡Claro! Por eso se me cortaba. Niña, tú has leído más libros que yo.
+update lya [extra_data="decidida"]
+lya: Pocos, pero enteros. Dos de hierba lunar y una de savia clara. Ya está.
+[signal arg="oak:formula_fin"]
+leave lya

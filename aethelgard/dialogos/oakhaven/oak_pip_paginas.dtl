@@ -1,0 +1,6 @@
+join pip (normal) center
+pip: ¿Papeles? Sí, vi volar unos cuantos. El viento de la tarde se los llevó.
+pip: Iban por encima de los tejados. Mira en los rincones: el viento siempre deja cosas ahí.
+pip: Esta te la regalo. Pero que nadie se entere de que soy bueno.
+[signal arg="oak:formula_pip"]
+leave pip
