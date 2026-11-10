@@ -60,7 +60,8 @@ const GUARDADO_EXP := "user://partida_exp.save"
 const CLAVES := ["grupo", "inventario", "cofres_abiertos", "prologo_visto", "lugar", "pos_mapa", "pos_mapa_ok",
 	"pos_zona", "pos_zona_ok", "pos_zona_lugar", "lore_visto", "incienso", "escena_guardada",
 	"mazmorras", "combates_ganados", "decisiones", "pos_isla", "pos_isla_ok",
-	"hitos", "pos_3d", "pos_3d_ok", "pos_3d_lugar", "grupo_activo"]
+	"hitos", "pos_3d", "pos_3d_ok", "pos_3d_lugar", "grupo_activo",
+	"investigaciones"]   # investigaciones: investigacion.gd (fase 2); las partidas antiguas no la traen
 const MAPA := "res://mapa.tscn"
 
 
