@@ -44,7 +44,13 @@
     código (como el sensor de huellas) ya no cambian el modo.
   - Prueba nueva: `prueba_teclas_sistema`.
   - APK v420 compilada y copiada a Descargas: `Aethelgard_Auditoria_2026-11-10_v420.apk`, SHA-256 `0f72c3ad…`.
-  - **Comprobación en el teléfono:** ver abajo.
+  - **Comprobado en el teléfono con la v420** (14:57):
+    - el usuario la instaló desde Descargas; las otras tres apps siguieron intactas;
+    - bajar y subir el volumen en la pantalla de inicio y dentro de Pastos Verdes 3D ya no cambia el modo: en el
+      registro solo queda la línea informativa del sensor «gf-keys»;
+    - arranque: 20,9 s (carga 13,7 s);
+    - Pastos Verdes 3D: 30,0 / 30,1 FPS, p95 33,6-33,7 ms, ningún fotograma de más de 50 ms;
+    - ni errores ni cierres.
 
 ## Pendiente
 
