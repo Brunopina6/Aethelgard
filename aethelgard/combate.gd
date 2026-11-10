@@ -15,6 +15,7 @@ const PROB_CONGELAR := 1.0
 const RONDAS_CONGELACION := 2
 const VITALIDAD_CONGELACION := 2
 const ATB_MAX := 100.0
+const Formulas := preload("res://combate_formulas.gd")   # fórmulas de daño (10/11)
 const ESC := 0.8
 const CANVAS := Vector2(320, 480)
 const DANO_QUEMADURA := 5
@@ -1996,11 +1997,9 @@ func _menu_embuir() -> void:
 
 
 # Daño físico de un golpe de Garon (con Embuir, +20 %).
+# Las fórmulas están en combate_formulas.gd (10/11): aquí se conservan las funciones de siempre.
 func _dano_fisico(quien: Dictionary, mult := 1.0) -> int:
-	var d: float = quien["atk"] * quien.get("mult_fisico", 1.0) * mult
-	if quien.get("embuir", "") != "":
-		d *= 1.0 + EMBUIR["extra"]
-	return maxi(1, int(d) + randi_range(-2, 3))
+	return Formulas.dano_fisico(quien, mult, EMBUIR["extra"])
 
 
 func _embuir(el: String) -> void:
@@ -2465,8 +2464,7 @@ func _gastar_pm(quien: Dictionary, coste: int) -> void:
 
 
 func _dano_magia(quien: Dictionary, d: Dictionary) -> int:
-	var base: float = d["dano"] * quien.get("magia_mult", 1.0) + quien.get("magia_extra", 0)
-	return maxi(1, int(base * quien.get("mult_magia", 1.0))) + randi_range(-3, 3)
+	return Formulas.dano_magia(quien, d)
 
 
 func _aplicar_todos() -> void:
