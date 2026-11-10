@@ -17,6 +17,7 @@ const VITALIDAD_CONGELACION := 2
 const ATB_MAX := 100.0
 const Formulas := preload("res://combate_formulas.gd")   # fórmulas de daño (10/11)
 const Recompensas := preload("res://combate_recompensas.gd")   # experiencia y monedas al terminar (10/11, fase 2)
+const Escalado := preload("res://combate_escalado.gd")   # nivel del encuentro por región y jefes (V9, hito 7)
 const ESC := 0.8
 const CANVAS := Vector2(320, 480)
 const DANO_QUEMADURA := 5
@@ -465,8 +466,12 @@ func _elegir_enemigos() -> void:
 	for g in grupo:
 		cuantos[g[0]] = cuantos.get(g[0], 0) + 1
 	var vistos := {}
+	# Nivel del encuentro (V9, combate_escalado.gd): se fija aquí, al empezar, con el nivel del grupo de ahora.
+	var zona_enc: String = Engine.get_meta("zona", "llanura")
+	var nivel_grupo_enc: int = load("res://progreso.gd").nivel_grupo()
 	for g in grupo:
 		var e: Dictionary = ENEMIGOS[g[0]].duplicate(true)
+		Escalado.aplicar(e, zona_enc, nivel_grupo_enc, combate_fijo)   # en la base de la región, igual que ENEMIGOS
 		e["hero"] = false
 		e["clave"] = g[0]                              # qué enemigo es: su voz (sonido.gd, T-083)
 		var mod: Dictionary = MODELOS[e["modelo"]]
