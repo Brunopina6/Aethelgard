@@ -297,6 +297,7 @@ const ANIM := {
 	"gorthor": {"distancia": 170.0},
 	"garon3d": {"distancia": 130.0},
 	"guardian": {"distancia": 150.0},
+	"guardian_bosque2d": {"distancia": 170.0},     # fase 3: el Guardián del Bosque (respaldo 2D)
 }
 
 var heroes: Array = [
@@ -4707,7 +4708,9 @@ const RECOMPENSA_FIJO := {"garganta_gorthor": "fauces_gorthor", "garganta_nido":
 func _premio_bosque() -> String:
 	if Bosque.desenlace() == "":
 		Bosque.apuntar("derrotado")
-	load("res://progreso.gd").poner_hito("bq_resuelto")
+	var P = load("res://progreso.gd")
+	P.poner_hito("bq_resuelto")
+	P.poner_hito("bq_" + Bosque.desenlace())        # bq_purificado o bq_derrotado: Oakhaven reacciona (ciudades/oakhaven.gd)
 	var Inv = load("res://inventario.gd")
 	var textos: Array = []
 	if Bosque.desenlace() == "purificado":
