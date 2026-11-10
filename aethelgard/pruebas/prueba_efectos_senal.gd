@@ -788,26 +788,23 @@ func _tanda6() -> void:
 		[4.6, "zarzalin_pezuna"], [4.87, "zarzalin_pezuna"], [5.9, "zarzalin_embestida"], [5.9, "golpe"], [5.9, "garon_herido"],
 		[6.6, "garon_jadeo"], [7.8, "ui_tic"], [8.2, "pocion"], [8.4, "garon_alivio"], [9.4, "garon_esfuerzo"], [9.8, "golpe_critico"],
 		[9.8, "zarzalin_caida"], [10.8, "victoria"], [11.6, "lya_victoria"], [12.8, "monedas"]]
+	# antes de la tanda 7 (sin apartar la música y sin limitador), lo de ahora (la música se aparta en combate y el
+	# limitador del Master: sonido.gd, APARTAR y LIMITE) y la alternativa B (la música 4 dB más baja, sin apartarla)
+	Son.limitador(false)
+	await _mezcla_por_buses("buses_combate_antes", combate, 15.0,
+		"Combate como antes de la tanda 7: música a −6 dB, sin apartarla y sin limitador")
+	Son.limitador(true)
+	Mus.pedir("combate")                                  # en combate, sonido.gd aparta la música él solo
+	await _real(0.3)
+	if not Son.musica_apartada():
+		fallos.append("en el contexto «combate» la música no se aparta (sonido.gd, APARTAR_MUSICA_EN_COMBATE)")
 	await _mezcla_por_buses("buses_combate", combate, 15.0,
-		"Combate con su música (−6 dB, como hoy): interfaz, golpes, voces de héroes y enemigos, una bestia, poción y victoria")
-	# propuestas, para comparar con lo mismo: (B) la música 4 dB más baja; (C) como hoy, pero la música se aparta un poco
-	# cuando suenan los efectos (un compresor en el bus Musica que escucha al bus Efectos)
+		"Combate de ahora: la música (−6 dB) se aparta cuando suenan efectos y el limitador del Master (tanda 7)")
+	Mus.pedir("silencio")
+	await _real(0.3)
 	musica.volume_db = -10.0
-	await _mezcla_por_buses("buses_combate_musica_10", combate, 15.0, "El mismo combate con la música a −10 dB (propuesta B)")
+	await _mezcla_por_buses("buses_combate_musica_10", combate, 15.0, "Alternativa B: la música a −10 dB, sin apartarla (con el limitador)")
 	musica.volume_db = -6.0
-	var im := AudioServer.get_bus_index("Musica")
-	var duck := AudioEffectCompressor.new()
-	duck.threshold = -32.0
-	duck.ratio = 4.0
-	duck.attack_us = 8000.0
-	duck.release_ms = 300.0
-	duck.sidechain = &"Efectos"
-	AudioServer.add_bus_effect(im, duck, 0)
-	await _mezcla_por_buses("buses_combate_apartar", combate, 15.0,
-		"El mismo combate con la música a −6 dB que se aparta cuando suenan los efectos (propuesta C: compresor con sidechain)")
-	for k in range(AudioServer.get_bus_effect_count(im) - 1, -1, -1):
-		if AudioServer.get_bus_effect(im, k) == duck:
-			AudioServer.remove_bus_effect(im, k)
 	musica.stop()
 	musica.queue_free()
 	await _real(0.5)

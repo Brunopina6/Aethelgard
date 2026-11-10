@@ -74,6 +74,17 @@ const EF := "res://audio/efectos/"
 const VOCES := {"Efectos": 10, "Interfaz": 4, "Ambiente": 4}
 const ATENUAR_DB := 8.0                                    # lo que bajan las prioridades 0-2 mientras suena una 4
 const FUNDIDO_CORTE := 0.1                                 # s: al cambiar de escena o cortar
+# Mezcla (tanda 7; decisión del coordinador, reversible: el usuario aún no lo ha escuchado). Medido el 09/11 con la mezcla
+# por buses (prueba_efectos_senal, «mezclas=6»): en combate la música quedaba 9 dB por encima de los golpes y las voces, y
+# el Master llegaba a −0,3 dBFS. Para volver atrás, poner la constante a false.
+# - APARTAR_MUSICA_EN_COMBATE: en combate (contexto «combate» de Musica), la música baja sola cuando suenan efectos: un
+#   compresor al final del bus Musica que escucha al bus Efectos. Conservador para que no «bombee»: ratio bajo, ataque y
+#   suelta lentos. Alternativa B (documentada en el inventario): la música del combate de −6 a −10 dB en combate.gd.
+# - LIMITADOR_MASTER: un limitador suave al final del Master, contra la saturación medida (solo actúa en los picos).
+const APARTAR_MUSICA_EN_COMBATE := true
+const APARTAR := {"umbral": -30.0, "ratio": 2.0, "ataque_ms": 30.0, "suelta_ms": 800.0}
+const LIMITADOR_MASTER := true
+const LIMITE := {"techo_db": -1.0, "suelta_s": 0.15}
 const MAX_GRUPO := {"voz": 2, "quieto": 1, "voz_heroe": 1}               # cuántos de un mismo grupo suenan a la vez como mucho
 # Los héroes quietos en la exploración 3D (tanda 4; Pasos3D): tras «primero» s parados (al azar entre los dos), un gesto
 # discreto de su personaje; mientras sigan parados, otro cada «entre» s. Andar lo reinicia. Kael es el que escucha (o el
@@ -406,6 +417,8 @@ var _det_ctx := ""
 var _momento := ""                                         # la hora de la escena que la ha fijado (tanda 6)
 var _momento_escena: Node = null
 var _campana_t := -1.0                                     # s hasta la próxima campana de la hora
+var _apartar: AudioEffectCompressor = null                 # tanda 7: la música que se aparta (solo en combate)
+var _limitador: AudioEffectHardLimiter = null              # tanda 7: el limitador del Master
 var _det_t := 0.0
 var _rng := RandomNumberGenerator.new()
 var pausado := false
@@ -427,6 +440,7 @@ func _ready() -> void:
 			p.process_mode = Node.PROCESS_MODE_ALWAYS if bus == "Interfaz" else Node.PROCESS_MODE_PAUSABLE
 			add_child(p)
 			_voces[bus].append(p)
+	limitador(LIMITADOR_MASTER)
 
 
 # Lee los volúmenes guardados (sin archivo, o con un valor que no es un número, 100 %) y los aplica a los buses.
@@ -961,6 +975,53 @@ func _process(delta: float) -> void:
 		_escena = e
 		_al_cambiar_escena()
 	_detalles(delta)
+	var m = get_node_or_null("/root/Musica")
+	apartar_musica(APARTAR_MUSICA_EN_COMBATE and m != null and m.contexto == "combate")
+
+
+# Tanda 7: en combate, la música se aparta cuando suenan efectos (APARTAR): un compresor al final del bus Musica que
+# escucha al bus Efectos. Pedirlo dos veces no pone dos; con false se quita.
+func apartar_musica(si: bool) -> void:
+	var i := AudioServer.get_bus_index("Musica")
+	if i < 0 or si == (_apartar != null):
+		return
+	if si:
+		_apartar = AudioEffectCompressor.new()
+		_apartar.threshold = float(APARTAR["umbral"])
+		_apartar.ratio = float(APARTAR["ratio"])
+		_apartar.attack_us = float(APARTAR["ataque_ms"]) * 1000.0
+		_apartar.release_ms = float(APARTAR["suelta_ms"])
+		_apartar.sidechain = &"Efectos"
+		_apartar.resource_name = "Apartar_musica"
+		AudioServer.add_bus_effect(i, _apartar)
+	else:
+		_quitar_efecto_bus(i, _apartar)
+		_apartar = null
+
+
+func musica_apartada() -> bool:
+	return _apartar != null
+
+
+# Tanda 7: el limitador suave del Master (LIMITE): solo toca los picos que pasarían de «techo_db».
+func limitador(si: bool) -> void:
+	if si == (_limitador != null):
+		return
+	if si:
+		_limitador = AudioEffectHardLimiter.new()
+		_limitador.ceiling_db = float(LIMITE["techo_db"])
+		_limitador.release = float(LIMITE["suelta_s"])
+		_limitador.resource_name = "Limitador_master"
+		AudioServer.add_bus_effect(0, _limitador)
+	else:
+		_quitar_efecto_bus(0, _limitador)
+		_limitador = null
+
+
+func _quitar_efecto_bus(i: int, efecto_bus: AudioEffect) -> void:
+	for k in range(AudioServer.get_bus_effect_count(i) - 1, -1, -1):
+		if AudioServer.get_bus_effect(i, k) == efecto_bus:
+			AudioServer.remove_bus_effect(i, k)
 
 
 # Cambio de escena: lo de Efectos y Ambiente que no «cruza» se apaga y lo programado ya no suena. El eco y los detalles
