@@ -193,12 +193,19 @@ func _process(_dt: float) -> bool:
 				_comprobar_accion(dg)
 			elif frames - f_fase == 40:
 				if dg != null and dg.current_timeline != null:
-					dg.end_timeline()
+					# como al final del diálogo de quien atiende (su señal; V10, servicios.gd), y se cierra sin la despedida
+					if punto in Distrito.OFICIOS:
+						dg.signal_event.emit("oak:servicio_" + punto)
+					dg.end_timeline(true)
 			elif frames - f_fase == 60:
 				if punto in Distrito.OFICIOS and d.servicio_abierto != punto and d.ultimo_aviso == "" and not _con_dialogo(punto):
 					_mal("%s: tras «%s» no se abre el servicio ni se avisa" % [PERFILES[ip], punto])
+				if punto in Distrito.OFICIOS and _con_dialogo(punto) and d.servicio_abierto != punto:
+					_mal("%s: el diálogo de «%s» pide su servicio y no se abre" % [PERFILES[ip], punto])
 				if v.ocupado() and d._ui == null:
 					_mal("%s: tras «%s» la escena se queda ocupada" % [PERFILES[ip], punto])
+				if d._ui != null and is_instance_valid(d._ui):        # se cierra, como haría quien juega
+					d._ui.call("cerrar" if d._ui.has_method("cerrar") else "cerrar_menu")
 				_siguiente()
 		"choques":
 			if frames - f_fase == 1:
