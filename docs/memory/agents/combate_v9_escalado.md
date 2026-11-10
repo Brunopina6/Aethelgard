@@ -73,7 +73,12 @@ enemigo, +8 % de PV y +5 % de ataque, y deja de subir en el tope.
   los Grimfang huyen por la zona limpia) y el Guardián del Bosque con el grupo a 34 (487 PV, 19 de ataque, fase 2 y
   victoria). Son combates con ataques automáticos (y el Guardián empujado como en `prueba_guardian_bosque`): prueban que
   el escalado funciona y no rompe nada, **no** la estrategia de un jugador.
-- Batería completa con `ci_local.ps1`: ver la sección siguiente si se añade.
+- Batería completa con `ci_local.ps1` (importación aislada `D:\REBELUM_diagnostico\importaciones\ci_2026-11-10_170502`):
+  **94 SUPERADAS, 0 FALLIDAS, 42 MANUALES, 0 NO SEGURAS**, «CI LOCAL: todo superado»
+  (`D:\REBELUM_diagnostico\pruebas\2026-11-10_170513\resumen.md`). partida.save real y carpeta real de datos sin cambios.
+- La importación creó los `.uid` de `combate_escalado.gd` y `prueba_escalado.gd` (confirmados en `461f026`) y otros tres
+  que no son de este encargo (`prueba_oficios.gd.uid`, `dialogos/bosque/bq_orbe_a.dtl.uid`, `bq_orbe_b.dtl.uid`): quedan
+  sin confirmar para quien lleve esos archivos.
 
 ### Límites y pendiente
 - No se ha jugado a mano ni en el Redmi: el equilibrio real con el escalado (sobre todo Kael solo en Pastos Verdes con
