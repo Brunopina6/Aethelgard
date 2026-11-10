@@ -1,6 +1,19 @@
 # SESSION_HANDOFF: punto de control
 
-**Último punto de control:** 2026-11-10 a las 16:25 (hora local, UTC+1). **La memoria describe
+**Último punto de control:** 2026-11-10 a las 17:45 (hora local, UTC+1). **Directiva V9** del usuario («Operación
+Renacimiento Total»):
+- Rama LOCAL `claude/rebelum-v9` (`D:\Aethelgard_v9`), creada desde la v293 verificada (`dca4c1c` = release
+  `exp-20261109-dca4c1c`).
+- Se recuperó, tras examinarlo, el trabajo posterior (fases 2 y 3).
+- Añadido:
+  - el orbe del altar (dos futuros del bosque, propuesta pendiente de canon);
+  - los oficios de Kael y Garon y el taller conjunto;
+  - el escalado de enemigos por región (combate);
+  - el Claro del Guardián (gráficos, Blender).
+- Batería 95/0/42/0. APK de auditoría v471 en local.
+- Estado y pendientes: `docs/v9/ESTADO_V9.md` y `docs/v9/RETOMAR.md` (en esa rama). **Sin subir ni fusionar.**
+
+**Punto de control anterior:** 2026-11-10 a las 16:25 (hora local, UTC+1). **La memoria describe
 `integracion-experimental` @ `b4e26e2` (fase 2 fusionada y subida, batería 87/0)** y la rama LOCAL
 `claude/rebelum-bosque-fase3` @ `dda5473` (sin subir ni fusionar).
 
