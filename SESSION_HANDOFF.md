@@ -19,7 +19,8 @@
     quedaba peor (D-082).
 - **Pruebas:** `ci_local.ps1` (2026-11-10_213109): **103 superadas, 0 fallidas, 43 manuales y 0 no seguras**. Partida
   real sin cambios.
-- **APK v520**, copiada al Redmi y **pendiente de que el usuario la instale**:
+- **APK v520**, **instalada en el Redmi** por el usuario (10/11, 23:53; `dumpsys` da versionCode 520, versionName
+  `androidauditora-20261110-c2eb155`). **Falta probarla** con `docs/v10/PENDIENTES_REDMI.md`:
   - `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261110-c2eb155.apk`;
   - SHA-256 `9bfe81297b5837f222047f77f9467ed4875d6cc13f42661b125b1e8cc6a2d0ff`.
   - **10/11, hacia las 22:10:** copiada por USB a Descargas como `Aethelgard_Auditoria_2026-11-10_v520.apk`, con el
@@ -28,7 +29,7 @@
   - **No va a GitHub:** lleva recursos con licencia pendiente.
 - **La v499 no sirve para probar la V10** (es la V9, `56dfb9c`).
 - **Siguiente paso:**
-  1. el usuario instala la v520 desde Descargas; después se sigue `docs/v10/PENDIENTES_REDMI.md`;
+  1. el usuario prueba la v520 (ya instalada) siguiendo `docs/v10/PENDIENTES_REDMI.md` y cuenta el resultado;
   2. sin él, lo pendiente de `docs/v10/ESTADO_V10.md`: sonido del distrito, rutinas 3D de Hilda y Mirta, prueba de
      combate del Bálsamo y la runa.
 - **Para retomar:** `docs/v10/RETOMAR.md` en la rama.
