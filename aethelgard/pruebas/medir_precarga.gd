@@ -26,12 +26,17 @@ func _peso(ruta: String) -> int:
 
 func _medir() -> void:
 	var rec = root.get_node("Recursos")
+	for a in OS.get_cmdline_user_args():           # «perfil=bajo»: como en un móvil con ese perfil (fase 2)
+		if a.begins_with("perfil="):
+			Engine.set_meta("calidad_proto", a.substr(7))
 	var lista: PackedStringArray = rec.listar()
 	var por := {}
 	var t_total := 0
 	for ruta in lista:
 		var partes := ruta.substr(6).split("/")
 		var carpeta: String = partes[0] if partes.size() > 1 else "(raíz)"
+		if partes.size() > 2 and partes[0] in ["zonas3d", "ciudades", "enemigos"]:   # fase 2: por región o bestia
+			carpeta += "/" + partes[1]
 		if not por.has(carpeta):
 			por[carpeta] = [0, 0, 0]
 		var t0 := Time.get_ticks_usec()

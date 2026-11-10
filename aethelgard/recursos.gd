@@ -12,7 +12,8 @@ extends Node
 const EXTENSIONES := ["png", "jpg", "jpeg", "webp", "svg", "fbx", "glb", "gltf", "obj", "tscn", "scn",
 	"mp3", "ogg", "wav", "gdshader", "tres", "res", "ttf", "otf"]
 const EXCLUIR := ["res://addons/", "res://para_meshy/", "res://.godot/", "res://decorado/", "res://texturas/",
-	"res://isla/", "res://carga.tscn"]
+	"res://isla/", "res://carga.tscn",
+	"res://vegetacion_prueba/", "res://pruebas/"]   # estas dos nunca van en la APK: solo alargaban el arranque del PC
 # FPS: 60 solo en combate; 30 en el mapa, las zonas y los menús (menos calor y batería).
 const FPS_COMBATE := 60
 const FPS_NORMAL := 30
@@ -204,9 +205,65 @@ func listar(carpeta := "res://") -> PackedStringArray:
 			continue
 		if nombre.ends_with("/"):
 			r.append_array(listar(ruta))
-		elif nombre.get_extension().to_lower() in EXTENSIONES:
+		elif nombre.get_extension().to_lower() in EXTENSIONES and not _de_otro_perfil(ruta):
 			r.append(ruta)
 	return r
+
+
+# Modelos con versión ligera (X.glb y X_ligero.glb, como los edificios de Oakhaven 3D): se precarga solo la que usa el
+# perfil gráfico de este aparato, con la misma regla que zonas3d/oakhaven/ciudad.gd (_modelo). Antes se precargaban
+# las dos y una no se usaba nunca (fase 2, 10/11). Si el jugador cambia de perfil en Ajustes, la otra se carga al
+# entrar en la región, con la pantalla en negro.
+var _ligeros = null
+
+# Texturas que no usa nadie (fase 2, 10/11; medido con pruebas/medir_texturas_modelos.gd):
+#   1. Las <modelo>_<n>.png que Godot sacó de un FBX y que ese modelo no usa (sus dependencias dicen cuáles sí): Kael,
+#      Garon y Grimfang solo usan _0 y _1; Érebo, ninguna; la de Lya (Meshy), solo _0. Si un modelo empieza a usar
+#      otra, sale en sus dependencias y se vuelve a precargar sola.
+#   2. Las de dos FBX de Meshy que ya no están (Garon y Grimfang antiguos): nadie las carga.
+# Antes se precargaban al arrancar y se quedaban en la memoria de vídeo toda la partida. prueba_precarga lo vigila.
+const SIN_USO := ["res://Meshy_AI_Crimson_Helm_Guardian_20261103_animated_mixamo_All_animation",
+	"res://Meshy_AI_Grimfang_Goblin_20261103_animated_mixamo_All_animation"]
+var _deps_fbx := {}
+
+
+func _textura_sin_uso(ruta: String) -> bool:
+	if not ruta.ends_with(".png") or ruta.get_base_dir() != "res://":
+		return false
+	for s in SIN_USO:
+		if ruta.begins_with(s) and not ResourceLoader.exists(s + ".fbx"):
+			return true
+	var base := ruta.get_basename()
+	var guion := base.rfind("_")
+	if guion < 0 or not base.substr(guion + 1).is_valid_int():
+		return false
+	var fbx := base.substr(0, guion) + ".fbx"
+	if not ResourceLoader.exists(fbx):
+		return false
+	if not _deps_fbx.has(fbx):
+		var d := {}
+		for dep in ResourceLoader.get_dependencies(fbx):
+			var p: String = dep.substr(maxi(0, dep.find("res://")))   # «uid://…::::res://…» o «res://…::Tipo» → la ruta
+			if p.find("::") >= 0:
+				p = p.substr(0, p.find("::"))
+			d[p] = true
+		_deps_fbx[fbx] = d
+	return not _deps_fbx[fbx].has(ruta)
+
+
+func _de_otro_perfil(ruta: String) -> bool:
+	if _textura_sin_uso(ruta):
+		return true
+	if not ruta.ends_with(".glb"):
+		return false
+	if _ligeros == null:
+		_ligeros = false
+		if ResourceLoader.exists("res://prototipos/calidad_proto.gd"):   # no está en la app estable
+			var cal = load("res://prototipos/calidad_proto.gd")
+			_ligeros = cal.datos().get("modelos_ligeros", cal.actual() != "alto")
+	if ruta.ends_with("_ligero.glb"):
+		return not _ligeros and ResourceLoader.exists(ruta.trim_suffix("_ligero.glb") + ".glb")
+	return _ligeros and ResourceLoader.exists(ruta.get_basename() + "_ligero.glb")
 
 
 func _excluida(ruta: String) -> bool:
