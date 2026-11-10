@@ -1,0 +1,15 @@
+join kael (vivo_pv) left
+join lya (vivo_pv) right
+update lya [extra_data="firme"]
+lya: El árbol, los lirios, las raíces… Todo apunta al claro del noreste.
+update lya [extra_data="preocupada"]
+lya: El guardián ha olvidado su juramento. Y su olvido se contagia.
+update kael [extra_data="duda"]
+kael: ¿Se contagia? ¿Como un catarro?
+update lya [extra_data="decidida"]
+lya: La savia de los árboles sanos aún sabe lo que fue el bosque. Déjame estudiarla.
+garon: Estudia deprisa.
+update kael [extra_data="decidido"]
+kael: Y si no, se lo explicamos de otra manera.
+leave kael
+leave lya

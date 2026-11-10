@@ -1,0 +1,13 @@
+join kael (vivo_pv) left
+join lya (vivo_pv) right
+update lya [extra_data="duda"]
+lya: Escritura antigua. Dice «Quien vela no olvida».
+update kael [extra_data="duda"]
+kael: ¿Quién vela? ¿Un guarda? ¿Otro farolero?
+update lya [extra_data="firme"]
+lya: Un guardián. Un espíritu de raíces que cuidaba de este bosque.
+garon: Cuidaba.
+update lya [extra_data="preocupada"]
+lya: Hay más escrito, pero la piedra está borrada. Como el árbol de Tilo.
+leave kael
+leave lya

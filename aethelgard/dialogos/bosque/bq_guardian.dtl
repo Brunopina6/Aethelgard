@@ -1,0 +1,13 @@
+join kael (vivo_pv) left
+join lya (vivo_pv) right
+update lya [extra_data="preocupada"]
+lya: Kael… no te acerques. Está despertando.
+guardian_bosque: Quien vela… ¿quién vela? Lo tenía aquí… y se ha ido.
+guardian_bosque: ¿Quiénes sois? Este bosque no os conoce.
+garon: Yo, delante.
+update kael [extra_data="decidido"]
+kael: Venimos a devolverte algo que se te olvidó.
+update lya [extra_data="firme"]
+lya: Si tenemos el elixir, espera a que flaquee. Entonces, dáselo.
+leave kael
+leave lya

@@ -1,0 +1,15 @@
+join kael (vivo_pv) left
+join lya (vivo_pv) right
+update lya [extra_data="preocupada"]
+lya: Se ha quedado quieto. Ya no late nada.
+update kael [extra_data="duda"]
+kael: Hemos ganado. ¿Por qué no lo parece?
+garon: Ganar no es salvar.
+update lya [extra_data="duda"]
+lya: Las runas se apagan… pero los árboles siguen grises.
+update kael [extra_data="decidido"]
+kael: Ha dejado su madera, dura como el hierro. La llevaremos con respeto.
+update lya [extra_data="decidida"]
+lya: Volvamos a Oakhaven. Alguien tendrá que plantar algo aquí.
+leave kael
+leave lya

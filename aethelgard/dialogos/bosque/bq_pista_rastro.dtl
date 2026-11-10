@@ -1,0 +1,13 @@
+join kael (vivo_pv) left
+join lya (vivo_pv) right
+update kael [extra_data="sorpresa"]
+kael: ¿Esto es de un arado? Va campo a través, sin ton ni son.
+update lya [extra_data="inquieta"]
+lya: Son raíces. Algo grande se ha arrastrado por aquí, bajo la tierra.
+update lya [extra_data="duda"]
+lya: Las raíces no vagan. Estas parecen no saber volver a casa.
+garon: Van hacia las ruinas. Tras esas ramas caídas.
+update kael [extra_data="ligero"]
+kael: Raíces perdidas. Ya me caen bien.
+leave kael
+leave lya

@@ -1,0 +1,13 @@
+join kael (vivo_pv) left
+join lya (vivo_pv) right
+guardian_bosque: Quien vela… no olvida. Ahora lo sé otra vez.
+update lya [extra_data="inquieta"]
+lya: Mirad las hojas. Vuelve el verde.
+guardian_bosque: Tomad este brote. Que crezca con vosotros.
+update kael [extra_data="ligero"]
+kael: Primera vez que un árbol me da las gracias.
+garon: El bosque respira.
+update lya [extra_data="decidida"]
+lya: Volvamos a Oakhaven. Esta vez llevamos buenas noticias.
+leave kael
+leave lya
