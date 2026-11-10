@@ -134,6 +134,27 @@ const F_CUERDAS_PUERTO := "S24/Rogue Waves - Yacht & Marina/AMBNaut_Atmos, EXT M
 const F_VIENTO_CABLES := "S18/Ivo Vicic - Bora wind - European local wind/38 Wind_hurricane_wires_whistle.wav"
 const F_EQUIPO_SOLDADO :=  "S18/Gamemaster Audio - Footstep and Foley Sounds/foley_soldier_gear_equipment_metal_cloth_heavy_movement_light_08.wav"
 
+# V9 (10/11): el Guardián del Bosque Olvidado y el orbe del altar (todas de los paquetes GDC de Sonniss 2016-2023)
+const F_GB_RAMA := "S18/Soundrangers - Foley Elements Foliage/tree_dead_tree_limb_impact_05.wav"
+const F_GB_CORTEZA := "S18/Soundrangers - Foley Elements Foliage/tree_bark_rotten_rip_03.wav"
+const F_GB_ARBOL_CAE := "S18/Soundrangers - Foley Elements Foliage/tree_falling_04.wav"
+const F_GB_LATIDO := "S18/Airborne Sound - Human/Heartbeat,Sound Design,Pulse,Throb,Steady,Accelerate,Panic,Fear.wav"
+const F_GB_CRUJE := "S23/BluezoneCorp - Forest Textures/Bluezone_BC0279_forest_tree_wood_texture_creaking_016.wav"
+const F_GB_TRONCOS := "S23/BluezoneCorp - Forest Textures/Bluezone_BC0279_forest_wood_log_debris_falling_3_007.wav"
+const F_GB_RAMAJE := "S23/BluezoneCorp - Forest Textures/Bluezone_BC0279_forest_tree_branch_texture_1_004.wav"
+const F_GB_ARRANCADO := "S16/Mattia Cellotto - Rocks Momentum/Eradicated Tree - Stones Large Impacts Debris - 1 Meter. Debris,Stones,Soil,Impact,Rock,Impact,Fall,Various_04.wav"
+const F_GB_LENERA := "S16/Mattia Cellotto - Rocks Momentum/Woodshed - Rock and Wood Large Impacts - 1 Meter. Rock,Wood,Large,Impact,Roll,Various_02.wav"
+const F_GB_ARRASTRE := "S17/SoundBits - Drag & Slide/HeavyWood_Sliding_on_ForestFloor_01_04.wav"
+const F_GB_GEMIDO := "S18/Articulated Sounds - Yeti Monster/MONSTER Yeti groan 21.wav"
+const F_GB_GRUNIDO := "S18/Articulated Sounds - Yeti Monster/MONSTER Yeti grumble 02.wav"
+const F_GB_CRUJIDOS := "S18/Discover Oregon - Wind and Storms/Creaks and Snaps 2017.03.20 - Gentle Tree Creaks.WAV"
+const F_GB_DRON := "S18/Airborne Sound – Light and Dark Drones/Drone,Resonant,Bed,Solemn,Mystical with Ring,Accents,Prominent,Squeaky or Gong,Loop.wav"
+const F_GB_CUENCO := "S19/Prismo Sound - Singing Bowls/SINGING_BOWL_Sustain_AandD_01_OctaveDown.wav"
+const F_GB_PAD := "S23/CB Sound Design - Dreamcatcher - The Sound of Dreams & Magic/Synth_Pad_12.wav"
+const F_ORBE_CRISTAL := "S17/Raconteur Sound - Crystal Glasses- Tones and Drones_/Crystal, Glass, Tall Narrow, Tone, Rubbing, Musical_05.wav"
+const F_ORBE_COPA := "S17/Raconteur Sound - Crystal Glasses- Tones and Drones_/Crystal, Glass, Red Wine, Tone, Rubbing, Musical_07.wav"
+const F_ORBE_DRON := "S23/CB Sound Design - Dreamcatcher - The Sound of Dreams & Magic/Dream_Drone_09.wav"
+
 # [derivado, fuente, desde (s), hasta (s, -1 = el final), opciones]
 # opciones: norm ("pico" o "rms"), db (objetivo en dBFS), techo (pico máximo con «rms»), fi / fo (fundidos en s),
 # capas ([[fuente, desde, hasta, en (s), dB], ...] que se suman a la principal), pb (paso bajo en Hz: «lejos»),
@@ -551,6 +572,66 @@ const RECETAS := [
 			["S20/SmartSoundFX – Medieval/ARMOR Body Drop Chain Leather Short 02.wav", 0.55, 0.85, 0.0, -10.0]]}],
 	["ambiente/viento_cuerdas_1", F_VIENTO_CABLES, 9.0, 14.5, {"norm": "rms", "db": -24.0, "techo": -3.0, "fi": 1.2, "fo": 1.5}],
 	["ambiente/viento_cuerdas_2", F_VIENTO_CABLES, 26.0, 31.5, {"norm": "rms", "db": -24.0, "techo": -3.0, "fi": 1.2, "fo": 1.5}],
+	# ================================================================ V9 (10/11): el Guardián del Bosque Olvidado (combate.gd) y el
+	# orbe del altar (bosque_pastos.gd). Un árbol viejo que despierta: madera que cruje y gime (con un gruñido grave de
+	# criatura por debajo, para que sea una voz y no un mueble), raíces y tierra, y un corazón que late. Los tiempos van
+	# con los de su modelo (enemigos/guardian_bosque/guardian_bosque_3d.gd): la coraza se ve a 0,93 s de empezar la fase 2
+	# y cae de rodillas a 1,1 s de empezar la derrota. «tono» < 1 lo hace más grande (y más lento).
+	# - el título del jefe (en lugar del «jefe» de todos): un golpe hueco de tronco con un retumbar grave y un crujido largo
+	["guardian/jefe", F_GB_LENERA, 3.10, 4.30, {"norm": "pico", "db": -1.0, "fo": 1.0, "tono": 0.85,
+		"capas": [[F_CAVERNA, 0.0, 3.0, 0.0, 6.0], [F_ARBOL_CRUJE, 1.0, 3.3, 0.5, -2.0]]}],
+	# - despierta al empezar el combate (su clip «entrada»): la madera se arrastra sobre el suelo del bosque, ramas y hojas,
+	#   y un gemido grave al desperezarse
+	["guardian/entrada", F_GB_ARRASTRE, 1.50, 3.90, {"norm": "rms", "db": -20.0, "techo": -2.0, "fi": 0.15, "fo": 0.7, "tono": 0.88,
+		"capas": [[F_GB_RAMAJE, 0.0, 1.8, 0.3, -4.0], [F_GB_GEMIDO, 0.25, 2.1, 0.6, 12.0]]}],
+	# - su voz (familia «corteza»): crujido y gruñido al alzar la rama (2), corteza que se desgarra al recibir (3), y un
+	#   crujido largo con gemido al caer
+	["guardian/corteza_ataque_1", F_ARBOL_CRUJE, 1.20, 2.00, {"norm": "pico", "db": -2.0, "fo": 0.2, "tono": 0.85,
+		"capas": [[F_GB_GRUNIDO, 0.35, 1.05, 0.05, -6.0]]}],
+	["guardian/corteza_ataque_2", F_GB_CRUJE, 0.60, 1.40, {"norm": "pico", "db": -2.0, "fo": 0.2, "tono": 0.8,
+		"capas": [[F_GB_GRUNIDO, 0.05, 0.60, 0.10, -8.0]]}],
+	["guardian/corteza_herido_1", F_GB_CORTEZA, 0.05, 0.45, {"norm": "pico", "db": -2.0, "fo": 0.12, "tono": 0.85,
+		"capas": [[F_GB_GEMIDO, 0.30, 0.80, 0.02, 10.0]]}],
+	["guardian/corteza_herido_2", F_GB_CORTEZA, 0.65, 1.05, {"norm": "pico", "db": -2.0, "fo": 0.12, "tono": 0.85,
+		"capas": [[F_RAMAS_ROTAS, 0.20, 0.50, 0.0, -8.0]]}],
+	["guardian/corteza_herido_3", F_GB_CORTEZA, 0.95, 1.35, {"norm": "pico", "db": -2.0, "fo": 0.12, "tono": 0.8,
+		"capas": [[F_GB_GEMIDO, 0.95, 1.30, 0.0, 10.0]]}],
+	["guardian/corteza_caida", F_ARBOL_CRUJE, 1.00, 2.60, {"norm": "pico", "db": -2.0, "fo": 0.6, "tono": 0.75,
+		"capas": [[F_GB_GEMIDO, 0.25, 1.60, 0.0, 12.0]]}],
+	# - el latigazo de rama (señal «impacto» de «ataque», a 0,6 s del clip): la rama seca restalla y astilla (2 variantes)
+	["guardian/ataque_1", F_GB_RAMA, 0.15, 0.55, {"norm": "pico", "db": -1.0, "fo": 0.15, "tono": 0.9,
+		"capas": [[F_RAMAS_ROTAS, 0.20, 0.55, 0.03, -4.0], [F_FOLLAJE, 0.0, 0.30, 0.02, -8.0]]}],
+	["guardian/ataque_2", F_GB_RAMA, 0.55, 0.95, {"norm": "pico", "db": -1.0, "fo": 0.15, "tono": 0.9,
+		"capas": [[F_GB_CORTEZA, 0.75, 1.00, 0.0, -4.0]]}],
+	# - las raíces que brotan del suelo en el golpe cargado (señal «impacto» de «golpe_fuerte», a 0,667 s): tierra y
+	#   piedras que saltan, raíces que se desgarran al salir, astillas y un golpe grave
+	["guardian/golpe", F_GB_ARRANCADO, 5.15, 6.40, {"norm": "pico", "db": -1.0, "fo": 0.4, "tono": 0.92,
+		"capas": [[F_TIERRA, 0.04, 0.90, 0.0, -2.0], [F_GB_CORTEZA, 0.05, 1.30, 0.05, 4.0], [F_GB_TRONCOS, 0.15, 1.30, 0.35, -6.0],
+			[F_CAVERNA, 0.0, 1.20, 0.0, 0.0]]}],
+	# - el latido grave de la carga (dos latidos lentos, como un corazón enorme) bajo el crujido del tronco que se tensa
+	["guardian/carga", F_GB_LATIDO, 0.0, 2.70, {"norm": "pico", "db": -1.0, "fo": 0.3, "tono": 0.8,
+		"capas": [[F_ARBOL_CRUJE, 1.0, 3.1, 0.3, 0.0]]}],
+	# - el rugido de corteza al pasar a la fase 2: madera que cruje con un gemido y un gruñido de criatura, y la corteza
+	#   que se abre y astilla justo cuando aparece la coraza (0,8 s ÷ 0,82 de tono ≈ 0,98 s)
+	["guardian/fase2", F_GB_CRUJE, 0.0, 2.30, {"norm": "pico", "db": -1.0, "fo": 0.8, "tono": 0.82,
+		"capas": [[F_GB_GEMIDO, 0.20, 2.20, 0.0, 14.0], [F_GB_GRUNIDO, 0.0, 1.10, 0.0, 0.0], [F_GB_CORTEZA, 0.0, 1.40, 0.80, 2.0],
+			[F_GB_TRONCOS, 0.20, 1.30, 0.95, -8.0]]}],
+	# - se desmorona en la derrota (su clip «derrota»): el tronco cruje y se viene abajo, las rodillas golpean la tierra
+	#   (0,55 + 0,5 s ÷ 0,9 ≈ 1,17 s; el clip, 1,1 s) y caen astillas
+	["guardian/derrumbe", F_GB_ARBOL_CAE, 3.00, 5.80, {"norm": "pico", "db": -1.0, "fo": 1.0, "tono": 0.9,
+		"capas": [[F_GB_ARRANCADO, 10.50, 11.90, 0.55, 4.0], [F_GB_TRONCOS, 0.15, 1.40, 1.20, -4.0]]}],
+	# - el Elixir lo purifica: cálido y luminoso (un cuenco tibetano una octava abajo, un colchón suave y campanillas)
+	["guardian/purificar", F_GB_CUENCO, 12.0, 15.5, {"norm": "rms", "db": -21.0, "techo": -2.0, "fi": 0.25, "fo": 1.4,
+		"capas": [[F_GB_PAD, 7.3, 10.8, 0.0, -14.0], [F_CAMPANAS, 6.4, 9.0, 0.3, -10.0]]}],
+	# - el bosque antiguo por debajo del combate (bucle de 30 s, Ambiente): árboles viejos que crujen con el viento y un
+	#   zumbido grave y solemne, con paso bajo (oscuro); se importa a 22 050 Hz (lo de arriba ya lo quita el paso bajo)
+	["ambiente/bosque_antiguo", F_GB_CRUJIDOS, 50.0, 82.0, {"norm": "rms", "db": -24.0, "techo": -4.0, "bucle": 2.0, "pb": 9000.0,
+		"capas": [[F_GB_DRON, 0.0, 32.0, 0.0, -28.0]]}],
+	# - el orbe del altar: la visión (una copa de cristal frotada que resuena, con un colchón de sueño y campanillas) y su
+	#   cierre (otra copa, más grave, que se apaga)
+	["mundo/orbe_vision", F_ORBE_CRISTAL, 0.40, 5.20, {"norm": "rms", "db": -21.0, "techo": -3.0, "fi": 0.6, "fo": 1.8,
+		"capas": [[F_ORBE_DRON, 1.5, 6.3, 0.0, 2.0], [F_CAMPANAS, 2.0, 4.6, 0.6, -10.0]]}],
+	["mundo/orbe_cierra", F_ORBE_COPA, 0.40, 2.60, {"norm": "pico", "db": -3.0, "fi": 0.05, "fo": 1.2, "tono": 0.84}],
 ]
 
 # PROPUESTA de sonido para las 12 magias (T-083, tanda 2): NO se integran (D-048: su presentación está protegida). Solo
@@ -598,6 +679,10 @@ func _initialize() -> void:
 		else:
 			partes.append(a)
 	base = " ".join(partes).replace("\\", "/").trim_suffix("/") + "/"
+	if not DirAccess.dir_exists_absolute(base):           # V9: con la biblioteca mal escrita no se toca nada (ni el CSV)
+		print("FALLO: no encuentro la biblioteca en «%s»" % base)
+		quit(1)
+		return
 	if "comprobar" in args:
 		quit(_comprobar())
 		return
@@ -620,6 +705,8 @@ func _initialize() -> void:
 		var fila := _preparar(r)
 		if fila == "":
 			fallos += 1
+			if previas.has(r[0] + ".wav"):                 # V9: si no se pudo rehacer, su fila de antes se queda
+				filas.append(previas[r[0] + ".wav"])
 		else:
 			filas.append(fila)
 	var csv := ProjectSettings.globalize_path("res://").path_join("../" + PROCEDENCIA).simplify_path()

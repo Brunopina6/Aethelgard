@@ -800,3 +800,9 @@ importé con datos aislados. **No he podido escuchar nada. No se ha usado el Red
   lugar). Lo preparo cuando se apruebe.
 - **Quien lleve `prueba_zona3d`**: que espere los botones DIAG y MEDIO de `45a49e6`.
 - **Usuario**: escuchar la mezcla del combate (antes, ahora y la B) y decidir.
+
+## 2026-11-10, 18:50 · V9: el Guardián del Bosque y el orbe del altar
+
+Informe completo en [`sonido_v9_guardian.md`](sonido_v9_guardian.md) (rama `claude/v9-sonido-guardian`): identidad sonora
+del Guardián (título, entrada, voz «corteza», latigazo, raíces, latido, rugido, derrumbe y purificación), el tratamiento
+de su combate (paso bajo en la música y un bosque antiguo por debajo, sin música nueva) y el orbe del altar.

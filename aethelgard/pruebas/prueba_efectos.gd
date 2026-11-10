@@ -227,7 +227,7 @@ func _catalogo() -> void:
 				continue
 			# bucles: los emisores 3D y las fuentes 2D, salvo las que suenan de vez en cuando («cada»: el cuervo)
 			var bucle: bool = (d.has("tres_d") or d.has("dos_d")) and not d.get("dos_d", {}).has("cada") \
-				and not d.get("tres_d", {}).has("cada")
+				and not d.get("tres_d", {}).has("cada") or d.get("bucle", false)   # V9: el bosque antiguo del tratamiento
 			if (s.loop_mode == AudioStreamWAV.LOOP_FORWARD) != bucle:
 				_fallo("1: %s %s debería ser un bucle" % [ruta, "no" if bucle else "sí y no"])
 			var w := AudioStreamWAV.load_from_file(ProjectSettings.globalize_path(ruta))   # el derivado, sin comprimir

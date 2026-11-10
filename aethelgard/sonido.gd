@@ -60,6 +60,9 @@ extends Node
 #   falta tocar ninguna escena: va donde ya hay pasos_3d (Pastos Verdes y la Garganta 3D).
 # Tanda 5: las voces no verbales de Kael, Lya y Garon en combate (FAMILIAS_HEROE): esfuerzo, herido, jadeo con poca vida,
 #   alivio y victoria; por debajo de los golpes (prioridad 1, una a la vez). Cómo pedirlas: docs/audio/inventario_sonidos.md.
+# V9 (10/11): identidad sonora del Guardián del Bosque Olvidado («guardian_bosque_*» y su voz, familia «corteza») y el
+#   tratamiento de su combate (TRATAMIENTOS: la música con paso bajo y un bosque antiguo por debajo); el orbe del altar
+#   («orbe_vision», «orbe_cierra»). Dónde se piden: docs/audio/inventario_sonidos.md, sección V9.
 
 const ARCHIVO := "user://ajustes.cfg"
 const BUSES := ["Musica", "Efectos", "Interfaz", "Ambiente"]
@@ -119,6 +122,8 @@ const ECO := {
 # dos_d: emisor 2D por cercanía (agua de las zonas). grupo: comparte el límite MAX_GRUPO (las voces de los enemigos).
 # tono_fijo: multiplica siempre el tono (el Gólem de ámbar usa el ataque de la piedra, más agudo).
 # en_3d: distancia de referencia cuando suena en el espacio (efecto con «pos»; si no lo dice, EN_3D).
+# trata (V9): [jefe, etapa] de TRATAMIENTOS: al pedirlo, empieza o cambia el tratamiento del combate de ese jefe.
+# bucle (V9): el archivo es un bucle que no es un emisor (el bosque antiguo del tratamiento; no se pide con efecto()).
 # Pasos: tres a la vez como mucho (Kael, Lya y Garon pueden pisar casi juntos; con dos se cortaban colas).
 const EFECTOS := {
 	# ---- pasos
@@ -221,6 +226,25 @@ const EFECTOS := {
 	"posadero_herido": {"a": "bestias/posadero_herido_", "n": 2, "db": -2.0, "tono": 0.05, "p": 3, "max": 1, "espera": 0.25, "grupo": "voz"},
 	"posadero_caida": {"a": "bestias/posadero_caida", "db": -9.0, "p": 3, "max": 1, "espera": 1.0, "grupo": "voz"},
 	"posadero_entrada": {"a": "bestias/posadero_entrada", "db": -3.0, "p": 3, "max": 1, "espera": 1.0},
+	# ---- V9: el Guardián del Bosque Olvidado (combate.gd, clave «guardian_bosque»), con identidad propia en lugar de «jefe»,
+	# «carga_jefe» y «fase2». Un árbol viejo: madera que cruje y gime, raíces y tierra, un corazón que late.
+	# _jefe: su título (_presentar, en lugar de «jefe»); empieza el tratamiento del combate («trata»: la música con paso
+	# bajo y el bosque antiguo por debajo, TRATAMIENTOS) · _entrada: despierta (su clip «entrada») · _ataque: el latigazo de
+	# rama (señal «impacto» de su modelo) · _golpe: las raíces que brotan en el golpe cargado (señal «impacto») · _carga:
+	# el latido grave al cargar (en lugar de «carga_jefe») · _fase2: el rugido de corteza (en lugar de «fase2»; la música se
+	# abre) · _derrumbe: se desmorona al caer (no si se purifica) · _purificar: el Elixir, cálido y luminoso (el bosque
+	# antiguo se calma). Su voz va por FAMILIAS («corteza»): ataque al alzar la rama, herido y caída con Sonido.recibe.
+	"guardian_bosque_jefe": {"a": "guardian/jefe", "db": -5.0, "p": 4, "max": 1, "espera": 1.0, "trata": ["guardian_bosque", "inicio"]},
+	"guardian_bosque_entrada": {"a": "guardian/entrada", "db": -9.0, "p": 3, "max": 1, "espera": 1.0},
+	"guardian_bosque_ataque": {"a": "guardian/ataque_", "n": 2, "db": -8.0, "tono": 0.05, "p": 2, "max": 2, "espera": 0.1},
+	"guardian_bosque_golpe": {"a": "guardian/golpe", "db": -6.0, "tono": 0.03, "p": 3, "max": 1, "espera": 0.3},
+	"guardian_bosque_carga": {"a": "guardian/carga", "db": -9.0, "p": 3, "max": 1, "espera": 0.5},
+	"guardian_bosque_fase2": {"a": "guardian/fase2", "db": -4.0, "p": 4, "max": 1, "espera": 1.0, "trata": ["guardian_bosque", "fase2"]},
+	"guardian_bosque_derrumbe": {"a": "guardian/derrumbe", "db": -6.0, "p": 3, "max": 1, "espera": 1.0},
+	"guardian_bosque_purificar": {"a": "guardian/purificar", "db": -5.0, "p": 4, "max": 1, "espera": 2.0, "trata": ["guardian_bosque", "calma"]},
+	"corteza_ataque": {"a": "guardian/corteza_ataque_", "n": 2, "db": -9.0, "tono": 0.04, "p": 2, "max": 1, "espera": 0.3, "grupo": "voz"},
+	"corteza_herido": {"a": "guardian/corteza_herido_", "n": 3, "db": -9.0, "tono": 0.06, "p": 2, "max": 1, "espera": 0.25, "grupo": "voz"},
+	"corteza_caida": {"a": "guardian/corteza_caida", "db": -6.0, "p": 3, "max": 1, "espera": 0.5, "grupo": "voz"},
 	# ---- las voces de los héroes en combate (tanda 5; no verbales). Por debajo de los golpes y de las voces de los
 	# enemigos: prioridad 1 (lo primero que cede si faltan voces) y una a la vez entre los tres (grupo «voz_heroe»); la
 	# de victoria, prioridad 3 (no baja con la fanfarria) y muy corta. Las piden voz() y recibe() (esfuerzo al lanzarse,
@@ -266,6 +290,10 @@ const EFECTOS := {
 	"puerta_abre": {"a": "mundo/puerta_abre", "db": -9.0, "p": 3, "max": 1, "espera": 1.0,
 		"en_3d": {"unidad": 20.0, "max": 90.0, "filtro": 0.0}},
 	"brazalete": {"a": "mundo/brazalete", "db": -17.0, "tono": 0.03, "p": 1, "max": 1, "espera": 1.5},
+	# V9: el orbe del altar (bosque_pastos.gd, _vision): la visión se abre con una resonancia cristalina y se cierra con
+	# otra copa, más grave, que se apaga (en lugar de «misterio»)
+	"orbe_vision": {"a": "mundo/orbe_vision", "db": -9.0, "p": 3, "max": 1, "espera": 1.0},
+	"orbe_cierra": {"a": "mundo/orbe_cierra", "db": -14.0, "p": 2, "max": 1, "espera": 0.5},
 	# ---- Oakhaven (tanda 3; los pide narrativa: docs/audio/inventario_sonidos.md, «Cómo pedirlos»)
 	"campana": {"a": "mundo/campana", "bus": "Ambiente", "db": -12.0, "p": 1, "max": 1, "espera": 6.0},
 	"farol": {"a": "mundo/farol", "db": -6.0, "tono": 0.06, "p": 2, "max": 3, "espera": 0.08},
@@ -330,6 +358,8 @@ const EFECTOS := {
 	"pajaro_ciudad": {"a": "ambiente/pajaro_ciudad_", "n": 2, "bus": "Ambiente", "db": -16.0, "tono": 0.06, "p": 0, "max": 1, "espera": 3.0},
 	"grillo": {"a": "ambiente/grillo", "bus": "Ambiente", "db": -14.0, "tono": 0.05, "p": 0, "max": 1, "espera": 4.0},
 	"mochuelo": {"a": "ambiente/mochuelo_", "n": 2, "bus": "Ambiente", "db": -20.0, "tono": 0.03, "p": 0, "max": 1, "espera": 8.0},
+	# V9: el bosque antiguo bajo el combate del Guardián (TRATAMIENTOS; un bucle, no un emisor: «bucle»)
+	"bosque_antiguo": {"a": "ambiente/bosque_antiguo", "bus": "Ambiente", "db": -8.0, "bucle": true},
 	"rafaga_hierba": {"a": "ambiente/rafaga_hierba_", "n": 4, "bus": "Ambiente", "db": -14.0, "tono": 0.05, "p": 0, "max": 1, "espera": 3.0},
 	"rafaga_arbol": {"a": "ambiente/rafaga_arbol_", "n": 4, "bus": "Ambiente", "db": -14.0, "tono": 0.05, "p": 0, "max": 1, "espera": 3.0},
 	"pajaro": {"a": "ambiente/pajaro", "bus": "Ambiente", "db": -18.0, "tono": 0.08, "p": 0, "max": 1, "espera": 4.0},
@@ -362,7 +392,24 @@ const CUADROS_PASO := [1, 6]
 const FAMILIAS := {"slime": "limo", "grimfang": "goblin", "gorthor": "gorthor", "guardian": "piedra", "golem_ambar": "ambar",
 	# las bestias del bestiario (tanda 4): su clave en combate.gd, con el nombre de la ficha o el corto
 	"zarzalin": "zarzalin", "cencerrante": "cencerrante", "velaria": "velaria", "custodio_cal": "custodio", "custodio": "custodio",
-	"hilandera_eco": "hilandera", "hilandera": "hilandera", "posadero_hueco": "posadero", "posadero": "posadero"}
+	"hilandera_eco": "hilandera", "hilandera": "hilandera", "posadero_hueco": "posadero", "posadero": "posadero",
+	# V9: el Guardián del Bosque Olvidado (su voz: madera que cruje y gime; «guardian_bosque_*» son sus efectos)
+	"guardian_bosque": "corteza"}
+# V9: tratamiento del combate de un jefe (lo empieza y lo cambia un efecto con «trata»: [jefe, etapa]). Mientras dure:
+# - la música (bus Musica) pasa por un paso bajo («corte», Hz) y un ajuste de volumen («musica_db»): el Guardián
+#   empieza con la música apagada, como oída desde dentro del bosque, y en su fase 2 se abre;
+# - un bucle propio por debajo («bucle», del catálogo, por Ambiente; «bucle_db» sobre su volumen; −60 = callado).
+# «s»: segundos del cambio. Se quita solo: si se va su dueño (el combate, «en» del efecto), si cambia la escena, y el
+# bucle se apaga con la victoria o la derrota. No hay música de jefe con licencia libre en el proyecto (la del combate
+# tiene la licencia pendiente y la de Suno no entra): el tratamiento es para la que suene, sin añadir ninguna.
+const TRATAMIENTOS := {
+	"guardian_bosque": {"bucle": "bosque_antiguo", "etapas": {
+		"inicio": {"corte": 2800.0, "musica_db": -2.0, "bucle_db": 0.0, "s": 2.5},
+		"fase2": {"corte": 9000.0, "musica_db": 0.0, "bucle_db": -5.0, "s": 1.6},
+		"calma": {"corte": 20000.0, "musica_db": -3.0, "bucle_db": 2.0, "s": 2.0},
+		"fin": {"bucle_db": -60.0, "s": 1.8},
+	}},
+}
 # Los efectos de cada bestia (tanda 4), por familia: [avisos], [impactos] y los demás (para las pruebas y el inventario).
 const BESTIAS := {
 	"zarzalin": [["zarzalin_aviso_embestida", "zarzalin_aviso_colmillo"], ["zarzalin_embestida", "zarzalin_colmillo"],
@@ -419,6 +466,7 @@ var _momento_escena: Node = null
 var _campana_t := -1.0                                     # s hasta la próxima campana de la hora
 var _apartar: AudioEffectCompressor = null                 # tanda 7: la música que se aparta (solo en combate)
 var _limitador: AudioEffectHardLimiter = null              # tanda 7: el limitador del Master
+var _trata := {}                                           # V9: el tratamiento del combate de un jefe (TRATAMIENTOS)
 var _det_t := 0.0
 var _rng := RandomNumberGenerator.new()
 var pausado := false
@@ -587,6 +635,10 @@ func efecto(nombre: String, op := {}) -> Node:
 			if (gen == _gen or d.get("cruza", false)) and (dueno == null or is_instance_valid(dueno)):
 				efecto(nombre, resto))
 		return null
+	if d.has("trata"):                                     # V9: el combate de un jefe, con su tratamiento (aunque calle)
+		tratamiento(String(d["trata"][0]), String(d["trata"][1]), op.get("en"))
+	elif (nombre == "victoria" or nombre == "derrota") and not _trata.is_empty():
+		tratamiento(String(_trata["jefe"]), "fin")         # su bucle se apaga con el final del combate
 	var bus: String = d.get("bus", "Efectos")
 	if pausado:
 		return _descartar(nombre, "pausa")
@@ -974,6 +1026,8 @@ func _process(delta: float) -> void:
 	if e != _escena:
 		_escena = e
 		_al_cambiar_escena()
+	if not _trata.is_empty() and not _trata_vigente():
+		quitar_tratamiento()                               # V9: se ha ido el combate del jefe
 	_detalles(delta)
 	var m = get_node_or_null("/root/Musica")
 	apartar_musica(APARTAR_MUSICA_EN_COMBATE and m != null and m.contexto == "combate")
@@ -1018,6 +1072,113 @@ func limitador(si: bool) -> void:
 		_limitador = null
 
 
+# V9: el tratamiento del combate de un jefe (TRATAMIENTOS): lo empieza la primera etapa que se pide (con «dueno», el
+# combate: mientras exista) y las siguientes lo cambian con un fundido. Pone un paso bajo y un volumen al principio del
+# bus Musica (antes del compresor de la tanda 7) y su bucle por Ambiente, hijo del dueño (muere con él).
+func tratamiento(jefe: String, etapa: String, dueno = null) -> void:
+	var t: Dictionary = TRATAMIENTOS.get(jefe, {})
+	var e: Dictionary = t.get("etapas", {}).get(etapa, {})
+	if e.is_empty():
+		return
+	if not _trata.is_empty() and (_trata["jefe"] != jefe or not _trata_vigente()):
+		quitar_tratamiento()
+	if _trata.is_empty():
+		if etapa == "fin":
+			return
+		if not (is_instance_valid(dueno) and dueno is Node):
+			dueno = get_tree().current_scene
+		if not (is_instance_valid(dueno) and dueno is Node):
+			return                                         # sin combate al que atarlo, nada (no se quedaría puesto)
+		_trata = {"jefe": jefe, "dueno": dueno}
+		var i := AudioServer.get_bus_index("Musica")
+		if i >= 0:
+			var f := AudioEffectLowPassFilter.new()
+			f.cutoff_hz = 20000.0
+			f.resource_name = "Tratamiento_paso_bajo"
+			var a := AudioEffectAmplify.new()
+			a.volume_db = 0.0
+			a.resource_name = "Tratamiento_volumen"
+			AudioServer.add_bus_effect(i, f, 0)
+			AudioServer.add_bus_effect(i, a, 1)
+			_trata["filtro"] = f
+			_trata["amp"] = a
+		var nb: String = t.get("bucle", "")
+		if EFECTOS.has(nb):
+			var st := _stream(_elegir(nb, EFECTOS[nb], -1))
+			if st != null:
+				var p := AudioStreamPlayer.new()
+				p.name = "Tratamiento_" + nb
+				p.bus = StringName(EFECTOS[nb].get("bus", "Ambiente"))
+				p.stream = st
+				p.volume_db = -60.0
+				p.process_mode = Node.PROCESS_MODE_PAUSABLE
+				p.set_meta("efecto", nb)
+				dueno.add_child(p)
+				p.play()
+				_emisores.append(p)                        # la pausa de la app (pausar) también lo para
+				_trata["bucle"] = p
+				_trata["bucle_db"] = float(EFECTOS[nb].get("db", 0.0))
+	_trata["etapa"] = etapa
+	var viejo = _trata.get("tween")
+	if viejo is Tween and viejo.is_valid():
+		viejo.kill()
+	var s := float(e.get("s", 1.0))
+	var tw := create_tween().set_parallel(true)
+	tw.tween_interval(s)
+	if e.has("corte") and _trata.has("filtro"):
+		tw.tween_property(_trata["filtro"], "cutoff_hz", float(e["corte"]), s)
+	if e.has("musica_db") and _trata.has("amp"):
+		tw.tween_property(_trata["amp"], "volume_db", float(e["musica_db"]), s)
+	var bucle = _trata.get("bucle")
+	if e.has("bucle_db") and is_instance_valid(bucle):
+		var objetivo := float(_trata["bucle_db"]) + float(e["bucle_db"])
+		if float(e["bucle_db"]) <= -59.0:
+			objetivo = -60.0
+		tw.tween_property(bucle, "volume_db", objetivo, s)
+		if objetivo <= -60.0:
+			tw.chain().tween_callback(bucle.stop)
+	_trata["tween"] = tw
+
+
+# Quita el tratamiento: el paso bajo y el volumen del bus Musica y el bucle (con un fundido corto).
+func quitar_tratamiento() -> void:
+	if _trata.is_empty():
+		return
+	var tw = _trata.get("tween")
+	if tw is Tween and tw.is_valid():
+		tw.kill()
+	var i := AudioServer.get_bus_index("Musica")
+	if i >= 0:
+		for k in ["filtro", "amp"]:
+			if _trata.has(k):
+				_quitar_efecto_bus(i, _trata[k])
+	var p = _trata.get("bucle")
+	if is_instance_valid(p):
+		var t := create_tween()
+		t.tween_property(p, "volume_db", -60.0, FUNDIDO_CORTE)
+		t.tween_callback(p.queue_free)
+	_trata = {}
+
+
+# El tratamiento que suena: {"jefe", "etapa", "corte" (Hz del paso bajo), "musica_db", "bucle_db"}, o {} si no hay.
+func tratamiento_actual() -> Dictionary:
+	if _trata.is_empty():
+		return {}
+	var r := {"jefe": _trata["jefe"], "etapa": _trata.get("etapa", "")}
+	if _trata.has("filtro"):
+		r["corte"] = _trata["filtro"].cutoff_hz
+		r["musica_db"] = _trata["amp"].volume_db
+	if is_instance_valid(_trata.get("bucle")):
+		r["bucle_db"] = _trata["bucle"].volume_db
+		r["bucle_suena"] = _trata["bucle"].playing
+	return r
+
+
+func _trata_vigente() -> bool:
+	var du = _trata.get("dueno")
+	return is_instance_valid(du) and du is Node and du.is_inside_tree()
+
+
 func _quitar_efecto_bus(i: int, efecto_bus: AudioEffect) -> void:
 	for k in range(AudioServer.get_bus_effect_count(i) - 1, -1, -1):
 		if AudioServer.get_bus_effect(i, k) == efecto_bus:
@@ -1039,6 +1200,9 @@ func _al_cambiar_escena() -> void:
 		_oyente = null
 	if not _eco.is_empty() and _eco_escena != _escena:
 		quitar_eco()
+	if not _trata.is_empty() and (not _trata_vigente() or _escena != null and _trata["dueno"] != _escena \
+			and not _escena.is_ancestor_of(_trata["dueno"])):
+		quitar_tratamiento()                               # V9: el tratamiento del jefe no pasa a otra escena
 	if _det3d_escena != null and _det3d_escena != _escena:
 		_det3d_escena = null
 		_det3d_donde = Callable()

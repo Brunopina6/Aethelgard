@@ -747,7 +747,7 @@ func _mirar_orbe() -> void:
 # El velo de color sobre la pantalla mientras dura la visión.
 func _vision(si: bool, c := Color.TRANSPARENT) -> void:
 	if si:
-		Sonido.efecto("misterio")
+		Sonido.efecto("orbe_vision")                   # V9: la resonancia cristalina de la visión (sonido.gd)
 		if _velo == null:
 			_velo = ColorRect.new()
 			_velo.size = Vector2(1280, 720)
@@ -757,6 +757,7 @@ func _vision(si: bool, c := Color.TRANSPARENT) -> void:
 		_velo.color = Color(c, 0.0)
 		create_tween().tween_property(_velo, "color:a", c.a, 0.8)
 	elif _velo != null:
+		Sonido.efecto("orbe_cierra")                   # V9: la visión se cierra (sonido.gd)
 		var v := _velo
 		_velo = null
 		var t := create_tween()

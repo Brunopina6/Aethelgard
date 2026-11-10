@@ -1449,7 +1449,7 @@ func _turno_guardian(f: Dictionary, vivos: Array, mult: float) -> void:
 		_marcar_aviso(f, true)
 		if modelo != null and modelo.has_method("cargar"):
 			modelo.cargar("golpe_fuerte")
-		Sonido.efecto("carga_jefe")                 # sonido.gd
+		Sonido.efecto("guardian_bosque_carga")      # V9: su latido grave, en lugar de «carga_jefe» (sonido.gd)
 		if fase2:
 			registro.text = "%s hunde sus raíces en la tierra: ¡va a golpear a todos!" % f["nombre"]
 			_numero_flotante(f, "⚠ ¡Juicio del bosque!", Color(1.0, 0.8, 0.2), 32)
@@ -2747,6 +2747,7 @@ func _usar_elixir(nombre: String, g: Dictionary) -> void:
 	g["cargando"] = false
 	registro.text = _texto_bosque("purificacion", "La savia clara empapa sus raíces. El Guardián recuerda.")
 	Sonido.efecto("pocion")
+	Sonido.efecto("guardian_bosque_purificar")      # V9: cálido y luminoso; su bosque se calma (sonido.gd)
 	_fogonazo(Color(0.75, 1.0, 0.6), 0.5, 1.2)
 	_luz(Color(0.6, 1.0, 0.5), 2.4, 6.0, 2.0, _centro(g))
 	_particulas(_centro(g) + Vector2(0, 120), Color(0.85, 1.0, 0.6, 1.0), Color(0.3, 0.9, 0.3, 0.0), 60, 2.0,
@@ -2926,7 +2927,10 @@ func _presentar(f: Dictionary) -> void:
 	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	titulo.modulate.a = 0.0
 	capa.add_child(titulo)
-	Sonido.efecto("jefe")                          # sonido.gd
+	if Bosque.es_guardian(f):                      # V9: su título y el tratamiento de su combate, atado a este (sonido.gd)
+		Sonido.efecto("guardian_bosque_jefe", {"en": self})
+	else:
+		Sonido.efecto("jefe")                      # sonido.gd
 	_temblor(6.0)
 	var t := create_tween()
 	t.tween_property(titulo, "modulate:a", 1.0, 0.35)
@@ -2974,7 +2978,7 @@ func _cambio_fase(f: Dictionary) -> void:
 func _cambio_fase_bosque(f: Dictionary) -> void:
 	estado = "accion"
 	registro.text = _texto_bosque("fase2", "¡El corazón del bosque despierta!")
-	Sonido.efecto("fase2")
+	Sonido.efecto("guardian_bosque_fase2")         # V9: su rugido de corteza, en lugar de «fase2» (sonido.gd)
 	_fogonazo(Color(0.55, 1.0, 0.45), 0.55, 0.8)
 	_temblor(12.0)
 	menu.vibrar(60)
@@ -3667,6 +3671,7 @@ func _sonidos_bestia(e: Dictionary, p) -> void:
 # rama llega 2,27 m por delante y las raíces del golpe fuerte brotan a 1,7 m. El impacto, una vez, en el momento del clip.
 func _anim_guardian(o: Dictionary, impacto: Callable, ataque: String) -> void:
 	var p = _p3d(o)
+	_voz(o, "ataque")                                # V9: la madera cruje al alzar la rama (sonido.gd, «corteza»)
 	o["animando"] = true
 	var golpes := [0]
 	var al_golpear := func():
@@ -4633,6 +4638,9 @@ func _tic_quemadura(f: Dictionary) -> void:
 
 
 func _restablecer_color(f: Dictionary) -> void:
+	if f["hp"] <= 0 and Bosque.es_guardian(f) and not f.get("purificado", false) and not f.get("derrumbe", false):
+		f["derrumbe"] = true                           # V9: el Guardián se desmorona, una vez (no si se purifica; sonido.gd)
+		_sonar("guardian_bosque_derrumbe")
 	var rig: Node2D = f["rig"]
 	if _p3d(f) != null:
 		if f["hp"] > 0:

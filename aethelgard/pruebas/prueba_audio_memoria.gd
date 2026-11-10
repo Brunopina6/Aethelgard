@@ -21,6 +21,8 @@ const FRECUENCIA := {
 	"res://audio/efectos/ambiente/mercado_murmullo.wav": 22050,
 	"res://audio/ambiente/pradera.wav": 32000, "res://audio/ambiente/mazmorra.wav": 32000,
 	"res://audio/ambiente/desierto.wav": 32000,
+	# V9 (10/11): el bosque antiguo del combate del Guardián: por encima de 11 025 Hz, −63 dB respecto al total (medido)
+	"res://audio/efectos/ambiente/bosque_antiguo.wav": 22050,
 }
 
 var fallos := 0
