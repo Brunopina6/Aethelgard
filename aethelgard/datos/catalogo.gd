@@ -9,7 +9,7 @@ extends RefCounted
 
 const TIPOS := ["materiales", "recetas", "investigaciones"]
 # Los tres talleres previstos (fase 3) y quién lleva cada uno.
-const TALLERES := {"alquimia": "Lya", "forja": "Kael", "armaduras": "Garon"}
+const TALLERES := {"alquimia": "Lya", "forja": "Kael", "armaduras": "Garon", "conjunto": "Kael, Lya y Garon"}
 const REQUISITOS := ["material", "hito", "investigacion", "nivel"]
 const HEROES := ["Kael", "Lya", "Garon"]
 

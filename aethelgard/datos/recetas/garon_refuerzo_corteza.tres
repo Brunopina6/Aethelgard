@@ -1,0 +1,15 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/receta.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "garon_refuerzo_corteza"
+taller = "armaduras"
+nombre = "Refuerzo de corteza"
+materiales = {"Musgo de piedra": 2}
+resultado = "mejora:Garon:defensa:3"
+cantidad = 1
+investigacion = "garon_runas"
+desc = "Garon refuerza su equipo con corteza y musgo: +3 de defensa para siempre."
+borrador = false

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/receta.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "garon_runa_raiz"
+taller = "armaduras"
+nombre = "Runa de raíz"
+materiales = {"Savia clara": 1, "Hierba lunar": 1}
+resultado = "tecnica:Garon:barrera_inicio:0.1"
+cantidad = 1
+investigacion = "garon_runas"
+desc = "Una runa grabada en su escudo: empieza cada combate con una coraza pequeña."
+borrador = false

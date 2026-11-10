@@ -1,0 +1,15 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/receta.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "kael_corte_certero"
+taller = "forja"
+nombre = "Técnica: corte certero"
+materiales = {"Hierba lunar": 2}
+resultado = "tecnica:Kael:critico:0.08"
+cantidad = 1
+investigacion = "kael_afilado"
+desc = "Kael aprende a buscar las grietas: +8 % de golpe crítico para siempre."
+borrador = false

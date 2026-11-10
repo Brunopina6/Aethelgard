@@ -10,7 +10,10 @@ signal cerrado
 const Catalogo := preload("res://datos/catalogo.gd")
 const Investigacion := preload("res://investigacion.gd")
 const Talleres := preload("res://talleres.gd")
-const TALLER := "alquimia"
+# Qué taller muestra (V9: oficios): alquimia (Lya), forja (Kael), armaduras (Garon) o conjunto. Se pone antes de abrirla.
+var taller := "alquimia"
+const TITULOS := {"alquimia": "Alquimia de Lya", "forja": "Forja de Kael", "armaduras": "Armaduras y runas de Garon",
+	"conjunto": "Taller conjunto"}
 const ORO := Color("E8C46A")
 const SUAVE := Color(0.85, 0.82, 0.74)
 const MAL := Color(1.0, 0.55, 0.45)
@@ -34,7 +37,7 @@ func _ready() -> void:
 	panel.position = Vector2(80, 36)
 	panel.size = Vector2(1120, 648)
 	add_child(panel)
-	var titulo := _texto("Alquimia de Lya", 34, ORO)
+	var titulo := _texto(TITULOS.get(taller, "Taller"), 34, ORO)
 	titulo.autowrap_mode = TextServer.AUTOWRAP_OFF
 	titulo.position = Vector2(110, 52)
 	add_child(titulo)
@@ -139,7 +142,7 @@ func _pintar_recetas() -> void:
 	var hay := false
 	for id in todas:
 		var rc: Resource = todas[id]
-		if rc.taller != TALLER or rc.borrador:
+		if rc.taller != taller or rc.borrador:
 			continue
 		hay = true
 		var partes: Array = []
@@ -161,12 +164,12 @@ func _pintar_recetas() -> void:
 			linea2 = motivo
 			c2 = MAL
 		else:
-			linea2 = "Lista para preparar. Tienes %d." % Inv.cantidad(rc.resultado)
-		var desc: String = QUE_HACE.get(rc.resultado, "")
-		_fila(rc.nombre if rc.nombre == rc.resultado else "%s → %s" % [rc.nombre, rc.resultado], "Ingredientes: " + ", ".join(partes) + ("   ·   " + desc if desc != "" else ""),
+			linea2 = "Lista para preparar." if Talleres._de_un_uso(rc) else "Lista para preparar. Tienes %d." % Inv.cantidad(rc.resultado)
+		var desc: String = QUE_HACE.get(rc.resultado, rc.desc if rc.desc != "" else Talleres.texto_resultado(rc.resultado))
+		_fila(rc.nombre if rc.nombre == rc.resultado or Talleres._de_un_uso(rc) else "%s → %s" % [rc.nombre, rc.resultado], "Ingredientes: " + ", ".join(partes) + ("   ·   " + desc if desc != "" else ""),
 			linea2, c2, "FABRICAR", motivo != "", _fabricar.bind(id))
 	if not hay:
-		lista.add_child(_texto("Lya aún no conoce ninguna receta.", 24, SUAVE))
+		lista.add_child(_texto("Aún no hay recetas en este taller.", 24, SUAVE))
 	_enfocar_primero()
 
 
@@ -174,7 +177,7 @@ func _fabricar(id: String) -> void:
 	var rc := Catalogo.uno("recetas", id)
 	if Talleres.fabricar(id):
 		Sonido.efecto("tesoro")
-		mensaje.text = "Lya prepara %s. (+%d)" % [rc.resultado, rc.cantidad]
+		mensaje.text = "Hecho: %s." % rc.nombre if Talleres._de_un_uso(rc) else "Preparado: %s. (+%d)" % [rc.resultado, rc.cantidad]
 		mensaje.add_theme_color_override("font_color", BIEN)
 	else:
 		Sonido.efecto("ui_error")
@@ -187,7 +190,7 @@ func _pintar_investigaciones() -> void:
 	var todas: Dictionary = Catalogo.todos("investigaciones")
 	for id in todas:
 		var v: Resource = todas[id]
-		if v.taller != TALLER or v.borrador:
+		if v.taller != taller or v.borrador:
 			continue
 		var e: String = Investigacion.estado(id)
 		var linea2 := ""
@@ -234,9 +237,9 @@ func _investigar(id: String) -> void:
 		Investigacion.avanzar(id, 1)
 	if v.pasos <= 1:                                 # un estudio corto: se completa al momento
 		Investigacion.avanzar(id, v.pasos)
-		mensaje.text = "Lya termina de estudiar «%s»." % v.nombre
+		mensaje.text = "Estudio terminado: «%s»." % v.nombre
 	else:
-		mensaje.text = "Lya empieza a investigar «%s»." % v.nombre
+		mensaje.text = "Empieza la investigación «%s»." % v.nombre
 	Sonido.efecto("pagina")
 	mensaje.add_theme_color_override("font_color", BIEN)
 	_pintar()

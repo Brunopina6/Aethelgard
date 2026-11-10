@@ -1,0 +1,14 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/investigacion.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "garon_runas"
+taller = "armaduras"
+nombre = "Runas de corteza"
+desc = "Garon copia las runas del claro sobre su equipo. Despacio. Sin errores."
+requisitos = [{"tipo": "hito", "id": "bq_resuelto"}, {"tipo": "material", "id": "Musgo de piedra", "cantidad": 1}]
+pasos = 1
+desbloquea = PackedStringArray("garon_refuerzo_corteza", "garon_runa_raiz")
+borrador = false

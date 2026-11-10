@@ -112,6 +112,12 @@ static func estadisticas(heroe: String) -> Dictionary:
 			magia_extra += int(o.get("magia", 0))
 			for k in o.get("bonus", {}):
 				a[k] = a.get(k, 0) + o["bonus"][k]
+		var mj: Dictionary = inv.datos().get("mejoras", {}).get(heroe, {})   # mejoras de su taller (V9: oficios)
+		for k in mj:
+			if k == "ataque":
+				ataque += int(mj[k])
+			else:
+				a[k] = a.get(k, 0) + int(mj[k])
 	if ResourceLoader.exists("res://equipo_extra.gd"):   # Hoja sin Nombre (C2): +1 de ataque por recuerdo visto
 		var X = load("res://equipo_extra.gd")
 		ataque += X.ataque_recuerdo(X.efectos_de(heroe), Engine.get_meta("lore_visto", {}))

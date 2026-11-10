@@ -1,0 +1,15 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/receta.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "amuleto_claro"
+taller = "conjunto"
+nombre = "Amuleto del claro"
+materiales = {"Savia clara": 1, "Hierba lunar": 1, "Musgo de piedra": 1}
+resultado = "amuleto_claro"
+cantidad = 1
+investigacion = "conjunto_bosque"
+desc = "Accesorio: recupera PV cada turno y afina los golpes críticos."
+borrador = false

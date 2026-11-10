@@ -9,4 +9,5 @@ extends Resource
 @export var resultado := ""                  # id del objeto que da (inventario, equipo_extra o un material)
 @export var cantidad := 1
 @export var investigacion := ""              # id de la investigación que la desbloquea ("" = desde el principio)
+@export_multiline var desc := ""            # qué hace, para la pantalla del taller (opcional)
 @export var borrador := true

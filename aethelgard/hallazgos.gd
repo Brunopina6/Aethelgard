@@ -54,6 +54,7 @@ const FUERA := {
 	"fauces_gorthor": "al vencer a Gorthor (combate.gd, RECOMPENSA_FIJO)",
 	"brote_guardian": "al purificar al Guardián del Bosque, Pastos Verdes (fase 3; combate.gd, _premio_bosque)",
 	"corteza_guardian": "al derrotar al Guardián del Bosque, Pastos Verdes (fase 3; combate.gd, _premio_bosque)",
+	"amuleto_claro": "se fabrica en el taller conjunto (V9; talleres.gd, receta amuleto_claro)",
 }
 
 

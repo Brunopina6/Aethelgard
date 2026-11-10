@@ -1,0 +1,15 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/receta.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "kael_filo_savia"
+taller = "forja"
+nombre = "Filo de savia"
+materiales = {"Musgo de piedra": 1, "Savia clara": 1}
+resultado = "mejora:Kael:ataque:3"
+cantidad = 1
+investigacion = "kael_afilado"
+desc = "Kael afila su arma con savia y musgo: +3 de ataque para siempre."
+borrador = false

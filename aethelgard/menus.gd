@@ -250,14 +250,29 @@ func _cambiar(ranura: String, paso: int) -> void:
 func _pintar_objetos() -> void:
 	cuerpo.add_child(_texto("Objetos", 26, COLOR_TITULO))
 	cuerpo.add_child(_texto("Monedas: %d" % Inv.oro(), 22, COLOR_TITULO))
-	if load("res://progreso.gd").hito("bq_alquimia") and load("res://grupo.gd").activos().has("Lya"):   # fase 3
-		var alq := _boton("Alquimia de Lya", 18, Vector2(240, 40), "alquimia")
-		alq.pressed.connect(func():
+	# Talleres (fase 3 y V9): la alquimia de Lya al descubrirla; la forja de Kael, las armaduras de Garon y el taller
+	# conjunto tras resolver lo del Guardián del Bosque. Cada uno, con su héroe (o los tres) en el grupo.
+	var P = load("res://progreso.gd")
+	var activos: Array = load("res://grupo.gd").activos()
+	var talleres := HBoxContainer.new()
+	talleres.add_theme_constant_override("separation", 8)
+	for t in [["alquimia", "Alquimia de Lya", P.hito("bq_alquimia") and activos.has("Lya")],
+			["forja", "Forja de Kael", P.hito("bq_resuelto") and activos.has("Kael")],
+			["armaduras", "Runas de Garon", P.hito("bq_resuelto") and activos.has("Garon")],
+			["conjunto", "Taller conjunto", P.hito("bq_resuelto") and activos.has("Kael") and activos.has("Lya") and activos.has("Garon")]]:
+		if not t[2]:
+			continue
+		var cual: String = t[0]
+		var b := _boton(t[1], 18, Vector2(200, 40), cual)
+		b.pressed.connect(func():
 			Sonido.efecto("ui_tic")
 			var a = load("res://alquimia_menu.gd").new()
+			a.taller = cual
 			a.cerrado.connect(_pintar_de_nuevo)
 			get_tree().root.add_child(a))
-		cuerpo.add_child(alq)
+		talleres.add_child(b)
+	if talleres.get_child_count() > 0:
+		cuerpo.add_child(talleres)
 	var usos: Dictionary = load("res://combate.gd").OBJETOS_COMBATE
 	for o in Inv.datos()["objetos"]:
 		var f := HBoxContainer.new()

@@ -106,6 +106,11 @@ const ACCESORIOS := {
 		"efecto": "Empieza con una coraza pequeña.",
 		"texto": "Corteza dura como el hierro, arrancada al Guardián vencido. Todavía huele a lluvia.",
 		"donde": "Al derrotar al Guardián del Bosque (Pastos Verdes)"},
+	# V9, investigación conjunta de Lya, Kael y Garon (talleres.gd, receta amuleto_claro).
+	"amuleto_claro": {"nombre": "Amuleto del claro", "efectos": {"regen": 0.03, "critico": 0.05},
+		"efecto": "PV por turno y algún crítico.",
+		"texto": "Savia, musgo y una runa de Garon en un nudo de Kael. Lya dice que aún late.",
+		"donde": "Taller conjunto, tras «Lo que aprendimos del bosque»"},
 	"pluma_arpia": {"nombre": "Pluma de arpía", "efectos": {"esquiva": 0.12},
 		"efecto": "12 % de esquivar golpes.",
 		"texto": "Blanca, ligera y fría. Vex pagaría bien por ella.",
@@ -258,7 +263,13 @@ static func efectos_de_equipo(equipo: Dictionary) -> Dictionary:
 static func efectos_de(heroe: String) -> Dictionary:
 	if not ResourceLoader.exists("res://inventario.gd"):
 		return {}
-	return efectos_de_equipo(load("res://inventario.gd").equipo_de(heroe))
+	var Inv = load("res://inventario.gd")
+	var r := efectos_de_equipo(Inv.equipo_de(heroe))
+	var tec: Dictionary = Inv.datos().get("tecnicas", {}).get(heroe, {})   # técnicas y runas de su taller (V9: oficios)
+	for k in tec:
+		if EFECTOS.has(k) and EFECTOS[k]["tipo"] == "num":
+			r[k] = minf(float(EFECTOS[k]["max"]), float(r.get(k, 0.0)) + float(tec[k]))
+	return r
 
 
 # ATB al empezar el combate (combate.gd _ready): nunca 100, para que entre en la cola por el camino normal.

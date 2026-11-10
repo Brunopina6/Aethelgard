@@ -71,7 +71,7 @@ func _borrar() -> void:
 
 # ---------------------------------------------------------------- 1. datos
 func _datos() -> void:
-	_ok(X.ACCESORIOS.size() == 10 and X.ARMAS.size() == 6,   # +2 de la fase 3 (Brote y Corteza del Guardián)
+	_ok(X.ACCESORIOS.size() == 11 and X.ARMAS.size() == 6,   # +2 de la fase 3 (Brote y Corteza del Guardián)
 		 "1: hay %d accesorios y %d armas" % [X.ACCESORIOS.size(), X.ARMAS.size()])
 	var nombres := {}
 	for id in X.ACCESORIOS.keys() + X.ARMAS.keys():
@@ -107,7 +107,7 @@ func _datos() -> void:
 		X.ARMAS["gemelas_muralla"]["ataque"] < I.ARMAS["hoja_infernal"]["ataque"], "1: las de Garon quitan más que sus Hojas")
 	for id in X.ACCESORIOS:
 		_ok(not X.ACCESORIOS[id].has("ataque") and not X.ACCESORIOS[id].has("magia"), "1: el accesorio %s da ataque o magia" % id)
-	_hecho("1: 10 accesorios y 6 armas especiales, con datos completos")
+	_hecho("1: 11 accesorios y 6 armas especiales, con datos completos")
 
 
 # ---------------------------------------------------------------- 2. objeto, ranura y «solo»
@@ -205,7 +205,7 @@ func _disponible() -> void:
 	var c1 := ["C1"]
 	var en_c1: Array = (X.ACCESORIOS.keys() + X.ARMAS.keys()).filter(func(id): return X.disponible(id, c1))
 	en_c1.sort()
-	var esperado := ["brote_guardian", "cinta_lumi", "diente_grimfang", "farol_peregrino", "gota_cascada", "moneda_aguila",
+	var esperado := ["amuleto_claro", "brote_guardian", "cinta_lumi", "diente_grimfang", "farol_peregrino", "gota_cascada", "moneda_aguila",
 		"pluma_arpia"]                               # brote_guardian: fase 3 (regen y PM, C1); la Corteza va con M3
 	_ok(en_c1 == esperado, "5: con C1 están disponibles %s (el diseño: los 6 accesorios menos Lágrima y Brasa)" % [en_c1])
 	_ok(X.disponible("lagrima_ambar", ["C1", "M3"]) and X.disponible("brasa_frasco", ["C1", "M4"])

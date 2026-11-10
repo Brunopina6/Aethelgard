@@ -305,6 +305,8 @@ func tras_dialogo(id: String) -> void:
 			for rec in RECOLECCION:
 				if rec[3] and not Pr.hito(rec[0]):
 					_punto("rec:" + rec[0], _crear_material(_sitio(rec[2]), rec[1]), "Recoger: " + rec[1])
+		"bq_purificado", "bq_derrotado":            # V9: se abren los oficios de Kael y Garon
+			r._mostrar_aviso("Kael y Garon quieren probar lo aprendido: forja y runas en el menú (Objetos).", 3.6)
 		"bq_orbe_a":
 			Pr.poner_hito("bq_orbe_a")
 			_vision(false)

@@ -11,7 +11,8 @@ signal cerrado
 const OBJETOS := {"Poción": 20, "Éter": 45, "Incienso de Ceniza": 80}
 # Fase 3, «El bosque que no recuerda»: tras el Guardián del Bosque, Doña Encina deja hierbas a la venta en Oakhaven
 # (lugar 0). Purificado: Hierba lunar y Savia clara; derrotado: solo Hierba lunar. Más caras de lo que paga la tienda.
-const OBJETOS_BOSQUE := {"purificado": {"Hierba lunar": 15, "Savia clara": 30}, "derrotado": {"Hierba lunar": 15}}
+const OBJETOS_BOSQUE := {"purificado": {"Hierba lunar": 15, "Savia clara": 30, "Musgo de piedra": 12},
+	"derrotado": {"Hierba lunar": 15, "Musgo de piedra": 12}}   # el musgo, para los oficios de Kael y Garon (V9)
 
 
 static func objetos_de(lugar: int) -> Dictionary:

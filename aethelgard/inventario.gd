@@ -77,6 +77,10 @@ const INICIAL := {
 	"equipo": {"Kael": {"arma": "frostfang", "cuerpo": "ropa_viaje", "pies": "botas_cuero"},
 		"Lya": {"arma": "cetro_loto", "cuerpo": "tunica_lino"},
 		"Garon": {"arma": "hoja_infernal"}},
+	# Oficios (V9): mejoras y técnicas de cada héroe, fabricadas en su taller (talleres.gd); recetas de un solo uso hechas.
+	"mejoras": {},
+	"tecnicas": {},
+	"hechas": [],
 }
 
 

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/investigacion.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "conjunto_bosque"
+taller = "conjunto"
+nombre = "Lo que aprendimos del bosque"
+desc = "Lya, Kael y Garon juntan lo que sabe cada uno para hacer algo que ninguno haría solo."
+requisitos = [{"tipo": "investigacion", "id": "lya_savia"}, {"tipo": "investigacion", "id": "kael_afilado"}, {"tipo": "investigacion", "id": "garon_runas"}]
+pasos = 1
+desbloquea = PackedStringArray("amuleto_claro")
+borrador = false

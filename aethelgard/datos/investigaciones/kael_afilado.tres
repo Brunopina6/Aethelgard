@@ -1,0 +1,14 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/investigacion.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "kael_afilado"
+taller = "forja"
+nombre = "El filo del bosque"
+desc = "Kael estudia cómo la savia y el musgo endurecen el acero sin quebrarlo."
+requisitos = [{"tipo": "hito", "id": "bq_resuelto"}, {"tipo": "material", "id": "Musgo de piedra", "cantidad": 1}]
+pasos = 1
+desbloquea = PackedStringArray("kael_filo_savia", "kael_corte_certero")
+borrador = false
