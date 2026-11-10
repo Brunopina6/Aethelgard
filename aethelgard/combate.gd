@@ -233,9 +233,11 @@ const MODELOS := {
 		"gestos": "res://gestos_3d.gd", "rutas": ["res://enemigos/coloso_falla/coloso_falla.glb"],
 		"vp": Vector2i(1000, 1120), "alto_vista": 4.6, "centro_y": 1.95, "barra_y": 50.0, "centro_3d": 1.9,
 		"respaldo": "coloso_falla2d"},
-	# Respaldo 2D: el guardián de piedra, más grande que el del Bosque y teñido de gris con un poso de ámbar (sus runas).
-	"coloso_falla2d": {"tipo": "imagen", "imagen": "res://enemigos/guardian.png", "cadera": Vector2(160, 470), "tam": 1.6,
-		"barra_y": -298.0, "centro_y": 18.0, "tinte": Color(0.8, 0.76, 0.68)},
+	# Respaldo 2D: el guardián de piedra, grande (más alto que dos héroes) y teñido de gris cálido (la imagen es verdosa).
+	# Con GRUPOS[12] en y = 90, los pies caen a unos 470 px de pantalla y la cabeza a unos 75: su vida y sus estados
+	# (Piel de piedra, Expuesto…) se leen encima, dentro de la pantalla (capturas de pruebas/fotos_coloso.gd).
+	"coloso_falla2d": {"tipo": "imagen", "imagen": "res://enemigos/guardian.png", "cadera": Vector2(160, 470), "tam": 1.45,
+		"barra_y": -197.0, "centro_y": 90.0, "tinte": Color(1.05, 0.86, 0.8)},
 }
 
 # Enemigos disponibles y grupos que pueden aparecer en un encuentro (se elige uno al azar).
@@ -280,7 +282,7 @@ const GRUPOS := [
 	[["grimfang", Vector2(300, 130)]],                                      # 9
 	[["zarzalin", Vector2(250, 120)]],                                      # 10: Zarzalín (Pastos Verdes)
 	[["guardian_bosque", Vector2(150, -120)]],                               # 11: Guardián del Bosque (Pastos Verdes, fase 3)
-	[["coloso_falla", Vector2(150, -120)]],                                  # 12: Coloso de la Falla (Garganta 3D, V9)
+	[["coloso_falla", Vector2(150, 90)]],                                    # 12: Coloso de la Falla (Garganta 3D, V9)
 ]
 const GRUPOS_AL_AZAR := 5           # solo los primeros salen en encuentros aleatorios (con el grupo de tres)
 # Encuentros al azar según cuántos héroes hay ahora en el grupo (grupo.gd, activos). Kael solo no tiene cura ni a
@@ -1517,8 +1519,8 @@ func _turno_guardian(f: Dictionary, vivos: Array, mult: float) -> void:
 # gasta y, en la fase 2, cambia de defensa (combate_coloso.fin_turno), con su aviso.
 const COLOR_RUNAS := Color(1.0, 0.7, 0.28)          # ámbar de las runas (fase 2, coraza rúnica y Leer runas)
 const COLOR_VENTANA := Color(1.0, 0.42, 0.22)       # los puntos débiles, en la ventana
-const TINTE_CORAZA := Color(1.0, 0.76, 0.46)        # el respaldo 2D con la coraza rúnica puesta
-const TINTE_PIEL := Color(0.86, 0.74, 0.6)          # el respaldo 2D en la fase 2, con la piel de piedra
+const TINTE_CORAZA := Color(1.4, 0.95, 0.55)        # el respaldo 2D con la coraza rúnica puesta (ámbar dorado)
+const TINTE_PIEL := Color(1.15, 0.86, 0.68)         # el respaldo 2D en la fase 2, con la piel de piedra (gris cálido)
 
 
 func _turno_coloso(f: Dictionary, vivos: Array, mult: float) -> void:
