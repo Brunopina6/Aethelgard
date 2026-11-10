@@ -597,21 +597,11 @@ func _crear_claro() -> void:
 	var n := Node3D.new()
 	n.position = p
 	add_child(n)
+	# el Claro del Guardián (V9, gráficos: zonas3d/bosque/claro_guardian.gd): menhires, raíces y tocón-trono, según el estado
+	if ResourceLoader.exists("res://zonas3d/bosque/claro_guardian.gd"):
+		load("res://zonas3d/bosque/claro_guardian.gd").crear(r, p, B.desenlace() if P().hito("bq_resuelto") else "dormido", self)
 	if P().hito("bq_resuelto"):
 		n.name = "bq_claro_" + B.desenlace()
-		if B.desenlace() == "purificado":
-			var brote := CylinderMesh.new()
-			brote.top_radius = 0.05
-			brote.bottom_radius = 0.1
-			brote.height = 1.2
-			r._pieza(n, brote, _mat(Color(0.4, 0.75, 0.3), true), Vector3(0, 0.6, 0))
-			n.add_child(_crear_manantial_claro())
-		else:
-			var tocon := CylinderMesh.new()
-			tocon.top_radius = 1.0
-			tocon.bottom_radius = 1.3
-			tocon.height = 1.0
-			r._pieza(n, tocon, _mat(Color(0.4, 0.38, 0.36)), Vector3(0, 0.5, 0))
 		_punto("claro", n, "Examinar el claro")
 		return
 	n.name = "bq_guardian_dormido"
