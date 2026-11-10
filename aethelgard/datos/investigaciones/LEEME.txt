@@ -1,0 +1,3 @@
+Aquí van las investigaciones de los talleres (un .tres por cada una, tipo res://datos/tipos/).
+Vacía a propósito hasta que el usuario apruebe el diseño de la fase 3 (docs/fase2_optimizacion/FASE3_TALLERES.md).
+Las pruebas usan datos de ejemplo de res://pruebas/datos_prueba/.

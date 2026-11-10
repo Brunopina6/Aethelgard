@@ -1,0 +1,14 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/investigacion.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "circular"
+taller = "alquimia"
+nombre = "Investigación circular"
+desc = "Investigación de prueba."
+requisitos = [{"tipo": "investigacion", "id": "circular"}, {"tipo": "magia", "id": "x"}, {"tipo": "nivel", "heroe": "Nyx", "nivel": 2}, {"tipo": "material", "id": "Nada", "cantidad": 1}]
+pasos = 0
+desbloquea = PackedStringArray("receta_fantasma")
+borrador = true

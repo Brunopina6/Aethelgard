@@ -1,0 +1,12 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/material.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "mineral_hierro"
+clave_inventario = "Mineral de hierro"
+nombre = "Mineral de hierro"
+venta = 7
+desc = "Material de prueba."
+de_enemigos = PackedStringArray("golem_prueba")

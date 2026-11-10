@@ -151,9 +151,10 @@ func _pintar() -> void:
 					desc = "Sin encuentros durante %d pasos" % load("res://progreso.gd").PASOS_INCIENSO
 				_fila(o, desc, "Tienes %d" % Inv.cantidad(o), OBJETOS[o], func(): _comprar_objeto(o))
 			var Extra = load("res://equipo_extra.gd")    # el botín de las bestias (T-097): se vende
-			for m in Extra.MATERIALES:
+			var mats: Dictionary = Extra.materiales()     # datos/materiales/ (fase 2)
+			for m in mats:
 				if Inv.cantidad(m) > 0:
-					_fila(m, Extra.MATERIALES[m]["desc"], "Tienes %d" % Inv.cantidad(m), Extra.MATERIALES[m]["venta"],
+					_fila(m, mats[m]["desc"], "Tienes %d" % Inv.cantidad(m), mats[m]["venta"],
 						func(): _vender(m), false, true)
 		"Equipo":
 			var precios := _precios_equipo()
@@ -216,11 +217,11 @@ func _comprar_objeto(o: String) -> void:
 	_pintar()
 
 
-# Vende uno del botín de las bestias (equipo_extra.gd MATERIALES) por su precio de venta.
+# Vende uno del botín de las bestias (datos/materiales/, por equipo_extra.materiales) por su precio de venta.
 func _vender(m: String) -> void:
 	if Inv.cantidad(m) > 0:
 		Inv.gastar(m)
-		Inv.ganar_oro(int(load("res://equipo_extra.gd").MATERIALES[m]["venta"]))
+		Inv.ganar_oro(int(load("res://equipo_extra.gd").materiales()[m]["venta"]))
 		Sonido.efecto("monedas")
 		_avisar("Has vendido %s." % m)
 	else:

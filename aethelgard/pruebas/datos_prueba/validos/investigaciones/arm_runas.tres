@@ -1,0 +1,14 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/investigacion.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "arm_runas"
+taller = "armaduras"
+nombre = "Investigación arm_runas"
+desc = "Investigación de prueba."
+requisitos = [{"tipo": "hito", "id": "prueba_runas"}, {"tipo": "investigacion", "id": "forja_filo"}]
+pasos = 2
+desbloquea = PackedStringArray("runa_defensa")
+borrador = true

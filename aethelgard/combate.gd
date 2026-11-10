@@ -16,6 +16,7 @@ const RONDAS_CONGELACION := 2
 const VITALIDAD_CONGELACION := 2
 const ATB_MAX := 100.0
 const Formulas := preload("res://combate_formulas.gd")   # fórmulas de daño (10/11)
+const Recompensas := preload("res://combate_recompensas.gd")   # experiencia y monedas al terminar (10/11, fase 2)
 const ESC := 0.8
 const CANVAS := Vector2(320, 480)
 const DANO_QUEMADURA := 5
@@ -4489,13 +4490,9 @@ func _repartir_exp(ganan: bool) -> void:
 	if not ResourceLoader.exists("res://grupo.gd"):
 		return
 	var gr = load("res://grupo.gd")
-	var total := 0
-	var oro := 0
-	for e in enemigos:
-		if e.get("huido", false):                 # los que huyen no dan nada
-			continue
-		total += int(e.get("exp", 0))
-		oro += int(e.get("oro", 0))
+	var dan: Dictionary = Recompensas.de_enemigos(enemigos)   # los que huyen no dan nada
+	var total: int = dan["exp"]
+	var oro: int = dan["oro"]
 	for h in heroes:
 		if gr.datos().has(h["nombre"]):
 			gr.guardar_vida(h["nombre"], h["hp"], h["mp"])
@@ -4524,10 +4521,11 @@ func _repartir_exp(ganan: bool) -> void:
 	for h in heroes:
 		if not gr.datos().has(h["nombre"]):
 			continue
-		var cantidad := int(round(total * Progreso.mult_exp(zona, tipo, gr.datos()[h["nombre"]]["nivel"])))
+		var mult_h: float = Progreso.mult_exp(zona, tipo, gr.datos()[h["nombre"]]["nivel"])
 		if h["hp"] <= 0:
-			gr.ganar_exp(h["nombre"], cantidad / 2)
+			gr.ganar_exp(h["nombre"], Recompensas.exp_de_heroe(total, mult_h, true))
 			continue
+		var cantidad: int = Recompensas.exp_de_heroe(total, mult_h, false)
 		var subidos: int = gr.ganar_exp(h["nombre"], cantidad)
 		if subidos > 0:
 			await get_tree().create_timer(1.0).timeout

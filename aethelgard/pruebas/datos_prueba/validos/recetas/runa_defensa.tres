@@ -1,0 +1,14 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/receta.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "runa_defensa"
+taller = "armaduras"
+nombre = "Receta de prueba"
+materiales = {"Hierba lunar": 1, "Mineral de hierro": 1}
+resultado = "Runa de defensa"
+cantidad = 2
+investigacion = "arm_runas"
+borrador = true
