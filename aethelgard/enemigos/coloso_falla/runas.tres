@@ -1,0 +1,8 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[resource]
+resource_name = "runas"
+albedo_color = Color(0.34, 0.26, 0.19, 1)
+roughness = 0.5
+emission_enabled = true
+emission = Color(1, 0.62, 0.25, 1)
