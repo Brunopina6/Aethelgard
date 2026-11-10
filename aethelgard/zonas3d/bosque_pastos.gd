@@ -24,6 +24,7 @@ const SITIO_RUINAS := Vector3(-12.0, 0, -12.0)
 const SITIO_MANANTIAL := Vector3(-16.0, 0, -8.5)
 const SITIO_COFRE := Vector3(-8.0, 0, -17.0)
 const SITIO_CLARO := Vector3(17.0, 0, -18.5)
+const SITIO_ORBE := Vector3(-9.0, 0, -10.0)        # el altar del orbe, en las ruinas (V9: los dos futuros del bosque)
 # Materiales: [id del punto, material, sitio, ¿solo tras abrir la senda?]
 const RECOLECCION := [
 	["bq_rec_hierba_1", "Hierba lunar", Vector3(4.5, 0, 6.5), false],
@@ -113,6 +114,7 @@ func _crear_senda_abierta() -> void:
 	_punto("manantial", _crear_manantial(_sitio(SITIO_MANANTIAL)), "Beber del manantial")
 	if not P().hito("bq_cofre_senda"):
 		_punto("cofre_senda", _crear_cofrecito(_sitio(SITIO_COFRE)), "Abrir el cofre")
+	_punto("orbe", _crear_altar_orbe(_sitio(SITIO_ORBE)), "Mirar el orbe")
 
 
 # Hueco libre más cercano a «c» (fuera del río y de lo prohibido), en el suelo.
@@ -253,6 +255,8 @@ func accion(id: String) -> void:
 				_dialogo("bq_senda")
 		"claro":
 			r._mostrar_aviso(T.TEXTOS["claro_purificado" if B.desenlace() == "purificado" else "claro_derrotado"], 3.2)
+		"orbe":
+			_mirar_orbe()
 		"manantial":
 			_beber()
 		"cofre_senda":
@@ -301,6 +305,17 @@ func tras_dialogo(id: String) -> void:
 			for rec in RECOLECCION:
 				if rec[3] and not Pr.hito(rec[0]):
 					_punto("rec:" + rec[0], _crear_material(_sitio(rec[2]), rec[1]), "Recoger: " + rec[1])
+		"bq_orbe_a":
+			Pr.poner_hito("bq_orbe_a")
+			_vision(false)
+		"bq_orbe_b":
+			Pr.poner_hito("bq_orbe_b")
+			Pr.poner_hito("bq_futuros")
+			_vision(false)
+			var I = load("res://investigacion.gd")
+			if I.estado("lya_savia") == "en_curso":
+				I.avanzar("lya_savia", 1)
+			r._mostrar_aviso("Lo que Lya ha visto en el orbe adelanta «La savia que recuerda».", 3.2)
 		"bq_guardian":
 			r._encuentro(B.COMBATE, GRUPO_GUARDIAN, "¡El Guardián despierta!")
 			return
@@ -679,9 +694,86 @@ func _ciervo(p: Vector3) -> void:
 
 
 func _animar(_delta: float) -> void:
+	animar_orbe()
 	for m in runas:                                  # las runas laten
 		if is_instance_valid(m):
 			m.scale = Vector3.ONE * (1.0 + 0.15 * sin(_t * 3.0))
 	if guardian != null and is_instance_valid(guardian) and guardian.get_child_count() > 0 \
 			and not ResourceLoader.exists("res://enemigos/guardian_bosque/guardian_bosque.glb"):
 		guardian.rotation.x = deg_to_rad(sin(_t * 0.8) * 1.5)   # respira, dormido
+
+
+# ================================================================= el orbe del altar (V9: «los futuros que nunca existieron»)
+# Propuesta experimental, pendiente de canon: el orbe de los altares (zona.gd, _adornar_altar) no tenía función. Aquí, en
+# las ruinas de la senda, muestra dos futuros del bosque que aún no han pasado: el que llega si el Guardián se purifica
+# (bq_orbe_a) y el que llega si cae (bq_orbe_b). Verlos los dos (bq_futuros) adelanta un paso la investigación de Lya.
+# Sin universos paralelos: dos diálogos y un tinte de pantalla.
+var orbe: MeshInstance3D
+var _velo: ColorRect
+
+
+func _mirar_orbe() -> void:
+	var Pr = P()
+	if Pr.hito("bq_resuelto"):
+		r._mostrar_aviso("El orbe ya no muestra dos caminos: solo el bosque tal como es ahora.", 3.0)
+		return
+	if not Pr.hito("bq_orbe_a"):
+		_vision(true, Color(0.75, 1.0, 0.55, 0.22))
+		_dialogo("bq_orbe_a")
+	elif not Pr.hito("bq_orbe_b"):
+		_vision(true, Color(0.55, 0.55, 0.6, 0.32))
+		_dialogo("bq_orbe_b")
+	else:
+		r._mostrar_aviso("El orbe late despacio. Los dos futuros siguen ahí, esperando.", 2.6)
+
+
+# El velo de color sobre la pantalla mientras dura la visión.
+func _vision(si: bool, c := Color.TRANSPARENT) -> void:
+	if si:
+		Sonido.efecto("misterio")
+		if _velo == null:
+			_velo = ColorRect.new()
+			_velo.size = Vector2(1280, 720)
+			_velo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			r._capa_ui.add_child(_velo)
+			r._capa_ui.move_child(_velo, 0)          # debajo de los botones y del diálogo
+		_velo.color = Color(c, 0.0)
+		create_tween().tween_property(_velo, "color:a", c.a, 0.8)
+	elif _velo != null:
+		var v := _velo
+		_velo = null
+		var t := create_tween()
+		t.tween_property(v, "color:a", 0.0, 0.8)
+		t.tween_callback(v.queue_free)
+
+
+func _crear_altar_orbe(p: Vector3) -> Node3D:
+	var n := Node3D.new()
+	n.name = "bq_altar_orbe"
+	n.position = p
+	add_child(n)
+	var base := CylinderMesh.new()
+	base.top_radius = 0.35
+	base.bottom_radius = 0.45
+	base.height = 0.9
+	base.radial_segments = 8
+	r._pieza(n, base, _mat(Color(0.6, 0.58, 0.54)), Vector3(0, 0.45, 0))
+	var losa := CylinderMesh.new()
+	losa.top_radius = 0.5
+	losa.bottom_radius = 0.5
+	losa.height = 0.08
+	losa.radial_segments = 8
+	r._pieza(n, losa, _mat(Color(0.66, 0.64, 0.6)), Vector3(0, 0.94, 0))
+	var esfera := SphereMesh.new()
+	esfera.radius = 0.22
+	esfera.height = 0.44
+	orbe = r._pieza(n, esfera, _mat(Color(0.8, 1.0, 0.7), true), Vector3(0, 1.45, 0))
+	if not P().hito("bq_futuros"):
+		r._destello(n, Vector3(0, 1.45, 0), 0.5)
+	return n
+
+
+func animar_orbe() -> void:
+	if orbe != null and is_instance_valid(orbe):
+		orbe.position.y = 1.45 + 0.08 * sin(_t * 1.6)
+		orbe.rotation.y = _t * 0.6

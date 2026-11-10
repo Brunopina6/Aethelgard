@@ -144,7 +144,7 @@ func _probar() -> void:
 	await _usar(r, "ramas", "bq:ramas")
 	if not P.hito("bq_senda"):
 		_fallo("3: con la pista del rastro y Garon, las ramas no se apartan")
-	for id in ["inscripcion", "manantial", "cofre_senda", "rec:bq_rec_hierba_4", "rec:bq_rec_musgo_3", "rec:bq_rec_savia_2"]:
+	for id in ["inscripcion", "manantial", "cofre_senda", "orbe", "rec:bq_rec_hierba_4", "rec:bq_rec_musgo_3", "rec:bq_rec_savia_2"]:
 		if _pos(r, id) == Vector3.INF:
 			_fallo("3: tras abrir la senda no aparece «%s»" % id)
 	var insc: Vector3 = _pos(r, "inscripcion")
@@ -153,6 +153,15 @@ func _probar() -> void:
 		_fallo("3: la inscripción no completa las pistas (bq_pistas)")
 	if lirios.distance_to(surcos) < 8.0 or surcos.distance_to(insc) < 8.0 or lirios.distance_to(insc) < 8.0:
 		_fallo("3: las pistas están demasiado juntas (%s, %s, %s)" % [lirios, surcos, insc])
+	# 3b. el orbe del altar (V9): dos visiones, una tras otra; con las dos, bq_futuros
+	await _usar(r, "orbe", "bq:orbe")
+	if not P.hito("bq_orbe_a") or P.hito("bq_orbe_b"):
+		_fallo("3b: la primera mirada al orbe no muestra solo el primer futuro")
+	await _usar(r, "orbe", "bq:orbe")
+	if not P.hito("bq_orbe_b") or not P.hito("bq_futuros"):
+		_fallo("3b: la segunda mirada no muestra el segundo futuro (bq_futuros)")
+	if r.bosque._velo != null:
+		_fallo("3b: el velo de la visión no se quita al terminar")
 	# 4. materiales
 	for rec in r.bosque.RECOLECCION:
 		await _usar(r, "rec:" + rec[0], "bq:rec:" + rec[0])
@@ -191,6 +200,9 @@ func _probar() -> void:
 		if Inv.cantidad("Poción") != pociones + 1 or Inv.cantidad("Hierba lunar") != 2:
 			_fallo("6: la Poción no gasta o no da lo suyo")
 		a._investigar("lya_savia")
+		var pv: int = int(Engine.get_meta("investigaciones", {}).get("lya_savia", {}).get("progreso", 0))
+		if pv != 1:
+			_fallo("6: lo visto en el orbe no adelanta un paso (progreso %d)" % pv)
 		if load("res://investigacion.gd").estado("lya_savia") != "en_curso":
 			_fallo("6: «La savia que recuerda» no empieza")
 		load("res://investigacion.gd").avanzar_en_curso()     # dos combates ganados (combate.gd, _fin_combate)

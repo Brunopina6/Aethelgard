@@ -16,7 +16,8 @@ const DIALOGOS := {
 	"bq_tilo_1": "bosque", "bq_arbol": "bosque", "bq_pista_planta": "bosque", "bq_pista_rastro": "bosque",
 	"bq_senda": "bosque", "bq_pista_inscripcion": "bosque", "bq_pistas": "bosque", "bq_guardian": "bosque",
 	"bq_purificado": "bosque", "bq_derrotado": "bosque", "bq_tilo_durante": "bosque", "bq_tilo_purificado": "bosque",
-	"bq_tilo_derrotado": "bosque", "oak_encina_bosque_purificado": "oakhaven", "oak_encina_bosque_derrotado": "oakhaven"}
+	"bq_tilo_derrotado": "bosque", "bq_orbe_a": "bosque", "bq_orbe_b": "bosque",
+	"oak_encina_bosque_purificado": "oakhaven", "oak_encina_bosque_derrotado": "oakhaven"}
 const PRESENTES := {"bosque": ["kael", "lya", "garon", "tilo", "guardian_bosque"], "oakhaven": ["encina", "kael"]}
 const GRUPO_TRES := ["bq_guardian", "bq_purificado", "bq_derrotado"]     # con Kael, Lya y Garon: los tres hablan
 const GESTOS := {"kael": ["ligero", "brazalete", "sorpresa", "decidido", "duda"],

@@ -228,7 +228,10 @@ func _investigar(id: String) -> void:
 		mensaje.add_theme_color_override("font_color", MAL)
 		_pintar()
 		return
+	var ya_visto: bool = id == "lya_savia" and load("res://progreso.gd").hito("bq_futuros")
 	var v := Catalogo.uno("investigaciones", id)
+	if ya_visto and v.pasos > 1:                    # lo visto en el orbe (V9) adelanta un paso
+		Investigacion.avanzar(id, 1)
 	if v.pasos <= 1:                                 # un estudio corto: se completa al momento
 		Investigacion.avanzar(id, v.pasos)
 		mensaje.text = "Lya termina de estudiar «%s»." % v.nombre
