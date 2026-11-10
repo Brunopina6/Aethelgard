@@ -71,7 +71,7 @@ func _borrar() -> void:
 
 # ---------------------------------------------------------------- 1. datos
 func _datos() -> void:
-	_ok(X.ACCESORIOS.size() == 11 and X.ARMAS.size() == 6,   # +2 de la fase 3 (Brote y Corteza del Guardián)
+	_ok(X.ACCESORIOS.size() == 12 and X.ARMAS.size() == 6,   # +2 de la fase 3 (Brote y Corteza) y +1 del Coloso (V9)
 		 "1: hay %d accesorios y %d armas" % [X.ACCESORIOS.size(), X.ARMAS.size()])
 	var nombres := {}
 	for id in X.ACCESORIOS.keys() + X.ARMAS.keys():
@@ -107,7 +107,7 @@ func _datos() -> void:
 		X.ARMAS["gemelas_muralla"]["ataque"] < I.ARMAS["hoja_infernal"]["ataque"], "1: las de Garon quitan más que sus Hojas")
 	for id in X.ACCESORIOS:
 		_ok(not X.ACCESORIOS[id].has("ataque") and not X.ACCESORIOS[id].has("magia"), "1: el accesorio %s da ataque o magia" % id)
-	_hecho("1: 11 accesorios y 6 armas especiales, con datos completos")
+	_hecho("1: 12 accesorios y 6 armas especiales, con datos completos")
 
 
 # ---------------------------------------------------------------- 2. objeto, ranura y «solo»

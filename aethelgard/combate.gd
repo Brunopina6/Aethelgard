@@ -49,6 +49,7 @@ const OBJETOS_COMBATE := {
 		"color": Color(0.55, 1.0, 0.45), "desc": "Purifica al Guardián del Bosque, en su segunda fase."},
 }
 const Bosque := preload("res://combate_bosque.gd")   # el Guardián, la Esencia y el Elixir (fase 3)
+const Coloso := preload("res://combate_coloso.gd")   # el Coloso de la Falla (V9, jefe 2; Garganta 3D)
 # Menú de combate minimalista (menu_combate.gd). Ocupa el 40 % derecho de la pantalla, por eso los
 # héroes van más a la izquierda y los enemigos se juntan a la izquierda: x = x * ENEMIGOS_X.x + ENEMIGOS_X.y
 const ENEMIGOS_X := Vector2(0.75, -190.0)
@@ -223,6 +224,20 @@ const MODELOS := {
 		"respaldo": "guardian_bosque2d"},
 	"guardian_bosque2d": {"tipo": "imagen", "imagen": "res://enemigos/guardian.png", "cadera": Vector2(160, 470), "tam": 1.45,
 		"barra_y": -230.0, "centro_y": 60.0, "tinte": Color(0.62, 0.92, 0.58)},
+	# Coloso de la Falla (V9, jefe 2; combate_coloso.gd). Su modelo 3D lo prepara animaciones (enemigos/coloso_falla/, con
+	# la interfaz de guardian_bosque_3d.gd: despertar, cargar, atacar, ataque, fase2): la entrada 3D queda lista pero sin
+	# usar (ENEMIGOS lleva el respaldo; combate_coloso.gd, MODELO_3D, dice cómo activarla). El encuadre es el del
+	# Guardián del Bosque y habrá que ajustarlo con el modelo. Si se activa sin el GLB, se usa el respaldo 2D.
+	"coloso_falla": {
+		"tipo": "3d", "esc": 0.6, "script": "res://enemigos/coloso_falla/coloso_falla_3d.gd",
+		"gestos": "res://gestos_3d.gd", "rutas": ["res://enemigos/coloso_falla/coloso_falla.glb"],
+		"vp": Vector2i(1000, 1120), "alto_vista": 4.6, "centro_y": 1.95, "barra_y": 50.0, "centro_3d": 1.9,
+		"respaldo": "coloso_falla2d"},
+	# Respaldo 2D: el guardián de piedra, grande (más alto que dos héroes) y teñido de gris cálido (la imagen es verdosa).
+	# Con GRUPOS[12] en y = 90, los pies caen a unos 470 px de pantalla y la cabeza a unos 75: su vida y sus estados
+	# (Piel de piedra, Expuesto…) se leen encima, dentro de la pantalla (capturas de pruebas/fotos_coloso.gd).
+	"coloso_falla2d": {"tipo": "imagen", "imagen": "res://enemigos/guardian.png", "cadera": Vector2(160, 470), "tam": 1.45,
+		"barra_y": -197.0, "centro_y": 90.0, "tinte": Color(1.05, 0.86, 0.8)},
 }
 
 # Enemigos disponibles y grupos que pueden aparecer en un encuentro (se elige uno al azar).
@@ -246,6 +261,11 @@ const ENEMIGOS := {
 	# débil al fuego), ataque cargado con aviso; se purifica con el Elixir o se derrota.
 	"guardian_bosque": {"nombre": "Guardián del Bosque Olvidado", "modelo": "guardian_bosque", "hp": 420, "atk": 17, "vel": 9.0,
 		"exp": 90, "oro": 0, "personalidad": "bosque", "fases": true, "titulo": true},
+	# V9, jefe 2: el Coloso de la Falla, jefe opcional de la Garganta 3D (combate_coloso.gd). Lento y duro: piel de piedra
+	# (golpes a la mitad) salvo en la ventana tras su golpe cargado; al 50 %, las runas (coraza rúnica alterna). Garon
+	# puede leer sus inscripciones. «modelo»: «coloso_falla» cuando llegue su GLB (hoy, el respaldo 2D).
+	"coloso_falla": {"nombre": "Coloso de la Falla", "modelo": "coloso_falla2d", "hp": 520, "atk": 21, "vel": 8.0,
+		"exp": 80, "oro": 120, "personalidad": "coloso", "fases": true, "titulo": true},
 }
 const GRUPOS := [
 	[["grimfang", Vector2(230, 150)], ["grimfang", Vector2(410, 115)]],
@@ -262,6 +282,7 @@ const GRUPOS := [
 	[["grimfang", Vector2(300, 130)]],                                      # 9
 	[["zarzalin", Vector2(250, 120)]],                                      # 10: Zarzalín (Pastos Verdes)
 	[["guardian_bosque", Vector2(150, -120)]],                               # 11: Guardián del Bosque (Pastos Verdes, fase 3)
+	[["coloso_falla", Vector2(150, 90)]],                                    # 12: Coloso de la Falla (Garganta 3D, V9)
 ]
 const GRUPOS_AL_AZAR := 5           # solo los primeros salen en encuentros aleatorios (con el grupo de tres)
 # Encuentros al azar según cuántos héroes hay ahora en el grupo (grupo.gd, activos). Kael solo no tiene cura ni a
@@ -306,6 +327,8 @@ const ANIM := {
 	"guardian": {"distancia": 150.0},
 	"guardian_bosque2d": {"distancia": 170.0},     # fase 3: el Guardián del Bosque (respaldo 2D)
 	"guardian_bosque": {"distancia": 170.0},       # fase 3: ataca desde su sitio (_anim_guardian)
+	"coloso_falla2d": {"distancia": 170.0},        # V9: el Coloso de la Falla (respaldo 2D)
+	"coloso_falla": {"distancia": 170.0},          # V9: su modelo 3D, desde su sitio como el Guardián (_anim_guardian)
 }
 
 var heroes: Array = [
@@ -1305,7 +1328,7 @@ func _turno_enemigo(f: Dictionary) -> void:
 		mult *= randf_range(0.9, 1.3)
 	# huir (en una «zona limpia», con el grupo muy por encima, los enemigos débiles huyen solos)
 	var limpia: bool = load("res://progreso.gd").zona_limpia(Engine.get_meta("zona", "llanura"))
-	if p != "jefe" and p != "bosque" and limpia and randf() < 0.7:   # (los jefes no huyen)
+	if p != "jefe" and p != "bosque" and p != "coloso" and limpia and randf() < 0.7:   # (los jefes no huyen)
 		await _huir(f)
 		_fin_turno_enemigo(f)
 		return
@@ -1319,6 +1342,10 @@ func _turno_enemigo(f: Dictionary) -> void:
 		return
 	if p == "bosque":                                # el Guardián del Bosque Olvidado (fase 3)
 		await _turno_guardian(f, vivos, mult)
+		_fin_turno_enemigo(f)
+		return
+	if p == "coloso":                                # el Coloso de la Falla (V9, jefe 2)
+		await _turno_coloso(f, vivos, mult)
 		_fin_turno_enemigo(f)
 		return
 	if PATRONES.has(p):                              # Grimfang, el Slime y el Gólem: su ataque anunciado (T-097)
@@ -1482,6 +1509,174 @@ func _turno_guardian(f: Dictionary, vivos: Array, mult: float) -> void:
 	var objetivo: Dictionary = _cubre(_elegir_objetivo("agresivo", vivos))   # latigazo de raíz
 	registro.text = "%s azota a %s con una raíz" % [f["nombre"], objetivo["nombre"]]
 	await _animar_golpe(f, objetivo, int(f["atk"] * mult) + randi_range(-2, 3), "")
+
+
+# El Coloso de la Falla (V9, jefe 2; las reglas y su porqué, en combate_coloso.gd). Fase 1, «La piedra que vigila»:
+# puñetazo (a uno, ×1,25), lluvia de rocas (a todos, floja, ×0,5) y el Puño de la Falla (aviso un turno antes, ×2 a
+# uno). Fase 2, «Las runas despiertan»: carga más a menudo el Derrumbe rúnico (×1,6 a todos). Tras descargar queda
+# EXPUESTO hasta su turno siguiente, en el que se recompone sin atacar. Cada golpe se resuelve una vez, en el impacto de
+# su animación (el respaldo 2D, la de imagen; su modelo 3D, _anim_guardian). Al acabar su turno, la lectura de Garon se
+# gasta y, en la fase 2, cambia de defensa (combate_coloso.fin_turno), con su aviso.
+const COLOR_RUNAS := Color(1.0, 0.7, 0.28)          # ámbar de las runas (fase 2, coraza rúnica y Leer runas)
+const COLOR_VENTANA := Color(1.0, 0.42, 0.22)       # los puntos débiles, en la ventana
+const TINTE_CORAZA := Color(1.4, 0.95, 0.55)        # el respaldo 2D con la coraza rúnica puesta (ámbar dorado)
+const TINTE_PIEL := Color(1.15, 0.86, 0.68)         # el respaldo 2D en la fase 2, con la piel de piedra (gris cálido)
+
+
+func _turno_coloso(f: Dictionary, vivos: Array, mult: float) -> void:
+	await _accion_coloso(f, vivos, mult)
+	if f["hp"] > 0:
+		_avisos_coloso(f, Coloso.fin_turno(f))
+
+
+func _accion_coloso(f: Dictionary, vivos: Array, mult: float) -> void:
+	var fase2: bool = f.get("fase2", false)
+	var modelo = _p3d(f)
+	if f.get("expuesto", false):                     # se recompone: la ventana se cierra
+		f["expuesto"] = false
+		_marcar_puntos(f, false)
+		registro.text = "%s recompone sus placas de piedra" % f["nombre"]
+		_numero_flotante(f, "Se recompone", Color(0.82, 0.8, 0.72), 28)
+		_actualizar()
+		await get_tree().create_timer(0.8).timeout
+		return
+	if f.get("cargando", false):
+		f["cargando"] = false
+		_marcar_aviso(f, false)
+		f["descarga"] = true
+		f["ataque_3d"] = "golpe_fuerte"              # su modelo 3D (cuando llegue): el golpe fuerte (_anim_guardian)
+		if fase2:
+			registro.text = "¡%s desata el Derrumbe rúnico!" % f["nombre"]
+			var dano := int(f["atk"] * 1.6 * mult)
+			var principal: Dictionary = _cubre(_elegir_objetivo("bruto", vivos))
+			await _animar_golpe(f, principal, dano + randi_range(-2, 3), "")
+			for h0 in vivos:
+				if h0 == principal or h0["hp"] <= 0:
+					continue
+				var h: Dictionary = _cubre(h0, false)
+				if h["hp"] <= 0:
+					continue
+				var d2: int = maxi(1, dano - int(h.get("def", 0) / 2.0))
+				if h.get("defendiendo", false):
+					d2 = maxi(1, int(d2 * 0.5))
+				_golpe_visual(h, _quitar_pv(h, d2), "")
+			Sonido.golpe(true)                       # la onda del derrumbe alcanza a los demás, una vez
+			_temblor(14.0)
+		else:
+			var obj = f.get("objetivo_carga", null)
+			if obj == null or obj["hp"] <= 0:
+				obj = _elegir_objetivo("agresivo", vivos)
+			obj = _cubre(obj)
+			registro.text = "¡El Puño de la Falla cae sobre %s!" % obj["nombre"]
+			await _animar_golpe(f, obj, int(f["atk"] * 2.0 * mult) + randi_range(-2, 3), "")
+			_temblor(10.0)
+		f["descarga"] = false
+		f.erase("objetivo_carga")
+		f.erase("ataque_3d")
+		if f["hp"] > 0:                              # la ventana: queda expuesto hasta su turno siguiente
+			f["expuesto"] = true
+			_marcar_puntos(f, true)
+			registro.text = "¡%s queda expuesto: sus puntos débiles brillan!" % f["nombre"]
+			_numero_flotante(f, "¡Puntos débiles!", COLOR_VENTANA, 34)
+			_sonar("coloso_expuesto")                # una vez, al abrirse la ventana (si sonido.gd lo tiene)
+			_actualizar()
+			await get_tree().create_timer(0.6).timeout
+		return
+	var r := randf()
+	if r < (0.4 if fase2 else 0.3):                  # carga su golpe: un turno de aviso
+		var obj := _elegir_objetivo("agresivo", vivos)
+		f["cargando"] = true
+		f["objetivo_carga"] = obj
+		_marcar_aviso(f, true)
+		if modelo != null and modelo.has_method("cargar"):
+			modelo.cargar("golpe_fuerte")
+		Sonido.efecto("carga_jefe")                 # sonido.gd
+		if fase2:
+			registro.text = "Las runas de %s arden: ¡va a golpear a todos!" % f["nombre"]
+			_numero_flotante(f, "⚠ ¡Derrumbe rúnico!", Color(1.0, 0.8, 0.2), 32)
+		else:
+			registro.text = "%s alza el puño: ¡va a por %s!" % [f["nombre"], obj["nombre"]]
+			_numero_flotante(f, "⚠ ¡Puño de la Falla!", Color(1.0, 0.8, 0.2), 32)
+		_particulas(_centro(f) + Vector2(0, 100), Color(0.85, 0.78, 0.66, 0.9), Color(0.5, 0.45, 0.4, 0.0), 30, 1.0,
+			Vector2(30, 100), 80.0, Vector2(0, -1), 20.0, Vector2(0, -50), 0.1)
+		_actualizar()
+		await get_tree().create_timer(1.0).timeout
+		return
+	if r < 0.6:                                      # lluvia de rocas: a todos, floja
+		registro.text = "%s hace caer rocas sobre el grupo" % f["nombre"]
+		if modelo != null and modelo.has_method("ataque"):
+			modelo.ataque()
+		_voz(f, "ataque")
+		_temblor(8.0)
+		var d := maxi(1, int(f["atk"] * 0.5 * mult))
+		for h in vivos:
+			if h["hp"] <= 0:
+				continue
+			var dh: int = d + randi_range(-1, 2)
+			if h.get("defendiendo", false):
+				dh = maxi(1, int(dh * 0.5))
+			_particulas(_centro(h) + Vector2(0, -90), Color(0.7, 0.66, 0.6, 0.95), Color(0.4, 0.37, 0.33, 0.0), 12, 0.7,
+				Vector2(60, 160), 60.0, Vector2(0, 1), 25.0, Vector2(0, 500), 0.14)
+			_golpe_visual(h, _quitar_pv(h, maxi(1, dh)), "")
+		Sonido.golpe()                               # las rocas caen: un golpe, una vez para todos
+		_actualizar()
+		await get_tree().create_timer(0.9).timeout
+		return
+	var objetivo: Dictionary = _cubre(_elegir_objetivo("agresivo", vivos))   # puñetazo
+	registro.text = "%s descarga un puñetazo sobre %s" % [f["nombre"], objetivo["nombre"]]
+	await _animar_golpe(f, objetivo, int(f["atk"] * 1.25 * mult) + randi_range(-2, 3), "")
+
+
+# Avisa lo que ha cambiado al acabar su turno (combate_coloso.fin_turno): la lectura de Garon que se acaba y, en la fase 2,
+# la defensa nueva (y el respaldo 2D cambia de tono con ella).
+func _avisos_coloso(f: Dictionary, cambios: Array) -> void:
+	var img = f["partes"].get("imagen", f["partes"].get("sprite"))
+	for c in cambios:
+		match c:
+			"lectura_fin":
+				_numero_flotante(f, "Las runas se cierran", Color(0.82, 0.78, 0.7), 26, Vector2(0, 90))
+			"coraza":
+				_numero_flotante(f, "Coraza rúnica: la magia hace la mitad", COLOR_RUNAS, 26, Vector2(0, 50))
+				_sonar("coloso_coraza")
+				if img != null and _p3d(f) == null:
+					create_tween().tween_property(img, "modulate", TINTE_CORAZA, 0.5)
+			"piel":
+				_numero_flotante(f, "Piel de piedra: los golpes hacen la mitad", Color(0.85, 0.82, 0.76), 26, Vector2(0, 50))
+				_sonar("coloso_piel")
+				if img != null and _p3d(f) == null:
+					create_tween().tween_property(img, "modulate", TINTE_PIEL, 0.5)
+	_actualizar()
+
+
+# Los puntos débiles del Coloso en la ventana: tres brillos que laten sobre sus juntas, sin partículas (se leen igual en
+# el perfil bajo), hasta que se recompone o cae. Con «si» = false, fuera.
+func _marcar_puntos(f: Dictionary, si: bool) -> void:
+	var antes = f.get("puntos_nodo", null)
+	if antes != null and is_instance_valid(antes):
+		antes.queue_free()
+	f.erase("puntos_nodo")
+	if not si or not f.has("rig"):
+		return
+	var n := Node2D.new()
+	n.position = _centro(f)
+	n.z_index = 6
+	escena.add_child(n)
+	for ofs in [Vector2(-34, -70), Vector2(30, -10), Vector2(-12, 60)]:
+		var b := _brillo(COLOR_VENTANA)
+		b.position = ofs
+		b.scale = Vector2.ONE * 0.5
+		n.add_child(b)
+		var t := b.create_tween().set_loops()
+		t.tween_property(b, "scale", Vector2.ONE * 0.8, 0.45).set_trans(Tween.TRANS_SINE)
+		t.tween_property(b, "scale", Vector2.ONE * 0.45, 0.45).set_trans(Tween.TRANS_SINE)
+	f["puntos_nodo"] = n
+
+
+func _coloso_vivo() -> Dictionary:
+	for e in enemigos:
+		if Coloso.es_coloso(e) and e["hp"] > 0:
+			return e
+	return {}
 
 
 # Patrones de los enemigos de siempre (T-097, tanda del 09/11): como Zarzalín, cada uno avisa un turno antes de su
@@ -1953,6 +2148,8 @@ func _menu_garon() -> void:
 	var minimo: int = GUARDIA["coste"]               # la Guardia (T-100) también va en ESGRIMA
 	for t in TECNICAS_GARON.values():
 		minimo = mini(minimo, t["coste"])
+	if not _coloso_vivo().is_empty():                # contra el Coloso (V9), también «Leer runas»
+		minimo = mini(minimo, Coloso.LECTURA["coste"])
 	menu.abrir(actor, [
 		{"tipo": "carta", "texto": "ATACAR", "accion": func(): _menu_objetivo("atacar", ""),
 			"texto_b": "DEFENDER", "accion_b": _defender},
@@ -1997,7 +2194,38 @@ func _menu_esgrima() -> void:
 		motivo = Artes.motivo_pm(GUARDIA["coste"], actor["mp"])
 	items.append({"texto": GUARDIA["nombre"], "accion": _elegir_guardia, "derecha": "%d PM" % GUARDIA["coste"],
 		"apagado": motivo != "", "falta_pm": not paga_g, "desc": GUARDIA["desc"] if motivo == "" else motivo})
+	var col := _coloso_vivo()                          # contra el Coloso de la Falla (V9): Garon lee sus inscripciones
+	if not col.is_empty():
+		var coste_l: int = Coloso.LECTURA["coste"]
+		var paga_l := _puede_pagar(coste_l)
+		var motivo_l := Coloso.motivo_lectura(col)
+		if motivo_l == "" and not paga_l:
+			motivo_l = Artes.motivo_pm(coste_l, actor["mp"])
+		items.append({"texto": Coloso.LECTURA["nombre"], "accion": _leer_runas, "derecha": "%d PM" % coste_l,
+			"apagado": motivo_l != "", "falta_pm": not paga_l, "desc": Coloso.LECTURA["desc"] if motivo_l == "" else motivo_l})
 	menu.submenu(items)
+
+
+# Garon lee las inscripciones del Coloso de la Falla (V9; combate_coloso.gd): su piel de piedra se abre durante sus dos
+# turnos siguientes. Una acción de Garon con su coste, solo en este combate; no hace daño.
+func _leer_runas() -> void:
+	var col := _coloso_vivo()
+	if col.is_empty() or Coloso.motivo_lectura(col) != "" or not _puede_pagar(Coloso.LECTURA["coste"]):
+		return
+	_ocultar_menu()
+	estado = "accion"
+	var quien = actor
+	_gastar_pm(quien, Coloso.LECTURA["coste"])
+	Coloso.leer(col)
+	registro.text = "%s lee las inscripciones: ¡la piel de piedra del Coloso se abre!" % quien["nombre"]
+	_numero_flotante(quien, Coloso.LECTURA["nombre"], menu.COLOR_HEROE.get("Garon", Color.WHITE), 34)
+	_sonar("leer_runas" if Sonido.EFECTOS.has("leer_runas") else "misterio")   # una vez, al leerlas
+	_onda(_suelo_de(col), Color(COLOR_RUNAS, 0.9), 30.0, 220.0, 0.8, 8.0)
+	_destello(_centro(col), COLOR_RUNAS, 1.4)
+	_numero_flotante(col, "Runas leídas: piel abierta", COLOR_RUNAS, 28, Vector2(0, 50))
+	_actualizar()
+	await get_tree().create_timer(0.9).timeout
+	_terminar_turno()
 
 
 func _elegir_tecnica(n: String) -> void:
@@ -2167,10 +2395,11 @@ func _tecnica_garon(n: String, obj: Dictionary) -> void:
 		var d := _dano_fisico(quien, t["mult"])
 		var impacto := func():
 			Sonido.golpe(true)                       # el tajo de Juicio (sonido.gd)
-			_quitar_pv(obj, d)
+			var dd: int = Coloso.dano_recibido(d, "", quien, obj)   # el Coloso (V9): piel o ventana; los demás, «d»
+			_quitar_pv(obj, dd)
 			Sonido.recibe(obj)                       # y su voz: herido o caída (sonido.gd)
 			_destello(_centro(obj), menu.COLOR_HEROE.get("Garon", Color.WHITE).lightened(0.4), 1.8)
-			_golpe_visual(obj, d, _efecto_embuir(quien, obj))
+			_golpe_visual(obj, dd, _efecto_embuir(quien, obj))
 		if _p3d(quien) != null and _p3d(quien).has_method("atacar_juicio"):
 			await _anim_ataque_3d(quien, obj, impacto, "atacar_juicio")
 		else:
@@ -2182,7 +2411,7 @@ func _tecnica_garon(n: String, obj: Dictionary) -> void:
 			for e in objs:
 				if e["hp"] <= 0:
 					continue
-				var d := _dano_fisico(quien, t["mult"])
+				var d := Coloso.dano_recibido(_dano_fisico(quien, t["mult"]), "", quien, e)   # (el Coloso, V9)
 				_quitar_pv(e, d)
 				Sonido.recibe(e)                     # su voz (sonido.gd: una por familia y dos a la vez como mucho)
 				_golpe_visual(e, d, _efecto_embuir(quien, e))
@@ -2889,6 +3118,8 @@ func _quitar_pv(f: Dictionary, d: int) -> int:
 		f.erase("guardia_de")
 	if not f.get("hero", false) and f["hp"] <= 0 and f.has("aviso_nodo"):
 		_marcar_aviso(f, false)                       # cae con el golpe preparado: su señal de aviso, fuera
+	if not f.get("hero", false) and f["hp"] <= 0 and f.has("puntos_nodo"):
+		_marcar_puntos(f, false)                      # el Coloso cae expuesto: sus puntos débiles, fuera
 	if f.get("fases", false) and not f.get("fase2", false) and f["hp"] > 0 and f["hp"] <= f["hp_max"] * 0.5:
 		f["fase2"] = true
 		f["fase2_pendiente"] = true
@@ -2948,6 +3179,9 @@ func _cambio_fase(f: Dictionary) -> void:
 	if Bosque.es_guardian(f):
 		await _cambio_fase_bosque(f)
 		return
+	if Coloso.es_coloso(f):
+		await _cambio_fase_coloso(f)
+		return
 	estado = "accion"
 	registro.text = "¡%s se enfurece!" % f["nombre"]
 	Sonido.efecto("fase2")                         # sonido.gd
@@ -2998,6 +3232,38 @@ func _cambio_fase_bosque(f: Dictionary) -> void:
 		Vector2(20, 70), 60.0, Vector2(0, -1), 40.0, Vector2(0, -30), 0.06, true)
 	f["vel"] *= 1.3
 	_musica_fase2()
+	await get_tree().create_timer(1.6).timeout
+	if estado == "accion":
+		estado = "esperando"
+
+
+# Segunda fase del Coloso de la Falla (V9): «Las runas despiertan». Destello ámbar, temblor, el escenario y el Coloso se
+# tiñen de ámbar, chispas de las runas alrededor y la coraza rúnica puesta (la magia hace la mitad hasta su turno; luego
+# alterna con la piel de piedra: combate_coloso.gd). Más rápido. Con su modelo 3D, su fase2().
+func _cambio_fase_coloso(f: Dictionary) -> void:
+	estado = "accion"
+	registro.text = "¡Las runas del Coloso despiertan!"
+	Sonido.efecto("fase2")
+	_fogonazo(COLOR_RUNAS, 0.55, 0.8)
+	_temblor(14.0)
+	menu.vibrar(60)
+	var modelo = _p3d(f)
+	if modelo != null and modelo.has_method("fase2"):
+		modelo.fase2()
+	f["coraza_runica"] = true
+	_numero_flotante(f, "¡LAS RUNAS DESPIERTAN!", COLOR_RUNAS, 40)
+	_numero_flotante(f, "Coraza rúnica: la magia hace la mitad", COLOR_RUNAS.lightened(0.3), 26, Vector2(0, 60))
+	if fondo_nodo != null:
+		create_tween().tween_property(fondo_nodo, "modulate", Color(1.0, 0.86, 0.66), 1.2)
+	create_tween().tween_property(escena, "modulate", tono_escena * Color(1.0, 0.9, 0.78), 1.2)
+	var img = f["partes"].get("imagen", f["partes"].get("sprite"))
+	if img != null and modelo == null:
+		create_tween().tween_property(img, "modulate", TINTE_CORAZA, 0.8)
+	f["brasas"] = _particulas(_centro(f) + Vector2(0, 80), Color(1.0, 0.75, 0.35, 0.9), Color(1.0, 0.45, 0.1, 0.0), 24, 1.6,
+		Vector2(20, 70), 70.0, Vector2(0, -1), 30.0, Vector2(0, -40), 0.06, true)
+	f["vel"] *= 1.25
+	_musica_fase2()
+	_actualizar()
 	await get_tree().create_timer(1.6).timeout
 	if estado == "accion":
 		estado = "esperando"
@@ -3331,7 +3597,7 @@ func _doble_3d(obj: Dictionary) -> Node3D:
 	return d
 
 
-const ALTO_DOBLE := {"slime": 0.95, "guardian": 1.9, "gorthor": 2.5, "hollin": 1.6}
+const ALTO_DOBLE := {"slime": 0.95, "guardian": 1.9, "gorthor": 2.5, "hollin": 1.6, "coloso_falla2d": 2.7}
 
 
 # La imagen del fondo de la zona (para verla a lo lejos en la invocación), o null.
@@ -3365,6 +3631,7 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 		dano = max(1, int(dano * 0.5))
 	if not objetivo["hero"]:                          # fase 3: el Guardián del Bosque y la Esencia de enfoque
 		dano = Bosque.dano_recibido(dano, magia, origen, objetivo, _lya_sabe())
+		dano = Coloso.dano_recibido(dano, magia, origen, objetivo)   # V9: el Coloso (piel, ventana, coraza rúnica)
 	var congela: bool = magia == "" and origen["hero"] and _lleva_frostfang(origen) and randf() < PROB_CONGELAR
 	# Pluma de arpía: un héroe esquiva un golpe físico (solo tira el dado con la pluma puesta: sin ella, nada cambia)
 	var esquiva: bool = magia == "" and objetivo["hero"] and Extra.esquiva(objetivo.get("efectos", {}))
@@ -3399,7 +3666,7 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 			var rep: int = Extra.replica(objetivo, objetivo.get("defendiendo", false))   # C2, Guardiana de Ámbar
 			if rep > 0:
 				_numero_flotante(objetivo, "Réplica", Color("FFC46A"), 28, Vector2(-30, -40))
-				_golpe_visual(origen, _quitar_pv(origen, rep), "")
+				_golpe_visual(origen, _quitar_pv(origen, Coloso.dano_recibido(rep, "", objetivo, origen)), "")
 	if magia != "" and _p3d(origen) != null:
 		await _anim_magia_3d(origen, objetivo, magia, impacto)
 	elif magia != "":
@@ -4303,6 +4570,7 @@ func _magia_grupal(o: Dictionary, objs: Array, magia: String, nivel: int, dano: 
 		var d := dano + randi_range(-4, 4)
 		if not obj.get("hero", false):               # fase 3: el Guardián del Bosque y la Esencia de enfoque
 			d = Bosque.dano_recibido(d, magia, o, obj, _lya_sabe())
+			d = Coloso.dano_recibido(d, magia, o, obj)   # V9: el Coloso (coraza rúnica)
 		_quitar_pv(obj, d)
 		_golpe_visual(obj, d, magia, false, potencia)
 	if nivel == 2:
@@ -4772,6 +5040,8 @@ func _fin_combate(ganan: bool) -> void:
 		var g: Dictionary = Engine.get_meta("combates_ganados", {})
 		if not g.get(combate_fijo, false) and combate_fijo == Bosque.COMBATE:   # el Guardián del Bosque (fase 3)
 			aviso = _premio_bosque()
+		elif not g.get(combate_fijo, false) and combate_fijo == Coloso.COMBATE:  # el Coloso de la Falla (V9), una vez
+			aviso = Coloso.dar_premio()
 		elif not g.get(combate_fijo, false) and RECOMPENSA_FIJO.has(combate_fijo) and Extra.disponible(RECOMPENSA_FIJO[combate_fijo]):
 			aviso = Extra.conseguir(RECOMPENSA_FIJO[combate_fijo])
 		g[combate_fijo] = true
@@ -4890,5 +5160,7 @@ func _actualizar() -> void:
 				estados.append("⚠ Cargando")
 			if e.get("furia", false):
 				estados.append("Furia")
+			if Coloso.es_coloso(e):                     # V9: piel de piedra, coraza rúnica, expuesto, runas leídas
+				estados.append_array(Coloso.estados(e))
 			e["lbl_estado"].text = "  ".join(estados)
 			e["lbl_estado"].visible = vivo
