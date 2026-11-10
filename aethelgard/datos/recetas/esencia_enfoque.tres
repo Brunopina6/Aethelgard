@@ -1,0 +1,14 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/receta.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "esencia_enfoque"
+taller = "alquimia"
+nombre = "Esencia de enfoque"
+materiales = {"Hierba lunar": 1, "Musgo de piedra": 1}
+resultado = "Esencia de enfoque"
+cantidad = 1
+investigacion = "lya_enfoque"
+borrador = false

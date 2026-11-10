@@ -108,3 +108,13 @@ static func recetas_de(taller: String, con_borradores := false) -> Array:
 		if x.investigacion == "" or estado(x.investigacion) == "completada":
 			r.append(id)
 	return r
+
+
+# Al ganar un combate (combate.gd, _fin_combate): cada investigación en curso avanza un paso. Devuelve las que se
+# completan ahora (para avisar). Sin investigaciones en curso no hace nada.
+static func avanzar_en_curso(n := 1) -> Array:
+	var r: Array = []
+	for id in _partida().keys():
+		if estado(id) == "en_curso" and avanzar(id, n):
+			r.append(id)
+	return r

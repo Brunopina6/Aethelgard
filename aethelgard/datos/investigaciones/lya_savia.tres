@@ -1,0 +1,14 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/investigacion.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "lya_savia"
+taller = "alquimia"
+nombre = "La savia que recuerda"
+desc = "Con las tres señales del olvido, Lya busca una savia que devuelva al bosque lo que olvidó. Avanza con cada combate ganado."
+requisitos = [{"tipo": "hito", "id": "bq_pistas"}]
+pasos = 2
+desbloquea = PackedStringArray("elixir_savia")
+borrador = false

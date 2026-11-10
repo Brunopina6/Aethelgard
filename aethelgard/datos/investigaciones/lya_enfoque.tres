@@ -1,0 +1,14 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/investigacion.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "lya_enfoque"
+taller = "alquimia"
+nombre = "Concentración arcana"
+desc = "Lya estudia cómo el musgo de piedra calma la mente antes de conjurar."
+requisitos = [{"tipo": "material", "id": "Musgo de piedra", "cantidad": 1}]
+pasos = 1
+desbloquea = PackedStringArray("esencia_enfoque")
+borrador = false

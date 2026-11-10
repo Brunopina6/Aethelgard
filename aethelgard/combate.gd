@@ -41,7 +41,13 @@ const CURA_POCION := 50
 const OBJETOS_COMBATE := {
 	"Poción": {"que": "PV", "cura": 60, "imagen": "res://objetos/pocion.png", "color": Color(1.0, 0.35, 0.3)},
 	"Éter": {"que": "PM", "cura": 25, "imagen": "res://objetos/eter.png", "color": Color(0.35, 1.0, 0.6)},
+	# Alquimia de Lya (fase 3, «El bosque que no recuerda»; combate_bosque.gd). Solo salen en el menú si se tienen.
+	"Esencia de enfoque": {"que": "ENFOQUE", "cura": 0, "imagen": "res://objetos/eter.png", "color": Color(0.7, 0.55, 1.0),
+		"desc": "Su magia hace ×1,3 durante 3 turnos."},
+	"Elixir de savia purificada": {"que": "PURIFICA", "cura": 0, "imagen": "res://objetos/pocion.png",
+		"color": Color(0.55, 1.0, 0.45), "desc": "Purifica al Guardián del Bosque, en su segunda fase."},
 }
+const Bosque := preload("res://combate_bosque.gd")   # el Guardián, la Esencia y el Elixir (fase 3)
 # Menú de combate minimalista (menu_combate.gd). Ocupa el 40 % derecho de la pantalla, por eso los
 # héroes van más a la izquierda y los enemigos se juntan a la izquierda: x = x * ENEMIGOS_X.x + ENEMIGOS_X.y
 const ENEMIGOS_X := Vector2(0.75, -190.0)
@@ -206,6 +212,10 @@ const MODELOS := {
 		"barra_y": -230.0, "centro_y": 60.0, "tinte": Color(1.0, 0.6, 0.52)},
 	"guardian": {"tipo": "imagen", "imagen": "res://enemigos/guardian.png", "cadera": Vector2(160, 470), "tam": 0.92,
 		"barra_y": 10.0, "centro_y": 210.0},
+	# Guardián del Bosque Olvidado (fase 3): respaldo 2D, el guardián de piedra grande y teñido de verde musgo, hasta tener su
+	# modelo 3D (enemigos/guardian_bosque/).
+	"guardian_bosque2d": {"tipo": "imagen", "imagen": "res://enemigos/guardian.png", "cadera": Vector2(160, 470), "tam": 1.45,
+		"barra_y": -230.0, "centro_y": 60.0, "tinte": Color(0.62, 0.92, 0.58)},
 }
 
 # Enemigos disponibles y grupos que pueden aparecer en un encuentro (se elige uno al azar).
@@ -225,6 +235,10 @@ const ENEMIGOS := {
 	"zarzalin": {"nombre": "Zarzalín", "modelo": "zarzalin", "hp": 80, "atk": 11, "vel": 14.0, "exp": 20, "oro": 12,
 		"personalidad": "embiste"},
 	"golem_ambar": {"nombre": "Gólem de ámbar", "modelo": "guardian", "hp": 200, "atk": 17, "vel": 9.0, "exp": 70, "oro": 90, "personalidad": "bruto"},
+	# Fase 3, «El bosque que no recuerda»: el jefe de Pastos Verdes (combate_bosque.gd). Dos fases (al 50 %: coraza de raíces y
+	# débil al fuego), ataque cargado con aviso; se purifica con el Elixir o se derrota.
+	"guardian_bosque": {"nombre": "Guardián del Bosque Olvidado", "modelo": "guardian_bosque2d", "hp": 420, "atk": 17, "vel": 9.0,
+		"exp": 90, "oro": 0, "personalidad": "bosque", "fases": true, "titulo": true},
 }
 const GRUPOS := [
 	[["grimfang", Vector2(230, 150)], ["grimfang", Vector2(410, 115)]],
@@ -240,6 +254,7 @@ const GRUPOS := [
 	[["slime", Vector2(140, 110)], ["slime", Vector2(380, 125)]],           # 8
 	[["grimfang", Vector2(300, 130)]],                                      # 9
 	[["zarzalin", Vector2(250, 120)]],                                      # 10: Zarzalín (Pastos Verdes)
+	[["guardian_bosque", Vector2(260, 120)]],                               # 11: Guardián del Bosque (Pastos Verdes, fase 3)
 ]
 const GRUPOS_AL_AZAR := 5           # solo los primeros salen en encuentros aleatorios (con el grupo de tres)
 # Encuentros al azar según cuántos héroes hay ahora en el grupo (grupo.gd, activos). Kael solo no tiene cura ni a
@@ -1277,7 +1292,7 @@ func _turno_enemigo(f: Dictionary) -> void:
 		mult *= randf_range(0.9, 1.3)
 	# huir (en una «zona limpia», con el grupo muy por encima, los enemigos débiles huyen solos)
 	var limpia: bool = load("res://progreso.gd").zona_limpia(Engine.get_meta("zona", "llanura"))
-	if p != "jefe" and limpia and randf() < 0.7:
+	if p != "jefe" and p != "bosque" and limpia and randf() < 0.7:   # (los jefes no huyen)
 		await _huir(f)
 		_fin_turno_enemigo(f)
 		return
@@ -1287,6 +1302,10 @@ func _turno_enemigo(f: Dictionary) -> void:
 		return
 	if p == "embiste":                               # Zarzalín: aviso, embestida y recuperación (T-097)
 		await _turno_zarzalin(f, vivos, mult)
+		_fin_turno_enemigo(f)
+		return
+	if p == "bosque":                                # el Guardián del Bosque Olvidado (fase 3)
+		await _turno_guardian(f, vivos, mult)
 		_fin_turno_enemigo(f)
 		return
 	if PATRONES.has(p):                              # Grimfang, el Slime y el Gólem: su ataque anunciado (T-097)
@@ -1366,6 +1385,88 @@ func _turno_enemigo(f: Dictionary) -> void:
 		registro.text = "%s ataca a %s" % [f["nombre"], objetivo["nombre"]]
 		await _animar_golpe(f, objetivo, dano, "")
 	_fin_turno_enemigo(f)
+
+
+# El Guardián del Bosque Olvidado (fase 3, combate_bosque.gd). Fase 1, «El despertar de las raíces»: latigazo de raíz
+# (a uno), esporas (a todos, flojas) y Raíces que aprisionan (aviso un turno antes, ×2 a uno; Defender lo reduce a la
+# mitad). Fase 2, «El corazón del bosque» (al 50 %, _cambio_fase): carga más a menudo el Juicio del bosque (×1,6 a
+# todos) y lleva la coraza de raíces (combate_bosque.dano_recibido). Con su modelo 3D, sus clips de carga y descarga.
+func _turno_guardian(f: Dictionary, vivos: Array, mult: float) -> void:
+	var fase2: bool = f.get("fase2", false)
+	var modelo = _p3d(f)
+	if f.get("cargando", false):
+		f["cargando"] = false
+		_marcar_aviso(f, false)
+		f["descarga"] = true
+		if modelo != null and modelo.has_method("golpe_fuerte"):
+			modelo.golpe_fuerte()
+		if fase2:
+			registro.text = "¡%s desata el Juicio del bosque!" % f["nombre"]
+			var dano := int(f["atk"] * 1.6 * mult)
+			var principal: Dictionary = _cubre(_elegir_objetivo("bruto", vivos))
+			await _animar_golpe(f, principal, dano + randi_range(-2, 3), "")
+			for h0 in vivos:
+				if h0 == principal or h0["hp"] <= 0:
+					continue
+				var h: Dictionary = _cubre(h0, false)
+				if h["hp"] <= 0:
+					continue
+				var d2: int = maxi(1, dano - int(h.get("def", 0) / 2.0))
+				if h.get("defendiendo", false):
+					d2 = maxi(1, int(d2 * 0.5))
+				_golpe_visual(h, _quitar_pv(h, d2), "")
+			Sonido.golpe(true)
+			_temblor(14.0)
+		else:
+			var obj = f.get("objetivo_carga", null)
+			if obj == null or obj["hp"] <= 0:
+				obj = _elegir_objetivo("agresivo", vivos)
+			obj = _cubre(obj)
+			registro.text = "¡Las raíces aprisionan a %s!" % obj["nombre"]
+			await _animar_golpe(f, obj, int(f["atk"] * 2.0 * mult) + randi_range(-2, 3), "")
+			_temblor(10.0)
+		f["descarga"] = false
+		f.erase("objetivo_carga")
+		return
+	var r := randf()
+	if r < (0.4 if fase2 else 0.3):                  # carga su golpe: un turno de aviso
+		var obj := _elegir_objetivo("agresivo", vivos)
+		f["cargando"] = true
+		f["objetivo_carga"] = obj
+		_marcar_aviso(f, true)
+		if modelo != null and modelo.has_method("cargar"):
+			modelo.cargar()
+		Sonido.efecto("carga_jefe")                 # sonido.gd
+		if fase2:
+			registro.text = "%s hunde sus raíces en la tierra: ¡va a golpear a todos!" % f["nombre"]
+			_numero_flotante(f, "⚠ ¡Juicio del bosque!", Color(1.0, 0.8, 0.2), 32)
+		else:
+			registro.text = "%s tensa sus raíces: ¡va a por %s!" % [f["nombre"], obj["nombre"]]
+			_numero_flotante(f, "⚠ ¡Raíces!", Color(1.0, 0.8, 0.2), 32)
+		_particulas(_centro(f) + Vector2(0, 100), Color(0.55, 1.0, 0.45, 0.9), Color(0.2, 0.6, 0.1, 0.0), 30, 1.0,
+			Vector2(30, 100), 80.0, Vector2(0, -1), 20.0, Vector2(0, -50), 0.1)
+		_actualizar()
+		await get_tree().create_timer(1.0).timeout
+		return
+	if r < (0.65 if fase2 else 0.6):                 # esporas: magia del bosque, flojas, a todos
+		registro.text = "%s esparce esporas" % f["nombre"]
+		_voz(f, "ataque")
+		var d := maxi(1, int(f["atk"] * 0.55 * mult))
+		for h in vivos:
+			if h["hp"] <= 0:
+				continue
+			var dh: int = d + randi_range(-1, 2)
+			if h.get("defendiendo", false):
+				dh = maxi(1, int(dh * 0.5))
+			_particulas(_centro(h) + Vector2(0, 40), Color(0.75, 0.9, 0.5, 0.8), Color(0.4, 0.6, 0.2, 0.0), 14, 0.9,
+				Vector2(20, 60), 60.0, Vector2(0, -1), 40.0, Vector2(0, 20), 0.12)
+			_golpe_visual(h, _quitar_pv(h, maxi(1, dh)), "")
+		_actualizar()
+		await get_tree().create_timer(0.9).timeout
+		return
+	var objetivo: Dictionary = _cubre(_elegir_objetivo("agresivo", vivos))   # latigazo de raíz
+	registro.text = "%s azota a %s con una raíz" % [f["nombre"], objetivo["nombre"]]
+	await _animar_golpe(f, objetivo, int(f["atk"] * mult) + randi_range(-2, 3), "")
 
 
 # Patrones de los enemigos de siempre (T-097, tanda del 09/11): como Zarzalín, cada uno avisa un turno antes de su
@@ -1753,7 +1854,7 @@ func _mostrar_menu() -> void:
 
 # OBJETO y HUIR, iguales en el menú de todos (con su motivo si están apagadas, T-100).
 func _orden_objeto() -> Dictionary:
-	return {"texto": "OBJETO", "accion": _menu_pocion, "apagado": _cantidad_objeto("Poción") + _cantidad_objeto("Éter") <= 0,
+	return {"texto": "OBJETO", "accion": _menu_pocion, "apagado": OBJETOS_COMBATE.keys().all(func(n): return _cantidad_objeto(n) <= 0),
 		"motivo": "No quedan objetos"}
 
 
@@ -2468,6 +2569,16 @@ func _dano_magia(quien: Dictionary, d: Dictionary) -> int:
 	return Formulas.dano_magia(quien, d)
 
 
+# ¿Completó Lya «La savia que recuerda»? (su magia hace más al Guardián del Bosque; se mira una vez por combate)
+var _lya_sabe_cache := -1
+
+
+func _lya_sabe() -> bool:
+	if _lya_sabe_cache < 0:
+		_lya_sabe_cache = 1 if load("res://investigacion.gd").estado(Bosque.INVESTIGACION_VENTAJA) == "completada" else 0
+	return _lya_sabe_cache == 1
+
+
 func _aplicar_todos() -> void:
 	_ocultar_menu()
 	estado = "accion"
@@ -2509,8 +2620,11 @@ func _menu_pocion() -> void:
 	for nombre in OBJETOS_COMBATE:
 		var o: Dictionary = OBJETOS_COMBATE[nombre]
 		var n := _cantidad_objeto(nombre)
+		if n <= 0 and o.has("desc"):                 # los de la alquimia (fase 3), solo si se tienen
+			continue
+		var desc: String = o["desc"] if o.has("desc") else "Recupera %d %s a un aliado." % [o["cura"], o["que"]]
 		var it := {"texto": nombre, "accion": _menu_objeto_aliado.bind(nombre), "apagado": n <= 0,
-			"derecha": "×%d" % n, "desc": "Recupera %d %s a un aliado." % [o["cura"], o["que"]] if n > 0 else "No te queda ninguno."}
+			"derecha": "×%d" % n, "desc": desc if n > 0 else "No te queda ninguno."}
 		if ResourceLoader.exists(o["imagen"]):
 			it["icono"] = load(o["imagen"])
 		items.append(it)
@@ -2525,7 +2639,22 @@ func _cantidad_objeto(nombre: String) -> int:
 
 # Se puede dar a cualquier aliado que siga en pie (si ya tiene todo lleno, no).
 func _menu_objeto_aliado(nombre: String) -> void:
-	var campo := "hp" if OBJETOS_COMBATE[nombre]["que"] == "PV" else "mp"
+	var que: String = OBJETOS_COMBATE[nombre]["que"]
+	if que == "ENFOQUE":                              # a un aliado en pie que no lo tenga ya
+		var conscientes := heroes.filter(func(h): return h["hp"] > 0 and int(h.get("enfoque_turnos", 0)) <= 0)
+		if conscientes.is_empty():
+			registro.text = "Nadie lo necesita ahora"
+			return
+		_pedir_objetivo(conscientes, func(f): _usar_objeto(nombre, f), _menu_pocion, "TOCA A UN ALIADO")
+		return
+	if que == "PURIFICA":                             # sobre el Guardián del Bosque
+		var guardianes := enemigos.filter(func(e): return e["hp"] > 0 and Bosque.es_guardian(e))
+		if guardianes.is_empty():
+			registro.text = "El elixir solo sirve contra el Guardián del Bosque."
+			return
+		_pedir_objetivo(guardianes, func(f): _usar_elixir(nombre, f), _menu_pocion, "TOCA AL GUARDIÁN")
+		return
+	var campo := "hp" if que == "PV" else "mp"
 	var validos := heroes.filter(func(h): return h["hp"] > 0 and h[campo] < h[campo + "_max"])
 	if validos.is_empty():
 		registro.text = "Nadie lo necesita ahora"
@@ -2539,6 +2668,20 @@ func _usar_objeto(nombre: String, quien: Dictionary) -> void:
 	_ocultar_menu()
 	if ResourceLoader.exists("res://inventario.gd"):
 		load("res://inventario.gd").gastar(nombre)
+	if OBJETOS_COMBATE[nombre]["que"] == "ENFOQUE":    # Esencia de enfoque (fase 3)
+		estado = "accion"
+		quien["enfoque_turnos"] = Bosque.TURNOS_ENFOQUE
+		quien["enfoque_nuevo"] = quien == actor        # el turno en que la toma no cuenta
+		registro.text = "%s toma %s: su magia se afina" % [quien["nombre"], nombre] if quien == actor \
+			else "%s da %s a %s: su magia se afina" % [actor["nombre"], nombre, quien["nombre"]]
+		Sonido.efecto("pocion", {"tono": 1.2})
+		_frasco(quien, OBJETOS_COMBATE[nombre])
+		_luz(OBJETOS_COMBATE[nombre]["color"], 1.8, 4.0, 1.4, _centro(quien))
+		_numero_flotante(quien, "¡Enfoque!", Color(0.8, 0.7, 1.0), 34)
+		_actualizar()
+		await get_tree().create_timer(0.9).timeout
+		_terminar_turno()
+		return
 	if nombre == "Poción":
 		pociones -= 1
 	estado = "accion"
@@ -2567,6 +2710,52 @@ func _usar_objeto(nombre: String, quien: Dictionary) -> void:
 	await get_tree().create_timer(0.9).timeout
 	_restablecer_color(quien)
 	_terminar_turno()
+
+
+# Elixir de savia purificada (fase 3) sobre el Guardián: en su primera fase resbala (no se gasta y se vuelve al menú);
+# en la segunda lo purifica: desenlace A, guardado en «decisiones» (combate_bosque.gd), y el combate termina en victoria.
+func _usar_elixir(nombre: String, g: Dictionary) -> void:
+	var motivo := Bosque.elixir_sobre(g)
+	if motivo != "":
+		registro.text = _texto_bosque(motivo, "La savia resbala por la corteza: aún está demasiado fuerte.") \
+			if motivo == "elixir_fase1" else motivo
+		_mostrar_menu()
+		return
+	if _cantidad_objeto(nombre) <= 0:
+		return
+	_ocultar_menu()
+	estado = "accion"
+	load("res://inventario.gd").gastar(nombre)
+	Bosque.apuntar("purificado")
+	g["purificado"] = true
+	_marcar_aviso(g, false)
+	g["cargando"] = false
+	registro.text = _texto_bosque("purificacion", "La savia clara empapa sus raíces. El Guardián recuerda.")
+	Sonido.efecto("cura")
+	_fogonazo(Color(0.75, 1.0, 0.6), 0.5, 1.2)
+	_luz(Color(0.6, 1.0, 0.5), 2.4, 6.0, 2.0, _centro(g))
+	_particulas(_centro(g) + Vector2(0, 120), Color(0.85, 1.0, 0.6, 1.0), Color(0.3, 0.9, 0.3, 0.0), 60, 2.0,
+		Vector2(40, 140), 80.0, Vector2(0, -1), 40.0, Vector2(0, -40), 0.06)
+	_onda(_suelo_de(g), Color(0.6, 1.0, 0.5, 0.9), 30.0, 260.0, 1.2, 10.0)
+	var rig: Node2D = g["rig"]
+	var t := create_tween()
+	t.tween_property(rig, "modulate", Color(0.8, 1.3, 0.8, 0.0), 2.0)
+	await t.finished
+	g["hp"] = 0
+	if g.has("sombra"):
+		g["sombra"].visible = false
+	g["lbl_hp"].visible = false
+	_actualizar()
+	await get_tree().create_timer(0.4).timeout
+	if not _comprobar_fin():
+		estado = "esperando"
+
+
+# Textos cortos de la aventura del bosque (dialogos/notas/bosque.gd, de narrativa); si falta, el de aquí.
+func _texto_bosque(clave: String, defecto: String) -> String:
+	if ResourceLoader.exists("res://dialogos/notas/bosque.gd"):
+		return str(load("res://dialogos/notas/bosque.gd").TEXTOS.get(clave, defecto))
+	return defecto
 
 
 # El frasco aparece sobre el aliado, se inclina, brilla y se desvanece.
@@ -2639,6 +2828,13 @@ func _terminar_turno(carga := true) -> void:
 	var pm_extra: int = Extra.pm_al_terminar(actor)            # Gota de la cascada alta (sin ella, 0)
 	if pm_extra > 0:
 		_numero_flotante(actor, "+%d PM" % pm_extra, Color(0.55, 1.0, 0.85), 30)
+	if actor.get("enfoque_turnos", 0) > 0:        # Esencia de enfoque (fase 3): 3 turnos, sin contar el que la toma
+		if actor.get("enfoque_nuevo", false):
+			actor["enfoque_nuevo"] = false
+		else:
+			actor["enfoque_turnos"] -= 1
+			if actor["enfoque_turnos"] <= 0:
+				_numero_flotante(actor, "El enfoque se apaga", Color(0.8, 0.75, 0.95), 24)
 	if actor.get("embuir_turnos", 0) > 0:         # Embuir dura 3 turnos de Garon (sin contar el que lo pone)
 		if actor.get("embuir_nuevo", false):
 			actor["embuir_nuevo"] = false
@@ -2730,6 +2926,9 @@ func _presentar(f: Dictionary) -> void:
 # Segunda fase (al 50 %): destello rojo, el fondo se tiñe, cambia la música, brasas alrededor del jefe,
 # y va más rápido y pega más fuerte.
 func _cambio_fase(f: Dictionary) -> void:
+	if Bosque.es_guardian(f):
+		await _cambio_fase_bosque(f)
+		return
 	estado = "accion"
 	registro.text = "¡%s se enfurece!" % f["nombre"]
 	Sonido.efecto("fase2")                         # sonido.gd
@@ -2749,6 +2948,36 @@ func _cambio_fase(f: Dictionary) -> void:
 	f["brasas"] = brasas
 	f["vel"] *= 1.4
 	f["atk"] = int(f["atk"] * 1.15)
+	_musica_fase2()
+	await get_tree().create_timer(1.6).timeout
+	if estado == "accion":
+		estado = "esperando"
+
+
+# Segunda fase del Guardián del Bosque (fase 3): «El corazón del bosque». Destello verde, hojas, el escenario se tiñe de
+# verde y aparece la coraza de raíces (golpes físicos a la mitad, débil al fuego: combate_bosque.gd). Más rápido.
+func _cambio_fase_bosque(f: Dictionary) -> void:
+	estado = "accion"
+	registro.text = _texto_bosque("fase2", "¡El corazón del bosque despierta!")
+	Sonido.efecto("fase2")
+	_fogonazo(Color(0.55, 1.0, 0.45), 0.55, 0.8)
+	_temblor(12.0)
+	menu.vibrar(60)
+	var modelo = _p3d(f)
+	if modelo != null and modelo.has_method("fase2"):
+		modelo.fase2()
+	_numero_flotante(f, "¡CORAZA DE RAÍCES!", Color("9BE36B"), 40)
+	_numero_flotante(f, "Débil al fuego", Color(1.0, 0.6, 0.3), 26, Vector2(0, 60))
+	var verde := Color(0.78, 1.0, 0.78)
+	if fondo_nodo != null:
+		create_tween().tween_property(fondo_nodo, "modulate", verde, 1.2)
+	create_tween().tween_property(escena, "modulate", tono_escena * Color(0.85, 1.0, 0.85), 1.2)
+	var img = f["partes"].get("imagen", f["partes"].get("sprite"))
+	if img != null:
+		create_tween().tween_property(img, "modulate", Color(0.5, 0.85, 0.45), 0.8)
+	f["brasas"] = _particulas(_centro(f) + Vector2(0, 80), Color(0.6, 1.0, 0.4, 0.9), Color(0.2, 0.6, 0.1, 0.0), 24, 1.8,
+		Vector2(20, 70), 60.0, Vector2(0, -1), 40.0, Vector2(0, -30), 0.06, true)
+	f["vel"] *= 1.3
 	_musica_fase2()
 	await get_tree().create_timer(1.6).timeout
 	if estado == "accion":
@@ -3115,6 +3344,8 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 		dano = max(1, dano - int(objetivo.get("def", 0) / 2.0))
 	if objetivo.get("defendiendo", false):
 		dano = max(1, int(dano * 0.5))
+	if not objetivo["hero"]:                          # fase 3: el Guardián del Bosque y la Esencia de enfoque
+		dano = Bosque.dano_recibido(dano, magia, origen, objetivo, _lya_sabe())
 	var congela: bool = magia == "" and origen["hero"] and _lleva_frostfang(origen) and randf() < PROB_CONGELAR
 	# Pluma de arpía: un héroe esquiva un golpe físico (solo tira el dado con la pluma puesta: sin ella, nada cambia)
 	var esquiva: bool = magia == "" and objetivo["hero"] and Extra.esquiva(objetivo.get("efectos", {}))
@@ -4030,6 +4261,8 @@ func _magia_grupal(o: Dictionary, objs: Array, magia: String, nivel: int, dano: 
 	var potencia := 0.7 if nivel == 2 else 1.0001     # distinto de 1: sin destello ni temblor por cada enemigo
 	var impacto_en := func(obj: Dictionary) -> void:
 		var d := dano + randi_range(-4, 4)
+		if not obj.get("hero", false):               # fase 3: el Guardián del Bosque y la Esencia de enfoque
+			d = Bosque.dano_recibido(d, magia, o, obj, _lya_sabe())
 		_quitar_pv(obj, d)
 		_golpe_visual(obj, d, magia, false, potencia)
 	if nivel == 2:
@@ -4468,14 +4701,38 @@ func _comprobar_fin() -> bool:
 const RECOMPENSA_FIJO := {"garganta_gorthor": "fauces_gorthor", "garganta_nido": "lagrima_ambar"}
 
 
+# Premio del Guardián del Bosque, una sola vez (el combate fijo queda ganado). Si no se purificó, es que se derrotó.
+#   purificado: el Brote del Guardián (accesorio, magia natural) y dos Savias claras.
+#   derrotado: el Corazón de roble (material, se vende caro) y la Corteza del Guardián (accesorio, coraza al empezar).
+func _premio_bosque() -> String:
+	if Bosque.desenlace() == "":
+		Bosque.apuntar("derrotado")
+	load("res://progreso.gd").poner_hito("bq_resuelto")
+	var Inv = load("res://inventario.gd")
+	var textos: Array = []
+	if Bosque.desenlace() == "purificado":
+		textos.append(Extra.conseguir("brote_guardian"))
+		Inv.agregar_objeto("Savia clara", 2)
+		textos.append("+2 Savia clara")
+	else:
+		Inv.agregar_objeto("Corazón de roble", 1)
+		textos.append("+1 Corazón de roble")
+		textos.append(Extra.conseguir("corteza_guardian"))
+	return "  ".join(textos.filter(func(t): return t != ""))
+
+
 func _fin_combate(ganan: bool) -> void:
 	var aviso := ""
 	if ganan and combate_fijo != "":
 		var g: Dictionary = Engine.get_meta("combates_ganados", {})
-		if not g.get(combate_fijo, false) and RECOMPENSA_FIJO.has(combate_fijo) and Extra.disponible(RECOMPENSA_FIJO[combate_fijo]):
+		if not g.get(combate_fijo, false) and combate_fijo == Bosque.COMBATE:   # el Guardián del Bosque (fase 3)
+			aviso = _premio_bosque()
+		elif not g.get(combate_fijo, false) and RECOMPENSA_FIJO.has(combate_fijo) and Extra.disponible(RECOMPENSA_FIJO[combate_fijo]):
 			aviso = Extra.conseguir(RECOMPENSA_FIJO[combate_fijo])
 		g[combate_fijo] = true
 		Engine.set_meta("combates_ganados", g)
+	if ganan:                                      # las investigaciones de Lya en curso avanzan (fase 3)
+		load("res://investigacion.gd").avanzar_en_curso()
 	await _repartir_exp(ganan)
 	if aviso != "":
 		registro.text = aviso
