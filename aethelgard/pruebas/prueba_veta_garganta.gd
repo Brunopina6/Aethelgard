@@ -1,0 +1,122 @@
+extends SceneTree
+# La veta del Hierro de la Falla en la Garganta 3D (V10, encargo «El pedido de Maese Ferro»; zonas3d/garganta_3d.gd).
+# Escena de verdad, «-- 3d garganta3d sin_prologo». Partida propia (user://prueba_veta_garganta.save).
+#   1. Sin el encargo no hay veta.
+#   2. Con la pista de Garon (hito enc_herrero_pista), la veta está; picarla da 1 Hierro de la Falla y el hito
+#      enc_herrero_veta, y la veta desaparece. Con Lya y Garon en el grupo lo comentan (gg_veta).
+#   3. Picarla otra vez no da más hierro. Sin Lya ni Garon: solo el aviso, sin diálogo.
+# Termina con «FALLOS: n» y quit(1) si algo no se cumple.
+
+const REGION := "res://zonas3d/garganta_3d.tscn"
+const ARCHIVO := "user://prueba_veta_garganta.save"
+const HIERRO := "Hierro de la Falla"
+
+var frames := 0
+var paso := 0
+var f_paso := 0
+var R
+var P
+var inv
+var fallos: Array = []
+var viejo: Node = null
+
+
+func _initialize() -> void:
+	R = root.get_node("Recursos")
+	P = load("res://progreso.gd")
+	inv = load("res://inventario.gd")
+	if not load("res://modo3d.gd").activo():
+		fallos.append("la exploración 3D no está activa (falta «-- 3d»)")
+		_terminar()
+		return
+	Engine.set_meta("archivo_partida_prueba", ARCHIVO)
+	Engine.set_meta("partida_lista", true)
+	for k in ["mazmorras", "inventario", "grupo_activo", "pos_3d", "pos_3d_ok", "pos_3d_lugar"]:
+		if Engine.has_meta(k):
+			Engine.remove_meta(k)
+	change_scene_to_file(REGION)
+	_siguiente(1)
+
+
+func _siguiente(n: int) -> void:
+	paso = n
+	f_paso = frames
+
+
+func _lista() -> bool:
+	return current_scene != null and current_scene.scene_file_path == REGION and not R.cambiando and frames - f_paso >= 8
+
+
+func _hierro() -> int:
+	return inv.cantidad(HIERRO)
+
+
+func _terminar() -> void:
+	for f in fallos:
+		print("FALLO: ", f)
+	print("FALLOS: %d" % fallos.size())
+	quit(1 if fallos.size() > 0 else 0)
+
+
+func _process(_d: float) -> bool:
+	frames += 1
+	if frames > 30 * 120:
+		fallos.append("se pasa el tiempo (paso %d)" % paso)
+		_terminar()
+		return false
+	var dg = root.get_node_or_null("Dialogic")
+	match paso:
+		1:
+			if _lista():
+				var r = current_scene
+				if r.veta != null:
+					fallos.append("1: sin el encargo ya hay veta")
+				P.poner_hito("enc_herrero_pedido")
+				P.poner_hito("enc_herrero_pista")
+				Engine.set_meta("grupo_activo", ["Kael", "Lya", "Garon"])
+				viejo = r
+				change_scene_to_file(REGION)
+				_siguiente(2)
+		2:
+			if _lista() and current_scene != viejo:
+				var r = current_scene
+				if r.veta == null:
+					fallos.append("2: con la pista de Garon no está la veta")
+				Engine.set_meta("grupo_activo", ["Kael", "Lya", "Garon"])   # la región pone el grupo de la misión al entrar
+				var antes := _hierro()
+				r._picar_veta()
+				if _hierro() != antes + 1:
+					fallos.append("2: picar la veta no da 1 %s (%d → %d)" % [HIERRO, antes, _hierro()])
+				if not P.hito("enc_herrero_veta"):
+					fallos.append("2: no se apunta enc_herrero_veta")
+				_siguiente(3)
+		3:
+			if frames - f_paso >= 4:
+				var r = current_scene
+				if r.veta != null and is_instance_valid(r.veta) and not r.veta.is_queued_for_deletion():
+					fallos.append("2: la veta sigue ahí")
+				if dg == null or dg.current_timeline == null or not dg.current_timeline.resource_path.ends_with("gg_veta.dtl"):
+					fallos.append("2: con Lya y Garon no empieza gg_veta (%s)" % [dg.current_timeline.resource_path if dg != null and dg.current_timeline != null else "ninguno"])
+				if dg != null and dg.current_timeline != null:
+					dg.end_timeline()
+				var antes := _hierro()
+				r._picar_veta()
+				if _hierro() != antes:
+					fallos.append("3: picarla otra vez da más hierro")
+				# sin Lya ni Garon: solo el aviso
+				Engine.get_meta("hitos", {}).erase("enc_herrero_veta")
+				_siguiente(4)
+		4:
+			if frames - f_paso >= 12:
+				var r = current_scene
+				Engine.set_meta("grupo_activo", ["Kael"])
+				var antes := _hierro()
+				r._picar_veta()
+				if _hierro() != antes + 1 or not P.hito("enc_herrero_veta"):
+					fallos.append("3: sin Lya ni Garon, picar no da el hierro o el hito")
+				if dg != null and dg.current_timeline != null and dg.current_timeline.resource_path.ends_with("gg_veta.dtl"):
+					fallos.append("3: sin Lya ni Garon empieza gg_veta")
+				print("OK veta de la Garganta: aparece con la pista, da el hierro una vez, gg_veta con Lya y Garon")
+				_terminar()
+				return true
+	return false

@@ -990,7 +990,15 @@ func _picar_veta() -> void:
 	Progreso.poner_hito("enc_herrero_veta")
 	load("res://inventario.gd").agregar_objeto("Hierro de la Falla", 1)
 	Sonido.efecto("tesoro")
-	_mostrar_aviso("Kael golpea la veta: el hierro canta. (+1 Hierro de la Falla) Volved con Maese Ferro.", 3.6)
+	# con Lya y Garon en el grupo, lo comentan (dialogos/garganta/gg_veta.dtl, narrativa); si no, solo el aviso
+	var dg = get_node_or_null("/root/Dialogic")
+	var g: Array = load("res://grupo.gd").activos()
+	if dg != null and dg.current_timeline == null and g.has("Lya") and g.has("Garon"):
+		_parar_kael()
+		dg.start("gg_veta")
+		dg.timeline_ended.connect(func(): _mostrar_aviso("+1 Hierro de la Falla. Volved con Maese Ferro.", 3.0), CONNECT_ONE_SHOT)
+	else:
+		_mostrar_aviso("Kael golpea la veta: el hierro canta. (+1 Hierro de la Falla) Volved con Maese Ferro.", 3.6)
 	if veta != null:
 		veta.queue_free()
 		veta = null
