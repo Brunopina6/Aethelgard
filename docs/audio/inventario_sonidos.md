@@ -820,6 +820,29 @@ Musica queda como estaba. Lo pide el catálogo («trata»), sin llamadas nuevas 
 Medido con `prueba_audio_guardian` (10/11): las 14 claves nuevas ocupan **920 KB** en la RAM (QOA; el bucle, 262 KB).
 Todo el audio: **20,36 MB** (presupuesto 21 MB de `prueba_audio_memoria`; antes, 19,47).
 
+### Señal (con ventana y el driver real, `prueba_efectos_senal` «efectos=guardian_bosque_,corteza_,orbe_ mezclas=9», 10/11 a las 18:37)
+
+Cada efecto solo, Master al 100 % (pico / RMS dBFS): título −6,0 / −27,3 · entrada −10,8 / −31,9 · latigazo −9,0 / −27,6
+· raíces −7,1 / −27,2 · latido −9,8 / −25,5 · fase 2 −5,2 / −25,7 · derrumbe −6,8 / −24,0 · purificar −14,2 / −25,9 ·
+voz: herido −11,3 / −33,5, caída −7,6 / −31,2, ataque −18,8 / −41,9 (**8 dB de menos por la prueba**: sonó justo tras
+la purificación, de prioridad 4, que baja lo demás; en el juego, ≈ −34) · orbe: visión −17,2 / −29,9, cierre −17,0 /
+−26,9. Referencias de antes: el golpe −27,7; las voces de los enemigos −23 a −31; las artes −24 a −26.
+
+La misma pelea por buses (música del combate a −6 dB que se aparta, como en combate):
+
+| Mezcla | Música (RMS) | Bosque antiguo | Efectos sobre la música (mediana) | Pico del Master |
+|---|---|---|---|---|
+| sin tratamiento | −23,9 | — | −4,3 dB | −3,8 |
+| fase 1, con tratamiento | −25,6 | −34,0 | −1,4 dB | −4,2 |
+| fase 2 (rugido y pelea) | −24,9 | −35,6 | −2,7 dB | −4,2 |
+| purificación y victoria | −30,5 | −34,4 (se apaga) | +8,7 dB | −5,5 |
+| derrota (voz, derrumbe, victoria) | −27,8 | −37,7 (se apaga) | +11,3 dB | −5,5 |
+
+El tratamiento deja los efectos unos 3 dB más claros sobre la música y el bosque unos 10 dB por debajo de ella. Medido
+por nivel (RMS), no por bandas: el paso bajo quita sobre todo agudos, que es donde están los crujidos y los golpes, así
+que la mejora al oído debería ser mayor que esos 3 dB (sin comprobar). Muestras y qué escuchar:
+`D:\REBELUM_diagnostico\sonido_muestras\2026-11-10_guardian\indice.md`.
+
 ## Candidatos aún sin usar
 
 - **Alternativas para escuchar y elegir:** `victory_…_01_s29` y `…_02_s29` (otra victoria), InspectorJ
