@@ -426,6 +426,7 @@ func _pintar_ajustes() -> void:
 			fg.add_child(bg)
 		cuerpo.add_child(fg)
 		cuerpo.add_child(_texto("Se nota la próxima vez que se entra en la Garganta.", 16, COLOR_SUAVE))
+		_pintar_calidad()
 		# La invocación de Érebo (T-101): la de siempre o la nueva, en pruebas (invocacion_erebo_nueva.gd).
 		var ere = load("res://invocacion_erebo_nueva.gd")
 		var nueva: bool = ere.elegida()
@@ -459,6 +460,72 @@ func _pintar_ajustes() -> void:
 			fo.add_child(bo)
 		cuerpo.add_child(fo)
 		cuerpo.add_child(_texto("Se nota la próxima vez que se entra en Oakhaven.", 16, COLOR_SUAVE))
+
+
+# Calidad de las regiones 3D (encargo del 09/11; prototipos/calidad_auto.gd, sección [calidad] de user://ajustes.cfg):
+# «Automática» deja que el juego elija y ajuste según el aparato; Baja, Media o Alta fijan el perfil y entonces el
+# juego no cambia nada solo (lo manual manda). El límite de FPS lo elige el jugador; sin elegir, 30 (60 solo con Alta
+# y si el aparato lo aguanta, medido).
+const CALIDADES := [["auto", "Automática"], ["bajo", "Baja"], ["medio", "Media"], ["alto", "Alta"]]
+
+
+func _pintar_calidad() -> void:
+	var auto = load("res://prototipos/calidad_auto.gd")
+	var cal = load("res://prototipos/calidad_proto.gd")
+	var e: Dictionary = auto.estado()
+	var elegida: String = "auto" if e["auto"] or e["perfil"] == "" else e["perfil"]
+	cuerpo.add_child(_texto("Calidad gráfica", 26, COLOR_TITULO))
+	var fc := HBoxContainer.new()
+	fc.add_theme_constant_override("separation", 8)
+	for op in CALIDADES:
+		var clave: String = op[0]
+		var b := _boton(("● " if clave == elegida else "○ ") + op[1], 18, Vector2(170, 34), "calidad:" + clave)
+		b.pressed.connect(func():
+			_elegir_calidad(clave)
+			Sonido.efecto("ui_tic")
+			_pintar_de_nuevo())
+		fc.add_child(b)
+	cuerpo.add_child(fc)
+	var fps_en_uso: int = auto.fps_de(cal.actual(), e, int(cal.PERFILES[cal.actual()]["fps"]))
+	var ff := HBoxContainer.new()
+	ff.add_theme_constant_override("separation", 8)
+	var nombre_fps := _texto("Límite de FPS", 20, COLOR_TEXTO)
+	nombre_fps.custom_minimum_size = Vector2(170, 0)
+	ff.add_child(nombre_fps)
+	for n in auto.FPS_VALIDOS:
+		var cifra: int = n
+		var b := _boton(("● " if cifra == fps_en_uso else "○ ") + str(cifra), 18, Vector2(110, 34), "fps:%d" % cifra)
+		b.pressed.connect(func():
+			auto.guardar({"fps": cifra})
+			Sonido.efecto("ui_tic")
+			_pintar_de_nuevo())
+		ff.add_child(b)
+	cuerpo.add_child(ff)
+	var nota := "Se aplica la próxima vez que se entra en una región 3D."
+	if elegida == "auto":
+		var p: String = auto.perfil_de(e)
+		if p != "":
+			nota = "Ahora: %s%s. " % [_nombre_calidad(p), ", ya comprobada al jugar" if e["calibrado"] else ""] + nota
+	elif e["aviso"] == elegida:
+		nota = "En este aparato, %s no llega a sus FPS de forma estable. " % _nombre_calidad(elegida) + nota
+	cuerpo.add_child(_texto(nota, 16, COLOR_SUAVE))
+
+
+func _nombre_calidad(p: String) -> String:
+	for op in CALIDADES:
+		if op[0] == p:
+			return op[1]
+	return p
+
+
+# «auto»: el sistema decide (lo que ya midió se conserva). Otro: el perfil fijado por el jugador.
+func _elegir_calidad(clave: String) -> void:
+	var auto = load("res://prototipos/calidad_auto.gd")
+	if clave == "auto":
+		var e: Dictionary = auto.estado()
+		auto.guardar({"auto": true, "perfil": e["perfil_auto"] if e["perfil_auto"] != "" else null})
+	else:
+		auto.guardar({"auto": false, "perfil": clave})
 
 
 func _cambiar_volumen(bus: String, paso: int) -> void:

@@ -67,6 +67,7 @@ func _ready() -> void:
 	_crear_panel_rnd(capa)
 	seguro = kael.global_position
 	_aplicar_perfil()
+	_preparar_regulador()
 	_preparar_sombreados.call_deferred()            # cuando la escena hija ya ha puesto todo lo suyo
 	if Engine.has_meta("banco_proto"):
 		_seguir_banco.call_deferred()
@@ -91,6 +92,120 @@ func _cambiar_perfil() -> void:
 	var cal = load("res://prototipos/calidad_proto.gd")
 	Engine.set_meta("calidad_proto", cal.siguiente())
 	get_tree().reload_current_scene()
+
+
+# ---------------------------------------------------------------- calidad adaptable (encargo del 09/11)
+# Calibración al entrar por primera vez con un perfil del sistema y ajuste dinámico mientras se juega
+# (prototipos/regulador_calidad.gd decide; calidad_auto.gd guarda en user://ajustes.cfg). Se le pasa el tiempo REAL
+# de cada fotograma (_medir), salvo en pausa o en modo ahorro (menú o diálogo esperando: Godot no redibuja y el
+# tiempo entre fotogramas no dice nada de la GPU). Sin ventana (pruebas), con un banco o con CAL no hace nada.
+const Regulador := preload("res://prototipos/regulador_calidad.gd")
+var regulador: Regulador = null
+var _perfil_vivo: Dictionary = {}          # valores con los que está la escena ahora (para los recortes en vivo)
+var _saltar_muestra := true
+
+
+func _preparar_regulador() -> void:
+	if Engine.has_meta("banco_proto") or Engine.has_meta("calidad_proto"):
+		return
+	if DisplayServer.get_name() == "headless" and not Engine.get_meta("calidad_regulador_forzado", false):
+		return
+	var cal = load("res://prototipos/calidad_proto.gd")
+	var auto = load("res://prototipos/calidad_auto.gd")
+	var nombre: String = cal.actual()
+	var e: Dictionary = auto.estado()
+	var del_sistema: bool = not cal.fijado_a_mano()
+	_perfil_vivo = cal.datos()
+	# Se defienden 30 FPS; 60 solo cuando los puso el sistema (alto, a medir o medidos), nunca si los pidió el jugador.
+	var objetivo := 60 if del_sistema and e["fps"] == 0 and perfil_fps == 60 else 30
+	regulador = Regulador.new(nombre, perfil_fps, objetivo, del_sistema, del_sistema and not e["calibrado"],
+		auto.nivel_de(nombre, e), auto.escalones_utiles(nombre).size())
+
+
+func _dar_muestra(ms: float) -> void:
+	var quieto := OS.low_processor_usage_mode or get_tree().paused
+	var vale := not quieto and not _saltar_muestra
+	_saltar_muestra = quieto                       # el primer fotograma tras el modo ahorro tampoco cuenta
+	if vale:
+		_atender_regulador(regulador.muestra(ms))
+
+
+func _atender_regulador(acc: Dictionary) -> void:
+	if acc.is_empty():
+		return
+	var auto = load("res://prototipos/calidad_auto.gd")
+	var m: Dictionary = acc.get("medida", {})
+	var medida := "p95 %.1f ms, mediana %.1f ms, %d fotogramas, presupuesto %.1f ms" % [m.get("p95", 0.0),
+		m.get("mediana", 0.0), m.get("n", 0), regulador.presupuesto_ms()]
+	var donde := scene_file_path.get_file()
+	match String(acc["accion"]):
+		"calibrado":
+			auto.guardar({"calibrado": true, "fps_auto": acc["fps"]})
+			auto.registrar("calibrado en %s: %s a %d FPS%s (%s)" % [donde, acc["perfil"], acc["fps"],
+				", el más bajo, sin llegar del todo" if acc.get("justo", false) else "", medida])
+		"fps":
+			perfil_fps = int(acc["fps"])
+			auto.guardar({"fps_auto": perfil_fps})
+			auto.registrar("en %s, %s no aguanta 60 FPS: se queda en 30 (%s)" % [donde, regulador.perfil, medida])
+		"perfil":
+			auto.guardar({"perfil_auto": acc["perfil"], "perfil": acc["perfil"], "calibrado": false})
+			auto.registrar("en %s, %s no llega: %s desde la próxima carga (%s)" % [donde, regulador.perfil,
+				acc["perfil"], medida])
+		"nivel":
+			auto.guardar({"nivel": acc["nivel"], "nivel_de": regulador.perfil})
+			_aplicar_recortes_en_vivo()
+			auto.registrar("en %s, %s escalón %d%s (%s)" % [donde, "sube al" if acc.get("subir", false) else "baja al",
+				acc["nivel"], ": " + auto.nombre_escalon(regulador.perfil, acc["nivel"]) if acc["nivel"] > 0 else "", medida])
+		"aviso":
+			auto.guardar({"aviso": regulador.perfil})
+			auto.registrar("en %s, el perfil %s elegido a mano no llega a %d FPS (%s)" % [donde, regulador.perfil,
+				regulador.objetivo, medida])
+		"no_llega":
+			auto.guardar({"no_llega": true})
+			auto.registrar("en %s, este aparato no llega a 30 FPS ni en el perfil bajo con todos los recortes (%s; %s)" % [
+				donde, medida, auto.resumen_aparato()])
+
+
+# Lo que se puede cambiar sin recargar y sin que se note de golpe: la resolución del 3D, la distancia y los tramos de
+# las sombras que ya hay (encenderlas o apagarlas sí se notaría: eso, en la próxima carga) y la hierba de
+# sendero_puente.gd (sus trozos se reconocen por la distancia de dibujo del perfil: menos matas y más cerca). El resto
+# de cambios del escalón (flores, espuma) llegan con la próxima carga, que ya lee los recortes (calidad_proto.datos).
+func _aplicar_recortes_en_vivo() -> void:
+	var nuevo: Dictionary = load("res://prototipos/calidad_proto.gd").datos()
+	var vp := get_viewport()
+	if absf(vp.scaling_3d_scale - float(nuevo["escala_3d"])) > 0.001:
+		vp.scaling_3d_scale = nuevo["escala_3d"]
+	var ds0 := float(_perfil_vivo.get("dist_sombras", 0.0))
+	var ds1 := float(nuevo.get("dist_sombras", ds0))
+	for luz in find_children("*", "DirectionalLight3D", true, false):
+		var l := luz as DirectionalLight3D
+		if not l.shadow_enabled:
+			continue
+		if ds0 > 0.0 and ds1 != ds0:
+			l.directional_shadow_max_distance *= ds1 / ds0
+		var tramos := int(nuevo.get("sombra_tramos", 4))
+		if tramos == 1:
+			l.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
+		elif tramos == 2 and l.directional_shadow_mode == DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS:
+			l.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
+		elif tramos >= 2 and int(_perfil_vivo.get("sombra_tramos", 4)) == 1:    # al subir de escalón, como era
+			l.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS if tramos == 2 \
+				else DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS
+	var dh0 := float(_perfil_vivo.get("dist_hierba", 0.0))
+	var dh1 := float(nuevo.get("dist_hierba", dh0))
+	var h0 := int(_perfil_vivo.get("hierba", 0))
+	var h1 := int(nuevo.get("hierba", h0))
+	if dh0 > 0.0 and (dh1 != dh0 or h1 != h0):
+		for n in find_children("*", "MultiMeshInstance3D", true, false):
+			var mmi := n as MultiMeshInstance3D
+			if mmi.multimesh == null or absf(mmi.visibility_range_end - dh0) > 0.01:
+				continue
+			mmi.visibility_range_end = dh1
+			# la escena se construyó con «hierba» del momento de la carga; la proporción, respecto a esa
+			var con := int(_perfil_vivo.get("hierba_construida", h0))
+			mmi.multimesh.visible_instance_count = -1 if h1 >= con else ceili(mmi.multimesh.instance_count * float(h1) / con)
+	nuevo["hierba_construida"] = int(_perfil_vivo.get("hierba_construida", h0))
+	_perfil_vivo = nuevo
 
 
 # ---------------------------------------------------------------- mundo de prueba
@@ -680,6 +795,8 @@ func _medir(delta: float) -> void:
 	_u_ant = ahora
 	if _ms.size() > 600:
 		_ms.pop_front()
+	if regulador != null and _ms.size() > 0:
+		_dar_muestra(_ms[_ms.size() - 1])
 	_banco_paso(delta)
 	_t_rnd += delta
 	if _t_rnd < 0.5 or panel_rnd == null or not panel_rnd.visible:

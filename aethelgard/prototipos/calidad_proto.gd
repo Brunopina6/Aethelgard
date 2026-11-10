@@ -5,6 +5,9 @@ extends RefCounted
 #   medio: equilibrio.
 #   alto:  la referencia artística para dispositivos potentes (PC, iPhone 15 Pro Max, a medir).
 # El perfil alto NUNCA se rebaja para que quepa el bajo.
+# Qué perfil usa cada aparato, su límite de FPS y los recortes del ajuste dinámico: calidad_auto.gd (detección,
+# ajustes guardados en user://ajustes.cfg [calidad] y escalones) y regulador_calidad.gd (calibración y ajuste
+# dinámico mientras se juega, desde vista3d.gd). Aquí solo están los valores de cada perfil.
 
 const PERFILES := {
 	"bajo": {
@@ -26,16 +29,20 @@ const PERFILES := {
 		"arbol_sombra_simple": true,
 		"fps": 30,
 	},
+	# Medio (09/11, decisión del coordinador con las medidas del Redmi, v336, banco MEDIO con tope de 30): el
+	# candidato B. El de antes (0,9 · 2 tramos a 30 m · 4200/450 hierba/flores a 42 m) daba 27,1 FPS, p95 42,2 ms;
+	# este, 30,3 FPS, mediana 33,3 y p95 34,3 ms a 20 m (174 dibujos, 373k triángulos). A 34 m, 27,7 FPS: ahí actúa
+	# el ajuste dinámico (primero la resolución: 0,8 → 0,75 → 0,7; calidad_auto.ESCALONES). Limita la GPU (CPU 7 ms).
 	"medio": {
-		"escala_3d": 0.9,
+		"escala_3d": 0.8,
 		"msaa": 0,
 		"sombras": true,
-		"dist_sombras": 30.0,
-		"sombra_tramos": 2,       # 2 tramos en vez de los 4 de Godot: la escena se pinta 2 veces menos para la sombra
+		"dist_sombras": 24.0,
+		"sombra_tramos": 1,       # un tramo (antes 2): medido en el Redmi, junto con la escala, cand A/B
 		"sombra_res": 2048,
-		"hierba": 4200,
-		"flores": 450,
-		"dist_hierba": 42.0,
+		"hierba": 3000,
+		"flores": 350,
+		"dist_hierba": 34.0,
 		"relieve": true,
 		"luces_faroles": false, # medido en el Redmi: −7 ms; halo falso en su lugar
 		"refraccion": false,
@@ -68,20 +75,41 @@ const PERFILES := {
 const ORDEN := ["bajo", "medio", "alto"]
 
 
-# Perfil en uso: el elegido con el botón (se recuerda mientras la app está abierta); si no, por defecto
-# bajo en móviles y alto en PC. «-- movil» en la línea de órdenes fuerza el bajo (pruebas).
+# Perfil en uso: el elegido con el botón CAL o un banco de medidas (se recuerda mientras la app está abierta);
+# «-- movil» en la línea de órdenes fuerza el bajo (pruebas); si no, el de Ajustes o el que eligió el sistema
+# (calidad_auto.gd). Sin nada guardado y sin ventana (pruebas), como antes: bajo en móviles y alto en PC.
 static func actual() -> String:
 	if Engine.has_meta("calidad_proto"):
 		return Engine.get_meta("calidad_proto")
-	if "movil" in OS.get_cmdline_user_args() or OS.has_feature("mobile"):
+	if "movil" in OS.get_cmdline_user_args():
 		return "bajo"
-	return "alto"
+	return load("res://prototipos/calidad_auto.gd").perfil_en_uso(legado())
 
 
+static func legado() -> String:
+	return "bajo" if OS.has_feature("mobile") else "alto"
+
+
+# ¿Lo decide el jugador o una prueba (CAL, bancos, «-- movil»)? Entonces el sistema no calibra ni recorta nada.
+static func fijado_a_mano() -> bool:
+	if Engine.has_meta("calidad_proto") or "movil" in OS.get_cmdline_user_args():
+		return true
+	return not load("res://prototipos/calidad_auto.gd").estado()["auto"]
+
+
+# Valores del perfil en uso. Con el perfil del sistema (automática) llevan los recortes del ajuste dinámico que se
+# hayan necesitado en este aparato, y «fps» es el límite en uso (calidad_auto.fps_de: 60 solo con «alto» medido o
+# elegido por el jugador). Con CAL o un banco, el perfil tal cual, como antes.
 # Pruebas A/B (Skill aet-rendimiento-android: quitar una cosa cada vez): Engine.set_meta("calidad_extra",
 # {"sombras": false}) cambia solo esos valores sobre el perfil en uso.
 static func datos() -> Dictionary:
-	var d: Dictionary = PERFILES[actual()].duplicate()
+	var nombre := actual()
+	var d: Dictionary = PERFILES[nombre].duplicate()
+	if not Engine.has_meta("calidad_proto") and not "movil" in OS.get_cmdline_user_args():
+		var auto = load("res://prototipos/calidad_auto.gd")
+		var e: Dictionary = auto.estado()
+		d["fps"] = auto.fps_de(nombre, e, int(d["fps"]))
+		d.merge(auto.recortes(nombre, auto.nivel_de(nombre, e)), true)
 	if Engine.has_meta("calidad_extra"):
 		d.merge(Engine.get_meta("calidad_extra"), true)
 	return d
