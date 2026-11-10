@@ -1,0 +1,15 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/receta.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "balsamo_mirta"
+taller = "alquimia"
+nombre = "Bálsamo de Mirta"
+materiales = {"Hierba lunar": 2, "Savia clara": 1}
+resultado = "Bálsamo de Mirta"
+cantidad = 1
+investigacion = "lya_formula_mirta"
+desc = "En combate: +45 PV a todo el grupo."
+borrador = false

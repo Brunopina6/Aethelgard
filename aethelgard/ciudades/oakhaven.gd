@@ -339,6 +339,16 @@ const SECRETOS := [
 # ================================================================= piezas (lo que se examina o se usa)
 # «si»: cuándo se puede usar; si no, se enseña «texto_sin». «lleva_a»: a dónde pasa Kael (en casillas).
 const PIEZAS := [
+	# V10, «La fórmula desaparecida»: tres páginas del cuaderno de Mirta que el viento repartió (tras hablar con Pip).
+	{"id": "oak_pagina_1", "nombre": "Página suelta", "casilla": Vector2(18.5, 26), "accion": "Recoger la página",
+		"si": ["hito:enc_formula_pip", "!estado:pagina_1"], "senal": "oak:pagina_1",
+		"texto": "Una página con letra apretada: «…dos de hierba lunar, nunca tres…».", "texto_sin": ""},
+	{"id": "oak_pagina_2", "nombre": "Página suelta", "casilla": Vector2(40, 36.5), "accion": "Recoger la página",
+		"si": ["hito:enc_formula_pip", "!estado:pagina_2"], "senal": "oak:pagina_2",
+		"texto": "Pegada a un poste de la Calle Mayor: «…la savia, clara, al final…».", "texto_sin": ""},
+	{"id": "oak_pagina_3", "nombre": "Página suelta", "casilla": Vector2(36.5, 12.5), "accion": "Recoger la página",
+		"si": ["hito:enc_formula_pip", "!estado:pagina_3"], "senal": "oak:pagina_3",
+		"texto": "A los pies del Árbol: «…y removerlo como quien acuna». Firmado: M.", "texto_sin": ""},
 	{"id": "oak_barril", "nombre": "Barril", "casilla": Vector2(12, 29), "accion": "Subir el barril",
 		"si": ["estado:favores", "!estado:favor_barril", "!hito:oak_favores"], "senal": "oak:favor_barril",
 		"texto": "Subes el barril a la puerta del Cuervo. Pesa más de lo que parece.",
@@ -383,7 +393,9 @@ const NOTAS := [
 const SENALES := ["oak:pip_pagar", "oak:favores_aceptados", "oak:favor_barril", "oak:favor_flores",
 	"oak:favor_cucharon", "oak:favores_hechos", "oak:faroles_aceptados", "oak:farol_1", "oak:farol_2", "oak:farol_3",
 	"oak:faroles_hechos", "oak:lavanda_pedida", "oak:lavanda_cogida", "oak:lavanda_entregada", "oak:encina_gracias",
-	"oak:torre", "oak:grieta", "oak:vista_raices", "oak:sopa", "oak:rumor", "oak:dormir", "oak:encina_bosque", "oak:pip_perro", "oak:pip_perro_fin"]
+	"oak:torre", "oak:grieta", "oak:vista_raices", "oak:sopa", "oak:rumor", "oak:dormir", "oak:encina_bosque", "oak:pip_perro", "oak:pip_perro_fin",
+	"oak:servicio_forja", "oak:servicio_armaduras", "oak:servicio_botica", "oak:herrero_pedido", "oak:hierro_entregar",
+	"oak:hierro_kael", "oak:formula_pedido", "oak:formula_pip", "oak:pagina_1", "oak:pagina_2", "oak:pagina_3", "oak:formula_fin"]
 # Condiciones con nombre (las demás: hito:, estado:, decision:k=v, grupo:, oro:n, modo:3d/2d y ganado:<combate fijo>,
 # uno de «combates_ganados», como garganta_gorthor; «!» las niega).
 const CONDICIONES := {
@@ -625,6 +637,53 @@ static func aplicar_senal(arg: Variant) -> String:
 			d["pip_oak"] = "pagado"
 			Engine.set_meta("decisiones", d)
 			return "Le das una moneda a Pip."
+		"oak:servicio_forja", "oak:servicio_armaduras", "oak:servicio_botica":   # V10: la ciudad abre el servicio al acabar
+			return ""
+		"oak:herrero_pedido":                         # V10, encargo A: Maese Ferro pide el hierro que canta
+			if P.hito("enc_herrero_pedido"):
+				return ""
+			P.poner_hito("enc_herrero_pedido")
+			return "Nuevo encargo: «El pedido de Maese Ferro» (Diario, Encargos)."
+		"oak:hierro_entregar", "oak:hierro_kael":     # V10, encargo A: la decisión, una vez y con el hierro
+			var Inv = load("res://inventario.gd")
+			if P.hito("enc_herrero_fin") or Inv.cantidad("Hierro de la Falla") <= 0:
+				return ""
+			var dec: Dictionary = Engine.get_meta("decisiones", {})
+			dec["hierro_ferro"] = "entregado" if s == "oak:hierro_entregar" else "kael"
+			Engine.set_meta("decisiones", dec)
+			P.poner_hito("enc_herrero_fin")
+			if s == "oak:hierro_entregar":
+				Inv.gastar("Hierro de la Falla")
+				return "El pedido de Maese Ferro: " + _dar({"oro": 80}) + ". Ferro venderá Hierro de la Falla."
+			return "El pedido de Maese Ferro: Kael se queda el hierro. Ferro le enseñará a templarlo (forja)."
+		"oak:formula_pedido":                         # V10, encargo B: Mirta perdió su cuaderno
+			if P.hito("enc_formula_pedido"):
+				return ""
+			P.poner_hito("enc_formula_pedido")
+			return "Nuevo encargo: «La fórmula desaparecida» (Diario, Encargos)."
+		"oak:formula_pip":                            # V10, encargo B: Pip vio volar las páginas
+			if not P.hito("enc_formula_pedido") or P.hito("enc_formula_pip"):
+				return ""
+			P.poner_hito("enc_formula_pip")
+			return "Pip vio volar tres páginas por la ciudad. Búscalas."
+		"oak:pagina_1", "oak:pagina_2", "oak:pagina_3":   # V10, encargo B: cada página, una vez
+			if not P.hito("enc_formula_pip") or P.estado(NOMBRE, k):
+				return ""
+			P.poner_estado(NOMBRE, k)
+			var n := 0
+			for i in [1, 2, 3]:
+				if P.estado(NOMBRE, "pagina_%d" % i):
+					n += 1
+			if n == 3:
+				P.poner_hito("enc_formula_paginas")
+				return "Página %d de 3. Ya están todas: volved con Mirta." % n
+			return "Página %d de 3 del cuaderno de Mirta." % n
+		"oak:formula_fin":                            # V10, encargo B: Lya rehace la fórmula; premio una vez
+			if not P.hito("enc_formula_paginas") or P.hito("enc_formula_fin"):
+				return ""
+			P.poner_hito("enc_formula_fin")
+			return "La fórmula desaparecida: " + _dar({"oro": 40, "objetos": {"Bálsamo de Mirta": 2}}) \
+				+ ". Mirta venderá su bálsamo y Lya puede investigar la fórmula."
 		"oak:pip_perro":                              # V9: Pip pide ayuda; Canela aparece en Pastos Verdes
 			if P.hito("enc_perro_pedido"):
 				return ""

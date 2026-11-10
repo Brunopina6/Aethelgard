@@ -47,6 +47,9 @@ const GRUPO_NIDO := 6                    # combate.gd, GRUPOS[6]: el gólem de �
 const GRUPO_GORTHOR := 5                 # combate.gd, GRUPOS[5]: Gorthor el Devorador
 const ID_PUENTES := "garganta_puentes"   # progreso.gd, DETALLES[2]
 const ID_PILAR := "garganta_pilar"
+# V10, «El pedido de Maese Ferro» (datos/encargos_oakhaven.gd): al pie del pilar del peregrino, la veta del hierro que canta.
+const VETA_DESDE_PILAR := Vector3(1.3, 0, 0.6)
+var veta: Node3D
 const BOTONES_BANCO := ["PRUEBA", "DIAG", "TOPE", "ARB"]   # sus recorridos son los de Pastos Verdes: aquí no sirven
 const CAIDA_LEVADIZO := 2.6              # segundos que tarda en bajar
 const CASCADA_ARRIBA := Vector3(3.6, T.TOPE - 4.0, T.Z_NORTE + 0.8)     # la cascada del fondo (sonido y comentario)
@@ -129,6 +132,8 @@ func _ready() -> void:
 	_armado_nido = not _en_nido(kael.global_position)        # al volver de perder, no se repite hasta salir y entrar
 	_armado_gorthor = not _en_arena(kael.global_position)
 	_armado_coloso = not _en_coloso(kael.global_position)
+	if Progreso.hito("enc_herrero_pista") and not Progreso.hito("enc_herrero_veta"):   # V10: la veta, si ya se encontró la pista
+		_crear_veta()
 	Engine.set_meta("zona", ZONA)
 	_sonido_3d()
 	_titulo_zona("Garganta del Diablo")
@@ -528,6 +533,8 @@ func _piezas_al_alcance() -> Array:
 		lista.append(["puerta", T.PUERTA + Vector3(0, 0, 1.2), "Examinar la puerta"])
 	if not cofre_abierto() and Progreso.ganado(ID_NIDO):
 		lista.append(["cofre", T.COFRE_NIDO, "Abrir cofre"])
+	if Progreso.hito("enc_herrero_pista") and not Progreso.hito("enc_herrero_veta"):   # V10: la veta del encargo de Ferro
+		lista.append(["veta", T.PILAR_PEREGRINO + VETA_DESDE_PILAR, "Picar la veta"])
 	return lista
 
 
@@ -574,6 +581,10 @@ func _accion() -> void:
 			_abrir_cofre()
 		"detalle_p2", "detalle_p8":
 			_examinar(0 if cerca == "detalle_p2" else 1)
+			if cerca == "detalle_p8":
+				_pista_herrero()
+		"veta":
+			_picar_veta()
 
 
 func _apagar_destello(altar: Node3D) -> void:
@@ -923,3 +934,65 @@ func _comentar(momento: String) -> void:
 	var c: Dictionary = Comentarios.elegir(momento)
 	if not c.is_empty():
 		Comentarios.mostrar(capa_ui, c)
+
+
+# ================================================================= V10: el hierro que canta (encargo de Maese Ferro)
+# Con el encargo pedido, examinar el pilar del peregrino da la pista (Garon lee el hierro de las inscripciones) y
+# aparece la veta; picarla da un Hierro de la Falla, una vez. Se guarda con los hitos de siempre.
+func _pista_herrero() -> void:
+	if not Progreso.hito("enc_herrero_pedido") or Progreso.hito("enc_herrero_pista"):
+		return
+	Progreso.poner_hito("enc_herrero_pista")
+	var garon: bool = load("res://grupo.gd").activos().has("Garon")
+	get_tree().create_timer(4.6).timeout.connect(func():
+		if is_instance_valid(self):
+			_mostrar_aviso(("Garon: «Las letras del pilar las grabaron con el hierro de aquí. Mirad: la veta brilla.»" if garon
+				else "Al pie del pilar, la roca tiene vetas oscuras que brillan como el metal."), 4.0)
+			_crear_veta())
+
+
+func _crear_veta() -> void:
+	if veta != null or Progreso.hito("enc_herrero_veta"):
+		return
+	veta = Node3D.new()
+	veta.name = "veta_hierro"
+	veta.position = T.PILAR_PEREGRINO + VETA_DESDE_PILAR
+	add_child(veta)
+	var roca := SphereMesh.new()
+	roca.radius = 0.45
+	roca.height = 0.6
+	var mr := MeshInstance3D.new()
+	mr.mesh = roca
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.32, 0.3, 0.33)
+	mr.material_override = mat
+	mr.position = Vector3(0, 0.2, 0)
+	veta.add_child(mr)
+	for k in 3:                                      # vetas de hierro que brillan
+		var b := BoxMesh.new()
+		b.size = Vector3(0.5, 0.05, 0.06)
+		var mb := MeshInstance3D.new()
+		mb.mesh = b
+		var mm := StandardMaterial3D.new()
+		mm.albedo_color = Color(0.55, 0.6, 0.7)
+		mm.emission_enabled = true
+		mm.emission = Color(0.5, 0.6, 0.9)
+		mm.emission_energy_multiplier = 0.8
+		mb.material_override = mm
+		mb.position = Vector3(0, 0.15 + k * 0.12, 0.3)
+		mb.rotation_degrees = Vector3(0, 0, -20 + k * 20)
+		veta.add_child(mb)
+
+
+func _picar_veta() -> void:
+	if Progreso.hito("enc_herrero_veta"):
+		return
+	Progreso.poner_hito("enc_herrero_veta")
+	load("res://inventario.gd").agregar_objeto("Hierro de la Falla", 1)
+	Sonido.efecto("tesoro")
+	_mostrar_aviso("Kael golpea la veta: el hierro canta. (+1 Hierro de la Falla) Volved con Maese Ferro.", 3.6)
+	if veta != null:
+		veta.queue_free()
+		veta = null
+	guardar_posicion()
+	Progreso.guardar(scene_file_path)

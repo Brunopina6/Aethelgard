@@ -270,6 +270,11 @@ static func efectos_de(heroe: String) -> Dictionary:
 		return {}
 	var Inv = load("res://inventario.gd")
 	var r := efectos_de_equipo(Inv.equipo_de(heroe))
+	for id in Inv.equipo_de(heroe).values():          # runas de una pieza (V10: «runa:» en talleres.gd)
+		var efp: Dictionary = Inv.mejoras_de_objeto(str(id)).get("efectos", {})
+		for k in efp:
+			if EFECTOS.has(k) and EFECTOS[k]["tipo"] == "num":
+				r[k] = minf(float(EFECTOS[k]["max"]), float(r.get(k, 0.0)) + float(efp[k]))
 	var tec: Dictionary = Inv.datos().get("tecnicas", {}).get(heroe, {})   # técnicas y runas de su taller (V9: oficios)
 	for k in tec:
 		if EFECTOS.has(k) and EFECTOS[k]["tipo"] == "num":

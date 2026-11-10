@@ -1,0 +1,15 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/receta.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "cota_runica"
+taller = "armaduras"
+nombre = "Runa de la Falla en la cota"
+materiales = {"Savia clara": 1, "Mineral rúnico": 1}
+resultado = "runa:cota_malla:barrera_inicio:0.1"
+cantidad = 1
+investigacion = "garon_cota_runica"
+desc = "Una runa en la cota: quien la lleva empieza cada combate con una coraza pequeña."
+borrador = false

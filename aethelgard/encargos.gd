@@ -10,7 +10,7 @@ extends RefCounted
 #   estado_de:<lugar>/<clave>   (progreso.gd, estado de un lugar: p. ej. estado_de:oakhaven/encina_bosque)
 # Las demás (estado:, cond:, modo:) las entiende el módulo de la región (su función cumple), si la tiene.
 
-const FUENTES := ["res://ciudades/oakhaven.gd", "res://datos/encargos_pastos.gd"]
+const FUENTES := ["res://ciudades/oakhaven.gd", "res://datos/encargos_pastos.gd", "res://datos/encargos_oakhaven.gd"]
 
 
 static func _p():

@@ -117,6 +117,7 @@ var cambios := false                      # una señal de un diálogo cambió la
 var noche_invitada := false
 var rumor_pendiente := ""                 # el rumor que la posadera cuenta al acabar el diálogo de sus servicios
 var dormir_pendiente := false             # «Dormir» en «¿Qué va a ser?»: se descansa al acabar el diálogo
+var servicio_pendiente := ""              # V10: forja, armaduras o botica, que se abre al acabar el diálogo de quien atiende
 var velo_patio: Polygon2D                 # el Patio de las Velas, a oscuras hasta pasar la grieta
 var r_ronda: Rect2                        # rectángulos de LUGARES que se miran en cada fotograma
 var r_raices: Rect2
@@ -1474,6 +1475,9 @@ func _al_senal(arg) -> void:
 	if s == "oak:dormir":                        # se descansa al acabar el diálogo (_posada de zona.gd)
 		dormir_pendiente = true
 		return
+	if s.begins_with("oak:servicio_"):            # V10: la forja, las armaduras o la botica (servicios.gd)
+		servicio_pendiente = s.trim_prefix("oak:servicio_")
+		return
 	var t := Oak.aplicar_senal(s)
 	if t == "":
 		return
@@ -1490,6 +1494,12 @@ func _al_acabar_dialogo() -> void:
 		get_tree().create_timer(0.2).timeout.connect(func():   # (Dialogic acaba de cerrar: un momento)
 			if is_instance_valid(self) and not saliendo:
 				_posada())
+	if servicio_pendiente != "":
+		var sv := servicio_pendiente
+		servicio_pendiente = ""
+		get_tree().create_timer(0.2).timeout.connect(func():   # (Dialogic acaba de cerrar: un momento)
+			if is_instance_valid(self) and not saliendo:
+				_abrir_servicio(sv))
 	if rumor_pendiente != "":
 		var texto := rumor_pendiente
 		rumor_pendiente = ""
@@ -1564,3 +1574,23 @@ func _siguiente_aviso() -> void:
 func _guardar() -> void:
 	guardar_posicion()
 	Progreso.guardar(scene_file_path)              # en las pruebas no escribe (progreso.gd)
+
+
+# V10: el servicio de quien atiende (servicios.gd). Mientras está abierto, Kael no anda (como la tienda).
+func _abrir_servicio(servicio: String) -> void:
+	if tienda_abierta:
+		return
+	tienda_abierta = true
+	tiene_destino = false
+	var capa := CanvasLayer.new()
+	capa.layer = 5
+	add_child(capa)
+	var n = load("res://servicios.gd").abrir(capa, servicio)
+	if n == null:
+		tienda_abierta = false
+		capa.queue_free()
+		return
+	n.cerrado.connect(func():
+		tienda_abierta = false
+		capa.queue_free()
+		_poner_oro())

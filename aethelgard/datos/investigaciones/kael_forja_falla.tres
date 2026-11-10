@@ -1,0 +1,14 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/investigacion.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "kael_forja_falla"
+taller = "forja"
+nombre = "Acero de la Falla"
+desc = "Maese Ferro enseña a Kael a templar el hierro que canta sin que se quiebre."
+requisitos = [{"tipo": "material", "id": "Hierro de la Falla", "cantidad": 1}]
+pasos = 1
+desbloquea = PackedStringArray("frostfang_falla")
+borrador = false

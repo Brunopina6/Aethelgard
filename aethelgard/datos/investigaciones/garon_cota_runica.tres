@@ -1,0 +1,14 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/investigacion.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "garon_cota_runica"
+taller = "armaduras"
+nombre = "Malla rúnica"
+desc = "Hilda y Garon estudian cómo entretejer runas en las anillas de una cota."
+requisitos = [{"tipo": "hito", "id": "bq_resuelto"}, {"tipo": "material", "id": "Musgo de piedra", "cantidad": 1}]
+pasos = 1
+desbloquea = PackedStringArray("cota_reforzada", "cota_runica")
+borrador = false

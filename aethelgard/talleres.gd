@@ -19,6 +19,10 @@ static func puede(id: String, con_borradores := false) -> String:
 		return "Hay que investigarla antes."
 	if _de_un_uso(r) and id in load("res://inventario.gd").datos().get("hechas", []):
 		return "Ya está hecho."
+	if r.resultado.begins_with("pieza:") or r.resultado.begins_with("runa:"):   # hace falta tener la pieza (V10)
+		var pieza: String = r.resultado.get_slice(":", 1)
+		if not pieza in load("res://inventario.gd").datos()["equipables"]:
+			return "Necesitas %s." % str(load("res://inventario.gd")._objeto_base(pieza).get("nombre", pieza))
 	var Inv = load("res://inventario.gd")
 	for clave in r.materiales:
 		if Inv.cantidad(clave) < int(r.materiales[clave]):
@@ -48,7 +52,8 @@ static func fabricar(id: String, con_borradores := false) -> bool:
 #   "mejora:<héroe>:<atributo>:<n>"   suma n a su ataque o a un atributo (grupo.gd, estadisticas)
 #   "tecnica:<héroe>:<efecto>:<v>"    un efecto de equipo_extra.gd EFECTOS para siempre (equipo_extra.gd, efectos_de)
 static func _de_un_uso(r: Resource) -> bool:
-	return r.resultado.begins_with("mejora:") or r.resultado.begins_with("tecnica:")
+	return r.resultado.begins_with("mejora:") or r.resultado.begins_with("tecnica:") \
+		or r.resultado.begins_with("pieza:") or r.resultado.begins_with("runa:")
 
 
 static func _aplicar(resultado: String) -> void:
@@ -57,6 +62,17 @@ static func _aplicar(resultado: String) -> void:
 		push_warning("Taller: resultado no válido «%s»" % resultado)
 		return
 	var d: Dictionary = load("res://inventario.gd").datos()
+	if p[0] == "pieza" or p[0] == "runa":            # una pieza concreta (V10): inventario.mejoras_objeto
+		if not d["mejoras_objeto"].has(p[1]):
+			d["mejoras_objeto"][p[1]] = {}
+		var mo: Dictionary = d["mejoras_objeto"][p[1]]
+		if p[0] == "pieza":
+			mo[p[2]] = int(mo.get(p[2], 0)) + int(p[3])
+		else:
+			if not mo.has("efectos"):
+				mo["efectos"] = {}
+			mo["efectos"][p[2]] = float(mo["efectos"].get(p[2], 0.0)) + float(p[3])
+		return
 	var clave := "mejoras" if p[0] == "mejora" else "tecnicas"
 	if not d[clave].has(p[1]):
 		d[clave][p[1]] = {}
@@ -72,6 +88,11 @@ static func texto_resultado(resultado: String) -> String:
 	var p := resultado.split(":")
 	if p.size() != 4:
 		return ""
+	if p[0] == "pieza":
+		return "%s: +%s de %s, para siempre." % [str(load("res://inventario.gd")._objeto_base(p[1]).get("nombre", p[1])), p[3], p[2]]
+	if p[0] == "runa":
+		return "Runa en %s: coraza al empezar cada combate." % str(load("res://inventario.gd")._objeto_base(p[1]).get("nombre", p[1])) \
+			if p[2] == "barrera_inicio" else "Runa en %s: +%s de %s." % [str(load("res://inventario.gd")._objeto_base(p[1]).get("nombre", p[1])), p[3], p[2]]
 	if p[0] == "mejora":
 		return "%s: +%s de %s, para siempre." % [p[1], p[3], p[2]]
 	var nombres := {"critico": "probabilidad de golpe crítico", "barrera_inicio": "coraza al empezar cada combate",

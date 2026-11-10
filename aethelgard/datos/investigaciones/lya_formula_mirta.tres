@@ -1,0 +1,14 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/investigacion.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "lya_formula_mirta"
+taller = "alquimia"
+nombre = "La fórmula de Mirta"
+desc = "Con las páginas recuperadas, Lya rehace la fórmula del bálsamo de Mirta."
+requisitos = [{"tipo": "hito", "id": "enc_formula_paginas"}]
+pasos = 1
+desbloquea = PackedStringArray("balsamo_mirta")
+borrador = false

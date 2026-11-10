@@ -81,6 +81,8 @@ const INICIAL := {
 	"mejoras": {},
 	"tecnicas": {},
 	"hechas": [],
+	# V10: mejoras de una pieza concreta (forja de Kael, armaduras de Garon): {objeto: {ataque|atributo: n, "efectos": {…}}}
+	"mejoras_objeto": {},
 }
 
 
@@ -115,6 +117,10 @@ static func agregar(id: String) -> void:
 
 # Datos de un arma, una protección o un accesorio por su id (o {} si no existe, p. ej. de una versión más nueva).
 static func objeto(id: String) -> Dictionary:
+	return con_mejoras(id, _objeto_base(id))
+
+
+static func _objeto_base(id: String) -> Dictionary:
 	if ARMAS.has(id):
 		var a: Dictionary = ARMAS[id].duplicate()
 		a["ranura"] = "arma"
@@ -219,3 +225,33 @@ static func gastar_oro(n: int) -> bool:
 static func agregar_objeto(nombre: String, n := 1) -> void:
 	var o: Dictionary = datos()["objetos"]
 	o[nombre] = o.get(nombre, 0) + n
+
+# Mejoras de una pieza (V10, talleres.gd «pieza:» y «runa:»): el objeto con lo que se le ha hecho. Un arma suma a
+# su «ataque»; una protección, a su «bonus»; las runas, a sus «efectos» (equipo_extra.gd EFECTOS). Sin mejoras, el
+# objeto tal cual (mismo diccionario de siempre). Lee la partida sin crearla (las pruebas de datos no la necesitan).
+static func con_mejoras(id: String, o: Dictionary) -> Dictionary:
+	if o.is_empty():
+		return o
+	var mj: Dictionary = Engine.get_meta("inventario", {}).get("mejoras_objeto", {}).get(id, {})
+	if mj.is_empty():
+		return o
+	o = o.duplicate(true)
+	for k in mj:
+		if k == "efectos":
+			var ef: Dictionary = o.get("efectos", {}).duplicate()
+			for e in mj[k]:
+				ef[e] = float(ef.get(e, 0.0)) + float(mj[k][e])
+			o["efectos"] = ef
+		elif k == "ataque":
+			o["ataque"] = int(o.get("ataque", 0)) + int(mj[k])
+		else:
+			var b: Dictionary = o.get("bonus", {}).duplicate()
+			b[k] = int(b.get(k, 0)) + int(mj[k])
+			o["bonus"] = b
+	o["nombre"] = str(o.get("nombre", id)) + " +"
+	o["mejorado"] = true
+	return o
+
+
+static func mejoras_de_objeto(id: String) -> Dictionary:
+	return Engine.get_meta("inventario", {}).get("mejoras_objeto", {}).get(id, {})

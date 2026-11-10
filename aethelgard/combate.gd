@@ -47,6 +47,9 @@ const OBJETOS_COMBATE := {
 		"desc": "Su magia hace ×1,3 durante 3 turnos."},
 	"Elixir de savia purificada": {"que": "PURIFICA", "cura": 0, "imagen": "res://objetos/pocion.png",
 		"color": Color(0.55, 1.0, 0.45), "desc": "Purifica al Guardián del Bosque, en su segunda fase."},
+	# V10, «La fórmula desaparecida»: el bálsamo de Mirta cura a todo el grupo (sin elegir a quién).
+	"Bálsamo de Mirta": {"que": "PV_TODOS", "cura": 45, "imagen": "res://objetos/pocion.png", "color": Color(1.0, 0.7, 0.45),
+		"desc": "+45 PV a todo el grupo."},
 }
 const Bosque := preload("res://combate_bosque.gd")   # el Guardián, la Esencia y el Elixir (fase 3)
 const Coloso := preload("res://combate_coloso.gd")   # el Coloso de la Falla (V9, jefe 2; Garganta 3D)
@@ -2891,6 +2894,12 @@ func _menu_objeto_aliado(nombre: String) -> void:
 			return
 		_pedir_objetivo(conscientes, func(f): _usar_objeto(nombre, f), _menu_pocion, "TOCA A UN ALIADO")
 		return
+	if que == "PV_TODOS":                             # el Bálsamo de Mirta (V10): a todos, sin elegir
+		if heroes.filter(func(h): return h["hp"] > 0 and h["hp"] < h["hp_max"]).is_empty():
+			registro.text = "Nadie lo necesita ahora"
+			return
+		_usar_objeto(nombre, actor)
+		return
 	if que == "PURIFICA":                             # sobre el Guardián del Bosque
 		var guardianes := enemigos.filter(func(e): return e["hp"] > 0 and Bosque.es_guardian(e))
 		if guardianes.is_empty():
@@ -2912,6 +2921,24 @@ func _usar_objeto(nombre: String, quien: Dictionary) -> void:
 	_ocultar_menu()
 	if ResourceLoader.exists("res://inventario.gd"):
 		load("res://inventario.gd").gastar(nombre)
+	if OBJETOS_COMBATE[nombre]["que"] == "PV_TODOS":   # Bálsamo de Mirta (V10): +45 PV a cada héroe en pie
+		estado = "accion"
+		var o_b: Dictionary = OBJETOS_COMBATE[nombre]
+		registro.text = "%s usa %s" % [actor["nombre"], nombre]
+		Sonido.efecto("pocion")
+		for h in heroes:
+			if h["hp"] <= 0:
+				continue
+			var cb: int = mini(int(o_b["cura"]), h["hp_max"] - h["hp"])
+			h["hp"] += cb
+			_efecto_cura(h)
+			_numero_flotante(h, "+%d PV" % cb, C_CURA)
+		_actualizar()
+		await get_tree().create_timer(0.9).timeout
+		for h in heroes:
+			_restablecer_color(h)
+		_terminar_turno()
+		return
 	if OBJETOS_COMBATE[nombre]["que"] == "ENFOQUE":    # Esencia de enfoque (fase 3)
 		estado = "accion"
 		quien["enfoque_turnos"] = Bosque.TURNOS_ENFOQUE

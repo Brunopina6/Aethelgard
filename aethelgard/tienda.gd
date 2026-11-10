@@ -22,6 +22,8 @@ static func objetos_de(lugar: int) -> Dictionary:
 		for d in OBJETOS_BOSQUE:
 			if P.hito("bq_" + d):
 				r.merge(OBJETOS_BOSQUE[d])
+		if str(Engine.get_meta("decisiones", {}).get("hierro_ferro", "")) == "entregado":   # V10: Ferro lo vende
+			r["Hierro de la Falla"] = 45
 	return r
 
 
@@ -45,6 +47,20 @@ const COLOR_MAL := Estilo.BRASA
 const PESTANAS := ["Objetos", "Equipo", "Magias"]
 
 var pestana := "Objetos"
+# La botica de Mirta (V10, servicios_botica.gd): solo la pestaña Botica, con sus ingredientes.
+var solo_botica := false
+var pestanas: Array = PESTANAS
+const BOTICA := {"Hierba lunar": 15, "Musgo de piedra": 12, "Savia clara": 30}
+const BALSAMO := "Bálsamo de Mirta"
+const PRECIO_BALSAMO := 40
+
+
+# Lo que vende Mirta: sus ingredientes siempre y, tras «La fórmula desaparecida», su bálsamo (V10).
+static func botica_objetos() -> Dictionary:
+	var r: Dictionary = BOTICA.duplicate()
+	if load("res://progreso.gd").hito("enc_formula_fin"):
+		r[BALSAMO] = PRECIO_BALSAMO
+	return r
 var Inv
 var Grupo
 var Artes                                          # artes.gd (T-091): sus libros, detrás de los de siempre
@@ -57,6 +73,9 @@ var eligiendo := false                             # «¿Quién aprende la magia
 
 func _ready() -> void:
 	add_to_group("menu_quieto")                  # Recursos activa el modo ahorro mientras está abierta
+	if solo_botica:
+		pestanas = ["Botica"]
+		pestana = "Botica"
 	Inv = load("res://inventario.gd")
 	Grupo = load("res://grupo.gd")
 	Artes = load("res://artes.gd")
@@ -77,7 +96,7 @@ func _ready() -> void:
 	arriba.add_theme_constant_override("separation", 10)
 	todo.add_child(arriba)
 	arriba.add_child(_texto("Tienda", 28, COLOR_TITULO))
-	for p in PESTANAS:
+	for p in pestanas:
 		var b := _boton(p, 22, Vector2(150, 44), "pestana:" + p)
 		b.set_meta("p", p)
 		b.pressed.connect(_ir_a_pestana.bind(p))
@@ -102,7 +121,7 @@ func _ready() -> void:
 	cuerpo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	marco.add_child(cuerpo)
 	_pintar()
-	Entrada.enfocar(botones[PESTANAS.find(pestana)])
+	Entrada.enfocar(botones[pestanas.find(pestana)])
 	Sonido.efecto("ui_abrir")                      # sonido.gd (T-083)
 
 
@@ -130,9 +149,9 @@ func _unhandled_input(ev: InputEvent) -> void:
 			_cerrar()
 	elif ev.is_action_pressed("pestana_anterior") or ev.is_action_pressed("pestana_siguiente"):
 		var paso := -1 if ev.is_action_pressed("pestana_anterior") else 1
-		var p: String = PESTANAS[posmod(PESTANAS.find(pestana) + paso, PESTANAS.size())]
+		var p: String = pestanas[posmod(pestanas.find(pestana) + paso, pestanas.size())]
 		_ir_a_pestana(p)
-		botones[PESTANAS.find(p)].grab_focus(not Entrada.con_foco())
+		botones[pestanas.find(p)].grab_focus(not Entrada.con_foco())
 	else:
 		return
 	get_viewport().set_input_as_handled()
@@ -150,7 +169,7 @@ func _vaciar() -> String:
 func _devolver_foco(clave: String) -> void:
 	var defecto := Entrada.primero(cuerpo)
 	if defecto == null:
-		defecto = botones[PESTANAS.find(pestana)]
+		defecto = botones[pestanas.find(pestana)]
 	Entrada.restaurar(self, clave, defecto)
 
 
@@ -161,6 +180,13 @@ func _pintar() -> void:
 		b.add_theme_color_override("font_color", COLOR_TITULO if b.get_meta("p") == pestana else COLOR_TEXTO)
 	lbl_oro.text = "%d monedas" % Inv.oro()
 	match pestana:
+		"Botica":                                     # V10: la botica de Mirta
+			var bot := botica_objetos()
+			var mats: Dictionary = load("res://equipo_extra.gd").materiales()
+			var usos_b: Dictionary = load("res://combate.gd").OBJETOS_COMBATE
+			for o in bot:
+				var desc_b: String = mats[o]["desc"] if mats.has(o) else str(usos_b.get(o, {}).get("desc", ""))
+				_fila(o, desc_b, "Tienes %d" % Inv.cantidad(o), bot[o], func(): _comprar_botica(o))
 		"Objetos":
 			var objs := _objetos()
 			for o in objs:
@@ -226,6 +252,17 @@ func _fila(nombre: String, desc: String, nota: String, precio: int, al_comprar: 
 	b.pressed.connect(al_comprar)
 	f.add_child(b)
 	cuerpo.add_child(f)
+
+
+func _comprar_botica(o: String) -> void:
+	var bot := botica_objetos()
+	if bot.has(o) and Inv.gastar_oro(bot[o]):
+		Inv.agregar_objeto(o)
+		Sonido.efecto("monedas")
+		_avisar("Has comprado %s." % o)
+	else:
+		Sonido.efecto("ui_error")
+	_pintar()
 
 
 func _comprar_objeto(o: String) -> void:

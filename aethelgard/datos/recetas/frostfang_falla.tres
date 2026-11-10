@@ -1,0 +1,15 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/receta.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "frostfang_falla"
+taller = "forja"
+nombre = "Frostfang templada en la Falla"
+materiales = {"Hierro de la Falla": 1, "Musgo de piedra": 1}
+resultado = "pieza:frostfang:ataque:4"
+cantidad = 1
+investigacion = "kael_forja_falla"
+desc = "Frostfang: +4 de ataque para siempre (se ve al equiparla)."
+borrador = false

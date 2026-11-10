@@ -1,0 +1,15 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/receta.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "cota_reforzada"
+taller = "armaduras"
+nombre = "Cota de malla reforzada"
+materiales = {"Musgo de piedra": 2, "Hierro de la Falla": 1}
+resultado = "pieza:cota_malla:defensa:3"
+cantidad = 1
+investigacion = "garon_cota_runica"
+desc = "Cota de malla: +3 de defensa para siempre."
+borrador = false

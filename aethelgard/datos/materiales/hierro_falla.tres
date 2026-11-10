@@ -1,0 +1,12 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/material.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "hierro_falla"
+clave_inventario = "Hierro de la Falla"
+nombre = "Hierro de la Falla"
+venta = 30
+desc = "Hierro oscuro de una veta de la Garganta. Al golpearlo, canta."
+de_enemigos = PackedStringArray()
