@@ -361,7 +361,17 @@ static func volcar(escena := "") -> Dictionary:
 	for k in CLAVES:
 		if Engine.has_meta(k):
 			d[k] = Engine.get_meta(k)
+	d["formato"] = FORMATO
 	return d
+
+
+# Versión del formato de la partida (10/11): se escribe al guardar para que una migración futura sepa de dónde parte.
+# Las partidas de antes no la llevan: son el formato 1, y cargan igual (restaurar() no la necesita).
+const FORMATO := 2
+
+
+static func formato_de(d: Dictionary) -> int:
+	return int(d.get("formato", 1))
 
 
 # Guarda la partida. "escena" = dónde se vuelve al abrir el juego (el mapa o la zona). Devuelve si se guardó.
