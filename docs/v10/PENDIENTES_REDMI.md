@@ -6,9 +6,11 @@ Todo lo de abajo está **pendiente de validación manual**. Nada se ha medido en
 ## La APK que hay que probar
 
 - **No vale la v499** (de la V9, commit `56dfb9c`): no lleva nada de la V10.
-- La APK de la V10 es la de auditoría que indique `ESTADO_V10.md` (preset «Android auditoría», paquete
-  `com.aethelgard.auditoria`, «REBELUM Auditoría»). Instala junto a las demás y no toca la app estable ni sus datos.
-- Copia y SHA-256 en `D:\REBELUM_compilaciones`. Se instala a mano desde Descargas.
+- La APK de la V10 es **`D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261110-c2eb155.apk`**:
+  - versionCode 520, 281,5 MB;
+  - SHA-256 `9bfe81297b5837f222047f77f9467ed4875d6cc13f42661b125b1e8cc6a2d0ff`;
+  - preset «Android auditoría», paquete `com.aethelgard.auditoria`, «REBELUM Auditoría».
+- Se instala junto a las demás y no toca la app estable ni sus datos. Se instala a mano desde Descargas.
 
 ## Qué mirar, por orden
 
