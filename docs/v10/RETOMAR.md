@@ -3,10 +3,11 @@
 Si la conversación se corta, empieza aquí. Antes, sigue el protocolo de `D:\Aethelgard\CLAUDE.md`: comprueba la
 memoria en GitHub y lee `SESSION_HANDOFF.md`.
 
-## Estado de Git (10/11/2026, 21:45)
+## Estado de Git (11/11/2026, 01:10)
 
 - **Trabajo:** `claude/rebelum-v10` en `D:\Aethelgard_v10`. LOCAL, sin subir ni fusionar.
-- **Último commit con código:** `c2eb155`. Después, solo documentos.
+- **Último commit con código:** `f2b3ff4`. Contiene los arreglos vistos en el Redmi (`822927a`): «Recoger la
+  página» con el dedo y el botón Atrás en los talleres. Después, solo documentos.
 - **Especialistas, ya fusionados:** `claude/v10-narrativa` (`D:\Aethelgard_v10_narrativa`) y `claude/v10-distrito`
   (`D:\Aethelgard_v10_distrito`). Se conservan; no se borran.
 - **Base:** `claude/rebelum-v9` @ `3795769` (`D:\Aethelgard_v9`), también LOCAL.
@@ -14,7 +15,8 @@ memoria en GitHub y lee `SESSION_HANDOFF.md`.
 
 ## Comprobar que todo sigue bien
 
-Desde PowerShell, en `D:\Aethelgard_v10` (resultado esperado: 103 · 0 · 43 · 0):
+Desde PowerShell, en `D:\Aethelgard_v10`. Resultado esperado: 104 superadas, 0 fallidas, 43 manuales y 0 no seguras.
+En `822927a` dio 103 · 1 · 43 · 0: la fallida fue `prueba_equilibrio`, que es inestable (repetida sola, pasó 3 de 3).
 
 ```
 powershell -ExecutionPolicy Bypass -File .\ci_local.ps1
@@ -25,18 +27,17 @@ importas a mano, ejecuta después `git restore aethelgard/project.godot`.
 
 ## APK
 
-- La de la V10 es `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261110-c2eb155.apk` (v520). Está sin
-  instalar.
-- La v499 es de la V9: no sirve para la V10.
-- Para probar en el Redmi:
-  1. copiarla a Descargas por USB (con `export MSYS_NO_PATHCONV=1` si es desde Git Bash);
-  2. comprobar el tamaño y el SHA-256;
-  3. la instala el usuario;
-  4. seguir `PENDIENTES_REDMI.md`.
+- La de la V10 es `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261111-f2b3ff4.apk` (v524).
+  - Está **instalada en el Redmi** (11/11).
+  - Lo probado en el teléfono está en `PENDIENTES_REDMI.md`, «Resultado en el teléfono».
+- La v520 (`c2eb155`) y la v499 (V9) ya no sirven para probar la V10.
 
 ## Siguiente paso concreto
 
-1. **Si el usuario vuelve con el Redmi:** copiar la v520 y seguir `PENDIENTES_REDMI.md`.
+1. **En el Redmi, lo que falta** (`PENDIENTES_REDMI.md`):
+   - el encargo A y las mejoras, con una partida que haya llegado a PV-05;
+   - el Bálsamo en un combate;
+   - volver a mirar la partida de la 2D abierta en 3D junto a la botica.
 2. **Si autoriza fusionar y subir:**
    - batería otra vez;
    - fusionar `claude/rebelum-v10` en la rama que diga;
