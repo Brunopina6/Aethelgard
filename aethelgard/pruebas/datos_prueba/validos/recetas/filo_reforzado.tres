@@ -1,0 +1,14 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/receta.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "filo_reforzado"
+taller = "forja"
+nombre = "Receta de prueba"
+materiales = {"Mineral de hierro": 3}
+resultado = "cota_malla"
+cantidad = 1
+investigacion = "forja_filo"
+borrador = true

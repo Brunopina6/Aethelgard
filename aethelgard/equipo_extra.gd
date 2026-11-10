@@ -42,17 +42,37 @@ const HECHOS: Array = ["C1", "M3", "M4", "C2"]   # M3, M4 y C2 enganchados el 09
 # Botín de las bestias (T-097, decisión del coordinador del 09/11): materiales que solo se venden (sin recetas). Al
 # ganar, cada enemigo de esa clave que no haya huido deja uno (combate.gd _repartir_exp); se guardan en los objetos del
 # inventario y la tienda los compra por «venta» monedas (tienda.gd, pestaña Objetos).
-const BOTIN := {"zarzalin": "Corteza espinosa"}
-const MATERIALES := {
-	"Corteza espinosa": {"venta": 18, "desc": "Corteza de Zarzalín, llena de espinas. Se vende."},
-}
+# Desde la fase 2 (10/11) los materiales viven en res://datos/materiales/ (un .tres cada uno, datos/catalogo.gd): aquí
+# solo se leen. Sus claves de inventario no cambian, así que las partidas antiguas siguen igual.
+const Catalogo := preload("res://datos/catalogo.gd")
+
+
+# clave de inventario → {"id", "venta", "desc"}: lo que vende la tienda (tienda.gd, pestaña Objetos).
+static func materiales() -> Dictionary:
+	var r := {}
+	var todos: Dictionary = Catalogo.todos("materiales")
+	for id in todos:
+		var m: Resource = todos[id]
+		r[m.clave_inventario] = {"id": id, "venta": m.venta, "desc": m.desc}
+	return r
+
+
+# clave del enemigo (combate.gd ENEMIGOS) → clave de inventario del material que deja.
+static func botin() -> Dictionary:
+	var r := {}
+	var todos: Dictionary = Catalogo.todos("materiales")
+	for id in todos:
+		for clave in todos[id].de_enemigos:
+			r[clave] = todos[id].clave_inventario
+	return r
 
 
 static func botin_de(enemigos: Array) -> Array:
+	var b := botin()
 	var r: Array = []
 	for e in enemigos:
-		if not e.get("huido", false) and int(e.get("hp", 0)) <= 0 and BOTIN.has(str(e.get("clave", ""))):
-			r.append(BOTIN[e["clave"]])
+		if not e.get("huido", false) and int(e.get("hp", 0)) <= 0 and b.has(str(e.get("clave", ""))):
+			r.append(b[e["clave"]])
 	return r
 
 # Accesorios: sin atributos, solo su efecto. «efecto»: texto corto del menú (32 caracteres como mucho).
