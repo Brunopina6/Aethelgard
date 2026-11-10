@@ -1,8 +1,27 @@
 # SESSION_HANDOFF: punto de control
 
-**Último punto de control:** 2026-11-10 a las 14:20 (hora local, UTC+1). **La memoria describe
-`integracion-experimental` @ `0d06bd1`, que está en GitHub**, y la rama local `claude/rebelum-optimizacion-fase2` @
-`ddcc1d3` (sin subir).
+**Último punto de control:** 2026-11-10 a las 16:25 (hora local, UTC+1). **La memoria describe
+`integracion-experimental` @ `b4e26e2` (fase 2 fusionada y subida, batería 87/0)** y la rama LOCAL
+`claude/rebelum-bosque-fase3` @ `dda5473` (sin subir ni fusionar).
+
+## 10/11 tarde: fase 3, «El bosque que no recuerda» ([T-106](TASKS.md#t-106), [D-080](DECISIONS.md#d-080))
+
+- **Encargo** del usuario (directiva maestra de la fase 3, trabajo sin supervisión; Redmi fuera hasta la noche, sin ADB).
+- **Rama `claude/rebelum-bosque-fase3`** (`D:\Aethelgard_fase3`):
+  - aventura jugable en Pastos Verdes 3D: pistas, senda, materiales, manantial, ciervo, cofre y Guardián;
+  - alquimia de Lya en su pantalla (y en el menú del juego);
+  - Guardián del Bosque Olvidado con dos fases y modelo 3D propio (Blender, obra propia);
+  - dos desenlaces con premios y persistencia;
+  - Oakhaven reacciona (Encina y su tienda).
+- **Batería:** 92/0/42/0. **APK de auditoría** v449, compilada en local (no instalada).
+- **Documentos:** `docs/fase3_bosque/` (RETOMAR, INFORME_DESARROLLO, PRUEBAS, PENDIENTES_REDMI, AVENTURA_JUGABLE).
+- **Siguiente paso concreto:** con el Redmi, instalar la v449 desde Descargas y seguir `PENDIENTES_REDMI.md`; después,
+  si el usuario lo autoriza, fusionar y subir.
+
+## Punto de control anterior (14:20)
+
+**La memoria describía `integracion-experimental` @ `0d06bd1`** y la rama local `claude/rebelum-optimizacion-fase2` @
+`ddcc1d3`.
 
 ## 10/11 tarde: especialistas integrados y fase 2 ([T-105](TASKS.md#t-105), [D-079](DECISIONS.md#d-079))
 

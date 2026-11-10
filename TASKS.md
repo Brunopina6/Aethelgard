@@ -1067,3 +1067,13 @@
 - **Propuesta de la fase 3** (talleres jugables): `docs/fase2_optimizacion/FASE3_TALLERES.md`, pendiente de que el
   usuario la apruebe.
 - **Pendiente en el Redmi:** arranque, memoria, FPS, regiones 3D y la calidad Automática.
+
+### T-106
+**Fase 3: «El bosque que no recuerda» (aventura, alquimia de Lya, Guardián y desenlaces)**
+- **Estado:** hecha en el PC el 10/11. **Pendiente de Redmi.** Sin fusionar.
+- **Evidencia:**
+  - rama local `claude/rebelum-bosque-fase3` @ `dda5473`;
+  - batería 92 superadas, 0 fallidas, 42 manuales, 0 no seguras
+    (`D:\REBELUM_diagnostico\pruebas\2026-11-10_160727`);
+  - APK de auditoría v449, `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261110-b9d9300.apk`.
+- **Detalle:** `docs/fase3_bosque/INFORME_DESARROLLO.md` y `PENDIENTES_REDMI.md`.

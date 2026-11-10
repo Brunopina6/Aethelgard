@@ -1427,6 +1427,19 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 - **Publicado:** Prueba v293 en `Aethelgard-pruebas` (`exp-20261109-dca4c1c`, SHA-256 `3dbe855e…`), sin copiarla al
   Redmi.
 
+### D-080
+**Fase 3, «El bosque que no recuerda»: decisiones del coordinador (10/11, tarde)**
+- **Encargo** [usuario]: directiva maestra de la fase 3; trabajo sin supervisión, sin Redmi y sin preguntar.
+- **Canon:**
+  - el Guardián olvidó su juramento por un olvido que se contagia;
+  - sin Érebo, sin recuerdos ni corazones como tema, sin decir qué es la niebla;
+  - el orbe del altar no se usa.
+- **Purificar** = usar el Elixir sobre el Guardián en su segunda fase; **derrotar** = vida a 0. Los premios usan
+  efectos que ya existen.
+- **Equilibrio:** sin tocar a los héroes. Ninguna receta da dinero.
+- **Para que el usuario revise:** los nombres «El corazón del bosque» (de su orden) y «Corazón de roble», y que el
+  Guardián hable.
+
 ### D-079
 **Integración de los especialistas y criterios de la fase 2 (10/11, tarde)**
 - **Integración** [usuario: «integralas»]:
