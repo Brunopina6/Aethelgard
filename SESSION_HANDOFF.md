@@ -1,6 +1,24 @@
 # SESSION_HANDOFF: punto de control
 
-**Último punto de control:** 2026-11-09 a la 01:15 (hora local, UTC+1). Noche de trabajo autónomo: el usuario duerme y
+**Último punto de control:** 2026-11-10 a las 13:45 (hora local, UTC+1). **La memoria describe
+`integracion-experimental` @ `59c3a67`, que está en GitHub.**
+
+## 10/11: auditoría autónoma, validación en el Redmi y fusión ([T-104](TASKS.md#t-104), [D-078](DECISIONS.md#d-078))
+
+- **Fusionada y subida:** `218155a` (fusión `--no-ff` de `claude/rebelum-autonomo-2026-11-10`, sin conflictos) y
+  `59c3a67` (informe de próximas mejoras). Batería tras fusionar: 79 superadas, 0 fallidas, 41 manuales, 0 no seguras
+  (`D:\REBELUM_diagnostico\pruebas\2026-11-10_130828\resumen.md`). Push normal `dca4c1c..59c3a67`.
+- **Respaldo:** rama `respaldo-integracion-antes-autonomo-20261110` y etiqueta
+  `respaldo-integracion-20261110-antes-autonomo` (`2889213`), solo locales.
+- **Redmi:** solo se instaló la app aparte «REBELUM Auditoría» (`com.aethelgard.auditoria`, v387). La estable, la
+  «Prueba 3D» y la «Exp» v365 siguen intactas.
+- **Siguiente paso concreto:** integrar las ramas de especialistas pendientes (animaciones `625abfb`, combate
+  `ac3b889`, narrativa `82cf257`, Oakhaven 3D `ec939e3`, rendimiento `d8d2834`, Garganta 3D `9513b4c`, sonido
+  `4f917e5`) y después seguir `docs/auditoria_autonoma/PROXIMAS_MEJORAS.md`, empezando por la carga inicial.
+
+## Punto de control anterior
+
+**Punto de control:** 2026-11-09 a la 01:15 (hora local, UTC+1). Noche de trabajo autónomo: el usuario duerme y
 pidió no preguntar ([MEMORIA_CHAT.md](MEMORIA_CHAT.md)). **La memoria describe `integracion-experimental` @ `c74b872`, que está en GitHub.**
 
 - **Encargos vigentes, de más antiguo a más nuevo** (todos en [MEMORIA_CHAT.md](MEMORIA_CHAT.md)):
@@ -93,7 +111,7 @@ pidió no preguntar ([MEMORIA_CHAT.md](MEMORIA_CHAT.md)). **La memoria describe 
   El Redmi está conectado por ADB.
 - **09/11, 11:50:**
   - integradas la Garganta 3D (`ea067b1`, elegible en Ajustes con `cff2323`) y la fase 1 de combate (`555fc29`, en
-    GitHub). Batería de `555fc29`: 47 superadas, 0 fallidas (`D:REBELUM_diagnosticopruebas�6-11-09_084703`);
+    GitHub). Batería de `555fc29`: 47 superadas, 0 fallidas (`D:\REBELUM_diagnostico\pruebas\2026-11-09_084703`);
   - un límite de uso cortó a cuatro especialistas: combate fase 2, sonido tanda 3, narrativa fase 2 y el arte de
     Oakhaven. Su trabajo quedó sin confirmar en sus copias. A las 11:50 se reanudan con su contexto: primero combate y
     narrativa; sonido y gráficos, después de compilar la APK con la Garganta 3D elegible.
@@ -119,7 +137,7 @@ pidió no preguntar ([MEMORIA_CHAT.md](MEMORIA_CHAT.md)). **La memoria describe 
   - combate, fase 1 (`D:Aethelgard_combate`, desde `2cb8221`): red de seguridad (huella) y datos de magias y equipo;
   - narrativa, fase 1 (`D:Aethelgard_narrativa`, desde `1977bff`): Oakhaven en archivos nuevos;
   - gráficos, fase 2 (`D:Aethelgard_graficos`, desde `e11a882`): integrar el mapamundi pintado. La fase 1 está
-    revisada y aprobada (comparaciones en `D:REBELUM_diagnosticomapamundi�6-11-08mparacion`).
+    revisada y aprobada (comparaciones en `D:\REBELUM_diagnostico\mapamundi\2026-11-08\comparacion`).
 - Lo publicado y comprobado sigue igual: `integracion-experimental` @ `c74b872` y la Prueba v77.
 - **Para retomar:** revisar cada copia y relanzar cada especialista con su tarea (los encargos están en este relevo, en
   TASKS.md y en el informe de cada uno, en `docs/memory/agents/`).

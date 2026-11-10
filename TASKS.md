@@ -1028,3 +1028,27 @@
   - el grupo, las salidas y lo que se puede usar se ven;
   - capturas antes y después y medidas de carga y fluidez;
   - una APK con la ruta exacta para verlo, lo comprobado y lo que falta en el Redmi.
+
+### T-104
+**Auditoría autónoma y validación en el Redmi, integradas**
+- **Estado:** hecha el 10/11. **Evidencia:** `integracion-experimental` @ `218155a` (fusión) y `59c3a67` (informe de
+  próximas mejoras), en GitHub. Batería tras fusionar: 79 superadas, 0 fallidas, 41 manuales, 0 no seguras
+  (`D:\REBELUM_diagnostico\pruebas\2026-11-10_130828\resumen.md`).
+- **Qué entra:**
+  - el guardado nunca deja la partida sin copia comprobada;
+  - el mapa ofrece el lugar más cercano;
+  - el prólogo solo queda visto al terminarlo;
+  - diez pruebas con aserciones reales;
+  - prueba de invariantes del combate y `combate_formulas.gd` (huella idéntica);
+  - formato de partida 2 e ids de regiones;
+  - auditoría de recursos y `ci_local.ps1`;
+  - preset «Android auditoría»;
+  - en el móvil se empieza en modo táctil aunque el sensor de huellas («gf-keys») se anuncie como mando.
+- **Validado en el Redmi** con la app aparte `com.aethelgard.auditoria` (v386 y v387); informe en
+  `docs/auditoria_autonoma/VALIDACION_REDMI.md`. **Pendiente en el teléfono:**
+  - la Garganta 3D con esta compilación;
+  - el sensor de huellas durante la partida;
+  - mando y teclado reales;
+  - sonido y temperatura.
+- **Siguiente:** `docs/auditoria_autonoma/PROXIMAS_MEJORAS.md` (carga inicial por zonas, combate modular, datos en
+  recursos, talleres e investigaciones).

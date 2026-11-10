@@ -1427,6 +1427,24 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 - **Publicado:** Prueba v293 en `Aethelgard-pruebas` (`exp-20261109-dca4c1c`, SHA-256 `3dbe855e…`), sin copiarla al
   Redmi.
 
+### D-078
+**Fusión de la auditoría autónoma en `integracion-experimental` (10/11)**
+- **Orden** [usuario]: «AUTORIZADO: fusiona las mejoras verificadas y súbelas a GitHub», con respaldo previo y la
+  batería completa después. Sin tocar `main`, `desarollo` ni otras ramas, sin force push y sin APK nueva.
+- **Hecho:**
+  - respaldo local: rama y etiqueta en `2889213`;
+  - fusión `--no-ff` sin conflictos (`218155a`);
+  - batería 79/0;
+  - push normal `dca4c1c..59c3a67`.
+- **También se subieron** los commits de los especialistas que el coordinador ya había integrado y revisado en local
+  (`dca4c1c..2889213`).
+- **Revisado antes de subir:**
+  - sin APK, partidas, claves ni música de Suno;
+  - los binarios más grandes (Cencerrante, 7 MB; ambientes de plaza, 2,9 MB) son menores que otros que ya estaban en
+    la rama.
+- **La app «REBELUM Auditoría»** (`com.aethelgard.auditoria`) queda como forma de validar una rama en el Redmi sin
+  tocar las apps instaladas.
+
 ## 6. Diseño ya implementado del 30/10 al 05/11
 
 [historial] Son decisiones del usuario que ya están en el juego. Están anotadas para que no se pierda su origen.
