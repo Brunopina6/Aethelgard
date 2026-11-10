@@ -62,12 +62,31 @@ ni fusión. Antes de empezar se cerró la fase 2: fusionada y subida a `integrac
 
 ## Modelo 3D del Guardián
 
-Encargado al especialista de animaciones: Blender, geometría propia y gratis, sin Meshy. Rama `claude/f3-guardian-modelo`.
-Hasta integrarlo:
-- en el combate, el Guardián usa el respaldo 2D (el guardián de piedra grande y teñido de verde musgo);
-- en la región, una figura de madera hecha con formas.
+**Integrado** (`957e53a` y `529dcd1`). Lo hizo el especialista de animaciones con Blender 5.2.3, con geometría propia y
+un guion que lo regenera, sin Meshy ni recursos descargados. Su procedencia está en `docs/recursos.md`.
 
-(Este apartado se completa al integrar su trabajo.)
+**Cifras:**
+- 7 774 triángulos, 28 huesos, 1 malla, 2 materiales, sin texturas;
+- 0,96 MB;
+- 3,75 m de alto.
+
+**Clips:** reposo, ataque, carga, golpe_fuerte, herido, fase2, derrota y dormido.
+
+**En el combate:**
+- ataca desde su sitio;
+- carga con su clip;
+- descarga con las raíces;
+- despliega la coraza en la fase 2.
+- Si faltara el modelo, se usa el respaldo 2D (el guardián de piedra teñido de verde).
+
+**En la región:** está dormido en el claro, arrodillado y con musgo.
+
+**Pruebas y capturas:**
+- `prueba_guardian_modelo` (8 clips, triángulos y huesos): superada.
+- Capturas del combate con ventana: `D:\REBELUM_diagnostico\fase3\combate_guardian_160526\` (inicio, fase 1, cambio de
+  fase y fase 2).
+- Capturas de la región: `D:\REBELUM_diagnostico\fase3\fotos_160649\`.
+- Renders de Blender: `D:\REBELUM_diagnostico\fase3\guardian_modelo\`.
 
 ## Sin hacer en esta fase
 
