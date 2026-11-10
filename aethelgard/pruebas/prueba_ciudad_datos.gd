@@ -809,6 +809,11 @@ func _acabar_recorrido() -> void:
 		if f["texto"].length() > MAX_CARACTERES:
 			_fallo("5: %s: frase de %d caracteres" % [donde, f["texto"].length()])
 		_revisar_texto(f["texto"], donde, not actual.get("propuesta", false))
+	# V10: un héroe que el propio diálogo exige con «grupo:» (Lya en «La fórmula desaparecida») puede hablar con el vecino
+	var si_actual = _si_de(id)
+	for c in (si_actual if si_actual is Array else [si_actual]):
+		if str(c).begins_with("grupo:"):
+			hablan.erase(str(c).trim_prefix("grupo:").to_lower())
 	if grupo.is_empty():
 		if hablan.size() != 1:
 			_fallo("5: %s: hablan %s (un vecino por diálogo)" % [donde, hablan.keys()])
@@ -915,3 +920,12 @@ func _terminar() -> bool:
 	print("FALLOS: %d" % fallos.size())
 	quit(1 if fallos.size() > 0 else 0)
 	return true
+
+
+# La condición «si» con la que un vecino ofrece un diálogo (V10: para los héroes que exige con «grupo:»).
+func _si_de(id: String) -> Variant:
+	for n in Oak.NPCS:
+		for d in n["dialogos"]:
+			if d["dialogo"] == id:
+				return d.get("si", [])
+	return []

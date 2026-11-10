@@ -406,6 +406,7 @@ func _alcanzables(z, desde: Vector2) -> Dictionary:
 func _vecinos(z) -> void:
 	for n in Oak.NPCS:
 		await _hablar(z, n["id"], [2])
+		await _cerrar_servicio(z)
 	if await _hablar(z, "albar") != Oak.ruta_dialogo("oak_albar_puerta"):
 		_fallo("3: la segunda vez, Albar no dice otra cosa")
 	hechos.append("hablar con los ocho vecinos")
@@ -837,3 +838,11 @@ func _con_arte(z) -> void:
 		_fallo("11: la luz ambiente no es la del arte (%s)" % (ambiente.color if ambiente else "nada"))
 	Engine.remove_meta("oakhaven_arte_prueba")
 	hechos.append("el camino del arte (falso)")
+
+
+# V10: Ferro, Hilda y Mirta abren su servicio (servicios.gd) al acabar de hablar; se cierra, como haría quien juega.
+func _cerrar_servicio(z) -> void:
+	await _hasta(func(): return z.servicio_abierto != null, 1.0)
+	if z.servicio_abierto != null:
+		z.servicio_abierto.cerrado.emit()
+		await _esperar(2)

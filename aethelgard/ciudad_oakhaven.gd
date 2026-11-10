@@ -118,6 +118,7 @@ var noche_invitada := false
 var rumor_pendiente := ""                 # el rumor que la posadera cuenta al acabar el diálogo de sus servicios
 var dormir_pendiente := false             # «Dormir» en «¿Qué va a ser?»: se descansa al acabar el diálogo
 var servicio_pendiente := ""              # V10: forja, armaduras o botica, que se abre al acabar el diálogo de quien atiende
+var servicio_abierto: Node = null          # V10: el servicio abierto ahora (servicios.gd), o null
 var velo_patio: Polygon2D                 # el Patio de las Velas, a oscuras hasta pasar la grieta
 var r_ronda: Rect2                        # rectángulos de LUGARES que se miran en cada fotograma
 var r_raices: Rect2
@@ -1586,11 +1587,13 @@ func _abrir_servicio(servicio: String) -> void:
 	capa.layer = 5
 	add_child(capa)
 	var n = load("res://servicios.gd").abrir(capa, servicio)
+	servicio_abierto = n
 	if n == null:
 		tienda_abierta = false
 		capa.queue_free()
 		return
 	n.cerrado.connect(func():
 		tienda_abierta = false
+		servicio_abierto = null
 		capa.queue_free()
 		_poner_oro())

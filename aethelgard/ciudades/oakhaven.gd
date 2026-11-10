@@ -382,16 +382,6 @@ const SECRETOS := [
 # ================================================================= piezas (lo que se examina o se usa)
 # «si»: cuándo se puede usar; si no, se enseña «texto_sin». «lleva_a»: a dónde pasa Kael (en casillas).
 const PIEZAS := [
-	# V10, «La fórmula desaparecida»: tres páginas del cuaderno de Mirta que el viento repartió (tras hablar con Pip).
-	{"id": "oak_pagina_1", "nombre": "Página suelta", "casilla": Vector2(18.5, 26), "accion": "Recoger la página",
-		"si": ["hito:enc_formula_pip", "!estado:pagina_1"], "senal": "oak:pagina_1",
-		"texto": "Una página con letra apretada: «…dos de hierba lunar, nunca tres…».", "texto_sin": ""},
-	{"id": "oak_pagina_2", "nombre": "Página suelta", "casilla": Vector2(40, 36.5), "accion": "Recoger la página",
-		"si": ["hito:enc_formula_pip", "!estado:pagina_2"], "senal": "oak:pagina_2",
-		"texto": "Pegada a un poste de la Calle Mayor: «…la savia, clara, al final…».", "texto_sin": ""},
-	{"id": "oak_pagina_3", "nombre": "Página suelta", "casilla": Vector2(36.5, 12.5), "accion": "Recoger la página",
-		"si": ["hito:enc_formula_pip", "!estado:pagina_3"], "senal": "oak:pagina_3",
-		"texto": "A los pies del Árbol: «…y removerlo como quien acuna». Firmado: M.", "texto_sin": ""},
 	{"id": "oak_barril", "nombre": "Barril", "casilla": Vector2(12, 29), "accion": "Subir el barril",
 		"si": ["estado:favores", "!estado:favor_barril", "!hito:oak_favores"], "senal": "oak:favor_barril",
 		"texto": "Subes el barril a la puerta del Cuervo. Pesa más de lo que parece.",
@@ -413,6 +403,17 @@ const PIEZAS := [
 	{"id": "oak_grieta", "nombre": "Grieta", "casilla": Vector2(23.5, 35.5), "accion": "Pasar",
 		"si": "", "senal": "oak:grieta", "lleva_a": Vector2(23.5, 37),
 		"texto": "La grieta se pasa de lado. Al otro lado, luz de velas.", "texto_sin": ""},
+	# V10, «La fórmula desaparecida»: tres páginas del cuaderno de Mirta que el viento repartió (tras hablar con Pip).
+	{"id": "oak_pagina_1", "nombre": "Página suelta", "casilla": Vector2(18.5, 26), "accion": "Recoger la página",
+		"si": ["hito:enc_formula_pip", "!estado:pagina_1"], "senal": "oak:pagina_1",
+		"texto": "Una página con letra apretada: «…dos de hierba lunar, nunca tres…».", "texto_sin": ""},
+	{"id": "oak_pagina_2", "nombre": "Página suelta", "casilla": Vector2(40, 30), "accion": "Recoger la página",
+		"si": ["hito:enc_formula_pip", "!estado:pagina_2"], "senal": "oak:pagina_2",
+		"texto": "Pegada a un poste de la Calle Mayor: «…la savia, clara, al final…».", "texto_sin": ""},
+	{"id": "oak_pagina_3", "nombre": "Página suelta", "casilla": Vector2(36.5, 12.5), "accion": "Recoger la página",
+		"si": ["hito:enc_formula_pip", "!estado:pagina_3"], "senal": "oak:pagina_3",
+		"texto": "A los pies del Árbol: «…y removerlo como quien acuna». Firmado: M.", "texto_sin": ""},
+
 ]
 
 # ================================================================= notas del Diario (lista aparte: no cuentan para las
