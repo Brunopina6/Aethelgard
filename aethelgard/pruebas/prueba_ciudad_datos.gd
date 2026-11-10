@@ -330,6 +330,8 @@ func _revisar_datos() -> void:
 		if p["senal"] != "":
 			usadas[p["senal"]] = true
 	usadas[Oak.LAVANDA["senal"]] = true
+	for s in _senales_dtl(load("res://ciudades/oakhaven_posada.gd").menu_dialogo()):   # «¿Qué va a ser?» (botón POSADA)
+		usadas[s] = true
 	for s in usadas:
 		if not s in Oak.SENALES:
 			_fallo("1: la señal «%s» no la entiende aplicar_senal()" % s)

@@ -235,10 +235,10 @@ func _process(_d: float) -> bool:
 				r._accion()
 				_siguiente()
 		20:
-			_cerrar("pv_tilo_fin")
+			_cerrar("bq_tilo_1")                 # fase 3: tras PV-14, Tilo abre «El bosque que no recuerda»
 		21:
 			if _listo(REGION, 5):
-				if not _objetivo_es(r, "Sigue el camino hacia el noreste.", false):
+				if not _objetivo_es(r, "Examina el árbol marcado.", false):   # (fase 3)
 					return false
 				return _comprobar_guardado()
 	return false

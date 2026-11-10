@@ -115,8 +115,8 @@ func _ready() -> void:
 	etiqueta_zona.text = "Zona: %s" % NOMBRES_ZONA.get(zona_actual, zona_actual)
 	# escena de historia: el prólogo sale la primera vez que se abre el mapa (Dialogic), con su puesta en escena
 	# (escena_dialogo.gd: velo, franjas, cámara, título y «Saltar»; T-081)
+	# Queda visto al TERMINAR o saltarlo (_prologo_terminado), no al empezar: si se cierra el juego a mitad, vuelve (10/11).
 	if not Engine.get_meta("prologo_visto", false) and has_node("/root/Dialogic") and not "sin_prologo" in OS.get_cmdline_user_args():
-		Engine.set_meta("prologo_visto", true)
 		_empezar_prologo.call_deferred()
 	for a in OS.get_cmdline_user_args():          # pruebas: godot ... -- menu=Grupo
 		if a.begins_with("menu="):
@@ -522,11 +522,21 @@ func _zona_en(p: Vector2) -> String:
 	return mejor
 
 
-func _comprobar_cerca() -> void:
+# El lugar más cercano a «pos» dentro de «radio», o null. Antes se quedaba con el último de la lista dentro del radio:
+# entre dos lugares con los radios solapados (Portal del Vacío y Pastos Verdes) podía ofrecer el que no tocaba (10/11).
+static func lugar_mas_cercano(pos: Vector2, lista: Array, radio: float):
 	var mejor = null
-	for l in lugares:
-		if jugador.position.distance_to(l["pos"]) < RADIO_LUGAR:
+	var dmin := radio
+	for l in lista:
+		var d := pos.distance_to(l["pos"])
+		if d < dmin:
+			dmin = d
 			mejor = l
+	return mejor
+
+
+func _comprobar_cerca() -> void:
+	var mejor = lugar_mas_cercano(jugador.position, lugares, RADIO_LUGAR)
 	if mejor != cerca:
 		cerca = mejor
 		boton_entrar.visible = cerca != null
@@ -686,9 +696,19 @@ func _mostrar_aviso(texto: String) -> void:
 func _empezar_prologo() -> void:
 	escena_dialogo = load("res://escena_dialogo.gd").new()
 	add_child(escena_dialogo)
-	escena_dialogo.terminada.connect(func(): escena_dialogo = null)
+	escena_dialogo.terminada.connect(func():
+		escena_dialogo = null
+		_prologo_terminado())
 	escena_dialogo.empezar("prologo", camara, "Prólogo", [jugador])  # el muñeco del mapa y su sombra no compiten con
 																		# los retratos (la cámara, su hija, sigue igual)
+
+
+# El prólogo terminó (entero o saltado): queda visto y se guarda. Una interrupción (cerrar la app a mitad) no llega aquí.
+func _prologo_terminado() -> void:
+	if Engine.get_meta("prologo_visto", false):
+		return
+	Engine.set_meta("prologo_visto", true)
+	load("res://progreso.gd").guardar("res://mapa.tscn")
 
 
 # También durante la entrada y la salida de la puesta en escena: Kael no anda y la interfaz no tapa la escena.

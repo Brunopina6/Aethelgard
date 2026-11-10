@@ -92,7 +92,9 @@ var farolas: Array = []                   # dónde van las farolas de las calles
 var con_relleno := false                  # las casas y farolas son las del RELLENO de gráficos
 var vecinos: Array = []                   # Oak.NPCS con el muñeco propio de cada uno, si lo hay (_npcs)
 var quieto_t := 0.0                       # tiempo sin moverse
-var franja := "anochecer"                 # «manana» tras dormir en la posada, hasta salir (ciudades/oakhaven_vida.gd)
+var franja := Vida.FRANJA_AL_LLEGAR       # la hora: mañana, tarde o anochecer (ciudades/oakhaven_vida.gd, FRANJAS)
+var franja_t := 0.0                       # s en esta franja (pasa a la siguiente a los DURACION_FRANJA)
+var paseos := {}                          # id del vecino → su Tween de paseo (rutina «pasea»)
 var voz_pausa := 4.0                      # s hasta que alguien pueda decir algo al pasar (la primera, tras la llegada)
 var voz_quien := {}                       # id → s hasta que esa persona pueda volver a hablar
 var voz_dichos := {}                      # frases dichas en esta visita (texto → true)
@@ -114,6 +116,7 @@ var brillo_grieta := false
 var cambios := false                      # una señal de un diálogo cambió la partida: se guarda al acabar
 var noche_invitada := false
 var rumor_pendiente := ""                 # el rumor que la posadera cuenta al acabar el diálogo de sus servicios
+var dormir_pendiente := false             # «Dormir» en «¿Qué va a ser?»: se descansa al acabar el diálogo
 var velo_patio: Polygon2D                 # el Patio de las Velas, a oscuras hasta pasar la grieta
 var r_ronda: Rect2                        # rectángulos de LUGARES que se miran en cada fotograma
 var r_raices: Rect2
@@ -143,9 +146,19 @@ func _ready() -> void:
 	Sonido.fuente_2d(self, "taberna", Vector2(rt.get_center().x, rt.end.y) * T, jugador)
 	Sonido.fuente_2d(self, "cuervo", Vector2(rt.position.x + 2.0, rt.end.y + 0.5) * T, jugador)
 	Sonido.efecto("campana", {"retraso": 1.5})
+	# Oakhaven vivo (sonido, tanda 6: docs/audio/inventario_sonidos.md): el murmullo de la plaza, su fuente y el
+	# mercado, por cercanía; y la hora: la tarde (la hora azul del arte) y, tras dormir en la posada, el día.
+	var pz := _rect("plaza")
+	Sonido.fuente_2d(self, "plaza_murmullo", pz.get_center() * T, jugador)
+	Sonido.fuente_2d(self, "fuente_plaza", _sitio_fuente(), jugador)
+	Sonido.fuente_2d(self, "mercado_murmullo", _rect("mercado").get_center() * T, jugador)
+	# la hora de la sesión (o la tarde, al llegar): sus rutinas y su sonido (oakhaven_vida.gd, sonido.gd fijar_momento)
+	franja_t = float(Engine.get_meta("oak_franja_t", 0.0))
+	_poner_franja(str(Engine.get_meta("oak_franja", Vida.FRANJA_AL_LLEGAR)), false)
 
 
 func _exit_tree() -> void:
+	Engine.set_meta("oak_franja_t", franja_t)      # (la franja ya está en Engine: _poner_franja)
 	var D = get_node_or_null("/root/Dialogic")
 	if D == null:
 		return
@@ -561,6 +574,15 @@ func _dibujo_de_lugar(id: String) -> Node2D:
 	if id == "arbol" and arbol != null and not arbol_provisional:
 		return arbol
 	return null
+
+
+# Dónde suena la fuente: la del dibujo de la plaza (su ancla está a la altura del caño: el pie, una casilla más abajo)
+# o, sin arte, el centro de la plaza.
+func _sitio_fuente() -> Vector2:
+	var plaza_arte = nodos_lugar.get("plaza")
+	if plaza_arte != null and plaza_arte.has_method("ancla") and plaza_arte.ancla("fuente") != Vector2.INF:
+		return plaza_arte.ancla("fuente") + Vector2(0, T)
+	return _rect("plaza").get_center() * T
 
 
 static func _rect_punto(c: Vector2) -> Rect2i:
@@ -982,6 +1004,7 @@ func _process(delta: float) -> void:
 	_mirar_arbol(delta)
 	_comentarios(delta)
 	_vida(delta)
+	_rutinas(delta)
 	if velo_patio != null:
 		velo_patio.modulate.a = move_toward(velo_patio.modulate.a, 0.0 if _patio_visible() else 1.0, delta * 2.0)
 
@@ -1051,6 +1074,85 @@ func _vida(delta: float) -> void:
 	voz_pausa = Vida.duracion(texto) + Vida.PAUSA
 	voz_globo = _globo(texto, mejor["pie"] - Vector2(0, mejor["alto"] + 12.0), mejor["anonimo"])
 	voz_globo.set_meta("quien", mejor["id"])
+
+
+# La hora de la ciudad (ciudades/oakhaven_vida.gd): cada vecino a su sitio de esa franja (con un fundido si «animar»),
+# su paseo si le toca, las frases de esa hora y lo que suena. Se recuerda en la sesión (Engine «oak_franja»).
+func _poner_franja(f: String, animar: bool) -> void:
+	if not f in Vida.FRANJAS:
+		f = Vida.FRANJA_AL_LLEGAR
+	franja = f
+	Engine.set_meta("oak_franja", f)
+	Sonido.fijar_momento(self, Vida.MOMENTO_SONIDO[f])
+	voz_dichos.clear()
+	for n in npcs:
+		_poner_en_rutina(n, animar)
+
+
+func _poner_en_rutina(n: Array, animar: bool) -> void:
+	var id: String = n[1].get("id", "")
+	var r := Vida.rutina(id, franja)
+	if r.is_empty():
+		return
+	var s: Sprite2D = n[0]
+	if paseos.has(id):
+		paseos[id].kill()
+		paseos.erase(id)
+	if not s.has_meta("sombra"):                      # la sombra que puso zona.gd, para moverla con él
+		for sb in sombras.get_children():
+			if sb.position.distance_to(s.position + Vector2(0, 2)) < 1.0:
+				s.set_meta("sombra", sb)
+	var destino: Vector2 = r["casilla"] * T
+	if not animar or s.position == destino:
+		s.position = destino
+		_pasear(n, r)
+		return
+	var t := s.create_tween()
+	t.tween_property(s, "modulate:a", 0.0, 0.4)
+	t.tween_callback(func():
+		s.position = destino
+		_pasear(n, r))
+	t.tween_property(s, "modulate:a", 1.0, 0.4)
+
+
+# El paseo de la rutina («pasea»): va y viene entre «casilla» y «hasta», despacio, con una pausa en cada punta.
+func _pasear(n: Array, r: Dictionary) -> void:
+	if r.get("hace", "") != "pasea" or not r.has("hasta"):
+		return
+	var s: Sprite2D = n[0]
+	var a: Vector2 = r["casilla"] * T
+	var b: Vector2 = r["hasta"] * T
+	var dur := a.distance_to(b) / (T * 1.1)
+	var t := s.create_tween().set_loops()
+	t.tween_callback(func(): s.flip_h = b.x < a.x)
+	t.tween_property(s, "position", b, dur).set_trans(Tween.TRANS_SINE)
+	t.tween_interval(2.0)
+	t.tween_callback(func(): s.flip_h = a.x < b.x)
+	t.tween_property(s, "position", a, dur).set_trans(Tween.TRANS_SINE)
+	t.tween_interval(2.0)
+	paseos[n[1].get("id", "")] = t
+
+
+# Pasa el tiempo de la franja (no durante un diálogo ni un fundido) y, mientras se habla, los paseos se paran; las
+# sombras siguen a su vecino.
+func _rutinas(delta: float) -> void:
+	var parado: bool = _en_dialogo() or viajando
+	for id in paseos:
+		if parado:
+			paseos[id].pause()
+		else:
+			paseos[id].play()
+	for n in npcs:
+		var sb = n[0].get_meta("sombra", null)
+		if sb != null and is_instance_valid(sb):
+			sb.position = n[0].position + Vector2(0, 2)
+	if parado or saliendo:
+		return
+	franja_t += delta
+	var siguiente := Vida.franja_siguiente(franja)
+	if franja_t >= Vida.DURACION_FRANJA and siguiente != franja:
+		franja_t = 0.0
+		_poner_franja(siguiente, true)
 
 
 func _comentario_en_pantalla() -> bool:
@@ -1204,6 +1306,7 @@ func _usar_pieza(e: Array) -> void:
 	var p: Dictionary = e[1]
 	if not Oak.cumple(p["si"]):
 		_avisar(p["texto_sin"], "examinar", true)
+		_avisos_hallazgo(Hallazgos.al_examinar(Oak.INDICE, "pieza:" + p["id"]), 0.0)   # (hallazgos.gd)
 		return
 	var primera_vista: bool = p["id"] == "oak_torre" and not Progreso.estado(Oak.NOMBRE, "vista_torre")
 	var aviso_senal := Oak.aplicar_senal(p["senal"]) if p["senal"] != "" else ""
@@ -1315,6 +1418,22 @@ func _abrir_cofre(c: Array) -> void:
 
 # ================================================================= posada
 
+# El botón POSADA pregunta antes: «¿Qué va a ser? Dormir / Sopa / Rumor» (ciudades/oakhaven_posada.gd, menu_dialogo).
+# Así la sopa y los rumores no dependen de hablar con la posadera ni de su misión. «Dormir» sigue en _posada.
+func _boton_posada() -> void:
+	var D = get_node_or_null("/root/Dialogic")
+	if D == null:
+		_posada()
+		return
+	if D.current_timeline != null or viajando or saliendo:
+		return
+	var t := DialogicTimeline.new()
+	t.from_text(Posada.menu_dialogo())
+	tiene_destino = false
+	boton_examinar.visible = false
+	D.start(t)
+
+
 func _pagar_posada() -> bool:
 	# ciudades/oakhaven_posada.gd, lo mismo que usará el Oakhaven 3D: la noche gratis de «Tres favores para el Cuervo»
 	# (invita la posadera) o PRECIO_DORMIR, que es el PRECIO_POSADA de zona.gd
@@ -1325,8 +1444,8 @@ func _pagar_posada() -> bool:
 # Al despertar, una charla de posada nueva si la hay (CHARLAS_POSADA: queda vista) o la escena corta de siempre con
 # los que están en el grupo (ESCENAS_POSADA; las dos en ciudades/oakhaven.gd).
 func _tras_posada() -> void:
-	franja = "manana"                             # ha amanecido: los vecinos lo notan (oakhaven_vida.gd)
-	voz_dichos.clear()
+	franja_t = 0.0
+	_poner_franja("manana", true)                # ha amanecido: rutinas, frases y sonido de la mañana
 	_actualizar_posada()
 	_empezar_dialogo(Oak.escena_al_despertar())
 	if noche_invitada:
@@ -1352,6 +1471,9 @@ func _al_senal(arg) -> void:
 	if s == "oak:rumor":                         # la posadera lo cuenta al acabar este diálogo (_al_acabar_dialogo)
 		rumor_pendiente = Posada.rumor()["texto"]
 		return
+	if s == "oak:dormir":                        # se descansa al acabar el diálogo (_posada de zona.gd)
+		dormir_pendiente = true
+		return
 	var t := Oak.aplicar_senal(s)
 	if t == "":
 		return
@@ -1363,6 +1485,11 @@ func _al_senal(arg) -> void:
 
 func _al_acabar_dialogo() -> void:
 	_poner_oro()
+	if dormir_pendiente:
+		dormir_pendiente = false
+		get_tree().create_timer(0.2).timeout.connect(func():   # (Dialogic acaba de cerrar: un momento)
+			if is_instance_valid(self) and not saliendo:
+				_posada())
 	if rumor_pendiente != "":
 		var texto := rumor_pendiente
 		rumor_pendiente = ""
@@ -1372,6 +1499,17 @@ func _al_acabar_dialogo() -> void:
 	if cambios:
 		cambios = false
 		_guardar()
+
+
+# Los avisos de un hallazgo (hallazgos.gd), en la cola de avisos de la ciudad: uno detrás de otro, tras el que esté.
+func _avisos_hallazgo(textos: Array, _desde: float) -> void:
+	if textos.is_empty():
+		return
+	for t in textos:
+		_avisar(t)
+	Sonido.efecto("tesoro", {"retraso": 0.3})
+	_poner_oro()
+	_guardar()
 
 
 # El rumor de la posadera (ciudades/oakhaven_posada.gd), en su caja de diálogo: una frase hecha al momento.

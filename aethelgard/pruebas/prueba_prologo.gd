@@ -100,9 +100,41 @@ func _probar() -> void:
 	await _pasada("saltar_dialogo")
 	await _pasada("saltar_entrada")
 	await _pasada("rapido")
+	await _interrumpido()
 	print("OK prólogo: ", ", ".join(hechos))
 	print("FALLOS: %d" % fallos.size())
 	quit(1 if fallos.size() > 0 else 0)
+
+
+# 6. Interrumpido (10/11): se corta a mitad, como al cerrar la app (la escena desaparece sin terminar). Lo que se
+#    guardaría no lo da por visto, y al volver al mapa empieza otra vez; saltado, ya queda visto.
+func _interrumpido() -> void:
+	var P = load("res://progreso.gd")
+	for k in P.CLAVES:
+		if Engine.has_meta(k):
+			Engine.remove_meta(k)
+	change_scene_to_file(MAPA)
+	if not await _hasta(func(): return current_scene != null and current_scene.scene_file_path == MAPA and current_scene.get("escena_dialogo") != null):
+		_fallo("interrumpido: el prólogo no empieza")
+		return
+	await _esperar(20)
+	var escena = current_scene.escena_dialogo
+	escena.queue_free()                             # se corta sin terminar (no emite «terminada»)
+	await _esperar(2)
+	if D.current_timeline != null:
+		D.end_timeline(true)
+	await _esperar(2)
+	if bool(P.volcar("res://mapa.tscn").get("prologo_visto", false)) or Engine.get_meta("prologo_visto", false):
+		_fallo("interrumpido: cortado a mitad, el prólogo queda visto (no volvería a salir)")
+	change_scene_to_file(MAPA)
+	if not await _hasta(func(): return current_scene != null and current_scene.scene_file_path == MAPA and current_scene.get("escena_dialogo") != null):
+		_fallo("interrumpido: al volver al mapa, el prólogo no empieza otra vez")
+		return
+	await _esperar(10)
+	current_scene.escena_dialogo.saltar()
+	if not await _hasta(func(): return Engine.get_meta("prologo_visto", false), 15.0):
+		_fallo("interrumpido: saltado después, el prólogo no queda visto")
+	hechos.append("interrumpido")
 
 
 # Los retratos vivos que hay ahora, por personaje («Kael», «Lya»).
@@ -135,8 +167,8 @@ func _pasada(modo: String) -> void:
 	var zoom0: Vector2 = m.camara.zoom
 	var lay = D.Styles.get_layout_node()
 	var capa0: int = escena._capa_dialogic          # la de antes de la escena (que la sube mientras dura)
-	if not Engine.get_meta("prologo_visto", false):
-		_fallo("%s: el prólogo no queda visto al empezar" % modo)
+	if Engine.get_meta("prologo_visto", false):     # (10/11) solo al terminar: una interrupción no lo da por visto
+		_fallo("%s: el prólogo queda visto al empezar, antes de terminarlo" % modo)
 	if m.jugador.visible:
 		_fallo("%s: el muñeco del mapa sigue a la vista durante la escena" % modo)
 	if not D.paused or D.current_timeline == null:
@@ -206,6 +238,8 @@ func _pasada(modo: String) -> void:
 	# al acabar (o al saltar): todo como estaba
 	if not await _volver_al_juego(m, escena, zoom0, lay, capa0, modo):
 		return
+	if not Engine.get_meta("prologo_visto", false):
+		_fallo("%s: al terminar (o saltarlo), el prólogo no queda visto" % modo)
 	if modo == "entero":                           # 5. reabierto en el mismo mapa: empieza en reposo y se salta
 		await _reabrir(m)
 	hechos.append(modo)

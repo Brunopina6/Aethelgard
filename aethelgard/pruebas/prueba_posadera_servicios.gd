@@ -1,19 +1,25 @@
 extends SceneTree
-# «¿Algo más?» de la posadera en la ciudad 2D (dialogos/oakhaven/oak_posadera_servicios.dtl, ciudades/oakhaven_posada.gd
-# y ciudad_oakhaven.gd). Sin ventana, con «-- sin_prologo». Partida propia (user://prueba_posadera_servicios.save).
-#   1. Hablando con la posadera, en su turno sale la pregunta (después de sus otros diálogos de siempre).
-#   2. «Sopa del día»: cobra 10 monedas, recupera los PV y no los PM, avisa con la sopa del día y la partida se guarda.
-#   3. «Un rumor»: al acabar, la posadera cuenta el primer rumor sin oír en su caja de diálogo, y queda oído; la vez
-#      siguiente, el siguiente.
-#   4. «Nada, gracias»: no cobra ni cambia nada.
-#   5. Sin monedas, la sopa no se cobra ni cura, y lo dice.
+# «¿Qué va a ser?»: el botón POSADA de la ciudad 2D pregunta antes de descansar (ciudades/oakhaven_posada.gd,
+# menu_dialogo; ciudad_oakhaven.gd, _boton_posada; zona.gd, _boton_posada). Sin ventana, con «-- sin_prologo». Partida
+# propia (user://prueba_posadera_servicios.save). No hace falta la misión de la posadera: va con «Tres favores» sin
+# empezar.
+#   1. Pulsar POSADA abre la pregunta (no descansa todavía); hablar con la posadera ya no la saca.
+#   2. «Dormir»: al acabar la pregunta, descansa como siempre (cobra 30, cura, escena al despertar); con la noche gratis,
+#      la opción lo dice y no cobra.
+#   3. «Sopa del día»: cobra 10, recupera los PV y no los PM, y avisa con la sopa del día.
+#   4. «Un rumor»: al acabar, la posadera cuenta el primer rumor sin oír en su caja, y queda oído; luego, el siguiente.
+#   5. «Nada, gracias»: no cobra ni cambia nada.
+#   6. Sin monedas, la sopa no se cobra ni cura, y lo dice.
 # Imprime «FALLOS: n» y sale con 1 si hay alguno.
 
 const Oak := preload("res://ciudades/oakhaven.gd")
 const Posada := preload("res://ciudades/oakhaven_posada.gd")
 const CIUDAD := "res://ciudad_oakhaven.tscn"
 const ARCHIVO := "user://prueba_posadera_servicios.save"
-const SERVICIOS := "res://dialogos/oakhaven/oak_posadera_servicios.dtl"
+const DORMIR := 1
+const SOPA := 2
+const RUMOR := 3
+const NADA := 4
 
 var P
 var G
@@ -69,7 +75,6 @@ func _probar() -> void:
 	Engine.set_meta("partida_lista", true)
 	Engine.set_meta("prologo_visto", true)
 	G.empezar_solo()
-	P.poner_hito("oak_favores")                  # (con la misión en curso, sus diálogos de la misión van primero)
 	var l: Dictionary = load("res://mapa.gd").LUGARES[Oak.INDICE]
 	Engine.set_meta("lugar", {"indice": Oak.INDICE, "nombre": l["nombre"], "tipo": l["tipo"], "zona": "llanura", "texto": l["texto"]})
 	Engine.set_meta("pos_zona_ok", false)
@@ -81,7 +86,8 @@ func _probar() -> void:
 		return
 	var z = current_scene
 	await _esperar(10)
-	await _turno(z)
+	await _boton(z)
+	await _dormir(z)
 	await _sopa(z)
 	await _rumores(z)
 	await _nada(z)
@@ -100,27 +106,14 @@ func _terminar() -> void:
 	quit(1 if fallos.size() > 0 else 0)
 
 
-func _posadera(z) -> Array:
-	for n in z.npcs:
-		if n[1]["id"] == "posadera":
-			return n
-	return []
-
-
-# Habla con la posadera (como un jugador: a su lado, el botón y pulsar) y recorre lo que salga eligiendo «opcion».
-# Devuelve la ruta del diálogo que se abrió.
-func _hablar(z, opcion: int) -> String:
-	var n := _posadera(z)
-	z.jugador.position = n[0].position + Vector2(40, 30)
-	await _esperar(3)
-	z._comprobar_cerca()
-	z._accion()
+# Pulsa POSADA (el botón de verdad) y recorre la pregunta eligiendo «opcion».
+func _posada(z, opcion: int) -> void:
+	frases.clear()
+	z._boton_hud("POSADA").pressed.emit()
 	if not await _hasta(func(): return D.current_timeline != null, 5.0):
-		_fallo("hablar con la posadera no abre ningún diálogo")
-		return ""
-	var ruta: String = D.current_timeline.resource_path
+		_fallo("POSADA no abre la pregunta")
+		return
 	await _recorrer(opcion)
-	return ruta
 
 
 func _recorrer(opcion: int) -> void:
@@ -145,82 +138,108 @@ func _recorrer(opcion: int) -> void:
 	await _esperar(6)
 
 
-# Hasta su turno: los diálogos de siempre se turnan y la pregunta va la última.
-func _a_su_turno(z) -> void:
-	var n := _posadera(z)
-	for i in 6:
-		if Oak.dialogo_de("posadera", n[2]) == SERVICIOS:
-			return
-		await _hablar(z, 1)
-	_fallo("1: la pregunta de los servicios no llega en el turno de la posadera")
-
-
-func _turno(z) -> void:
-	var vistos: Array = []
-	var n := _posadera(z)
-	for i in 4:
-		vistos.append(Oak.dialogo_de("posadera", n[2] + i).get_file())
-	if not "oak_posadera_servicios.dtl" in vistos:
-		_fallo("1: en cuatro charlas con la posadera no sale «¿Algo más?» (%s)" % [vistos])
-	print("TURNO ", vistos)
-
-
 func _herir() -> void:
 	for h in G.activos():
 		G.guardar_vida(h, 1, 0)
 
 
-func _sopa(z) -> void:
-	await _a_su_turno(z)
+# 1. El botón pregunta; hablar con la posadera, no.
+func _boton(z) -> void:
+	var oro: int = I.oro()
+	z._boton_hud("POSADA").pressed.emit()
+	if not await _hasta(func(): return D.current_timeline != null, 5.0):
+		_fallo("1: POSADA no abre la pregunta")
+		return
+	await _hasta(func(): return frases.any(func(t): return "¿Qué va a ser?" in t), 5.0)
+	if not frases.any(func(t): return "¿Qué va a ser?" in t):
+		_fallo("1: la posadera no pregunta «¿Qué va a ser?» (%s)" % [frases])
+	if I.oro() != oro:
+		_fallo("1: al pulsar POSADA ya se cobra la noche")
+	await _recorrer(NADA)
+	for v in 4:
+		if Oak.dialogo_de("posadera", v).ends_with("oak_posadera_servicios.dtl"):
+			_fallo("1: hablar con la posadera aún saca la pregunta")
+	print("BOTÓN: ", frases)
+
+
+# 2. Dormir.
+func _dormir(z) -> void:
 	I.ganar_oro(100 - I.oro())
 	_herir()
-	var ruta := await _hablar(z, 1)
-	if ruta != SERVICIOS:
-		_fallo("2: se abre %s y no la pregunta" % ruta)
+	if not "Dormir (%d monedas)" % Posada.PRECIO_DORMIR in Posada.menu_dialogo():
+		_fallo("2: la pregunta no dice el precio de la noche")
+	await _posada(z, DORMIR)
+	if not await _hasta(func(): return D.current_timeline != null, 6.0):     # la escena al despertar
+		_fallo("2: «Dormir» no lleva a descansar")
+		return
+	var e: Dictionary = G.estadisticas("Kael")
+	if I.oro() != 100 - Posada.PRECIO_DORMIR or int(G.datos()["Kael"]["pv"]) != e["pv_max"] \
+			or int(G.datos()["Kael"]["pm"]) != e["pm_max"]:
+		_fallo("2: «Dormir» no cobra %d o no cura (oro %d, %s)" % [Posada.PRECIO_DORMIR, I.oro(), G.datos()["Kael"]])
+	if D.current_timeline.resource_path != Oak.escena_posada():
+		_fallo("2: al despertar sale %s" % D.current_timeline.resource_path)
+	await _recorrer(1)
+	P.poner_estado(Oak.NOMBRE, "noche_gratis")
+	if not "Dormir (invita la casa)" in Posada.menu_dialogo():
+		_fallo("2: con la noche gratis, la opción no lo dice")
+	var oro: int = I.oro()
+	await _posada(z, DORMIR)
+	await _hasta(func(): return D.current_timeline != null, 6.0)
+	if I.oro() != oro or P.estado(Oak.NOMBRE, "noche_gratis"):
+		_fallo("2: la noche gratis cobra o no se gasta (oro %d → %d)" % [oro, I.oro()])
+	await _recorrer(1)
+	await _esperar(30)
+	print("DORMIR: oro %d" % I.oro())
+
+
+# 3. Sopa.
+func _sopa(z) -> void:
+	I.ganar_oro(100 - I.oro())
+	_herir()
+	await _posada(z, SOPA)
 	var e: Dictionary = G.estadisticas("Kael")
 	if I.oro() != 100 - Posada.PRECIO_COMER:
-		_fallo("2: la sopa no cobra %d (oro %d)" % [Posada.PRECIO_COMER, I.oro()])
+		_fallo("3: la sopa no cobra %d (oro %d)" % [Posada.PRECIO_COMER, I.oro()])
 	if int(G.datos()["Kael"]["pv"]) != e["pv_max"] or int(G.datos()["Kael"]["pm"]) != 0:
-		_fallo("2: la sopa no deja PV llenos y PM como estaban (%s)" % [G.datos()["Kael"]])
+		_fallo("3: la sopa no deja PV llenos y PM como estaban (%s)" % [G.datos()["Kael"]])
 	if not await _hasta(func(): return Posada.sopa_del_dia() in z.aviso.text and z.aviso.modulate.a > 0.5, 5.0):
-		_fallo("2: no sale el aviso de la sopa («%s»)" % z.aviso.text)
+		_fallo("3: no sale el aviso de la sopa («%s»)" % z.aviso.text)
 	print("SOPA: ", z.aviso.text)
 
 
+# 4. Rumores.
 func _rumores(z) -> void:
 	for vez in 2:
-		await _a_su_turno(z)
 		var esperado: Dictionary = Posada.rumores_disponibles()[0]
-		frases.clear()
-		await _hablar(z, 2)
+		await _posada(z, RUMOR)
 		if not await _hasta(func(): return D.current_timeline != null, 5.0):
-			_fallo("3: tras pedir un rumor, la posadera no lo cuenta")
+			_fallo("4: tras pedir un rumor, la posadera no lo cuenta")
 			return
 		await _recorrer(1)
 		if not esperado["texto"] in frases:
-			_fallo("3: la posadera no cuenta «%s» (dijo %s)" % [esperado["texto"], frases])
+			_fallo("4: la posadera no cuenta «%s» (dijo %s)" % [esperado["texto"], frases])
 		if not Posada.rumor_oido(esperado["id"]):
-			_fallo("3: el rumor %s no queda oído" % esperado["id"])
+			_fallo("4: el rumor %s no queda oído" % esperado["id"])
 		print("RUMOR %d: %s" % [vez + 1, esperado["texto"]])
 
 
+# 5. Nada.
 func _nada(z) -> void:
-	await _a_su_turno(z)
 	var oro: int = I.oro()
-	var oidos: Array = Posada.RUMORES.filter(func(r): return Posada.rumor_oido(r["id"]))
-	await _hablar(z, 3)
+	var oidos: int = Posada.RUMORES.filter(func(r): return Posada.rumor_oido(r["id"])).size()
+	await _posada(z, NADA)
 	await _esperar(20)
 	if I.oro() != oro or D.current_timeline != null \
-			or Posada.RUMORES.filter(func(r): return Posada.rumor_oido(r["id"])).size() != oidos.size():
-		_fallo("4: «Nada, gracias» cambia algo (oro %d → %d)" % [oro, I.oro()])
+			or Posada.RUMORES.filter(func(r): return Posada.rumor_oido(r["id"])).size() != oidos:
+		_fallo("5: «Nada, gracias» cambia algo (oro %d → %d)" % [oro, I.oro()])
 
 
+# 6. Sin monedas.
 func _sin_monedas(z) -> void:
-	await _a_su_turno(z)
 	I.gastar_oro(I.oro())
 	_herir()
-	await _hablar(z, 1)
+	await _posada(z, SOPA)
 	if int(G.datos()["Kael"]["pv"]) != 1:
-		_fallo("5: sin monedas, la sopa cura igual")
+		_fallo("6: sin monedas, la sopa cura igual")
 	if not await _hasta(func(): return "No te llega" in z.aviso.text, 5.0):
-		_fallo("5: sin monedas no lo dice («%s»)" % z.aviso.text)
+		_fallo("6: sin monedas no lo dice («%s»)" % z.aviso.text)

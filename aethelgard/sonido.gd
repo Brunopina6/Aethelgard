@@ -74,6 +74,17 @@ const EF := "res://audio/efectos/"
 const VOCES := {"Efectos": 10, "Interfaz": 4, "Ambiente": 4}
 const ATENUAR_DB := 8.0                                    # lo que bajan las prioridades 0-2 mientras suena una 4
 const FUNDIDO_CORTE := 0.1                                 # s: al cambiar de escena o cortar
+# Mezcla (tanda 7; decisión del coordinador, reversible: el usuario aún no lo ha escuchado). Medido el 09/11 con la mezcla
+# por buses (prueba_efectos_senal, «mezclas=6»): en combate la música quedaba 9 dB por encima de los golpes y las voces, y
+# el Master llegaba a −0,3 dBFS. Para volver atrás, poner la constante a false.
+# - APARTAR_MUSICA_EN_COMBATE: en combate (contexto «combate» de Musica), la música baja sola cuando suenan efectos: un
+#   compresor al final del bus Musica que escucha al bus Efectos. Conservador para que no «bombee»: ratio bajo, ataque y
+#   suelta lentos. Alternativa B (documentada en el inventario): la música del combate de −6 a −10 dB en combate.gd.
+# - LIMITADOR_MASTER: un limitador suave al final del Master, contra la saturación medida (solo actúa en los picos).
+const APARTAR_MUSICA_EN_COMBATE := true
+const APARTAR := {"umbral": -30.0, "ratio": 2.0, "ataque_ms": 30.0, "suelta_ms": 800.0}
+const LIMITADOR_MASTER := true
+const LIMITE := {"techo_db": -1.0, "suelta_s": 0.15}
 const MAX_GRUPO := {"voz": 2, "quieto": 1, "voz_heroe": 1}               # cuántos de un mismo grupo suenan a la vez como mucho
 # Los héroes quietos en la exploración 3D (tanda 4; Pasos3D): tras «primero» s parados (al azar entre los dos), un gesto
 # discreto de su personaje; mientras sigan parados, otro cada «entre» s. Andar lo reinicia. Kael es el que escucha (o el
@@ -214,14 +225,14 @@ const EFECTOS := {
 	# enemigos: prioridad 1 (lo primero que cede si faltan voces) y una a la vez entre los tres (grupo «voz_heroe»); la
 	# de victoria, prioridad 3 (no baja con la fanfarria) y muy corta. Las piden voz() y recibe() (esfuerzo al lanzarse,
 	# herido o caída al recibir un golpe físico, jadeo si queda con poca vida), voz(h, "alivio") y victoria_heroes().
-	"kael_esfuerzo": {"a": "heroes/kael_esfuerzo_", "n": 3, "db": -16.5, "tono": 0.04, "p": 1, "max": 1, "espera": 0.3, "grupo": "voz_heroe"},
+	"kael_esfuerzo": {"a": "heroes/kael_esfuerzo_", "n": 3, "db": -13.5, "tono": 0.04, "p": 1, "max": 1, "espera": 0.3, "grupo": "voz_heroe"},
 	"kael_herido": {"a": "heroes/kael_herido_", "n": 2, "db": -14.0, "tono": 0.05, "p": 1, "max": 1, "espera": 0.3, "grupo": "voz_heroe"},
 	"kael_jadeo": {"a": "heroes/kael_jadeo_", "n": 2, "db": -10.5, "tono": 0.03, "p": 1, "max": 1, "espera": 2.0, "grupo": "voz_heroe"},
 	"kael_alivio": {"a": "heroes/kael_alivio_", "n": 2, "db": -12.5, "tono": 0.03, "p": 1, "max": 1, "espera": 0.5, "grupo": "voz_heroe"},
 	"kael_victoria": {"a": "heroes/kael_victoria_", "n": 2, "db": -8.5, "tono": 0.03, "p": 3, "max": 1, "espera": 1.0, "grupo": "voz_heroe"},
 	"lya_esfuerzo": {"a": "heroes/lya_esfuerzo_", "n": 3, "db": -14.5, "tono": 0.04, "p": 1, "max": 1, "espera": 0.3, "grupo": "voz_heroe"},
 	"lya_herido": {"a": "heroes/lya_herido_", "n": 3, "db": -17.0, "tono": 0.05, "p": 1, "max": 1, "espera": 0.3, "grupo": "voz_heroe"},
-	"lya_jadeo": {"a": "heroes/lya_jadeo_", "n": 2, "db": -19.0, "tono": 0.03, "p": 1, "max": 1, "espera": 2.0, "grupo": "voz_heroe"},
+	"lya_jadeo": {"a": "heroes/lya_jadeo_", "n": 2, "db": -14.0, "tono": 0.03, "p": 1, "max": 1, "espera": 2.0, "grupo": "voz_heroe"},
 	"lya_alivio": {"a": "heroes/lya_alivio_1", "db": -13.0, "tono": 0.04, "p": 1, "max": 1, "espera": 0.5, "grupo": "voz_heroe"},
 	"lya_victoria": {"a": "heroes/lya_victoria_1", "db": -12.0, "tono": 0.03, "p": 3, "max": 1, "espera": 1.0, "grupo": "voz_heroe"},
 	"garon_esfuerzo": {"a": "heroes/garon_esfuerzo_", "n": 3, "db": -16.0, "tono": 0.03, "p": 1, "max": 1, "espera": 0.3, "grupo": "voz_heroe"},
@@ -307,6 +318,18 @@ const EFECTOS := {
 	"taberna": {"a": "ambiente/taberna", "bus": "Ambiente", "db": -2.0, "dos_d": {"cerca": 2.0, "lejos": 11.0}},
 	"cuervo": {"a": "mundo/cuervo_", "n": 3, "bus": "Ambiente", "db": -12.0, "tono": 0.06, "p": 0, "max": 1, "espera": 1.5,
 		"dos_d": {"cerca": 2.0, "lejos": 12.0, "cada": [4.0, 11.0]}},
+	# Oakhaven vivo (tanda 6): el murmullo de la plaza y del mercado y la fuente, en bucle y por cercanía (fuente_2d en la
+	# 2D; fuente_3d en la 3D, T-103), y los detalles según la hora (DETALLES «ciudad_dia», «_tarde», «_noche»). Medido el 09/11
+	# (mezcla por buses): con la plaza a −2 y la fuente a −8 los pasos quedaban 4 dB por debajo del ambiente; así, 1 dB por encima
+	"plaza_murmullo": {"a": "ambiente/plaza_murmullo", "bus": "Ambiente", "db": -5.0, "dos_d": {"cerca": 4.0, "lejos": 16.0},
+		"tres_d": {"unidad": 8.0, "max": 50.0}},
+	"mercado_murmullo": {"a": "ambiente/mercado_murmullo", "bus": "Ambiente", "db": -1.0, "dos_d": {"cerca": 3.0, "lejos": 12.0},
+		"tres_d": {"unidad": 6.0, "max": 40.0}},
+	"fuente_plaza": {"a": "ambiente/fuente_plaza", "bus": "Ambiente", "db": -10.0, "dos_d": {"cerca": 1.5, "lejos": 8.0},
+		"tres_d": {"unidad": 3.0, "max": 25.0}},
+	"pajaro_ciudad": {"a": "ambiente/pajaro_ciudad_", "n": 2, "bus": "Ambiente", "db": -16.0, "tono": 0.06, "p": 0, "max": 1, "espera": 3.0},
+	"grillo": {"a": "ambiente/grillo", "bus": "Ambiente", "db": -14.0, "tono": 0.05, "p": 0, "max": 1, "espera": 4.0},
+	"mochuelo": {"a": "ambiente/mochuelo_", "n": 2, "bus": "Ambiente", "db": -20.0, "tono": 0.03, "p": 0, "max": 1, "espera": 8.0},
 	"rafaga_hierba": {"a": "ambiente/rafaga_hierba_", "n": 4, "bus": "Ambiente", "db": -14.0, "tono": 0.05, "p": 0, "max": 1, "espera": 3.0},
 	"rafaga_arbol": {"a": "ambiente/rafaga_arbol_", "n": 4, "bus": "Ambiente", "db": -14.0, "tono": 0.05, "p": 0, "max": 1, "espera": 3.0},
 	"pajaro": {"a": "ambiente/pajaro", "bus": "Ambiente", "db": -18.0, "tono": 0.08, "p": 0, "max": 1, "espera": 4.0},
@@ -318,7 +341,11 @@ const EFECTOS := {
 # Detalles de la naturaleza por contexto de Musica: cada cuánto (s, al azar entre los dos) y qué puede sonar.
 const DETALLES := {
 	"pradera": {"cada": [9.0, 20.0], "efectos": ["rafaga_hierba", "rafaga_hierba", "pajaro"]},
-	"ciudad": {"cada": [14.0, 28.0], "efectos": ["pajaro"]},
+	"ciudad": {"cada": [14.0, 28.0], "efectos": ["pajaro", "pajaro_ciudad"]},
+	# una ciudad con su hora (fijar_momento: Oakhaven, tanda 6); «campana»: cada cuánto la campana lejana marca la hora
+	"ciudad_dia": {"cada": [10.0, 22.0], "efectos": ["pajaro", "pajaro_ciudad", "pajaro_ciudad", "rafaga_hierba"], "campana": [110.0, 200.0]},
+	"ciudad_tarde": {"cada": [12.0, 24.0], "efectos": ["pajaro_ciudad", "grillo", "grillo", "rafaga_hierba"], "campana": [110.0, 200.0]},
+	"ciudad_noche": {"cada": [10.0, 22.0], "efectos": ["grillo", "grillo", "mochuelo"], "campana": [180.0, 300.0]},
 	"bosque": {"cada": [8.0, 18.0], "efectos": ["rafaga_arbol", "rafaga_arbol", "hojas"]},
 	"viento": {"cada": [10.0, 22.0], "efectos": ["rafaga_hierba"]},
 	"mazmorra": {"cada": [4.0, 11.0], "efectos": ["gota", "gota", "gota_cueva"]},
@@ -387,6 +414,11 @@ var _eco_escena: Node = null
 var _jadeo_de := {}                                        # héroe → ya ha jadeado con poca vida (tanda 5)
 var _voz_de := {}                                          # enemigo → [su última voz, su orden] (una voz por enemigo)
 var _det_ctx := ""
+var _momento := ""                                         # la hora de la escena que la ha fijado (tanda 6)
+var _momento_escena: Node = null
+var _campana_t := -1.0                                     # s hasta la próxima campana de la hora
+var _apartar: AudioEffectCompressor = null                 # tanda 7: la música que se aparta (solo en combate)
+var _limitador: AudioEffectHardLimiter = null              # tanda 7: el limitador del Master
 var _det_t := 0.0
 var _rng := RandomNumberGenerator.new()
 var pausado := false
@@ -408,6 +440,7 @@ func _ready() -> void:
 			p.process_mode = Node.PROCESS_MODE_ALWAYS if bus == "Interfaz" else Node.PROCESS_MODE_PAUSABLE
 			add_child(p)
 			_voces[bus].append(p)
+	limitador(LIMITADOR_MASTER)
 
 
 # Lee los volúmenes guardados (sin archivo, o con un valor que no es un número, 100 %) y los aplica a los buses.
@@ -942,6 +975,53 @@ func _process(delta: float) -> void:
 		_escena = e
 		_al_cambiar_escena()
 	_detalles(delta)
+	var m = get_node_or_null("/root/Musica")
+	apartar_musica(APARTAR_MUSICA_EN_COMBATE and m != null and m.contexto == "combate")
+
+
+# Tanda 7: en combate, la música se aparta cuando suenan efectos (APARTAR): un compresor al final del bus Musica que
+# escucha al bus Efectos. Pedirlo dos veces no pone dos; con false se quita.
+func apartar_musica(si: bool) -> void:
+	var i := AudioServer.get_bus_index("Musica")
+	if i < 0 or si == (_apartar != null):
+		return
+	if si:
+		_apartar = AudioEffectCompressor.new()
+		_apartar.threshold = float(APARTAR["umbral"])
+		_apartar.ratio = float(APARTAR["ratio"])
+		_apartar.attack_us = float(APARTAR["ataque_ms"]) * 1000.0
+		_apartar.release_ms = float(APARTAR["suelta_ms"])
+		_apartar.sidechain = &"Efectos"
+		_apartar.resource_name = "Apartar_musica"
+		AudioServer.add_bus_effect(i, _apartar)
+	else:
+		_quitar_efecto_bus(i, _apartar)
+		_apartar = null
+
+
+func musica_apartada() -> bool:
+	return _apartar != null
+
+
+# Tanda 7: el limitador suave del Master (LIMITE): solo toca los picos que pasarían de «techo_db».
+func limitador(si: bool) -> void:
+	if si == (_limitador != null):
+		return
+	if si:
+		_limitador = AudioEffectHardLimiter.new()
+		_limitador.ceiling_db = float(LIMITE["techo_db"])
+		_limitador.release = float(LIMITE["suelta_s"])
+		_limitador.resource_name = "Limitador_master"
+		AudioServer.add_bus_effect(0, _limitador)
+	else:
+		_quitar_efecto_bus(0, _limitador)
+		_limitador = null
+
+
+func _quitar_efecto_bus(i: int, efecto_bus: AudioEffect) -> void:
+	for k in range(AudioServer.get_bus_effect_count(i) - 1, -1, -1):
+		if AudioServer.get_bus_effect(i, k) == efecto_bus:
+			AudioServer.remove_bus_effect(i, k)
 
 
 # Cambio de escena: lo de Efectos y Ambiente que no «cruza» se apaga y lo programado ya no suena. El eco y los detalles
@@ -969,12 +1049,23 @@ func _al_cambiar_escena() -> void:
 func _detalles(delta: float) -> void:
 	var m = get_node_or_null("/root/Musica")
 	var ctx: String = m.contexto if m != null else ""
+	if _momento != "" and is_instance_valid(_momento_escena) and _momento_escena == _escena \
+			and DETALLES.has(ctx + "_" + _momento):
+		ctx = ctx + "_" + _momento                         # tanda 6: la hora que ha fijado la escena
 	if ctx != _det_ctx:
 		_det_ctx = ctx
 		_det_t = _rng.randf_range(4.0, 9.0)
+		_campana_t = -1.0
 	var dd: Dictionary = DETALLES.get(ctx, {})
 	if dd.is_empty() or pausado or get_tree().paused:
 		return
+	if dd.has("campana"):                                  # la campana lejana marca la hora de vez en cuando
+		if _campana_t < 0.0:
+			_campana_t = _rng.randf_range(float(dd["campana"][0]) * 0.4, float(dd["campana"][1]) * 0.5)
+		_campana_t -= delta
+		if _campana_t <= 0.0:
+			efecto("campana")
+			_campana_t = _rng.randf_range(float(dd["campana"][0]), float(dd["campana"][1]))
 	_det_t -= delta
 	if _det_t <= 0.0:
 		var lista: Array = dd["efectos"]
@@ -991,6 +1082,18 @@ func _detalles(delta: float) -> void:
 # Los detalles de la naturaleza (DETALLES) de esta escena 3D suenan en un punto: «donde» recibe la posición de quien
 # escucha y dos números al azar entre 0 y 1 (del generador del sonido) y devuelve dónde (Vector3; si no, suena normal).
 # La Garganta 3D: cada gota cae en la pared de roca más cercana. Se olvida al cambiar de escena.
+# Tanda 6: la hora del lugar («dia», «tarde» o «noche») mientras «escena» sea la actual: los detalles de su contexto pasan
+# a ser los de «<contexto>_<momento>» si existen (Oakhaven: pájaros de día, grillo al atardecer, mochuelo de noche, y la
+# campana que marca la hora). Se olvida sola al cambiar de escena. Con «» vuelve a lo de siempre.
+func fijar_momento(escena: Node, momento: String) -> void:
+	_momento = momento
+	_momento_escena = escena
+
+
+func momento_actual() -> String:
+	return _momento if is_instance_valid(_momento_escena) and _momento_escena == _escena else ""
+
+
 func detalles_3d(escena: Node, donde: Callable) -> void:
 	_det3d_escena = escena
 	_det3d_donde = donde

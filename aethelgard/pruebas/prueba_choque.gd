@@ -11,6 +11,20 @@ var objetivo: Node2D
 var paso_frames := 0
 var desvio := 0.0
 var minimo := 9999.0
+var fallos := 0
+
+
+func _fallo(t: String) -> void:
+	fallos += 1
+	print("FALLO: ", t)
+
+
+func _terminar() -> bool:
+	print("FALLOS: %d" % fallos)
+	quit(1 if fallos > 0 else 0)
+	return true
+
+
 
 
 func _initialize() -> void:
@@ -42,7 +56,11 @@ func _process(_d: float) -> bool:
 		_siguiente()
 		return false
 	if caso < 0 or caso >= casos.size():
-		return frames > 5
+		if frames <= 5:
+			return false
+		if casos.is_empty():
+			_fallo("no hay ningún árbol ni planta que probar")
+		return _terminar()
 	paso_frames += 1
 	var dd: Vector2 = casos[caso][3]
 	var lado: float = absf((zona.jugador.position - objetivo.position).dot(dd.orthogonal()))
@@ -57,8 +75,10 @@ func _process(_d: float) -> bool:
 		if paso:
 			r = "lo rodea (se desvía %d px)" % desvio if desvio > 12 else "LO ATRAVIESA (pasa a %d px del centro)" % minimo
 		print("%-22s choque=%s  -> %s" % [c[0], c[2], r])
+		if c[2] and r.begins_with("LO ATRAVIESA"):   # (10/11) lo que tiene colisión nunca se atraviesa
+			_fallo("%s tiene colisión y Kael lo atraviesa" % c[0])
 		_siguiente()
-	return caso >= casos.size()
+	return _terminar() if caso >= casos.size() else false
 
 
 func _siguiente() -> void:

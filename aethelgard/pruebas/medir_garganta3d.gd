@@ -17,6 +17,7 @@ const REGION := "res://zonas3d/garganta_3d.tscn"
 var salida := ""
 var perfil := "bajo"
 var solo_conteo := false
+var etiqueta := ""                       # «etiqueta=x»: conteo_<perfil>_x.json (varias cargas en la misma pasada)
 var R
 var T
 var v
@@ -39,6 +40,10 @@ func _initialize() -> void:
 			perfil = a.substr(7)
 		elif a == "conteo":
 			solo_conteo = true
+		elif a == "sin_cache":
+			Engine.set_meta("garganta_sin_cache", true)
+		elif a.begins_with("etiqueta="):
+			etiqueta = "_" + a.substr(9)
 	R = root.get_node("Recursos")
 	T = load("res://zonas3d/garganta/trazado.gd")
 	if not solo_conteo:
@@ -209,7 +214,10 @@ func _conteo() -> bool:
 			c["particulas"] += 1
 			c["particulas_total"] += n.amount
 	c["luces_omni"] = v.find_children("*", "OmniLight3D", true, false).size()
-	var ruta := "%s/conteo_%s.json" % [salida, perfil]
+	c["construccion_ms"] = v.esc.get("tiempos")              # (null con código anterior a la medida por pasos)
+	c["roca_de_cache"] = v.esc.get("leidas_de_cache")
+	c["mallas_de_roca_hechas"] = v.esc.get("_n_roca")
+	var ruta := "%s/conteo_%s%s.json" % [salida, perfil, etiqueta]
 	var f := FileAccess.open(ruta, FileAccess.WRITE)
 	f.store_string(JSON.stringify(c, "  "))
 	f.close()

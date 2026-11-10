@@ -15,6 +15,8 @@ const PROB_CONGELAR := 1.0
 const RONDAS_CONGELACION := 2
 const VITALIDAD_CONGELACION := 2
 const ATB_MAX := 100.0
+const Formulas := preload("res://combate_formulas.gd")   # fórmulas de daño (10/11)
+const Recompensas := preload("res://combate_recompensas.gd")   # experiencia y monedas al terminar (10/11, fase 2)
 const ESC := 0.8
 const CANVAS := Vector2(320, 480)
 const DANO_QUEMADURA := 5
@@ -39,7 +41,13 @@ const CURA_POCION := 50
 const OBJETOS_COMBATE := {
 	"Poción": {"que": "PV", "cura": 60, "imagen": "res://objetos/pocion.png", "color": Color(1.0, 0.35, 0.3)},
 	"Éter": {"que": "PM", "cura": 25, "imagen": "res://objetos/eter.png", "color": Color(0.35, 1.0, 0.6)},
+	# Alquimia de Lya (fase 3, «El bosque que no recuerda»; combate_bosque.gd). Solo salen en el menú si se tienen.
+	"Esencia de enfoque": {"que": "ENFOQUE", "cura": 0, "imagen": "res://objetos/eter.png", "color": Color(0.7, 0.55, 1.0),
+		"desc": "Su magia hace ×1,3 durante 3 turnos."},
+	"Elixir de savia purificada": {"que": "PURIFICA", "cura": 0, "imagen": "res://objetos/pocion.png",
+		"color": Color(0.55, 1.0, 0.45), "desc": "Purifica al Guardián del Bosque, en su segunda fase."},
 }
+const Bosque := preload("res://combate_bosque.gd")   # el Guardián, la Esencia y el Elixir (fase 3)
 # Menú de combate minimalista (menu_combate.gd). Ocupa el 40 % derecho de la pantalla, por eso los
 # héroes van más a la izquierda y los enemigos se juntan a la izquierda: x = x * ENEMIGOS_X.x + ENEMIGOS_X.y
 const ENEMIGOS_X := Vector2(0.75, -190.0)
@@ -204,6 +212,16 @@ const MODELOS := {
 		"barra_y": -230.0, "centro_y": 60.0, "tinte": Color(1.0, 0.6, 0.52)},
 	"guardian": {"tipo": "imagen", "imagen": "res://enemigos/guardian.png", "cadera": Vector2(160, 470), "tam": 0.92,
 		"barra_y": 10.0, "centro_y": 210.0},
+	# Guardián del Bosque Olvidado (fase 3): respaldo 2D, el guardián de piedra grande y teñido de verde musgo, hasta tener su
+	# modelo 3D (enemigos/guardian_bosque/).
+	# Guardián del Bosque Olvidado (fase 3): modelo 3D propio (animaciones, Blender; enemigos/guardian_bosque/), con el 2D de respaldo.
+	"guardian_bosque": {
+		"tipo": "3d", "esc": 0.6, "script": "res://enemigos/guardian_bosque/guardian_bosque_3d.gd",
+		"gestos": "res://gestos_3d.gd", "rutas": ["res://enemigos/guardian_bosque/guardian_bosque.glb"],
+		"vp": Vector2i(1000, 1120), "alto_vista": 4.6, "centro_y": 1.95, "barra_y": 50.0, "centro_3d": 1.9,
+		"respaldo": "guardian_bosque2d"},
+	"guardian_bosque2d": {"tipo": "imagen", "imagen": "res://enemigos/guardian.png", "cadera": Vector2(160, 470), "tam": 1.45,
+		"barra_y": -230.0, "centro_y": 60.0, "tinte": Color(0.62, 0.92, 0.58)},
 }
 
 # Enemigos disponibles y grupos que pueden aparecer en un encuentro (se elige uno al azar).
@@ -223,6 +241,10 @@ const ENEMIGOS := {
 	"zarzalin": {"nombre": "Zarzalín", "modelo": "zarzalin", "hp": 80, "atk": 11, "vel": 14.0, "exp": 20, "oro": 12,
 		"personalidad": "embiste"},
 	"golem_ambar": {"nombre": "Gólem de ámbar", "modelo": "guardian", "hp": 200, "atk": 17, "vel": 9.0, "exp": 70, "oro": 90, "personalidad": "bruto"},
+	# Fase 3, «El bosque que no recuerda»: el jefe de Pastos Verdes (combate_bosque.gd). Dos fases (al 50 %: coraza de raíces y
+	# débil al fuego), ataque cargado con aviso; se purifica con el Elixir o se derrota.
+	"guardian_bosque": {"nombre": "Guardián del Bosque Olvidado", "modelo": "guardian_bosque", "hp": 420, "atk": 17, "vel": 9.0,
+		"exp": 90, "oro": 0, "personalidad": "bosque", "fases": true, "titulo": true},
 }
 const GRUPOS := [
 	[["grimfang", Vector2(230, 150)], ["grimfang", Vector2(410, 115)]],
@@ -238,6 +260,7 @@ const GRUPOS := [
 	[["slime", Vector2(140, 110)], ["slime", Vector2(380, 125)]],           # 8
 	[["grimfang", Vector2(300, 130)]],                                      # 9
 	[["zarzalin", Vector2(250, 120)]],                                      # 10: Zarzalín (Pastos Verdes)
+	[["guardian_bosque", Vector2(150, -120)]],                               # 11: Guardián del Bosque (Pastos Verdes, fase 3)
 ]
 const GRUPOS_AL_AZAR := 5           # solo los primeros salen en encuentros aleatorios (con el grupo de tres)
 # Encuentros al azar según cuántos héroes hay ahora en el grupo (grupo.gd, activos). Kael solo no tiene cura ni a
@@ -280,6 +303,8 @@ const ANIM := {
 	"gorthor": {"distancia": 170.0},
 	"garon3d": {"distancia": 130.0},
 	"guardian": {"distancia": 150.0},
+	"guardian_bosque2d": {"distancia": 170.0},     # fase 3: el Guardián del Bosque (respaldo 2D)
+	"guardian_bosque": {"distancia": 170.0},       # fase 3: ataca desde su sitio (_anim_guardian)
 }
 
 var heroes: Array = [
@@ -393,6 +418,8 @@ func _ready() -> void:
 			h["mult_magia"] = e["mult_magia"]
 			h["efectos"] = Extra.efectos_de(h["nombre"])           # accesorios (T-092); el equipo de hoy no da nada
 			h["atb"] = Extra.atb_inicial(h["efectos"], ATB_MAX)     # Farol de peregrino; sin él, 0 como siempre
+			_equipo_al_empezar(h)                                  # Lágrima, Brasa en frasco y Hoja sin Nombre
+		_aliento_al_empezar()                                      # Rama del Árbol Milenario (sin ella, nada)
 	_elegir_enemigos()
 	_crear_texturas()
 	_crear_interfaz()
@@ -963,6 +990,11 @@ func _crear_rig_3d(f: Dictionary, m: Dictionary, raiz: Node2D, base: Vector2, es
 	f["cam3d"] = cam
 	# centro del cuerpo en pantalla (para efectos y números de daño)
 	f["centro_ofs"] = cam.unproject_position(Vector3(0, m.get("centro_3d", 0.85), 0)) / q * esc
+	if f.get("hero", false) and ResourceLoader.exists("res://inventario.gd"):   # C2: el arma especial, con su color
+		var arma: Dictionary = load("res://inventario.gd").arma_de(f["nombre"])
+		for k in ["espada", "espada_izq"]:           # (las de Kael y Lya ya salen teñidas: material_arma.de_arma)
+			if k in maga and maga.get(k) != null:
+				load("res://material_arma.gd").tenir(maga.get(k), arma)
 
 
 # Personaje 3D (maga o Kael) de un luchador, o null si es 2D.
@@ -1240,7 +1272,11 @@ func _siguiente_turno() -> void:
 #   apoyo:    cura al aliado más herido (chamanes); si no hay heridos, ataca
 #   jefe:     como agresivo, y a veces carga un turno (con aviso) su golpe más fuerte a todos
 # Con menos del 30 % de vida entran en furia: pegan un 50 % más.
+var atacante_actual = null                       # el enemigo que actúa (lo congela el Invierno Guardián al romperlo)
+
+
 func _turno_enemigo(f: Dictionary) -> void:
+	atacante_actual = f
 	if f.get("rendido", false):                     # de rodillas: espera la decisión de Kael
 		_fin_turno_enemigo(f)
 		return
@@ -1264,7 +1300,7 @@ func _turno_enemigo(f: Dictionary) -> void:
 		mult *= randf_range(0.9, 1.3)
 	# huir (en una «zona limpia», con el grupo muy por encima, los enemigos débiles huyen solos)
 	var limpia: bool = load("res://progreso.gd").zona_limpia(Engine.get_meta("zona", "llanura"))
-	if p != "jefe" and limpia and randf() < 0.7:
+	if p != "jefe" and p != "bosque" and limpia and randf() < 0.7:   # (los jefes no huyen)
 		await _huir(f)
 		_fin_turno_enemigo(f)
 		return
@@ -1276,6 +1312,14 @@ func _turno_enemigo(f: Dictionary) -> void:
 		await _turno_zarzalin(f, vivos, mult)
 		_fin_turno_enemigo(f)
 		return
+	if p == "bosque":                                # el Guardián del Bosque Olvidado (fase 3)
+		await _turno_guardian(f, vivos, mult)
+		_fin_turno_enemigo(f)
+		return
+	if PATRONES.has(p):                              # Grimfang, el Slime y el Gólem: su ataque anunciado (T-097)
+		if await _turno_patron(f, vivos, mult, PATRONES[p]):
+			_fin_turno_enemigo(f)
+			return
 	# curar a un aliado
 	if p == "apoyo":
 		var herido = null
@@ -1299,9 +1343,11 @@ func _turno_enemigo(f: Dictionary) -> void:
 		var mordisco: int = int(f["atk"] * 1.6 * mult) + randi_range(-2, 3)
 		registro.text = "¡%s devora a %s!" % [f["nombre"], presa["nombre"]]
 		f["devora"] = true                           # su mordisco suena al morder (sonido.gd, T-083)
+		f["absorbido"] = 0
 		await _animar_golpe(f, presa, mordisco, "")
 		f["devora"] = false
-		var cura: int = mini(int(mordisco * 0.6), f["hp_max"] - f["hp"])
+		# se cura con lo que de verdad mordió: lo que paró la coraza de Escarcha no cuenta (sin coraza, igual que siempre)
+		var cura: int = _cura_devorar(f, mordisco)
 		if cura > 0 and f["hp"] > 0 and not ultimo_esquivado:   # si la presa lo esquiva (pluma), no se cura
 			f["hp"] += cura
 			_numero_flotante(f, "+%d" % cura, C_CURA)
@@ -1311,6 +1357,7 @@ func _turno_enemigo(f: Dictionary) -> void:
 	# el jefe carga su golpe más fuerte (un turno de aviso); en la segunda fase, más a menudo
 	if p == "jefe" and not f.get("cargando", false) and randf() < (0.45 if f.get("fase2", false) else 0.35):
 		f["cargando"] = true
+		_marcar_aviso(f, true)                       # la señal de aviso sobre él, hasta que golpee (se lee sin partículas)
 		Sonido.efecto("carga_jefe")                 # sonido.gd
 		registro.text = "¡%s se prepara para un golpe devastador!" % f["nombre"]
 		_numero_flotante(f, "⚠ ¡Cuidado!", Color(1.0, 0.8, 0.2), 34)
@@ -1323,6 +1370,7 @@ func _turno_enemigo(f: Dictionary) -> void:
 	var objetivo = _cubre(_elegir_objetivo(p, vivos))   # (si Garon le cubre, va a Garon)
 	if f.get("cargando", false):                # descarga: golpe fuerte a todo el grupo
 		f["cargando"] = false
+		_marcar_aviso(f, false)
 		registro.text = "¡%s desata su golpe devastador!" % f["nombre"]
 		var fuerte := int(f["atk"] * 2.2 * mult)
 		f["descarga"] = true                         # Grimfang / Gorthor: golpe fuerte a dos manos
@@ -1345,6 +1393,192 @@ func _turno_enemigo(f: Dictionary) -> void:
 		registro.text = "%s ataca a %s" % [f["nombre"], objetivo["nombre"]]
 		await _animar_golpe(f, objetivo, dano, "")
 	_fin_turno_enemigo(f)
+
+
+# El Guardián del Bosque Olvidado (fase 3, combate_bosque.gd). Fase 1, «El despertar de las raíces»: latigazo de raíz
+# (a uno), esporas (a todos, flojas) y Raíces que aprisionan (aviso un turno antes, ×2 a uno; Defender lo reduce a la
+# mitad). Fase 2, «El corazón del bosque» (al 50 %, _cambio_fase): carga más a menudo el Juicio del bosque (×1,6 a
+# todos) y lleva la coraza de raíces (combate_bosque.dano_recibido). Con su modelo 3D, sus clips de carga y descarga.
+func _turno_guardian(f: Dictionary, vivos: Array, mult: float) -> void:
+	var fase2: bool = f.get("fase2", false)
+	var modelo = _p3d(f)
+	if f.get("cargando", false):
+		f["cargando"] = false
+		_marcar_aviso(f, false)
+		f["descarga"] = true
+		f["ataque_3d"] = "golpe_fuerte"              # su modelo 3D: las raíces que brotan (_anim_guardian)
+		if fase2:
+			registro.text = "¡%s desata el Juicio del bosque!" % f["nombre"]
+			var dano := int(f["atk"] * 1.6 * mult)
+			var principal: Dictionary = _cubre(_elegir_objetivo("bruto", vivos))
+			await _animar_golpe(f, principal, dano + randi_range(-2, 3), "")
+			for h0 in vivos:
+				if h0 == principal or h0["hp"] <= 0:
+					continue
+				var h: Dictionary = _cubre(h0, false)
+				if h["hp"] <= 0:
+					continue
+				var d2: int = maxi(1, dano - int(h.get("def", 0) / 2.0))
+				if h.get("defendiendo", false):
+					d2 = maxi(1, int(d2 * 0.5))
+				_golpe_visual(h, _quitar_pv(h, d2), "")
+			Sonido.golpe(true)
+			_temblor(14.0)
+		else:
+			var obj = f.get("objetivo_carga", null)
+			if obj == null or obj["hp"] <= 0:
+				obj = _elegir_objetivo("agresivo", vivos)
+			obj = _cubre(obj)
+			registro.text = "¡Las raíces aprisionan a %s!" % obj["nombre"]
+			await _animar_golpe(f, obj, int(f["atk"] * 2.0 * mult) + randi_range(-2, 3), "")
+			_temblor(10.0)
+		f["descarga"] = false
+		f.erase("objetivo_carga")
+		f.erase("ataque_3d")
+		return
+	var r := randf()
+	if r < (0.4 if fase2 else 0.3):                  # carga su golpe: un turno de aviso
+		var obj := _elegir_objetivo("agresivo", vivos)
+		f["cargando"] = true
+		f["objetivo_carga"] = obj
+		_marcar_aviso(f, true)
+		if modelo != null and modelo.has_method("cargar"):
+			modelo.cargar("golpe_fuerte")
+		Sonido.efecto("carga_jefe")                 # sonido.gd
+		if fase2:
+			registro.text = "%s hunde sus raíces en la tierra: ¡va a golpear a todos!" % f["nombre"]
+			_numero_flotante(f, "⚠ ¡Juicio del bosque!", Color(1.0, 0.8, 0.2), 32)
+		else:
+			registro.text = "%s tensa sus raíces: ¡va a por %s!" % [f["nombre"], obj["nombre"]]
+			_numero_flotante(f, "⚠ ¡Raíces!", Color(1.0, 0.8, 0.2), 32)
+		_particulas(_centro(f) + Vector2(0, 100), Color(0.55, 1.0, 0.45, 0.9), Color(0.2, 0.6, 0.1, 0.0), 30, 1.0,
+			Vector2(30, 100), 80.0, Vector2(0, -1), 20.0, Vector2(0, -50), 0.1)
+		_actualizar()
+		await get_tree().create_timer(1.0).timeout
+		return
+	if r < (0.65 if fase2 else 0.6):                 # esporas: magia del bosque, flojas, a todos
+		registro.text = "%s esparce esporas" % f["nombre"]
+		if modelo != null and modelo.has_method("ataque"):
+			modelo.ataque()                           # sacude sus ramas
+		_voz(f, "ataque")
+		var d := maxi(1, int(f["atk"] * 0.55 * mult))
+		for h in vivos:
+			if h["hp"] <= 0:
+				continue
+			var dh: int = d + randi_range(-1, 2)
+			if h.get("defendiendo", false):
+				dh = maxi(1, int(dh * 0.5))
+			_particulas(_centro(h) + Vector2(0, 40), Color(0.75, 0.9, 0.5, 0.8), Color(0.4, 0.6, 0.2, 0.0), 14, 0.9,
+				Vector2(20, 60), 60.0, Vector2(0, -1), 40.0, Vector2(0, 20), 0.12)
+			_golpe_visual(h, _quitar_pv(h, maxi(1, dh)), "")
+		_actualizar()
+		await get_tree().create_timer(0.9).timeout
+		return
+	var objetivo: Dictionary = _cubre(_elegir_objetivo("agresivo", vivos))   # latigazo de raíz
+	registro.text = "%s azota a %s con una raíz" % [f["nombre"], objetivo["nombre"]]
+	await _animar_golpe(f, objetivo, int(f["atk"] * mult) + randi_range(-2, 3), "")
+
+
+# Patrones de los enemigos de siempre (T-097, tanda del 09/11): como Zarzalín, cada uno avisa un turno antes de su
+# golpe fuerte y, tras darlo, recupera el aliento un turno. El aviso se lee de cuatro maneras: el cartel («Grimfang alza
+# el hacha: ¡va a por Kael!»), el texto sobre él, «⚠ Cargando» sobre su vida y una señal dibujada encima (sin
+# partículas: igual en el perfil bajo). Con las animaciones y los sonidos que ya tienen (el golpe a dos manos de
+# Grimfang, su voz de ataque...). Defender lo reduce a la mitad y la Guardia de Garon lo para.
+#   agresivo (Grimfang, también con el dibujo del Hollín y en el centinela): Hachazo a uno, ×1,6.
+#   cobarde (Slime): se encoge (recibe la mitad hasta su turno) y después rebota contra uno, ×1,3.
+#   bruto (Gólem de ámbar): Pisotón a todo el grupo, ×1,0.
+# Los jefes (Guardián, Gorthor) ya avisaban su golpe devastador; ahora también llevan la señal dibujada.
+const PATRONES := {
+	"agresivo": {"prob": 0.3, "a": "uno", "mult": 1.6, "prepara": "alza el hacha", "aviso": "⚠ ¡Hachazo!",
+		"golpe": "¡%s descarga el hachazo sobre %s!"},
+	"cobarde": {"prob": 0.3, "a": "uno", "mult": 1.3, "prepara": "se encoge", "aviso": "⚠ ¡Rebote!",
+		"golpe": "¡%s rebota contra %s!", "encoge": true},
+	"bruto": {"prob": 0.3, "a": "todos", "mult": 1.0, "prepara": "levanta los puños", "aviso": "⚠ ¡Pisotón!",
+		"golpe": "¡%s da un pisotón que alcanza a todos!"},
+}
+
+
+# Devuelve true si este turno ha sido del patrón (avisar, golpear o recuperarse); false, el turno de siempre.
+func _turno_patron(f: Dictionary, vivos: Array, mult: float, plan: Dictionary) -> bool:
+	if f.get("recupera", false):
+		f["recupera"] = false
+		registro.text = "%s recupera el aliento" % f["nombre"]
+		_numero_flotante(f, "Recupera", Color(0.8, 0.85, 0.75), 28)
+		await get_tree().create_timer(0.8).timeout
+		return true
+	if f.get("cargando", false):
+		f["cargando"] = false
+		f["recupera"] = true
+		_marcar_aviso(f, false)
+		if plan.get("encoge", false):                # deja de estar encogido
+			f["defendiendo"] = false
+			create_tween().tween_property(f["rig"], "scale", f.get("escala_rig", Vector2.ONE), 0.15)
+		var dano := int(f["atk"] * float(plan["mult"]) * mult)
+		f["descarga"] = true                         # Grimfang: el golpe a dos manos
+		if plan["a"] == "todos":
+			registro.text = plan["golpe"] % f["nombre"]
+			var principal: Dictionary = _cubre(_elegir_objetivo("bruto", vivos))
+			await _animar_golpe(f, principal, dano + randi_range(-2, 3), "")
+			for h0 in vivos:
+				if h0 == principal or h0["hp"] <= 0:
+					continue
+				var h: Dictionary = _cubre(h0, false)
+				if h["hp"] <= 0:
+					continue
+				var d2: int = maxi(1, dano - int(h.get("def", 0) / 2.0))
+				if h.get("defendiendo", false):
+					d2 = maxi(1, int(d2 * 0.5))
+				_golpe_visual(h, _quitar_pv(h, d2), "")
+			Sonido.golpe(true)
+			_temblor(10.0)
+		else:
+			var objetivo = f.get("objetivo_carga", null)
+			if objetivo == null or objetivo["hp"] <= 0:
+				objetivo = _elegir_objetivo("agresivo", vivos)
+			objetivo = _cubre(objetivo)
+			registro.text = plan["golpe"] % [f["nombre"], objetivo["nombre"]]
+			await _animar_golpe(f, objetivo, dano + randi_range(-2, 3), "")
+		f["descarga"] = false
+		f.erase("objetivo_carga")
+		return true
+	if randf() >= float(plan["prob"]):
+		return false
+	var obj := _elegir_objetivo("agresivo", vivos)
+	f["cargando"] = true
+	f["objetivo_carga"] = obj
+	_marcar_aviso(f, true)
+	if plan["a"] == "todos":
+		registro.text = "%s %s: ¡va a golpear a todos!" % [f["nombre"], plan["prepara"]]
+	else:
+		registro.text = "%s %s: ¡va a por %s!" % [f["nombre"], plan["prepara"], obj["nombre"]]
+	_numero_flotante(f, plan["aviso"], Color(1.0, 0.8, 0.2), 32)
+	_voz(f, "ataque")                                # su voz (sonido.gd), como al lanzarse
+	if plan.get("encoge", false):                    # el Slime se encoge: recibe la mitad hasta su turno
+		f["defendiendo"] = true
+		f["escala_rig"] = f["rig"].scale
+		create_tween().tween_property(f["rig"], "scale", f["rig"].scale * Vector2(1.12, 0.78), 0.2).set_trans(Tween.TRANS_BACK)
+	_actualizar()
+	await get_tree().create_timer(1.0).timeout
+	return true
+
+
+# La señal de aviso sobre un enemigo que prepara un golpe (vfx/sena_arte.gd «aviso»): se queda hasta que golpea.
+func _marcar_aviso(f: Dictionary, si: bool) -> void:
+	var antes = f.get("aviso_nodo", null)
+	if antes != null and is_instance_valid(antes):
+		antes.queue_free()
+	f.erase("aviso_nodo")
+	if si and f.has("rig"):
+		var s := _sena_arte("aviso", f, {"dur": 9999.0})
+		# encima de «⚠ Cargando» y de la vida, sin taparlos (la señal vive en «escena», escalada: se pasa a sus medidas)
+		s.position = (_ancla_vida(f) + Vector2(60, -40 - 24 * TAM_ESCENA) - escena.position) / TAM_ESCENA
+		f["aviso_nodo"] = s
+
+
+# Devorar (Gorthor, segunda fase): se cura el 60 % de lo que de verdad mordió. Lo que paró la coraza de Escarcha
+# («absorbido», que apunta el impacto de _animar_golpe) no cuenta; sin coraza, el 60 % del mordisco, como siempre.
+func _cura_devorar(f: Dictionary, mordisco: int) -> int:
+	return mini(maxi(0, int((mordisco - int(f.get("absorbido", 0))) * 0.6)), f["hp_max"] - f["hp"])
 
 
 func _elegir_objetivo(p: String, vivos: Array) -> Dictionary:
@@ -1381,6 +1615,7 @@ func _turno_zarzalin(f: Dictionary, vivos: Array, mult: float) -> void:
 		return
 	if f.get("cargando", false):
 		f["cargando"] = false
+		_marcar_aviso(f, false)
 		f["recupera"] = true
 		var objetivo = f.get("objetivo_carga", null)
 		if objetivo == null or objetivo["hp"] <= 0:
@@ -1395,6 +1630,7 @@ func _turno_zarzalin(f: Dictionary, vivos: Array, mult: float) -> void:
 	if randf() < ZARZALIN["prob_aviso"]:
 		var objetivo := _elegir_objetivo("agresivo", vivos)
 		f["cargando"] = true
+		_marcar_aviso(f, true)
 		f["objetivo_carga"] = objetivo
 		registro.text = "%s baja el hocico: ¡va a embestir a %s!" % [f["nombre"], objetivo["nombre"]]
 		_numero_flotante(f, "⚠ ¡Embestida!", Color(1.0, 0.8, 0.2), 32)
@@ -1412,6 +1648,7 @@ func _turno_zarzalin(f: Dictionary, vivos: Array, mult: float) -> void:
 
 
 func _fin_turno_enemigo(f: Dictionary) -> void:
+	atacante_actual = null
 	f["atb"] = 0.0
 	_actualizar()
 	await get_tree().create_timer(0.3).timeout
@@ -1424,6 +1661,7 @@ func _huir(f: Dictionary) -> void:
 	registro.text = "¡%s huye!" % f["nombre"]
 	Sonido.efecto("huida", {"db": -4.0})           # sonido.gd
 	f["huido"] = true
+	_marcar_aviso(f, false)
 	var rig: Node2D = f["rig"]
 	var pz = _p3d(f)
 	if pz != null and pz.has_method("avisar"):        # Zarzalín: se da la vuelta y se va galopando
@@ -1626,7 +1864,7 @@ func _mostrar_menu() -> void:
 
 # OBJETO y HUIR, iguales en el menú de todos (con su motivo si están apagadas, T-100).
 func _orden_objeto() -> Dictionary:
-	return {"texto": "OBJETO", "accion": _menu_pocion, "apagado": _cantidad_objeto("Poción") + _cantidad_objeto("Éter") <= 0,
+	return {"texto": "OBJETO", "accion": _menu_pocion, "apagado": OBJETOS_COMBATE.keys().all(func(n): return _cantidad_objeto(n) <= 0),
 		"motivo": "No quedan objetos"}
 
 
@@ -1802,13 +2040,15 @@ func _guardia(obj: Dictionary) -> void:
 		p.mirar(Vector3(signf(dx) * 0.9, 0.0, 0.45), 0.2)
 		if p.has_method("avanzar"):
 			p.avanzar(0.8)
-	_sonar("defensa")                                # una vez, al ponerse en guardia (sonido: pedido «guardia» propio)
+	_sonar("guardia")                                # una vez, al ponerse en guardia (sonido.gd, tanda 5)
 	_sena_arte("guardia", obj, {"desde": _centro(quien) - _centro(obj)})
 	_numero_flotante(obj, "Guardia", GUARDIA["color"], 30)
 	await get_tree().create_timer(0.7).timeout
 	if p != null and p.has_method("mirar_frente"):
 		p.mirar_frente(0.25)
 		p.reposo()
+		if p.has_method("cubrir"):                # y se queda plantado, cubriendo, hasta que acaba la Guardia
+			p.cubrir(Vector3.ZERO)                # (de cara a los enemigos, entre ellos y el aliado)
 	await get_tree().create_timer(0.2).timeout
 	_terminar_turno()
 
@@ -1821,18 +2061,35 @@ var cubiertos := 0                               # golpes que la Guardia ha llev
 func _cubre(obj: Dictionary, avisar := true) -> Dictionary:
 	var de := str(obj.get("guardia_de", ""))
 	if de == "" or obj["hp"] <= 0:
-		return obj
+		return _cubre_gemelas(obj, avisar)
 	for h in heroes:
 		if h["nombre"] == de and h["hp"] > 0 and not is_same(h, obj):
 			cubiertos += 1
 			if avisar:
 				_numero_flotante(h, "¡Cubre a %s!" % obj["nombre"], GUARDIA["color"], 30, Vector2(-40, -40))
 			return h
-	return obj
+	return _cubre_gemelas(obj, avisar)
+
+
+# C2, Gemelas de la Muralla: quien las lleva recibe el golpe de un aliado con poca vida (equipo_extra.gd quien_cubre).
+# Sin ellas, el objetivo de siempre.
+func _cubre_gemelas(obj: Dictionary, avisar := true) -> Dictionary:
+	if obj["hp"] <= 0:
+		return obj
+	var q: Dictionary = Extra.quien_cubre(obj, heroes)
+	if not is_same(q, obj):
+		cubiertos += 1
+		if avisar:
+			_numero_flotante(q, "¡Cubre a %s!" % obj["nombre"], GUARDIA["color"], 30, Vector2(-40, -40))
+	return q
 
 
 # Quita la guardia que daba «nombre» (al empezar su turno o al caer). Sin guardia, no hace nada.
 func _quitar_guardia(nombre: String) -> void:
+	for g in heroes:                                # el gesto de cubrir de Garon (garon_3d.gd), fuera
+		var pg = _p3d(g) if g["nombre"] == nombre else null
+		if pg != null and pg.has_method("fin_cubrir"):
+			pg.fin_cubrir()
 	for h in heroes:
 		if str(h.get("guardia_de", "")) == nombre:
 			h.erase("guardia_de")
@@ -1852,11 +2109,9 @@ func _menu_embuir() -> void:
 
 
 # Daño físico de un golpe de Garon (con Embuir, +20 %).
+# Las fórmulas están en combate_formulas.gd (10/11): aquí se conservan las funciones de siempre.
 func _dano_fisico(quien: Dictionary, mult := 1.0) -> int:
-	var d: float = quien["atk"] * quien.get("mult_fisico", 1.0) * mult
-	if quien.get("embuir", "") != "":
-		d *= 1.0 + EMBUIR["extra"]
-	return maxi(1, int(d) + randi_range(-2, 3))
+	return Formulas.dano_fisico(quien, mult, EMBUIR["extra"])
 
 
 func _embuir(el: String) -> void:
@@ -2093,6 +2348,8 @@ func _lanzar_arte(fam: String, nv: int, objs: Array) -> void:
 	var extra := int(quien.get("efectos", {}).get("apoyo_turnos", 0.0))   # Báculo del Peregrino (C2)
 	var hechos: Array = Artes.aplicar(fam, nv, objs, cola, ATB_MAX, extra)
 	_sonar(Artes.sonido(fam, nv))                    # una vez, al aplicarse (si sonido.gd ya lo tiene)
+	if fam == "Alba" and nv == 3:
+		_fogonazo(Color(1.0, 0.85, 0.45), 0.22, 1.0)  # Hora Dorada: un destello dorado
 	if fam == "Alba" and nv == 2:
 		_fogonazo(Color(0.55, 0.35, 0.8), 0.25, 1.2)   # Peso del Ocaso: la pantalla se tiñe de violeta
 	for i in hechos.size():
@@ -2101,7 +2358,7 @@ func _lanzar_arte(fam: String, nv: int, objs: Array) -> void:
 		_particulas(_centro(f) + Vector2(0, 60), Color(col, 1.0), Color(col, 0.0), 26, 1.0, Vector2(40, 120), 60.0,
 			Vector2(0, -1), 30.0, Vector2(0, -60), 0.07)
 		if x.has("atb"):
-			_sena_arte("ocaso" if x["atb"] < 0.0 or not f.get("hero", false) else "alba", f)
+			_sena_arte("ocaso" if x["atb"] < 0.0 or not f.get("hero", false) else "alba", f, {"color": menu.ORO} if nv == 3 else {})
 			_numero_flotante(f, "Retraso" if x["atb"] < 0.0 else "¡Antes!", col, 32)
 		elif x.has("pv"):
 			_revivir_visual(f)
@@ -2113,10 +2370,10 @@ func _lanzar_arte(fam: String, nv: int, objs: Array) -> void:
 			if i == 0:                                # lo que dura, una vez (es igual para todos; el HUD lo cuenta)
 				_numero_flotante(f, "Aliento: %d turnos" % int(x["aliento"]), Artes.COLOR_ESTADO["aliento"], 30)
 		elif x.has("barrera"):                       # M3: la coraza de hielo se forma alrededor (y el HUD dice cuánto aguanta)
-			_sena_arte("escarcha", f)
+			_sena_arte("escarcha", f, {"color": C_HIELO} if d.get("congela", false) else {})   # el Invierno, más azul
 			_numero_flotante(f, "❄ %d" % x["barrera"], col, 30)
 		elif x.has("brasa"):
-			_onda(_suelo_de(f), Color(col, 0.9), 20.0, 160.0, 0.7, 8.0)
+			_sena_arte("brasa", f)                   # M4: una llama queda sobre el aliado (y su icono en el HUD)
 			_numero_flotante(f, "Brasa", col, 30)
 	_actualizar()
 	_quitar_carga(circulo)
@@ -2158,10 +2415,10 @@ func _sena_arte(tipo: String, f: Dictionary, extra := {}) -> Node2D:
 	s.tipo = tipo
 	s.color = {"alba": Artes.COLOR["Alba"], "ocaso": COLOR_OCASO, "lumbre": Artes.COLOR["Lumbre"],
 		"aliento": Artes.COLOR_ESTADO["aliento"], "hoja": Artes.COLOR_ESTADO["aliento"], "escarcha": Artes.COLOR["Escarcha"],
-		"escarcha_golpe": Artes.COLOR["Escarcha"], "escarcha_rota": Artes.COLOR["Escarcha"],
-		"guardia": GUARDIA["color"]}.get(tipo, Color.WHITE)
+		"escarcha_golpe": Artes.COLOR["Escarcha"], "escarcha_rota": Artes.COLOR["Escarcha"], "aviso": Color(1.0, 0.72, 0.2),
+		"guardia": GUARDIA["color"], "brasa": Artes.COLOR_ESTADO["brasa"]}.get(tipo, Color.WHITE)
 	s.dur = {"alba": 1.5, "ocaso": 1.4, "lumbre": SENA_VIAJE_LUMBRE + 1.4, "aliento": 1.6, "hoja": 1.0, "escarcha": 1.5,
-		"escarcha_golpe": 0.45, "escarcha_rota": 0.9, "guardia": 1.4}.get(tipo, 1.4)
+		"escarcha_golpe": 0.45, "escarcha_rota": 0.9, "guardia": 1.4, "brasa": 1.4}.get(tipo, 1.4)
 	s.alto = clampf((_suelo_de(f).y - _centro(f).y) * 2.0, 120.0, 340.0)
 	for k in extra:
 		s.set(k, extra[k])
@@ -2200,10 +2457,53 @@ func _tic_estados_heroe(f: Dictionary) -> void:
 			create_tween().tween_callback(func(): _numero_flotante(f, "Aliento se acaba", Color(0.8, 0.85, 0.75), 24)).set_delay(0.5)
 
 
+# Equipo que actúa al empezar el combate (M3, M4 y C2; sin él, nada cambia): la Lágrima de ámbar pone una coraza, la
+# Brasa en frasco una Brasa. (La Hoja sin Nombre suma su ataque en grupo.gd estadisticas: también en el menú Grupo.)
+const BRASA_FRASCO := 0.25                           # con qué parte de sus PV se levanta quien lleva la Brasa en frasco
+
+
+func _equipo_al_empezar(h: Dictionary) -> void:
+	var ef: Dictionary = h.get("efectos", {})
+	if float(ef.get("barrera_inicio", 0.0)) > 0.0:
+		Artes.poner_barrera(h, float(ef["barrera_inicio"]))
+	if ef.get("brasa", false):
+		Artes.poner_brasa(h, BRASA_FRASCO)
+
+
+# Rama del Árbol Milenario (C2): al empezar, el aliado más herido recibe Aliento («aliento_inicio» turnos).
+func _aliento_al_empezar() -> void:
+	var turnos := 0
+	for h in heroes:
+		turnos = maxi(turnos, int(h.get("efectos", {}).get("aliento_inicio", 0.0)))
+	if turnos <= 0:
+		return
+	var vivos := heroes.filter(func(h): return h["hp"] > 0)
+	if vivos.is_empty():
+		return
+	vivos.sort_custom(func(a, b): return float(a["hp"]) / a["hp_max"] < float(b["hp"]) / b["hp_max"])
+	Artes.dar_aliento(vivos[0], turnos, float(Artes.datos("Lumbre", 2)["regen"]))
+
+
+# Última Brasa y Brasa en frasco (M4): el héroe que llega a 0 PV se levanta en ese instante, una vez. Su llama sube,
+# suena «brasa» y lo dice. (artes.gd al_llegar_a_cero ya le ha devuelto los PV.)
+func _brasa_levanta(f: Dictionary) -> void:
+	_sonar(Artes.SONIDO_ESTADO["brasa"])
+	_sena_arte("lumbre", f, {"viaje": 0.0, "color": Artes.COLOR_ESTADO["brasa"]})
+	_numero_flotante(f, "¡%s se levanta!" % f["nombre"], Artes.COLOR_ESTADO["brasa"], 32, Vector2(-40, -50))
+	menu.destacar_heroe(f, Artes.COLOR_ESTADO["brasa"])
+
+
 # Sonidos nuevos (artes y accesorios): solo si ya están en el catálogo de sonido.gd. Mientras no estén, silencio (y
 # sin el aviso de Sonido.efecto por un nombre que no conoce). La señal «sonido_pedido» sale siempre: con ella las pruebas
 # comprueban que cada uno se pide una sola vez y en su momento, también antes de que exista el archivo.
 signal sonido_pedido(nombre: String)
+signal voz_pedida(quien: String, evento: String)   # las voces de los héroes (tanda 5), para las pruebas
+
+
+# Una voz de héroe o enemigo (sonido.gd elige la familia por su nombre o su clave); la señal sale siempre.
+func _voz(quien: Dictionary, evento: String) -> void:
+	voz_pedida.emit(str(quien.get("nombre", "")), evento)
+	Sonido.voz(quien, evento)
 
 
 func _sonar(nombre: String) -> void:
@@ -2276,8 +2576,17 @@ func _gastar_pm(quien: Dictionary, coste: int) -> void:
 
 
 func _dano_magia(quien: Dictionary, d: Dictionary) -> int:
-	var base: float = d["dano"] * quien.get("magia_mult", 1.0) + quien.get("magia_extra", 0)
-	return maxi(1, int(base * quien.get("mult_magia", 1.0))) + randi_range(-3, 3)
+	return Formulas.dano_magia(quien, d)
+
+
+# ¿Completó Lya «La savia que recuerda»? (su magia hace más al Guardián del Bosque; se mira una vez por combate)
+var _lya_sabe_cache := -1
+
+
+func _lya_sabe() -> bool:
+	if _lya_sabe_cache < 0:
+		_lya_sabe_cache = 1 if load("res://investigacion.gd").estado(Bosque.INVESTIGACION_VENTAJA) == "completada" else 0
+	return _lya_sabe_cache == 1
 
 
 func _aplicar_todos() -> void:
@@ -2321,8 +2630,11 @@ func _menu_pocion() -> void:
 	for nombre in OBJETOS_COMBATE:
 		var o: Dictionary = OBJETOS_COMBATE[nombre]
 		var n := _cantidad_objeto(nombre)
+		if n <= 0 and o.has("desc"):                 # los de la alquimia (fase 3), solo si se tienen
+			continue
+		var desc: String = o["desc"] if o.has("desc") else "Recupera %d %s a un aliado." % [o["cura"], o["que"]]
 		var it := {"texto": nombre, "accion": _menu_objeto_aliado.bind(nombre), "apagado": n <= 0,
-			"derecha": "×%d" % n, "desc": "Recupera %d %s a un aliado." % [o["cura"], o["que"]] if n > 0 else "No te queda ninguno."}
+			"derecha": "×%d" % n, "desc": desc if n > 0 else "No te queda ninguno."}
 		if ResourceLoader.exists(o["imagen"]):
 			it["icono"] = load(o["imagen"])
 		items.append(it)
@@ -2337,7 +2649,22 @@ func _cantidad_objeto(nombre: String) -> int:
 
 # Se puede dar a cualquier aliado que siga en pie (si ya tiene todo lleno, no).
 func _menu_objeto_aliado(nombre: String) -> void:
-	var campo := "hp" if OBJETOS_COMBATE[nombre]["que"] == "PV" else "mp"
+	var que: String = OBJETOS_COMBATE[nombre]["que"]
+	if que == "ENFOQUE":                              # a un aliado en pie que no lo tenga ya
+		var conscientes := heroes.filter(func(h): return h["hp"] > 0 and int(h.get("enfoque_turnos", 0)) <= 0)
+		if conscientes.is_empty():
+			registro.text = "Nadie lo necesita ahora"
+			return
+		_pedir_objetivo(conscientes, func(f): _usar_objeto(nombre, f), _menu_pocion, "TOCA A UN ALIADO")
+		return
+	if que == "PURIFICA":                             # sobre el Guardián del Bosque
+		var guardianes := enemigos.filter(func(e): return e["hp"] > 0 and Bosque.es_guardian(e))
+		if guardianes.is_empty():
+			registro.text = "El elixir solo sirve contra el Guardián del Bosque."
+			return
+		_pedir_objetivo(guardianes, func(f): _usar_elixir(nombre, f), _menu_pocion, "TOCA AL GUARDIÁN")
+		return
+	var campo := "hp" if que == "PV" else "mp"
 	var validos := heroes.filter(func(h): return h["hp"] > 0 and h[campo] < h[campo + "_max"])
 	if validos.is_empty():
 		registro.text = "Nadie lo necesita ahora"
@@ -2351,6 +2678,20 @@ func _usar_objeto(nombre: String, quien: Dictionary) -> void:
 	_ocultar_menu()
 	if ResourceLoader.exists("res://inventario.gd"):
 		load("res://inventario.gd").gastar(nombre)
+	if OBJETOS_COMBATE[nombre]["que"] == "ENFOQUE":    # Esencia de enfoque (fase 3)
+		estado = "accion"
+		quien["enfoque_turnos"] = Bosque.TURNOS_ENFOQUE
+		quien["enfoque_nuevo"] = quien == actor        # el turno en que la toma no cuenta
+		registro.text = "%s toma %s: su magia se afina" % [quien["nombre"], nombre] if quien == actor \
+			else "%s da %s a %s: su magia se afina" % [actor["nombre"], nombre, quien["nombre"]]
+		Sonido.efecto("pocion", {"tono": 1.2})
+		_frasco(quien, OBJETOS_COMBATE[nombre])
+		_luz(OBJETOS_COMBATE[nombre]["color"], 1.8, 4.0, 1.4, _centro(quien))
+		_numero_flotante(quien, "¡Enfoque!", Color(0.8, 0.7, 1.0), 34)
+		_actualizar()
+		await get_tree().create_timer(0.9).timeout
+		_terminar_turno()
+		return
 	if nombre == "Poción":
 		pociones -= 1
 	estado = "accion"
@@ -2359,6 +2700,8 @@ func _usar_objeto(nombre: String, quien: Dictionary) -> void:
 	var cura: int = min(o["cura"], quien[campo + "_max"] - quien[campo])
 	quien[campo] += cura
 	Sonido.efecto("pocion", {"tono": 1.0 if campo == "hp" else 1.12})   # el frasco (sonido.gd)
+	if campo == "hp" and cura > 0:                     # su alivio, si la poción le cura PV (sonido.gd, tanda 5)
+		_voz(quien, "alivio")
 	if quien == actor:
 		registro.text = "%s usa %s (+%d %s)" % [quien["nombre"], nombre, cura, o["que"]]
 	else:
@@ -2377,6 +2720,52 @@ func _usar_objeto(nombre: String, quien: Dictionary) -> void:
 	await get_tree().create_timer(0.9).timeout
 	_restablecer_color(quien)
 	_terminar_turno()
+
+
+# Elixir de savia purificada (fase 3) sobre el Guardián: en su primera fase resbala (no se gasta y se vuelve al menú);
+# en la segunda lo purifica: desenlace A, guardado en «decisiones» (combate_bosque.gd), y el combate termina en victoria.
+func _usar_elixir(nombre: String, g: Dictionary) -> void:
+	var motivo := Bosque.elixir_sobre(g)
+	if motivo != "":
+		registro.text = _texto_bosque(motivo, "La savia resbala por la corteza: aún está demasiado fuerte.") \
+			if motivo == "elixir_fase1" else motivo
+		_mostrar_menu()
+		return
+	if _cantidad_objeto(nombre) <= 0:
+		return
+	_ocultar_menu()
+	estado = "accion"
+	load("res://inventario.gd").gastar(nombre)
+	Bosque.apuntar("purificado")
+	g["purificado"] = true
+	_marcar_aviso(g, false)
+	g["cargando"] = false
+	registro.text = _texto_bosque("purificacion", "La savia clara empapa sus raíces. El Guardián recuerda.")
+	Sonido.efecto("pocion")
+	_fogonazo(Color(0.75, 1.0, 0.6), 0.5, 1.2)
+	_luz(Color(0.6, 1.0, 0.5), 2.4, 6.0, 2.0, _centro(g))
+	_particulas(_centro(g) + Vector2(0, 120), Color(0.85, 1.0, 0.6, 1.0), Color(0.3, 0.9, 0.3, 0.0), 60, 2.0,
+		Vector2(40, 140), 80.0, Vector2(0, -1), 40.0, Vector2(0, -40), 0.06)
+	_onda(_suelo_de(g), Color(0.6, 1.0, 0.5, 0.9), 30.0, 260.0, 1.2, 10.0)
+	var rig: Node2D = g["rig"]
+	var t := create_tween()
+	t.tween_property(rig, "modulate", Color(0.8, 1.3, 0.8, 0.0), 2.0)
+	await t.finished
+	g["hp"] = 0
+	if g.has("sombra"):
+		g["sombra"].visible = false
+	g["lbl_hp"].visible = false
+	_actualizar()
+	await get_tree().create_timer(0.4).timeout
+	if not _comprobar_fin():
+		estado = "esperando"
+
+
+# Textos cortos de la aventura del bosque (dialogos/notas/bosque.gd, de narrativa); si falta, el de aquí.
+func _texto_bosque(clave: String, defecto: String) -> String:
+	if ResourceLoader.exists("res://dialogos/notas/bosque.gd"):
+		return str(load("res://dialogos/notas/bosque.gd").TEXTOS.get(clave, defecto))
+	return defecto
 
 
 # El frasco aparece sobre el aliado, se inclina, brilla y se desvanece.
@@ -2449,6 +2838,13 @@ func _terminar_turno(carga := true) -> void:
 	var pm_extra: int = Extra.pm_al_terminar(actor)            # Gota de la cascada alta (sin ella, 0)
 	if pm_extra > 0:
 		_numero_flotante(actor, "+%d PM" % pm_extra, Color(0.55, 1.0, 0.85), 30)
+	if actor.get("enfoque_turnos", 0) > 0:        # Esencia de enfoque (fase 3): 3 turnos, sin contar el que la toma
+		if actor.get("enfoque_nuevo", false):
+			actor["enfoque_nuevo"] = false
+		else:
+			actor["enfoque_turnos"] -= 1
+			if actor["enfoque_turnos"] <= 0:
+				_numero_flotante(actor, "El enfoque se apaga", Color(0.8, 0.75, 0.95), 24)
 	if actor.get("embuir_turnos", 0) > 0:         # Embuir dura 3 turnos de Garon (sin contar el que lo pone)
 		if actor.get("embuir_nuevo", false):
 			actor["embuir_nuevo"] = false
@@ -2480,9 +2876,13 @@ func _quitar_pv(f: Dictionary, d: int) -> int:
 		_coraza_golpeada(f, r)
 		d = int(r["resto"])
 	f["hp"] = maxi(0, f["hp"] - d)
-	if f.get("hero", false) and f["hp"] <= 0:           # la Guardia se acaba si cae Garon o el aliado que cubre
+	if f.get("hero", false) and f["hp"] <= 0 and Artes.al_llegar_a_cero(f):   # M4: con Brasa se levanta (una vez)
+		_brasa_levanta(f)
+	elif f.get("hero", false) and f["hp"] <= 0:         # la Guardia se acaba si cae Garon o el aliado que cubre
 		_quitar_guardia(f["nombre"])
 		f.erase("guardia_de")
+	if not f.get("hero", false) and f["hp"] <= 0 and f.has("aviso_nodo"):
+		_marcar_aviso(f, false)                       # cae con el golpe preparado: su señal de aviso, fuera
 	if f.get("fases", false) and not f.get("fase2", false) and f["hp"] > 0 and f["hp"] <= f["hp_max"] * 0.5:
 		f["fase2"] = true
 		f["fase2_pendiente"] = true
@@ -2501,6 +2901,8 @@ func _coraza_golpeada(f: Dictionary, r: Dictionary) -> void:
 	if r.get("rota", false):
 		_sonar(Artes.SONIDO_ESTADO["rota"])
 		_sena_arte("escarcha_rota", f)
+		if r.get("congela", false) and atacante_actual != null and atacante_actual["hp"] > 0:
+			_congelar(atacante_actual)              # Invierno Guardián (M4): quien la rompe queda Congelado
 		_numero_flotante(f, "¡Coraza rota!", C_HIELO, 28, Vector2(-40, -50))
 	else:
 		_sonar(Artes.SONIDO_ESTADO["absorbe"])
@@ -2534,6 +2936,9 @@ func _presentar(f: Dictionary) -> void:
 # Segunda fase (al 50 %): destello rojo, el fondo se tiñe, cambia la música, brasas alrededor del jefe,
 # y va más rápido y pega más fuerte.
 func _cambio_fase(f: Dictionary) -> void:
+	if Bosque.es_guardian(f):
+		await _cambio_fase_bosque(f)
+		return
 	estado = "accion"
 	registro.text = "¡%s se enfurece!" % f["nombre"]
 	Sonido.efecto("fase2")                         # sonido.gd
@@ -2553,6 +2958,36 @@ func _cambio_fase(f: Dictionary) -> void:
 	f["brasas"] = brasas
 	f["vel"] *= 1.4
 	f["atk"] = int(f["atk"] * 1.15)
+	_musica_fase2()
+	await get_tree().create_timer(1.6).timeout
+	if estado == "accion":
+		estado = "esperando"
+
+
+# Segunda fase del Guardián del Bosque (fase 3): «El corazón del bosque». Destello verde, hojas, el escenario se tiñe de
+# verde y aparece la coraza de raíces (golpes físicos a la mitad, débil al fuego: combate_bosque.gd). Más rápido.
+func _cambio_fase_bosque(f: Dictionary) -> void:
+	estado = "accion"
+	registro.text = _texto_bosque("fase2", "¡El corazón del bosque despierta!")
+	Sonido.efecto("fase2")
+	_fogonazo(Color(0.55, 1.0, 0.45), 0.55, 0.8)
+	_temblor(12.0)
+	menu.vibrar(60)
+	var modelo = _p3d(f)
+	if modelo != null and modelo.has_method("fase2"):
+		modelo.fase2()
+	_numero_flotante(f, "¡CORAZA DE RAÍCES!", Color("9BE36B"), 40)
+	_numero_flotante(f, "Débil al fuego", Color(1.0, 0.6, 0.3), 26, Vector2(0, 60))
+	var verde := Color(0.78, 1.0, 0.78)
+	if fondo_nodo != null:
+		create_tween().tween_property(fondo_nodo, "modulate", verde, 1.2)
+	create_tween().tween_property(escena, "modulate", tono_escena * Color(0.85, 1.0, 0.85), 1.2)
+	var img = f["partes"].get("imagen", f["partes"].get("sprite"))
+	if img != null:
+		create_tween().tween_property(img, "modulate", Color(0.5, 0.85, 0.45), 0.8)
+	f["brasas"] = _particulas(_centro(f) + Vector2(0, 80), Color(0.6, 1.0, 0.4, 0.9), Color(0.2, 0.6, 0.1, 0.0), 24, 1.8,
+		Vector2(20, 70), 60.0, Vector2(0, -1), 40.0, Vector2(0, -30), 0.06, true)
+	f["vel"] *= 1.3
 	_musica_fase2()
 	await get_tree().create_timer(1.6).timeout
 	if estado == "accion":
@@ -2799,17 +3234,25 @@ func _teatro_erebo(obj: Dictionary, es_jefe: bool, al_resultado: Callable) -> vo
 		await get_tree().process_frame
 	create_tween().tween_property(pantalla, "modulate:a", 1.0, 0.4)
 
-	var inv = load("res://invocacion_erebo.gd").new()
+	# T-101: la invocación nueva si se ha elegido en Ajustes (invocacion_erebo_nueva.gd); si no, la de siempre.
+	var nueva: bool = ResourceLoader.exists("res://invocacion_erebo_nueva.gd") and load("res://invocacion_erebo_nueva.gd").elegida()
+	var inv = load("res://invocacion_erebo_nueva.gd" if nueva else "res://invocacion_erebo.gd").new()
 	mundo.add_child(inv)
 	inv.ajustes.calidad = "movil" if movil else "alta"
 	inv.evento.connect(_evento_erebo.bind(titulo))
 	var ctx := {"invocador": lya, "objetivo": doble, "es_jefe": es_jefe, "camara": cam,
 		"al_resultado": _resultado_erebo.bind(doble, al_resultado)}
+	if nueva:                                      # Kael mira (y reacciona) si está en pie
+		ctx["kael"] = heroes.any(func(h): return h["nombre"] == "Kael" and h["hp"] > 0)
 	for a in OS.get_cmdline_user_args():           # pruebas: -- erebo=exito / erebo=fallo
 		if a.begins_with("erebo="):
 			ctx["forzar"] = a.substr(6)
 	inv_erebo = inv
-	await inv.lanzar(ctx)
+	# Se espera a «terminada» (la emiten las dos: al acabar y al saltar, una vez) y no a que acabe lanzar(): al saltar en
+	# medio de una espera (el aplastamiento del orbe, Érebo surgiendo), limpiar() mata el tween que la coreografía
+	# esperaba y esa corrutina ya no vuelve; el combate no debe quedarse esperándola (prueba_erebo_saltar).
+	inv.lanzar(ctx)
+	await inv.terminada
 	inv_erebo = null
 	await get_tree().create_timer(0.3).timeout
 	# sale: fundido a negro y de vuelta al combate
@@ -2836,6 +3279,8 @@ func _evento_erebo(n: String, titulo: Label) -> void:
 # Al romperse el orbe (o al saltar): el resultado al enemigo de verdad y la reacción de su doble.
 func _resultado_erebo(r: Dictionary, doble: Node3D, al_resultado: Callable) -> void:
 	al_resultado.call(r)
+	if not is_instance_valid(doble) or ("anim" in doble and doble.get("anim") == null):
+		return                                       # el doble aún no tiene su modelo (se ha saltado muy pronto)
 	if r.get("muerte", false) and doble.has_method("morir"):
 		doble.morir()
 	elif doble.has_method("herida"):
@@ -2909,6 +3354,8 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 		dano = max(1, dano - int(objetivo.get("def", 0) / 2.0))
 	if objetivo.get("defendiendo", false):
 		dano = max(1, int(dano * 0.5))
+	if not objetivo["hero"]:                          # fase 3: el Guardián del Bosque y la Esencia de enfoque
+		dano = Bosque.dano_recibido(dano, magia, origen, objetivo, _lya_sabe())
 	var congela: bool = magia == "" and origen["hero"] and _lleva_frostfang(origen) and randf() < PROB_CONGELAR
 	# Pluma de arpía: un héroe esquiva un golpe físico (solo tira el dado con la pluma puesta: sin ella, nada cambia)
 	var esquiva: bool = magia == "" and objetivo["hero"] and Extra.esquiva(objetivo.get("efectos", {}))
@@ -2926,6 +3373,7 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 			if origen.get("devora", false):
 				Sonido.voz(origen, "devorar")              # el mordisco de Gorthor
 		var real: int = _quitar_pv(objetivo, dano)     # lo que llega a los PV (con coraza de Escarcha, menos; M3)
+		origen["absorbido"] = dano - real              # lo que paró la coraza (el mordisco de Gorthor no se cura con eso)
 		if magia == "":
 			Sonido.recibe(objetivo)                    # la voz del enemigo golpeado: herido o caída (sonido.gd)
 		if embuido:
@@ -2934,12 +3382,23 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 			_golpe_visual(objetivo, real, magia, critico)
 		if congela and objetivo["hp"] > 0:
 			_congelar(objetivo)
+		if magia == "" and origen.get("hero", false):  # C2, Fauces de Gorthor: se cura parte de lo que hace (sin ellas, 0)
+			var robo: int = Extra.robo_vida(origen, real)
+			if robo > 0:
+				_numero_flotante(origen, "+%d" % robo, C_CURA, 34)
+		if magia == "" and objetivo.get("hero", false) and not origen.get("hero", false) and origen["hp"] > 0:
+			var rep: int = Extra.replica(objetivo, objetivo.get("defendiendo", false))   # C2, Guardiana de Ámbar
+			if rep > 0:
+				_numero_flotante(objetivo, "Réplica", Color("FFC46A"), 28, Vector2(-30, -40))
+				_golpe_visual(origen, _quitar_pv(origen, rep), "")
 	if magia != "" and _p3d(origen) != null:
 		await _anim_magia_3d(origen, objetivo, magia, impacto)
 	elif magia != "":
 		await _anim_magia(origen, objetivo, magia, impacto)
 	elif _p3d(origen) != null and _p3d(origen).has_method("avisar"):           # Zarzalín (T-097)
 		await _anim_zarzalin(origen, objetivo, impacto, str(origen.get("ataque_3d", "colmillo_lateral")))
+	elif _p3d(origen) != null and _p3d(origen).has_method("despertar"):        # Guardián del Bosque (fase 3): desde su sitio
+		await _anim_guardian(origen, impacto, str(origen.get("ataque_3d", "ataque")))
 	elif _p3d(origen) != null and _p3d(origen).has_method("atacar_hacha"):     # Grimfang y Gorthor
 		# golpe fuerte a dos manos con rabia o al descargar el golpe cargado; si no, el doble tajo
 		var fuerte: bool = origen.get("furia", false) or origen.get("descarga", false)
@@ -3065,6 +3524,7 @@ func _anim_fisico_3d(o: Dictionary, obj: Dictionary, impacto: Callable) -> void:
 	t1.tween_property(rig, "position", base + Vector2(dx, dy), 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	await t1.finished
 	maga.preparar_golpe()
+	_voz(o, "ataque")                                # su esfuerzo al golpear (sonido.gd, tanda 5)
 	await get_tree().create_timer(0.28).timeout
 	maga.golpear()
 	await get_tree().create_timer(0.1).timeout
@@ -3101,6 +3561,7 @@ func _anim_salto_3d(o: Dictionary, obj: Dictionary, impacto: Callable) -> void:
 	k.ataque_salto(_impacto_fuerte.bind(impacto))
 	await get_tree().create_timer(SALTO_T[0]).timeout
 	Sonido.efecto("salto")                         # el sable sube con el salto (sonido.gd)
+	_voz(o, "ataque")                              # su esfuerzo al saltar (sonido.gd, tanda 5)
 	o["suelo_salto"] = despegue.y                  # la sombra se queda en el suelo mientras salta
 	var t2 := create_tween()
 	t2.tween_property(rig, "position", despegue + Vector2(-40, -130), SALTO_T[1]).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
@@ -3197,6 +3658,24 @@ func _sonidos_bestia(e: Dictionary, p) -> void:
 # (propuesta de animaciones: los pies a centro − 30 − 0,632·px_m − alcance·px_m, y a la altura de los pies del objetivo),
 # y atacar(ataque, al_golpear) llama al golpe UNA vez en su ancla. Durante el clip el rig no se mueve (el clip lleva el
 # avance). Vuelve galopando y queda en reposo. Desde la carga (avisar), la embestida entra sin repetir la preparación.
+# El Guardián del Bosque (fase 3; enemigos/guardian_bosque/guardian_bosque_3d.gd, de animaciones) ataca desde su sitio: su
+# rama llega 2,27 m por delante y las raíces del golpe fuerte brotan a 1,7 m. El impacto, una vez, en el momento del clip.
+func _anim_guardian(o: Dictionary, impacto: Callable, ataque: String) -> void:
+	var p = _p3d(o)
+	o["animando"] = true
+	var golpes := [0]
+	var al_golpear := func():
+		golpes[0] += 1
+		if golpes[0] == 1:
+			impacto.call()
+			if ataque == "golpe_fuerte":
+				_temblor(9.0)
+	await p.atacar(ataque, al_golpear)
+	if golpes[0] == 0:
+		al_golpear.call()
+	o["animando"] = false
+
+
 func _anim_zarzalin(o: Dictionary, obj: Dictionary, impacto: Callable, ataque: String) -> void:
 	var p = _p3d(o)
 	var rig: Node2D = o["rig"]
@@ -3455,7 +3934,7 @@ func _golpe_visual(objetivo: Dictionary, dano: int, magia: String, critico := fa
 				objetivo["quemadura"] = RONDAS_QUEMADURA
 				_encender_llama(objetivo)
 		_:
-			if critico:
+			if critico and dano > 0:
 				_destello(centro, Color(1.0, 0.85, 0.4), 1.8)
 				_numero_flotante(objetivo, "¡%d!" % dano, C_DANO, 58)
 				registro.text = "¡Golpe crítico!"
@@ -3466,9 +3945,9 @@ func _golpe_visual(objetivo: Dictionary, dano: int, magia: String, critico := fa
 				_temblor(3.0)
 			else:                                      # todo lo paró la coraza de Escarcha (M3): ya lo dice «❄»
 				_temblor(2.0)
-			rig.modulate = Color(1.6, 0.3, 0.3)
+			rig.modulate = Color(1.6, 0.3, 0.3) if dano > 0 else Color(0.8, 0.95, 1.45)   # parado entero: frío, no rojo
 	_actualizar()
-	if objetivo["hp"] > 0 and not objetivo["animando"]:
+	if objetivo["hp"] > 0 and not objetivo["animando"] and dano > 0:   # parado entero por la coraza: sin dolor
 		_cara(objetivo, "dolor")
 		_reproducir(objetivo, "hurt")
 		if MODELOS[objetivo["modelo"]].has("anims"):     # pose de herido un momento
@@ -3812,6 +4291,8 @@ func _magia_grupal(o: Dictionary, objs: Array, magia: String, nivel: int, dano: 
 	var potencia := 0.7 if nivel == 2 else 1.0001     # distinto de 1: sin destello ni temblor por cada enemigo
 	var impacto_en := func(obj: Dictionary) -> void:
 		var d := dano + randi_range(-4, 4)
+		if not obj.get("hero", false):               # fase 3: el Guardián del Bosque y la Esencia de enfoque
+			d = Bosque.dano_recibido(d, magia, o, obj, _lya_sabe())
 		_quitar_pv(obj, d)
 		_golpe_visual(obj, d, magia, false, potencia)
 	if nivel == 2:
@@ -4229,6 +4710,9 @@ func _comprobar_fin() -> bool:
 		estado = "fin"
 		_ocultar_menu()
 		Sonido.efecto("victoria" if ganan else "derrota")   # sonido.gd
+		if ganan:                                      # el gesto de uno de los que siguen en pie (tanda 5)
+			voz_pedida.emit("", "victoria")
+			Sonido.victoria_heroes(heroes)
 		registro.text = "¡Victoria!" if ganan else "Derrota..."
 		if ganan:
 			for h in heroes:
@@ -4242,12 +4726,50 @@ func _comprobar_fin() -> bool:
 	return false
 
 
+# Recompensas especiales de los combates fijos (C2 y M3; decisión del coordinador del 09/11): la primera victoria las da,
+# una vez. Contra Gorthor, las Fauces, se le perdone o no.
+const RECOMPENSA_FIJO := {"garganta_gorthor": "fauces_gorthor", "garganta_nido": "lagrima_ambar"}
+
+
+# Premio del Guardián del Bosque, una sola vez (el combate fijo queda ganado). Si no se purificó, es que se derrotó.
+#   purificado: el Brote del Guardián (accesorio, magia natural) y dos Savias claras.
+#   derrotado: el Corazón de roble (material, se vende caro) y la Corteza del Guardián (accesorio, coraza al empezar).
+func _premio_bosque() -> String:
+	if Bosque.desenlace() == "":
+		Bosque.apuntar("derrotado")
+	var P = load("res://progreso.gd")
+	P.poner_hito("bq_resuelto")
+	P.poner_hito("bq_" + Bosque.desenlace())        # bq_purificado o bq_derrotado: Oakhaven reacciona (ciudades/oakhaven.gd)
+	var Inv = load("res://inventario.gd")
+	var textos: Array = []
+	if Bosque.desenlace() == "purificado":
+		textos.append(Extra.conseguir("brote_guardian"))
+		Inv.agregar_objeto("Savia clara", 2)
+		textos.append("+2 Savia clara")
+	else:
+		Inv.agregar_objeto("Corazón de roble", 1)
+		textos.append("+1 Corazón de roble")
+		textos.append(Extra.conseguir("corteza_guardian"))
+	return "  ".join(textos.filter(func(t): return t != ""))
+
+
 func _fin_combate(ganan: bool) -> void:
+	var aviso := ""
 	if ganan and combate_fijo != "":
 		var g: Dictionary = Engine.get_meta("combates_ganados", {})
+		if not g.get(combate_fijo, false) and combate_fijo == Bosque.COMBATE:   # el Guardián del Bosque (fase 3)
+			aviso = _premio_bosque()
+		elif not g.get(combate_fijo, false) and RECOMPENSA_FIJO.has(combate_fijo) and Extra.disponible(RECOMPENSA_FIJO[combate_fijo]):
+			aviso = Extra.conseguir(RECOMPENSA_FIJO[combate_fijo])
 		g[combate_fijo] = true
 		Engine.set_meta("combates_ganados", g)
+	if ganan:                                      # las investigaciones de Lya en curso avanzan (fase 3)
+		load("res://investigacion.gd").avanzar_en_curso()
 	await _repartir_exp(ganan)
+	if aviso != "":
+		registro.text = aviso
+		Sonido.efecto("ui_equipar_arma" if aviso.contains("Fauces") else "ui_equipar")
+		await get_tree().create_timer(1.2).timeout
 	_volver_al_mapa()
 
 
@@ -4257,13 +4779,9 @@ func _repartir_exp(ganan: bool) -> void:
 	if not ResourceLoader.exists("res://grupo.gd"):
 		return
 	var gr = load("res://grupo.gd")
-	var total := 0
-	var oro := 0
-	for e in enemigos:
-		if e.get("huido", false):                 # los que huyen no dan nada
-			continue
-		total += int(e.get("exp", 0))
-		oro += int(e.get("oro", 0))
+	var dan: Dictionary = Recompensas.de_enemigos(enemigos)   # los que huyen no dan nada
+	var total: int = dan["exp"]
+	var oro: int = dan["oro"]
 	for h in heroes:
 		if gr.datos().has(h["nombre"]):
 			gr.guardar_vida(h["nombre"], h["hp"], h["mp"])
@@ -4292,10 +4810,11 @@ func _repartir_exp(ganan: bool) -> void:
 	for h in heroes:
 		if not gr.datos().has(h["nombre"]):
 			continue
-		var cantidad := int(round(total * Progreso.mult_exp(zona, tipo, gr.datos()[h["nombre"]]["nivel"])))
+		var mult_h: float = Progreso.mult_exp(zona, tipo, gr.datos()[h["nombre"]]["nivel"])
 		if h["hp"] <= 0:
-			gr.ganar_exp(h["nombre"], cantidad / 2)
+			gr.ganar_exp(h["nombre"], Recompensas.exp_de_heroe(total, mult_h, true))
 			continue
+		var cantidad: int = Recompensas.exp_de_heroe(total, mult_h, false)
 		var subidos: int = gr.ganar_exp(h["nombre"], cantidad)
 		if subidos > 0:
 			await get_tree().create_timer(1.0).timeout

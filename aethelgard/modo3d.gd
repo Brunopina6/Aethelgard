@@ -16,11 +16,12 @@ extends RefCounted
 
 const PASTOS_VERDES := 10                     # índice del lugar en el mapa (mapa.gd, LUGAR_PASTOS)
 const GARGANTA := 2                           # índice del lugar en el mapa (mapa.gd, INDICE_GARGANTA)
+const OAKHAVEN := 0                           # índice del lugar en el mapa (ciudades/oakhaven.gd, INDICE; T-103)
 const REGIONES := {PASTOS_VERDES: "res://zonas3d/pastos_verdes_3d.tscn",
-	GARGANTA: "res://zonas3d/garganta_3d.tscn"}
-const EN_PRUEBAS := {GARGANTA: "garganta3d"}  # región → argumento que hace falta para usarla
+	GARGANTA: "res://zonas3d/garganta_3d.tscn", OAKHAVEN: "res://zonas3d/oakhaven_3d.tscn"}
+const EN_PRUEBAS := {GARGANTA: "garganta3d", OAKHAVEN: "oakhaven3d"}  # región → argumento que hace falta para usarla
 # Escenas 2D que tienen versión 3D: una partida guardada dentro de la 2D vuelve a la 3D si esta se usa (escena_equivalente).
-const EQUIVALENTES := {"res://garganta.tscn": GARGANTA}
+const EQUIVALENTES := {"res://garganta.tscn": GARGANTA, "res://ciudad_oakhaven.tscn": OAKHAVEN}
 
 
 static func activo() -> bool:

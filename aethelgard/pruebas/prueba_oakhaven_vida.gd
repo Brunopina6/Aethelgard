@@ -115,7 +115,8 @@ func _datos() -> void:
 			_fallo("1: %s: %d letras: «%s»" % [e[0], t.length(), t])
 		if f.has("si") and Oak.error_condicion(f["si"]) != "":
 			_fallo("1: %s: %s" % [e[0], Oak.error_condicion(f["si"])])
-		if not f.get("franja", "anochecer") in ["anochecer", "manana"]:
+		var fr = f.get("franja", "tarde")
+		if not (fr if fr is Array else [fr]).all(func(x): return x in Vida.FRANJAS):
 			_fallo("1: %s: franja desconocida «%s»" % [e[0], f["franja"]])
 		var p := _plano(t)
 		for x in PROHIBIDO:
@@ -162,7 +163,8 @@ func _que_toca() -> void:
 	if Vida.frase("albar", "anochecer", dichos) == "":
 		_fallo("2: al acabarse, Albar se queda callado en vez de volver a empezar")
 	for f in Vida.frases_de("voz_taberna"):
-		if f.get("franja", "") == "manana" and Vida.frase("voz_taberna", "anochecer", {}) == f["texto"]:
+		if Vida._toca_franja(f, "manana") and not Vida._toca_franja(f, "anochecer") \
+				and Vida.frase("voz_taberna", "anochecer", {}) == f["texto"]:
 			_fallo("2: por la tarde sale una frase de la mañana")
 
 
@@ -195,7 +197,10 @@ func _en_la_ciudad() -> void:
 	var g: Node2D = z.voz_globo
 	var texto: String = g.get_child(0).text
 	print("VOZ %s: %s" % [g.get_meta("quien"), texto])
-	if g.get_meta("quien") != "posadera" or not Vida.VECINOS["posadera"].any(func(f): return f["texto"] == texto):
+	var suyas: Array = Vida.VECINOS["posadera"].map(func(f): return f["texto"])
+	for fr in Vida.FRANJAS:                          # (y las de su rutina: oakhaven_vida.gd, RUTINAS)
+		suyas.append(Vida.rutina("posadera", fr).get("frase", ""))
+	if g.get_meta("quien") != "posadera" or not texto in suyas:
 		_fallo("3: junto a la posadera habla %s («%s»)" % [g.get_meta("quien"), texto])
 	if g.global_position.y > posadera[0].position.y - 60.0 or absf(g.global_position.x - posadera[0].position.x) > 2.0:
 		_fallo("3: la frase no sale sobre la cabeza de la posadera (%s / %s)" % [g.global_position, posadera[0].position])

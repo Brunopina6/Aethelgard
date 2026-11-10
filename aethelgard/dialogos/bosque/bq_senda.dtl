@@ -1,0 +1,10 @@
+join kael (vivo_pv) left
+join lya (vivo_pv) right
+garon: Atrás.
+update kael [extra_data="ligero"]
+kael: Siempre dice eso justo antes de lucirse.
+garon: Abierto. Hay una senda.
+update lya [extra_data="duda"]
+lya: Losas de peregrino. Esta senda llevaba a algún sitio importante.
+leave kael
+leave lya

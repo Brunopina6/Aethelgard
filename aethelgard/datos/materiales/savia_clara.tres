@@ -1,0 +1,12 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/material.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "savia_clara"
+clave_inventario = "Savia clara"
+nombre = "Savia clara"
+venta = 9
+desc = "Savia de un árbol sano, limpia como el agua."
+de_enemigos = PackedStringArray()

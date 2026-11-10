@@ -37,6 +37,18 @@ const ARMAR_SALIDA := 2.5                # una salida solo funciona después de 
 # Bancos del prototipo que no sirven en la región (experimentos de árboles y del perfil medio). PRUEBA y TOPE se
 # quedan: miden la región en el móvil igual que se midió el prototipo.
 const BOTONES_BANCO := ["DIAG", "ARB"]
+# Botón «MEDIO» (09/11, medido en el Redmi): el perfil medio daba 23-25 FPS con su tope de 30. Candidatos para que
+# llegue a 30 estables, todos con tope (como se jugará); el alto no se toca.
+const BANCO_MEDIO := [["medio", 20.0, false, {}, "medio actual", true],
+	["medio", 20.0, false, {"escala_3d": 0.8}, "medio esc0,8", true],
+	["medio", 20.0, false, {"sombra_tramos": 1, "dist_sombras": 24.0}, "medio sombra1", true],
+	["medio", 20.0, false, {"hierba": 3000, "flores": 350, "dist_hierba": 34.0}, "medio hierba-", true],
+	["medio", 20.0, false, {"relieve": false}, "medio-relieve", true],
+	["medio", 20.0, false, {"escala_3d": 0.8, "sombra_tramos": 1, "dist_sombras": 24.0}, "cand A", true],
+	["medio", 20.0, false, {"escala_3d": 0.8, "sombra_tramos": 1, "dist_sombras": 24.0, "hierba": 3000, "flores": 350,
+		"dist_hierba": 34.0}, "cand B", true],
+	["medio", 34.0, false, {"escala_3d": 0.8, "sombra_tramos": 1, "dist_sombras": 24.0, "hierba": 3000, "flores": 350,
+		"dist_hierba": 34.0}, "cand B", true]]
 # Botón «GRUPO»: lo que cuestan Lya y Garon en cada perfil, sin tope de FPS (sin grupo y con grupo, a 20 m), y el
 # perfil bajo con el grupo y su tope de 30 FPS, como se jugará.
 const BANCO_GRUPO := [["bajo", 20.0, false, {"grupo": false}, "bajo sin grupo"], ["bajo", 20.0, false, {}, "bajo con grupo"],
@@ -81,6 +93,7 @@ var fundido: ColorRect
 var aviso: Label
 var boton_accion: Button
 var tilo: Node3D
+var bosque = null                         # zonas3d/bosque_pastos.gd: «El bosque que no recuerda» (fase 3)
 var estela: Node3D
 var grupo: Node3D                        # zonas3d/grupo_3d.gd (null si no sale nadie)
 var cofre: Node3D
@@ -101,6 +114,10 @@ var cerca := ""                          # "tilo", "estela", "cofre", "lavanda" 
 # «Lavanda para el Árbol» (Oakhaven, T-089; ciudades/oakhaven.gd): el ramito que se coge aquí, cerca del puesto de Tilo.
 # Solo está si Rosa lo ha pedido y aún no se ha cogido (null si no).
 const OAKHAVEN := "res://ciudades/oakhaven.gd"
+# Notas para encontrar (narrativa, dialogos/notas/pastos_verdes.gd): una libreta, un mojón, una cinta. Se examinan y van
+# al Diario («Notas»; progreso.gd, CIUDADES). Un poste pequeño junto al camino y, mientras no se ha leído, un destello.
+const NotasPV := preload("res://dialogos/notas/pastos_verdes.gd")
+var notas: Array = []                    # [nodo, datos de NotasPV.NOTAS, destello o null]
 const LAVANDA_CERCA := Vector3(4.0, 0, 1.0)     # junto al camino, antes del puente; lejos de Tilo, Garon y el centinela
 var lavanda: Node3D
 var dialogo_actual := ""
@@ -117,6 +134,9 @@ func _ready() -> void:
 	_crear_interfaz()
 	_crear_salidas()
 	_crear_personajes()
+	bosque = load("res://zonas3d/bosque_pastos.gd").new()   # «El bosque que no recuerda» (fase 3)
+	add_child(bosque)
+	bosque.preparar(self)
 	var vuelve: bool = Engine.get_meta("pos_3d_ok", false) and Engine.get_meta("pos_3d_lugar", -1) == INDICE
 	if vuelve and not en_banco():
 		_colocar_kael(Engine.get_meta("pos_3d"))       # vuelve del combate o de una partida guardada aquí
@@ -192,6 +212,23 @@ func _crear_panel_rnd(capa: CanvasLayer) -> void:
 	bg.focus_mode = Control.FOCUS_NONE
 	bg.pressed.connect(func(): _empezar_banco(BANCO_GRUPO))
 	capa.add_child(bg)
+	# DIAG y MEDIO (medidas en el móvil, 09/11): ocultos; salen solo con el panel RND abierto, para no llenar la región.
+	var rnd: Button = null
+	for n in capa.get_children():
+		if n is Button and n.text == "RND":
+			rnd = n
+	for b in [["DIAG", 268, BANCO_DIAG], ["MEDIO", 332, BANCO_MEDIO]]:
+		var nb := Button.new()
+		nb.text = b[0]
+		nb.position = Vector2(1160, b[1])
+		nb.custom_minimum_size = Vector2(108, 56)
+		nb.focus_mode = Control.FOCUS_NONE
+		var casos: Array = b[2]
+		nb.pressed.connect(func(): _empezar_banco(casos))
+		nb.visible = false
+		if rnd != null:
+			rnd.pressed.connect(func(): nb.visible = panel_rnd.visible)   # tras _alternar_panel, que ya lo cambió
+		capa.add_child(nb)
 
 
 # Al cambiar de perfil se recarga la escena: antes se apunta dónde está Kael para no volver al principio.
@@ -220,6 +257,8 @@ func _process(delta: float) -> void:
 		_quieto_t = 0.0
 		_parar_kael()
 		boton_accion.visible = false
+		if bosque != null and bosque.boton_alquimia != null:
+			bosque.boton_alquimia.visible = false
 		return
 	super(delta)
 	if saliendo or kael == null:
@@ -242,6 +281,8 @@ func _process(delta: float) -> void:
 			_salir()
 			return
 	_comprobar_mision()
+	if bosque != null:
+		bosque.comprobar(p, delta)
 	_comprobar_cerca()
 	_comentarios(delta, d)
 
@@ -305,6 +346,8 @@ func _quitar_comentarios() -> void:
 
 
 func ocupado() -> bool:
+	if bosque != null and bosque.ocupado():            # la pantalla de alquimia abierta (fase 3)
+		return true
 	if _escena_pendiente != "":
 		return true
 	var dg = get_node_or_null("/root/Dialogic")
@@ -333,7 +376,7 @@ func _paso() -> void:
 		_encuentro()
 
 
-func _encuentro(fijo := "", grupo := -1) -> void:
+func _encuentro(fijo := "", grupo := -1, texto := "") -> void:
 	if saliendo:
 		return
 	saliendo = true
@@ -346,7 +389,7 @@ func _encuentro(fijo := "", grupo := -1) -> void:
 		Engine.set_meta("grupo_combate", grupo)
 		Engine.set_meta("combate_fijo", fijo)
 	Sonido.efecto("emboscada")           # sonido.gd
-	_mostrar_aviso("¡Emboscada!" if fijo == "" else "¡Al centinela!")
+	_mostrar_aviso(texto if texto != "" else ("¡Emboscada!" if fijo == "" else "¡Al centinela!"))
 	fundido.color = Color(1, 1, 1, 0)
 	var t := create_tween()
 	for i in 3:
@@ -444,6 +487,9 @@ func _al_terminar_dialogo() -> void:
 
 
 func _tras_dialogo(id: String) -> void:
+	if id.begins_with("bq_") and bosque != null:        # la aventura del bosque (fase 3)
+		bosque.tras_dialogo(id)
+		return
 	var P = load("res://progreso.gd")
 	match id:
 		"pv_06":
@@ -482,7 +528,8 @@ func texto_objetivo() -> String:
 		return "Vuelve junto al centinela."
 	if not P.hito("pv_14"):
 		return "Vuelve a hablar con Tilo."
-	return "Sigue el camino hacia el noreste."
+	var tb: String = bosque.texto_objetivo() if bosque != null else ""   # la aventura del bosque (fase 3)
+	return tb if tb != "" else "Sigue el camino hacia el noreste."
 
 
 func _actualizar_objetivo() -> void:
@@ -687,6 +734,17 @@ func _comprobar_cerca() -> void:
 	elif lavanda != null and _dist_plana(p, lavanda.global_position) < RADIO_ACCION:
 		cerca = "lavanda"
 		boton_accion.text = "Coger la lavanda"
+	else:
+		for e in notas:
+			if _dist_plana(p, e[0].global_position) < RADIO_ACCION:
+				cerca = "nota:" + e[1]["id"]
+				boton_accion.text = "Examinar"
+				break
+	if cerca == "" and bosque != null:                 # la aventura del bosque (fase 3)
+		var b: Dictionary = bosque.cerca_de(p)
+		if not b.is_empty():
+			cerca = "bq:" + b["id"]
+			boton_accion.text = b["boton"]
 	boton_accion.visible = cerca != ""
 
 
@@ -707,8 +765,10 @@ func _accion() -> void:
 				_empezar_dialogo("pv_tilo")
 			elif not P.hito("pv_14"):
 				_escena_mision("pv_14")
-			else:
-				_empezar_dialogo("pv_tilo_fin")
+			else:                                # tras la misión, la aventura del bosque (fase 3)
+				var dt: String = bosque.dialogo_tilo() if bosque != null else "pv_tilo_fin"
+				if not _empezar_dialogo(dt):
+					_tras_dialogo(dt)
 		"estela":
 			var d: Dictionary = P.detalles_de(INDICE)[0]
 			_mostrar_aviso(d["texto"], 4.0)
@@ -724,6 +784,12 @@ func _accion() -> void:
 			_abrir_cofre()
 		"lavanda":
 			_coger_lavanda()
+		_:
+			if cerca.begins_with("bq:"):
+				bosque.accion(cerca.trim_prefix("bq:"))
+				return
+			if cerca.begins_with("nota:"):
+				_leer_nota(cerca.trim_prefix("nota:"))
 
 
 # El ramito de «Lavanda para el Árbol»: se coge una sola vez (ciudades/oakhaven.gd, aplicar_senal) y se lleva a Rosa.
@@ -770,6 +836,46 @@ func _crear_personajes() -> void:
 	cofre = _crear_cofre(_sitio_cofre())
 	if not en_banco() and load(OAKHAVEN).lavanda_disponible():
 		lavanda = _crear_lavanda(_sitio_junto_al_camino(LAVANDA_CERCA))
+	if not en_banco():
+		for n in NotasPV.NOTAS:
+			notas.append(_crear_nota(_sitio_junto_al_camino(n["cerca"]), n))
+
+
+# Una nota: un poste bajo con una tablilla clara (provisional, sin modelo) y su destello mientras no se ha leído.
+func _crear_nota(p: Vector3, d: Dictionary) -> Array:
+	var n := Node3D.new()
+	n.position = p
+	n.name = d["id"]
+	add_child(n)
+	var poste := CylinderMesh.new()
+	poste.top_radius = 0.035
+	poste.bottom_radius = 0.045
+	poste.height = 0.7
+	_pieza(n, poste, _mat_simple(Color(0.42, 0.3, 0.2)), Vector3(0, 0.35, 0))
+	var tabla := BoxMesh.new()
+	tabla.size = Vector3(0.32, 0.22, 0.03)
+	_pieza(n, tabla, _mat_simple(Color(0.86, 0.8, 0.66)), Vector3(0, 0.62, 0.05), Vector3(-0.25, 0, 0))
+	var brillo = null if load("res://progreso.gd").visto(d["id"]) else _destello(n, Vector3(0, 0.75, 0), 0.4)
+	return [n, d, brillo]
+
+
+# Leer una nota: su texto y, si es nueva, al Diario.
+func _leer_nota(id: String) -> void:
+	for e in notas:
+		if e[1]["id"] != id:
+			continue
+		_mostrar_aviso(e[1]["texto"], 4.5)
+		Sonido.efecto("examinar")
+		if e[2] != null and is_instance_valid(e[2]):
+			e[2].queue_free()
+			e[2] = null
+		if load("res://progreso.gd").ver_nota(id):
+			var nombre: String = e[1]["nombre"]
+			get_tree().create_timer(4.6).timeout.connect(func():
+				if is_instance_valid(self):
+					Sonido.efecto("pagina")
+					_mostrar_aviso("Nueva nota en el Diario: «%s»" % nombre, 2.4))
+		return
 
 
 # El ramito de lavanda (provisional, sin modelo: pedido a gráficos): unas espigas moradas atadas, con un destello.

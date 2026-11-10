@@ -158,8 +158,7 @@ const NPCS := [
 				"si": ["estado:favores", "!cond:favores_listos", "!hito:oak_favores"], "prioridad": true},
 			{"dialogo": "oak_posadera"},
 			{"dialogo": "oak_posadera_favores", "si": ["!estado:favores", "!hito:oak_favores"]},
-			{"dialogo": "oak_posadera_niebla"},
-			{"dialogo": "oak_posadera_servicios"}],   # «¿Algo más?»: la sopa y los rumores (oakhaven_posada.gd)
+			{"dialogo": "oak_posadera_niebla"}],   # (sus servicios, en el botón POSADA: oakhaven_posada.gd)
 		"frases": ["Bienvenido al Cuervo Oxidado. Cama, sopa y silencio: treinta monedas.",
 			"El silencio no lo garantizo. Los de la mesa del fondo cantan."]},
 	{"id": "albar", "nombre": "Albar", "corto": "Albar", "personaje": "albar",
@@ -184,8 +183,13 @@ const NPCS := [
 		"casilla": Vector2(35, 10), "donde": "Raíces del Árbol",
 		"imagen": "res://personajes/npc/maga.png", "tinte": Color(0.78, 0.9, 0.66),
 		"dialogos": [
+			# fase 3, «El bosque que no recuerda»: lo que pasó con el Guardián del Bosque (combate.gd, _premio_bosque)
+			{"dialogo": "oak_encina_bosque_purificado", "si": ["hito:bq_purificado", "!estado:encina_bosque"], "prioridad": true},
+			{"dialogo": "oak_encina_bosque_derrotado", "si": ["hito:bq_derrotado", "!estado:encina_bosque"], "prioridad": true},
 			{"dialogo": "oak_encina_gracias", "si": ["hito:oak_lavanda", "!estado:encina_gracias"], "prioridad": true},
-			{"dialogo": "oak_encina"}, {"dialogo": "oak_encina_anillo"}],
+			{"dialogo": "oak_encina"}, {"dialogo": "oak_encina_anillo"},
+			{"dialogo": "oak_encina_bosque_purificado", "si": "hito:bq_purificado"},
+			{"dialogo": "oak_encina_bosque_derrotado", "si": "hito:bq_derrotado"}],
 		"frases": ["Este roble ya era viejo cuando Oakhaven era una aldea. Respétalo.",
 			"Cuenta sus anillos y sabrás su historia. Yo me perdí por el dos mil."]},
 ]
@@ -375,7 +379,7 @@ const NOTAS := [
 const SENALES := ["oak:pip_pagar", "oak:favores_aceptados", "oak:favor_barril", "oak:favor_flores",
 	"oak:favor_cucharon", "oak:favores_hechos", "oak:faroles_aceptados", "oak:farol_1", "oak:farol_2", "oak:farol_3",
 	"oak:faroles_hechos", "oak:lavanda_pedida", "oak:lavanda_cogida", "oak:lavanda_entregada", "oak:encina_gracias",
-	"oak:torre", "oak:grieta", "oak:vista_raices", "oak:sopa", "oak:rumor"]
+	"oak:torre", "oak:grieta", "oak:vista_raices", "oak:sopa", "oak:rumor", "oak:dormir", "oak:encina_bosque"]
 # Condiciones con nombre (las demás: hito:, estado:, decision:k=v, grupo:, oro:n, modo:3d/2d y ganado:<combate fijo>,
 # uno de «combates_ganados», como garganta_gorthor; «!» las niega).
 const CONDICIONES := {
@@ -608,7 +612,7 @@ static func aplicar_senal(arg: Variant) -> String:
 	match s:
 		"oak:sopa":                                   # un servicio de la posada: se repite (ciudades/oakhaven_posada.gd)
 			return load("res://ciudades/oakhaven_posada.gd").comer()["texto"]
-		"oak:rumor":                                  # el rumor lo cuenta la posadera en otro diálogo (ciudad_oakhaven.gd)
+		"oak:rumor", "oak:dormir":                    # los hace la escena al acabar el diálogo (ciudad_oakhaven.gd)
 			return ""
 		"oak:pip_pagar":
 			if cumple("decision:pip_oak=pagado") or not load("res://inventario.gd").gastar_oro(1):
@@ -661,9 +665,9 @@ static func aplicar_senal(arg: Variant) -> String:
 				return ""
 			P.poner_hito("oak_lavanda")
 			return "Lavanda para el Árbol: " + _dar(mision("oak_lavanda")["recompensa"]) + "."
-		"oak:encina_gracias", "oak:torre", "oak:grieta", "oak:vista_raices":
+		"oak:encina_gracias", "oak:torre", "oak:grieta", "oak:vista_raices", "oak:encina_bosque":
 			var clave: String = {"encina_gracias": "encina_gracias", "torre": "vista_torre", "grieta": "grieta",
-				"vista_raices": "vista_raices"}[k]
+				"vista_raices": "vista_raices", "encina_bosque": "encina_bosque"}[k]
 			if not P.estado(NOMBRE, clave):
 				P.poner_estado(NOMBRE, clave)
 			return ""

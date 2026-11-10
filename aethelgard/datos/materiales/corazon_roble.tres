@@ -1,0 +1,12 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/material.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "corazon_roble"
+clave_inventario = "Corazón de roble"
+nombre = "Corazón de roble"
+venta = 120
+desc = "El núcleo del Guardián vencido. Late todavía, muy despacio."
+de_enemigos = PackedStringArray()

@@ -13,6 +13,9 @@ extends Node2D
 const SIGUIENTE := "res://mapa.tscn"
 const MINIMO := 2.0               # segundos mínimos en pantalla
 const A_LA_VEZ := 6               # archivos cargándose a la vez en segundo plano
+# Sin ventana (pruebas), de uno en uno: el renderizador falso de Godot sin ventana no aguanta crear mallas desde varios
+# hilos a la vez (cierres en prueba_boton_prologo, 10/11). En el móvil y en el PC con ventana, como siempre.
+var a_la_vez := 1 if DisplayServer.get_name() == "headless" else A_LA_VEZ
 const FRAMES_SHADERS := 24        # fotogramas dibujando los modelos y efectos fuera de la vista
 const FRASES := [
 	"La niebla no perdona a nadie… salvo a uno.",
@@ -245,7 +248,7 @@ func _process(delta: float) -> void:
 
 
 func _paso_archivos() -> void:
-	while en_curso.size() < A_LA_VEZ and not pendientes.is_empty():
+	while en_curso.size() < a_la_vez and not pendientes.is_empty():
 		var ruta: String = pendientes[pendientes.size() - 1]
 		pendientes.remove_at(pendientes.size() - 1)
 		if Recursos.esta(ruta):

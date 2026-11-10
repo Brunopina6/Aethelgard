@@ -187,6 +187,10 @@ func _probar() -> void:
 		await _heroes()
 	if _parte("cuerdas"):
 		await _cuerdas()
+	if _parte("ciudad"):
+		await _ciudad_viva()
+	if _parte("mezcla"):
+		await _mezcla()
 	if _parte("garganta3d"):
 		await _garganta3d()
 	print("OK efectos: ", ", ".join(hechos))
@@ -217,8 +221,9 @@ func _catalogo() -> void:
 				_fallo("1: falta %s («%s»)" % [ruta, nombre])
 				continue
 			var s = load(ruta)
-			if not s is AudioStreamWAV or s.format != AudioStreamWAV.FORMAT_QOA or s.stereo or s.mix_rate != 48000:
-				_fallo("1: %s no es QOA mono a 48 kHz" % ruta)
+			var hz_esperado: int = load("res://pruebas/prueba_audio_memoria.gd").FRECUENCIA.get(ruta, 48000)   # tanda 7: bucles bajados
+			if not s is AudioStreamWAV or s.format != AudioStreamWAV.FORMAT_QOA or s.stereo or s.mix_rate != hz_esperado:
+				_fallo("1: %s no es QOA mono a %d Hz" % [ruta, hz_esperado])
 				continue
 			# bucles: los emisores 3D y las fuentes 2D, salvo las que suenan de vez en cuando («cada»: el cuervo)
 			var bucle: bool = (d.has("tres_d") or d.has("dos_d")) and not d.get("dos_d", {}).has("cada") \
@@ -1473,8 +1478,9 @@ func _garganta3d() -> void:
 	await _esperar(5)
 	if _n("emboscada") != 1:
 		_fallo("12: la emboscada suena %d veces" % _n("emboscada"))
-	if not Son.eco_activo().is_empty() or _efectos_bus() != efectos_antes:
-		_fallo("12: en el combate sigue el eco de la Garganta (%s; %s)" % [str(Son.eco_activo()), str(_efectos_bus())])
+	var fx_ahora := _efectos_bus()
+	if not Son.eco_activo().is_empty() or fx_ahora["Efectos"] != efectos_antes["Efectos"] or fx_ahora["Ambiente"] != efectos_antes["Ambiente"]:
+		_fallo("12: en el combate sigue el eco de la Garganta (%s; %s)" % [str(Son.eco_activo()), str(fx_ahora)])
 	if is_instance_valid(cascada):
 		_fallo("12: en el combate sigue la cascada")
 	await _escena_vacia()
@@ -1731,3 +1737,104 @@ func _cuerdas() -> void:
 	var silba: int = g.veces
 	await _escena_vacia()
 	hechos.append("cuerdas (en 40 s: cuerdas %d, viento %d; lejos, 0)" % [cruje, silba])
+
+# ================================================================= tanda 6
+
+# 20. Oakhaven vivo: una ciudad de mentira (casillas de 64 px) con quien anda y su cámara.
+func _ciudad_viva() -> void:
+	await _escena_vacia()
+	_limpiar()
+	var M = root.get_node("Musica")
+	M.pedir("ciudad")
+	var ciudad := Node2D.new()
+	root.add_child(ciudad)
+	var quien := Node2D.new()
+	ciudad.add_child(quien)
+	var cam := Camera2D.new()
+	quien.add_child(cam)
+	cam.make_current()
+	var t := 64.0
+	var plaza := Vector2(40.5, 26) * t
+	var p = Son.fuente_2d(ciudad, "plaza_murmullo", plaza, quien)
+	var m = Son.fuente_2d(ciudad, "mercado_murmullo", Vector2(54, 29.5) * t, quien)
+	var f = Son.fuente_2d(ciudad, "fuente_plaza", plaza + Vector2(0, 1) * t, quien)
+	if p == null or m == null or f == null:
+		_fallo("20: no se crean las fuentes de la plaza, el mercado o la fuente")
+		ciudad.queue_free()
+		return
+	quien.position = plaza + Vector2(0, 1.5) * t
+	await _juego(1.5)
+	var cerca_p: float = p.volume_db
+	var cerca_f: float = f.volume_db
+	quien.position = plaza + Vector2(0, 30) * t                # lejos de todo
+	await _juego(2.0)
+	if cerca_p <= -8.0 or cerca_f <= -14.0:
+		_fallo("20: junto a la fuente de la plaza no suenan lo bastante (plaza %.1f dB, fuente %.1f dB)" % [cerca_p, cerca_f])
+	if p.playing or f.playing or m.playing:
+		_fallo("20: lejos de la plaza y del mercado siguen sonando")
+	for x in [p, m, f]:
+		if String(x.bus) != "Ambiente":
+			_fallo("20: «%s» no va por Ambiente" % x.get_meta("efecto", "?"))
+	# la hora: de noche, grillo y mochuelo (ningún pájaro de día) y la campana; sin hora, lo de siempre
+	Son.fijar_momento(ciudad, "noche")
+	Son._momento_escena = current_scene                      # (la ciudad de mentira cuelga de root: vale la escena actual)
+	_limpiar()
+	await _juego(0.2)
+	Son._campana_t = 0.05
+	for i in 8:
+		Son._det_t = 0.0
+		Son._ultimo.clear()
+		await _juego(0.3)
+	if Son._det_ctx != "ciudad_noche":
+		_fallo("20: con la hora fijada a «noche», los detalles no son los de «ciudad_noche» (%s)" % Son._det_ctx)
+	if _n("pajaro") + _n("pajaro_ciudad") > 0 or _n("grillo") + _n("mochuelo") == 0:
+		_fallo("20: de noche suenan pájaros de día o no suena la noche (%s)" % str(Son.contador))
+	if _n("campana") != 1:
+		_fallo("20: la campana de la hora suena %d veces (esperaba 1)" % _n("campana"))
+	await _escena_vacia()
+	if Son.momento_actual() != "":
+		_fallo("20: la hora se queda al cambiar de escena")
+	# en 3D, las mismas fuentes como emisores en bucle
+	await _escena_3d()
+	var e = Son.fuente_3d(current_scene, "fuente_plaza", Vector3(0, 0, -3))
+	if not e is AudioStreamPlayer3D or not e.playing or String(e.bus) != "Ambiente":
+		_fallo("20: la fuente de la plaza no vale como emisor 3D (T-103)")
+	ciudad.queue_free()
+	M.pedir("silencio")
+	await _escena_vacia()
+	_limpiar()
+	hechos.append("ciudad viva (plaza %.1f dB y fuente %.1f dB al lado, callados lejos; de noche, grillo y mochuelo; la campana de la hora; la fuente en 3D)" % [cerca_p, cerca_f])
+
+# ================================================================= tanda 7
+
+# 21. La mezcla: la música que se aparta solo en combate y el limitador del Master.
+func _mezcla() -> void:
+	await _escena_vacia()
+	var M = root.get_node("Musica")
+	var im := AudioServer.get_bus_index("Musica")
+	var lim := false
+	for k in AudioServer.get_bus_effect_count(0):
+		var fx := AudioServer.get_bus_effect(0, k)
+		if fx is AudioEffectHardLimiter and absf(fx.ceiling_db - float(Son.LIMITE["techo_db"])) < 0.01:
+			lim = true
+	if Son.LIMITADOR_MASTER and not lim:
+		_fallo("21: no está el limitador al final del Master")
+	M.pedir("combate")
+	await _juego(0.3)
+	var comp: AudioEffectCompressor = null
+	for k in AudioServer.get_bus_effect_count(im):
+		if AudioServer.get_bus_effect(im, k) is AudioEffectCompressor:
+			comp = AudioServer.get_bus_effect(im, k)
+	if Son.APARTAR_MUSICA_EN_COMBATE and (comp == null or String(comp.sidechain) != "Efectos" or comp.ratio > 3.0):
+		_fallo("21: en combate la música no se aparta con un compresor suave que escuche a Efectos")
+	M.pedir("pradera")
+	await _juego(0.3)
+	var queda := 0
+	for k in AudioServer.get_bus_effect_count(im):
+		if AudioServer.get_bus_effect(im, k) is AudioEffectCompressor:
+			queda += 1
+	if queda != 0 or Son.musica_apartada():
+		_fallo("21: fuera del combate la música sigue apartándose (%d compresores)" % queda)
+	M.pedir("silencio")
+	await _juego(0.2)
+	hechos.append("mezcla (en combate la música se aparta; fuera, no; limitador del Master a %.1f dB)" % float(Son.LIMITE["techo_db"]))

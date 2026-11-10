@@ -6,7 +6,7 @@ extends SceneTree
 #   2. El combate se juega entero con el grupo inicial. Se gana, se reparten experiencia y monedas, se guarda y se
 #      vuelve al mirador.
 #   3. Allí empieza la cinemática y después PV-07. El objetivo pasa a «Vuelve a hablar con Tilo».
-#   4. Tilo: PV-14 y la mecha. El objetivo pasa a «Sigue el camino hacia el noreste».
+#   4. Tilo: PV-14 y la mecha. El objetivo pasa al de la aventura del bosque (fase 3: «Habla con Tilo…»).
 #   5. Salir al mapa y volver a entrar, y cargar la partida guardada: todo sigue igual y nada se repite.
 # Alcance: un combate con ataques automáticos (sin magias ni objetos); no prueba la estrategia de un jugador.
 
@@ -27,6 +27,9 @@ var inv
 var exp_antes := 0
 var oro_antes := 0
 var abierto_en := -1
+# Tras PV-14 empieza «El bosque que no recuerda» (fase 3, zonas3d/bosque_pastos.gd): el objetivo lleva a Tilo.
+const TRAS_PV14 := "Habla con Tilo: algo le pasa al árbol de su puesto."
+
 var fallos: Array = []
 
 
@@ -152,7 +155,7 @@ func _process(_d: float) -> bool:
 				_siguiente()
 		10:
 			if _listo():
-				if not P.hito("mecha_tilo") or _objetivo(r) != "Sigue el camino hacia el noreste.":
+				if not P.hito("mecha_tilo") or _objetivo(r) != TRAS_PV14:
 					fallos.append("4: tras PV-14, mecha=%s y objetivo «%s»" % [P.hito("mecha_tilo"), _objetivo(r)])
 				else:
 					print("OK 4: PV-14, la mecha y el objetivo «%s»" % _objetivo(r))
@@ -201,7 +204,7 @@ func _tras_combate(r) -> void:
 
 func _comprobar_estado(r, cuando: String) -> void:
 	var ok: bool = P.hito("pv_07") and P.hito("pv_14") and P.ganado("pastos_centinela") and not r.cinematica \
-		and r.cinematicas_vistas == 0 and _objetivo(r) == "Sigue el camino hacia el noreste." \
+		and r.cinematicas_vistas == 0 and _objetivo(r) == TRAS_PV14 \
 		and (r.marcador == null or not r.marcador.visible) and r.grupo.nodos().size() == 2
 	if ok:
 		print("OK 5 (%s): misión terminada, sin cinemática ni marcador, con Lya y Garon" % cuando)

@@ -309,6 +309,7 @@ var saliendo := false
 # Comentarios de los héroes al explorar (dialogos/comentarios.gd, narrativa): al llegar a un lugar por primera vez en
 # la sesión y tras abrir un cofre. Solo se ven: no cambian la partida.
 const Comentarios := preload("res://dialogos/comentarios.gd")
+const Hallazgos := preload("res://hallazgos.gd")     # tomos, armas y accesorios que se encuentran (narrativa)
 const LLEGADA_COMENTARIO := 2.8           # s tras entrar: después del fundido y del aviso del lugar
 var llegada_t := LLEGADA_COMENTARIO       # cuenta atrás del comentario al llegar (< 0: ya pasó)
 var comentario_pendiente := ""            # momento que espera su turno (el del cofre, tras el premio)
@@ -962,6 +963,7 @@ func _crear_objetos() -> void:
 		_poner_npcs()
 	_poner_detalles()
 	_adornar_altar()
+	_poner_hallazgos()
 
 
 # El altar o monumento del final del camino. Una ciudad hecha a mano pone el suyo (ciudad_oakhaven.gd: el Árbol).
@@ -1795,6 +1797,9 @@ func _cofre_abierto(id: String) -> bool:
 
 # Abre el cofre: monedas, pociones o éter (cada cofre solo se abre una vez en toda la partida).
 func _abrir_cofre(c: Array) -> void:
+	if Hallazgos.es_hallazgo(str(c[1])):                   # un cofre de hallazgo: su tomo, arma o accesorio
+		_abrir_hallazgo(c)
+		return
 	var abiertos: Dictionary = Engine.get_meta("cofres_abiertos", {})
 	abiertos[c[1]] = true
 	Engine.set_meta("cofres_abiertos", abiertos)
@@ -2137,7 +2142,7 @@ func _crear_ui() -> void:
 		fila.position = Vector2(18, 98)
 		fila.add_theme_constant_override("separation", 10)
 		ui.add_child(fila)
-		for d in [["TIENDA", _abrir_tienda, "TIENDA"], ["POSADA (%d)" % PRECIO_POSADA, _posada, "POSADA"]]:
+		for d in [["TIENDA", _abrir_tienda, "TIENDA"], ["POSADA (%d)" % PRECIO_POSADA, _boton_posada, "POSADA"]]:
 			var b := Button.new()
 			b.text = d[0]
 			b.custom_minimum_size = Vector2(170, 48)
@@ -2310,6 +2315,7 @@ func _accion() -> void:
 		_mostrar_aviso(d["texto"])
 		Sonido.efecto("examinar")                          # sonido.gd
 		var acto: Dictionary = load("res://progreso.gd").ver_detalle(d["id"])
+		_avisos_hallazgo(Hallazgos.al_examinar(int(lugar["indice"]), "detalle:" + d["id"]), 3.6 if acto.is_empty() else 8.2)
 		if not acto.is_empty():
 			get_tree().create_timer(4.0).timeout.connect(func():
 				if is_instance_valid(self):
@@ -2327,6 +2333,7 @@ func _accion() -> void:
 	else:
 		Sonido.efecto("examinar")                          # examinar el altar o monumento (sonido.gd, T-083)
 		_mostrar_aviso(lugar["texto"])
+		_avisos_hallazgo(Hallazgos.al_examinar(int(lugar["indice"]), "altar"), 3.6)
 
 
 # Qué diálogo de Dialogic toca con este vecino ("" = sus frases de siempre). Una ciudad hecha a mano lo elige según la
@@ -2377,6 +2384,11 @@ func _abrir_tienda(pestana := "Objetos") -> void:
 
 
 # Posada: se paga y el grupo recupera todos los PV y PM.
+# El botón POSADA: descansar. Una ciudad puede preguntar antes (ciudad_oakhaven.gd: «¿Qué va a ser?»).
+func _boton_posada() -> void:
+	_posada()
+
+
 func _posada() -> void:
 	if not _pagar_posada():
 		Sonido.efecto("ui_error")                          # sonido.gd
@@ -2482,6 +2494,113 @@ func _process(delta: float) -> void:
 	_atender_comentarios(delta)
 	for f in luces_fuego:                          # las llamas parpadean
 		f[0].energy = f[1] * (0.85 + 0.15 * sin(tiempo * 13.0 + f[2]) * sin(tiempo * 7.3 + f[2] * 2.0))
+
+
+# ================================================================= hallazgos (hallazgos.gd)
+
+# Los cofres propios de los hallazgos de este lugar (un tomo, un arma o un accesorio), cerca de su rincón. Uno ya
+# encontrado se ve abierto. Su id es el del hallazgo (no su posición): no se confunde con los cofres de siempre.
+func _poner_hallazgos() -> void:
+	for h in Hallazgos.cofres_de(int(lugar.get("indice", -1))):
+		var abierto: bool = Hallazgos.encontrado(h[0])
+		var sp := _poner_objeto("cofre_abierto" if abierto else "cofre", _sitio_hallazgo(h[1]) * T)
+		cofres.append([sp, h[0], abierto])
+
+
+# Dónde va el cofre de un hallazgo (en casillas): en su rincón; «mirada», unas casillas al norte de las ruinas (adonde
+# mira la estatua); «agua», en la orilla más cerca del centro. Sin ese rincón, junto al altar.
+func _sitio_hallazgo(cerca: String) -> Vector2:
+	var base := Vector2(-1, -1)
+	match cerca:
+		"agua":
+			base = _orilla()
+		"mirada":
+			base = _rincon("ruinas")
+			if base.x >= 0:
+				base += Vector2(1.4, -5.0)
+		_:
+			base = _rincon(cerca)
+	if base.x < 0:
+		base = meta + Vector2(3.0, 2.0)
+	return _casilla_libre(base)
+
+
+func _rincon(tipo: String) -> Vector2:
+	for l in lugares_interes:
+		if l["tipo"] == tipo:
+			return l["pos"] + Vector2(-1.4, 1.0)          # (el cofre de siempre y el detalle van a otro lado)
+	return Vector2(-1, -1)
+
+
+# La casilla de suelo junto al agua más cerca del centro del mapa (o (-1, -1) si no hay agua).
+func _orilla() -> Vector2:
+	var mejor := Vector2(-1, -1)
+	var centro := Vector2(ANCHO, ALTO) * 0.5
+	for y in range(2, ALTO - 2):
+		for x in range(2, ANCHO - 2):
+			var c := Vector2(x, y) + Vector2(0.5, 0.5)
+			if not _suelo_libre(c):
+				continue
+			var junto := false
+			for d in [Vector2(1, 0), Vector2(-1, 0), Vector2(0, 1), Vector2(0, -1)]:
+				junto = junto or _en_agua((c + d) * T)
+			if junto and (mejor.x < 0 or c.distance_to(centro) < mejor.distance_to(centro)):
+				mejor = c
+	return mejor
+
+
+func _suelo_libre(c: Vector2) -> bool:
+	var x := floori(c.x)
+	var y := floori(c.y)
+	return x > 0 and y > 0 and x < ANCHO - 1 and y < ALTO - 1 and muros[y * ANCHO + x] == 0 and not _en_agua(c * T)
+
+
+# La casilla libre más cerca de «c», lejos de otros cofres, detalles y del altar.
+func _casilla_libre(c: Vector2) -> Vector2:
+	for r in [0.0, 0.8, 1.6, 2.4, 3.2, 4.0, 5.0, 6.0]:
+		for k in 12:
+			var q: Vector2 = c + Vector2(cos(TAU * k / 12.0), sin(TAU * k / 12.0)) * r
+			if not _suelo_libre(q):
+				continue
+			var lejos := q.distance_to(meta) > 2.0
+			for e in cofres + detalles:
+				lejos = lejos and q.distance_to(e[0].position / T) > 1.8
+			if lejos:
+				return q
+			if r == 0.0:
+				break
+	return c
+
+
+func _abrir_hallazgo(c: Array) -> void:
+	var textos: Array = Hallazgos.encontrar(str(c[1]))
+	c[2] = true
+	var d := _objeto("cofre_abierto")
+	var s: Sprite2D = c[0]
+	s.texture = d["tex"]
+	s.offset = -d["origen"]
+	Sonido.efecto("cofre")
+	_avisos_hallazgo(textos, 0.0)
+	_comentar_luego("cofre", 1.2 + 3.6 * textos.size())
+
+
+# Los avisos de un hallazgo, uno detrás de otro desde «desde» segundos, con su sonido; y se guarda la partida.
+func _avisos_hallazgo(textos: Array, desde: float) -> void:
+	if textos.is_empty():
+		return
+	for i in textos.size():
+		var t: String = textos[i]
+		var cuando := desde + 3.6 * i
+		if cuando <= 0.0:
+			_mostrar_aviso(t)
+		else:
+			get_tree().create_timer(cuando).timeout.connect(func():
+				if is_instance_valid(self):
+					_mostrar_aviso(t))
+	Sonido.efecto("tesoro", {"retraso": desde + 0.3})
+	_poner_oro()
+	guardar_posicion()
+	load("res://progreso.gd").guardar(scene_file_path)
 
 
 # ================================================================= comentarios de los héroes

@@ -619,3 +619,184 @@ Sin confirmar, porque no son míos: `aethelgard/dialogos/comentarios.gd.uid` y `
 - **Gráficos** (`garganta_3d.gd`): las tres líneas de `fuente_linea` del inventario (`puente_cruje` en cada puente y
   `viento_cuerdas` por el borde de la cornisa).
 - **Usuario:** escuchar el índice de hoy.
+
+## 2026-11-09, 22:55 · T-083, tanda 6: voces más claras, Oakhaven vivo y la mezcla por buses
+
+Rama `area-sonido`. Antes de empezar, uní `integracion-experimental` `6adc4d9` (`0c367bf`). Me paró un límite de uso
+del coordinador cuando la batería ya había empezado; al retomar, uní `dca4c1c` (`220d606`) y repetí la importación
+aislada (`D:\REBELUM_diagnostico\importaciones\sonido_20261109_224425`). Los `.uid` sueltos que la integración ya trae
+los aparté a mi carpeta temporal (eran idénticos). **No he podido escuchar nada. No se ha usado el Redmi.** No he
+tocado `combate.gd`, `ciudad_oakhaven.gd` ni `zonas3d/**`.
+
+### 1. Qué se ha hecho
+
+- **Las dos voces que había marcado como dudosas**:
+  - **esfuerzo de Kael**: tres esfuerzos cortos y enteros (The Chris Alan, «Little Fighter Guy - Vocalizations»,
+    GDC 2018), en vez del arranque recortado de un grito largo;
+  - **jadeo de Lya**: respiraciones de la misma actriz que sus esfuerzos (Pole Position, «Female 3», GDC 2023). Llevan
+    unos 8 dB de ganancia en lugar de 36; el suelo de ruido medido entre respiraciones baja de −30 a −53,5 dBFS.
+  - Las dos, con su volumen ajustado para que salgan como antes: −30 y −34,6 dBFS de RMS.
+- **Oakhaven vivo** (sirve para la 2D de hoy y está preparado para la 3D, T-103):
+  - murmullo de la Plaza del Tapiz (un pueblo con voces y caballos, con paso bajo para que no se entiendan las palabras),
+    murmullo del mercado y la fuente de la plaza. Son bucles por cercanía (`fuente_2d`) que también valen como emisores
+    3D (`fuente_3d`);
+  - la hora: `Sonido.fijar_momento(escena, "dia" | "tarde" | "noche")` cambia los detalles de la ciudad (pájaros de
+    día; un pájaro y el grillo al atardecer; el grillo y un mochuelo de noche). La campana lejana marca la hora de vez en
+    cuando. La hora se olvida al cambiar de escena;
+  - bus Ambiente, con sus límites;
+  - las líneas para `ciudad_oakhaven.gd` y para la 3D están en el inventario;
+  - los pasos sobre el empedrado siguen siendo `paso_piedra`: no hay pasos sobre adoquines en la biblioteca.
+- **La mezcla por buses** (`prueba_efectos_senal`, «mezclas=6»): se graban a la vez el Master y cada bus en un combate
+  con su música y en la plaza. Se mide el nivel de cada bus y cuánto quedan los efectos y la interfaz por encima del
+  fondo. Hay propuestas comparadas con el mismo combate:
+  - **hoy**: la música queda **9 dB por encima de los efectos** (mediana) y el Master llega a **−0,3 dBFS** de pico, a
+    punto de saturar;
+  - **B, la música a −10 dB** (en `combate.gd`): los efectos quedan 2 dB por debajo y el pico baja a −3 dBFS;
+  - **C, la música se aparta** (un compresor con sidechain «Efectos» en el bus Musica): los efectos quedan 7 dB por
+    encima;
+  - **la plaza, aplicado**: con el murmullo de −2 a −5 dB y la fuente de −8 a −10, los pasos pasan de 4 dB por debajo
+    del ambiente a quedar a la par.
+- **Licencias:** todo de los paquetes GDC de Sonniss 2017-2023 (PDF de cada paquete). Ninguna fuente CC0 nueva y nada
+  de Suno. La única música medida es `musica_combate_normal.mp3`, la que ya está en el proyecto (licencia pendiente);
+  solo se grabó en local.
+
+### 2. Commits (rama `area-sonido`)
+
+| Commit | Qué |
+|---|---|
+| `0c367bf` | Merge de `integracion-experimental` (`6adc4d9`) |
+| `1bd0b92` | Esfuerzo de Kael y jadeo de Lya nuevos y 8 derivados de Oakhaven (`audio/efectos/heroes`, `ambiente`), recetas y CSV |
+| `23dc700` | `sonido.gd`: Oakhaven vivo (`plaza_murmullo`, `mercado_murmullo`, `fuente_plaza`, `pajaro_ciudad`, `grillo`, `mochuelo`, `DETALLES` por hora, `fijar_momento`, campana de la hora) y los volúmenes nuevos |
+| `a30306c` | `prueba_efectos.gd` (parte «ciudad») y `prueba_efectos_senal.gd` («mezclas=6», la mezcla por buses) |
+| `a97c786` | `docs/audio/inventario_sonidos.md` (tanda 6: líneas para Oakhaven y la tabla de la mezcla con las propuestas), `docs/recursos.md` y `pruebas/lista_pruebas.txt` |
+| `220d606` | Merge de `integracion-experimental` (`dca4c1c`) |
+| (este) | Este informe |
+
+### 3. Pruebas (todas con datos aislados)
+
+- `prueba_efectos`: **SUPERADA** dentro de la batería. Tiene todas las partes, entre ellas «ciudad» (la plaza a −5 dB y
+  la fuente a −10 al lado, calladas lejos; de noche, grillo y mochuelo; una campana de la hora; la fuente en 3D),
+  «heroes», «bestias», «quietos» y «cuerdas».
+- `prueba_efectos_senal`, «mezclas=6» (con ventana, driver real y el ejecutor; 4 pasadas): 0 fallos. El pico del Master
+  del combate de hoy queda como **aviso** y no como fallo, porque es justo lo que se mide (−0,3 a −2,6 dBFS según la
+  pasada).
+- `comprobar`: **176 de 176 originales intactos**.
+- **Batería completa** (09/11, 22:44, después de unir `dca4c1c`): **67 superadas, 0 fallidas, 35 manuales, 0 no
+  seguras**. Partida real, carpeta real y proyecto, sin cambios. Resumen:
+  `D:\REBELUM_diagnostico\pruebas\2026-11-09_224448\resumen.md`. Pasan `prueba_efectos`, `prueba_audio`, `prueba_musica`,
+  `prueba_garganta3d` y `prueba_combate_huella`. Había 196 Godot de otras copias durante la pasada.
+- Antes del merge comprobé que todo lo que piden las escenas existe en el catálogo, también lo nuevo de la Garganta 3D
+  (`puente_cruje`, `viento_cuerdas`) y de Oakhaven (taberna, cuervo, campana).
+
+### 4. Evidencias
+
+- Muestras con índice y la tabla de la mezcla por buses: `D:\REBELUM_diagnostico\sonido_muestras\2026-11-09_tanda6\indice.md`.
+  Hay los cinco efectos nuevos solos y las mezclas «buses_*». Cada bus por separado está en
+  `D:\REBELUM_diagnostico\pruebas\2026-11-09_185932\prueba_efectos_senal\buses_*_<bus>.wav`.
+- La tabla completa y las propuestas numeradas: `docs/audio/inventario_sonidos.md`, sección «Tanda 6».
+
+### 5. Límites
+
+- **Nadie lo ha oído.** Lo más dudoso:
+  - si los esfuerzos de «Little Fighter Guy» suenan demasiado jóvenes o de dibujo para Kael;
+  - si el murmullo de la plaza (grabado en Jordania, con paso bajo) deja entender palabras;
+  - si la música que se aparta (C) «bombea».
+- **La mezcla está medida por nivel (RMS), no por bandas de frecuencia.** Un efecto agudo se oye sobre una música grave
+  aunque tengan el mismo RMS. Las propuestas 1 y 2 hay que escucharlas.
+- **Pendiente en Redmi:** la mezcla en el altavoz del móvil (los graves de la música apenas salen y la proporción
+  cambia).
+- **Oakhaven:** las fuentes y la hora no suenan hasta que se añadan las líneas a `ciudad_oakhaven.gd`. Las he probado con
+  una ciudad de mentira.
+
+### 6. Siguiente paso y cambios en archivos de otros
+
+- **Combate** (`combate.gd`): decidir al escucharlo entre la música a −10 dB (propuesta 1) o la música que se aparta
+  (propuesta 2, que puedo poner yo en `sonido.gd` solo durante el combate). Aplicar `_sonar("guardia")` y las líneas de
+  voces de la tanda 5 si aún faltan.
+- **Narrativa o quien lleve `ciudad_oakhaven.gd`**: las cuatro líneas del inventario (plaza, fuente, mercado y
+  `fijar_momento(self, "tarde")`).
+- **Oakhaven 3D (T-103)**: las mismas fuentes con `fuente_3d` y `oyente_3d`.
+- **Usuario**: escuchar el índice de la tanda 6, sobre todo las tres versiones del combate.
+
+## 2026-11-09, 23:50 · T-083, tanda 7: la mezcla del combate aplicada y la memoria del audio
+
+Rama `area-sonido`. Antes de empezar, uní `integracion-experimental` (`45a49e6`) con `merge --no-ff` (`b68d7ed`) e
+importé con datos aislados. **No he podido escuchar nada. No se ha usado el Redmi.** No he tocado `combate.gd`,
+`recursos.gd`, `ciudad_oakhaven.gd` ni `zonas3d/**`.
+
+### 1. Qué se ha hecho
+
+- **La mezcla del combate**, tal como lo decidió el coordinador (reversible), en `sonido.gd`:
+  - `APARTAR_MUSICA_EN_COMBATE`: solo en el contexto «combate», un compresor suave al final del bus Musica que escucha
+    a Efectos (umbral −30 dB, 2:1, ataque 30 ms, suelta 800 ms). Fuera del combate, se quita;
+  - `LIMITADOR_MASTER`: un `AudioEffectHardLimiter` a −1 dBFS al final del Master;
+  - con las dos constantes a `false`, todo como antes. La alternativa B (música −10 dB en `combate.gd`) queda
+    documentada y medida.
+  - Medido con el mismo combate: los efectos pasan de 8,4 dB por debajo de la música (mediana) a **1,6 dB por encima**.
+    El pico del Master queda en −4,4 dBFS (antes, de −0,3 a −2,9).
+- **El eco de la Garganta 3D** sigue limitado a esa zona: solo lo pide `garganta_3d.gd` y se quita al salir.
+- **Memoria del audio:**
+  - prueba nueva, `prueba_audio_memoria` (automática): cuánto ocupa cada sonido en la RAM y en el paquete. Comprueba
+    que todo esté en QOA, la frecuencia de los bucles bajados y un presupuesto de 21 MB;
+  - ocho bucles largos se importan a menos frecuencia (22 050 o 32 000 Hz): solo los que no tenían nada que se oiga por
+    encima de la nueva mitad. Lo que había allí quedaba entre 52 y 81 dB por debajo del total (FFT medida);
+  - **RAM y paquete del audio: 22,45 → 19,47 MB (−3 MB, −13 %).**
+  - No cambian los WAV, los volúmenes (medido: ±0,6 dB, lo que varía el punto de arranque del bucle) ni los cortes de
+    bucle.
+  - **Ogg Vorbis: no se ha podido.** No hay codificador sin instalar nada. Los candidatos y lo que se ganaría están en
+    el inventario.
+  - Lo más grande que queda es la música del combate (MP3, 6,6 MB), que `recursos.gd` carga al abrir el juego.
+    Propuesta: cargarla al entrar en combate.
+
+### 2. Commits (rama `area-sonido`)
+
+| Commit | Qué |
+|---|---|
+| `b68d7ed` | Merge de `integracion-experimental` (`45a49e6`) |
+| `aa87c32` | `sonido.gd`: la música se aparta en combate y el limitador del Master |
+| `c44ff59` | Pruebas: parte «mezcla» y la mezcla por buses antes, ahora y con la B |
+| `c494055` | Los `.import` de los ocho bucles (`force/max_rate`) |
+| `ecc15a7` | `pruebas/prueba_audio_memoria.gd` (+ `.uid`) y su línea en `lista_pruebas.txt` |
+| `f69b654` · `a0574fb` | Inventario: tanda 7 |
+| `a15c982` | `prueba_efectos`: acepta los bucles bajados y el compresor de la música en combate |
+| (este) | Este informe |
+
+### 3. Pruebas (todas con datos aislados)
+
+- `prueba_efectos` entera: **0 fallos**, también la parte «mezcla» (en combate, el compresor; fuera, no; el limitador
+  en el Master).
+- `prueba_audio_memoria`: antes de los cambios, 9 fallos; después, 0. Los fallos de antes eran los ocho bucles todavía
+  a 48 kHz y los 22,5 MB, que pasaban del presupuesto.
+- `prueba_efectos_senal` («mezclas=6») y `prueba_musica_senal`, con ventana: 0 fallos. Los ambientes salen igual que el
+  08/11 (pradera −28,5 frente a −29,1; mapa −38,7 frente a −38,7).
+- **Batería completa** (09/11, 23:35, con `a15c982`): **71 superadas, 1 fallida, 36 manuales, 0 no seguras**. Partida
+  real, carpeta real y proyecto, sin cambios. Resumen: `D:\REBELUM_diagnostico\pruebas\2026-11-09_233535\resumen.md`.
+  - La fallida, **`prueba_zona3d`** («sigue el botón de banco «DIAG»»), **no es de sonido**. Llega con el merge:
+    `45a49e6` añadió los botones DIAG y MEDIO al panel de medidas de Pastos Verdes, y la prueba no los espera.
+  - La pasada anterior (23:21) tuvo además `prueba_efectos` en rojo por dos comprobaciones mías que no contaban con esta
+    tanda (la frecuencia de los bucles y el compresor del bus Musica). Están arregladas en `a15c982`.
+
+### 4. Evidencias
+
+- La memoria antes y después (registros y una fila por sonido):
+  `D:\REBELUM_diagnostico\sonido_muestras\2026-11-09_tanda7\memoria\`.
+- La mezcla: `D:\REBELUM_diagnostico\sonido_muestras\2026-11-09_tanda7\indice.md` y `…\despues\`, con cada bus grabado
+  por separado.
+- Las tablas y las propuestas: `docs/audio/inventario_sonidos.md`, sección «Tanda 7».
+
+### 5. Límites
+
+- **Nadie lo ha oído.** Lo más dudoso: si la música que se aparta se nota subir y bajar. En la prueba los efectos
+  suenan el 67 % del tiempo y la música baja 5,5 dB de media; en un combate de verdad, menos.
+- Los bucles bajados, medidos por energía (FFT), no oídos.
+- **Pendiente en Redmi:** la memoria real en el teléfono y la mezcla en su altavoz. Lo que da la prueba es lo que ocupan
+  los datos y la memoria estática en el PC.
+- **Ogg en streaming:** necesita un codificador (instalarlo o convertir fuera, con permiso).
+
+### 6. Siguiente paso y cambios en archivos de otros
+
+- **`recursos.gd`**: no cargar la música del combate al abrir el juego (6,6 MB). Y, si se quiere ir más lejos, una
+  carpeta `audio/bucles/` que no se cargue al abrir y que `sonido.gd` cargue y suelte por lugar (~7 MB fuera de cada
+  lugar). Lo preparo cuando se apruebe.
+- **Quien lleve `prueba_zona3d`**: que espere los botones DIAG y MEDIO de `45a49e6`.
+- **Usuario**: escuchar la mezcla del combate (antes, ahora y la B) y decidir.
