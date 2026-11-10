@@ -27,19 +27,20 @@ Escrito para leerlo sin saber programar.
 - **El orbe del altar:** enseña los dos futuros del bosque.
 - **Los oficios:** forja de Kael, runas de Garon y taller conjunto, además de la alquimia de Lya.
 - **El escalado de enemigos por región** y **el Claro del Guardián** (sector 3D de Blender).
-- **Batería completa:** 95 superadas, 0 fallidas.
+- **El Coloso de la Falla:** segundo jefe regional, en la Garganta 3D, con modelo 3D propio.
+- **El sistema de encargos y la pestaña Encargos del Diario**, con «Canela se ha perdido» (Pip).
+- **La identidad sonora del Guardián y del orbe.**
+- **Batería completa:** 100 superadas, 0 fallidas.
 
 ## Qué queda pendiente (por orden)
 
 1. Probarlo todo en el Redmi: `docs/fase3_bosque/PENDIENTES_REDMI.md`, más el orbe y los talleres.
 2. El cuarto protagonista (magia negra). Antes, revisar el «Mago negro» antiguo de `grupo.gd`.
 3. **Siguientes jefes:**
-   - el Coloso de la Falla (Garganta 3D);
    - el Campanero del Porvenir;
    - el Emperador Slime (opcional).
-4. El sistema de encargos reutilizable y la ampliación de Oakhaven. Oakhaven ya tiene misiones propias, como la de la
-   lavanda, los faroles o los favores: hay que partir de ellas.
-5. Sonido y música propios del Guardián.
+4. Más encargos, con el sistema ya hecho, y la ampliación de Oakhaven.
+5. Efectos propios del Coloso y escuchar los del Guardián.
 
 ## Cómo continuar
 
