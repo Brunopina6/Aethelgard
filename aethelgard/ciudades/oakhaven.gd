@@ -42,6 +42,9 @@ const PERSONAJES := {
 	"albar": "res://dialogos/personajes/oakhaven/albar.dch",
 	"bastian": "res://dialogos/personajes/oakhaven/bastian.dch",
 	"encina": "res://dialogos/personajes/oakhaven/encina.dch",
+	"ferro": "res://dialogos/personajes/oakhaven/ferro.dch",      # V10 (docs/v10/DISENO_V10.md), propuesta
+	"hilda": "res://dialogos/personajes/oakhaven/hilda.dch",
+	"mirta": "res://dialogos/personajes/oakhaven/mirta.dch",
 }
 
 # ================================================================= trazado
@@ -137,6 +140,8 @@ const NPCS := [
 			# V9, encargo «Canela se ha perdido» (datos/encargos_pastos.gd; la perra está en las ruinas de Pastos Verdes)
 			{"dialogo": "oak_pip_perro", "si": ["hito:pv_14", "!hito:enc_perro_pedido"], "prioridad": true},
 			{"dialogo": "oak_pip_perro_gracias", "si": ["hito:enc_perro_encontrado", "!hito:enc_perro_devuelto"], "prioridad": true},
+			# V10, encargo B «La fórmula desaparecida»: Pip vio volar las páginas de Mirta
+			{"dialogo": "oak_pip_paginas", "si": ["hito:enc_formula_pedido", "!hito:enc_formula_pip"], "prioridad": true},
 			{"dialogo": "oak_pip_perro_despues", "si": "hito:enc_perro_devuelto"},
 			{"dialogo": "npc_pip", "si": "!decision:pip_oak=pagado"},
 			{"dialogo": "oak_pip_secreto", "si": ["!decision:pip_oak=pagado", "oro:1"]},
@@ -196,6 +201,44 @@ const NPCS := [
 			{"dialogo": "oak_encina_bosque_derrotado", "si": "hito:bq_derrotado"}],
 		"frases": ["Este roble ya era viejo cuando Oakhaven era una aldea. Respétalo.",
 			"Cuenta sus anillos y sabrás su historia. Yo me perdí por el dos mil."]},
+	# V10, «Oakhaven, el corazón vivo del reino» (docs/v10/DISENO_V10.md; personajes en propuesta, pendientes de canon).
+	# Los diálogos de servicio acaban con la señal del taller (oak:servicio_*); los del encargo, con «prioridad».
+	# Ferro: la herrería es la casa del final de la Calle del Mercado, al pie de la Calle de la Torre.
+	{"id": "ferro", "nombre": "Maese Ferro", "corto": "Ferro", "personaje": "ferro",
+		"casilla": Vector2(70.5, 26), "donde": "Herrería, junto al yunque (final de la Calle del Mercado)",
+		"imagen": "res://personajes/npc/caballero.png", "tinte": Color(1, 0.74, 0.56),
+		"dialogos": [
+			# encargo A, «El pedido de Maese Ferro» (enc_herrero): con el hierro, se decide; antes, lo pide
+			{"dialogo": "oak_ferro_veta", "si": ["hito:enc_herrero_veta", "!hito:enc_herrero_fin"], "prioridad": true},
+			{"dialogo": "oak_ferro_pedido", "si": ["hito:pv_05", "!hito:enc_herrero_pedido"], "prioridad": true},
+			{"dialogo": "oak_ferro_despues", "si": "hito:enc_herrero_fin"},
+			# la variante: con el bosque resuelto o con la técnica aprendida (en vez de «hecha:frostfang_falla», que
+			# cumple() no entiende, la decisión de quedarse el hierro: Ferro le enseña el Acero de la Falla)
+			{"dialogo": "oak_ferro_v", "si": "hito:bq_resuelto"},
+			{"dialogo": "oak_ferro_v", "si": ["decision:hierro_ferro=kael", "!hito:bq_resuelto"]},
+			{"dialogo": "oak_ferro"}],
+		"frases": ["¿Vienes a mirar o a trabajar? Aquí se trabaja.",
+			"Venga, enséñame esa espada. …Hum. La has tratado como a una pala."]},
+	# Hilda: su taller es la casa de la Calle del Mercado (frente al mercado); su puesto, a la entrada de la calle.
+	{"id": "hilda", "nombre": "Hilda la Armera", "corto": "Hilda", "personaje": "hilda",
+		"casilla": Vector2(47, 25.6), "donde": "Puesto de armaduras, a la entrada de la Calle del Mercado",
+		"imagen": "res://personajes/npc/aldeana.png", "tinte": Color(0.8, 0.84, 0.92),
+		"dialogos": [{"dialogo": "oak_hilda"}],
+		"frases": ["Hilda, armera. Ni un remache de más, ni uno de menos.",
+			"Lo que se ajusta hoy no se rompe mañana. A ver qué traéis."]},
+	# Mirta: atiende dentro de la botica; en la ciudad 2D, en la plazuela, a un lado de Selene (que no se mueve).
+	{"id": "mirta", "nombre": "Mirta la Boticaria", "corto": "Mirta", "personaje": "mirta",
+		"casilla": Vector2(33.5, 41.5), "donde": "Plazuela de la Botica (sale del mostrador)",
+		"imagen": "res://personajes/npc/maga.png", "tinte": Color(0.9, 0.8, 1),
+		"dialogos": [
+			# encargo B, «La fórmula desaparecida» (enc_formula): Lya recompone la fórmula, así que hace falta en el grupo
+			{"dialogo": "oak_mirta_formula", "si": ["hito:enc_formula_paginas", "!hito:enc_formula_fin", "grupo:Lya"],
+				"prioridad": true},
+			{"dialogo": "oak_mirta_pedido", "si": ["hito:pv_03", "!hito:enc_formula_pedido"], "prioridad": true},
+			{"dialogo": "oak_mirta_despues", "si": "hito:enc_formula_fin"},
+			{"dialogo": "oak_mirta"}],
+		"frases": ["¡Clientes! Pasad. Cuidado con el frasco verde. No, el otro verde.",
+			"Una cosa sí sé: la mejor cura es la que llega a tiempo."]},
 ]
 
 # Escena corta al descansar en la posada, según quién esté en el grupo (solo hablan los presentes).
