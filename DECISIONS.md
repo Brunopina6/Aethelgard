@@ -1427,6 +1427,21 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 - **Publicado:** Prueba v293 en `Aethelgard-pruebas` (`exp-20261109-dca4c1c`, SHA-256 `3dbe855e…`), sin copiarla al
   Redmi.
 
+### D-079
+**Integración de los especialistas y criterios de la fase 2 (10/11, tarde)**
+- **Integración** [usuario: «integralas»]:
+  - ramas de sonido, narrativa, Oakhaven 3D y rendimiento en `integracion-experimental`;
+  - batería 82/0 y subida normal (`0d06bd1`), según D-070.
+  - El perfil medio pasa al candidato B (medido en el Redmi el 09/11); el alto no cambia.
+- **Fase 2** [usuario: orden «FASE 2: optimización profesional», sin Redmi]. **Decisiones del coordinador:**
+  - **Precarga:** se quita lo que no usa nadie, comprobado con las dependencias de cada modelo. La carga diferida de
+    lo del combate no se hace sin medirla en el Redmi, por el riesgo de tirones.
+  - **3D:** sin cambios visuales ni de perfiles sin el teléfono («calidad visual primero»).
+  - **Datos:** una sola fuente de verdad por tipo. Las claves de inventario no cambian (compatibilidad de partidas).
+  - **Talleres:** solo la base técnica, con datos de ejemplo en las pruebas. Las recetas e investigaciones reales y la
+    pantalla, en la fase 3 con aprobación.
+  - La rama de la fase 2 queda local: no se fusiona ni se sube sin autorización.
+
 ### D-078
 **Fusión de la auditoría autónoma en `integracion-experimental` (10/11)**
 - **Orden** [usuario]: «AUTORIZADO: fusiona las mejoras verificadas y súbelas a GitHub», con respaldo previo y la

@@ -1052,3 +1052,18 @@
   - sonido y temperatura.
 - **Siguiente:** `docs/auditoria_autonoma/PROXIMAS_MEJORAS.md` (carga inicial por zonas, combate modular, datos en
   recursos, talleres e investigaciones).
+
+### T-105
+**Fase 2: optimización de la carga, combate modular, datos ampliables y base de talleres**
+- **Estado:** hecha en local el 10/11, **sin validar en el Redmi** y sin fusionar.
+- **Evidencia:** rama `claude/rebelum-optimizacion-fase2` @ `ddcc1d3` (`D:\Aethelgard_fase2`). Batería: 86 superadas,
+  0 fallidas, 41 manuales y 0 no seguras (`D:\REBELUM_diagnostico\pruebas\2026-11-10_140944`).
+- **Medido en el PC:**
+  - precarga: de 791 archivos y 276,6 MB a 699 y 181,3 MB;
+  - arranque: de 12,5-12,6 s a 11,6-11,7 s;
+  - memoria máxima: de 1212 MB a 925-939 MB.
+- **Hecho:** `combate_recompensas.gd` (huella idéntica), `datos/catalogo.gd` con la Corteza espinosa, e
+  `investigacion.gd` con `talleres.gd`; cuatro pruebas nuevas.
+- **Propuesta de la fase 3** (talleres jugables): `docs/fase2_optimizacion/FASE3_TALLERES.md`, pendiente de que el
+  usuario la apruebe.
+- **Pendiente en el Redmi:** arranque, memoria, FPS, regiones 3D y la calidad Automática.

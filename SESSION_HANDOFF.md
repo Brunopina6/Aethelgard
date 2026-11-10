@@ -1,7 +1,26 @@
 # SESSION_HANDOFF: punto de control
 
-**Último punto de control:** 2026-11-10 a las 13:45 (hora local, UTC+1). **La memoria describe
-`integracion-experimental` @ `59c3a67`, que está en GitHub.**
+**Último punto de control:** 2026-11-10 a las 14:20 (hora local, UTC+1). **La memoria describe
+`integracion-experimental` @ `0d06bd1`, que está en GitHub**, y la rama local `claude/rebelum-optimizacion-fase2` @
+`ddcc1d3` (sin subir).
+
+## 10/11 tarde: especialistas integrados y fase 2 ([T-105](TASKS.md#t-105), [D-079](DECISIONS.md#d-079))
+
+- **Integrado y subido** (`59c3a67..0d06bd1`, batería 82/0):
+  - sonido (tanda 7), narrativa (rutinas de Oakhaven), Oakhaven 3D (modelos ligeros) y rendimiento (calidad
+    adaptable);
+  - la corrección `c75806b` (sin ventana, la carga va de uno en uno).
+  - Animaciones, combate y Garganta 3D no tenían nada nuevo; su trabajo sin confirmar sigue en sus copias.
+- **Fase 2** (orden del usuario, sin Redmi y sin ADB: se llevó el móvil). Rama local `claude/rebelum-optimizacion-fase2`
+  en `D:\Aethelgard_fase2`:
+  - recompensas del combate en `combate_recompensas.gd` (huella idéntica);
+  - catálogo `datos/` con la Corteza espinosa migrada;
+  - base de investigaciones y talleres;
+  - precarga más ligera: en el PC, 12,6 → 11,7 s y 1212 → ~930 MB;
+  - batería 86/0/41/0.
+  - Informes en `docs/fase2_optimizacion/`. **No fusionar ni subir sin autorización.**
+- **Siguiente paso concreto:** con el Redmi, instalar la APK de pruebas aparte de esta rama y medir lo pendiente
+  (`docs/fase2_optimizacion/RETOMAR.md`).
 
 ## 10/11: auditoría autónoma, validación en el Redmi y fusión ([T-104](TASKS.md#t-104), [D-078](DECISIONS.md#d-078))
 
