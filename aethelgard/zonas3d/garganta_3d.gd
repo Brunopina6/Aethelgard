@@ -51,6 +51,22 @@ const BOTONES_BANCO := ["PRUEBA", "DIAG", "TOPE", "ARB"]   # sus recorridos son 
 const CAIDA_LEVADIZO := 2.6              # segundos que tarda en bajar
 const CASCADA_ARRIBA := Vector3(3.6, T.TOPE - 4.0, T.Z_NORTE + 0.8)     # la cascada del fondo (sonido y comentario)
 const CASCADA_ABAJO := Vector3(3.6, T.HONDO + 10.0, T.Z_NORTE + 2.8)
+# El Coloso de la Falla (V9, jefe 2, opcional; combate_coloso.gd y zonas3d/garganta/coloso.gd): duerme, medio hundido, al
+# fondo de la grieta oculta, más allá del pilar del peregrino, en el rincón sin salida de la cornisa baja. No corta
+# ningún camino: el pilar (a 6 m) se examina sin despertarle. Al llegar a RADIO_COLOSO, sus runas se encienden, un aviso
+# corto (y la frase de Garon si va en el grupo) y su combate fijo («jefe»); si se pierde, se vuelve a VUELTA_COLOSO,
+# fuera del disparo y del pilar. Ganado, en su sitio quedan placas caídas y no despierta nada.
+const Coloso := preload("res://combate_coloso.gd")
+const FiguraColoso := preload("res://zonas3d/garganta/coloso.gd")
+const ID_COLOSO := Coloso.COMBATE        # «garganta_coloso»
+const GRUPO_COLOSO := Coloso.GRUPO       # combate.gd, GRUPOS[12]
+const COLOSO := Vector3(13.4, T.BAJO, -37.9)
+const VUELTA_COLOSO := Vector3(11.0, T.BAJO, -33.4)
+const RADIO_COLOSO := 3.0
+const ESPERA_COLOSO := 2.8               # segundos del aviso antes del combate (Kael quieto)
+const TEXTO_COLOSO := "Al fondo de la falla, un coloso de piedra alza la cabeza. Sus runas se encienden."
+const TEXTO_COLOSO_GARON := "Garon: «Esas runas dicen cómo se cierra su piel. Puedo leerlas.»"
+const TEXTO_COLOSO_VENCIDO := "Solo quedan placas de piedra con las runas apagadas."
 
 var perfil: Dictionary = {}
 var nombre_perfil := "alto"
@@ -89,6 +105,10 @@ var capa_ui: CanvasLayer                 # la interfaz de la región (avisos, bo
 var _cascada_dicha := false              # el comentario de la cascada, la primera vez que se ve de cerca
 var _t_vaiven := 0.0                     # reloj del vaivén de los puentes colgantes (T-102)
 var _mecidos := {}                       # personaje → lo que se ha movido su modelo con el puente
+var coloso: Node3D                       # el Coloso dormido (null si ya se le venció o si falta su modelo)
+var _armado_coloso := true
+var _coloso_hablando := false            # el aviso antes de su combate: Kael quieto
+var _coloso_dicho := false               # tras vencerle, «Solo quedan placas…», una vez por visita
 
 
 func _ready() -> void:
@@ -108,6 +128,7 @@ func _ready() -> void:
 	salida["armada"] = _dist_plana(kael.global_position, T.SALIDA) > ARMAR_SALIDA
 	_armado_nido = not _en_nido(kael.global_position)        # al volver de perder, no se repite hasta salir y entrar
 	_armado_gorthor = not _en_arena(kael.global_position)
+	_armado_coloso = not _en_coloso(kael.global_position)
 	Engine.set_meta("zona", ZONA)
 	_sonido_3d()
 	_titulo_zona("Garganta del Diablo")
@@ -202,6 +223,11 @@ func _crear_piezas() -> void:
 		gorthor = piezas.gorthor(T.GORTHOR)
 	# la grieta oculta y la salida
 	piezas.pilar_peregrino(T.PILAR_PEREGRINO)
+	# al fondo de la grieta, el Coloso de la Falla (V9): dormido o, ya vencido, sus placas caídas
+	if Progreso.ganado(ID_COLOSO):
+		FiguraColoso.ruinas(piezas.lotes, mat, COLOSO + Vector3(0.3, 0, -0.3))
+	else:
+		coloso = FiguraColoso.dormido(self, esc, piezas.lotes, perfil, COLOSO)
 	piezas.marca_salida(T.SALIDA)
 	piezas.cerrar()
 
@@ -229,6 +255,11 @@ func _en_nido(p: Vector3) -> bool:
 
 func _en_arena(p: Vector3) -> bool:
 	return p.y > T.ALTO - 2.0 and p.z < T.Z_GORTHOR and _dist_plana(p, T.ARENA) < T.ARENA_RADIO + 0.5
+
+
+# Al fondo de la grieta, junto al Coloso (en la cornisa baja).
+func _en_coloso(p: Vector3) -> bool:
+	return absf(p.y - T.BAJO) < 2.0 and p.x > T.X_BORDE_E - 1.5 and _dist_plana(p, COLOSO) < RADIO_COLOSO
 
 
 # Una posición de la Garganta 2D (en píxeles, «pos_zona») → el sitio equivalente de la 3D (el ancla más cercana del
@@ -313,7 +344,7 @@ func _parar_kael() -> void:
 
 func ocupado() -> bool:
 	var dg = get_node_or_null("/root/Dialogic")
-	return viajando or tirando or (dg != null and dg.current_timeline != null)
+	return viajando or tirando or _coloso_hablando or (dg != null and dg.current_timeline != null)
 
 
 # El panel del prototipo trae bancos de medida con los recorridos de Pastos Verdes: aquí solo quedan CAL (perfil) y
@@ -450,7 +481,37 @@ func _comprobar_fijos() -> bool:
 	elif en_arena and not _silencio_dicho:                     # garganta.gd: el texto del lugar tras vencerle
 		_silencio_dicho = true
 		_mostrar_aviso("La arena guarda silencio. Gorthor ya no espera a nadie.", 3.0)
+	var junto_coloso := _en_coloso(p)                          # el Coloso de la Falla (V9), al fondo de la grieta
+	if not Progreso.ganado(ID_COLOSO):
+		if junto_coloso and _armado_coloso:
+			_armado_coloso = false
+			_despertar_coloso()
+			return true
+		if not junto_coloso:
+			_armado_coloso = true
+	elif junto_coloso and not _coloso_dicho:
+		_coloso_dicho = true
+		_mostrar_aviso(TEXTO_COLOSO_VENCIDO, 3.0)
 	return false
+
+
+# El Coloso despierta: Kael se para, las runas se encienden, el aviso (con la frase de Garon si va en el grupo) y, tras
+# ESPERA_COLOSO, su combate fijo. Al volver de perder se aparece en VUELTA_COLOSO, fuera del disparo.
+func _despertar_coloso() -> void:
+	_coloso_hablando = true
+	_parar_kael()
+	boton_accion.visible = false
+	FiguraColoso.despertar(coloso)
+	Sonido.efecto("misterio")                                  # sonido.gd (el mismo que al descubrir una página)
+	var texto := TEXTO_COLOSO
+	if "Garon" in load("res://grupo.gd").activos():
+		texto += "\n" + TEXTO_COLOSO_GARON
+	_mostrar_aviso(texto, ESPERA_COLOSO)
+	await get_tree().create_timer(ESPERA_COLOSO).timeout
+	_coloso_hablando = false
+	if not is_instance_valid(self) or saliendo:
+		return
+	_encuentro(ID_COLOSO, GRUPO_COLOSO, "jefe", VUELTA_COLOSO, "¡El Coloso de la Falla despierta!")
 
 
 # ================================================================= piezas al alcance
