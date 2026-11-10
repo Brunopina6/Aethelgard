@@ -19,7 +19,6 @@ RETOMAR.md).
 | 11:48 | prueba_choque, prueba_andar, prueba_tema, prueba_garon, prueba_cofre, prueba_dpad (+3 manuales) | 5 superadas, 1 fallida (error mío en la conversión de prueba_choque: corregido) |
 | 11:50 | prueba_choque | superada |
 | 11:51 | prueba_tema (lanzador con REBELUM_GODOT) | superada |
-
 | 11:52-11:57 | huella (antes) + 12 de combate tras separar las fórmulas | 12 superadas; huella 725aef4a…, 9 de 9 |
 | 12:01 | batería completa | 78 superadas, 1 fallida (prueba_partida por la clave «formato»: corregido) |
 | 12:09 | prueba_partida, prueba_formato_regiones y 8 de guardado y región | 10 superadas |
