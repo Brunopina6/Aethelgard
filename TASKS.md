@@ -1080,7 +1080,13 @@
 
 ### T-108
 **Directiva V10 («Oakhaven, el corazón vivo del reino»), desde la V9**
-- **Estado:** hecho y probado en el PC, **sin validar en el Redmi** y sin fusionar ni subir.
+- **Estado:** hecho y probado en el PC; **probado en parte en el Redmi** (11/11) y sin fusionar ni subir.
+- **Redmi (11/11):**
+  - con la v520 salieron dos fallos: «Recoger la página» no respondía al dedo y Atrás no cerraba los talleres;
+  - los dos se arreglaron en `822927a`, con la prueba `prueba_toque_oakhaven`;
+  - la v524 (`f2b3ff4`) está instalada y los dos arreglos se comprobaron en el teléfono;
+  - queda sin probar en el móvil: el encargo A, las mejoras y el Bálsamo en combate;
+  - el detalle está en `docs/v10/PENDIENTES_REDMI.md`.
 - **Evidencia:**
   - rama LOCAL `claude/rebelum-v10` (`D:\Aethelgard_v10`) @ `0689f58`; el último código está en `c2eb155`;
   - batería 103 superadas, 0 fallidas, 43 manuales y 0 no seguras (`D:\REBELUM_diagnostico\pruebas\2026-11-10_213109`);

@@ -1,5 +1,51 @@
 # SESSION_HANDOFF: punto de control
 
+## V10 PROBADA EN EL REDMI — 2026-11-11, 01:10 (hora local, UTC+1)
+
+- **Ahora:**
+  - rama LOCAL `claude/rebelum-v10` @ `173dadf`, con el último código en `f2b3ff4`;
+  - en el Redmi está **instalada la v524** (`f2b3ff4`, `adb install -r`, autorizado por el usuario). Comprobado en el
+    teléfono: «Recoger la página» funciona con el dedo y Atrás cierra el taller;
+  - la partida de la app de pruebas está restaurada al respaldo;
+  - nada fusionado ni subido;
+  - el detalle está en `docs/v10/PENDIENTES_REDMI.md`, «Resultado en el teléfono».
+- **Siguiente paso:**
+  1. en el móvil, el encargo A y las mejoras (con una partida en PV-05) y el Bálsamo en combate;
+  2. el tejado que tapa a Kael en el paso al pozo;
+  3. que el usuario autorice o no fusionar y subir.
+
+Lo que sigue es el punto de control de las 00:40.
+
+- **Autorización:** el usuario pidió el 10/11 a las 23:55 «gestiónalo tú, conéctate a mi móvil y hazlo tú». Se probó
+  por USB (ADB) **solo en la app de pruebas** «REBELUM Auditoría» (`com.aethelgard.auditoria`, v520). La app estable
+  y las demás no se tocaron.
+- **Datos:** la partida de esa app se respaldó antes en `D:\REBELUM_respaldos\2026-11-10_redmi_auditoria_antes_v520`
+  y se **restauró** al acabar (mismo SHA-256 que el respaldo). Para llegar a cada sitio se usaron copias editadas de la
+  partida. Capturas y la partida de la prueba: `D:\REBELUM_diagnostico\redmi_v520`.
+- **Comprobado en el teléfono:**
+  - arranca y carga la partida;
+  - Ferro abre la forja, Hilda el taller y Mirta da el encargo: bien con el dedo, y la lista se desplaza con el dedo;
+  - encargo B entero (Mirta, Pip, tres páginas y Mirta con Lya): 168 → 208 monedas y 2 Bálsamos;
+  - en Oakhaven 3D se ven el distrito de los oficios e Hilda abre su taller;
+  - FPS del contador del juego: 30 (tope) en 2D, y en el distrito 3D 30 en bajo, 30 en medio y **9-14 en alto**.
+- **Fallos encontrados:**
+  - **«Recoger la página» no hacía nada con el dedo** (con Intro sí). Arreglado en `822927a`.
+  - **El botón Atrás no cerraba los talleres ni la botica.** Arreglado en `822927a`.
+  - Ambos arreglos tienen la prueba nueva `prueba_toque_oakhaven`, que falla sin ellos. **Sin probar todavía en el
+    móvil.**
+  - Batería en `822927a`: 103 superadas, 1 fallida y 43 manuales. La fallida es `prueba_equilibrio` (golpe de Kael
+    5,52 veces el de Lya, aprobado «unas 5»). No toca nada de lo cambiado y, repetida 3 veces sola, pasó las 3: es
+    inestable. No se cambió su resultado esperado.
+- **Pendiente, sin arreglar:**
+  - en Oakhaven 3D, el tejado de una casa tapa a Kael en el paso al pozo;
+  - una partida guardada en la ciudad 2D junto a la botica, al abrirse en 3D, pareció dejar a Kael encerrado (el tejado
+    lo tapaba y el dedo no lo movió). **En el PC no se repite** en ningún perfil: la casilla está libre y Kael anda
+    (`prueba_toque_oakhaven`, `f2b3ff4`). Mirarlo otra vez en el móvil;
+  - Mirta y Selene llevan el mismo muñeco y casi no se distinguen;
+  - la posadera está junto a la primera página y el botón la nombra a ella hasta que Kael se aparta.
+- **No probado en el teléfono:** encargo A (pide PV-05), las mejoras (faltan el hierro y las investigaciones) y el
+  Bálsamo en combate (no salió ningún encuentro). En el PC los cubre `prueba_oakhaven_v10`.
+
 ## V10 «OAKHAVEN, EL CORAZÓN VIVO DEL REINO» — 2026-11-10, 21:50 (hora local, UTC+1), HECHA EN EL PC
 
 - **Rama de trabajo:** LOCAL `claude/rebelum-v10`, copia `D:\Aethelgard_v10`, creada desde `claude/rebelum-v9` @
