@@ -7,6 +7,9 @@ extends SceneTree
 #   2. El botón Atrás de Android (NOTIFICATION_WM_GO_BACK_REQUEST, no ui_cancel) cierra la ventana de un taller
 #      (alquimia_menu.gd) y la de la botica (servicios_botica.gd); con la alquimia abierta dentro de la botica, cierra
 #      solo la alquimia.
+#   3. Una partida guardada en la ciudad 2D junto a la botica (34,4, 41,7), abierta en Oakhaven 3D (con «oakhaven3d»),
+#      en los tres perfiles: Kael no aparece dentro de una casa y puede andar. (En el Redmi pareció encerrado: el tejado
+#      de la casa de al lado lo tapaba y el dedo no lo movió; en el PC la casilla está libre. Queda como comprobación.)
 # Usa su propia partida (Engine «archivo_partida_prueba»): nunca toca la de verdad. Imprime «FALLOS: n».
 
 const CIUDAD := "res://ciudad_oakhaven.tscn"
@@ -32,6 +35,7 @@ func _frames(n: int) -> void:
 func _probar() -> void:
 	await _pagina_con_el_dedo()
 	await _atras()
+	await _no_encerrado()
 	for extra in ["", ".bak", ".tmp"]:
 		if FileAccess.file_exists(ARCHIVO + extra):
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(ARCHIVO + extra))
@@ -113,3 +117,33 @@ func _atras() -> void:
 	await _frames(2)
 	if not botica_cerrada[0] or is_instance_valid(botica):
 		_fallo("2: Atrás no cierra la botica")
+
+
+func _no_encerrado() -> void:
+	if not load("res://modo3d.gd").region_activa(0):
+		_fallo("3: Oakhaven 3D no está activa (hacen falta «3d oakhaven3d»)")
+		return
+	var pos_2d := Vector2(34.4, 41.7) * T                     # donde se guardó la partida en el Redmi
+	var p3: Vector3 = load("res://zonas3d/oakhaven_3d.gd").posicion_desde_2d(pos_2d)
+	for perfil in ["bajo", "medio", "alto"]:                  # en el Redmi iba en «bajo»
+		Engine.set_meta("calidad_proto", perfil)
+		Engine.set_meta("pos_zona", pos_2d)
+		Engine.set_meta("pos_zona_ok", true)
+		Engine.set_meta("pos_zona_lugar", 0)
+		var ruta: String = load("res://modo3d.gd").escena_equivalente(CIUDAD)
+		change_scene_to_file(ruta)
+		await _frames(40)
+		var v = current_scene
+		if v == null or not v.has_method("_prohibido"):
+			_fallo("3 (%s): no se abrió Oakhaven 3D" % perfil)
+			continue
+		var k: Vector3 = v.kael.global_position
+		print("OK 3 (%s): la casilla 2D %s cae en %s (bloqueada: %s); Kael aparece en %s" % [perfil, str(pos_2d / T),
+			str(p3), v._prohibido(p3), str(k)])
+		if v._prohibido(k):
+			_fallo("3 (%s): Kael aparece dentro de un edificio en %s" % [perfil, str(k)])
+		v.destino = v._ajustar_destino(k + Vector3(0, 0, 2.0))  # y puede andar
+		await _frames(60)
+		if v.kael.global_position.distance_to(k) < 0.3:
+			_fallo("3 (%s): Kael no puede andar desde %s" % [perfil, str(k)])
+	Engine.remove_meta("calidad_proto")
