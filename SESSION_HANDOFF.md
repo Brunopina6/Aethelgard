@@ -19,8 +19,14 @@
   - precarga más ligera: en el PC, 12,6 → 11,7 s y 1212 → ~930 MB;
   - batería 86/0/41/0.
   - Informes en `docs/fase2_optimizacion/`. **No fusionar ni subir sin autorización.**
-- **Siguiente paso concreto:** con el Redmi, instalar la APK de pruebas aparte de esta rama y medir lo pendiente
-  (`docs/fase2_optimizacion/RETOMAR.md`).
+- **Redmi (15:00):** «REBELUM Auditoría» v418 y después v420 (`c88e4df`), instaladas por el usuario desde Descargas
+  (MIUI cancela los avisos por USB si nadie pulsa). Las demás apps, intactas.
+  - Arranque: 19-21 s (esta mañana, 22-25).
+  - Pastos Verdes 3D: 30 FPS estables con la Automática en «bajo»; memoria gráfica 381 MB.
+  - Fallo del botón de volumen (pasaba a «teclado»): corregido y comprobado.
+  - Informe: `docs/fase2_optimizacion/VALIDACION_REDMI.md`. Rama local @ el commit de esa comprobación.
+- **Siguiente paso concreto:** que el usuario autorice fusionar la fase 2. Pendientes en el teléfono: combate (no
+  salió ningún encuentro), Garganta 3D y comparación exacta con la v413 (aceptar el aviso de MIUI).
 
 ## 10/11: auditoría autónoma, validación en el Redmi y fusión ([T-104](TASKS.md#t-104), [D-078](DECISIONS.md#d-078))
 
