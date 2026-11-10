@@ -35,6 +35,7 @@ func _ready() -> void:
 	panel.size = Vector2(1120, 648)
 	add_child(panel)
 	var titulo := _texto("Alquimia de Lya", 34, ORO)
+	titulo.autowrap_mode = TextServer.AUTOWRAP_OFF
 	titulo.position = Vector2(110, 52)
 	add_child(titulo)
 	var x := 110.0
@@ -162,7 +163,7 @@ func _pintar_recetas() -> void:
 		else:
 			linea2 = "Lista para preparar. Tienes %d." % Inv.cantidad(rc.resultado)
 		var desc: String = QUE_HACE.get(rc.resultado, "")
-		_fila("%s → %s" % [rc.nombre, rc.resultado], "Ingredientes: " + ", ".join(partes) + ("   ·   " + desc if desc != "" else ""),
+		_fila(rc.nombre if rc.nombre == rc.resultado else "%s → %s" % [rc.nombre, rc.resultado], "Ingredientes: " + ", ".join(partes) + ("   ·   " + desc if desc != "" else ""),
 			linea2, c2, "FABRICAR", motivo != "", _fabricar.bind(id))
 	if not hay:
 		lista.add_child(_texto("Lya aún no conoce ninguna receta.", 24, SUAVE))

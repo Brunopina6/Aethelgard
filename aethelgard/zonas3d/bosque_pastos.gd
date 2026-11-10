@@ -398,23 +398,13 @@ func _mat(c: Color, brillo := false) -> StandardMaterial3D:
 
 
 func _crear_arbol(p: Vector3) -> Node3D:
-	var n := Node3D.new()
-	n.name = "bq_arbol"
-	n.position = p
-	add_child(n)
 	var resuelto: bool = P().hito("bq_resuelto")
 	var purificado: bool = B.desenlace() == "purificado"
-	var corteza := Color(0.45, 0.33, 0.22) if purificado else Color(0.5, 0.5, 0.5)
-	var tronco := CylinderMesh.new()
-	tronco.top_radius = 0.22
-	tronco.bottom_radius = 0.34
-	tronco.height = 2.6
-	r._pieza(n, tronco, _mat(corteza), Vector3(0, 1.3, 0))
-	var copa := SphereMesh.new()
-	copa.radius = 1.25
-	copa.height = 1.9
-	var hojas := Color(0.32, 0.62, 0.26) if purificado else Color(0.55, 0.6, 0.52)
-	r._pieza(n, copa, _mat(hojas), Vector3(0, 3.0, 0))
+	# el mismo árbol de copa con viento que el resto de la región (sendero_puente.gd), de un verde ceniciento mientras el
+	# olvido lo marca y verde vivo si se purificó el bosque
+	var hojas := Color(0.34, 0.62, 0.26) if purificado else Color(0.6, 0.64, 0.58)
+	var n: Node3D = r._arbol_viento(p, 3.8, hojas)
+	n.name = "bq_arbol"
 	if purificado:                                   # florece
 		for k in 7:
 			var a := TAU * k / 7.0
@@ -434,10 +424,8 @@ func _crear_arbol(p: Vector3) -> Node3D:
 
 
 func _pulso_arbol() -> void:
-	if arbol != null:
-		var t := create_tween()
-		t.tween_property(arbol, "scale", Vector3(1.06, 1.06, 1.06), 0.25)
-		t.tween_property(arbol, "scale", Vector3.ONE, 0.4)
+	if arbol != null:                               # un destello en las runas (el árbol tiene física: no se escala)
+		r._destello(arbol, Vector3(0, 1.6, 0), 0.5)
 
 
 func _crear_lirios(p: Vector3) -> Node3D:
