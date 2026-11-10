@@ -21,7 +21,7 @@ const FICHAS := [
 	["Objetos", "Poción: PV. Éter: PM. Incienso de Ceniza: un rato sin encuentros."],
 ]
 
-const PESTANAS := ["Detalles", "Encargos", "Combate"]   # Encargos: V9 (encargos.gd)
+const PESTANAS := ["Detalles", "Combate", "Encargos"]   # Encargos: V9 (encargos.gd), al final
 
 var pestana := "Detalles"
 var cuerpo: VBoxContainer
