@@ -1,6 +1,6 @@
 # SESSION_HANDOFF: punto de control
 
-**Último punto de control:** 2026-11-10 a las 17:45 (hora local, UTC+1). **Directiva V9** del usuario («Operación
+**Último punto de control:** 2026-11-10 a las 19:10 (hora local, UTC+1). Tras la V9 inicial se añadieron, en la misma rama, el Coloso de la Falla (combate, animaciones), el sistema de encargos con «Canela se ha perdido», la identidad sonora del Guardián (sonido) y la pestaña Encargos del Diario; batería 100/0/43/0; APK de auditoría v499 en local (sin instalar). **Directiva V9** del usuario («Operación
 Renacimiento Total»):
 - Rama LOCAL `claude/rebelum-v9` (`D:\Aethelgard_v9`), creada desde la v293 verificada (`dca4c1c` = release
   `exp-20261109-dca4c1c`).
