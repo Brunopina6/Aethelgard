@@ -91,15 +91,15 @@ func en_banco() -> bool:
 func _crear_ambiente() -> void:
 	var env := Environment.new()
 	env.background_mode = Environment.BG_COLOR                 # la cámara de juego no ve el cielo: la hora azul, índigo
-	env.background_color = Color(0.17, 0.19, 0.33)
+	env.background_color = Color(0.21, 0.19, 0.33)
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.50, 0.53, 0.76)          # el AMBIENTE de la ciudad 2D (oakhaven_piezas.gd)
-	env.ambient_light_energy = 0.62
+	env.ambient_light_color = Color(0.58, 0.54, 0.70)          # el AMBIENTE de la 2D, algo más cálido (los faroles y las ventanas)
+	env.ambient_light_energy = 0.68
 	env.fog_enabled = true
 	env.fog_light_color = Color(0.30, 0.33, 0.50)
 	env.fog_density = 0.008
 	env.adjustment_enabled = true
-	env.adjustment_saturation = 1.08
+	env.adjustment_saturation = 1.14
 	env.adjustment_contrast = 1.08
 	env.tonemap_exposure = perfil.get("exposicion", 0.9 if perfil.get("sombras", false) else 1.0)
 	if perfil.get("brillo_bloom", nombre_perfil == "alto"):   # el resplandor de los faroles (perfil alto)
@@ -556,7 +556,7 @@ func _crear_interfaz() -> void:
 	aviso.modulate.a = 0.0
 	capa_ui.add_child(aviso)
 	panel_servicios = PanelContainer.new()
-	panel_servicios.position = Vector2(400, 150)
+	panel_servicios.position = Vector2(40, 130)           # a la izquierda: la posadera, en el centro, se ve
 	panel_servicios.visible = false
 	var caja := VBoxContainer.new()
 	caja.add_theme_constant_override("separation", 10)
