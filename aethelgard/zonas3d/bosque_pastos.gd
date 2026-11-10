@@ -25,6 +25,9 @@ const SITIO_MANANTIAL := Vector3(-16.0, 0, -8.5)
 const SITIO_COFRE := Vector3(-8.0, 0, -17.0)
 const SITIO_CLARO := Vector3(17.0, 0, -18.5)
 const SITIO_ORBE := Vector3(-9.0, 0, -10.0)        # el altar del orbe, en las ruinas (V9: los dos futuros del bosque)
+# Encargo «Canela se ha perdido» (V9; datos/encargos_pastos.gd): huellas hacia las ramas y la perra en las ruinas.
+const SITIOS_HUELLAS := [Vector3(-7.5, 0, 2.0), Vector3(-8.5, 0, -2.5)]
+const SITIO_PERRO := Vector3(-6.5, 0, -14.0)
 # Materiales: [id del punto, material, sitio, ¿solo tras abrir la senda?]
 const RECOLECCION := [
 	["bq_rec_hierba_1", "Hierba lunar", Vector3(4.5, 0, 6.5), false],
@@ -100,6 +103,7 @@ func _construir() -> void:
 		if P().hito(rec[0]) or (rec[3] and not P().hito("bq_senda")):
 			continue
 		_punto("rec:" + rec[0], _crear_material(_sitio(rec[2]), rec[1]), "Recoger: " + rec[1])
+	_crear_perro_y_huellas()
 	_crear_claro()
 	_claro_armado = r.kael == null or r._dist_plana(r.kael.global_position, SITIO_CLARO) > RADIO_CLARO
 	if P().hito("bq_resuelto") and not P().hito("bq_final_visto"):
@@ -115,6 +119,8 @@ func _crear_senda_abierta() -> void:
 	if not P().hito("bq_cofre_senda"):
 		_punto("cofre_senda", _crear_cofrecito(_sitio(SITIO_COFRE)), "Abrir el cofre")
 	_punto("orbe", _crear_altar_orbe(_sitio(SITIO_ORBE)), "Mirar el orbe")
+	if P().hito("enc_perro_pedido") and not P().hito("enc_perro_encontrado") and _pos_punto("perro") == Vector3.INF:
+		_punto("perro", _crear_perro(_sitio(SITIO_PERRO)), "Coger a Canela")
 
 
 # Hueco libre más cercano a «c» (fuera del río y de lo prohibido), en el suelo.
@@ -257,6 +263,15 @@ func accion(id: String) -> void:
 			r._mostrar_aviso(T.TEXTOS["claro_purificado" if B.desenlace() == "purificado" else "claro_derrotado"], 3.2)
 		"orbe":
 			_mirar_orbe()
+		"huellas_0", "huellas_1":
+			if not P().hito("enc_perro_huellas"):
+				P().poner_hito("enc_perro_huellas")
+				Sonido.efecto("examinar")
+			r._mostrar_aviso("Huellas pequeñas de perro. Van hacia el norte, hacia unas ramas caídas." if not P().hito("bq_senda")
+				else "Huellas pequeñas de perro. Siguen por la senda, hacia las ruinas.", 3.0)
+			_guardar()
+		"perro":
+			_dialogo("enc_perro")
 		"manantial":
 			_beber()
 		"cofre_senda":
@@ -307,6 +322,15 @@ func tras_dialogo(id: String) -> void:
 					_punto("rec:" + rec[0], _crear_material(_sitio(rec[2]), rec[1]), "Recoger: " + rec[1])
 		"bq_purificado", "bq_derrotado":            # V9: se abren los oficios de Kael y Garon
 			r._mostrar_aviso("Kael y Garon quieren probar lo aprendido: forja y runas en el menú (Objetos).", 3.6)
+		"enc_perro":
+			Pr.poner_hito("enc_perro_huellas")
+			Pr.poner_hito("enc_perro_encontrado")
+			_quitar_punto("perro")
+			for k in 2:
+				_quitar_punto("huellas_%d" % k)
+			_canela_sigue()
+			Sonido.efecto("union")
+			r._mostrar_aviso("Canela os sigue. Llevádsela a Pip, en Oakhaven.", 3.0)
 		"bq_orbe_a":
 			Pr.poner_hito("bq_orbe_a")
 			_vision(false)
@@ -687,6 +711,7 @@ func _ciervo(p: Vector3) -> void:
 
 func _animar(_delta: float) -> void:
 	animar_orbe()
+	_animar_canela(_delta)
 	for m in runas:                                  # las runas laten
 		if is_instance_valid(m):
 			m.scale = Vector3.ONE * (1.0 + 0.15 * sin(_t * 3.0))
@@ -769,3 +794,100 @@ func animar_orbe() -> void:
 	if orbe != null and is_instance_valid(orbe):
 		orbe.position.y = 1.45 + 0.08 * sin(_t * 1.6)
 		orbe.rotation.y = _t * 0.6
+
+
+# ================================================================= encargo «Canela se ha perdido» (V9)
+# Pip lo pide en Oakhaven (ciudades/oakhaven.gd, señal oak:pip_perro). Aquí: dos rastros de huellas en el camino que
+# llevan a las ramas; tras abrir la senda (Garon), Canela en las ruinas; al encontrarla os sigue por la región.
+var canela: Node3D
+
+
+func _crear_perro_y_huellas() -> void:
+	var Pr = P()
+	if not Pr.hito("enc_perro_pedido") or Pr.hito("enc_perro_encontrado"):
+		if Pr.hito("enc_perro_encontrado") and not Pr.hito("enc_perro_devuelto"):
+			_canela_sigue()
+		return
+	for k in SITIOS_HUELLAS.size():
+		_punto("huellas_%d" % k, _crear_huellas(_sitio(SITIOS_HUELLAS[k])), "Examinar las huellas")
+	if Pr.hito("bq_senda") and _pos_punto("perro") == Vector3.INF:
+		_punto("perro", _crear_perro(_sitio(SITIO_PERRO)), "Coger a Canela")
+
+
+func _pos_punto(id: String) -> Vector3:
+	for p in puntos:
+		if p["id"] == id and is_instance_valid(p["nodo"]):
+			return p["nodo"].global_position
+	return Vector3.INF
+
+
+func _crear_huellas(p: Vector3) -> Node3D:
+	var n := Node3D.new()
+	n.name = "bq_huellas"
+	n.position = p
+	add_child(n)
+	for k in 5:                                      # pisadas en fila hacia el norte
+		var pata := CylinderMesh.new()
+		pata.top_radius = 0.05
+		pata.bottom_radius = 0.05
+		pata.height = 0.01
+		r._pieza(n, pata, _mat(Color(0.32, 0.24, 0.16)), Vector3(0.12 * (k % 2) - 0.06, 0.02, -k * 0.3))
+	r._destello(n, Vector3(0, 0.3, 0), 0.25)
+	return n
+
+
+func _crear_perro(p: Vector3, brillo := true) -> Node3D:
+	var n := Node3D.new()
+	n.name = "bq_canela"
+	n.position = p
+	add_child(n)
+	var pelo := _mat(Color(0.78, 0.52, 0.28))
+	var cuerpo := CapsuleMesh.new()
+	cuerpo.radius = 0.13
+	cuerpo.height = 0.5
+	r._pieza(n, cuerpo, pelo, Vector3(0, 0.3, 0), Vector3(90, 0, 0))
+	var cabeza := SphereMesh.new()
+	cabeza.radius = 0.11
+	cabeza.height = 0.2
+	r._pieza(n, cabeza, pelo, Vector3(0, 0.45, -0.27))
+	for k in 2:                                      # orejas: la izquierda, doblada
+		var oreja := BoxMesh.new()
+		oreja.size = Vector3(0.05, 0.1, 0.02)
+		r._pieza(n, oreja, _mat(Color(0.6, 0.38, 0.2)), Vector3(-0.06 + 0.12 * k, 0.56 if k == 1 else 0.52, -0.27),
+			Vector3(0 if k == 1 else 60, 0, 0))
+	for k in 4:
+		var pata := CylinderMesh.new()
+		pata.top_radius = 0.025
+		pata.bottom_radius = 0.025
+		pata.height = 0.2
+		r._pieza(n, pata, pelo, Vector3(-0.07 + 0.14 * (k % 2), 0.1, -0.15 + 0.3 * int(k / 2.0)))
+	var cola := CylinderMesh.new()
+	cola.top_radius = 0.01
+	cola.bottom_radius = 0.03
+	cola.height = 0.22
+	r._pieza(n, cola, pelo, Vector3(0, 0.4, 0.28), Vector3(-40, 0, 0))
+	if brillo:
+		r._destello(n, Vector3(0, 0.7, 0), 0.3)
+	return n
+
+
+# Canela sigue a Kael por la región hasta devolvérsela a Pip.
+func _canela_sigue() -> void:
+	if canela != null and is_instance_valid(canela):
+		return
+	var p: Vector3 = r.kael.global_position if r.kael != null else Vector3.ZERO
+	canela = _crear_perro(p + Vector3(1.0, 0, 1.0), false)
+
+
+func _animar_canela(delta: float) -> void:
+	if canela == null or not is_instance_valid(canela) or r.kael == null:
+		return
+	var objetivo: Vector3 = r.kael.global_position + Vector3(0.9, 0, 0.9)
+	var d := canela.global_position.distance_to(objetivo)
+	if d > 12.0:
+		canela.global_position = objetivo                  # tras un salto grande (recolocación), a su lado
+	elif d > 0.4:
+		var q := canela.global_position.move_toward(objetivo, delta * 4.5)
+		q.y = r.altura(q.x, q.z)
+		canela.look_at(Vector3(objetivo.x, q.y, objetivo.z), Vector3.UP, true)
+		canela.global_position = q

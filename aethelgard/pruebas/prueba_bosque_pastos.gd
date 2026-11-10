@@ -34,6 +34,7 @@ func _initialize() -> void:
 	var h := {}
 	for id in ["pv_02", "pv_03", "pv_05", "pv_06", "pv_07", "pv_14", "mecha_tilo"]:
 		h[id] = true
+	h["enc_perro_pedido"] = true                       # V9: el encargo de Pip, ya pedido
 	Engine.set_meta("hitos", h)
 	Engine.set_meta("combates_ganados", {"pastos_centinela": true})
 	Engine.set_meta("cofres_abiertos", {})
@@ -153,6 +154,13 @@ func _probar() -> void:
 		_fallo("3: la inscripción no completa las pistas (bq_pistas)")
 	if lirios.distance_to(surcos) < 8.0 or surcos.distance_to(insc) < 8.0 or lirios.distance_to(insc) < 8.0:
 		_fallo("3: las pistas están demasiado juntas (%s, %s, %s)" % [lirios, surcos, insc])
+	# 3c. el encargo de Pip (V9): huellas y Canela en las ruinas, tras la senda
+	await _usar(r, "huellas_0", "bq:huellas_0")
+	if not P.hito("enc_perro_huellas"):
+		_fallo("3c: las huellas no se apuntan")
+	await _usar(r, "perro", "bq:perro")
+	if not P.hito("enc_perro_encontrado") or r.bosque.canela == null:
+		_fallo("3c: encontrar a Canela no la apunta o no os sigue")
 	# 3b. el orbe del altar (V9): dos visiones, una tras otra; con las dos, bq_futuros
 	await _usar(r, "orbe", "bq:orbe")
 	if not P.hito("bq_orbe_a") or P.hito("bq_orbe_b"):

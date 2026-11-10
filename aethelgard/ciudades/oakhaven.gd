@@ -134,6 +134,10 @@ const NPCS := [
 		"dialogos": [
 			{"dialogo": "oak_pip_cucharon", "si": ["estado:favores", "!estado:favor_cucharon", "!hito:oak_favores"],
 				"prioridad": true},
+			# V9, encargo «Canela se ha perdido» (datos/encargos_pastos.gd; la perra está en las ruinas de Pastos Verdes)
+			{"dialogo": "oak_pip_perro", "si": ["hito:pv_14", "!hito:enc_perro_pedido"], "prioridad": true},
+			{"dialogo": "oak_pip_perro_gracias", "si": ["hito:enc_perro_encontrado", "!hito:enc_perro_devuelto"], "prioridad": true},
+			{"dialogo": "oak_pip_perro_despues", "si": "hito:enc_perro_devuelto"},
 			{"dialogo": "npc_pip", "si": "!decision:pip_oak=pagado"},
 			{"dialogo": "oak_pip_secreto", "si": ["!decision:pip_oak=pagado", "oro:1"]},
 			{"dialogo": "oak_pip_sin_monedas", "si": ["!decision:pip_oak=pagado", "!oro:1"]},
@@ -379,7 +383,7 @@ const NOTAS := [
 const SENALES := ["oak:pip_pagar", "oak:favores_aceptados", "oak:favor_barril", "oak:favor_flores",
 	"oak:favor_cucharon", "oak:favores_hechos", "oak:faroles_aceptados", "oak:farol_1", "oak:farol_2", "oak:farol_3",
 	"oak:faroles_hechos", "oak:lavanda_pedida", "oak:lavanda_cogida", "oak:lavanda_entregada", "oak:encina_gracias",
-	"oak:torre", "oak:grieta", "oak:vista_raices", "oak:sopa", "oak:rumor", "oak:dormir", "oak:encina_bosque"]
+	"oak:torre", "oak:grieta", "oak:vista_raices", "oak:sopa", "oak:rumor", "oak:dormir", "oak:encina_bosque", "oak:pip_perro", "oak:pip_perro_fin"]
 # Condiciones con nombre (las demás: hito:, estado:, decision:k=v, grupo:, oro:n, modo:3d/2d y ganado:<combate fijo>,
 # uno de «combates_ganados», como garganta_gorthor; «!» las niega).
 const CONDICIONES := {
@@ -621,6 +625,16 @@ static func aplicar_senal(arg: Variant) -> String:
 			d["pip_oak"] = "pagado"
 			Engine.set_meta("decisiones", d)
 			return "Le das una moneda a Pip."
+		"oak:pip_perro":                              # V9: Pip pide ayuda; Canela aparece en Pastos Verdes
+			if P.hito("enc_perro_pedido"):
+				return ""
+			P.poner_hito("enc_perro_pedido")
+			return "Nuevo encargo: «Canela se ha perdido» (Diario, Encargos)."
+		"oak:pip_perro_fin":                          # V9: se la devolvéis; el premio, una sola vez
+			if not P.hito("enc_perro_encontrado") or P.hito("enc_perro_devuelto"):
+				return ""
+			P.poner_hito("enc_perro_devuelto")
+			return "Canela se ha perdido: " + _dar(load("res://encargos.gd").de("enc_perro")["m"]["recompensa"]) + "."
 		"oak:favores_aceptados":
 			return _empezar("favores", "oak_favores")
 		"oak:favor_barril", "oak:favor_flores", "oak:favor_cucharon":

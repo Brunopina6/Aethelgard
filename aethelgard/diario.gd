@@ -21,7 +21,7 @@ const FICHAS := [
 	["Objetos", "Poción: PV. Éter: PM. Incienso de Ceniza: un rato sin encuentros."],
 ]
 
-const PESTANAS := ["Detalles", "Combate"]
+const PESTANAS := ["Detalles", "Encargos", "Combate"]   # Encargos: V9 (encargos.gd)
 
 var pestana := "Detalles"
 var cuerpo: VBoxContainer
@@ -115,6 +115,9 @@ func _pintar() -> void:
 		c.queue_free()
 	for b in botones:
 		b.add_theme_color_override("font_color", Estilo.ORO if b.get_meta("p") == pestana else Estilo.LUZ_CLARA)
+	if pestana == "Encargos":
+		_pintar_encargos()
+		return
 	if pestana == "Combate":
 		for f in FICHAS + load("res://artes.gd").fichas_activas():   # con las fichas de las artes nuevas (T-091)
 			cuerpo.add_child(_texto(f[0], 30, Estilo.ORO, true))
@@ -177,3 +180,27 @@ func _texto(t: String, tam: int, color: Color, cursiva := false) -> Label:
 	l.add_theme_font_size_override("font_size", tam)
 	l.add_theme_color_override("font_color", color)
 	return l
+
+
+# Encargos de todas las regiones (V9, encargos.gd): los activos con el paso que falta y después los hechos, con lo que
+# se consiguió. Los que aún no han empezado no salen.
+func _pintar_encargos() -> void:
+	var E = load("res://encargos.gd")
+	var lista: Array = E.para_diario()
+	if lista.is_empty():
+		cuerpo.add_child(_texto("Aún no tienes encargos. Habla con la gente: siempre hay alguien que necesita ayuda.", 22, Estilo.GRIS, true))
+		return
+	for e in lista:
+		var m: Dictionary = e["m"]
+		var hecho: bool = E.estado(e) == "hecho"
+		cuerpo.add_child(_texto("%s%s · %s" % ["✔ " if hecho else "", m["nombre"], e["lugar"]], 28,
+			Estilo.CURA if hecho else Estilo.ORO, true))
+		var t := _texto("      " + (str(m.get("pago", "")) if hecho else str(m.get("resumen", ""))), 20, Estilo.GRIS, true)
+		t.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		t.custom_minimum_size = Vector2(1040, 0)
+		cuerpo.add_child(t)
+		if not hecho:
+			var p: Dictionary = E.paso_actual(e)
+			if not p.is_empty():
+				cuerpo.add_child(_texto("      Ahora: " + str(p["texto"]), 22, Estilo.LUZ_CLARA, true))
+		cuerpo.add_child(Control.new())

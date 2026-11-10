@@ -487,7 +487,7 @@ func _al_terminar_dialogo() -> void:
 
 
 func _tras_dialogo(id: String) -> void:
-	if id.begins_with("bq_") and bosque != null:        # la aventura del bosque (fase 3)
+	if (id.begins_with("bq_") or id.begins_with("enc_")) and bosque != null:   # la aventura del bosque y sus encargos
 		bosque.tras_dialogo(id)
 		return
 	var P = load("res://progreso.gd")
