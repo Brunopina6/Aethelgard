@@ -19,6 +19,8 @@ const ARCHIVO := "user://prueba_coloso_garganta.save"
 const ESPERA_MAX_MS := 45000
 const TOL := 0.6
 const K := preload("res://combate_coloso.gd")
+const ALCANCE := Vector3(12.6, -8.0, -37.4)          # junto al Coloso, en la cornisa: se pisa y le despierta
+const CASCADA_TRAMO := Vector3(11.4, -8.0, -36.0)    # donde prueba_garganta3d_tramo espera el comentario de la cascada
 
 var frames := 0
 var paso := 0
@@ -173,12 +175,14 @@ func _sitio(r) -> void:
 		fallos.append("1: su disparo alcanza el sitio desde el que se examina el pilar")
 	if _plana(G3.COLOSO, G3.VUELTA_COLOSO) <= G3.RADIO_COLOSO + 0.5:
 		fallos.append("1: la vuelta queda dentro de su disparo")
-	if not T.andable(G3.VUELTA_COLOSO, false) or not T.andable(G3.COLOSO, false):
-		fallos.append("1: la vuelta o el sitio del Coloso no se pueden pisar")
+	if not T.andable(G3.VUELTA_COLOSO, false) or not T.andable(ALCANCE, false) or not r._en_coloso(ALCANCE):
+		fallos.append("1: la vuelta o el sitio junto al Coloso no se pueden pisar (o no despiertan)")
+	if r._en_coloso(CASCADA_TRAMO):
+		fallos.append("1: el sitio de la cascada de prueba_garganta3d_tramo despierta al Coloso")
 	if fallos.is_empty():
 		print("OK 1: el Coloso duerme al fondo de la grieta; su disparo no alcanza el pilar ni la vuelta")
 	_poner(r, G3.VUELTA_COLOSO)
-	_andar(r, G3.COLOSO)
+	_andar(r, ALCANCE)
 	_siguiente(2)
 
 
@@ -201,7 +205,7 @@ func _tras_perder(r) -> void:
 	if fallos.size() == antes:
 		print("OK 3: tras perder, vuelta fuera del disparo, sin repetir ni apuntar; el pilar se examina sin despertarle")
 	_poner(r, G3.VUELTA_COLOSO)
-	_andar(r, G3.COLOSO)
+	_andar(r, ALCANCE)
 	_siguiente(5)
 
 
@@ -217,5 +221,5 @@ func _tras_ganar(r) -> void:
 		fallos.append("4: tras ganar, Kael aparece a %.2f m de la vuelta" % _plana(r.kael.global_position, G3.VUELTA_COLOSO))
 	if fallos.size() == antes:
 		print("OK 4a: se gana: +%d %s y el Fragmento; el Coloso ya no está" % [K.CANTIDAD_MATERIAL, K.MATERIAL])
-	_andar(r, G3.COLOSO)
+	_andar(r, ALCANCE)
 	_siguiente(8)
