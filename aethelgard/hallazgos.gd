@@ -52,6 +52,8 @@ const FUERA := {
 	"moneda_aguila": "tienda de Sunken City (EN_TIENDA)",
 	"lagrima_ambar": "primera victoria en el nido de la Garganta (combate.gd, RECOMPENSA_FIJO)",
 	"fauces_gorthor": "al vencer a Gorthor (combate.gd, RECOMPENSA_FIJO)",
+	"brote_guardian": "al purificar al Guardián del Bosque, Pastos Verdes (fase 3; combate.gd, _premio_bosque)",
+	"corteza_guardian": "al derrotar al Guardián del Bosque, Pastos Verdes (fase 3; combate.gd, _premio_bosque)",
 }
 
 
