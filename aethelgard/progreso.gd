@@ -296,33 +296,61 @@ static func leer(ruta: String):
 const AVISO_NO_GUARDA := "No se pudo guardar la partida. Se volverá a intentar en el próximo guardado."
 
 
+# Solo para las pruebas (prueba_guardado_fallos): simulan fallos del disco. En el juego valen 0 y false.
+static var fallos_renombrar := 0                  # cuántos de los próximos renombrados fallan
+static var falla_copia := false                   # la copia «.bak» falla
+static var falla_escritura := false               # no se puede abrir el «.tmp»
+
+
+# Garantías (10/11): la partida principal solo se quita cuando su copia «.bak» está escrita y se lee bien, y si el
+# guardado falla después de quitarla, se restaura desde esa copia. Un «.tmp» bueno que quedó de un intento fallido (la
+# copia más reciente si falta la principal) se guarda en «.bak» antes de reescribir el «.tmp».
 static func escribir(d: Dictionary, ruta: String) -> bool:
 	var texto := var_to_str(d)
 	var tmp := ruta + ".tmp"
-	var f := FileAccess.open(tmp, FileAccess.WRITE)
+	var real := ProjectSettings.globalize_path(ruta)
+	var tmp_real := ProjectSettings.globalize_path(tmp)
+	if leer(ruta) == null and leer(tmp) != null:
+		DirAccess.copy_absolute(tmp_real, real + ".bak")
+	var f: FileAccess = null if falla_escritura else FileAccess.open(tmp, FileAccess.WRITE)
 	if f == null:
-		push_warning("No se pudo guardar la partida (%s)" % error_string(FileAccess.get_open_error()))
+		push_warning("No se pudo guardar la partida (%s)" % ("simulado" if falla_escritura else error_string(FileAccess.get_open_error())))
 		_avisar(AVISO_NO_GUARDA)
 		return false
 	f.store_string(texto)
 	f.close()
 	if FileAccess.get_file_as_string(tmp) != texto:
 		push_warning("No se pudo guardar la partida: lo escrito no coincide")
-		DirAccess.remove_absolute(ProjectSettings.globalize_path(tmp))
+		DirAccess.remove_absolute(tmp_real)
 		_avisar(AVISO_NO_GUARDA)
 		return false
-	var real := ProjectSettings.globalize_path(ruta)
-	if leer(ruta) != null:
-		DirAccess.copy_absolute(real, real + ".bak")
-	var err := DirAccess.rename_absolute(ProjectSettings.globalize_path(tmp), real)
-	if err != OK:                                  # (en Windows no se puede renombrar encima de un archivo)
+	var habia_principal := leer(ruta) != null
+	if habia_principal:
+		var e: Error = ERR_CANT_CREATE if falla_copia else DirAccess.copy_absolute(real, real + ".bak")
+		if e != OK or leer(ruta + ".bak") == null:  # sin copia comprobada no se toca la principal
+			push_warning("No se pudo guardar la partida: no se pudo hacer la copia de seguridad")
+			_avisar(AVISO_NO_GUARDA)
+			return false
+	var err := _renombrar(tmp_real, real)
+	if err != OK and FileAccess.file_exists(ruta): # (en algunos sistemas no se puede renombrar encima de un archivo)
+		if not habia_principal and not FileAccess.file_exists(ruta + ".danada"):
+			DirAccess.copy_absolute(real, real + ".danada")   # una principal que no se lee se aparta, no se pierde
 		DirAccess.remove_absolute(real)
-		err = DirAccess.rename_absolute(ProjectSettings.globalize_path(tmp), real)
+		err = _renombrar(tmp_real, real)
+		if err != OK and habia_principal:          # no se borra nada: vuelve la principal desde su copia comprobada
+			DirAccess.copy_absolute(real + ".bak", real)
 	if err != OK:
 		push_warning("No se pudo guardar la partida (%s)" % error_string(err))
 		_avisar(AVISO_NO_GUARDA)
 		return false
 	return true
+
+
+static func _renombrar(de: String, a: String) -> Error:
+	if fallos_renombrar > 0:
+		fallos_renombrar -= 1
+		return ERR_CANT_CREATE
+	return DirAccess.rename_absolute(de, a)
 
 
 # Lo que se guarda: las CLAVES que haya en Engine. Lo usan guardar() y las pruebas (que no escriben archivos).
