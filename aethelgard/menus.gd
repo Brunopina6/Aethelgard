@@ -250,6 +250,14 @@ func _cambiar(ranura: String, paso: int) -> void:
 func _pintar_objetos() -> void:
 	cuerpo.add_child(_texto("Objetos", 26, COLOR_TITULO))
 	cuerpo.add_child(_texto("Monedas: %d" % Inv.oro(), 22, COLOR_TITULO))
+	if load("res://progreso.gd").hito("bq_alquimia") and load("res://grupo.gd").activos().has("Lya"):   # fase 3
+		var alq := _boton("Alquimia de Lya", 18, Vector2(240, 40), "alquimia")
+		alq.pressed.connect(func():
+			Sonido.efecto("ui_tic")
+			var a = load("res://alquimia_menu.gd").new()
+			a.cerrado.connect(_pintar_de_nuevo)
+			get_tree().root.add_child(a))
+		cuerpo.add_child(alq)
 	var usos: Dictionary = load("res://combate.gd").OBJETOS_COMBATE
 	for o in Inv.datos()["objetos"]:
 		var f := HBoxContainer.new()
