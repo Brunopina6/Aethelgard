@@ -25,11 +25,11 @@ Escrito para leerlo sin saber programar.
   - Oakhaven reacciona.
 - **El orbe del altar:** enseña los dos futuros del bosque.
 - **Los oficios:** forja de Kael, runas de Garon y taller conjunto, además de la alquimia de Lya.
-- **Batería completa:** 93 superadas, 0 fallidas.
+- **El escalado de enemigos por región** y **el Claro del Guardián** (sector 3D de Blender).
+- **Batería completa:** 95 superadas, 0 fallidas.
 
 ## Qué queda pendiente (por orden)
 
-1. Revisar y fusionar el escalado de enemigos y el Claro del Guardián.
 2. Probarlo todo en el Redmi: `docs/fase3_bosque/PENDIENTES_REDMI.md`, más el orbe y los talleres.
 3. El cuarto protagonista (magia negra). Antes, revisar el «Mago negro» antiguo de `grupo.gd`.
 4. **Siguientes jefes:**

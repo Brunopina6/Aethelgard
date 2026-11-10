@@ -19,8 +19,8 @@ claros en GitHub», pero CLAUDE.md exige tu autorización expresa para subir est
 | 3. Aventura del orbe | **Hecho** (Redmi) | Altar con orbe en las ruinas: muestra los dos futuros del bosque (purificado y caído), y verlos adelanta la investigación de Lya. Propuesta experimental: **pendiente de canon** | `zonas3d/bosque_pastos.gd`, `dialogos/bosque/bq_orbe_*.dtl`, `prueba_bosque_pastos` |
 | 4. Profesiones | **Hecho** (Redmi) | Ver la tabla de abajo | `talleres.gd`, `alquimia_menu.gd`, `datos/`, `prueba_oficios` |
 | 5. Oakhaven: tienda y consecuencia | **Hecho** (Redmi) | Doña Encina según el desenlace; la tienda de Oakhaven vende Hierba lunar, Savia clara y Musgo de piedra según el desenlace | `ciudades/oakhaven.gd`, `tienda.gd`, `prueba_tienda_bosque` |
-| 6. Expansión 3D | **En curso** | Gráficos construye con Blender el Claro del Guardián (arena del jefe, tres estados) | rama `claude/v9-sector` |
-| 7. Combate y personajes | **Parcial** | Escalado de enemigos por región, en curso (combate). El arquetipo de magia negra está **pendiente**: en `grupo.gd` hay un «Mago negro» (Nyx) antiguo que hay que revisar antes | rama `claude/v9-escalado` |
+| 6. Expansión 3D | **Hecho** (Redmi) | El Claro del Guardián, sector de Blender y obra propia: corro de menhires con runas, raíces, tocón-trono y tres estados (dormido, purificado y derrotado); kit ligero para los perfiles medio y bajo | `zonas3d/bosque/`, `prueba_claro_guardian` |
+| 7. Combate y personajes | **Parcial** | **Escalado de enemigos hecho:** base y tope por región, jefes con margen propio, en la base igual que antes (huella idéntica); `combate_escalado.gd`, `prueba_escalado`. El arquetipo de magia negra está **pendiente**: en `grupo.gd` hay un «Mago negro» (Nyx) antiguo que hay que revisar antes | rama `claude/v9-escalado` |
 | 8. Más jefes (Coloso, Campanero) | **Pendiente** | Solo diseño (directiva V9) | — |
 | 9. Contenido opcional (Emperador Slime, encargos) | **Pendiente** | El sistema de encargos reutilizable, sin hacer | — |
 | 10. Pulido | **Parcial** | Capturas revisadas, árbol marcado con el estilo de la región y textos de la alquimia. Falta sonido y música propios del Guardián | — |
@@ -48,8 +48,8 @@ claros en GitHub», pero CLAUDE.md exige tu autorización expresa para subir est
 | Interacción con el orbe y primera consecuencia narrativa | Hecho |
 | Una investigación profesional y una mejora de equipo | Hecho (varias) |
 | Primer comercio funcional | Hecho (la tienda de siempre, con mercancía según el desenlace) |
-| Un sector 3D ampliado | En curso (gráficos) |
-| Pruebas funcionales y de regresión | Hecho: batería completa, ver `docs/v9/RETOMAR.md` |
+| Un sector 3D ampliado | Hecho: el Claro del Guardián |
+| Pruebas funcionales y de regresión | Hecho: batería completa, 95 superadas y 0 fallidas (`D:REBELUM_diagnosticopruebas�6-11-10_172904`) |
 | Comparación de rendimiento con la v293 | Parcial: el arranque en el Redmi se midió con la v418 (19-21 s, frente a 22-25 s esta mañana); la aventura, sin medir en el teléfono |
 | Commits en GitHub | Pendiente de tu autorización |
-| APK de pruebas | Se compila en local al cerrar la tanda |
+| APK de pruebas | Compilada en local: v471, `D:REBELUM_compilacionesAethelgard_androidauditora-20261110-6356807.apk` (280,0 MB, SHA-256 `6d9ec5d2…`); sin instalar |
