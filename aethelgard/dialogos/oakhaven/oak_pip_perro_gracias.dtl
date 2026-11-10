@@ -1,0 +1,6 @@
+join pip (normal) center
+pip: ¡Canela! ¡Canela, tonta, ven aquí!
+pip: …No estoy llorando. Es el polvo del callejón.
+pip: Toma, para vosotros. Lo tenía guardado para algo importante. Esto lo es.
+[signal arg="oak:pip_perro_fin"]
+leave pip

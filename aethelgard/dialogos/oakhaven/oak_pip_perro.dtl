@@ -1,0 +1,6 @@
+join pip (normal) center
+pip: ¡Eh, tú! ¿Has visto a una perra canela, así de pequeña, con una oreja doblada?
+pip: Se llama Canela. Salió corriendo hacia los Pastos y no ha vuelto.
+pip: Yo no puedo ir: mi abuela dice que allí los árboles se olvidan de las cosas. Tráemela, ¿vale?
+[signal arg="oak:pip_perro"]
+leave pip

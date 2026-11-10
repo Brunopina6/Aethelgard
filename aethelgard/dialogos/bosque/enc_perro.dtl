@@ -1,0 +1,11 @@
+join kael (vivo_pv) left
+join lya (vivo_pv) right
+update lya [extra_data="inquieta"]
+lya: ¡Ahí! Detrás de la columna. Una perra… con una oreja doblada.
+update kael [extra_data="ligero"]
+kael: Tú debes de ser Canela. Pip te está buscando.
+garon: Tiembla. Que no ande sola por aquí.
+update kael [extra_data="decidido"]
+kael: Vamos, pequeña. Te llevamos a casa.
+leave kael
+leave lya
