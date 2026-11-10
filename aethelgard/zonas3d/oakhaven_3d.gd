@@ -15,6 +15,7 @@ const Posada := preload("res://ciudades/oakhaven_posada.gd")
 const Vida := preload("res://ciudades/oakhaven_vida.gd")
 const Ciudad := preload("res://zonas3d/oakhaven/ciudad.gd")
 const Sala := preload("res://zonas3d/oakhaven/posada3d.gd")
+const Distrito := preload("res://zonas3d/oakhaven/distrito.gd")   # V10: el distrito de los oficios, junto a la plaza
 const Materiales := preload("res://zonas3d/garganta/materiales.gd")
 const Progreso := preload("res://progreso.gd")
 
@@ -36,6 +37,7 @@ var nombre_perfil := "alto"
 var mat: Materiales
 var ciudad                                 # zonas3d/oakhaven/ciudad.gd
 var sala                                   # zonas3d/oakhaven/posada3d.gd
+var distrito                               # zonas3d/oakhaven/distrito.gd (null sin él)
 var grupo: Node3D
 var capa_ui: CanvasLayer
 var fundido: ColorRect
@@ -125,6 +127,7 @@ func _crear_ambiente() -> void:
 func _crear_escenario() -> void:
 	ciudad = Ciudad.new(self, mat, perfil, nombre_perfil)
 	ciudad.construir()
+	distrito = Distrito.crear(self, ciudad, mat, perfil, nombre_perfil)
 	sala = Sala.new(self, mat, perfil)
 	sala.construir()
 
@@ -166,7 +169,7 @@ func _colocar_kael(p: Vector3) -> void:
 	seguro = p
 	foco = p
 	destino = null
-	var z: Array = CAMARA_POSADA if Sala.en_sala(p) else CAMARA_CIUDAD
+	var z: Array = CAMARA_POSADA if Sala.en_sala(p) else (distrito.camara(p, CAMARA_CIUDAD) if distrito != null else CAMARA_CIUDAD)
 	inclinacion = z[0]
 	distancia = clampf(_dist_jugador, z[1], z[2])
 	_dist_puesta = distancia
@@ -176,7 +179,7 @@ func _colocar_kael(p: Vector3) -> void:
 func _camara_zona(delta: float) -> void:
 	if absf(distancia - _dist_puesta) > 0.0001:
 		_dist_jugador = clampf(_dist_jugador + distancia - _dist_puesta, DIST_MIN, DIST_MAX)
-	var z: Array = CAMARA_POSADA if en_posada else CAMARA_CIUDAD
+	var z: Array = CAMARA_POSADA if en_posada else (distrito.camara(kael.global_position, CAMARA_CIUDAD) if distrito != null else CAMARA_CIUDAD)
 	var k := 1.0 - exp(-2.2 * delta)
 	inclinacion = lerpf(inclinacion, z[0], k)
 	distancia = lerpf(distancia, clampf(_dist_jugador, z[1], z[2]), k)
@@ -209,7 +212,8 @@ func _parar_kael() -> void:
 
 func ocupado() -> bool:
 	var dg = get_node_or_null("/root/Dialogic")
-	return cambiando or (panel_servicios != null and panel_servicios.visible) or (dg != null and dg.current_timeline != null)
+	return cambiando or (panel_servicios != null and panel_servicios.visible) or (dg != null and dg.current_timeline != null) \
+		or (distrito != null and distrito.ocupado())
 
 
 # El panel del prototipo trae bancos de medida de Pastos Verdes: aquí solo CAL y RND.
@@ -280,7 +284,7 @@ func _piezas_al_alcance() -> Array:
 		return [["posadera", Sala.ORIGEN + Sala.MOSTRADOR, 1.6, "Hablar con la posadera"],
 			["salir_posada", Sala.ORIGEN + Sala.PUERTA - Vector3(0, 0, 0.6), 1.3, "Salir a la calle"]]
 	return [["aldric", ALDRIC, 2.2, "Hablar con Aldric"],
-		["posada", PUERTA_TABERNA, RADIO_ACCION, "Entrar en la posada"]]
+		["posada", PUERTA_TABERNA, RADIO_ACCION, "Entrar en la posada"]] + (distrito.piezas() if distrito != null else [])
 
 
 func _comprobar_cerca() -> void:
@@ -321,6 +325,9 @@ func _accion() -> void:
 			_salir_posada()
 		"posadera":
 			_abrir_servicios()
+		_:
+			if distrito != null:
+				distrito.accion(cerca)                     # los oficios y el pozo del distrito
 
 
 # ================================================================= Aldric (su diálogo de siempre)
