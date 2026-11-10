@@ -6,6 +6,20 @@ var esc: Node
 var frames := 0
 var dpad: Control
 var antes := Vector2.ZERO
+var fallos := 0
+
+
+func _fallo(t: String) -> void:
+	fallos += 1
+	print("FALLO: ", t)
+
+
+func _terminar() -> bool:
+	print("FALLOS: %d" % fallos)
+	quit(1 if fallos > 0 else 0)
+	return true
+
+
 
 
 func _initialize() -> void:
@@ -24,8 +38,8 @@ func _process(_d: float) -> bool:
 			if n.get_script() != null and n.get_script().resource_path.ends_with("dpad.gd"):
 				dpad = n
 		if dpad == null:
-			print("NO HAY CRUCETA")
-			return true
+			_fallo("no hay cruceta en la escena")
+			return _terminar()
 		antes = esc.jugador.position
 		var t := InputEventScreenTouch.new()
 		t.index = 0
@@ -36,11 +50,15 @@ func _process(_d: float) -> bool:
 	if frames == 65:
 		var d: Vector2 = esc.jugador.position - antes
 		print("se ha movido ", d.round(), "  -> ", "OK hacia la derecha" if d.x > 20 else "NO se mueve")
+		if d.x <= 20:
+			_fallo("empujando la cruceta a la derecha, Kael no se mueve a la derecha (%s)" % d.round())
 		var t := InputEventScreenTouch.new()
 		t.index = 0
 		t.pressed = false
 		dpad._gui_input(t)
 	if frames == 80:
 		print("al soltar: ui_right pulsado = ", Input.is_action_pressed("ui_right"))
-		return true
+		if Input.is_action_pressed("ui_right"):
+			_fallo("al soltar la cruceta, la derecha sigue pulsada")
+		return _terminar()
 	return false

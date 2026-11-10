@@ -39,7 +39,8 @@
 param(
     [switch]$Manual,
     [string[]]$Solo = @(),
-    [string]$Godot  = "C:\Users\G513\Desktop\jueo personal\Godot_v4.7.2-stable_win64_console.exe",
+    # Ruta de Godot: -Godot, o la variable de entorno REBELUM_GODOT (10/11, para automatizar), o la de este PC.
+    [string]$Godot  = $(if ($env:REBELUM_GODOT) { $env:REBELUM_GODOT } else { "C:\Users\G513\Desktop\jueo personal\Godot_v4.7.2-stable_win64_console.exe" }),
     [string]$Salida = "D:\REBELUM_diagnostico\pruebas",
     [string]$Lista  = ""
 )

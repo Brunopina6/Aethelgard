@@ -22,8 +22,8 @@ prueba_grupos_combate | auto | 3d sin_prologo auto  | 600 | user://     | grupo 
 prueba_huir       | auto     |                      | 150 | user://     | huir de un combate
 prueba_garon      | auto     | grupo=1 auto         | 240 | user://     | combate con Garon (ejemplo de pruebas/LEEME.md)
 prueba_dpad       | auto     | escena=zona dpad     | 150 | user://     | cruceta táctil
-prueba_toque      | auto     |                      | 150 | user://     | toques en pantalla
-prueba_dialogo    | auto     |                      | 150 | user://     | diálogos
+prueba_toque      | manual     |                      | 150 | user://     | toques en pantalla: DIAGNÓSTICO DESFASADO (10/11), no comprueba nada desde la puesta en escena del prólogo; pendiente de reescribir
+prueba_dialogo    | manual     |                      | 150 | user://     | diálogos: DIAGNÓSTICO DESFASADO (10/11), sus pulsaciones ya no avanzan el prólogo; lo cubren prueba_prologo y prueba_mando; pendiente de reescribir
 prueba_dialogo_interfaz | auto |                    | 120 | user://     | interfaz de Dialogic reutilizada: preparada una vez y oculta, limpia al acabar (texto, retratos y opciones; cortado en seco y final normal, con control), sin conexiones de más, una pulsación una acción, y viva tras cambiar de escena
 prueba_foco       | auto     | sin_prologo          | 240 | user://     | foco con teclado y mando (simulados): estilo visible y oculto al tocar, menú del grupo, tienda, diario, barra del mapa, botones de la ciudad, Kael quieto con el foco, una pulsación una acción y mando desconectado
 prueba_mando      | auto     | 3d sin_prologo dispositivo=mando | 400 | user:// | recorrido sin ratón con mando simulado: carga (partida de prueba), PV-02, andar, desconectar, hablar con Tilo, combate (objetivo, atrás, pestañas de magia, huir) y barra del mapa
@@ -47,10 +47,10 @@ prueba_erebo_nueva | auto     | invocar erebo=exito erebo_nueva | 400 | user:// 
 prueba_audio      | auto     |                      | 150 | user://     | sonido (muda): buses, volúmenes guardados solo al cambiarlos, pestaña Ajustes con teclado y ningún reproductor por Master (código y combate)
 prueba_cofre      | auto     |                      | 150 | user://     | cofres
 prueba_choque     | auto     | estilo=bosque        | 150 | user://     | colisiones en una zona de bosque
-prueba_equilibrio | auto     |                      | 240 | user://     | equilibrio de combate
-prueba_ia         | auto     |                      | 150 | user://     | IA de los enemigos
+prueba_equilibrio | auto     |                      | 240 | user://     | equilibrio de combate (10/11: con aserciones): D-H07 (golpe de Kael ×5, magia de Lya ×3), gasto de PM, Frostfang y Congelación
+prueba_ia         | auto     | auto semilla=7       | 180 | user://     | IA de los enemigos en un combate real (10/11: con aserciones): termina, actúan enemigos y héroes, final coherente
 prueba_menu_magia | auto     |                      | 150 | user://     | menú de magia
-prueba_menu_nuevo | auto     |                      | 150 | user://     | menú de combate
+prueba_menu_nuevo | manual     |                      | 150 | user://     | menú de combate: DIAGNÓSTICO DESFASADO (10/11), sus toques no caen en el menú desde el HUD nuevo (T-099); pendiente de reescribir con las posiciones de hoy
 prueba_tema       | auto     |                      | 150 | user://     | tema de la interfaz
 prueba_rio        | auto     |                      | 240 | user://     | río 3D; imprime FALLOS: n
 prueba_posador    | auto     |                      | 240 | user://     | Posador (IK); imprime OK o FALLO; usa y borra user://prueba_posador.res
