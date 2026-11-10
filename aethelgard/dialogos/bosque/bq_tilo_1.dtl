@@ -1,0 +1,12 @@
+join kael (vivo_pv) left
+join lya (vivo_pv) right
+tilo: ¡Menuda tormenta anoche! Rayos hasta el alba. Casi me apaga el farol.
+update kael [extra_data="duda"]
+kael: ¿Qué tormenta? Anoche no cayó ni una gota.
+tilo: Pues mirad ese árbol. Amaneció así, gris como la ceniza. Algún rayo, digo yo.
+update lya [extra_data="preocupada"]
+lya: Kael… la tierra está seca. Aquí no ha llovido.
+tilo: Me empapé hasta los huesos. Lo sé. Lo… sé. Echadle un ojo, ¿queréis?
+garon: Yo vigilo el camino.
+leave kael
+leave lya

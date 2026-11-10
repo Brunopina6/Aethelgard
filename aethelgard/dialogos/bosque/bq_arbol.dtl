@@ -1,0 +1,15 @@
+join kael (vivo_pv) left
+join lya (vivo_pv) right
+update lya [extra_data="duda"]
+lya: Estas runas no están talladas. Salen de dentro, como venas pálidas.
+update kael [extra_data="sorpresa"]
+kael: Laten. Como si el árbol respirara muy despacio.
+update lya [extra_data="inquieta"]
+lya: Es magia, pero al revés. No crea nada: borra. Le está quitando el color.
+garon: Hay más corteza gris. Hacia el norte.
+update lya [extra_data="decidida"]
+lya: Llevo mis frascos y mi mortero. Si esto tiene cura, saldrá de ahí.
+update kael [extra_data="decidido"]
+kael: Pues a buscar más árboles tristes.
+leave kael
+leave lya

@@ -1,0 +1,11 @@
+join kael (vivo_pv) left
+join lya (vivo_pv) right
+update lya [extra_data="duda"]
+lya: Lirios. Vivos, pero sin color. Y no huelen a nada.
+update kael [extra_data="ligero"]
+kael: Flores grises. Tilo diría que ha sido la tormenta.
+update lya [extra_data="firme"]
+lya: Una flor que olvida su color acaba olvidando para qué florece.
+garon: Las abejas pasan de largo.
+leave kael
+leave lya
