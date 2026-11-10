@@ -599,14 +599,12 @@ func _crear_claro() -> void:
 		return
 	n.name = "bq_guardian_dormido"
 	guardian = n
-	var ruta := "res://enemigos/guardian_bosque/guardian_bosque.glb"
-	if ResourceLoader.exists(ruta):
-		var m: Node3D = (load(ruta) as PackedScene).instantiate()
-		m.scale = Vector3.ONE * 1.4
-		n.add_child(m)
-		var ap := m.find_child("AnimationPlayer", true, false) as AnimationPlayer
-		if ap != null and ap.has_animation("dormido"):
-			ap.play("dormido")
+	var guion := "res://enemigos/guardian_bosque/guardian_bosque_3d.gd"   # su modelo 3D (animaciones, Blender)
+	if ResourceLoader.exists(guion) and ResourceLoader.exists("res://enemigos/guardian_bosque/guardian_bosque.glb"):
+		var g = load(guion).new()
+		g.dormido_al_empezar = true                    # arrodillado, con el musgo del sueño y el corazón tenue
+		n.add_child(g)
+		n.rotation.y = PI * 0.75                         # mira hacia el camino
 		return
 	var tronco := CylinderMesh.new()                 # sin modelo: un gigante de madera arrodillado, cubierto de musgo
 	tronco.top_radius = 0.55

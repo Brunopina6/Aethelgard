@@ -214,6 +214,12 @@ const MODELOS := {
 		"barra_y": 10.0, "centro_y": 210.0},
 	# Guardián del Bosque Olvidado (fase 3): respaldo 2D, el guardián de piedra grande y teñido de verde musgo, hasta tener su
 	# modelo 3D (enemigos/guardian_bosque/).
+	# Guardián del Bosque Olvidado (fase 3): modelo 3D propio (animaciones, Blender; enemigos/guardian_bosque/), con el 2D de respaldo.
+	"guardian_bosque": {
+		"tipo": "3d", "esc": 0.6, "script": "res://enemigos/guardian_bosque/guardian_bosque_3d.gd",
+		"gestos": "res://gestos_3d.gd", "rutas": ["res://enemigos/guardian_bosque/guardian_bosque.glb"],
+		"vp": Vector2i(1000, 1120), "alto_vista": 4.6, "centro_y": 1.95, "barra_y": 50.0, "centro_3d": 1.9,
+		"respaldo": "guardian_bosque2d"},
 	"guardian_bosque2d": {"tipo": "imagen", "imagen": "res://enemigos/guardian.png", "cadera": Vector2(160, 470), "tam": 1.45,
 		"barra_y": -230.0, "centro_y": 60.0, "tinte": Color(0.62, 0.92, 0.58)},
 }
@@ -237,7 +243,7 @@ const ENEMIGOS := {
 	"golem_ambar": {"nombre": "Gólem de ámbar", "modelo": "guardian", "hp": 200, "atk": 17, "vel": 9.0, "exp": 70, "oro": 90, "personalidad": "bruto"},
 	# Fase 3, «El bosque que no recuerda»: el jefe de Pastos Verdes (combate_bosque.gd). Dos fases (al 50 %: coraza de raíces y
 	# débil al fuego), ataque cargado con aviso; se purifica con el Elixir o se derrota.
-	"guardian_bosque": {"nombre": "Guardián del Bosque Olvidado", "modelo": "guardian_bosque2d", "hp": 420, "atk": 17, "vel": 9.0,
+	"guardian_bosque": {"nombre": "Guardián del Bosque Olvidado", "modelo": "guardian_bosque", "hp": 420, "atk": 17, "vel": 9.0,
 		"exp": 90, "oro": 0, "personalidad": "bosque", "fases": true, "titulo": true},
 }
 const GRUPOS := [
@@ -254,7 +260,7 @@ const GRUPOS := [
 	[["slime", Vector2(140, 110)], ["slime", Vector2(380, 125)]],           # 8
 	[["grimfang", Vector2(300, 130)]],                                      # 9
 	[["zarzalin", Vector2(250, 120)]],                                      # 10: Zarzalín (Pastos Verdes)
-	[["guardian_bosque", Vector2(260, 120)]],                               # 11: Guardián del Bosque (Pastos Verdes, fase 3)
+	[["guardian_bosque", Vector2(150, -120)]],                               # 11: Guardián del Bosque (Pastos Verdes, fase 3)
 ]
 const GRUPOS_AL_AZAR := 5           # solo los primeros salen en encuentros aleatorios (con el grupo de tres)
 # Encuentros al azar según cuántos héroes hay ahora en el grupo (grupo.gd, activos). Kael solo no tiene cura ni a
@@ -298,6 +304,7 @@ const ANIM := {
 	"garon3d": {"distancia": 130.0},
 	"guardian": {"distancia": 150.0},
 	"guardian_bosque2d": {"distancia": 170.0},     # fase 3: el Guardián del Bosque (respaldo 2D)
+	"guardian_bosque": {"distancia": 170.0},       # fase 3: ataca desde su sitio (_anim_guardian)
 }
 
 var heroes: Array = [
@@ -1399,8 +1406,7 @@ func _turno_guardian(f: Dictionary, vivos: Array, mult: float) -> void:
 		f["cargando"] = false
 		_marcar_aviso(f, false)
 		f["descarga"] = true
-		if modelo != null and modelo.has_method("golpe_fuerte"):
-			modelo.golpe_fuerte()
+		f["ataque_3d"] = "golpe_fuerte"              # su modelo 3D: las raíces que brotan (_anim_guardian)
 		if fase2:
 			registro.text = "¡%s desata el Juicio del bosque!" % f["nombre"]
 			var dano := int(f["atk"] * 1.6 * mult)
@@ -1428,6 +1434,7 @@ func _turno_guardian(f: Dictionary, vivos: Array, mult: float) -> void:
 			_temblor(10.0)
 		f["descarga"] = false
 		f.erase("objetivo_carga")
+		f.erase("ataque_3d")
 		return
 	var r := randf()
 	if r < (0.4 if fase2 else 0.3):                  # carga su golpe: un turno de aviso
@@ -1436,7 +1443,7 @@ func _turno_guardian(f: Dictionary, vivos: Array, mult: float) -> void:
 		f["objetivo_carga"] = obj
 		_marcar_aviso(f, true)
 		if modelo != null and modelo.has_method("cargar"):
-			modelo.cargar()
+			modelo.cargar("golpe_fuerte")
 		Sonido.efecto("carga_jefe")                 # sonido.gd
 		if fase2:
 			registro.text = "%s hunde sus raíces en la tierra: ¡va a golpear a todos!" % f["nombre"]
@@ -1451,6 +1458,8 @@ func _turno_guardian(f: Dictionary, vivos: Array, mult: float) -> void:
 		return
 	if r < (0.65 if fase2 else 0.6):                 # esporas: magia del bosque, flojas, a todos
 		registro.text = "%s esparce esporas" % f["nombre"]
+		if modelo != null and modelo.has_method("ataque"):
+			modelo.ataque()                           # sacude sus ramas
 		_voz(f, "ataque")
 		var d := maxi(1, int(f["atk"] * 0.55 * mult))
 		for h in vivos:
@@ -3388,6 +3397,8 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 		await _anim_magia(origen, objetivo, magia, impacto)
 	elif _p3d(origen) != null and _p3d(origen).has_method("avisar"):           # Zarzalín (T-097)
 		await _anim_zarzalin(origen, objetivo, impacto, str(origen.get("ataque_3d", "colmillo_lateral")))
+	elif _p3d(origen) != null and _p3d(origen).has_method("despertar"):        # Guardián del Bosque (fase 3): desde su sitio
+		await _anim_guardian(origen, impacto, str(origen.get("ataque_3d", "ataque")))
 	elif _p3d(origen) != null and _p3d(origen).has_method("atacar_hacha"):     # Grimfang y Gorthor
 		# golpe fuerte a dos manos con rabia o al descargar el golpe cargado; si no, el doble tajo
 		var fuerte: bool = origen.get("furia", false) or origen.get("descarga", false)
@@ -3647,6 +3658,24 @@ func _sonidos_bestia(e: Dictionary, p) -> void:
 # (propuesta de animaciones: los pies a centro − 30 − 0,632·px_m − alcance·px_m, y a la altura de los pies del objetivo),
 # y atacar(ataque, al_golpear) llama al golpe UNA vez en su ancla. Durante el clip el rig no se mueve (el clip lleva el
 # avance). Vuelve galopando y queda en reposo. Desde la carga (avisar), la embestida entra sin repetir la preparación.
+# El Guardián del Bosque (fase 3; enemigos/guardian_bosque/guardian_bosque_3d.gd, de animaciones) ataca desde su sitio: su
+# rama llega 2,27 m por delante y las raíces del golpe fuerte brotan a 1,7 m. El impacto, una vez, en el momento del clip.
+func _anim_guardian(o: Dictionary, impacto: Callable, ataque: String) -> void:
+	var p = _p3d(o)
+	o["animando"] = true
+	var golpes := [0]
+	var al_golpear := func():
+		golpes[0] += 1
+		if golpes[0] == 1:
+			impacto.call()
+			if ataque == "golpe_fuerte":
+				_temblor(9.0)
+	await p.atacar(ataque, al_golpear)
+	if golpes[0] == 0:
+		al_golpear.call()
+	o["animando"] = false
+
+
 func _anim_zarzalin(o: Dictionary, obj: Dictionary, impacto: Callable, ataque: String) -> void:
 	var p = _p3d(o)
 	var rig: Node2D = o["rig"]
