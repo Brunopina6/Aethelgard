@@ -19,6 +19,7 @@ extends SceneTree
 #   «mezclas=2» o «mezclas=3»: solo las mezclas de esa tanda (con «efectos=…»).
 # Tanda 4: las bestias del bestiario, una mezcla por ataque con los tiempos de su ficha («mezclas=4»).
 # Tanda 5: las voces de los héroes en un combate seguido, con los golpes y la victoria («mezclas=5»).
+# V9 (10/11): el combate del Guardián del Bosque con y sin su tratamiento, por buses («mezclas=9»).
 # Tanda 6: la mezcla por buses («mezclas=6»): un combate con su música, golpes, voces y la interfaz, y un paseo por una
 #   ciudad con su ambiente, el murmullo, la fuente y pasos; se graba cada bus a la vez y se mide cuánto asoma cada uno
 
@@ -174,6 +175,20 @@ const EVENTOS_BESTIAS := {
 	"quieto_kael": "Kael lleva un rato quieto en la exploración 3D: se recoloca el cuero y suelta el aire (muy bajo)",
 	"quieto_lya": "Lya lleva un rato quieta: sorbe por la nariz y se ajusta la tela (muy bajo, desde su sitio)",
 	"quieto_garon": "Garon lleva un rato quieto: mueve el equipo y respira hondo (muy bajo, desde su sitio)",
+	# V9 (10/11): el Guardián del Bosque Olvidado y el orbe del altar
+	"guardian_bosque_jefe": "Título del Guardián (en lugar de «jefe»): golpe hueco de tronco, retumbar y crujido",
+	"guardian_bosque_entrada": "El Guardián despierta al empezar el combate: madera arrastrada, ramas y un gemido",
+	"guardian_bosque_ataque": "Impacto del latigazo de rama (0,6 s del clip)",
+	"guardian_bosque_golpe": "Las raíces brotan en el golpe cargado (0,667 s del clip)",
+	"guardian_bosque_carga": "Carga su golpe (en lugar de «carga_jefe»): dos latidos graves y el tronco que se tensa",
+	"guardian_bosque_fase2": "Pasa a la fase 2 (en lugar de «fase2»): rugido de corteza; la corteza se abre con la coraza",
+	"guardian_bosque_derrumbe": "Se desmorona al caer (las rodillas tocan la tierra a 1,1 s)",
+	"guardian_bosque_purificar": "El Elixir lo purifica: cálido y luminoso (cuenco, colchón y campanillas)",
+	"corteza_ataque": "Voz del Guardián al alzar la rama: crujido y gruñido grave",
+	"corteza_herido": "Voz del Guardián al recibir un golpe físico: corteza que se desgarra",
+	"corteza_caida": "Voz del Guardián al caer: crujido largo con gemido",
+	"orbe_vision": "El orbe del altar muestra un futuro (en lugar de «misterio»): resonancia cristalina",
+	"orbe_cierra": "La visión del orbe se cierra: una copa más grave que se apaga",
 }
 const DOS_D_CASILLA := 64.0                                # zona.gd, T
 
@@ -247,6 +262,8 @@ func _grabar_todo() -> void:
 			await _tanda5()
 		if "6" in mezclas:
 			await _tanda6()
+		if "9" in mezclas:
+			await _tanda_v9()
 		AudioServer.remove_bus_effect(0, AudioServer.get_bus_effect_count(0) - 1)
 		_indice()
 		for f in fallos:
@@ -837,6 +854,56 @@ func _tanda6() -> void:
 	await _real(1.0)
 
 
+# V9 (10/11, «mezclas=9»): el combate del Guardián por buses, con la música del combate (−6 dB, apartándose como en
+# combate) sin tratamiento y con él (paso bajo en la música y el bosque antiguo por Ambiente: inicio, fase 2 y
+# purificación), y su derrota. Mide cuánto baja la música, a qué nivel queda el bosque y el margen de los efectos.
+func _tanda_v9() -> void:
+	var musica := AudioStreamPlayer.new()
+	var ruta: String = load("res://combate.gd").MUSICA_NORMAL
+	if ResourceLoader.exists(ruta):
+		var pista = load(ruta)
+		if pista is AudioStreamMP3 or pista is AudioStreamOggVorbis:
+			pista.loop = true
+		musica.stream = pista
+	musica.volume_db = -6.0
+	musica.bus = &"Musica"
+	root.add_child(musica)
+	musica.play(20.0)
+	Mus.pedir("combate")
+	await _real(1.0)
+	var pelea := [[0.4, "corteza_ataque"], [1.0, "guardian_bosque_ataque"], [1.0, "golpe"], [1.0, "kael_herido"],
+		[2.6, "kael_esfuerzo"], [3.0, "golpe"], [3.0, "corteza_herido"], [4.2, "guardian_bosque_carga"],
+		[7.4, "corteza_ataque"], [8.1, "guardian_bosque_golpe"], [8.1, "golpe_critico"], [8.1, "lya_herido"]]
+	await _mezcla_por_buses("buses_v9_sin_tratamiento", pelea, 11.0,
+		"El combate del Guardián SIN su tratamiento: la música del combate como siempre (para comparar)")
+	var du := Node.new()
+	du.name = "CombateDelGuardian"
+	root.add_child(du)
+	Son.efecto("guardian_bosque_jefe", {"en": du})
+	await _real(3.0)
+	await _mezcla_por_buses("buses_v9_fase1", pelea, 11.0,
+		"Fase 1 CON su tratamiento: la música con paso bajo (2,8 kHz) y −2 dB, y el bosque antiguo por debajo")
+	await _mezcla_por_buses("buses_v9_fase2", [[0.0, "guardian_bosque_fase2"]] + pelea.map(func(g): return [g[0] + 3.0, g[1]]), 14.0,
+		"Paso a la fase 2 (rugido de corteza) y la pelea: la música se abre (9 kHz) y el bosque baja 5 dB")
+	await _mezcla_por_buses("buses_v9_purificar", [[0.0, "pocion"], [0.0, "guardian_bosque_purificar"], [2.4, "victoria"]], 6.0,
+		"El Elixir lo purifica: la música se abre del todo y el bosque se calma; la victoria; el bosque se apaga")
+	du.queue_free()
+	await _real(0.5)
+	var du2 := Node.new()
+	root.add_child(du2)
+	Son.efecto("guardian_bosque_jefe", {"en": du2})
+	await _real(3.0)
+	Son.tratamiento("guardian_bosque", "fase2")
+	await _real(1.7)
+	await _mezcla_por_buses("buses_v9_derrota", [[0.0, "golpe_critico"], [0.0, "corteza_caida"], [0.05, "guardian_bosque_derrumbe"],
+		[1.8, "victoria"]], 6.0, "El golpe que lo tumba: su voz al caer, se desmorona y la victoria por encima")
+	du2.queue_free()
+	Mus.pedir("silencio")
+	musica.stop()
+	musica.queue_free()
+	await _real(1.0)
+
+
 func _mezcla_por_buses(nombre: String, golpes: Array, segundos: float, texto: String) -> void:
 	var recs := {}
 	for bus in ["Musica", "Efectos", "Interfaz", "Ambiente"]:
@@ -885,7 +952,7 @@ func _mezcla_por_buses(nombre: String, golpes: Array, segundos: float, texto: St
 			int(100.0 * activas.size() / maxf(1.0, e.size()))])
 	# margen: cuando suenan los efectos (o la interfaz), cuánto quedan por encima del fondo (la música o el ambiente)
 	for capa in ["Efectos", "Interfaz"]:
-		var fondo: Array = env.get("Musica", []) if nombre.begins_with("buses_combate") else env.get("Ambiente", [])
+		var fondo: Array = env.get("Musica", []) if nombre.begins_with("buses_combate") or nombre.begins_with("buses_v9") else env.get("Ambiente", [])
 		var arriba: Array = env.get(capa, [])
 		var margenes: Array = []
 		for k in mini(fondo.size(), arriba.size()):
