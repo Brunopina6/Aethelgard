@@ -14,6 +14,17 @@
 
 ## Resumen actualizado
 
+- **Estado al 10/11, 21:50 (directiva V10, en la misma conversación tras el traspaso):**
+  - El trabajo vigente está en la rama LOCAL `claude/rebelum-v10` (`D:\Aethelgard_v10`), que nace de la V9.
+  - **Oakhaven ya tiene oficios:**
+    - Maese Ferro (forja de Kael), Hilda (taller de Garon) y Mirta (botica y alquimia de Lya);
+    - mejoras por pieza;
+    - dos encargos con decisión y consecuencias;
+    - el distrito de los oficios en Oakhaven 3D.
+  - Batería: 103/0. APK v520 en local, sin instalar.
+  - **No se fusiona ni se sube sin autorización.**
+  - Para retomar: `docs/v10/RETOMAR.md` en esa rama.
+
 - **Estado al 10/11, 19:20 (traspaso de conversación):**
   - El trabajo vigente está en la rama LOCAL `claude/rebelum-v9` (`D:\Aethelgard_v9`), creada desde la v293 a petición
     del usuario. Contiene la fase 3 («El bosque que no recuerda»: aventura, alquimia de Lya y Guardián de dos fases

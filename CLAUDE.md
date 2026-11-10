@@ -189,13 +189,16 @@ pida la tarea.
 - `D:\Aethelgard`: la del usuario (rama `rebelum-3d`). Aquí se editan los documentos de memoria.
 - `D:\Aethelgard_alpha`: la de integración (rama `integracion-experimental`, en GitHub @ `b4e26e2` el 10/11).
 - `D:\Aethelgard_memoria`: la de `memoria-desarrollo`, solo para publicar la memoria.
-- **`D:\Aethelgard_v9`: la rama de trabajo actual, `claude/rebelum-v9` (LOCAL)** (desde el 10/11).
-  - Nace de la v293 (`dca4c1c`) y contiene la fase 3 («El bosque que no recuerda») y la directiva V9.
-  - Su estado está en `docs/v9/RETOMAR.md` y `CONTINUAR_EN_NUEVO_CHAT.md`.
+- **`D:\Aethelgard_v10`: la rama de trabajo actual, `claude/rebelum-v10` (LOCAL)** (desde el 10/11 por la noche).
+  - Nace de `claude/rebelum-v9` @ `3795769` y contiene la directiva V10 («Oakhaven, el corazón vivo del reino»).
+  - Su estado está en `docs/v10/RETOMAR.md` y `docs/v10/ESTADO_V10.md`.
   - **No se fusiona ni se sube sin autorización expresa del usuario.**
-  - **Su APK (v499) está sin validar en el Redmi.**
-- `D:\Aethelgard_fase3`, `D:\Aethelgard_fase2`, `D:\Aethelgard_v9_*` y `D:\Aethelgard_f3_*`: ramas de fases y de
-  especialistas, ya fusionadas en `claude/rebelum-v9`. Se conservan; no se borran.
+  - **Su APK (v520, `c2eb155`) está sin validar en el Redmi.** La v499 es de la V9 y no sirve para la V10.
+- `D:\Aethelgard_v9`: `claude/rebelum-v9` (LOCAL). Nace de la v293 (`dca4c1c`); contiene la fase 3 y la V9. Es la
+  base de la V10.
+- `D:\Aethelgard_fase3`, `D:\Aethelgard_fase2`, `D:\Aethelgard_v9_*`, `D:\Aethelgard_f3_*` y `D:\Aethelgard_v10_*`:
+  ramas de fases y de especialistas, ya fusionadas en `claude/rebelum-v9` o en `claude/rebelum-v10`. Se conservan; no
+  se borran.
 
 En la rama `memoria-desarrollo` solo están estos documentos. Sus enlaces a otros archivos de `docs/` funcionan en
 `D:\Aethelgard`, pero no en GitHub.

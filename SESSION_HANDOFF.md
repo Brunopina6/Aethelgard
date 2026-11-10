@@ -1,5 +1,37 @@
 # SESSION_HANDOFF: punto de control
 
+## V10 «OAKHAVEN, EL CORAZÓN VIVO DEL REINO» — 2026-11-10, 21:50 (hora local, UTC+1), HECHA EN EL PC
+
+- **Rama de trabajo:** LOCAL `claude/rebelum-v10`, copia `D:\Aethelgard_v10`, creada desde `claude/rebelum-v9` @
+  `3795769`.
+  - Último commit: **`0689f58`** (documentos). El último código está en `c2eb155`.
+  - Sin cambios sin confirmar.
+  - **Sin fusionar ni subir** (la directiva V10 lo prohíbe sin autorización).
+- **Hecho y probado (aislado):**
+  - servicios de Oakhaven (`servicios.gd`): Maese Ferro abre la forja de Kael, Hilda el taller de Garon y Mirta la
+    botica («¿Qué necesitáis?»);
+  - mejoras por pieza (`inventario.mejoras_objeto`): Frostfang +4, cota +3 y la runa de la cota;
+  - Hierro de la Falla y su veta en la Garganta 3D (diálogo `gg_veta`);
+  - encargos A, «El pedido de Maese Ferro» (entregar el hierro o quedárselo), y B, «La fórmula desaparecida» (tres
+    páginas, Bálsamo de Mirta);
+  - vecinos nuevos, sus rutinas y frases (narrativa, `claude/v10-narrativa`);
+  - distrito de los oficios en Oakhaven 3D (gráficos, `claude/v10-distrito`). La calle se queda a 60°: probé 52° y
+    quedaba peor (D-082).
+- **Pruebas:** `ci_local.ps1` (2026-11-10_213109): **103 superadas, 0 fallidas, 43 manuales y 0 no seguras**. Partida
+  real sin cambios.
+- **APK v520**, en local y sin instalar:
+  - `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261110-c2eb155.apk`;
+  - SHA-256 `9bfe81297b5837f222047f77f9467ed4875d6cc13f42661b125b1e8cc6a2d0ff`.
+  - **No va a GitHub:** lleva recursos con licencia pendiente.
+- **La v499 no sirve para probar la V10** (es la V9, `56dfb9c`).
+- **Siguiente paso:**
+  1. con el Redmi, copiar la v520 y seguir `docs/v10/PENDIENTES_REDMI.md`;
+  2. sin él, lo pendiente de `docs/v10/ESTADO_V10.md`: sonido del distrito, rutinas 3D de Hilda y Mirta, prueba de
+     combate del Bálsamo y la runa.
+- **Para retomar:** `docs/v10/RETOMAR.md` en la rama.
+
+**Punto de control anterior:** 2026-11-10, 19:20 (abajo).
+
 ## TRASPASO A UNA CONVERSACIÓN NUEVA — 2026-11-10, 19:20 (hora local, UTC+1)
 
 - **Rama de trabajo:** LOCAL `claude/rebelum-v9`, copia `D:\Aethelgard_v9`. Último commit seguro: **`3795769`**

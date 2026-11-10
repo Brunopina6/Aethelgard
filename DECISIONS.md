@@ -1427,6 +1427,28 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 - **Publicado:** Prueba v293 en `Aethelgard-pruebas` (`exp-20261109-dca4c1c`, SHA-256 `3dbe855e…`), sin copiarla al
   Redmi.
 
+### D-082
+**Directiva V10: base y decisiones del coordinador (10/11, noche)**
+- **Base:**
+  - `claude/rebelum-v10` nace de `claude/rebelum-v9` @ `3795769`, lo último verificado en local;
+  - no se parte de la v293 ni de una rama remota.
+  - Se comprobó que la v499 sale de `56dfb9c` (todo el código de la V9). No vale para probar la V10.
+- **Servicios:**
+  - el que atiende abre su servicio al acabar el diálogo, con la señal `oak:servicio_<tipo>` (`servicios.gd`);
+  - la 2D y el distrito 3D usan los mismos;
+  - se reutilizan los talleres y la tienda, sin crear sistemas paralelos.
+- **Mejoras por pieza:** resultados `pieza:` y `runa:`, guardados en `inventario.mejoras_objeto`, de una vez. Sin
+  segundo inventario.
+- **Encargo A:** si Kael se queda el hierro, solo hay uno: hay que elegir entre la Frostfang y la cota. Es una
+  decisión con peso.
+- **Cámara del distrito 3D:**
+  - la Calle de los Oficios se queda a 60° (la de gráficos);
+  - se probó volver a 52° con las casas del sur transparentes, y quedaba peor: medio plano de tejado translúcido sobre
+    Kael (capturas en `D:\REBELUM_diagnostico\v10\distrito\camara52_descartada`).
+- **Canon:** Ferro, Hilda, Mirta, los encargos y los textos del pozo son propuestas pendientes del usuario.
+- **Prohibido sin autorización expresa:** fusionar o subir `claude/rebelum-v10`.
+- **La APK v520 no va a GitHub:** lleva recursos con licencia pendiente.
+
 ### D-081
 **Directiva V9: base y decisiones del coordinador (10/11, tarde)**
 - **Base:**

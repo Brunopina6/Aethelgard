@@ -1078,6 +1078,28 @@
   - APK de auditoría v449, `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261110-b9d9300.apk`.
 - **Detalle:** `docs/fase3_bosque/INFORME_DESARROLLO.md` y `PENDIENTES_REDMI.md`.
 
+### T-108
+**Directiva V10 («Oakhaven, el corazón vivo del reino»), desde la V9**
+- **Estado:** hecho y probado en el PC, **sin validar en el Redmi** y sin fusionar ni subir.
+- **Evidencia:**
+  - rama LOCAL `claude/rebelum-v10` (`D:\Aethelgard_v10`) @ `0689f58`; el último código está en `c2eb155`;
+  - batería 103 superadas, 0 fallidas, 43 manuales y 0 no seguras (`D:\REBELUM_diagnostico\pruebas\2026-11-10_213109`);
+  - APK de auditoría v520 en local (`Aethelgard_androidauditora-20261110-c2eb155.apk`, SHA-256 `9bfe8129…`), sin instalar.
+- **Hecho:**
+  - servicios de Oakhaven: Maese Ferro (forja de Kael), Hilda (taller de Garon) y Mirta (botica y alquimia de Lya);
+  - mejoras por pieza: Frostfang +4, cota +3 y la runa de la cota;
+  - Hierro de la Falla y su veta en la Garganta 3D (diálogo `gg_veta`);
+  - encargos «El pedido de Maese Ferro», con su decisión, y «La fórmula desaparecida»;
+  - rutinas y frases de los vecinos nuevos (narrativa);
+  - distrito de los oficios en Oakhaven 3D (gráficos, Blender).
+- **Pendiente:**
+  - Redmi;
+  - sonido del distrito;
+  - rutinas 3D de Hilda y Mirta;
+  - prueba de combate del Bálsamo y la runa;
+  - canon de los personajes nuevos.
+- **Detalle:** `docs/v10/ESTADO_V10.md` y `docs/v10/RETOMAR.md` en esa rama.
+
 ### T-107
 **Directiva V9 («Operación Renacimiento Total»), desde la v293**
 - **Estado:** en curso. Varios hitos hechos y probados en el PC, **sin validar en el Redmi** y sin fusionar.
