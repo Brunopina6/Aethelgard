@@ -7,12 +7,13 @@ Escrito para leerlo sin saber programar.
 - **Rama de la V9:** `claude/rebelum-v9`, copia `D:\Aethelgard_v9`.
   - Nace de la **v293 verificada** (`dca4c1c`).
   - Incluye, tras examinarlo, todo lo validado después: fase 2 y fase 3.
-  - Último commit seguro: `4e88022` o el posterior que figure en el registro de git.
+  - Último commit seguro: el de este documento.
   - **No está subida ni fusionada.**
-- **Especialistas trabajando ahora**, cada uno en su copia:
-  - combate: escalado de enemigos, en `D:\Aethelgard_v9_escalado` (rama `claude/v9-escalado`);
-  - gráficos: el Claro del Guardián con Blender, en `D:\Aethelgard_v9_sector` (rama `claude/v9-sector`).
-  - Lo que entreguen se revisa y se fusiona en `claude/rebelum-v9`.
+- **Ya integrado del trabajo de los especialistas:**
+  - el escalado de enemigos (combate, rama `claude/v9-escalado`);
+  - el Claro del Guardián (gráficos, rama `claude/v9-sector`).
+- **APK de auditoría** v471, compilada en local y sin instalar:
+  `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261110-6356807.apk`.
 - **El resumen de cada hito** está en `ESTADO_V9.md`.
 
 ## Qué está terminado (y probado en el PC)
@@ -30,15 +31,15 @@ Escrito para leerlo sin saber programar.
 
 ## Qué queda pendiente (por orden)
 
-2. Probarlo todo en el Redmi: `docs/fase3_bosque/PENDIENTES_REDMI.md`, más el orbe y los talleres.
-3. El cuarto protagonista (magia negra). Antes, revisar el «Mago negro» antiguo de `grupo.gd`.
-4. **Siguientes jefes:**
+1. Probarlo todo en el Redmi: `docs/fase3_bosque/PENDIENTES_REDMI.md`, más el orbe y los talleres.
+2. El cuarto protagonista (magia negra). Antes, revisar el «Mago negro» antiguo de `grupo.gd`.
+3. **Siguientes jefes:**
    - el Coloso de la Falla (Garganta 3D);
    - el Campanero del Porvenir;
    - el Emperador Slime (opcional).
-5. El sistema de encargos reutilizable y la ampliación de Oakhaven. Oakhaven ya tiene misiones propias, como la de la
+4. El sistema de encargos reutilizable y la ampliación de Oakhaven. Oakhaven ya tiene misiones propias, como la de la
    lavanda, los faroles o los favores: hay que partir de ellas.
-6. Sonido y música propios del Guardián.
+5. Sonido y música propios del Guardián.
 
 ## Cómo continuar
 
