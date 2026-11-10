@@ -55,6 +55,7 @@ const FUERA := {
 	"brote_guardian": "al purificar al Guardián del Bosque, Pastos Verdes (fase 3; combate.gd, _premio_bosque)",
 	"corteza_guardian": "al derrotar al Guardián del Bosque, Pastos Verdes (fase 3; combate.gd, _premio_bosque)",
 	"amuleto_claro": "se fabrica en el taller conjunto (V9; talleres.gd, receta amuleto_claro)",
+	"fragmento_armadura": "al vencer al Coloso de la Falla, en la grieta de la Garganta 3D (V9, jefe 2; combate_coloso.gd, dar_premio)",
 }
 
 

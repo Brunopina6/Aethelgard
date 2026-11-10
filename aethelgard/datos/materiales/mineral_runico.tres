@@ -1,0 +1,12 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/material.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "mineral_runico"
+clave_inventario = "Mineral rúnico"
+nombre = "Mineral rúnico"
+venta = 140
+desc = "Piedra del Coloso de la Falla con una runa aún tibia. Los herreros la pagan bien."
+de_enemigos = PackedStringArray()

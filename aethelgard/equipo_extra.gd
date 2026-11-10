@@ -119,6 +119,11 @@ const ACCESORIOS := {
 		"efecto": "Empieza con coraza (15 % de PV).",
 		"texto": "Ámbar tibio del gólem del nido. Dentro hay un insecto que nadie ha visto vivo.",
 		"donde": "Primera victoria en el nido de la Garganta (combate fijo «garganta_nido»)"},
+	# V9, jefe 2: el premio del Coloso de la Falla, una vez (combate_coloso.gd, dar_premio). Coraza al empezar (M3).
+	"fragmento_armadura": {"nombre": "Fragmento de armadura antigua", "efectos": {"barrera_inicio": 0.2},
+		"efecto": "Empieza con coraza (20 % de PV).",
+		"texto": "Una placa del Coloso, grabada con runas que ya nadie sabe leer enteras. Aún aguanta golpes.",
+		"donde": "Al vencer al Coloso de la Falla, en la grieta de la Garganta 3D (combate fijo «garganta_coloso»)"},
 	"brasa_frasco": {"nombre": "Brasa en frasco", "efectos": {"brasa": true},
 		"efecto": "Si cae, se levanta una vez.",
 		"texto": "Una brasa que no se apaga, en un frasco tapado con cera.",
