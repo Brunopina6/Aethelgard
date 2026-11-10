@@ -20,4 +20,7 @@ RETOMAR.md).
 | 11:50 | prueba_choque | superada |
 | 11:51 | prueba_tema (lanzador con REBELUM_GODOT) | superada |
 
-Pendiente: la batería completa sobre la rama al cerrar cada fase grande.
+| 11:52-11:57 | huella (antes) + 12 de combate tras separar las fórmulas | 12 superadas; huella 725aef4a…, 9 de 9 |
+| 12:01 | batería completa | 78 superadas, 1 fallida (prueba_partida por la clave «formato»: corregido) |
+| 12:09 | prueba_partida, prueba_formato_regiones y 8 de guardado y región | 10 superadas |
+| 12:11 | **ci_local.ps1: batería completa** | **79 superadas, 0 fallidas, 41 manuales, 0 no seguras** |
