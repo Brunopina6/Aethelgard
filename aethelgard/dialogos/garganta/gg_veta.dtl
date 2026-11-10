@@ -1,0 +1,11 @@
+join kael (vivo_pv) left
+join lya (vivo_pv) right
+update kael [extra_data="sorpresa"]
+kael: ¿Oís eso? Aquí la piedra suena distinta.
+garon: Hierro de la Falla. Como el de las piedras escritas.
+update lya [extra_data="duda"]
+lya: Una veta entera… Con razón decía Ferro que canta.
+update kael [extra_data="ligero"]
+kael: Pues que cante de camino a Oakhaven.
+leave lya
+leave kael

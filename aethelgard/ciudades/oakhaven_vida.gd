@@ -72,6 +72,30 @@ const VECINOS := {
 		{"texto": "Dos mil anillos y uno negro. Siempre el negro."},
 		{"texto": "Huele a lavanda. Al roble le gusta.", "si": "hito:oak_lavanda"},
 	],
+	# V10 (docs/v10/DISENO_V10.md): Ferro y Hilda comentan lo del Guardián; Ferro, la técnica de Kael (la decisión
+	# «hierro_ferro», porque cumple() no entiende «hecha:»).
+	"ferro": [
+		{"texto": "Hierro bueno no grita. Canta."},
+		{"texto": "¿Ves esa reja? Mía. Y la de enfrente también."},
+		{"texto": "La Falla, chico. Junto a las piedras escritas.", "si": ["hito:enc_herrero_pedido", "!hito:enc_herrero_veta"]},
+		{"texto": "Dicen que el bosque florece. Bien hecho.", "si": "hito:bq_purificado"},
+		{"texto": "Tumbasteis al Guardián. Duro, pero hecho.", "si": "hito:bq_derrotado"},
+		{"texto": "Ese filo canta. Acero de la Falla, ¿eh?", "si": "decision:hierro_ferro=kael"},
+		{"texto": "Rejas nuevas en la muralla. Con tu hierro.", "si": "decision:hierro_ferro=entregado"},
+	],
+	"hilda": [
+		{"texto": "Una hebilla floja y te cuesta caro."},
+		{"texto": "Treinta y dos remaches. Contados dos veces."},
+		{"texto": "Ese grandullón pide una cota a medida.", "si": "grupo:Garon"},
+		{"texto": "El bosque florece otra vez. Lo he apuntado.", "si": "hito:bq_purificado"},
+		{"texto": "Lo del Guardián fue duro. Revisad las cotas.", "si": "hito:bq_derrotado"},
+	],
+	"mirta": [
+		{"texto": "¿Esto lo etiqueté yo? Qué letra tan rara."},
+		{"texto": "Hay males que se curan solo con dormir."},
+		{"texto": "¿Mi cuaderno? Juraría que estaba aquí.", "si": ["hito:enc_formula_pedido", "!hito:enc_formula_paginas"]},
+		{"texto": "Bálsamo recién hecho. ¡Gracias, Lya!", "si": "hito:enc_formula_fin"},
+	],
 }
 
 # La gente sin nombre: voces desde una puerta, una ventana o un puesto. «casilla»: de dónde sale la voz (en
@@ -179,6 +203,31 @@ const RUTINAS := {
 			"frase": "Habla bajo. Aquí todo escucha."},
 		"anochecer": {"casilla": Vector2(33, 6), "hace": "mira", "donde": "sentada entre las raíces, mirando la copa",
 			"frase": "De noche, el Árbol cruje como un barco."},
+	},
+	# V10: Ferro, siempre en el yunque; Hilda, entre su puesto y su taller; Mirta, con los estantes de la botica.
+	"ferro": {
+		"manana": {"casilla": Vector2(70.5, 26), "hace": "trabaja", "donde": "encendiendo la fragua de la herrería",
+			"frase": "Primero el fuego. Luego, las prisas."},
+		"tarde": {"casilla": Vector2(70.5, 26), "hace": "trabaja", "donde": "en el yunque, a la puerta de la herrería",
+			"frase": "Tres golpes y a templar. Así se hace."},
+		"anochecer": {"casilla": Vector2(70.5, 26), "hace": "trabaja", "donde": "apurando la última pieza en el yunque",
+			"frase": "Una más y cierro. Siempre digo lo mismo."},
+	},
+	"hilda": {
+		"manana": {"casilla": Vector2(47, 25.6), "hace": "trabaja", "donde": "montando su puesto de armaduras",
+			"frase": "Hebillas en fila. Cuero engrasado. Bien."},
+		"tarde": {"casilla": Vector2(47, 25.6), "hace": "quieto", "donde": "en su puesto, a la entrada de la Calle del Mercado",
+			"frase": "Lo que aprieta, se ajusta. Probad."},
+		"anochecer": {"casilla": Vector2(47, 25.6), "hasta": Vector2(57, 25.6), "hace": "pasea",
+			"donde": "llevando piezas del puesto a su taller", "frase": "Lo que no se vende, se remienda."},
+	},
+	"mirta": {
+		"manana": {"casilla": Vector2(33.5, 41.5), "hace": "trabaja", "donde": "revisando los estantes de la botica",
+			"frase": "Ortiga, malva, ortiga… ¿dos ortigas?"},
+		"tarde": {"casilla": Vector2(33.5, 41.5), "hace": "trabaja", "donde": "a la puerta de la botica, con un frasco",
+			"frase": "Un remedio a tiempo vale por tres."},
+		"anochecer": {"casilla": Vector2(33.5, 41.5), "hasta": Vector2(37, 41.5), "hace": "pasea",
+			"donde": "buscando algo por la plazuela", "frase": "¿Dónde dejé las gafas? …Ah. Puestas."},
 	},
 }
 

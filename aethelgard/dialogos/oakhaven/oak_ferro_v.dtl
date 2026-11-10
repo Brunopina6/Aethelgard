@@ -1,0 +1,4 @@
+ferro: Mira quién vuelve. En la fragua ya se habla de ti, chico.
+ferro: Dicen que no te arrugas. En mi oficio, eso es medio trabajo.
+ferro: La otra mitad es sudar. Saca esa espada.
+[signal arg="oak:servicio_forja"]
