@@ -744,6 +744,82 @@ Otras propuestas, sin aplicar porque cambian cómo suena:
 
 Evidencias: `D:\REBELUM_diagnostico\sonido_muestras\2026-11-09_tanda7\memoria\`: los registros de antes y después y
 `memoria_audio_*.csv`, una fila por sonido. La mezcla está en `…\2026-11-09_tanda7\indice.md` y en `…\despues\`.
+
+## V9 (2026-11-10): la identidad sonora del Guardián del Bosque Olvidado y el audio del orbe del altar
+
+Rama `claude/v9-sonido-guardian`. Antes, el Guardián sonaba con lo de todos los jefes («jefe», «carga_jefe», «fase2») y
+sin voz (su clave no tenía familia). Ahora es un **árbol viejo que despierta**: madera que cruje y gime (con un gruñido
+grave de criatura por debajo, para que se lea como una voz y no como un mueble), raíces y tierra, y un corazón que
+late; al purificarlo, un cuenco tibetano cálido. Su combate tiene además un **tratamiento** propio de la música y un
+bosque antiguo por debajo. **Nadie lo ha oído todavía**: lo de abajo es lo que se eligió y por qué, y lo medido.
+
+**Licencias:** todos los originales son de los paquetes GDC de Sonniss 2016, 2017, 2018, 2019 y 2023 (`Licensing.pdf` /
+`License.pdf` en la raíz de cada paquete, comprobados de nuevo el 10/11; condiciones en «Licencias y evidencia»). Las
+capas también. Ninguna fuente CC0 nueva, nada de Suno, ninguna música nueva. Huellas y tramos en
+[`efectos_procedencia.csv`](efectos_procedencia.csv) (18 filas nuevas). Hechos con `prueba_efectos_preparar.gd`
+(«solo=guardian/,ambiente/bosque_antiguo,mundo/orbe_»).
+
+### El Guardián (bus Efectos; `sonido.gd`, sección «V9»)
+
+| Efecto | Evento real (quién lo pide) | Archivos | Original (biblioteca) y capas | dB · p | Derivado (pico / RMS / s) |
+|---|---|---|---|---|---|
+| `guardian_bosque_jefe` | Su título al empezar el combate, **en lugar de «jefe»** (`combate.gd`, `_presentar`, con `{"en": self}`); empieza el tratamiento | `guardian/jefe` | Mattia Cellotto «Woodshed - Rock and Wood Large Impacts…02» + 344 Audio «Trailer Hit Cavernous 10 Filtered, Low End» + BlueZone «wood_creaking_tree_005»; tono ×0,85 | −5 · 4 | −1,0 / −22,7 / 3,53 |
+| `guardian_bosque_entrada` | Despierta (clip «entrada» del modelo 3D): `combate.gd` ya pide «<clave>_entrada» | `guardian/entrada` | SoundBits «HeavyWood_Sliding_on_ForestFloor_01_04» + BluezoneCorp «forest_tree_branch_texture_1_004» + Articulated Sounds «MONSTER Yeti groan 21»; ×0,88 | −9 · 3 | −2,0 / −23,1 / 2,78 |
+| `guardian_bosque_ataque` | Impacto del latigazo de rama: señal «impacto» del modelo (0,6 s), que `combate.gd` ya convierte en «<clave>_ataque» | `guardian/ataque_1…2` | Soundrangers «tree_dead_tree_limb_impact_05» (dos golpes) + BlueZone «wood_crushing_branches» / Soundrangers «tree_bark_rotten_rip_03»; ×0,9 | −8 · 2 | −1,0 / −20,2 y −25,6 / 0,44 |
+| `guardian_bosque_golpe` | Las raíces brotan en el golpe cargado: señal «impacto» de «golpe_fuerte» (0,667 s) → «<clave>_golpe» | `guardian/golpe` | Mattia Cellotto «Eradicated Tree - Stones Large Impacts Debris…04» + Kopeikin «soil and dirt debris heavy 13» + «tree_bark_rotten_rip_03» + BluezoneCorp «forest_wood_log_debris_falling_3_007» + «Trailer Hit Cavernous 10»; ×0,92 | −6 · 3 | −1,0 / −21,5 / 1,63 |
+| `guardian_bosque_carga` | Carga su golpe, **en lugar de «carga_jefe»** (`combate.gd`, `_turno_guardian`) | `guardian/carga` | Airborne Sound «Heartbeat, Sound Design, Pulse, Throb…» (dos latidos) + «wood_creaking_tree_005»; ×0,8 (más lento y grave) | −9 · 3 | −1,0 / −17,2 / 3,38 |
+| `guardian_bosque_fase2` | Paso a la fase 2, **en lugar de «fase2»** (`combate.gd`, `_cambio_fase_bosque`); abre el tratamiento | `guardian/fase2` | BluezoneCorp «forest_tree_wood_texture_creaking_016» + «Yeti groan 21» + «Yeti grumble 02» + «tree_bark_rotten_rip_03» (a 0,98 s, cuando se ve la coraza) + «log_debris»; ×0,82 | −4 · 4 | −1,0 / −21,8 / 2,80 |
+| `guardian_bosque_derrumbe` | Se desmorona al caer, una vez y **no si se purifica** (`combate.gd`, `_restablecer_color`) | `guardian/derrumbe` | Soundrangers «tree_falling_04» + «Eradicated Tree…04» (las rodillas, a ~1,2 s) + «log_debris»; ×0,9 | −6 · 3 | −1,0 / −18,1 / 3,11 |
+| `guardian_bosque_purificar` | El Elixir lo purifica (`combate.gd`, `_usar_elixir`, tras «pocion»); calma el tratamiento | `guardian/purificar` | Prismo Sound «SINGING_BOWL_Sustain_AandD_01_OctaveDown» + CB Sound Design «Synth_Pad_12» + «Enchanting_Bells_4» | −5 · 4 | −9,2 / −21,0 / 3,50 |
+| `corteza_ataque` | Su voz al alzar la rama (`combate.gd`, `_anim_guardian`) y al esparcir esporas (ya pedía `_voz(f, "ataque")`) | `guardian/corteza_ataque_1…2` | «wood_creaking_tree_005» / «forest_tree_wood_texture_creaking_016» + «Yeti grumble 02»; ×0,85 / ×0,8 | −9 · 2 (grupo «voz») | −2,0 / −25,2 y −23,3 / 0,94 y 1,00 |
+| `corteza_herido` | Un golpe físico que no lo tumba (`Sonido.recibe`, ya enganchado) | `guardian/corteza_herido_1…3` | «tree_bark_rotten_rip_03» (tres tramos) + «Yeti groan 21» / «wood_crushing_branches»; ×0,85 / ×0,8 | −9 · 2 (voz) | −2,0 / −24,9 a −27,6 / 0,47-0,61 |
+| `corteza_caida` | El golpe físico que lo tumba (`Sonido.recibe`) y «muerte» | `guardian/corteza_caida` | «wood_creaking_tree_005» + «Yeti groan 21»; ×0,75 | −6 · 3 (voz) | −2,0 / −25,3 / 2,13 |
+
+La familia de voz `corteza` va por `FAMILIAS` («guardian_bosque» → «corteza»): los demás enemigos no cambian (lo mira
+`prueba_audio_guardian`). La señal «aviso» del modelo pide «guardian_bosque_aviso_golpe», que **a propósito no existe**:
+el latido ya lo pide `combate.gd` (también con el dibujo 2D de respaldo) y sonaría dos veces.
+
+### El tratamiento de su combate (`sonido.gd`, `TRATAMIENTOS`)
+
+**No hay música de jefe con licencia libre en el proyecto**: la única música es `musica_combate_normal.mp3` (licencia
+pendiente) y la de Suno no entra. Así que no se añade ninguna: se trata la que suene, con dos efectos baratos al
+principio del bus Musica (un paso bajo y un volumen; nada de reverberación ni cambio de tono, que en el Mali cuestan) y
+un bucle de bosque antiguo por debajo (bus Ambiente):
+
+| Etapa | La pide | Música (paso bajo · volumen) | Bosque antiguo | Fundido |
+|---|---|---|---|---|
+| inicio | `guardian_bosque_jefe` | 2,8 kHz · −2 dB: como oída desde dentro del bosque | −8 dB (su volumen) | 2,5 s |
+| fase2 | `guardian_bosque_fase2` | 9 kHz · 0 dB: «el corazón del bosque despierta» (combate.gd además la acelera ×1,12) | −13 dB | 1,6 s |
+| calma | `guardian_bosque_purificar` | 20 kHz · −3 dB: abierta | −6 dB | 2,0 s |
+| fin | `victoria` o `derrota` (con un tratamiento puesto) | igual | se apaga y se para | 1,8 s |
+
+Se quita solo si el combate (su «dueño», el `{"en": self}` del título) deja de existir o cambia la escena: el bus
+Musica queda como estaba. Lo pide el catálogo («trata»), sin llamadas nuevas en `combate.gd` aparte de la del título.
+
+| Bucle | Original | Licencia | Derivado |
+|---|---|---|---|
+| `bosque_antiguo` (`ambiente/bosque_antiguo`, 30 s, bucle, Ambiente, −8 dB) | Discover Oregon «Creaks and Snaps 2017.03.20 - Gentle Tree Creaks» (50-82 s: árboles que crujen con viento) + Airborne Sound «Drone, Resonant, Bed, Solemn, Mystical…» (−28 dB, un zumbido solemne), paso bajo a 9 kHz | Sonniss GDC 2018 | RMS −24,0, pico −5,8; importado a **22 050 Hz** (por encima de 11 025 Hz queda −63 dB respecto al total, FFT medida el 10/11) |
+
+### El orbe del altar (`zonas3d/bosque_pastos.gd`, `_vision`)
+
+| Efecto | Evento real | Archivo | Original y capas | Licencia | dB · p | Derivado |
+|---|---|---|---|---|---|---|
+| `orbe_vision` | Se abre una visión del orbe (`_vision(true)`, **en lugar de «misterio»**) | `mundo/orbe_vision` | Raconteur Sound «Crystal, Glass, Tall Narrow, Tone, Rubbing, Musical_05» (una copa frotada) + CB Sound Design «Dream_Drone_09» + «Enchanting_Bells_4» | Sonniss GDC 2017 y 2023 | −9 · 3 | −8,2 / −21,0 / 4,80 |
+| `orbe_cierra` | La visión se cierra al acabar su diálogo (`_vision(false)`) | `mundo/orbe_cierra` | Raconteur Sound «Crystal, Glass, Red Wine, Tone, Rubbing, Musical_07», ×0,84 | Sonniss GDC 2017 | −14 · 2 | −3,0 / −13,0 / 2,62 |
+
+### Cambios en archivos de otros (solo las llamadas)
+
+- `combate.gd`: el título del Guardián (`guardian_bosque_jefe` con `{"en": self}`; los demás jefes siguen con «jefe»),
+  el latido en lugar de «carga_jefe» en `_turno_guardian`, el rugido en lugar de «fase2» en `_cambio_fase_bosque`,
+  `guardian_bosque_purificar` tras «pocion» en `_usar_elixir`, `_voz(o, "ataque")` al empezar `_anim_guardian` y el
+  derrumbe (una vez, no si se purifica) al principio de `_restablecer_color`.
+- `zonas3d/bosque_pastos.gd`: `orbe_vision` en lugar de «misterio» y `orbe_cierra` al cerrarse, en `_vision`.
+
+### Memoria
+
+Medido con `prueba_audio_guardian` (10/11): las 14 claves nuevas ocupan **920 KB** en la RAM (QOA; el bucle, 262 KB).
+Todo el audio: **20,36 MB** (presupuesto 21 MB de `prueba_audio_memoria`; antes, 19,47).
+
 ## Candidatos aún sin usar
 
 - **Alternativas para escuchar y elegir:** `victory_…_01_s29` y `…_02_s29` (otra victoria), InspectorJ
