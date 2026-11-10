@@ -50,9 +50,11 @@ Nada a medias: la fase está cerrada en un punto seguro.
 1. Abrir `D:\Aethelgard_fase2`. La rama ya es la buena: no hay que cambiarla.
 2. Comprobar que todo pasa. Desde PowerShell, en esa carpeta:
    `powershell -ExecutionPolicy Bypass -File .\ci_local.ps1`. Debe terminar con «CI LOCAL: todo superado».
-3. Con el Redmi conectado, compilar la APK de pruebas aparte:
-   `.\compilar_apk_experimental.ps1 -Preset "Android auditoría"`.
-   - Instalarla sin tocar las otras apps.
+3. **La APK de pruebas aparte ya está compilada** (local, sin publicar):
+   - archivo: `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261110-ddcc1d3.apk`;
+   - versión: v418, «REBELUM Auditoría», paquete `com.aethelgard.auditoria`;
+   - SHA-256: `0974b605…`.
+   - Con el Redmi conectado: instalarla sin tocar las otras apps (solo actualiza la app de pruebas «Auditoría»).
    - Medir lo pendiente comparando con la v387 (`docs/auditoria_autonoma/VALIDACION_REDMI.md`).
 4. Si todo va bien y lo autorizas: fusionar la rama con `integracion-experimental` y subirla.
 

@@ -23,7 +23,7 @@
 | Entradas sucesivas en regiones | — | no medido | sin teléfono |
 | FPS por perfil (Redmi: bajo 30,1 · medio 27,4 · alto 10,3 · combate 59,9) | — | no medido | sin teléfono |
 | Tiempo de transición entre escenas | — | no medido | sin teléfono |
-| Tamaño de la APK | 262 MB (09/11) | sin cambios esperados | no se cambió qué va en la APK; no se compiló |
+| Tamaño de la APK de pruebas «Auditoría» | 292 917 900 bytes (v387, `94a6592`) | 293 074 534 bytes (v418, `ddcc1d3`) | compilación local; +153 KB por lo integrado de los especialistas: esta fase no cambia qué va en la APK |
 
 **Archivos de las medidas:**
 - `D:\REBELUM_diagnostico\fase2\` (precarga y texturas);
