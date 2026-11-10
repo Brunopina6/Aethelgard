@@ -45,11 +45,17 @@ func _tactil() -> bool:
 	return OS.has_feature("mobile") or DisplayServer.is_touchscreen_available()
 
 
+# Botones del propio teléfono que llegan como teclas (volumen, encendido, atrás, menú…): no son un teclado y no deben
+# cambiar los textos a los de teclado. Visto en el Redmi el 10/11: bajar el volumen pasaba a «teclado».
+const TECLAS_DEL_SISTEMA := [KEY_VOLUMEDOWN, KEY_VOLUMEUP, KEY_VOLUMEMUTE, KEY_BACK, KEY_MENU, KEY_STANDBY,
+	KEY_MEDIAPLAY, KEY_MEDIASTOP, KEY_MEDIAPREVIOUS, KEY_MEDIANEXT, KEY_MEDIARECORD, KEY_UNKNOWN]
+
+
 func _mirar(ev: InputEvent) -> void:
 	var nuevo := modo
 	if ev is InputEventScreenTouch or ev is InputEventScreenDrag or (ev is InputEventMouseButton and ev.pressed):
 		nuevo = "puntero"
-	elif ev is InputEventKey and ev.pressed:
+	elif ev is InputEventKey and ev.pressed and not ev.keycode in TECLAS_DEL_SISTEMA:
 		nuevo = "teclado"
 	elif ev is InputEventJoypadButton and ev.pressed:
 		nuevo = "mando"
