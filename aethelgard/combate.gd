@@ -2732,7 +2732,7 @@ func _usar_elixir(nombre: String, g: Dictionary) -> void:
 	_marcar_aviso(g, false)
 	g["cargando"] = false
 	registro.text = _texto_bosque("purificacion", "La savia clara empapa sus raíces. El Guardián recuerda.")
-	Sonido.efecto("cura")
+	Sonido.efecto("pocion")
 	_fogonazo(Color(0.75, 1.0, 0.6), 0.5, 1.2)
 	_luz(Color(0.6, 1.0, 0.5), 2.4, 6.0, 2.0, _centro(g))
 	_particulas(_centro(g) + Vector2(0, 120), Color(0.85, 1.0, 0.6, 1.0), Color(0.3, 0.9, 0.3, 0.0), 60, 2.0,

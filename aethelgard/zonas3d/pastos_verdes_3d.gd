@@ -93,6 +93,7 @@ var fundido: ColorRect
 var aviso: Label
 var boton_accion: Button
 var tilo: Node3D
+var bosque = null                         # zonas3d/bosque_pastos.gd: «El bosque que no recuerda» (fase 3)
 var estela: Node3D
 var grupo: Node3D                        # zonas3d/grupo_3d.gd (null si no sale nadie)
 var cofre: Node3D
@@ -133,6 +134,9 @@ func _ready() -> void:
 	_crear_interfaz()
 	_crear_salidas()
 	_crear_personajes()
+	bosque = load("res://zonas3d/bosque_pastos.gd").new()   # «El bosque que no recuerda» (fase 3)
+	add_child(bosque)
+	bosque.preparar(self)
 	var vuelve: bool = Engine.get_meta("pos_3d_ok", false) and Engine.get_meta("pos_3d_lugar", -1) == INDICE
 	if vuelve and not en_banco():
 		_colocar_kael(Engine.get_meta("pos_3d"))       # vuelve del combate o de una partida guardada aquí
@@ -253,6 +257,8 @@ func _process(delta: float) -> void:
 		_quieto_t = 0.0
 		_parar_kael()
 		boton_accion.visible = false
+		if bosque != null and bosque.boton_alquimia != null:
+			bosque.boton_alquimia.visible = false
 		return
 	super(delta)
 	if saliendo or kael == null:
@@ -275,6 +281,8 @@ func _process(delta: float) -> void:
 			_salir()
 			return
 	_comprobar_mision()
+	if bosque != null:
+		bosque.comprobar(p, delta)
 	_comprobar_cerca()
 	_comentarios(delta, d)
 
@@ -338,6 +346,8 @@ func _quitar_comentarios() -> void:
 
 
 func ocupado() -> bool:
+	if bosque != null and bosque.ocupado():            # la pantalla de alquimia abierta (fase 3)
+		return true
 	if _escena_pendiente != "":
 		return true
 	var dg = get_node_or_null("/root/Dialogic")
@@ -366,7 +376,7 @@ func _paso() -> void:
 		_encuentro()
 
 
-func _encuentro(fijo := "", grupo := -1) -> void:
+func _encuentro(fijo := "", grupo := -1, texto := "") -> void:
 	if saliendo:
 		return
 	saliendo = true
@@ -379,7 +389,7 @@ func _encuentro(fijo := "", grupo := -1) -> void:
 		Engine.set_meta("grupo_combate", grupo)
 		Engine.set_meta("combate_fijo", fijo)
 	Sonido.efecto("emboscada")           # sonido.gd
-	_mostrar_aviso("¡Emboscada!" if fijo == "" else "¡Al centinela!")
+	_mostrar_aviso(texto if texto != "" else ("¡Emboscada!" if fijo == "" else "¡Al centinela!"))
 	fundido.color = Color(1, 1, 1, 0)
 	var t := create_tween()
 	for i in 3:
@@ -477,6 +487,9 @@ func _al_terminar_dialogo() -> void:
 
 
 func _tras_dialogo(id: String) -> void:
+	if id.begins_with("bq_") and bosque != null:        # la aventura del bosque (fase 3)
+		bosque.tras_dialogo(id)
+		return
 	var P = load("res://progreso.gd")
 	match id:
 		"pv_06":
@@ -515,7 +528,8 @@ func texto_objetivo() -> String:
 		return "Vuelve junto al centinela."
 	if not P.hito("pv_14"):
 		return "Vuelve a hablar con Tilo."
-	return "Sigue el camino hacia el noreste."
+	var tb: String = bosque.texto_objetivo() if bosque != null else ""   # la aventura del bosque (fase 3)
+	return tb if tb != "" else "Sigue el camino hacia el noreste."
 
 
 func _actualizar_objetivo() -> void:
@@ -726,6 +740,11 @@ func _comprobar_cerca() -> void:
 				cerca = "nota:" + e[1]["id"]
 				boton_accion.text = "Examinar"
 				break
+	if cerca == "" and bosque != null:                 # la aventura del bosque (fase 3)
+		var b: Dictionary = bosque.cerca_de(p)
+		if not b.is_empty():
+			cerca = "bq:" + b["id"]
+			boton_accion.text = b["boton"]
 	boton_accion.visible = cerca != ""
 
 
@@ -746,8 +765,10 @@ func _accion() -> void:
 				_empezar_dialogo("pv_tilo")
 			elif not P.hito("pv_14"):
 				_escena_mision("pv_14")
-			else:
-				_empezar_dialogo("pv_tilo_fin")
+			else:                                # tras la misión, la aventura del bosque (fase 3)
+				var dt: String = bosque.dialogo_tilo() if bosque != null else "pv_tilo_fin"
+				if not _empezar_dialogo(dt):
+					_tras_dialogo(dt)
 		"estela":
 			var d: Dictionary = P.detalles_de(INDICE)[0]
 			_mostrar_aviso(d["texto"], 4.0)
@@ -764,6 +785,9 @@ func _accion() -> void:
 		"lavanda":
 			_coger_lavanda()
 		_:
+			if cerca.begins_with("bq:"):
+				bosque.accion(cerca.trim_prefix("bq:"))
+				return
 			if cerca.begins_with("nota:"):
 				_leer_nota(cerca.trim_prefix("nota:"))
 
