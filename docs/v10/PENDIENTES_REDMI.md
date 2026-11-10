@@ -11,6 +11,8 @@ Todo lo de abajo está **pendiente de validación manual**. Nada se ha medido en
   - SHA-256 `9bfe81297b5837f222047f77f9467ed4875d6cc13f42661b125b1e8cc6a2d0ff`;
   - preset «Android auditoría», paquete `com.aethelgard.auditoria`, «REBELUM Auditoría».
 - Se instala junto a las demás y no toca la app estable ni sus datos. Se instala a mano desde Descargas.
+- **10/11, hacia las 22:10:** copiada por USB a Descargas del Redmi como `Aethelgard_Auditoria_2026-11-10_v520.apk`.
+  El tamaño (295 169 279 bytes) y el SHA-256 coinciden en el teléfono. Falta que el usuario la instale.
 
 ## Qué mirar, por orden
 
