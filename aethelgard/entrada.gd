@@ -19,11 +19,19 @@ const ACCIONES := ["ui_left", "ui_right", "ui_up", "ui_down", "ui_accept", "ui_c
 const AVISO_DESCONECTADO := "Mando desconectado. Puedes seguir con la pantalla o el teclado."
 
 var modo := "puntero"
+var _inicio := 0                                 # ms al abrir (avisos de mandos que Android anuncia al arrancar)
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	if not Input.get_connected_joypads().is_empty():
+	_inicio = Time.get_ticks_msec()
+	var mandos := Input.get_connected_joypads()
+	for id in mandos:                              # registro técnico: qué dispositivo se anuncia como mando
+		print("Entrada: dispositivo de mando %d «%s» (mapa conocido: %s)" % [id, Input.get_joy_name(id), Input.is_joy_known(id)])
+	# Con pantalla táctil se empieza con el dedo aunque se anuncie un mando: el Redmi anuncia uno sin tenerlo (10/11) y
+	# salía «PULSA INTRO». Con un mando de verdad, su primera pulsación pasa a «mando» (_mirar). Sin pantalla táctil
+	# (Android TV), como siempre.
+	if not mandos.is_empty() and not DisplayServer.is_touchscreen_available():
 		modo = "mando"
 	elif not _tactil():
 		modo = "teclado"
@@ -48,6 +56,8 @@ func _mirar(ev: InputEvent) -> void:
 	elif ev is InputEventJoypadMotion and absf(ev.axis_value) > 0.5:
 		nuevo = "mando"
 	if nuevo != modo:
+		# registro técnico (10/11): qué evento cambia el modo, una línea por cambio (sin datos personales)
+		print("Entrada: modo %s → %s por %s (dispositivo %d)" % [modo, nuevo, ev.as_text(), ev.device])
 		modo = nuevo
 		modo_cambiado.emit(modo)
 
@@ -145,7 +155,9 @@ func _usable(c: Control) -> bool:
 # Al desconectarse un mando: se sueltan sus acciones y se avisa. Al conectarse, solo se avisa.
 func _al_cambiar_mando(_dispositivo: int, conectado: bool) -> void:
 	if conectado:
-		Recursos.avisar("Mando conectado.", 2.5)
+		# Los que Android anuncia al abrir la app en un móvil no se avisan (el Redmi anuncia uno sin tenerlo, 10/11).
+		if not (DisplayServer.is_touchscreen_available() and Time.get_ticks_msec() - _inicio < 5000):
+			Recursos.avisar("Mando conectado.", 2.5)
 		return
 	for a in ACCIONES:
 		if InputMap.has_action(a) and Input.is_action_pressed(a):
