@@ -1280,6 +1280,19 @@ func _comprobar_cerca() -> void:
 		boton_examinar.text = "Examinar"
 
 
+# Para zona.gd: con una pieza o una nota a mano, el botón no se esconde un instante cada fotograma (eso anulaba la
+# pulsación con el dedo). Mismo criterio que arriba, sin vecinos ni cofres (zona.gd solo pregunta si no hay ninguno).
+func _hay_otra_accion() -> bool:
+	var en_alto := _en_alto(jugador.position)
+	for e in piezas:
+		if not _farol_encendido(e[1]) and _en_alto(e[2]) == en_alto and jugador.position.distance_to(e[2]) < RADIO_PIEZA:
+			return true
+	for e in notas:
+		if jugador.position.distance_to(e[2]) < RADIO_PIEZA:
+			return true
+	return false
+
+
 # A qué distancia está lo que eligió zona.gd (cofre, detalle o vecino); INF si nada (o solo el Árbol).
 func _distancia_elegida() -> float:
 	for x in [cofre_cerca, detalle_cerca, npc_cerca]:

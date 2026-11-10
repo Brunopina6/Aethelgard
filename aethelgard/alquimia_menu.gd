@@ -78,6 +78,13 @@ func _unhandled_input(ev: InputEvent) -> void:
 		cerrar_menu()
 
 
+# El botón Atrás de Android no llega como ui_cancel (project.godot: quit_on_go_back=false), sino como esta
+# notificación: cierra igual (visto en el Redmi el 11/11 con la v520).
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_GO_BACK_REQUEST and is_inside_tree() and not is_queued_for_deletion():
+		cerrar_menu()
+
+
 func cerrar_menu() -> void:
 	Sonido.efecto("ui_tic")
 	cerrado.emit()

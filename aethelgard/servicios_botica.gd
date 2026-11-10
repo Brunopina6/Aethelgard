@@ -76,6 +76,14 @@ func _alquimia() -> void:
 	abierto = a
 
 
+# El botón Atrás de Android no llega como ui_cancel (project.godot: quit_on_go_back=false), sino como esta
+# notificación (visto en el Redmi el 11/11 con la v520). Cierra si no hay otra ventana encima: la alquimia se cierra
+# sola con la misma notificación (llega antes aquí, al padre, y aquí no se hace nada); la tienda, con «Salir».
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_GO_BACK_REQUEST and abierto == null and is_inside_tree() and not is_queued_for_deletion():
+		cerrar()
+
+
 func cerrar() -> void:
 	cerrado.emit()
 	queue_free()

@@ -2303,7 +2303,14 @@ func _comprobar_cerca() -> void:
 		boton_examinar.visible = true
 	else:
 		boton_examinar.text = "Examinar"
-		boton_examinar.visible = jugador.position.distance_to(altar.position) < RADIO_ALTAR
+		boton_examinar.visible = jugador.position.distance_to(altar.position) < RADIO_ALTAR or _hay_otra_accion()
+
+
+# Si una zona hija tiene más cosas que usar a mano (las piezas y notas de ciudad_oakhaven.gd), el botón no se esconde
+# aquí: esconderlo y volver a enseñarlo en el mismo fotograma anula la pulsación con el dedo o el ratón (en el Redmi,
+# «Recoger la página» no hacía nada; con Intro, sí). La hija pone después el texto.
+func _hay_otra_accion() -> bool:
+	return false
 
 
 func _accion() -> void:
