@@ -36,7 +36,7 @@ const ACCESORIO := "fragmento_armadura"
 # combate y la Garganta usan el respaldo (la imagen del guardián de piedra, grande y gris ámbar). Para activarlo cuando
 # llegue el GLB: aquí true (la figura dormida de la Garganta) y, en combate.gd ENEMIGOS["coloso_falla"], «modelo»:
 # «coloso_falla» (la entrada 3D de MODELOS ya está; si faltara el GLB, combate.gd usa su respaldo 2D).
-const MODELO_3D := false
+const MODELO_3D := true
 const GUION_3D := "res://enemigos/coloso_falla/coloso_falla_3d.gd"
 const GLB_3D := "res://enemigos/coloso_falla/coloso_falla.glb"
 

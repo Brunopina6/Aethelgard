@@ -394,7 +394,7 @@ const FAMILIAS := {"slime": "limo", "grimfang": "goblin", "gorthor": "gorthor", 
 	"zarzalin": "zarzalin", "cencerrante": "cencerrante", "velaria": "velaria", "custodio_cal": "custodio", "custodio": "custodio",
 	"hilandera_eco": "hilandera", "hilandera": "hilandera", "posadero_hueco": "posadero", "posadero": "posadero",
 	# V9: el Guardián del Bosque Olvidado (su voz: madera que cruje y gime; «guardian_bosque_*» son sus efectos)
-	"guardian_bosque": "corteza"}
+	"guardian_bosque": "corteza", "coloso_falla": "piedra"}   # coloso_falla: la voz de piedra del guardián (V9)
 # V9: tratamiento del combate de un jefe (lo empieza y lo cambia un efecto con «trata»: [jefe, etapa]). Mientras dure:
 # - la música (bus Musica) pasa por un paso bajo («corte», Hz) y un ajuste de volumen («musica_db»): el Guardián
 #   empieza con la música apagada, como oída desde dentro del bosque, y en su fase 2 se abre;

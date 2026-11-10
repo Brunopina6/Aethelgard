@@ -229,9 +229,9 @@ const MODELOS := {
 	# usar (ENEMIGOS lleva el respaldo; combate_coloso.gd, MODELO_3D, dice cómo activarla). El encuadre es el del
 	# Guardián del Bosque y habrá que ajustarlo con el modelo. Si se activa sin el GLB, se usa el respaldo 2D.
 	"coloso_falla": {
-		"tipo": "3d", "esc": 0.6, "script": "res://enemigos/coloso_falla/coloso_falla_3d.gd",
+		"tipo": "3d", "esc": 0.64, "script": "res://enemigos/coloso_falla/coloso_falla_3d.gd",
 		"gestos": "res://gestos_3d.gd", "rutas": ["res://enemigos/coloso_falla/coloso_falla.glb"],
-		"vp": Vector2i(1000, 1120), "alto_vista": 4.6, "centro_y": 1.95, "barra_y": 50.0, "centro_3d": 1.9,
+		"vp": Vector2i(1260, 1360), "alto_vista": 6.2, "centro_y": 2.3, "barra_y": 150.0, "centro_3d": 2.7,   # encuadre de animaciones (V9)
 		"respaldo": "coloso_falla2d"},
 	# Respaldo 2D: el guardián de piedra, grande (más alto que dos héroes) y teñido de gris cálido (la imagen es verdosa).
 	# Con GRUPOS[12] en y = 90, los pies caen a unos 470 px de pantalla y la cabeza a unos 75: su vida y sus estados
@@ -264,7 +264,7 @@ const ENEMIGOS := {
 	# V9, jefe 2: el Coloso de la Falla, jefe opcional de la Garganta 3D (combate_coloso.gd). Lento y duro: piel de piedra
 	# (golpes a la mitad) salvo en la ventana tras su golpe cargado; al 50 %, las runas (coraza rúnica alterna). Garon
 	# puede leer sus inscripciones. «modelo»: «coloso_falla» cuando llegue su GLB (hoy, el respaldo 2D).
-	"coloso_falla": {"nombre": "Coloso de la Falla", "modelo": "coloso_falla2d", "hp": 520, "atk": 21, "vel": 8.0,
+	"coloso_falla": {"nombre": "Coloso de la Falla", "modelo": "coloso_falla", "hp": 520, "atk": 21, "vel": 8.0,
 		"exp": 80, "oro": 120, "personalidad": "coloso", "fases": true, "titulo": true},
 }
 const GRUPOS := [
@@ -282,7 +282,7 @@ const GRUPOS := [
 	[["grimfang", Vector2(300, 130)]],                                      # 9
 	[["zarzalin", Vector2(250, 120)]],                                      # 10: Zarzalín (Pastos Verdes)
 	[["guardian_bosque", Vector2(150, -120)]],                               # 11: Guardián del Bosque (Pastos Verdes, fase 3)
-	[["coloso_falla", Vector2(150, 90)]],                                    # 12: Coloso de la Falla (Garganta 3D, V9)
+	[["coloso_falla", Vector2(47, -256)]],                                    # 12: Coloso de la Falla (Garganta 3D, V9)
 ]
 const GRUPOS_AL_AZAR := 5           # solo los primeros salen en encuentros aleatorios (con el grupo de tres)
 # Encuentros al azar según cuántos héroes hay ahora en el grupo (grupo.gd, activos). Kael solo no tiene cura ni a
