@@ -119,6 +119,8 @@ func _revisar_texto(n: String, texto: String) -> void:
 			if not quien_j in ["kael", "lya"]:
 				_fallo("2: %s: «%s» (solo Kael y Lya tienen retrato vivo)" % [n, l])
 			continue
+		if l.begins_with("[signal arg=\"oak:"):         # la señal de Oakhaven que marca el diálogo como dicho (fase 3)
+			continue
 		var m := re_gesto.search(l)
 		if m != null:
 			if not m.get_string(2) in GESTOS.get(m.get_string(1), []):

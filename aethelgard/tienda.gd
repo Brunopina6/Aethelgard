@@ -9,6 +9,23 @@ signal cerrado
 
 # Precios. Los objetos se pueden comprar sin límite; el equipo una sola vez.
 const OBJETOS := {"Poción": 20, "Éter": 45, "Incienso de Ceniza": 80}
+# Fase 3, «El bosque que no recuerda»: tras el Guardián del Bosque, Doña Encina deja hierbas a la venta en Oakhaven
+# (lugar 0). Purificado: Hierba lunar y Savia clara; derrotado: solo Hierba lunar. Más caras de lo que paga la tienda.
+const OBJETOS_BOSQUE := {"purificado": {"Hierba lunar": 15, "Savia clara": 30}, "derrotado": {"Hierba lunar": 15}}
+
+
+static func objetos_de(lugar: int) -> Dictionary:
+	var r: Dictionary = OBJETOS.duplicate()
+	if lugar == 0:
+		var P = load("res://progreso.gd")
+		for d in OBJETOS_BOSQUE:
+			if P.hito("bq_" + d):
+				r.merge(OBJETOS_BOSQUE[d])
+	return r
+
+
+func _objetos() -> Dictionary:
+	return objetos_de(int(Engine.get_meta("lugar", {}).get("indice", -1)))
 const EQUIPO := {"escudo_madera": 60, "orbe_proteccion": 140, "escudo_hierro": 150, "escudo_runico": 320,
 	"cinta_cuero": 30, "botas_cuero": 40, "anillo_fuerza": 180, "anillo_rubi": 200, "amuleto_vida": 220,
 	"averno": 900, "diamante_azul": 1400}
@@ -144,12 +161,15 @@ func _pintar() -> void:
 	lbl_oro.text = "%d monedas" % Inv.oro()
 	match pestana:
 		"Objetos":
-			for o in OBJETOS:
+			var objs := _objetos()
+			for o in objs:
 				var usos: Dictionary = load("res://combate.gd").OBJETOS_COMBATE.get(o, {})
 				var desc := "Recupera %d %s" % [usos["cura"], usos["que"]] if not usos.is_empty() else ""
+				if desc == "" and load("res://equipo_extra.gd").materiales().has(o):   # hierbas de Encina (fase 3)
+					desc = load("res://equipo_extra.gd").materiales()[o]["desc"]
 				if o == "Incienso de Ceniza":
 					desc = "Sin encuentros durante %d pasos" % load("res://progreso.gd").PASOS_INCIENSO
-				_fila(o, desc, "Tienes %d" % Inv.cantidad(o), OBJETOS[o], func(): _comprar_objeto(o))
+				_fila(o, desc, "Tienes %d" % Inv.cantidad(o), objs[o], func(): _comprar_objeto(o))
 			var Extra = load("res://equipo_extra.gd")    # el botín de las bestias (T-097): se vende
 			var mats: Dictionary = Extra.materiales()     # datos/materiales/ (fase 2)
 			for m in mats:
@@ -208,7 +228,7 @@ func _fila(nombre: String, desc: String, nota: String, precio: int, al_comprar: 
 
 
 func _comprar_objeto(o: String) -> void:
-	if Inv.gastar_oro(OBJETOS[o]):
+	if _objetos().has(o) and Inv.gastar_oro(_objetos()[o]):
 		Inv.agregar_objeto(o)
 		Sonido.efecto("monedas")
 		_avisar("Has comprado %s." % o)

@@ -1,3 +1,4 @@
 encina: Esta mañana el roble olía a savia nueva. Hacía años que no.
 encina: Dicen que el bosque del noreste vuelve a florecer. Algo habéis hecho, muchacho.
 encina: Me sobran hierba lunar y savia clara. Si os hacen falta, os las vendo.
+[signal arg="oak:encina_bosque"]
