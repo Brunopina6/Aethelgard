@@ -48,6 +48,8 @@ directories/dtl_directory={
 "bq_arbol": "res://dialogos/bosque/bq_arbol.dtl",
 "bq_derrotado": "res://dialogos/bosque/bq_derrotado.dtl",
 "bq_guardian": "res://dialogos/bosque/bq_guardian.dtl",
+"bq_orbe_a": "res://dialogos/bosque/bq_orbe_a.dtl",
+"bq_orbe_b": "res://dialogos/bosque/bq_orbe_b.dtl",
 "bq_pista_inscripcion": "res://dialogos/bosque/bq_pista_inscripcion.dtl",
 "bq_pista_planta": "res://dialogos/bosque/bq_pista_planta.dtl",
 "bq_pista_rastro": "res://dialogos/bosque/bq_pista_rastro.dtl",

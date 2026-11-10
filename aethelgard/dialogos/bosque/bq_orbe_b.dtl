@@ -1,0 +1,11 @@
+join kael (vivo_pv) left
+join lya (vivo_pv) right
+update lya [extra_data="preocupada"]
+lya: Ahora el orbe se enturbia. El claro está callado y los árboles, grises.
+garon: Un tocón. Nada más.
+update kael [extra_data="duda"]
+kael: Lo vencemos y el bosque se queda así… ¿para siempre?
+update lya [extra_data="decidida"]
+lya: Ya sé lo que buscaba: la savia tiene que sanarlo, no herirlo. Mi estudio avanza.
+leave kael
+leave lya

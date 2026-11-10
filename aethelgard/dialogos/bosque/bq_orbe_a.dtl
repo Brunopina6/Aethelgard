@@ -1,0 +1,11 @@
+join kael (vivo_pv) left
+join lya (vivo_pv) right
+update lya [extra_data="inquieta"]
+lya: El orbe se aclara… Veo el claro en flor y al guardián de pie, velando.
+update kael [extra_data="sorpresa"]
+kael: Eso no ha pasado. ¿O sí?
+update lya [extra_data="firme"]
+lya: Todavía no. Es lo que podría ser, si alguien le devuelve lo que olvidó.
+garon: Entonces se puede.
+leave kael
+leave lya
