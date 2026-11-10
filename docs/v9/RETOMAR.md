@@ -12,8 +12,8 @@ Escrito para leerlo sin saber programar.
 - **Ya integrado del trabajo de los especialistas:**
   - el escalado de enemigos (combate, rama `claude/v9-escalado`);
   - el Claro del Guardián (gráficos, rama `claude/v9-sector`).
-- **APK de auditoría** v471, compilada en local y sin instalar:
-  `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261110-6356807.apk`.
+- **APK de auditoría** v499, compilada en local y sin instalar:
+  `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261110-56dfb9c.apk`.
 - **El resumen de cada hito** está en `ESTADO_V9.md`.
 
 ## Qué está terminado (y probado en el PC)

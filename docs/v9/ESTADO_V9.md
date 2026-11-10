@@ -49,7 +49,7 @@ claros en GitHub», pero CLAUDE.md exige tu autorización expresa para subir est
 | Una investigación profesional y una mejora de equipo | Hecho (varias) |
 | Primer comercio funcional | Hecho (la tienda de siempre, con mercancía según el desenlace) |
 | Un sector 3D ampliado | Hecho: el Claro del Guardián |
-| Pruebas funcionales y de regresión | Hecho: batería completa, 95 superadas y 0 fallidas (`D:REBELUM_diagnosticopruebas�6-11-10_172904`) |
+| Pruebas funcionales y de regresión | Hecho: batería completa, 100 superadas y 0 fallidas (`D:\REBELUM_diagnostico\pruebas\2026-11-10_185955`) |
 | Comparación de rendimiento con la v293 | Parcial: el arranque en el Redmi se midió con la v418 (19-21 s, frente a 22-25 s esta mañana); la aventura, sin medir en el teléfono |
 | Commits en GitHub | Pendiente de tu autorización |
-| APK de pruebas | Compilada en local: v471, `D:REBELUM_compilacionesAethelgard_androidauditora-20261110-6356807.apk` (280,0 MB, SHA-256 `6d9ec5d2…`); sin instalar |
+| APK de pruebas | Compilada en local: **v499**, `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261110-56dfb9c.apk` (281,1 MB, SHA-256 `52d7a120…`); sin instalar |
