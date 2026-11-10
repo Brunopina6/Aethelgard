@@ -55,4 +55,4 @@ Esta rama no ha cambiado ninguna otra: `integracion-experimental` sigue en `2889
 
 `ci_local.ps1` (10/11, 12:11): importación aislada y batería completa: **79 superadas, 0 fallidas**, 41 manuales,
 0 no seguras; partida real y carpeta real de datos sin cambios. Resumen:
-`D:\REBELUM_diagnostico\pruebas6-11-10_121154esumen.md`. La huella del combate, igual que la referencia.
+`D:\REBELUM_diagnostico\pruebas\2026-11-10_121154\resumen.md`. La huella del combate, igual que la referencia.
