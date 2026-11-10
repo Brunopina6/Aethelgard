@@ -14,6 +14,14 @@
 
 ## Resumen actualizado
 
+- **Estado al 10/11, 19:20 (traspaso de conversación):**
+  - El trabajo vigente está en la rama LOCAL `claude/rebelum-v9` (`D:\Aethelgard_v9`), creada desde la v293 a petición
+    del usuario. Contiene la fase 3 («El bosque que no recuerda»: aventura, alquimia de Lya y Guardián de dos fases
+    con desenlaces) y la directiva V9 (orbe, oficios, escalado, Coloso de la Falla, encargos y sonido del Guardián).
+  - Batería: 100/0. APK v499 sin validar en el Redmi.
+  - **No se fusiona ni se sube sin autorización.**
+  - Para retomar: `CONTINUAR_EN_NUEVO_CHAT.md` y `docs/v9/RETOMAR.md`.
+
 - **El proyecto:**
   - REBELUM (nombre técnico Aethelgard) es un JRPG de fantasía en Godot 4.7.2 (Compatibility).
   - Android primero, en un Redmi con Mali-G57. Después, PC, iOS y Android TV.

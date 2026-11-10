@@ -1427,6 +1427,25 @@ datos de conversaciones anteriores sin volver a comprobar en el código.
 - **Publicado:** Prueba v293 en `Aethelgard-pruebas` (`exp-20261109-dca4c1c`, SHA-256 `3dbe855e…`), sin copiarla al
   Redmi.
 
+### D-081
+**Directiva V9: base y decisiones del coordinador (10/11, tarde)**
+- **Base:**
+  - la v293 se verificó: la release `exp-20261109-dca4c1c` corresponde al commit `dca4c1c` (versionCode 293);
+  - la rama `claude/rebelum-v9` nace de ella;
+  - el trabajo posterior (fases 2 y 3) se recuperó tras examinarlo, en vez de rehacerlo: `docs/v9/AUDITORIA_BASE.md`.
+- **«Sin Meshy»:** no se crea nada nuevo con Meshy; lo que ya había (héroes y Cencerrante) se queda.
+- **Orbe:** propuesta experimental, pendiente de canon. Muestra dos futuros del bosque y adelanta la investigación de
+  Lya.
+- **Oficios:**
+  - mejoras y técnicas de un solo uso, guardadas en el inventario (`mejoras`, `tecnicas`, `hechas`);
+  - el musgo se vende en la tienda de Encina para no bloquear recetas.
+- **Escalado:** base y tope por región; en la base, los enemigos quedan como antes (la huella del combate no cambia).
+- **Coloso:**
+  - jefe opcional, al fondo de la grieta de la Garganta 3D;
+  - no toca el nido ni a Gorthor.
+- **Encargos:** se reutiliza el formato de misiones de Oakhaven (`encargos.gd`), sin crear un sistema paralelo.
+- **Prohibido sin autorización expresa:** fusionar o subir `claude/rebelum-v9`.
+
 ### D-080
 **Fase 3, «El bosque que no recuerda»: decisiones del coordinador (10/11, tarde)**
 - **Encargo** [usuario]: directiva maestra de la fase 3; trabajo sin supervisión, sin Redmi y sin preguntar.

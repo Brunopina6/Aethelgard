@@ -1,6 +1,26 @@
 # SESSION_HANDOFF: punto de control
 
-**Último punto de control:** 2026-11-10 a las 19:10 (hora local, UTC+1). Tras la V9 inicial se añadieron, en la misma rama, el Coloso de la Falla (combate, animaciones), el sistema de encargos con «Canela se ha perdido», la identidad sonora del Guardián (sonido) y la pestaña Encargos del Diario; batería 100/0/43/0; APK de auditoría v499 en local (sin instalar). **Directiva V9** del usuario («Operación
+## TRASPASO A UNA CONVERSACIÓN NUEVA — 2026-11-10, 19:20 (hora local, UTC+1)
+
+- **Rama de trabajo:** LOCAL `claude/rebelum-v9`, copia `D:\Aethelgard_v9`. Último commit seguro: **`3795769`**
+  («Traspaso: RETOMAR.md completo…»).
+  - Contiene todo: fase 3 «El bosque que no recuerda», directiva V9 y las ramas de los especialistas (todas
+    fusionadas; comprobado con `merge-base --is-ancestor`).
+  - Sin cambios sin confirmar.
+- **En GitHub:**
+  - `integracion-experimental` @ `b4e26e2` (fase 2);
+  - `main` @ `d4b2d16` y `desarollo` @ `2d1adc4`, sin tocar;
+  - la memoria.
+- **Pruebas:** `ci_local.ps1` desde PowerShell en `D:\Aethelgard_v9`. Último resultado: 100 superadas, 0 fallidas,
+  43 manuales y 0 no seguras.
+- **APK v499** (`D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261110-56dfb9c.apk`): **sin validar en el
+  Redmi**. La última validada fue la v420.
+- **No fusionar ni subir** la V9 ni la fase 3 sin autorización expresa.
+- **Para retomar:**
+  - `D:\Aethelgard\CONTINUAR_EN_NUEVO_CHAT.md` (la misma copia está en la raíz de la rama);
+  - `docs/v9/RETOMAR.md` y `docs/v9/ESTADO_V9.md` en la rama.
+
+**Punto de control anterior:** 2026-11-10 a las 19:10 (hora local, UTC+1). Tras la V9 inicial se añadieron, en la misma rama, el Coloso de la Falla (combate, animaciones), el sistema de encargos con «Canela se ha perdido», la identidad sonora del Guardián (sonido) y la pestaña Encargos del Diario; batería 100/0/43/0; APK de auditoría v499 en local (sin instalar). **Directiva V9** del usuario («Operación
 Renacimiento Total»):
 - Rama LOCAL `claude/rebelum-v9` (`D:\Aethelgard_v9`), creada desde la v293 verificada (`dca4c1c` = release
   `exp-20261109-dca4c1c`).

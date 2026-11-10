@@ -1077,3 +1077,22 @@
     (`D:\REBELUM_diagnostico\pruebas\2026-11-10_160727`);
   - APK de auditoría v449, `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261110-b9d9300.apk`.
 - **Detalle:** `docs/fase3_bosque/INFORME_DESARROLLO.md` y `PENDIENTES_REDMI.md`.
+
+### T-107
+**Directiva V9 («Operación Renacimiento Total»), desde la v293**
+- **Estado:** en curso. Varios hitos hechos y probados en el PC, **sin validar en el Redmi** y sin fusionar.
+- **Evidencia:**
+  - rama LOCAL `claude/rebelum-v9` (`D:\Aethelgard_v9`) @ `3795769`;
+  - batería 100 superadas, 0 fallidas, 43 manuales y 0 no seguras (`D:\REBELUM_diagnostico\pruebas\2026-11-10_185955`);
+  - APK de auditoría v499 en local.
+- **Hecho:**
+  - v293 verificada y trabajo posterior recuperado;
+  - orbe del altar;
+  - oficios de Kael y Garon y taller conjunto;
+  - escalado de enemigos;
+  - Claro del Guardián;
+  - Coloso de la Falla;
+  - sistema de encargos con «Canela se ha perdido»;
+  - sonido del Guardián.
+- **Pendiente:** Campanero del Porvenir, Emperador Slime, magia negra, ampliación de Oakhaven y efectos del Coloso.
+- **Detalle:** `docs/v9/ESTADO_V9.md` y `docs/v9/RETOMAR.md` en esa rama.
