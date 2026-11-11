@@ -141,7 +141,11 @@ func _amainar() -> void:
 
 func actualizar(delta: float, pos_kael: Vector3, ocupado: bool) -> void:
 	# la de la misión: amaina tras esperar en el cobijo, o sola a los MAX_NARRATIVA segundos
-	if objetivo > 0.0:
+	# con un diálogo abierto (ocupado) la tormenta sigue, pero sus relojes se paran y no amaina: si no, la de la misión
+	# podía acabar con su propio diálogo a medias y dejar la misión en un estado raro (Redmi, v581)
+	if objetivo > 0.0 and ocupado:
+		pass
+	elif objetivo > 0.0:
 		t_tormenta += delta
 		if T.en_cobijo(pos_kael.x, pos_kael.z):
 			t_cobijo += delta
