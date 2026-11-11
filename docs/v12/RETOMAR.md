@@ -154,3 +154,20 @@ Aprobados: **Ismena** (cartógrafa) y **Oren** (su hermano); **Bramavidrio**, el
   2. integra lo terminado copiando archivos (como siempre);
   3. pasa la batería completa;
   4. no des por buenos los prototipos.
+
+### En cola: «Segunda gran fase» (encargo del usuario de la madrugada del 12/11; empieza al cerrar la noche)
+
+**Qué abarca:**
+- personajes (Kael, Lya y Garon) más expresivos;
+- enemigos con identidad y mecánica propias;
+- todas las ubicaciones jugables a 3D, por regiones completas y sin perder contenido;
+- la escuela de magia negra: fuego, hielo, rayo, sombras, gravedad y debilitamiento, con progresión e investigación conectadas a los sistemas que ya hay;
+- un cuarto protagonista, «Naira, la Astrónoma del Eclipse» (provisional; tres conceptos antes de elegir; su historia, contrastada con la biblia).
+
+**Orden:** A auditoría, B protagonistas, C enemigos, D migración 3D, E magia negra, F Naira y G integración.
+
+**Normas:**
+- todo con Blender (GLB), animaciones mínimas y modelos originales conservados;
+- tres combatientes activos y el resto en reserva, salvo que no sea compatible;
+- sin push, merge ni publicaciones;
+- sin Redmi.
