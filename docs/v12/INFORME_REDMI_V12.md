@@ -187,3 +187,57 @@ batalla, a la izquierda.
 
 **Sin comprobar:** no se ha escuchado nada (el teléfono mezcla todo en una sola pista, así que no se puede saber por
 `dumpsys` qué canción suena). Falta oír el volumen del clímax frente a los avisos y los empalmes de los bucles.
+
+# V12 · Cuarta prueba en el Redmi: v610, validación del clímax y de los tres ataques (11/11, 19:56-20:08)
+
+**APK (sin publicar, por orden del usuario):** «REBELUM Auditoría», versionCode **610**, del commit **`63832d4`**.
+`D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261111-63832d4.apk`, 301,8 MB, SHA-256
+`9c368a751fb56ee1dcd8181f6b74709e81c14a379e2fc47c9b0896002ced437e`, el mismo certificado. Trae el aviso del clímax ya
+centrado en el campo de batalla. Batería en `63832d4`: **117 · 0 · 47 · 0**.
+
+- **Respaldo:** `D:\REBELUM_respaldos\2026-11-11_redmi_auditoria_antes_v610`, íntegro. La partida había cambiado
+  desde las 19:10 (el usuario jugó), así que se respaldó tal como estaba.
+- **Instalación:** MIUI volvió a cancelar `adb install -r`. La APK se copió a Descargas y el usuario la instaló. Después
+  se borró de Descargas.
+- **Al acabar:** la partida, el `.bak` y los ajustes se restauraron idénticos a ese respaldo. No hay cierres en
+  `dropbox` ni errores de script en logcat.
+- **FPS:** cada 5 s durante toda la sesión, con `--timestats`, en `sesion_v610\fps_ventanas.txt`.
+  - 102 ventanas sin ningún fotograma perdido.
+  - El mínimo (17,8 FPS) cae en la carga de la app al reiniciarla, no en un combate.
+  - Capturas con la hora en el nombre: `D:\REBELUM_diagnostico\v12\redmi\sesion_v610`.
+
+## Resultados (perfil medio, partida `mc7_gusano_fuerte`)
+
+| Prueba | Resultado | FPS medidos (ventanas de 5 s) |
+|---|---|---|
+| **Embestida del Abismo** | bien | 55-58 |
+| **Fractura del Mar de Cristal** | bien:<br>- aviso (19:59:51): se yergue, cartel y grietas bajo Garon<br>- caída con daño a los tres | aviso **46,6** (la única bajada)<br>caída 55,0-57,9 |
+| **Aliento del Desierto Eterno** | bien:<br>- aviso con succión de arena (20:03:02, «quitadle 227 PV más para cortarlo»)<br>- aspira varios turnos<br>- suelta el chorro (20:03:54, «¡Bramavidrio expulsa el Aliento del Desierto Eterno!»)<br>- para no cortarlo se usaron Cura y Pociones | 53,3-55,6 durante la aspiración y la salida |
+| **Clímax al 20 %** | bien: el golpe de Garon lo deja en 170/1134 (15 %) y sale «¡Momento decisivo!», **ya sin pisar el menú** (`200528_m2_3`) | 54-57 con la canción |
+| **Matarlo de un golpe** | bien:<br>- partida `mc7_gusano_remate` (fuerza 999)<br>- de 789/1150 (68,6 %) a «¡Victoria!» de un solo golpe, sin «¡Momento decisivo!» | — |
+| Victoria tras el clímax | bien, sin errores | 52-56 |
+| Memoria al acabar | 879 MB de PSS | — |
+
+**Transiciones de audio:** la música del jefe, el clímax y la victoria o la derrota se comprueban en el PC
+(`prueba_climax_jefe`: fundido de 0,9 s, sin reproductores duplicados, la victoria, la derrota y la huida cierran la
+canción y el bucle desde 13,62 s). En el teléfono todo el sonido sale mezclado en una sola pista, así que **no se puede
+comprobar por ADB qué suena: falta escucharlo.**
+
+**Congelado:** la Escarcha de Kael congela a Bramavidrio, que pierde turnos. Si Kael ataca mucho, puede no llegar a
+soltar el Aliento antes del 20 %. Es diseño, no un error, pero conviene saberlo al equilibrar.
+
+## Pendientes documentados
+
+1. **Personajes superpuestos al gusano:**
+   - en la victoria, los héroes se dibujan encima de Bramavidrio caído (`200605_victoria`, `200741_s1`);
+   - en los ataques cuerpo a cuerpo, Garon y Kael se meten dentro de la mandíbula (`200354_i1_1`);
+   - hace falta un orden de dibujo o un sitio para golpear propio de este jefe.
+2. **El chorro del Aliento apenas se ve en el teléfono:** solo partículas doradas junto a la boca. El chorro 3D va oculto
+   en combate porque apuntaba a la cámara. El rediseño en curso (`claude/v12-bramavidrio2`) debe resolverlo.
+3. **Sonidos:**
+   - Bramavidrio no tiene sonidos propios de succión, chorro, impacto de la Fractura ni caída (usa la familia
+     «piedra»);
+   - nadie ha escuchado el combate, el clímax, la canción del título ni «Pastoral Pulse».
+4. **Perfil bajo del desierto:** sigue algo lavado y con bruma en el teléfono (v581 y v597). No se ha vuelto a tocar.
+5. **Los argumentos de pruebas no llegan en Android** (`--esa command_line_params`). Para estas pruebas hacen falta
+   partidas editadas.
