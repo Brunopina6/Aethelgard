@@ -53,6 +53,7 @@ func construir() -> void:
 	mat_arena = _material_arena()
 	mat_roca = _liso(ROCA, 0.95)
 	_arena()
+	_falda()
 	_estanque()
 	_rocas()
 	_saliente()
@@ -122,6 +123,42 @@ func _arena() -> void:
 	forma.shape = malla.create_trimesh_shape()
 	cuerpo.add_child(forma)
 	raiz.add_child(cuerpo)
+
+
+# Las dunas siguen más allá del sector (V12, Redmi v581: al sur y al este se veía el vacío blanco). Malla gruesa
+# (FALDA_PASO), las mismas alturas, FALDA_BAJA por debajo para que la arena jugable la tape donde coinciden, sin choque:
+# no se anda por ella (trazado.gd, prohibido, sigue marcando el borde). Unos 6 000 triángulos.
+const FALDA := Rect2(-60.0, -60.0, 210.0, 230.0)
+const FALDA_PASO := 4.0
+const FALDA_BAJA := 0.08
+
+
+func _falda() -> void:
+	var nx := int(FALDA.size.x / FALDA_PASO)
+	var nz := int(FALDA.size.y / FALDA_PASO)
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for iz in nz:
+		for ix in nx:
+			var esq := [Vector2(ix, iz), Vector2(ix + 1, iz), Vector2(ix + 1, iz + 1), Vector2(ix, iz + 1)]
+			var v: Array = esq.map(_vertice_falda)
+			for tri in [[0, 1, 2], [0, 2, 3]]:
+				for k in tri:
+					st.set_color(_color_arena(v[k].x, v[k].z, v[k].y))
+					st.add_vertex(v[k])
+	st.generate_normals()
+	var mi := MeshInstance3D.new()
+	mi.name = "ArenaLejana"
+	mi.mesh = st.commit()
+	mi.material_override = mat_arena
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	raiz.add_child(mi)
+
+
+func _vertice_falda(e: Vector2) -> Vector3:
+	var x: float = FALDA.position.x + e.x * FALDA_PASO
+	var z: float = FALDA.position.y + e.y * FALDA_PASO
+	return Vector3(x, T.altura(x, z) - FALDA_BAJA, z)
 
 
 func _vertice(x: float, z: float) -> Vector3:
@@ -208,8 +245,14 @@ func _rocas() -> void:
 		var giro := fposmod(r[0] * 1.7 + r[1] * 0.9, TAU)
 		if poner_modelo(id, c + Vector3(0, -0.3, 0), esc, null, null, giro):
 			m.visible = false
-			_deformar(raiz.get_child(raiz.get_child_count() - 1), r[2], alto, i)
-			if alto >= 4.0:                                     # un bloque caído a su pie, del lado del sol
+			# junto al cobijo (12 m), y sobre todo al sur, entre él y la cámara, las rocas no crecen ni llevan bloque al
+			# pie: tapaban el refugio (Redmi, v581)
+			var junto_cobijo := Vector2(r[0], r[1]).distance_to(T.COBIJO) < 12.0
+			var n_roca: Node3D = raiz.get_child(raiz.get_child_count() - 1)
+			_deformar(n_roca, r[2], alto, i)
+			if junto_cobijo:
+				n_roca.scale.y *= (0.7 if r[1] > T.COBIJO.y else 0.85)
+			if alto >= 4.0 and not junto_cobijo:                # un bloque caído a su pie, del lado del sol
 				var pie := c + Vector3(cos(giro) * r[2] * 0.9, -0.2, sin(giro) * r[2] * 0.9)
 				pie.y = T.altura(pie.x, pie.z) - 0.2
 				if poner_modelo("roca_canon_c", pie, clampf(r[2] / 5.0, 0.45, 0.9), null, null, giro + 1.3):

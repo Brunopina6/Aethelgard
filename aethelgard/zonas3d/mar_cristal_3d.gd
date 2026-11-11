@@ -25,8 +25,8 @@ const SEMILLA := 4207                      # el reparto de lo enterrado en este 
 const LONG_PASO := 0.5
 const PASOS_MIN := 40
 const PROB_ENCUENTRO := 0.010
-const RADIO_SALIDA := 1.4
-const ARMAR_SALIDA := 3.0
+const RADIO_SALIDA := 1.8                   # V12 (Redmi): marcado en el suelo y algo mayor
+const ARMAR_SALIDA := 2.4                   # se arma al alejarse un poco (con 3,0 exactos, una partida a 3 m no salía)
 const RADIO_ACCION := 2.2
 const CAMARA := [48.0, 13.0, 22.0]         # [inclinación, distancia mínima, máxima]
 
@@ -54,7 +54,7 @@ var salida := {"armada": false}
 var _dist_jugador := 17.0
 var _dist_puesta := 17.0
 var dialogo_actual := ""
-var brillo_sin_sombras := 1.3               # vista3d.gd: el desierto sin sombras pierde más (medido ×1,32)
+var brillo_sin_sombras := 1.15              # vista3d.gd: 1,3 igualaba el PC, pero en el Redmi se veía lavado (v581)
 
 
 func _ready() -> void:
@@ -72,6 +72,7 @@ func _ready() -> void:
 	gusano = Gusano.new(self)
 	Mision.registrar_dialogic()
 	_crear_cartografa()
+	_marca_salida()
 	poner_oren(Progreso.hito("mc_superviviente"))
 	terreno.poner_ruinas(mision.ruinas_reveladas())
 	if Progreso.hito("mc_superviviente"):
@@ -332,7 +333,7 @@ func _comprobar_cerca() -> void:
 			mejor = d
 			cerca = pz[0]
 			boton_accion.text = pz[3]
-	boton_accion.visible = cerca != ""
+	boton_accion.visible = cerca != "" and _bloqueo <= 0.0      # tras un diálogo, nada: un toque en SEGUIR no lo reabre
 
 
 func _unhandled_input(ev: InputEvent) -> void:
@@ -372,7 +373,7 @@ func _senal_dialogo(arg) -> void:
 func _al_terminar_dialogo() -> void:
 	var fue := dialogo_actual
 	dialogo_actual = ""
-	_bloqueo = 0.4
+	_bloqueo = 1.0                                              # el último SEGUIR cae donde el botón de acción (Redmi, v581)
 	if mision != null and fue != "":
 		mision.dialogo_terminado(self, fue)
 
@@ -448,6 +449,59 @@ func poner_oren(si: bool) -> void:
 
 
 # ================================================================= guardado y salida
+
+# La salida al mapa, señalada como en Pastos Verdes (V12, Redmi v581: sin señal no se encontraba): un disco que brilla
+# en el camino del sur, un letrero «Mapa del mundo» y dos postes de caravana con un trapo, que se ven de lejos.
+func _marca_salida() -> void:
+	var p := Vector3(T.SALIDA.x, T.altura(T.SALIDA.x, T.SALIDA.z), T.SALIDA.z)
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.albedo_color = Color(1.0, 0.88, 0.5, 0.38)
+	var disco := CylinderMesh.new()
+	disco.top_radius = RADIO_SALIDA
+	disco.bottom_radius = RADIO_SALIDA
+	disco.height = 0.02
+	disco.radial_segments = 32
+	var mi := MeshInstance3D.new()
+	mi.name = "MarcaSalida"
+	mi.mesh = disco
+	mi.material_override = mat
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mi.position = p + Vector3(0, 0.06, 0)
+	add_child(mi)
+	var letrero := Label3D.new()
+	letrero.name = "LetreroSalida"
+	letrero.text = "Mapa del mundo"
+	letrero.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	letrero.font_size = 48
+	letrero.outline_size = 12
+	letrero.modulate = Color(1.0, 0.96, 0.85)
+	letrero.outline_modulate = Color(0.2, 0.15, 0.08, 0.8)
+	letrero.pixel_size = 0.01
+	letrero.position = p + Vector3(0, 2.4, 0)
+	add_child(letrero)
+	for lado in [-1.0, 1.0]:                                   # dos postes con un trapo rojo, como el toldo de la caravana
+		var poste := MeshInstance3D.new()
+		var c := CylinderMesh.new()
+		c.top_radius = 0.06
+		c.bottom_radius = 0.08
+		c.height = 2.4
+		poste.mesh = c
+		poste.material_override = terreno._liso(Color(0.42, 0.29, 0.18))
+		poste.position = p + Vector3(lado * (RADIO_SALIDA + 0.5), 1.2, 0)
+		add_child(poste)
+		var trapo := MeshInstance3D.new()
+		var q := QuadMesh.new()
+		q.size = Vector2(0.5, 0.7)
+		trapo.mesh = q
+		var mt := StandardMaterial3D.new()
+		mt.albedo_color = Color(0.78, 0.22, 0.18)
+		mt.cull_mode = BaseMaterial3D.CULL_DISABLED
+		trapo.material_override = mt
+		trapo.position = p + Vector3(lado * (RADIO_SALIDA + 0.5) + 0.27, 2.0, 0)
+		add_child(trapo)
+		terreno.telas.append(trapo)
 
 func guardar_posicion() -> void:
 	Engine.set_meta("pos_3d", kael.global_position)
