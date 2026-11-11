@@ -37,7 +37,33 @@ const CONTEXTOS := {
 	# introducción suave); «desde_cero»: al entrar en la pantalla de inicio empieza por el principio.
 	"titulo": {"musica": "res://audio/musica/titulo/when_the_world_forgets.ogg", "ambiente": "", "db_musica": -4.0,
 		"bucle": true, "desde_cero": true, "privada": true},
+	# V12 (11/11): «Pastoral Pulse», la música de Pastos Verdes que eligió el usuario (Suno Pro, privada como la del
+	# título), ELEGIBLE en Ajustes (MUSICA_PASTOS; por defecto, el ambiente de siempre). La introducción suena una vez y
+	# se repite el cuerpo: «bucle_desde» 11,17 s hasta el final del archivo (2:44,28), con un fundido cruzado de 0,4 s
+	# ya hecho en el archivo (docs/v12/MUSICA_PASTOS.md). El ambiente de la pradera sigue, algo más bajo.
+	"pradera_musica": {"musica": "res://audio/musica/pastos/pastoral_pulse.ogg", "ambiente": AMB + "pradera.wav",
+		"db": -9.0, "db_musica": -9.0, "bucle": true, "bucle_desde": 11.17, "privada": true},
 }
+const MUSICA_PASTOS := ["musica", "pastos"]       # [sección, clave] de user://ajustes.cfg: «nueva» o «ambiente»
+
+
+# ¿Suena la música nueva en Pastos Verdes? Solo si se eligió en Ajustes y el archivo está (es privado).
+static func musica_pastos_elegida() -> bool:
+	var c := ConfigFile.new()
+	if c.load("user://ajustes.cfg") != OK:
+		return false
+	return str(c.get_value(MUSICA_PASTOS[0], MUSICA_PASTOS[1], "ambiente")) == "nueva" \
+		and ResourceLoader.exists(CONTEXTOS["pradera_musica"]["musica"])
+
+
+static func elegir_musica_pastos(nueva: bool) -> Error:
+	var c := ConfigFile.new()
+	if FileAccess.file_exists("user://ajustes.cfg"):
+		var err := c.load("user://ajustes.cfg")
+		if err != OK:
+			return err
+	c.set_value(MUSICA_PASTOS[0], MUSICA_PASTOS[1], "nueva" if nueva else "ambiente")
+	return c.save("user://ajustes.cfg")
 # Momentos de la canción del título (s), medidos en su forma de onda (docs/v12/MUSICA_TITULO.md): la entrada del grupo
 # (bajo y batería) y la subida grande. La pantalla de inicio los usa para sus luces (portada/inicio_alternativo.gd).
 const TITULO_ROCK := 7.0
@@ -92,7 +118,7 @@ static func contexto_de(e: Node) -> String:
 		"res://garganta.tscn", "res://zonas3d/garganta_3d.tscn":   # la Garganta 2D y la 3D (T-095)
 			return "mazmorra"
 		"res://zonas3d/pastos_verdes_3d.tscn", "res://prototipos/sendero_puente.tscn":
-			return "pradera"
+			return "pradera_musica" if musica_pastos_elegida() else "pradera"   # V12: la música nueva, si se eligió
 		"res://zonas3d/mar_cristal_3d.tscn":                     # V12: el Mar de Cristal (la tormenta la pide clima.gd)
 			return "mar_cristal"
 		"res://ciudad_oakhaven.tscn", "res://zonas3d/oakhaven_3d.tscn":   # Oakhaven hecha a mano (T-089) y la 3D (T-103): el ambiente
@@ -162,7 +188,9 @@ func _empezar(p: AudioStreamPlayer, ruta: String, db: float) -> void:
 		if t != null and t.is_valid():
 			t.kill()
 	if CONTEXTOS.get(contexto, {}).get("bucle", false) and "loop" in s:
-		s.set("loop", true)                        # la canción del título se repite entera, sin huecos
+		s.set("loop", true)                        # la del título, entera; la de Pastos, desde «bucle_desde»
+		if "loop_offset" in s:
+			s.set("loop_offset", float(CONTEXTOS[contexto].get("bucle_desde", 0.0)))
 	p.stream = s
 	p.volume_db = SILENCIO_DB
 	var desde: float = _posiciones.get(ruta, 0.0)

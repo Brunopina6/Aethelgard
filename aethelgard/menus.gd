@@ -524,6 +524,25 @@ func _pintar_ajustes() -> void:
 		fp.add_child(bp)
 	cuerpo.add_child(fp)
 	cuerpo.add_child(_texto("Se nota la próxima vez que se abre el juego.", 16, COLOR_SUAVE))
+	# La música de Pastos Verdes (11/11): «Pastoral Pulse», la elegida por el usuario, o solo el ambiente de siempre
+	# (musica.gd, MUSICA_PASTOS). Solo si el archivo está en esta versión (es privado: pruebas).
+	var Mu = load("res://musica.gd")
+	if ResourceLoader.exists(Mu.CONTEXTOS["pradera_musica"]["musica"]):
+		var con_musica: bool = Mu.musica_pastos_elegida()
+		cuerpo.add_child(_texto("Música de Pastos Verdes", 26, COLOR_TITULO))
+		var fmp := HBoxContainer.new()
+		fmp.add_theme_constant_override("separation", 8)
+		for op in [[true, "Pastoral Pulse"], [false, "Solo ambiente"]]:
+			var nueva: bool = op[0]
+			var bmp := _boton(("● " if nueva == con_musica else "○ ") + op[1], 18, Vector2(260, 34),
+				"musica_pastos:%s" % ("nueva" if nueva else "ambiente"))
+			bmp.pressed.connect(func():
+				Mu.elegir_musica_pastos(nueva)
+				Sonido.efecto("ui_tic")
+				_pintar_de_nuevo())
+			fmp.add_child(bmp)
+		cuerpo.add_child(fmp)
+		cuerpo.add_child(_texto("Se nota la próxima vez que se entra en Pastos Verdes.", 16, COLOR_SUAVE))
 
 
 # Calidad de las regiones 3D (encargo del 09/11; prototipos/calidad_auto.gd, sección [calidad] de user://ajustes.cfg):
