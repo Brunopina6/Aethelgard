@@ -241,3 +241,45 @@ soltar el Aliento antes del 20 %. Es diseño, no un error, pero conviene saberlo
 4. **Perfil bajo del desierto:** sigue algo lavado y con bruma en el teléfono (v581 y v597). No se ha vuelto a tocar.
 5. **Los argumentos de pruebas no llegan en Android** (`--esa command_line_params`). Para estas pruebas hacen falta
    partidas editadas.
+
+# V12 · Quinta prueba en el Redmi: v615, el nuevo Bramavidrio (11/11, 21:52-22:06)
+
+**APK (sin publicar):** «REBELUM Auditoría», versionCode **615**, del commit **`7b9b71e`**: Bramavidrio v2, «la Sierpe de
+la Vela», con los efectos de sus tres ataques.
+- Archivo: `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261111-7b9b71e.apk`.
+- 310,5 MB, SHA-256 `bd7a30b1d3166170ec9a21cf59488b405380a9579f07107ed8ae961d8f30f079`, el mismo certificado.
+- Batería: **117 · 0 · 47 · 0**.
+
+**Procedimiento:**
+- **Respaldo:** el de `..._antes_v610`, porque la partida no había cambiado (el SHA-256 coincide).
+- **Instalación:** MIUI canceló `adb install -r`, así que el usuario instaló desde Descargas. La APK se borró después.
+- **Al acabar:** partida, `.bak` y ajustes restaurados idénticos, sin errores en logcat ni cierres.
+- **Material:** FPS cada 5 s en `sesion_v615\fps_ventanas.txt` y capturas en `sesion_v615`.
+
+| Medida | Resultado |
+|---|---|
+| Combate completo en **medio** (21:54-22:03, 104 ventanas) | media **58,9 FPS**, mínimo **47,5**, **0** fotogramas perdidos |
+| Reposo | 57-61 |
+| Embestida con golpe de arena | 55-60 |
+| **Fractura**: impacto con sacudida, el cuerpo cae delante y destello (`215634_f1_3`) | 56,9 |
+| **Aliento**: aviso con arena aspirada (`215858_d1_2`) | **47,5** (el pico; el contador marcó 41 en el instante) |
+| **Aliento**: suelta el chorro y la arena envuelve y empuja a los tres (`220035_x3`) | 53,5 |
+| Clímax al 20 % con la Embestida a la vez (`220201_m3`) | 55 |
+| Derrota: cae detrás, sin tapar a los héroes (`220320_z8`) | 58-62 |
+| Combate en **alto** (modelo de 15 197 triángulos) | 50,2-57,5 |
+| Exploración con la v2, antes del combate | 30,3-30,8 (tope de 30) |
+| Memoria | 924 MB de PSS al acabar, en alto (v610, medio: 879) |
+| Carga del combate desde el aviso | unos 18 s de negro (21:53:42-21:54:00), algo más que con la v1 |
+
+**Visto en el teléfono:**
+- La cabeza nueva ya no tapa a Kael ni a Garon en reposo.
+- Garon golpea desde fuera de la boca.
+- La derrota cae detrás de los héroes.
+- La Fractura y el Aliento se leen bien.
+
+**Pendiente:**
+- el perfil **bajo**, sin medir;
+- la carga del combate, algo más larga;
+- los sonidos propios de los ataques (placas, succión, chorro y latigazo);
+- escucharlo todo;
+- la decisión del usuario entre la v2 y la v1 (Ajustes → «Bramavidrio»).

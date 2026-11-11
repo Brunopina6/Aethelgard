@@ -102,6 +102,7 @@ Aprobados: **Ismena** (cartógrafa) y **Oren** (su hermano); **Bramavidrio**, el
   - **Pruebas:** con la v2 y con la v1, superadas.
   - **Sin medir en el Redmi.**
   - **En curso:** el especialista de combate hace los efectos de la Fractura (temblor, placas y arena), la succión y el chorro del Aliento, el impacto de la Embestida y la superposición con los héroes. Trabaja en `D:\Aethelgard_v12_brama_efectos`, rama `claude/v12-bramavidrio2-efectos`, desde `3699144`.
+- **22:06, v615 (`7b9b71e`, SIN publicar) con la v2 y sus efectos (integrados en `7b9b71e` desde `claude/v12-bramavidrio2-efectos` @ `4efd62f`) medida en el Redmi** (`INFORME_REDMI_V12.md`, quinta parte): combate en medio con 58,9 FPS de media, 47,5 de mínimo al empezar a aspirar el Aliento y 0 perdidos; en alto, 50-57. Falta el perfil bajo, los sonidos de los ataques y que el usuario elija la v2 o la v1 (Ajustes → «Bramavidrio»).
 - **Antes, el especialista de combate hizo los tres ataques** (Embestida del Abismo, Fractura del Mar de Cristal y
   Aliento del Desierto Eterno) en `claude/v12-bramavidrio`, sobre el modelo; luego se integra todo, batería, APK de
   Auditoría y medida en el Redmi frente a la v581. Referencia de presencia del usuario (de terceros, solo inspiración):
