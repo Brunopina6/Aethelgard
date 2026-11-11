@@ -26,6 +26,17 @@ var espejismo: Node3D
 var cofre_espejismo: Node3D
 var telas: Array = []                             # lo que se mueve con el viento (tiendas, tela rota, juncos)
 var palmeras: Array = []
+var arrastre_raiz: Node3D                         # la arena arrastrada de gráficos (sigue a Kael)
+var _viento_puesto := -1.0
+var _modelos := 0                                 # cuántas piezas de gráficos se han puesto (lo miran las pruebas)
+var espejismo_modelo := false
+
+const RUTA_ARTE := "res://zonas3d/mar_cristal/materiales_arte.gd"
+# Los nombres de terreno.gd frente a los de gráficos (docs/memory/agents/graficos_v12_desierto.md).
+const ALIAS := {"tienda": "tienda_a", "palmera_1": "palmera_a", "palmera_2": "palmera_b", "ruinas_trampilla": "trampilla",
+	"huesos_colosales": "huesos_costillas", "ruinas_columna": "ruinas_columna_a"}
+# Alto de cada roca de gráficos (m), para escalarla al alto de cada roca del trazado.
+const ALTO_ROCA := {"roca_canon_a": 9.0, "roca_canon_b": 7.0, "roca_canon_c": 3.0, "roca_canon_d": 6.0}
 
 
 func _init(r: Node3D, p: Dictionary) -> void:
@@ -65,15 +76,13 @@ func _liso(c: Color, rugosidad := 0.9) -> StandardMaterial3D:
 	return m
 
 
-# La arena: el shader de gráficos si ya está (materiales_arte.gd), si no un material con los colores por vértice.
+# La arena: el sombreado de gráficos (materiales_arte.gd, mat_arena: el mismo que los montones de las piezas, así se
+# funden); sin él, un material con los colores por vértice.
 func _material_arena() -> Material:
-	var ruta := "res://zonas3d/mar_cristal/materiales_arte.gd"
-	if ResourceLoader.exists(ruta):
-		var a = load(ruta)
-		if a.has_method("material_arena"):
-			var m = a.material_arena(perfil)
-			if m != null:
-				return m
+	if ResourceLoader.exists(RUTA_ARTE):
+		var m = load(RUTA_ARTE).mat_arena(perfil)
+		if m != null:
+			return m
 	var s := StandardMaterial3D.new()
 	s.vertex_color_use_as_albedo = true
 	s.roughness = 1.0
@@ -173,10 +182,14 @@ func _roca(c: Vector3, radio: float, alto: float, chocar := true) -> MeshInstanc
 
 
 func _rocas() -> void:
-	for r in T.ROCAS:
+	for i in T.ROCAS.size():
+		var r: Array = T.ROCAS[i]
 		var c := Vector3(r[0], T.altura(r[0], r[1]), r[1])
-		var m := _roca(c, r[2], r[3])
-		if poner_modelo("roca_canon_%d" % (int(r[0] + r[1]) % 3 + 1), c, float(r[2]) / 4.0, m):
+		var m := _roca(c, r[2], r[3])                            # su choque se queda: es el de trazado.gd (prohibido)
+		var alto: float = r[3]
+		var id := "roca_canon_c" if alto < 4.0 else ("roca_canon_d" if alto < 6.0 else ("roca_canon_a" if i % 2 == 0 else "roca_canon_b"))
+		var esc := clampf(alto / ALTO_ROCA[id], 0.5, 1.6)
+		if poner_modelo(id, c + Vector3(0, -0.3, 0), esc, null, null, fposmod(r[0] * 1.7 + r[1] * 0.9, TAU)):
 			m.visible = false
 
 
@@ -184,7 +197,7 @@ func _rocas() -> void:
 func _saliente() -> void:
 	var s: Array = T.SALIENTE
 	var base := Vector3(s[0] - 2.6, 0.0, s[1])
-	_roca(base, 1.6, s[3] + 0.6)
+	var pilar := _roca(base, 1.6, s[3] + 0.6)
 	var techo := MeshInstance3D.new()
 	var caja := BoxMesh.new()
 	caja.size = Vector3(s[2] * 1.9, 0.9, s[2] * 1.6)
@@ -201,7 +214,10 @@ func _saliente() -> void:
 	cuerpo.add_child(forma)
 	cuerpo.position = techo.position
 	raiz.add_child(cuerpo)
-	poner_modelo("roca_cobijo", Vector3(s[0], 0.0, s[1]), 1.0, null)
+	# el modelo: su origen es el sitio del cobijo, la masa al oeste. Los choques de aquí se quedan (los de las pruebas)
+	if poner_modelo("roca_cobijo", Vector3(T.COBIJO.x, T.altura(T.COBIJO.x, T.COBIJO.y), T.COBIJO.y), 1.0, null):
+		pilar.visible = false
+		techo.visible = false
 
 
 # ---------------------------------------------------------------- sitios
@@ -252,9 +268,10 @@ func _tela(pos: Vector3, tam: Vector2, c: Color, rot := 0.0) -> MeshInstance3D:
 
 
 func _campamento() -> void:
-	for t in T.TIENDAS:
+	for k in T.TIENDAS.size():
+		var t: Vector2 = T.TIENDAS[k]
 		var c := _suelo(t)
-		if poner_modelo("tienda", c, 1.0, null):
+		if poner_modelo("tienda_a" if k == 0 else "tienda_b", c, 1.0, null, null, 0.0, true):
 			continue
 		# una tienda de dos aguas: dos telas inclinadas y un poste
 		var a := _tela(c + Vector3(-0.9, 1.0, 0), Vector2(2.2, 3.2), Color(0.86, 0.36, 0.22), 0.0)
@@ -264,7 +281,9 @@ func _campamento() -> void:
 		_caja(c + Vector3(0, 0, 1.6), Vector3(0.12, 2.0, 0.12), Color(0.45, 0.30, 0.18), 0.0, true)
 		_caja(c + Vector3(0, 0, -1.6), Vector3(0.12, 2.0, 0.12), Color(0.45, 0.30, 0.18), 0.0, true)
 	var f := _suelo(T.FOGATA)
-	if not poner_modelo("fogata", f, 1.0, null):
+	if poner_modelo("fogata", f, 1.0, null):
+		_fuego(f + Vector3(0, 0.25, 0))
+	else:
 		for i in 7:
 			var ang := TAU * i / 7.0
 			_caja(f + Vector3(cos(ang) * 0.55, 0, sin(ang) * 0.55), Vector3(0.28, 0.2, 0.28), Color(0.45, 0.42, 0.40))
@@ -275,13 +294,47 @@ func _campamento() -> void:
 	luz.position = f + Vector3(0, 0.8, 0)
 	luz.name = "LuzFogata"
 	raiz.add_child(luz)
-	_caja(_suelo(T.CAMPAMENTO + Vector2(4.0, 3.0)), Vector3(1.0, 0.7, 0.7), Color(0.55, 0.38, 0.22), 0.3, true)   # fardos
-	_caja(_suelo(T.CAMPAMENTO + Vector2(5.0, 2.0)), Vector3(0.8, 0.6, 0.6), Color(0.62, 0.45, 0.28), -0.2, true)
+	_caja(_suelo(T.CAMPAMENTO + Vector2(-7.5, 1.5)), Vector3(1.0, 0.7, 0.7), Color(0.55, 0.38, 0.22), 0.3, true)   # fardos, junto a la jaima (fuera del paso)
+	_caja(_suelo(T.CAMPAMENTO + Vector2(-8.3, 0.4)), Vector3(0.8, 0.6, 0.6), Color(0.62, 0.45, 0.28), -0.2, true)
+
+
+# Las llamas de la fogata de gráficos (el modelo deja el fuego a la región): pocas partículas que suben y se apagan.
+func _fuego(p: Vector3) -> void:
+	var fu := CPUParticles3D.new()
+	fu.name = "Fuego"
+	fu.amount = 18
+	fu.lifetime = 0.7
+	fu.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+	fu.emission_sphere_radius = 0.18
+	fu.direction = Vector3.UP
+	fu.spread = 12.0
+	fu.gravity = Vector3(0, 1.2, 0)
+	fu.initial_velocity_min = 0.4
+	fu.initial_velocity_max = 0.9
+	fu.scale_amount_min = 0.6
+	fu.scale_amount_max = 1.2
+	var q := QuadMesh.new()
+	q.size = Vector2(0.28, 0.36)
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	m.albedo_color = Color(1.0, 0.55, 0.18, 0.85)
+	q.material = m
+	fu.mesh = q
+	fu.position = p
+	fu.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	raiz.add_child(fu)
 
 
 func _caravana() -> void:
 	var c := _suelo(T.CARAVANA)
-	if poner_modelo("caravana_restos", c, 1.0, null):
+	if poner_modelo("caravana_carro", c, 1.0, null, null, 0.45, true):
+		for pz in [["caravana_cajas", Vector2(-2.6, 1.8), 0.3], ["caravana_barril", Vector2(2.8, -1.4), 1.1],
+				["caravana_tela", Vector2(-1.2, -2.6), -0.4]]:
+			var p: Vector2 = T.CARAVANA + pz[1]
+			poner_modelo(pz[0], _suelo(p), 1.0, null, null, pz[2], true)
 		return
 	_caja(c + Vector3(0, -0.35, 0), Vector3(2.4, 1.0, 4.0), Color(0.48, 0.32, 0.20), 0.45, true)       # el carro volcado
 	for p in [Vector3(-2.2, 0, 1.6), Vector3(1.9, 0, -2.0), Vector3(2.8, 0, 1.0)]:
@@ -295,8 +348,9 @@ func _oasis() -> void:
 		var ang := TAU * i / 7.0 + 0.3
 		var p := T.OASIS + Vector2(cos(ang), sin(ang)) * (T.RADIO_ESTANQUE + 2.2 + 0.6 * (i % 2))
 		var c := _suelo(p)
-		var modelo := "palmera_%d" % (i % 2 + 1)
-		if poner_modelo(modelo, c, 1.0 + 0.12 * (i % 3), null):
+		var modelo := "palmera_a" if i % 2 == 0 else "palmera_b"
+		if poner_modelo(modelo, c, 0.85 + 0.1 * (i % 3), null, null, ang * 2.3):
+			_tronco_choque(c)
 			continue
 		var tronco := _caja(c, Vector3(0.35, 4.6 + 0.6 * (i % 3), 0.35), Color(0.52, 0.38, 0.24), ang, false)
 		tronco.rotation.z = deg_to_rad(6.0 * (1 if i % 2 == 0 else -1))
@@ -316,20 +370,28 @@ func _oasis() -> void:
 			hoja.position = Vector3(cos(TAU * h / 6.0), -0.3, -sin(TAU * h / 6.0)) * 1.0
 			copa.add_child(hoja)
 		palmeras.append(copa)
-		var cuerpo := StaticBody3D.new()
-		var forma := CollisionShape3D.new()
-		var cs := CylinderShape3D.new()
-		cs.radius = 0.3
-		cs.height = 3.0
-		forma.shape = cs
-		cuerpo.add_child(forma)
-		cuerpo.position = c + Vector3(0, 1.5, 0)
-		raiz.add_child(cuerpo)
-	for i in 10:                                                 # juncos en la orilla
+		_tronco_choque(c)
+	for i in 10:                                                 # juncos en la orilla (gráficos: 5 matas)
 		var ang := TAU * i / 10.0
 		var p := T.OASIS + Vector2(cos(ang), sin(ang)) * (T.RADIO_ESTANQUE + 0.6)
+		if i % 2 == 0 and poner_modelo("juncos", _suelo(p), 1.0, null, null, ang):
+			continue
+		if _modelos > 0:
+			continue
 		var j := _tela(_suelo(p) + Vector3(0, 0.5, 0), Vector2(0.5, 1.1), Color(0.42, 0.58, 0.28), ang)
 		j.name = "Junco%d" % i
+
+
+func _tronco_choque(c: Vector3) -> void:
+	var cuerpo := StaticBody3D.new()
+	var forma := CollisionShape3D.new()
+	var cs := CylinderShape3D.new()
+	cs.radius = 0.3
+	cs.height = 3.0
+	forma.shape = cs
+	cuerpo.add_child(forma)
+	cuerpo.position = c + Vector3(0, 1.5, 0)
+	raiz.add_child(cuerpo)
 
 
 func _ruinas() -> void:
@@ -338,7 +400,7 @@ func _ruinas() -> void:
 	arco_ruinas.name = "Arco"
 	arco_ruinas.position = c
 	raiz.add_child(arco_ruinas)
-	if not poner_modelo("ruinas_arco", Vector3.ZERO, 1.0, null, arco_ruinas):
+	if not poner_modelo("ruinas_arco", Vector3.ZERO, 1.0, null, arco_ruinas, 0.0, true):
 		var piedra := _liso(Color(0.86, 0.74, 0.58), 0.9)
 		for x in [-3.0, 3.0]:
 			var col := MeshInstance3D.new()
@@ -369,14 +431,19 @@ func _ruinas() -> void:
 		vidrio.material_override = mv
 		vidrio.position = Vector3(0, 6.5, 0.85)
 		arco_ruinas.add_child(vidrio)
-	for p in [Vector2(-8.0, 3.0), Vector2(8.5, 2.0), Vector2(-6.0, -4.0), Vector2(7.0, -5.0)]:   # columnas caídas
-		if not poner_modelo("ruinas_columna", c + Vector3(p.x, -0.5, p.y), 1.0, null):
+	var columnas := [["ruinas_columna_a", Vector2(-8.0, 3.0), 0.2], ["ruinas_columna_b", Vector2(8.5, 2.0), -0.3],
+		["ruinas_columna_c", Vector2(-6.0, -4.0), 0.5], ["ruinas_columna_d", Vector2(7.0, -5.0), 1.2],
+		["ruinas_muro", Vector2(-9.5, -1.5), 1.45]]
+	for col in columnas:
+		var p: Vector2 = col[1]
+		var sitio := _suelo(T.RUINAS + p)
+		if not poner_modelo(col[0], sitio, 1.0, null, null, col[2], true) and col[0] != "ruinas_muro":
 			_caja(c + Vector3(p.x, -0.6, p.y), Vector3(1.1, 2.4 + absf(p.x) * 0.1, 1.1), Color(0.84, 0.72, 0.56), p.y, true)
 	trampilla = Node3D.new()
 	trampilla.name = "Trampilla"
 	trampilla.position = _suelo(T.TRAMPILLA)
 	raiz.add_child(trampilla)
-	if not poner_modelo("ruinas_trampilla", Vector3.ZERO, 1.0, null, trampilla):
+	if not poner_modelo("trampilla", Vector3.ZERO, 1.0, null, trampilla):
 		var losa := MeshInstance3D.new()
 		var bl := BoxMesh.new()
 		bl.size = Vector3(2.0, 0.25, 2.0)
@@ -388,7 +455,7 @@ func _ruinas() -> void:
 
 func _huesos() -> void:
 	var c := Vector3(74.0, T.altura(74.0, 34.0), 34.0)
-	if poner_modelo("huesos_colosales", c, 1.0, null):
+	if poner_modelo("huesos_costillas", c, 1.0, null, null, 0.0, true):
 		return
 	for i in 6:                                                 # costillas: arcos de hueso que salen de la arena
 		var cost := MeshInstance3D.new()
@@ -413,6 +480,15 @@ func _espejismo() -> void:
 	espejismo.name = "Espejismo"
 	espejismo.position = _suelo(T.ESPEJISMO)
 	raiz.add_child(espejismo)
+	if ResourceLoader.exists(RUTA_ARTE) and ResourceLoader.exists("res://modelos/desierto/palmera_a.glb"):
+		var Arte = load(RUTA_ARTE)                              # la palmera de gráficos con el sombreado del espejismo
+		var pm: Node3D = Arte.modelo("palmera_a", perfil, true)
+		espejismo.add_child(pm)
+		espejismo_modelo = true
+		Arte.mat_espejismo().set_shader_parameter("espejismo", 1.0)
+		cofre_espejismo = _caja(espejismo.position + Vector3(0.6, 0, 0.6), Vector3(0.9, 0.6, 0.6), Color(0.40, 0.70, 0.78), 0.4)
+		cofre_espejismo.visible = false
+		return
 	var p := MeshInstance3D.new()                               # una palmera que tiembla y no está
 	var q := QuadMesh.new()
 	q.size = Vector2(3.0, 5.0)
@@ -435,7 +511,9 @@ func _espejismo() -> void:
 # Antes de la tormenta, el arco de las ruinas está casi enterrado; después, se ve entero (misión, paso 5).
 func poner_ruinas(reveladas: bool) -> void:
 	if arco_ruinas != null:
-		arco_ruinas.position.y = T.altura(T.RUINAS.x, T.RUINAS.y) - (0.0 if reveladas else 4.2)
+		# el GLB ya trae 2,4 m bajo la arena: antes de la tormenta asoma su clave (algo menos de 1 m); el sencillo, más
+		var hundir := 3.0 if _modelos > 0 else 4.2
+		arco_ruinas.position.y = T.altura(T.RUINAS.x, T.RUINAS.y) - (0.0 if reveladas else hundir)
 
 
 # Al amainar la tormenta de la misión, el arco sale de la arena poco a poco (y su polvo).
@@ -446,10 +524,18 @@ func destapar_ruinas() -> void:
 	t.tween_property(arco_ruinas, "position:y", T.altura(T.RUINAS.x, T.RUINAS.y), 2.5).set_trans(Tween.TRANS_SINE)
 
 
-# El espejismo se apaga y deja ver el cofre de verdad (mision.gd); al abrirlo, la tapa se ladea.
+# El espejismo se apaga y deja ver el cofre de verdad (mision.gd): con la palmera de gráficos, su sombreado baja
+# «espejismo» de 1 a 0 y la pieza se oculta; sin ella, el cuadro se oculta. Al abrirlo, la tapa se ladea.
 func revelar_cofre() -> void:
-	if espejismo != null:
-		espejismo.get_child(0).visible = false
+	if espejismo != null and espejismo.get_child_count() > 0:
+		var pieza := espejismo.get_child(0)
+		if espejismo_modelo:
+			var m: ShaderMaterial = load(RUTA_ARTE).mat_espejismo()
+			var t := espejismo.create_tween()
+			t.tween_method(func(v): m.set_shader_parameter("espejismo", v), 1.0, 0.0, 1.2)
+			t.tween_callback(func(): pieza.visible = false)
+		else:
+			pieza.visible = false
 	if cofre_espejismo != null:
 		cofre_espejismo.visible = true
 
@@ -460,16 +546,22 @@ func abrir_cofre() -> void:
 		cofre_espejismo.rotation.x = deg_to_rad(-12.0)
 
 
-# La trampilla de las ruinas se abre al usar la Llave de vidrio: la losa se aparta a un lado.
+# La trampilla de las ruinas se abre con la Llave de vidrio: la tapa de gráficos gira en su bisagra (al norte); sin
+# ella, la losa se aparta a un lado.
 func abrir_trampilla() -> void:
 	if trampilla == null:
 		return
+	var tapas := trampilla.find_children("trampilla_tapa*", "Node3D", true, false)
 	var t := trampilla.create_tween()
-	t.tween_property(trampilla, "position:x", trampilla.position.x + 1.8, 0.8).set_trans(Tween.TRANS_SINE)
+	if not tapas.is_empty():
+		t.tween_property(tapas[0], "rotation:x", -deg_to_rad(105.0), 0.9).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	else:
+		t.tween_property(trampilla, "position:x", trampilla.position.x + 1.8, 0.8).set_trans(Tween.TRANS_SINE)
 
 
-# Lo que se mueve con el viento: las telas y las copas, más con la tormenta. Barato: unas pocas rotaciones.
-func animar(t: float, viento: float) -> void:
+# Lo que se mueve con el viento: las telas y las copas sencillas (rotaciones baratas) y, con gráficos, sus sombreados
+# (telas, hojas, arena) y la arena arrastrada, que sigue a Kael. Los sombreados solo se tocan si el viento cambia.
+func animar(t: float, viento: float, pos_kael := Vector3.INF) -> void:
 	for i in telas.size():
 		var n: MeshInstance3D = telas[i]
 		if is_instance_valid(n):
@@ -477,22 +569,57 @@ func animar(t: float, viento: float) -> void:
 	for i in palmeras.size():
 		var c: Node3D = palmeras[i]
 		c.rotation.z = sin(t * (1.1 + viento * 2.0) + i) * (0.04 + 0.14 * viento)
-	if espejismo != null:
+	if espejismo != null and not espejismo_modelo and espejismo.get_child_count() > 0:
 		espejismo.get_child(0).position.x = sin(t * 3.1) * 0.15
+	if arrastre_raiz != null and pos_kael != Vector3.INF:
+		arrastre_raiz.position = Vector3(pos_kael.x, T.altura(pos_kael.x, pos_kael.z), pos_kael.z)
+	if _modelos > 0 and absf(viento - _viento_puesto) > 0.03:
+		_viento_puesto = viento
+		load(RUTA_ARTE).intensidad_viento(arrastre_raiz, viento)
 
 
-# Un modelo de gráficos si ya existe (modelos/desierto/<nombre>.glb, o su versión _ligero en los perfiles bajos). Devuelve
-# si lo puso; sin él, la región monta su pieza sencilla. «padre»: dónde ponerlo (por defecto, la raíz).
-func poner_modelo(nombre: String, pos: Vector3, escala: float, _provisional, padre: Node3D = null) -> bool:
-	var ruta := "res://modelos/desierto/%s.glb" % nombre
-	var ligera := "res://modelos/desierto/%s_ligero.glb" % nombre
-	if perfil.get("ligeros", false) and ResourceLoader.exists(ligera):
-		ruta = ligera
-	if not ResourceLoader.exists(ruta):
+# La arena arrastrada de gráficos (cintas y granos, por perfil) y, solo en el perfil alto, ondas de calor sobre las
+# dunas abiertas. Lo llama la región al montar la escena.
+func efectos_arte() -> void:
+	if not ResourceLoader.exists(RUTA_ARTE):
+		return
+	var Arte = load(RUTA_ARTE)
+	arrastre_raiz = Node3D.new()
+	arrastre_raiz.name = "Arrastre"
+	raiz.add_child(arrastre_raiz)
+	arrastre_raiz.add_child(Arte.arena_arrastrada(perfil))
+	for sitio in [Vector2(66.0, 60.0), Vector2(78.0, 32.0)]:
+		var cal: MeshInstance3D = Arte.calor(perfil)
+		if cal != null:
+			cal.position = _suelo(sitio) + Vector3(0, 0.35, 0)
+			raiz.add_child(cal)
+
+
+# Al salir de la región: suelta la caché de materiales de gráficos.
+func liberar() -> void:
+	if ResourceLoader.exists(RUTA_ARTE):
+		load(RUTA_ARTE).liberar()
+
+
+# Un modelo de gráficos (modelos/desierto/<id>.glb, con su versión ligera en los perfiles medio y bajo y los materiales
+# de materiales_arte.gd). «nombre» puede ser un alias (ALIAS). Devuelve si lo puso; sin él, la región monta su pieza
+# sencilla. «padre»: dónde ponerlo (por defecto, la raíz); «giro»: en y; «chocar»: añade las cajas de choque del GLB.
+func poner_modelo(nombre: String, pos: Vector3, escala: float, _provisional, padre: Node3D = null, giro := 0.0,
+		chocar := false) -> bool:
+	var id: String = ALIAS.get(nombre, nombre)
+	if not ResourceLoader.exists("res://modelos/desierto/%s.glb" % id) or not ResourceLoader.exists(RUTA_ARTE):
 		return false
-	var escena: PackedScene = load(ruta)
-	var n: Node3D = escena.instantiate()
+	var n: Node3D = load(RUTA_ARTE).modelo(id, perfil)
 	n.position = pos
+	n.rotation.y = giro
 	n.scale = Vector3.ONE * escala
-	(padre if padre != null else raiz).add_child(n)
+	var donde: Node3D = padre if padre != null else raiz
+	donde.add_child(n)
+	if chocar:
+		var cuerpo: StaticBody3D = load(RUTA_ARTE).choques(n)
+		if cuerpo.get_child_count() > 0:
+			donde.add_child(cuerpo)
+		else:
+			cuerpo.free()
+	_modelos += 1
 	return true

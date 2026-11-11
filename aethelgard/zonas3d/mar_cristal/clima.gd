@@ -172,3 +172,6 @@ func _aplicar(pos_kael: Vector3) -> void:
 		arena.initial_velocity_max = lerpf(4.0, 11.0, fuerza)
 		arena.emission_box_extents = Vector3(14.0, lerpf(0.4, 3.0, fuerza), 10.0)
 		arena.speed_scale = lerpf(1.0, 1.8, fuerza)
+		# con la arena arrastrada de gráficos (terreno.gd, efectos_arte), estas partículas solo hacen falta con tormenta
+		var arte: bool = region.terreno != null and region.terreno.arrastre_raiz != null
+		arena.emitting = fuerza > 0.15 or not arte
