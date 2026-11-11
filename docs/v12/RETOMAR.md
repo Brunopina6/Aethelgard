@@ -1,6 +1,6 @@
 # RETOMAR la V12 (El Mar de Cristal)
 
-Punto seguro del 11/11 a las 13:00 (sesión «REBELUM V12 desarrollo continuo»). Antes de seguir, lee
+Punto seguro del 11/11 a las 13:35 (sesión «REBELUM V12 desarrollo continuo»). Antes de seguir, lee
 `D:\Aethelgard\CLAUDE.md` (protocolo) y `CONTINUAR_V12_NUEVA_SESION.md`, en la raíz de esta copia.
 
 ## Git
@@ -47,20 +47,35 @@ Aprobados: **Ismena** (cartógrafa) y **Oren** (su hermano); **Bramavidrio**, el
   `prueba_hallazgos`, `prueba_audio_desierto`, `prueba_huir`. **Falta pasar la batería entera** tras tocar
   `combate.gd`, `menus.gd`, `modo3d.gd` y `musica.gd`.
 
+## Luz, arena, rocas y Bramavidrio (13:00-13:35, con capturas en `D:\REBELUM_diagnostico\v12\`)
+
+- **Batería completa:** 110 · 0 · 44 · 0 (pasada de las 13:00 con 7 fallos arreglados y repetidos a las 13:13: un
+  error de tipos en `gusano.gd` y `prueba_musica`, que solo aceptaba WAV). Después de la luz, las 25 pruebas de
+  regiones y `prueba_mar_cristal`, `prueba_integridad` y `prueba_precalentado`: superadas.
+- **Arena naranja como lava:** el sombreado de gráficos multiplica su color por el color de vértice, y la malla de
+  dunas traía colores de arena. Ahora el vértice es un matiz casi blanco; la luz del desierto es fría de cielo y cálida
+  de sol (más bajo); los colores de arena se fijan desde `terreno.gd` (COLORES_ARENA). En alto: arena dorada, sin
+  quemarse (captura `luz_131920\fotos\mar_cristal_alto.png`).
+- **El perfil bajo oscurecía las regiones:** medido cambiando un valor cada vez, solo las sombras aclaran la escena en
+  Compatibility. `vista3d.gd` sube el brillo final sin sombras por región (`brillo_sin_sombras`: Mar de Cristal 1,3,
+  Garganta 1,2, Oakhaven 1,17; Pastos ya lo compensaba). Bajo/medio después: 0,792/0,792 · 0,406/0,405 · 0,283/0,285.
+  Herramienta: `pruebas/herramientas/medir_luz_perfiles.gd` (con ventana; `sin_compensar`, `extra=`, `perfiles=`,
+  `regiones=`, `pos=x,z`). La ventana a veces deja de dibujar a mitad de una pasada larga: mejor una región por pasada.
+- **Rocas:** peñones y chimeneas (escala por forma, inclinación, bloque al pie) y paredes del cañón al oeste.
+- **Bramavidrio provisional:** larva de segmentos con placas de vidrio y boca de placas planas; su foto de combate,
+  inclinada hacia los héroes.
+- **Rendimiento en el PC** (1280×720, al empezar, no vale para el Redmi): Mar de Cristal bajo 31 llamadas y 79 k
+  primitivas; medio 52 y 158 k; alto 91 y 176 k (las sombras doblan las primitivas).
+
 ## Siguiente (en este orden)
 
-1. Batería completa (`ci_local.ps1` o `ejecutar_pruebas.ps1` sin `-Solo`) y arreglar regresiones.
-2. Capturas con ventana del sector en alto y bajo y, con ellas:
-   - **arena quemada a blanco en el perfil alto** (gráficos: píxel 255,255,147): luz de la región y parámetros del
-     sombreado de arena (desde la región, sin tocar los archivos de gráficos si no hace falta);
-   - **rocas algo cilíndricas:** componer varias piezas por roca, giros y escalas no uniformes;
-   - **perfil bajo más oscuro** (hallazgo de gráficos: en Compatibility, con sombras, ambiente y bruma suman más):
-     compensar el ambiente sin sombras, medido antes y después, sin rebajar el alto; afecta a todas las regiones
-     (`prototipos/vista3d.gd` o `calidad_proto.gd`), así que con capturas de las demás.
-3. Bramavidrio mejor: modelo provisional más orgánico (o GLB de gráficos) y su foto.
-4. Enemigos del desierto al azar: Vidracrán y Tolvanera (nombres de narrativa, sin aprobar).
-5. Rendimiento en el PC (llamadas, primitivas) y, con permiso, APK de auditoría para el Redmi.
-6. Volúmenes del desierto sin escuchar (nadie los ha oído).
+1. APK de auditoría para el Redmi (solo con permiso del usuario) y medir FPS reales del Mar de Cristal en bajo.
+2. Enemigos del desierto al azar: Vidracrán y Tolvanera (nombres de narrativa, sin aprobar).
+3. Ismena y Oren tienen figura provisional (cápsulas): pedir modelos a gráficos o animaciones.
+4. Bramavidrio: GLB de gráficos (el provisional sirve para probar).
+5. Volúmenes del desierto sin escuchar (nadie los ha oído).
+6. Memoria del proyecto (`D:\Aethelgard`: SESSION_HANDOFF, TASKS…) sin actualizar con la V12: sin push (orden del
+   usuario).
 
 ## Notas
 
