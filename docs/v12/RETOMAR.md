@@ -183,3 +183,13 @@ Aprobados: **Ismena** (cartógrafa) y **Oren** (su hermano); **Bramavidrio**, el
 
 Después de la auditoría vienen B (protagonistas, con respaldo), C (enemigos), D (migración región a región) y E (magia
 negra).
+
+**La auditoría está integrada** (`c703625`, `docs/v12/FASE2_AUDITORIA.md`). Segunda tanda, desde `c703625`:
+
+| Trabajo | Copia · rama | Archivos suyos |
+|---|---|---|
+| D: la Garganta 3D completa (Báculo del Peregrino, notas) y por defecto, con la 2D elegible | `D:\Aethelgard_v12_garganta` · `claude/v12-fase2-garganta` | `zonas3d/garganta*`, `modo3d.gd`, `hallazgos.gd` (compartible) |
+| E: escuelas de magia negra, tabla de debilidades, estados e investigación | `D:\Aethelgard_v12_magia` · `claude/v12-fase2-magia` | **el único que edita `combate.gd`, `artes.gd`, `grupo.gd` e `investigacion.gd`** |
+| B: rig común y clips de los héroes, materiales y retrato de Garon (apagado) | `D:\Aethelgard_v12_heroes` · `claude/v12-fase2-heroes` | `personajes/` (nuevos), sus pruebas |
+
+**Siguen en marcha:** Naira (historia y conceptos).
