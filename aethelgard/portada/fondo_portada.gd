@@ -142,6 +142,8 @@ var halo_cristal: Sprite2D
 var nucleo_cristal: Sprite2D
 var tiempo := 0.0
 var brillo: GradientTexture2D
+var intensidad := 0.0                    # 0 en calma, 1 con el rock de la canción del título (inicio_alternativo.gd)
+var destello := 0.0                      # un golpe de luz que se apaga solo (al entrar el rock)
 
 
 func _ready() -> void:
@@ -557,10 +559,11 @@ func _process(delta: float) -> void:
 	mat_cielo.set_shader_parameter("faro", cristal_ahora / Vector2(ANCHO, ALTO))
 	mat_ruinas.set_shader_parameter("cristal", cristal_ahora)   # el sombreador trabaja en coordenadas de pantalla
 	mat_cerca.set_shader_parameter("cristal", cristal_ahora - capa_medio.position + capa_cerca.position)
-	var pulso := 0.5 + 0.5 * sin(t * 0.9)
-	halo_cristal.modulate.a = 0.36 + 0.14 * pulso
-	nucleo_cristal.scale = Vector2.ONE * (0.82 + 0.12 * pulso)
+	var pulso := 0.5 + 0.5 * sin(t * (0.9 + 0.5 * intensidad))
+	destello = move_toward(destello, 0.0, delta * 0.8)
+	halo_cristal.modulate.a = minf(1.0, 0.36 + 0.14 * pulso + 0.22 * intensidad + 0.5 * destello)
+	nucleo_cristal.scale = Vector2.ONE * (0.82 + 0.12 * pulso + 0.12 * intensidad + 0.25 * destello)
 	for v in ventanas:
-		var a: float = 0.75 + 0.25 * sin(t * v[3] + v[2]) * sin(t * v[3] * 0.37 + v[2] * 2.0)
+		var a: float = minf(1.0, 0.75 + 0.25 * sin(t * v[3] + v[2]) * sin(t * v[3] * 0.37 + v[2] * 2.0) + 0.15 * intensidad)
 		v[0].modulate.a = a
 		v[1].modulate.a = 0.5 * a

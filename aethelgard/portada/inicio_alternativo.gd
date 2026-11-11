@@ -464,9 +464,51 @@ static func _campana() -> AudioStreamWAV:
 	return M._wav(m, hz)
 
 
+# ---------------------------------------------------------------- la canción del título (V12, 11/11)
+# «REBELUM — When the World Forgets» la pone musica.gd (contexto «titulo»: una sola reproducción, bus Musica, sigue
+# sin cortes de la carga al menú y funde al entrar en el juego). Aquí solo se siguen sus momentos para las luces:
+# el logo respira con la introducción; al entrar el grupo (TITULO_ROCK) un destello del cristal y la escena se aviva;
+# en la gran subida (TITULO_SUBIDA), un poco más. Todo suave y lejos de las opciones del menú. Si la canción no está
+# (es privada: fuera de Git), todo sigue como antes.
+var intensidad_cancion := 0.0
+var _rock_visto := false
+var _subida_vista := false
+var _ultima_pos := -1.0
+
+
+func _seguir_cancion(delta: float) -> void:
+	var mu = get_node_or_null("/root/Musica")
+	if mu == null or mu.contexto != "titulo":
+		return
+	var pos: float = mu.posicion_musica()
+	if pos < 0.0:
+		return
+	if pos + 1.0 < _ultima_pos:                   # la canción ha vuelto a empezar (bucle): otra vez en calma
+		_rock_visto = false
+		_subida_vista = false
+	_ultima_pos = pos
+	var meta := 0.0
+	if pos >= mu.TITULO_ROCK:
+		meta = 0.6
+		if not _rock_visto:
+			_rock_visto = true
+			fondo.set("destello", 1.0)
+	if pos >= mu.TITULO_SUBIDA:
+		meta = 1.0
+		if not _subida_vista:
+			_subida_vista = true
+			fondo.set("destello", 0.7)
+	intensidad_cancion = move_toward(intensidad_cancion, meta, delta * 0.5)
+	fondo.set("intensidad", intensidad_cancion)
+	if ambiente != null and ambiente.playing and tiempo > 4.5 and not ambiente.has_meta("bajado"):
+		ambiente.set_meta("bajado", true)          # con la canción, el viento casi no se oye (no la ensucia)
+		create_tween().tween_property(ambiente, "volume_db", -30.0, 3.0)
+
+
 func _animar(delta: float) -> void:
 	var t := tiempo
-	aura.modulate.a = (0.11 + 0.06 * sin(t * 0.8)) * logo.modulate.a
+	_seguir_cancion(delta)
+	aura.modulate.a = (0.11 + 0.06 * sin(t * 0.8) + 0.07 * intensidad_cancion) * logo.modulate.a
 	if listo:
 		destello_t += delta
 		if destello_t >= CADA_DESTELLO:

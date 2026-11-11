@@ -30,7 +30,18 @@ const CONTEXTOS := {
 	# V12, el Mar de Cristal (sonido_v12_desierto.md §2): el viento en calma y la tormenta de arena (clima.gd los alterna)
 	"mar_cristal": {"musica": "", "ambiente": "res://audio/desierto/viento.ogg", "db": -13.0},
 	"tormenta_arena": {"musica": "", "ambiente": "res://audio/desierto/tormenta.ogg", "db": -9.0},
+	# V12 (11/11): «REBELUM — When the World Forgets», la canción del usuario (Suno Pro) para la pantalla de inicio
+	# nueva, y RESERVADA para el desenlace del juego (docs/v12/MUSICA_TITULO.md). «privada»: es de Suno, así que va fuera
+	# de Git (aethelgard/audio/musica/ en .gitignore; maestras en D:\REBELUM_musica\maestros) y solo en pruebas
+	# privadas (CLAUDE.md); sin el archivo, silencio. «bucle»: la canción entera se repite (acaba con su golpe y vuelve su
+	# introducción suave); «desde_cero»: al entrar en la pantalla de inicio empieza por el principio.
+	"titulo": {"musica": "res://audio/musica/titulo/when_the_world_forgets.ogg", "ambiente": "", "db_musica": -4.0,
+		"bucle": true, "desde_cero": true, "privada": true},
 }
+# Momentos de la canción del título (s), medidos en su forma de onda (docs/v12/MUSICA_TITULO.md): la entrada del grupo
+# (bajo y batería) y la subida grande. La pantalla de inicio los usa para sus luces (portada/inicio_alternativo.gd).
+const TITULO_ROCK := 7.0
+const TITULO_SUBIDA := 53.0
 
 var capas := {}                                    # "musica"/"ambiente" → {a, b, activo, ruta}
 var contexto := ""
@@ -68,6 +79,8 @@ func _process(_d: float) -> void:
 static func contexto_de(e: Node) -> String:
 	var ruta: String = e.scene_file_path
 	match ruta:
+		"res://portada/inicio_alternativo.tscn":              # V12: la pantalla de inicio nueva, con la canción del título
+			return "titulo"
 		"res://carga.tscn":
 			return "carga"
 		"res://combate.tscn":
@@ -104,8 +117,10 @@ static func contexto_de(e: Node) -> String:
 func pedir(nombre: String) -> void:
 	if not CONTEXTOS.has(nombre):
 		nombre = "silencio"
-	contexto = nombre
 	var d: Dictionary = CONTEXTOS[nombre]
+	if d.get("desde_cero", false) and contexto != nombre:   # la canción del título: al entrar, desde el principio
+		_posiciones.erase(d.get("musica", ""))
+	contexto = nombre
 	_poner("musica", d.get("musica", ""), d.get("db_musica", -6.0))
 	_poner("ambiente", d.get("ambiente", ""), d.get("db", -6.0))
 
@@ -129,6 +144,13 @@ func _poner(capa: String, ruta: String, db: float) -> void:
 	c["activo"] = otro
 	_empezar(otro, ruta, db)
 
+# Por dónde va la canción de la capa «musica» (s), o -1 si no suena nada. La pantalla de inicio sincroniza con ella
+# sus luces (TITULO_ROCK, TITULO_SUBIDA).
+func posicion_musica() -> float:
+	if capas.is_empty():
+		return -1.0
+	var p: AudioStreamPlayer = capas["musica"]["activo"]
+	return p.get_playback_position() if p.playing else -1.0
 
 func _empezar(p: AudioStreamPlayer, ruta: String, db: float) -> void:
 	var s: AudioStream = Recursos.obtener(ruta) if has_node("/root/Recursos") else load(ruta)
@@ -139,6 +161,8 @@ func _empezar(p: AudioStreamPlayer, ruta: String, db: float) -> void:
 		var t: Tween = p.get_meta("tween")
 		if t != null and t.is_valid():
 			t.kill()
+	if CONTEXTOS.get(contexto, {}).get("bucle", false) and "loop" in s:
+		s.set("loop", true)                        # la canción del título se repite entera, sin huecos
 	p.stream = s
 	p.volume_db = SILENCIO_DB
 	var desde: float = _posiciones.get(ruta, 0.0)
