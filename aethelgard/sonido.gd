@@ -653,7 +653,7 @@ static func _wav(m: PackedFloat32Array, hz: int) -> AudioStreamWAV:
 # con «en_3d» del catálogo o de la petición; sin nadie que escuche en 3D, suena normal). Devuelve el reproductor, o null
 # si no suena (efecto que no existe, silencio, pausa, repetido demasiado pronto o sin voz libre).
 func efecto(nombre: String, op := {}) -> Node:
-	var d: Dictionary = EFECTOS.get(nombre, {})
+	var d: Dictionary = definicion(nombre)
 	if d.is_empty():
 		push_warning("Sonido: no hay efecto «%s»" % nombre)
 		return null
@@ -903,7 +903,7 @@ func _elegir(nombre: String, d: Dictionary, fija: int) -> String:
 	if d.has("codigo"):
 		return "codigo:" + String(d["codigo"])
 	if not d.has("n"):
-		return EF + d["a"] + ".wav"
+		return ruta_archivo(d)
 	var n := int(d["n"])
 	var i := fija
 	if i < 0 or i >= n:
@@ -911,7 +911,7 @@ func _elegir(nombre: String, d: Dictionary, fija: int) -> String:
 		if n > 1 and i == int(_variante.get(nombre, -1)):   # nunca la misma dos veces seguidas
 			i = (i + 1 + _rng.randi_range(0, n - 2)) % n
 	_variante[nombre] = i
-	return EF + d["a"] + str(i + 1) + ".wav"
+	return ruta_archivo(d, i)
 
 
 func _stream(ruta: String) -> AudioStream:
@@ -1534,7 +1534,7 @@ func fuente_3d(padre: Node3D, nombre: String, pos: Vector3, db := 0.0) -> AudioS
 # Emisor a lo largo de un segmento (un río, la caída de una cascada, el eje de un abismo): cada fotograma se pone en el
 # punto del segmento más cercano a quien escucha.
 func fuente_linea(padre: Node3D, nombre: String, a: Vector3, b: Vector3, db := 0.0) -> Node3D:
-	var d: Dictionary = EFECTOS.get(nombre, {})
+	var d: Dictionary = definicion(nombre)
 	if d.get("tres_d", {}).has("cada"):                    # tanda 5: de vez en cuando, no un bucle (las cuerdas)
 		return _fuente_cada(padre, nombre, a, b, db)
 	var f := FuenteLineal.new()
@@ -1597,8 +1597,8 @@ class FuenteCada extends Node3D:
 
 
 func _emisor(padre: Node3D, nombre: String, e: AudioStreamPlayer3D, db := 0.0) -> AudioStreamPlayer3D:
-	var d: Dictionary = EFECTOS.get(nombre, {})
-	var s := _stream(EF + String(d.get("a", "")) + ".wav") if d.has("tres_d") else null
+	var d: Dictionary = definicion(nombre)
+	var s := _stream(ruta_archivo(d)) if d.has("tres_d") else null
 	if padre == null or s == null:
 		e.free()
 		push_warning("Sonido: no se puede crear el emisor «%s»" % nombre)
@@ -1881,7 +1881,7 @@ class Agua2D extends AudioStreamPlayer2D:
 # (la taberna). Por el bus del catálogo (Ambiente), con la pausa, el silencio y el cambio de escena de siempre (es hija
 # de la escena y muere con ella). Devuelve el emisor, o null si el efecto no es de este tipo.
 func fuente_2d(padre: Node2D, nombre: String, pos: Vector2, quien: Node2D = null, casilla := 64.0) -> Node:
-	var d: Dictionary = EFECTOS.get(nombre, {})
+	var d: Dictionary = definicion(nombre)
 	if padre == null or not d.has("dos_d") or nombre in AGUA_2D.values():
 		push_warning("Sonido: no se puede crear la fuente 2D «%s»" % nombre)
 		return null
@@ -1904,7 +1904,7 @@ func fuente_2d(padre: Node2D, nombre: String, pos: Vector2, quien: Node2D = null
 	e.process_mode = Node.PROCESS_MODE_PAUSABLE
 	e.set_meta("efecto", nombre)
 	if e.cada.is_empty():
-		e.stream = _stream(EF + String(d["a"]) + ".wav")
+		e.stream = _stream(ruta_archivo(d))
 		if e.stream == null:
 			e.free()
 			return null
@@ -1917,7 +1917,7 @@ func fuente_2d(padre: Node2D, nombre: String, pos: Vector2, quien: Node2D = null
 # Una vez de una fuente 2D intermitente (el cuervo): su variante, su tono y su volumen por la distancia («nivel»
 # lineal), con las reglas de efecto() (pausa, silencio, espera).
 func _sonar_fuente(e: AudioStreamPlayer2D, nombre: String, nivel: float) -> bool:
-	var d: Dictionary = EFECTOS.get(nombre, {})
+	var d: Dictionary = definicion(nombre)
 	var bus: String = d.get("bus", "Ambiente")
 	var motivo := ""
 	if pausado:
