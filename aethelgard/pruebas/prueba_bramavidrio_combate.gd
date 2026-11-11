@@ -337,7 +337,7 @@ func _comprobar_turno(que: String, ant: Dictionary, r: Dictionary) -> void:
 		"embestida":
 			_ok(nuevos_imp.size() == 1 and nuevos_imp[0][0] == "embestida", "embestida: impactos %s" % str(nuevos_imp))
 			_ok(golpeados.size() <= 1, "embestida: alcanza a %s" % str(golpeados))
-			var t: Array = cuenta.call("gusano_temblor")
+			var t: Array = cuenta.call(B.sonido("embestida"))   # V12, sonido (12/11): el de la identidad elegida
 			_ok(t.size() == 1 and nuevos_imp.size() == 1 and t[0][1] == nuevos_imp[0][1],
 				"embestida: su golpe sordo %s no va una vez en el impacto %s" % [str(t), str(nuevos_imp)])
 		"aviso_sismico", "aviso_aliento":
@@ -349,7 +349,7 @@ func _comprobar_turno(que: String, ant: Dictionary, r: Dictionary) -> void:
 				"%s: no se lee sobre su vida («%s»)" % [que, z["lbl_estado"].text])
 			_ok(c.brama.cartel != null and is_instance_valid(c.brama.cartel) and c.brama.cartel_titulo.text.contains(
 				"Fractura" if es_s else "Aliento"), "%s: no sale el cartel" % que)
-			var n_s: int = cuenta.call("gusano_rugido" if es_s else "gusano_temblor").size()
+			var n_s: int = cuenta.call(B.sonido("rugido") if es_s else B.sonido("succion")).size()
 			_ok(n_s == 1, "%s: su sonido (%s) se pide %d veces" % [que, "rugido" if es_s else "temblor", n_s])
 			_ok(c.cola.count(z) == 0, "%s: el gusano sigue en la cola" % que)
 		"fractura":
@@ -363,14 +363,14 @@ func _comprobar_turno(que: String, ant: Dictionary, r: Dictionary) -> void:
 					var tope: int = int((base - int(h.get("def", 0) / 2.0)) * 0.5) + 1
 					_ok(dano[h["nombre"]] <= tope, "fractura: %s defendiendo recibe %d (tope %d)" % [h["nombre"], dano[h["nombre"]], tope])
 					r["defendida"] = int(r.get("defendida", 0)) + 1
-			var t: Array = cuenta.call("gusano_temblor")
+			var t: Array = cuenta.call(B.sonido("fractura"))
 			_ok(t.size() == 1 and nuevos_imp.size() == 1 and t[0][1] == nuevos_imp[0][1], "fractura: temblor %s, impacto %s" % [str(t), str(nuevos_imp)])
-			_ok(cuenta.call("gusano_rugido").is_empty(), "fractura: ruge otra vez al caer")
+			_ok(cuenta.call(B.sonido("rugido")).is_empty(), "fractura: ruge otra vez al caer")
 			_ok(int(ant["turnos_heroe"]) - int(ant["aviso_turnos"]) >= 1, "fractura: ningún héroe actuó desde el aviso")
 			_ok(c.brama.cartel == null, "fractura: el cartel sigue")
 		"aliento":
 			_ok(nuevos_imp.size() == 1 and nuevos_imp[0][0] == "aliento", "aliento: impactos %s" % str(nuevos_imp))
-			var r2: Array = cuenta.call("gusano_rugido")
+			var r2: Array = cuenta.call(B.sonido("chorro"))
 			_ok(r2.size() == 1 and nuevos_imp.size() == 1 and r2[0][1] == nuevos_imp[0][1], "aliento: rugido %s, impacto %s" % [str(r2), str(nuevos_imp)])
 			_ok(int(ant["turnos_heroe"]) - int(ant["aviso_turnos"]) >= 1, "aliento: ningún héroe actuó desde el aviso")
 			_ok(z.get("recupera", false) or z["hp"] <= 0, "aliento: después no queda jadeando")
@@ -437,7 +437,7 @@ func _a() -> void:
 			var garon: Array = c.heroes.filter(func(h): return h["nombre"] == "Garon")
 			if not garon.is_empty():
 				_ok(cab.y < c._suelo_de(garon[0]).y, "A: caído, su cabeza queda delante de Garon (%s, Garon %s)" % [cab, c._suelo_de(garon[0])])
-			_ok(_sonido("gusano_temblor") >= 1, "A: sin sonidos del gusano")
+			_ok(_sonido(B.sonido("embestida")) >= 1, "A: sin sonidos del gusano")
 			await _cerrar()
 			break
 		await _cerrar()

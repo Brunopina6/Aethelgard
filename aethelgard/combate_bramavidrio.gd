@@ -101,6 +101,33 @@ const PLACAS_FIN := 3.65
 const FIN_SUCCION := 1.7                 # «ataque_aliento»
 const ALCANCE_EXTRA := 160.0             # Embestida: cuánto puede avanzar su dibujo hacia un objetivo lejano (escena)
 var _ofs_mordisco := 673.0              # Embestida: de su agujero a su hocico en el impacto (escena; se mide en cada una)
+# V12, sonido propio de Bramavidrio (12/11, encargo del usuario; informe docs/memory/agents/sonido_v12_bramavidrio.md):
+# qué suena en cada instante, [identidad propia (sonido.gd, EFECTOS_BRAMAVIDRIO), lo de antes] ("" = nada). Con la
+# identidad apagada (sonido.gd BRAMAVIDRIO_IDENTIDAD = false, o «-- bramavidrio_sonido=anterior») suena exactamente lo de
+# antes. Solo se piden sonidos (con la señal sonido_pedido de combate.gd, como _sonar): ni efectos, ni daños, ni IA, ni
+# turnos cambian. Su voz (herido y caída) la pide combate.gd con Sonido.recibe (familia «brama» en sonido.gd).
+const SONIDOS := {
+	"emerge": ["brama_emerge", "gusano_temblor"],           # al entrar: rompe la arena (rompe_arena)
+	"rugido_entrada": ["brama_rugido", "gusano_rugido"],    # al entrar, 0,9 s después
+	"recoge": ["brama_recoge", ""],                         # Embestida: se recoge (0,2 s del clip)
+	"fija": ["brama_fija", ""],                             # Embestida: fija al objetivo (0,55)
+	"latigazo": ["brama_latigazo", ""],                     # Embestida: se lanza (0,8)
+	"surco": ["brama_surco", ""],                           # Embestida: avanza sobre la arena (_deslizar)
+	"embestida": ["brama_embestida", "gusano_temblor"],     # Embestida: impacto (1,0)
+	"rugido": ["brama_rugido", "gusano_rugido"],            # aviso de la Fractura (rugido_pico)
+	"caida_aire": ["brama_caida_aire", ""],                 # Fractura: cae (2,1)
+	"fractura": ["brama_fractura", "gusano_temblor"],       # Fractura: impacto (2,5333)
+	"placas": ["brama_placas", ""],                         # Fractura: placas_suelo (v1: con el impacto)
+	"placas_asientan": ["brama_placas_asientan", ""],       # Fractura: placas_asientan (3,1)
+	"succion": ["brama_succion", "gusano_temblor"],         # aviso del Aliento: empieza a aspirar (succion, 0,45)
+	"chorro": ["brama_chorro", "gusano_rugido"],            # Aliento: el chorro (1,85)
+	"alcanza": ["brama_arena_alcanza", ""],                 # Aliento: el chorro alcanza a un héroe
+	"atraganta": ["brama_atraganta", ""],                   # le cortan el Aliento
+	"jadeo": ["brama_jadeo", ""],                           # el turno que jadea (o escupe la arena tras el corte)
+	"derrumbe": ["brama_derrumbe", "gusano_temblor"],       # derrota: se desploma (caida, 1,6)
+}
+const BUCLE_SUCCION := "brama_succion_bucle"            # mientras aspira, hasta fin_succion, el golpe o el corte
+const SonidoGD := preload("res://sonido.gd")
 var creados := {}                       # pruebas: efectos creados de cada clase
 var chorro: Node2D                      # el chorro del Aliento mientras barre (pruebas)
 var polvo_succion: CPUParticles2D       # el polvo que levanta al aspirar
@@ -123,6 +150,21 @@ static func es(e) -> bool:
 	return e is Dictionary and str(e.get("clave", "")) == CLAVE
 
 
+# V12, sonido: el nombre del sonido de un instante (SONIDOS) según la identidad elegida ("" si no suena nada).
+static func sonido(evento: String) -> String:
+	var par: Array = SONIDOS.get(evento, ["", ""])
+	return par[0] if SonidoGD.identidad_bramavidrio() else par[1]
+
+
+# Pide el sonido de un instante como combate.gd _sonar: la señal sonido_pedido sale siempre (pruebas) y suena por Sonido.
+func _son(evento: String) -> void:
+	var n := sonido(evento)
+	if n == "":
+		return
+	c.sonido_pedido.emit(n)
+	Sonido.efecto(n)
+
+
 func preparar(combate, e: Dictionary) -> void:
 	c = combate
 	f = e
@@ -142,14 +184,14 @@ func al_entrar(p) -> void:
 		return
 	if p.has_signal("rompe_arena"):
 		p.rompe_arena.connect(func():
-			c._sonar("gusano_temblor")
+			_son("emerge")
 			_estallido_arena(_agujero(), 1.0)
 			c._temblor(6.0), CONNECT_ONE_SHOT)
 	if p.has_signal("caida"):
 		p.caida.connect(func():
-			c._sonar("gusano_temblor")
+			_son("derrumbe")
 			_caida_cuerpo(), CONNECT_ONE_SHOT)
-	get_tree().create_timer(0.9).timeout.connect(func(): if f["hp"] > 0: c._sonar("gusano_rugido"))
+	get_tree().create_timer(0.9).timeout.connect(func(): if f["hp"] > 0: _son("rugido_entrada"))
 
 
 # ================================================================= su turno
@@ -161,6 +203,7 @@ func turno(vivos: Array, mult: float) -> void:
 		f.erase("aturdido")
 		c.registro.text = ("%s, aturdido, escupe la arena que tragó" if aturdido else "%s jadea: la garganta se le apaga") % f["nombre"]
 		c._numero_flotante(f, "Aturdido" if aturdido else "Jadea", Color(0.8, 0.85, 0.75), 30)
+		_son("jadeo")                                 # V12, sonido: resuella (o escupe la arena)
 		_contar("recupera")
 		c._actualizar()
 		await get_tree().create_timer(0.9).timeout
@@ -226,7 +269,7 @@ func animar_golpe(objetivo: Dictionary, impacto: Callable) -> void:
 		hecho[0] = true
 		_contar("impacto_embestida")
 		impacto.call()
-		c._sonar("gusano_temblor")                  # el peso del golpe en la arena (con el golpe de siempre)
+		_son("embestida")                            # el peso del golpe en la arena (con el golpe de siempre)
 		_golpe_embestida(objetivo)
 	if p == null:                                    # el respaldo 2D: el empujón de su foto
 		await c._anim_fisico_imagen(f, objetivo, golpe)
@@ -265,20 +308,20 @@ func _avisar(que: String, _vivos: Array) -> void:
 		_tenir_fondo(Color(0.86, 0.74, 0.62))
 		if p != null and p.has_signal("rugido_pico"):
 			p.rugido_pico.connect(func():
-				c._sonar("gusano_rugido")
+				_son("rugido")
 				c._temblor(5.0), CONNECT_ONE_SHOT)
 		else:
-			c._sonar("gusano_rugido")
+			_son("rugido")
 	else:
 		c.registro.text = "%s abre las fauces y aspira el desierto: ¡va a soplar contra todos!" % f["nombre"]
 		_mostrar_cartel("⚠ " + NOMBRES["aliento"], "")
 		_tenir_fondo(Color(0.95, 0.82, 0.62))
 		if p != null and p.has_signal("succion"):
 			p.succion.connect(func():
-				c._sonar("gusano_temblor")
+				_son("succion")
 				_empezar_succion(), CONNECT_ONE_SHOT)
 		else:
-			c._sonar("gusano_temblor")
+			_son("succion")
 			_empezar_succion()
 	c._numero_flotante(f, "⚠ ¡Fractura!" if que == "sismico" else "⚠ ¡Aliento!", C_AVISO, 34)
 	c._actualizar()
@@ -311,7 +354,7 @@ func _fractura(vivos: Array, mult: float) -> void:
 		_contar("impacto_fractura")
 		_a_todos(vivos, int(f["atk"] * MULT_FRACTURA * mult), true)
 		Sonido.golpe(true)                           # la caída: un golpe para todos, una vez
-		c._sonar("gusano_temblor")
+		_son("fractura")
 		_efecto_fractura(_donde_cae(centro))
 		_sacudida(16.0, 0.75)                        # con peso: cae y rebota (y una réplica)
 		get_tree().create_timer(0.3).timeout.connect(func(): _sacudida(6.0, 0.35))
@@ -356,7 +399,7 @@ func _aliento(vivos: Array, mult: float) -> void:
 		hecho[0] = true
 		_contar("impacto_aliento")
 		_parar_succion()
-		c._sonar("gusano_rugido")                   # el bramido del chorro
+		_son("chorro")                               # el bramido del chorro
 		_chorro_barrido(vivos)                       # barre a los tres de delante atrás hasta fin_descarga
 		_a_todos(vivos, int(f["atk"] * MULT_ALIENTO * mult), false)
 		Sonido.golpe(true)                           # el chorro alcanza a todos: un golpe, una vez
@@ -422,6 +465,7 @@ func cortar(texto_cartel: String, texto: String) -> void:
 		p.recibir_golpe()
 	_estallido_arena(_boca(), 0.6)
 	c._sonar(c.Artes.SONIDO_ESTADO["rota"])
+	_son("atraganta")                                 # V12, sonido: se atraganta con su arena
 	c._numero_flotante(f, texto_cartel, Color(1.0, 0.92, 0.45), 38, Vector2(0, -60))
 	c.registro.text = texto
 	c._temblor(4.0)
@@ -998,6 +1042,7 @@ func _suelo_cabeza() -> Vector2:
 
 # Se recoge (anticipacion): la arena le resbala del cuello, el suelo del agujero se levanta y retumba.
 func _anticipacion_embestida() -> void:
+	_son("recoge")
 	var p = c._p3d(f)
 	if p == null:
 		return
@@ -1014,6 +1059,7 @@ func _anticipacion_embestida() -> void:
 
 # Fija al objetivo: un destello en su cabeza.
 func _fija_embestida() -> void:
+	_son("fija")
 	var p = c._p3d(f)
 	if p == null:
 		return
@@ -1031,6 +1077,7 @@ func _fija_embestida() -> void:
 # que falta (como mucho ALCANCE_EXTRA), levantando arena en la base, y vuelve a su agujero.
 func _lanza_embestida(obj: Dictionary) -> void:
 	_al_frente(true)
+	_son("latigazo")
 	var p = c._p3d(f)
 	if p == null:
 		return
@@ -1078,6 +1125,7 @@ func _deslizar(dx: float) -> void:
 	if rig == null or not is_instance_valid(rig):
 		return
 	_contar("desliza")
+	_son("surco")
 	var base: Vector2 = f["rig_base"]
 	var t: Tween = rig.create_tween()
 	t.tween_property(rig, "position", base + Vector2(dx, 0), 0.2).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
@@ -1099,6 +1147,7 @@ func _deslizar(dx: float) -> void:
 # Cae (caida): se dibuja delante de los héroes que quedan detrás de su cabeza y su sombra crece donde va a dar.
 func _sombra_caida(centro: Vector2) -> void:
 	_al_frente(true)
+	_son("caida_aire")
 	var n := _efecto("sombra_caida", centro, 0.9, true)
 	n.scale = Vector2(0.3, 0.3 * 0.34)
 	n.modulate.a = 0.0
@@ -1117,6 +1166,7 @@ func _sombra_caida(centro: Vector2) -> void:
 # arena a ras de suelo bajo los héroes y los terrones que les caen encima.
 func _placas_suelo(centro: Vector2, grupo: Vector2) -> void:
 	_contar("placas_suelo")
+	_son("placas")
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 1303                                       # siempre las mismas (no toca el azar del combate)
 	var placas: Array = []
@@ -1146,6 +1196,7 @@ func _placas_asientan() -> void:
 		return
 	_fx["asentadas"] = true
 	_contar("placas_asientan")
+	_son("placas_asientan")
 	var bases := PackedVector2Array()
 	for n in _fx["placas"]:
 		if not is_instance_valid(n):
@@ -1197,6 +1248,9 @@ func _empezar_succion() -> void:
 	_parar_succion()
 	if f["hp"] <= 0 or not f.get("cargando", false):
 		return
+	if sonido("succion") == "brama_succion":           # V12, sonido: sigue aspirando en bucle (lo corta _parar_succion)
+		c.sonido_pedido.emit(BUCLE_SUCCION)
+		Sonido.efecto(BUCLE_SUCCION, {"en": self})
 	var boca := _boca()
 	var n := _efecto("succion", boca, 0.0)               # lo borra _parar_succion
 	var puntos := _puntos_suelo(boca)
@@ -1249,6 +1303,7 @@ func _seguir_boca() -> void:
 
 
 func _parar_succion() -> void:
+	Sonido.cortar(BUCLE_SUCCION, 0.3)                    # V12, sonido: el bucle de la succión (si suena)
 	if succion != null and is_instance_valid(succion):
 		succion.emitting = false
 		if polvo_succion != null and is_instance_valid(polvo_succion):
@@ -1417,6 +1472,7 @@ func _actualizar_chorro(delta: float) -> void:
 # El chorro alcanza a un héroe: salpica, lo arrastra mientras le da y le cae arena encima.
 func _alcanzar(h: Dictionary, dir: Vector2, espera: float) -> void:
 	_contar("chorro_alcanza")
+	_son("alcanza")
 	var n := _efecto("alcanza", c._centro(h), 2.2)
 	_emisor(n, {"n": 30, "n_movil": 12, "vida": 0.5, "radio": 30.0, "dir": dir, "apertura": 50.0, "vel": Vector2(300, 700),
 		"gravedad": Vector2(0, 500), "escala": Vector2(0.06, 0.13),

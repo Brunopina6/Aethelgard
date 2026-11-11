@@ -65,6 +65,11 @@ extends Node
 #   («orbe_vision», «orbe_cierra»). Dónde se piden: docs/audio/inventario_sonidos.md, sección V9.
 # V12 (11/11): el Mar de Cristal (EFECTOS_DESIERTO, en OGG): el viento en calma y la tormenta de arena (bucles del lugar),
 #   la fogata y el oasis (emisores 3D), el temblor y el rugido del gusano, la pala y los pitidos del buscador.
+# V12 (12/11): identidad sonora propia de Bramavidrio (EFECTOS_BRAMAVIDRIO, en OGG, audio/bramavidrio/): rugido,
+#   respiración, mandíbula, placas, cristales, arena aspirada y escupida, impacto sísmico y derrota; su voz (familia
+#   «brama»). Los pide combate_bramavidrio.gd en los instantes de sus clips. Interruptor: BRAMAVIDRIO_IDENTIDAD (o
+#   «bramavidrio_sonido=anterior» en la línea de órdenes) vuelve a los sonidos de antes (gusano_* y la voz de piedra).
+#   Procedencia: docs/memory/agents/sonido_v12_bramavidrio.md.
 
 const ARCHIVO := "user://ajustes.cfg"
 const BUSES := ["Musica", "Efectos", "Interfaz", "Ambiente"]
@@ -399,6 +404,61 @@ const EFECTOS_DESIERTO := {
 	"buscador_pitido_raro": {"a": "buscador_pitido_raro", "dir": DESIERTO, "ext": ".ogg", "db": -14.0, "p": 1, "max": 2,
 		"espera": 0.05},
 }
+
+# V12 (12/11): la identidad sonora de Bramavidrio, el gusano colosal del Mar de Cristal (encargo del usuario: tamaño
+# colosal, nada estridente ni genérico). Roca, arena y vidrio, todo más grave y lento que el original, con un mismo
+# espacio (eco difuso de desierto) y una firma: un tono de cristal frotado que resuena en su rugido, al aspirar y al
+# morir. OGG en audio/bramavidrio/ (mismo formato que EFECTOS_DESIERTO: «dir» y «ext»). Todos los archivos tienen el
+# mismo LUFS momentáneo máximo (−12; el bucle de la succión, el surco y la arena que alcanza, por RMS): el «db» de aquí
+# es su papel en la mezcla (en el juego, Mmax + db: la Fractura, el chorro y el rugido ~−15, como «jefe»; la Embestida
+# −19; los detalles −21/−22; la música del combate va a −18 LUFS integrados y el clímax a −21). Medido, no escuchado.
+# Quién los pide y cuándo: combate_bramavidrio.gd (SONIDOS); su voz, por la familia «brama» (voz() y recibe()).
+# «en_bucle»: el archivo da la vuelta (su .import con loop=true); se pide con efecto(…, {"en": nodo}) y se corta con cortar().
+# Para volver a los sonidos de antes sin borrar nada: BRAMAVIDRIO_IDENTIDAD = false (o «-- bramavidrio_sonido=anterior»).
+const BRAMA := "res://audio/bramavidrio/"
+const BRAMAVIDRIO_IDENTIDAD := true
+const EFECTOS_BRAMAVIDRIO := {
+	# ---- su voz y su aliento
+	"brama_rugido": {"a": "rugido_", "n": 2, "dir": BRAMA, "ext": ".ogg", "db": -3.0, "tono": 0.03, "p": 3, "max": 1, "espera": 2.0},
+	"brama_herido": {"a": "herido_", "n": 3, "dir": BRAMA, "ext": ".ogg", "db": -9.0, "tono": 0.05, "p": 2, "max": 1,
+		"espera": 0.25, "grupo": "voz"},
+	"brama_caida": {"a": "caida", "dir": BRAMA, "ext": ".ogg", "db": -5.0, "p": 3, "max": 1, "espera": 0.5, "grupo": "voz"},
+	"brama_jadeo": {"a": "jadeo", "dir": BRAMA, "ext": ".ogg", "db": -6.0, "tono": 0.03, "p": 2, "max": 1, "espera": 1.0},
+	"brama_atraganta": {"a": "atraganta", "dir": BRAMA, "ext": ".ogg", "db": -7.0, "p": 3, "max": 1, "espera": 1.0},
+	# ---- emerger y desplomarse
+	"brama_emerge": {"a": "emerge", "dir": BRAMA, "ext": ".ogg", "db": -5.0, "p": 3, "max": 1, "espera": 1.0},
+	"brama_derrumbe": {"a": "derrumbe", "dir": BRAMA, "ext": ".ogg", "db": -4.0, "p": 3, "max": 1, "espera": 1.0},
+	# ---- Embestida del Abismo: se recoge, fija, se lanza (y avanza sobre la arena), muerde
+	"brama_recoge": {"a": "recoge", "dir": BRAMA, "ext": ".ogg", "db": -10.0, "tono": 0.04, "p": 2, "max": 1, "espera": 0.5},
+	"brama_fija": {"a": "fija", "dir": BRAMA, "ext": ".ogg", "db": -9.0, "tono": 0.03, "p": 2, "max": 1, "espera": 0.4},
+	"brama_latigazo": {"a": "latigazo", "dir": BRAMA, "ext": ".ogg", "db": -9.0, "tono": 0.04, "p": 2, "max": 1, "espera": 0.4},
+	"brama_surco": {"a": "surco", "dir": BRAMA, "ext": ".ogg", "db": -5.0, "tono": 0.04, "p": 2, "max": 1, "espera": 0.5},
+	"brama_embestida": {"a": "embestida_", "n": 2, "dir": BRAMA, "ext": ".ogg", "db": -7.0, "tono": 0.03, "p": 3, "max": 1,
+		"espera": 0.5},
+	# ---- Fractura del Mar de Cristal: cae, golpe sísmico, placas que se alzan y se asientan
+	"brama_caida_aire": {"a": "caida_aire", "dir": BRAMA, "ext": ".ogg", "db": -9.0, "p": 2, "max": 1, "espera": 1.0},
+	"brama_fractura": {"a": "fractura", "dir": BRAMA, "ext": ".ogg", "db": -3.0, "p": 3, "max": 1, "espera": 1.0},
+	"brama_placas": {"a": "placas", "dir": BRAMA, "ext": ".ogg", "db": -7.0, "p": 3, "max": 1, "espera": 1.0},
+	"brama_placas_asientan": {"a": "placas_asientan", "dir": BRAMA, "ext": ".ogg", "db": -10.0, "p": 2, "max": 1, "espera": 1.0},
+	# ---- Aliento del Desierto Eterno: aspira (y sigue aspirando en bucle hasta soltarlo), el chorro y a quién alcanza
+	"brama_succion": {"a": "succion", "dir": BRAMA, "ext": ".ogg", "db": -4.0, "p": 3, "max": 1, "espera": 1.0},
+	"brama_succion_bucle": {"a": "succion_bucle", "dir": BRAMA, "ext": ".ogg", "db": -7.0, "p": 2, "max": 1, "espera": 0.2,
+		"en_bucle": true},
+	"brama_chorro": {"a": "chorro", "dir": BRAMA, "ext": ".ogg", "db": -3.0, "p": 3, "max": 1, "espera": 1.0},
+	"brama_arena_alcanza": {"a": "alcanza_", "n": 2, "dir": BRAMA, "ext": ".ogg", "db": -3.0, "tono": 0.06, "p": 2, "max": 2,
+		"espera": 0.12},
+}
+
+
+# V12: ¿suena la identidad propia de Bramavidrio? Manda «bramavidrio_sonido=anterior|propio» después de «--» (pruebas),
+# luego Engine.set_meta("bramavidrio_sonido", "anterior"|"propio") y, si no, BRAMAVIDRIO_IDENTIDAD.
+static func identidad_bramavidrio() -> bool:
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("bramavidrio_sonido="):
+			return a.get_slice("=", 1) != "anterior"
+	if Engine.has_meta("bramavidrio_sonido"):
+		return String(Engine.get_meta("bramavidrio_sonido")) != "anterior"
+	return BRAMAVIDRIO_IDENTIDAD
 
 # Detalles de la naturaleza por contexto de Musica: cada cuánto (s, al azar entre los dos) y qué puede sonar.
 const DETALLES := {
@@ -744,14 +804,14 @@ func voz(quien: Dictionary, evento: String) -> Node:
 	if heroe:                                          # tanda 5: «ataque» de un héroe es su esfuerzo
 		evento = EVENTO_HEROE.get(evento, evento)
 	var nombre := fam + "_" + evento
-	if fam != "" and not EFECTOS.has(nombre) and evento == "muerte":
+	if fam != "" and not _hay_voz(nombre) and evento == "muerte":
 		nombre = fam + "_caida"
 	if fam != "" and not EFECTOS.has(nombre) and evento == "caida" and heroe:
 		nombre = fam + "_herido"                       # un héroe que cae se queja como herido (más grave)
 		evento = "herido"
 	if heroe and evento == "alivio":
 		_jadeo_de.erase(_clave_de(quien))              # curado: si vuelve a quedar con poca vida, vuelve a jadear
-	if fam == "" or not EFECTOS.has(nombre):
+	if fam == "" or not _hay_voz(nombre):
 		return null
 	var op := {}
 	if evento == "ataque" and quien.get("furia", false):
@@ -801,6 +861,8 @@ static func familia(quien: Dictionary) -> String:
 	if quien.get("hero", false):
 		return FAMILIAS_HEROE.get(String(quien.get("nombre", "")), "")
 	var clave := String(quien.get("clave", ""))
+	if clave == "bramavidrio" and identidad_bramavidrio():   # V12 (12/11): su voz propia (EFECTOS_BRAMAVIDRIO)
+		return "brama"
 	if FAMILIAS.has(clave):
 		return FAMILIAS[clave]
 	return FAMILIA_MODELO.get(String(quien.get("modelo", "")), "")
@@ -872,11 +934,19 @@ static func archivos() -> PackedStringArray:
 	return r
 
 
-# V12: la definición de un efecto, de EFECTOS o, si no está ahí, de EFECTOS_DESIERTO ({} si no existe).
+# V12: la definición de un efecto, de EFECTOS o, si no está ahí, de EFECTOS_DESIERTO o EFECTOS_BRAMAVIDRIO (12/11) ({} si
+# no existe).
 static func definicion(nombre: String) -> Dictionary:
 	if EFECTOS.has(nombre):
 		return EFECTOS[nombre]
+	if EFECTOS_BRAMAVIDRIO.has(nombre):
+		return EFECTOS_BRAMAVIDRIO[nombre]
 	return EFECTOS_DESIERTO.get(nombre, {})
+
+
+# V12 (12/11): las voces se buscan en EFECTOS y, las de Bramavidrio (familia «brama»), en EFECTOS_BRAMAVIDRIO.
+static func _hay_voz(nombre: String) -> bool:
+	return EFECTOS.has(nombre) or EFECTOS_BRAMAVIDRIO.has(nombre)
 
 
 # V12: el archivo de un efecto del catálogo (variante i, de 0 a n − 1; −1 si no tiene variantes), con su «dir» y su «ext»
