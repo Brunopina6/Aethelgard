@@ -288,11 +288,17 @@ static func mat_vidrio() -> ShaderMaterial:
 # La arena: para el suelo de la región y para los montones de las piezas (el mismo material: se funden).
 static func mat_arena(p: Dictionary) -> ShaderMaterial:
 	var alto := detalle_alto(p)
-	var clave := "arena_%s" % alto
+	var horneada := not bool(p.get("sombras", false))   # 12/11: sin sombras, la región puede hornear las suyas (sombras_bajo.gd)
+	var clave := "arena_%s_%s" % [alto, horneada]
 	if _cache.has(clave):
 		return _cache[clave]
+	var defs: Array = []
+	if alto:
+		defs.append("BRILLOS")
+	if horneada:
+		defs.append("SOMBRA_HORNEADA")
 	var m := ShaderMaterial.new()
-	m.shader = _shader(SH_ARENA, ["BRILLOS"] if alto else [])
+	m.shader = _shader(SH_ARENA, defs)
 	m.set_shader_parameter("ruido", ruido())
 	m.set_shader_parameter("dir_viento", DIR_VIENTO)
 	m.set_shader_parameter("viento", _viento)

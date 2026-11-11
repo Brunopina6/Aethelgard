@@ -52,8 +52,7 @@ func construir() -> void:
 	region.add_child(raiz)
 	mat_arena = _material_arena()
 	mat_roca = _liso(ROCA, 0.95)
-	_arena()
-	_falda()
+	# 12/11: la arena se hace al final, para que el perfil sin sombras pueda hornear en ella las de las piezas
 	_estanque()
 	_rocas()
 	_saliente()
@@ -64,6 +63,63 @@ func construir() -> void:
 	_huesos()
 	_esqueleto()
 	_espejismo()
+	_paisaje()
+	_hornear_sombras()
+	_arena()
+	_falda()
+
+
+# 12/11 (gráficos): cristales, matorrales, el hito del cobijo, el humo de la fogata, el rastro de la caravana y las rocas
+# que se aclaran si tapan a Kael (paisaje.gd).
+var paisaje
+var _t_animar := 0.0
+
+
+func _paisaje() -> void:
+	if not ResourceLoader.exists("res://zonas3d/mar_cristal/paisaje.gd"):
+		return
+	paisaje = load("res://zonas3d/mar_cristal/paisaje.gd").new(region, self, perfil)
+	paisaje.construir(raiz)
+	paisaje.preparar_oclusion()
+
+
+# Perfil sin sombras: las sombras de las piezas, horneadas en los colores de la arena (sombras_bajo.gd).
+var sombras                                       # sombras_bajo.gd, o null con sombras de verdad
+var piezas_puestas: Array = []                    # [nodo, id] de lo que se puso en la raíz (lo usan sombras y paisaje)
+
+
+func _hornear_sombras() -> void:
+	if perfil.get("sombras", false) or not region.has_method("luz_sin_sombras") \
+			or float(region.luz_sin_sombras().get("sombras_falsas", 0.0)) <= 0.0:
+		return
+	var S = load("res://zonas3d/mar_cristal/sombras_bajo.gd")
+	var t0 := Time.get_ticks_usec()
+	sombras = S.new(region.get_node_or_null("Sol"))
+	for par in piezas_puestas:
+		var n: Node3D = par[0]
+		var id: String = par[1]
+		if not is_instance_valid(n) or not n.visible:
+			continue
+		if id == "huesos_costillas":
+			_sombra_costillar(n)
+			continue
+		sombras.pieza_de_nodo(n, id)
+	if _modelos == 0:                                  # sin piezas de gráficos: las rocas sencillas del trazado
+		for r in T.ROCAS:
+			sombras.pieza(Vector2(r[0], r[1]), Vector2(r[0], r[1]), r[2] * 0.85, r[3], 0.4)
+	if mat_arena is ShaderMaterial:
+		sombras.aplicar(mat_arena)
+	print("Mar de Cristal: sombras horneadas del perfil sin sombras en %d ms" % ((Time.get_ticks_usec() - t0) / 1000))
+
+
+# El costillar: costillas sueltas que dan sombras a rayas (una mancha entera parecería una roca).
+func _sombra_costillar(n: Node3D) -> void:
+	var c := Vector2(n.global_position.x, n.global_position.z)
+	for k in 8:
+		var x := c.x - 6.5 + k * 1.75
+		var alto := 4.2 - absf(k - 3.5) * 0.45
+		sombras.pieza(Vector2(x, c.y - 1.6), Vector2(x, c.y + 1.6), 0.32, alto * 0.55, 0.0)
+	sombras.pieza(Vector2(c.x + 6.0, c.y), Vector2(c.x + 8.0, c.y), 0.9, 1.4, 0.3)     # el cráneo
 
 
 # ---------------------------------------------------------------- materiales
@@ -87,13 +143,25 @@ func _material_arena() -> Material:
 		if m != null:
 			# 11/11, 13:20: con la luz de la región, los colores de fábrica se veían naranja tostado. Arena dorada clara
 			# (el mismo material sirve a los montones de las piezas: siguen fundiéndose con el suelo).
+			var aclarar := _arena_sin_sombras()
 			for par in COLORES_ARENA:
-				m.set_shader_parameter(par, COLORES_ARENA[par])
+				m.set_shader_parameter(par, COLORES_ARENA[par].lerp(ARENA_CREMA, aclarar))
 			return m
 	var s := StandardMaterial3D.new()
 	s.vertex_color_use_as_albedo = true
 	s.roughness = 1.0
 	return s
+
+
+# Perfil sin sombras (el bajo; 12/11, gráficos): con menos bruma, la arena se veía terracota; se lleva hacia el crema
+# que se ve en el medio (allí lo pone la bruma, que en Compatibility suma más con sombras). 0 = los colores de siempre.
+const ARENA_CREMA := Vector3(0.96, 0.88, 0.72)
+
+
+func _arena_sin_sombras() -> float:
+	if perfil.get("sombras", false) or not region.has_method("luz_sin_sombras"):
+		return 0.0
+	return float(region.luz_sin_sombras().get("arena", 0.0))
 
 
 # ---------------------------------------------------------------- arena
@@ -140,6 +208,10 @@ func _falda() -> void:
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for iz in nz:
 		for ix in nx:
+			var x0: float = FALDA.position.x + ix * FALDA_PASO
+			var z0: float = FALDA.position.y + iz * FALDA_PASO
+			if x0 >= 2.0 and x0 + FALDA_PASO <= T.TAM.x - 2.0 and z0 >= 2.0 and z0 + FALDA_PASO <= T.TAM.y - 2.0:
+				continue        # 12/11: bajo la arena jugable no hace falta, y en los senos de las dunas asomaba a parches
 			var esq := [Vector2(ix, iz), Vector2(ix + 1, iz), Vector2(ix + 1, iz + 1), Vector2(ix, iz + 1)]
 			var v: Array = esq.map(_vertice_falda)
 			for tri in [[0, 1, 2], [0, 2, 3]]:
@@ -177,7 +249,7 @@ func _color_arena(x: float, z: float, y: float) -> Color:
 			t = t * Color(0.93, 0.90, 0.86)                     # pisado y más pardo
 		if T.en_temblor(x, z):
 			t = t * Color(0.95, 0.94, 0.93)                     # la arena que tiembla, algo más oscura
-		return t
+		return t * _orilla(x, z)
 	var c := ARENA.lerp(ARENA_CLARA, clampf(y / 3.0, 0.0, 1.0))
 	c = c.lerp(ARENA_SOMBRA, clampf(-pend * 0.45, 0.0, 0.55))
 	if T.en_camino(x, z):
@@ -187,6 +259,20 @@ func _color_arena(x: float, z: float, y: float) -> Color:
 	return c
 
 
+# 12/11 (gráficos): la orilla del oasis, mojada y más oscura junto al agua, y un cerco de arena con verdín algo más
+# allá (lo que crece donde hay humedad). Solo colores de vértice: sin coste al dibujar.
+func _orilla(x: float, z: float) -> Color:
+	var d := Vector2(x, z).distance_to(T.OASIS)
+	var mojada := 1.0 - smoothstep(T.RADIO_ESTANQUE + 0.3, T.RADIO_ESTANQUE + 2.4, d)
+	var verdin := (1.0 - smoothstep(T.RADIO_ESTANQUE + 2.0, T.RADIO_OASIS + 1.5, d)) * (1.0 - mojada)
+	return Color(1, 1, 1).lerp(Color(0.74, 0.70, 0.68), mojada).lerp(Color(0.86, 0.92, 0.72), verdin * 0.55)
+
+
+const SH_AGUA := "res://shaders/desierto/agua_oasis.gdshader"
+const AGUA_NUEVA := true                          # false: el disco turquesa transparente de antes
+const RADIO_AGUA := 6.0                            # la arena del cuenco sube por encima de -0,62 hacia los 5,7-6 m
+
+
 func _estanque() -> void:
 	var agua := MeshInstance3D.new()
 	var disco := CylinderMesh.new()
@@ -194,6 +280,10 @@ func _estanque() -> void:
 	disco.bottom_radius = T.RADIO_ESTANQUE + 0.6
 	disco.height = 0.05
 	disco.radial_segments = 32
+	if AGUA_NUEVA:                                            # 12/11: hasta donde sube la arena del cuenco (sin borde de
+		disco.top_radius = RADIO_AGUA                        # polígono a la vista: la orilla la dibuja la arena)
+		disco.bottom_radius = RADIO_AGUA
+		disco.radial_segments = 40
 	agua.mesh = disco
 	var m := StandardMaterial3D.new()
 	m.albedo_color = Color(0.20, 0.62, 0.66, 0.82)
@@ -201,6 +291,13 @@ func _estanque() -> void:
 	m.roughness = 0.08
 	m.metallic_specular = 0.9
 	agua.material_override = m
+	if AGUA_NUEVA and ResourceLoader.exists(SH_AGUA) and ResourceLoader.exists(RUTA_ARTE):
+		var ma := ShaderMaterial.new()                         # 12/11: hondo, orilla, ondas y espuma (el de antes, arriba)
+		ma.shader = load(SH_AGUA)
+		ma.set_shader_parameter("centro", T.OASIS)
+		ma.set_shader_parameter("radio", RADIO_AGUA)
+		ma.set_shader_parameter("ruido", load(RUTA_ARTE).ruido())
+		agua.material_override = ma
 	agua.position = Vector3(T.OASIS.x, -0.62, T.OASIS.y)
 	agua.name = "Estanque"
 	raiz.add_child(agua)
@@ -442,9 +539,17 @@ func _caravana() -> void:
 	t.rotation.x = deg_to_rad(-20)
 
 
+# 12/11 (gráficos): las palmeras, en un arco al norte, al este y al oeste del estanque; al sur (entre el estanque y la
+# cámara, que mira al norte) tapaban el agua y a Kael con sus copas. Ahora, llegando desde el sur, el oasis se ve entero,
+# enmarcado por las palmeras. false: el anillo de antes.
+const PALMERAS_AL_NORTE := true
+
+
 func _oasis() -> void:
 	for i in 7:
 		var ang := TAU * i / 7.0 + 0.3
+		if PALMERAS_AL_NORTE:                                   # de oeste-noroeste a este-noreste, pasando por el norte
+			ang = (PI + 0.12) + i * (PI - 0.24) / 6.0
 		var p := T.OASIS + Vector2(cos(ang), sin(ang)) * (T.RADIO_ESTANQUE + 2.2 + 0.6 * (i % 2))
 		var c := _suelo(p)
 		var modelo := "palmera_a" if i % 2 == 0 else "palmera_b"
@@ -613,6 +718,8 @@ func poner_ruinas(reveladas: bool) -> void:
 		# el GLB ya trae 2,4 m bajo la arena: antes de la tormenta asoma su clave (algo menos de 1 m); el sencillo, más
 		var hundir := 3.0 if _modelos > 0 else 4.2
 		arco_ruinas.position.y = T.altura(T.RUINAS.x, T.RUINAS.y) - (0.0 if reveladas else hundir)
+		if reveladas:
+			_sombra_arco()
 
 
 # Al amainar la tormenta de la misión, el arco sale de la arena poco a poco (y su polvo).
@@ -621,6 +728,19 @@ func destapar_ruinas() -> void:
 		return
 	var t := arco_ruinas.create_tween()
 	t.tween_property(arco_ruinas, "position:y", T.altura(T.RUINAS.x, T.RUINAS.y), 2.5).set_trans(Tween.TRANS_SINE)
+	_sombra_arco()
+
+
+# Perfil sin sombras: el arco destapado también da su sombra (sus dos pilares; el dintel queda lejos y fino).
+func _sombra_arco() -> void:
+	if sombras == null or arco_ruinas == null:
+		return
+	var c := T.RUINAS
+	for lado in [-1.0, 1.0]:
+		var p := c + Vector2(lado * 2.2, 0.0)
+		sombras.pieza(p, p, 0.75, 5.8, 0.15)
+	if mat_arena is ShaderMaterial:
+		sombras.aplicar(mat_arena)
 
 
 # El espejismo se apaga y deja ver el cofre de verdad (mision.gd): con la palmera de gráficos, su sombreado baja
@@ -661,6 +781,10 @@ func abrir_trampilla() -> void:
 # Lo que se mueve con el viento: las telas y las copas sencillas (rotaciones baratas) y, con gráficos, sus sombreados
 # (telas, hojas, arena) y la arena arrastrada, que sigue a Kael. Los sombreados solo se tocan si el viento cambia.
 func animar(t: float, viento: float, pos_kael := Vector3.INF) -> void:
+	if paisaje != null:
+		paisaje.actualizar(clampf(t - _t_animar, 0.0, 0.1))
+		paisaje.viento(viento)
+	_t_animar = t
 	for i in telas.size():
 		var n: MeshInstance3D = telas[i]
 		if is_instance_valid(n):
@@ -696,6 +820,8 @@ func efectos_arte() -> void:
 
 # Al salir de la región: suelta la caché de materiales de gráficos.
 func liberar() -> void:
+	paisaje = null                                  # paisaje.gd guarda este terreno: sin esto, los dos quedaban vivos
+	sombras = null
 	if ResourceLoader.exists(RUTA_ARTE):
 		load(RUTA_ARTE).liberar()
 
@@ -714,6 +840,8 @@ func poner_modelo(nombre: String, pos: Vector3, escala: float, _provisional, pad
 	n.scale = Vector3.ONE * escala
 	var donde: Node3D = padre if padre != null else raiz
 	donde.add_child(n)
+	if padre == null:
+		piezas_puestas.append([n, id])
 	if chocar:
 		var cuerpo: StaticBody3D = load(RUTA_ARTE).choques(n)
 		if cuerpo.get_child_count() > 0:

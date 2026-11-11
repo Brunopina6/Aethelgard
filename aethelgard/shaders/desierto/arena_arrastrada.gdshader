@@ -12,7 +12,7 @@ uniform float intensidad : hint_range(0.0, 1.0) = 0.3;
 uniform vec2 dir_viento = vec2(1.0, -0.25);
 uniform float velocidad = 3.0;
 uniform float escala = 0.09;
-uniform float alfa_max : hint_range(0.0, 1.0) = 0.5;
+uniform float alfa_max : hint_range(0.0, 1.0) = 0.4;
 
 varying vec3 v_mundo;
 varying float v_alfa;
@@ -27,9 +27,11 @@ void fragment() {
 	vec2 perp = vec2(-d.y, d.x);
 	vec2 q = vec2(dot(v_mundo.xz, d), dot(v_mundo.xz, perp));
 	float sp = velocidad * (0.4 + intensidad * 1.8);
-	float a = texture(ruido, vec2(q.x * escala * 0.35 - TIME * sp * 0.045, q.y * escala * 3.0 + v_mundo.y)).r;
-	float b = texture(ruido, vec2(q.x * escala * 0.9 - TIME * sp * 0.11, q.y * escala * 7.0 + 0.3)).r;
-	float vetas = smoothstep(0.42 - intensidad * 0.12, 0.8, a) * smoothstep(0.3, 0.72, b);
+	// 12/11 (gráficos): vetas más finas a lo ancho y más recortadas: antes, con la calma, cada cinta se veía como una losa
+	// clara y rectangular sobre la arena (sobre todo en el perfil bajo, y en el Redmi como bruma a manchas)
+	float a = texture(ruido, vec2(q.x * escala * 0.35 - TIME * sp * 0.045, q.y * escala * 8.0 + v_mundo.y)).r;
+	float b = texture(ruido, vec2(q.x * escala * 0.9 - TIME * sp * 0.11, q.y * escala * 15.0 + 0.3)).r;
+	float vetas = smoothstep(0.52 - intensidad * 0.14, 0.82, a) * smoothstep(0.38, 0.75, b);
 	float borde = smoothstep(0.0, 0.3, UV.x) * smoothstep(1.0, 0.7, UV.x) * smoothstep(0.0, 0.5, UV.y) * smoothstep(1.0, 0.5, UV.y);
 	ALBEDO = color;
 	ALPHA = vetas * borde * v_alfa * alfa_max * smoothstep(0.0, 0.3, intensidad) * (0.4 + 0.6 * intensidad);

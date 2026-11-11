@@ -43,6 +43,17 @@ uniform vec3 color_destello : source_color = vec3(0.85, 1.0, 1.0);
 uniform float destellos : hint_range(0.0, 3.0) = 1.2;
 #endif
 
+#ifdef SOMBRA_HORNEADA
+// Perfil sin sombras (12/11): las sombras de las piezas, horneadas por la región en una textura del tamaño del sector
+// (zonas3d/mar_cristal/sombras_bajo.gd). Negra (sin sombra) si nadie la pone. Sirve al suelo y a los montones de las
+// piezas, que comparten material: la sombra pasa de uno a otro sin costura.
+group_uniforms sombra_horneada;
+uniform sampler2D sombra_horneada : hint_default_black, filter_linear, repeat_disable;
+uniform vec4 sombra_rect = vec4(0.0, 0.0, 0.01, 0.01);    // x0, z0, 1/ancho, 1/fondo (metros)
+uniform vec3 sombra_tinte : source_color = vec3(0.66, 0.62, 0.72);
+uniform float sombra_fuerza : hint_range(0.0, 1.0) = 0.0;
+#endif
+
 varying vec3 v_mundo;
 
 void vertex() {
@@ -84,6 +95,10 @@ void fragment() {
 	c = mix(c, color_claro, vetas * fuerza_vetas * llano);
 
 	ALBEDO = c * COLOR.rgb;
+#ifdef SOMBRA_HORNEADA
+	float sh = texture(sombra_horneada, (p - sombra_rect.xy) * sombra_rect.zw).r;
+	ALBEDO *= mix(vec3(1.0), sombra_tinte, sh * sombra_fuerza);
+#endif
 	ROUGHNESS = 1.0;
 	SPECULAR = 0.0;            // mate: sin reflejo del cielo (con él, la arena al sol se quemaba a blanco)
 

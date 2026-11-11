@@ -84,6 +84,7 @@ func _ready() -> void:
 	_colocar_kael(Engine.get_meta("pos_3d") if vuelve else T.ENTRADA)
 	_ultima = kael.global_position
 	_crear_grupo()
+	_manchas_sombra()
 	salida["armada"] = _dist_plana(kael.global_position, T.SALIDA) > ARMAR_SALIDA
 	var dg = get_node_or_null("/root/Dialogic")
 	if dg != null:
@@ -105,6 +106,27 @@ func en_banco() -> bool:
 
 # ================================================================= mundo
 
+# Luz del perfil sin sombras (el bajo) SOLO de esta región (12/11, gráficos; docs/memory/agents/graficos_v12_desierto2.md).
+# Antes (v581-v615) era la luz de los otros perfiles con el brillo final ×1,15 (vista3d.gd, brillo_sin_sombras), y en el
+# Redmi se veía lavada, naranja-rosada y con bruma. Las capturas del teléfono y las del PC dan las mismas cuentas
+# (luminancia 0,710/0,713, saturación 0,453/0,450), así que se ajusta en el PC con medir_luz_perfiles.gd. Los valores de
+# antes, para volver a ellos: LUZ_SIN_SOMBRAS_ANTES. Pruebas A/B: Engine «mc_luz_prueba» = {clave: valor} cambia solo esas.
+const LUZ_SIN_SOMBRAS_ANTES := {"sol": 1.0, "brillo": 1.15, "niebla": 0.006, "color_niebla": Color(0.93, 0.86, 0.76),
+	"saturacion": 0.96, "contraste": 1.08, "exposicion": 0.88, "ambiente": 0.30, "arena": 0.0, "sombras_falsas": 0.0}
+# Ahora: un tercio de la bruma (era casi toda la «bruma» del teléfono: velaba a los personajes y a las rocas), más sol en
+# vez de brillo final (pasa por el mapeo de tonos como en el medio), la arena llevada al crema del medio (terreno.gd,
+# «arena»), algo menos de saturación (el bajo salía naranja-rosado) y las sombras falsas (sombras_bajo.gd).
+const LUZ_SIN_SOMBRAS := {"sol": 1.8, "brillo": 1.0, "niebla": 0.002, "color_niebla": Color(0.93, 0.86, 0.76),
+	"saturacion": 0.94, "contraste": 1.08, "exposicion": 0.88, "ambiente": 0.40, "arena": 0.5, "sombras_falsas": 1.0}
+
+
+func luz_sin_sombras() -> Dictionary:
+	var d: Dictionary = (LUZ_SIN_SOMBRAS_ANTES if Engine.has_meta("mc_luz_antes") else LUZ_SIN_SOMBRAS).duplicate()
+	if Engine.has_meta("mc_luz_prueba"):
+		d.merge(Engine.get_meta("mc_luz_prueba"), true)
+	return d
+
+
 func _crear_ambiente() -> void:
 	var env := Environment.new()
 	# 11/11, 13:20 (capturas en D:\REBELUM_diagnostico\v12\luz_*): con ambiente tan cálido como el sol y saturación al
@@ -123,6 +145,15 @@ func _crear_ambiente() -> void:
 	env.adjustment_contrast = 1.08
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	env.tonemap_exposure = 0.88
+	var sin_sombras: Dictionary = luz_sin_sombras() if not perfil.get("sombras", false) else {}
+	if not sin_sombras.is_empty():
+		env.fog_density = sin_sombras["niebla"]
+		env.fog_light_color = sin_sombras["color_niebla"]
+		env.adjustment_saturation = sin_sombras["saturacion"]
+		env.adjustment_contrast = sin_sombras["contraste"]
+		env.tonemap_exposure = sin_sombras["exposicion"]
+		env.ambient_light_energy = sin_sombras["ambiente"]
+		brillo_sin_sombras = sin_sombras["brillo"]
 	if nombre_perfil == "alto":
 		env.glow_enabled = true
 		env.glow_intensity = 0.22
@@ -136,7 +167,7 @@ func _crear_ambiente() -> void:
 	sol.name = "Sol"
 	sol.rotation_degrees = Vector3(-36.0, -132.0, 0.0)          # más bajo: sombras largas en las dunas
 	sol.light_color = Color(1.0, 0.89, 0.72)
-	sol.light_energy = perfil.get("luz_sol", 1.0) * 0.72
+	sol.light_energy = perfil.get("luz_sol", 1.0) * 0.72 * float(sin_sombras.get("sol", 1.0))
 	sol.shadow_enabled = perfil.get("sombras", false)
 	sol.directional_shadow_max_distance = perfil.get("dist_sombras", 40.0)
 	sol.shadow_blur = 1.2
@@ -202,6 +233,17 @@ func _crear_grupo() -> void:
 	grupo.colocar(Vector3.BACK)
 
 
+# Perfil sin sombras: una mancha de sombra bajo Kael, su grupo, Ismena y Oren (sombras_bajo.gd).
+func _manchas_sombra() -> void:
+	if terreno.sombras == null:
+		return
+	terreno.sombras.mancha(kael)
+	if grupo != null:
+		for n in grupo.nodos():
+			terreno.sombras.mancha(n)
+	terreno.sombras.mancha(cartografa)              # Oren lleva la suya al aparecer (poner_oren)
+
+
 func _parar_kael() -> void:
 	destino = null
 	if movimiento != "":
@@ -235,6 +277,8 @@ func _process(delta: float) -> void:
 		return
 	if terreno != null:
 		terreno.animar(_t, clima.viento() if clima != null else 0.2, kael.global_position)
+		if terreno.sombras != null:
+			terreno.sombras.actualizar()
 	if clima != null:
 		clima.actualizar(delta, kael.global_position, ocupado())
 	if en_banco():
@@ -426,6 +470,8 @@ func poner_oren(si: bool) -> void:
 	var p := Vector2(T.CARTOGRAFA.x - 1.6, T.CARTOGRAFA.y + 0.4)
 	oren.position = Vector3(p.x, T.altura(p.x, p.y), p.y)
 	add_child(oren)
+	if terreno.sombras != null:
+		terreno.sombras.mancha(oren)
 	if terreno.poner_modelo("oren", Vector3.ZERO, 1.0, null, oren):
 		return
 	for parte in [[CapsuleMesh, 0.30, 1.45, 0.73, Color(0.62, 0.36, 0.22)], [SphereMesh, 0.19, 0.38, 1.58, Color(0.84, 0.64, 0.48)]]:

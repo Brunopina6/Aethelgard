@@ -39,6 +39,7 @@ var _sol_base := 1.0
 var _ambiente_base := Color(0.72, 0.76, 0.86)   # los colores de calma: los de la escena (se leen al construir)
 var _fondo_base := Color(0.66, 0.77, 0.90)
 var _niebla_base := COLOR_CALMA
+var _densidad_base := NIEBLA_CALMA
 var _viento: Node
 var _sonido_tormenta := false
 signal amaino(era_narrativa: bool)
@@ -58,6 +59,7 @@ func construir() -> void:
 		_ambiente_base = _env.ambient_light_color
 		_fondo_base = _env.background_color
 		_niebla_base = _env.fog_light_color
+		_densidad_base = _env.fog_density             # 12/11: la del perfil (el bajo de esta región lleva la suya)
 	arena = CPUParticles3D.new()
 	arena.name = "ArenaViento"
 	var cuantas := {"bajo": 60, "medio": 110, "alto": 180}
@@ -171,7 +173,7 @@ func _puede_sistemica() -> bool:
 
 func _aplicar(pos_kael: Vector3) -> void:
 	if _env != null:
-		_env.fog_density = lerpf(NIEBLA_CALMA, NIEBLA_TORMENTA, fuerza)
+		_env.fog_density = lerpf(_densidad_base, NIEBLA_TORMENTA, fuerza)
 		_env.fog_light_color = _niebla_base.lerp(COLOR_TORMENTA, fuerza)
 		_env.ambient_light_color = _ambiente_base.lerp(Color(0.80, 0.62, 0.46), fuerza)
 		_env.background_color = _fondo_base.lerp(Color(0.80, 0.58, 0.38), fuerza)
