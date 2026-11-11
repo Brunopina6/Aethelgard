@@ -224,8 +224,8 @@ func _deformar(n: Node, radio: float, alto: float, semilla: int) -> void:
 		return
 	var nd := n as Node3D
 	var k := float(semilla)
-	var ancho := clampf(radio / maxf(alto * 0.6, 1.0), 0.8, 1.7)
-	nd.scale = Vector3(nd.scale.x * ancho * (1.0 + 0.18 * sin(k * 1.9)), nd.scale.y * (1.0 + 0.1 * cos(k * 2.3)),
+	var ancho := clampf(radio / maxf(alto * 0.6, 1.0), 0.8, 1.2)        # 13:30: con 1,7 parecían tartas de pisos
+	nd.scale = Vector3(nd.scale.x * ancho * (1.0 + 0.18 * sin(k * 1.9)), nd.scale.y * (1.2 + 0.15 * cos(k * 2.3)),
 		nd.scale.z * ancho * (1.0 - 0.15 * sin(k * 1.9)))
 	nd.rotation.x = deg_to_rad(4.0 * sin(k * 3.1))
 	nd.rotation.z = deg_to_rad(4.0 * cos(k * 2.7))
