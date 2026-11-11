@@ -103,3 +103,23 @@ llega la segunda fase de un jefe con fases, la fase no cambia la canción.
 
 **Pruebas:** `pruebas/prueba_climax_jefe.gd` (en `lista_pruebas.txt`), superada. Capturas en
 `D:\REBELUM_diagnostico\combate\2026-11-11_climax\`.
+
+## Volumen del clímax frente a la música del combate (12/11, noche)
+
+Medido con `ebur128`, sonoridad integrada:
+
+| Pista | LUFS | Volumen en el juego | Efectivo |
+|---|---|---|---|
+| `musica_combate_normal.mp3` (la de todos los combates; la de los jefes también) | −12,2 (pico +0,1 dBFS) | −6 dB | −18,2 |
+| `volvera_a_amanecer_climax.ogg` | −13,9 | antes −7 dB, **ahora −4,5 dB** | antes −20,9, **ahora −18,4** |
+
+- **Por qué:** a −7 dB el clímax sonaba casi 3 dB por debajo de la música que sustituye, y el gran momento se oía como una
+  bajada. Ahora queda casi igual.
+- **Los efectos no quedan tapados:** el clímax va por el bus Musica y en combate se aparta solo cuando suenan efectos
+  (`sonido.gd`, `APARTAR_MUSICA_EN_COMBATE`).
+- **Cómo cambiarlo:** `PISTAS["volvera_a_amanecer"]["db"]` en `combate_climax.gd`.
+- **Sin escuchar:** el equilibrio está medido, no oído.
+
+**No hay música propia de jefe:** `musica_jefe.mp3/.ogg` y `musica_jefe_fase2.mp3` no existen en el proyecto. Por eso los
+jefes usan la música normal y en su segunda fase la aceleran (`PITCH_FASE2`). No es un fallo: `combate.gd` ya lo
+contempla.

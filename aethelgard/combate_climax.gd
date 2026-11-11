@@ -27,9 +27,11 @@ const GOLPE_DB := -6.0
 
 # Las canciones de clímax. «loop_offset»: dónde vuelve el bucle (el .import no lo lleva: se pone al sonar). «estallido»:
 # segundos hasta el gran momento de la canción (el destello cae ahí).
+# «db» (12/11): medido con ebur128, la música de combate normal suena a −12,2 LUFS −6 dB = −18,2 LUFS efectivos; el clímax
+# (−13,9 LUFS) a −7 dB quedaba en −20,9, casi 3 dB por DEBAJO de la música que sustituye. A −4,5 dB queda en −18,4.
 const PISTAS := {
 	"volvera_a_amanecer": {"ruta": "res://audio/musica/jefes/volvera_a_amanecer_climax.ogg", "loop_offset": 13.62,
-		"estallido": 1.2, "db": -7.0, "titulo": "Volverá a amanecer"},
+		"estallido": 1.2, "db": -4.5, "titulo": "Volverá a amanecer"},
 }
 
 # Categorías: quién puede tenerlo. Los enemigos normales, los de élite y los minijefes, nunca por defecto; los jefes
