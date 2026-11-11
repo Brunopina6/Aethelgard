@@ -1,0 +1,7 @@
+join kael (vivo_pv) left
+update kael [extra_data="sorpresa"]
+kael: Una señora con corona de cristal. Y cara de no haberse reído nunca.
+kael: Todos caminan hacia un agua que flota sin orilla. Eso no es un lago.
+update kael [extra_data="ligero"]
+kael: Le rasparon el nombre. Solo queda «…de los Espejismos». Qué familia.
+leave kael

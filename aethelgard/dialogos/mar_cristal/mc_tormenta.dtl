@@ -1,0 +1,10 @@
+join kael (vivo_pv) left
+join lya (vivo_pv) right
+garon: Mirad. Una pared de arena.
+update lya [extra_data="preocupada"]
+lya: Tormenta. Con este viento, el buscador no oirá nada.
+garon: Roca. El cañón del oeste. Ya.
+update kael [extra_data="decidido"]
+kael: ¡Ya lo habéis oído! Al cañón, y nadie suelta a nadie.
+leave lya
+leave kael

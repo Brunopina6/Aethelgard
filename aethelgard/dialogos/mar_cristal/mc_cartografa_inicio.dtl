@@ -1,0 +1,16 @@
+join kael (vivo_pv) left
+ismena: Dime que has visto una caravana. Un carro, dos mulas y un toldo rojo.
+update kael [extra_data="sorpresa"]
+kael: Solo arena. Mucha. Muy bien colocada, eso sí.
+ismena: Es la de mi hermano, Oren. Tenía que llegar hace dos días.
+ismena: Yo dibujo los mapas de este mar. Él se pierde con uno en la mano.
+update kael [extra_data="decidido"]
+kael: ¿Por dónde empiezo?
+ismena: Por el centro. Con el catalejo vi algo grande, medio enterrado.
+ismena: Yo no me muevo de aquí. Si vuelve y no estoy, se pierde buscándome.
+ismena: Toma, el buscador: pita cerca del metal. Cuanto más rápido, más cerca.
+update kael [extra_data="ligero"]
+kael: Un palo que pita. Siempre quise uno.
+ismena: Te lo presto. Tráemelo de vuelta… y tráeme a mi hermano.
+[signal arg="mc:buscador"]
+leave kael

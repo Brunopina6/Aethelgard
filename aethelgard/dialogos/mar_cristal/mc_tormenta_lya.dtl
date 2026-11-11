@@ -1,0 +1,12 @@
+join kael (vivo_pv) left
+join lya (vivo_pv) right
+update kael [extra_data="sorpresa"]
+kael: Lya… esa duna se está moviendo. Hacia nosotros.
+update lya [extra_data="preocupada"]
+lya: Es una tormenta. Con este viento, el buscador no oirá nada.
+update lya [extra_data="decidida"]
+lya: Al cañón del oeste, bajo la roca. ¡Corre!
+update kael [extra_data="ligero"]
+kael: Corro, corro. Yo y mi palo.
+leave lya
+leave kael

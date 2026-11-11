@@ -1,0 +1,17 @@
+join kael (vivo_pv) left
+join lya (vivo_pv) right
+oren: ¿Luz? ¿Voces? Si sois un espejismo, traed agua de mentira. Me vale.
+update kael [extra_data="sorpresa"]
+kael: ¿Oren? Te busca tu hermana. Con un humor de perros.
+oren: Entonces estoy vivo. Ismena solo se enfada con los vivos.
+update lya [extra_data="preocupada"]
+lya: Bebe despacio. ¿Cuánto llevas aquí abajo?
+oren: Dos días. La arena tembló, las mulas huyeron y yo corrí al norte. Como siempre.
+oren: La llave estaba en la trampilla. Bajé, el viento la cerró y la llave cayó fuera.
+garon: Y la arena se la tragó.
+oren: Dos días a solas con esa de la pared. Os juro que me mira mal.
+update kael [extra_data="ligero"]
+kael: Pues vámonos antes de que te mire peor.
+[signal arg="mc:superviviente"]
+leave lya
+leave kael
