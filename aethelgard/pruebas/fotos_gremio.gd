@@ -38,6 +38,7 @@ func _probar() -> void:
 	Gr.contar_derrotas(["slime", "slime", "slime"])
 	Gr.cobrar("gr_limos")
 	Gr.aceptar("gr_musgo")
+	Engine.get_meta("gremio")["proyectos"] = ["pr_braseros"]   # los braseros de la plaza, ya pagados
 	change_scene_to_file("res://ciudad_oakhaven.tscn")
 	await _esperar(60)
 	await _foto("00_tablon_plaza")

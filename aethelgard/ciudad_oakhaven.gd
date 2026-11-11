@@ -120,6 +120,21 @@ var dormir_pendiente := false             # «Dormir» en «¿Qué va a ser?»: 
 var servicio_pendiente := ""              # V10: forja, armaduras o botica, que se abre al acabar el diálogo de quien atiende
 var servicio_abierto: Node = null          # V10: el servicio abierto ahora (servicios.gd), o null
 var gremio_abierto: Node = null            # V11: el tablón del gremio abierto (gremio_menu.gd), o null
+var obras: Dictionary = {}                 # V11: id de proyecto → los nodos que puso (no se ponen dos veces)
+
+
+# V11, hito C: lo que han cambiado los proyectos de reconstrucción pagados (gremio.gd PROYECTOS). Hoy, los braseros de
+# la plaza: dos braseros con fuego y luz junto al tablón. Al entrar y al pagarlo en el tablón.
+func _poner_proyectos() -> void:
+	var Gremio = load("res://gremio.gd")
+	for p in Gremio.PROYECTOS:
+		if obras.has(p["id"]) or not Gremio.proyecto_hecho(p["id"]):
+			continue
+		var nodos: Array = []
+		if p["id"] == "pr_braseros":
+			for c in p["casillas"]:
+				nodos.append(_poner_objeto("brasero", c * T))
+		obras[p["id"]] = nodos
 
 
 # V11, hito C: el tablón del Gremio de aventureros (gremio.gd). Mientras está abierto, Kael no anda (como la tienda);
@@ -132,6 +147,7 @@ func _abrir_gremio() -> void:
 	Sonido.efecto("examinar")
 	var m = load("res://gremio_menu.gd").new()
 	gremio_abierto = m
+	m.proyecto_hecho.connect(func(_id): _poner_proyectos())
 	m.cerrado.connect(func():
 		tienda_abierta = false
 		gremio_abierto = null
@@ -545,6 +561,7 @@ func _crear_objetos() -> void:
 			_poner_objeto("farola", p * T)
 	_poner_cofres()
 	_poner_piezas()
+	_poner_proyectos()
 	_poner_notas()
 	_actualizar_piezas()
 	# el Patio de las Velas es un rincón escondido: desde el callejón solo se ve la luz de la grieta, no lo de dentro

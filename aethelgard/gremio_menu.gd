@@ -4,6 +4,7 @@ extends CanvasLayer
 # «Cerrar» lo cierran. Lo abre la pieza oak_tablon_gremio de la ciudad 2D (ciudad_oakhaven.gd).
 
 signal cerrado
+signal proyecto_hecho(id: String)                # la ciudad pone lo nuevo enseguida (ciudad_oakhaven.gd)
 
 const Gremio := preload("res://gremio.gd")
 const ORO := Color("E8C46A")
@@ -109,6 +110,51 @@ func _pintar() -> void:
 		fila.add_child(b)
 		botones[id] = b
 		lista.add_child(fila)
+	# los proyectos de reconstrucción (cambian la ciudad)
+	var titulo := _texto("Proyectos de la ciudad", 24, ORO)
+	titulo.custom_minimum_size = Vector2(970, 40)
+	lista.add_child(titulo)
+	for p in Gremio.PROYECTOS:
+		var id: String = p["id"]
+		var e := Gremio.estado_proyecto(id)
+		var fila := HBoxContainer.new()
+		fila.custom_minimum_size = Vector2(970, 118)
+		var izq := VBoxContainer.new()
+		izq.custom_minimum_size = Vector2(740, 118)
+		izq.add_child(_texto("%s%s" % ["✓ " if e == "hecho" else "", p["nombre"]], 24, APAGADO if e == "hecho" else ORO))
+		var det := _texto("%s  ·  Coste: %s  ·  %s" % [p["texto"], Gremio.texto_coste(p["coste"]),
+			p["efecto"] if e == "hecho" else "Cambia la ciudad para siempre."], 17, APAGADO if e == "hecho" else SUAVE)
+		det.custom_minimum_size = Vector2(740, 0)
+		izq.add_child(det)
+		fila.add_child(izq)
+		var b := Button.new()
+		b.custom_minimum_size = Vector2(210, 64)
+		b.add_theme_font_size_override("font_size", 22)
+		match e:
+			"disponible":
+				b.text = "Financiar"
+				b.pressed.connect(_financiar.bind(id))
+			"hecho":
+				b.text = "Hecho"
+				b.disabled = true
+			"falta":
+				b.text = "Falta coste"
+				b.disabled = true
+			_:
+				b.text = "Rango %s" % Gremio.RANGOS[int(p["rango"])]["nombre"]
+				b.disabled = true
+		fila.add_child(b)
+		botones[id] = b
+		lista.add_child(fila)
+
+
+func _financiar(id: String) -> void:
+	var t := Gremio.financiar(id)
+	if t != "":
+		Sonido.efecto("ui_equipar")
+		mensaje.text = t
+		proyecto_hecho.emit(id)
+	_pintar()
 
 
 func _detalle(c: Dictionary, e: String) -> String:

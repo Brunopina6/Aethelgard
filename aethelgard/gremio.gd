@@ -34,11 +34,22 @@ const CONTRATOS := [
 ]
 
 
+# Proyectos de reconstrucción (V11, hito C): se pagan en el tablón con oro y materiales, piden rango y CAMBIAN la
+# ciudad para siempre (ciudad_oakhaven.gd los pone al entrar y al cerrar el tablón). Se guardan en «proyectos».
+const PROYECTOS := [
+	{"id": "pr_braseros", "nombre": "Los braseros de la plaza", "rango": 1,
+		"coste": {"oro": 100, "objetos": {"Musgo de piedra": 2}},
+		"texto": "Los dos braseros viejos de la plaza llevan años fríos. Con mortero nuevo y carbón, volverían a dar luz junto al tablón.",
+		"efecto": "Dos braseros vuelven a arder en la plaza, junto al tablón del gremio.",
+		"casillas": [Vector2(35.8, 22.3), Vector2(38.2, 22.3)]},
+]
+
+
 static func _d() -> Dictionary:
 	if not Engine.has_meta("gremio"):
 		Engine.set_meta("gremio", {"rep": 0, "aceptados": {}, "hechos": []})
 	var g: Dictionary = Engine.get_meta("gremio")
-	for k in [["rep", 0], ["aceptados", {}], ["hechos", []]]:
+	for k in [["rep", 0], ["aceptados", {}], ["hechos", []], ["proyectos", []]]:
 		if not g.has(k[0]):
 			g[k[0]] = k[1]
 	return g
@@ -147,3 +158,57 @@ static func cobrar(id: String) -> String:
 	if rango() > rango_antes:
 		t += " ¡Rango %s en el gremio!" % nombre_rango()
 	return t
+
+
+static func proyecto(id: String) -> Dictionary:
+	for p in PROYECTOS:
+		if p["id"] == id:
+			return p
+	return {}
+
+
+# Sin tocar la partida si no hay gremio (las ciudades lo miran al entrar).
+static func proyecto_hecho(id: String) -> bool:
+	return Engine.has_meta("gremio") and id in Engine.get_meta("gremio").get("proyectos", [])
+
+
+# "hecho", "bloqueado" (falta rango), "falta" (no llega el oro o los materiales) o "disponible".
+static func estado_proyecto(id: String) -> String:
+	var p := proyecto(id)
+	if proyecto_hecho(id):
+		return "hecho"
+	if int(p.get("rango", 0)) > rango():
+		return "bloqueado"
+	return "disponible" if _puede_pagar(p["coste"]) else "falta"
+
+
+static func _puede_pagar(coste: Dictionary) -> bool:
+	var Inv = load("res://inventario.gd")
+	if Inv.oro() < int(coste.get("oro", 0)):
+		return false
+	for o in coste.get("objetos", {}):
+		if Inv.cantidad(o) < int(coste["objetos"][o]):
+			return false
+	return true
+
+
+static func texto_coste(coste: Dictionary) -> String:
+	var t: Array = ["%d monedas" % int(coste.get("oro", 0))]
+	for o in coste.get("objetos", {}):
+		t.append("%d %s" % [int(coste["objetos"][o]), o])
+	return ", ".join(t)
+
+
+# Pagar un proyecto: gasta el coste y lo deja hecho para siempre. Devuelve su efecto ("" si no se pudo).
+static func financiar(id: String) -> String:
+	if estado_proyecto(id) != "disponible":
+		return ""
+	var p := proyecto(id)
+	var Inv = load("res://inventario.gd")
+	if not Inv.gastar_oro(int(p["coste"].get("oro", 0))):
+		return ""
+	for o in p["coste"].get("objetos", {}):
+		for i in int(p["coste"]["objetos"][o]):
+			Inv.gastar(o)
+	_d()["proyectos"].append(id)
+	return "«%s»: %s" % [p["nombre"], p["efecto"]]

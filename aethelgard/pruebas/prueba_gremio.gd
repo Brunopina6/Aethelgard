@@ -50,6 +50,7 @@ func _probar() -> void:
 	_derrotar()
 	_entregar()
 	_cumplir()
+	_proyecto()
 	_guardar()
 	await _combate()
 	await _ventana()
@@ -153,7 +154,7 @@ func _ventana() -> void:
 	m.cerrado.connect(func(): cerrado[0] = true)
 	root.add_child(m)
 	await _esperar(3)
-	_ok(m.botones.size() == Gr.CONTRATOS.size(), "6: el tablón no tiene un botón por contrato (%d)" % m.botones.size())
+	_ok(m.botones.size() == Gr.CONTRATOS.size() + Gr.PROYECTOS.size(), "6: el tablón no tiene un botón por contrato y proyecto (%d)" % m.botones.size())
 	var b: Button = m.botones["gr_musgo"]
 	_ok(b.disabled or b.text != "", "6: botón vacío")
 	_ok(m.cabecera.text.begins_with("Rango "), "6: no dice el rango («%s»)" % m.cabecera.text)
@@ -174,6 +175,7 @@ func _ventana() -> void:
 
 func _ciudad() -> void:
 	_limpiar()
+	Engine.set_meta("gremio", {"rep": 6, "aceptados": {}, "hechos": [], "proyectos": ["pr_braseros"]})
 	Engine.set_meta("archivo_partida_prueba", ARCHIVO)
 	Engine.set_meta("partida_lista", true)
 	Engine.set_meta("lugar", {"indice": 0, "nombre": "Oakhaven", "tipo": "ciudad"})
@@ -184,6 +186,7 @@ func _ciudad() -> void:
 	change_scene_to_file("res://ciudad_oakhaven.tscn")
 	await _esperar(40)
 	var z = current_scene
+	_braseros(z)
 	_ok(z != null and z.boton_examinar.visible and z.boton_examinar.text == "Leer el tablón",
 		"7: junto al tablón el botón no dice «Leer el tablón» («%s»)" % (z.boton_examinar.text if z != null else "sin ciudad"))
 	z._accion()
@@ -193,3 +196,28 @@ func _ciudad() -> void:
 		z.gremio_abierto.cerrar_menu()
 		await _esperar(3)
 		_ok(z.gremio_abierto == null, "7: la ciudad no se entera de que se cerró el tablón")
+
+
+func _proyecto() -> void:
+	var Inv2 = load("res://inventario.gd")
+	_ok(Gr.estado_proyecto("pr_braseros") in ["falta", "disponible"], "8: con rango Plata el proyecto sigue bloqueado (%s)" % Gr.estado_proyecto("pr_braseros"))
+	while Inv2.cantidad("Musgo de piedra") > 0:
+		Inv2.gastar("Musgo de piedra")
+	Inv2.ganar_oro(300)
+	_ok(Gr.estado_proyecto("pr_braseros") == "falta" and Gr.financiar("pr_braseros") == "", "8: sin musgo se financia")
+	Inv2.agregar_objeto("Musgo de piedra", 3)
+	var oro0: int = Inv2.oro()
+	var t: String = Gr.financiar("pr_braseros")
+	_ok(t.contains("braseros") and Inv2.oro() == oro0 - 100 and Inv2.cantidad("Musgo de piedra") == 1 and Gr.proyecto_hecho("pr_braseros"),
+		"8: financiar no gasta 100 monedas y 2 musgos o no queda hecho («%s»)" % t)
+	_ok(Gr.financiar("pr_braseros") == "" and Inv2.oro() == oro0 - 100, "8: se financia dos veces")
+	var d: Dictionary = P.volcar("res://mapa.tscn")
+	_ok("pr_braseros" in d["gremio"].get("proyectos", []), "8: el proyecto no va en la partida")
+
+
+func _braseros(z) -> void:
+	var nodos: Array = z.obras.get("pr_braseros", [])
+	_ok(nodos.size() == 2 and nodos.all(func(n): return n != null and is_instance_valid(n) and n.is_inside_tree()),
+		"8: con el proyecto hecho, la plaza no tiene sus dos braseros (%d)" % nodos.size())
+	z._poner_proyectos()
+	_ok(z.obras.get("pr_braseros", []).size() == 2, "8: los braseros se ponen dos veces")
