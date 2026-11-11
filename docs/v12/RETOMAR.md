@@ -156,7 +156,7 @@ Aprobados: **Ismena** (cartógrafa) y **Oren** (su hermano); **Bramavidrio**, el
   3. pasa la batería completa;
   4. no des por buenos los prototipos.
 
-### En cola: «Segunda gran fase» (encargo del usuario de la madrugada del 12/11; empieza al cerrar la noche)
+### Segunda gran fase (empezada el 12/11 a las 23:40)
 
 **Qué abarca:**
 - personajes (Kael, Lya y Garon) más expresivos;
@@ -172,3 +172,14 @@ Aprobados: **Ismena** (cartógrafa) y **Oren** (su hermano); **Bramavidrio**, el
 - tres combatientes activos y el resto en reserva, salvo que no sea compatible;
 - sin push, merge ni publicaciones;
 - sin Redmi.
+
+**En marcha** (copias locales desde `1b8f720`):
+
+| Trabajo | Copia · rama | Entrega |
+|---|---|---|
+| Fase A, la auditoría (solo documentos) | `D:\Aethelgard_v12_auditoria` · `claude/v12-fase2-auditoria` | `docs/v12/FASE2_AUDITORIA.md` |
+| Naira: historia, contrastada con la biblia, NO canon | `D:\Aethelgard_v12_naira_historia` · `claude/v12-fase2-naira-historia` | `docs/v12/NAIRA.md` |
+| Naira: tres conceptos 3D y quizá un modelo provisional | `D:\Aethelgard_v12_naira_concepto` · `claude/v12-fase2-naira-concepto` | `docs/memory/agents/animaciones_v12_naira.md` |
+
+Después de la auditoría vienen B (protagonistas, con respaldo), C (enemigos), D (migración región a región) y E (magia
+negra).
