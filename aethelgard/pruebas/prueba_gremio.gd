@@ -103,6 +103,10 @@ func _cumplir() -> void:
 func _guardar() -> void:
 	var d: Dictionary = P.volcar("res://mapa.tscn")
 	_ok(d.has("gremio") and int(d["gremio"]["rep"]) == 6, "4: el gremio no va en la partida")
+	# en disco de verdad (user:// aislado): se escribe, se lee y trae lo mismo
+	_ok(P.escribir(d, ARCHIVO), "4: no se pudo escribir la partida de prueba")
+	var leida = P.leer(ARCHIVO)
+	_ok(leida is Dictionary and int(leida.get("gremio", {}).get("rep", -1)) == 6 and "gr_limos" in leida["gremio"].get("hechos", []), "4: la partida leída del disco no trae el gremio")
 	var copia: Dictionary = str_to_var(var_to_str(d))
 	Engine.remove_meta("gremio")
 	_ok(Gr.nombre_rango() == "Bronce", "4: sin gremio no se vuelve a Bronce")

@@ -531,14 +531,15 @@ const C_ELITE := Color(1.0, 0.86, 0.5)
 
 
 func _quizas_elite() -> void:
+	# Los grupos con jefe no cuentan (11/11: si no, el élite del sexto se perdía cuando ese salía con el Guardián)
+	if enemigos.any(func(e): return e.get("personalidad", "") in ["jefe", "bosque", "coloso"]):
+		return
 	var n := int(Engine.get_meta("encuentros_azar", 0)) + 1
 	Engine.set_meta("encuentros_azar", n)
 	if n % CADA_ELITE != 0:
 		return
 	var fuerte: Dictionary = {}
 	for e in enemigos:
-		if e.get("personalidad", "") in ["jefe", "bosque", "coloso"]:
-			return
 		if fuerte.is_empty() or int(e["hp_max"]) > int(fuerte["hp_max"]):
 			fuerte = e
 	if not fuerte.is_empty():
@@ -4106,6 +4107,11 @@ func _espera_invocacion(seg: float) -> void:
 
 func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: String) -> void:
 	var critico: bool = magia == "" and randf() < Extra.prob_critico(PROB_CRITICO, origen.get("efectos", {}))   # Diente: la misma tirada
+	if origen.get("filo_arcano", false):
+		# V11: Filo Arcano no hace crítico. La mitad de su daño es el Fuego de Lya, y la magia nunca es crítica; con
+		# crítico pasaba de 70-80 a 112-128 (medido el 11/11) y tumbaba de un golpe a un Slime de élite (88 PV). La
+		# tirada se hace igual, para no mover el azar del resto del combate.
+		critico = false
 	if critico:
 		dano = int(dano * MULT_CRITICO)
 	if magia == "" and objetivo["hero"]:              # la defensa del héroe resta daño a los golpes

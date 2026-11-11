@@ -141,3 +141,29 @@ pantalla no ayuda a decidir (no dice qué le pasa a cada enemigo).
   premio».
 - **Pruebas:** `prueba_v11_combate`, apartado 7 (el sexto sí, el séptimo no, con Kael solo no). Siguen pasando
   `prueba_grupos_combate`, `prueba_zona3d`, `prueba_patrones_enemigos` y la huella del combate.
+
+## 6. Revisión del 11/11 por la mañana (fase A de la orden siguiente)
+
+- **Filo Arcano tumbó de un golpe al Slime de élite en el Redmi.** Medido en el PC (Kael y Lya a nivel 2, como en la
+  partida del móvil):
+
+  | Golpe | Daño |
+  |---|---|
+  | Ataque de Kael | 16-21 |
+  | Fuego de Lya | 72-78 |
+  | Filo Arcano sin crítico | 70-80 |
+  | Filo Arcano con crítico (×1,6, 12 %) | 112-128 |
+
+  - **Diagnóstico:** fue un crítico legítimo según el código, pero es un **fallo de equilibrio**. El crítico
+    multiplicaba también la parte de magia de Lya, y la magia nunca es crítica.
+  - **Arreglo:** Filo Arcano ya no hace crítico. La tirada se hace igual, para no mover el azar del resto del
+    combate. Así queda en unos 75, menos que atacar con Kael y lanzar el Fuego de Lya por separado (unos 92), a
+    cambio de hacerlo en un solo turno y romper guardias.
+  - **Prueba:** 40 Filos seguidos nunca pasan del máximo sin crítico (80). Con el arreglo quitado, la prueba falla
+    (126 de daño).
+- **Élites, fallo intermitente encontrado:** si el sexto encuentro salía con un jefe (el Guardián), se perdía el élite.
+  Ahora los grupos con jefe no cuentan, y la prueba lo comprueba (pasó 3 de 3).
+- **Guardado:** el gremio y el récord de la taberna se escriben y se leen de un archivo de verdad (`prueba_gremio` y
+  `prueba_taberna`), no solo en memoria.
+- **Quiebra, Barrera Rúnica, interrupción y la lista de invocaciones:** se prueban en combates de verdad con datos
+  fijos (`prueba_v11_combate`). En el móvil siguen sin probar.

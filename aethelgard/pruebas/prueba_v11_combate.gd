@@ -266,6 +266,22 @@ func _filo_arcano() -> void:
 	_ok(s["hp"] < 400, "5: Filo Arcano no hace daño")
 	_ok(not s.get("cargando", false) and s.get("aturdido", false), "5: Filo Arcano no rompe la guardia del Slime encogido")
 	_ok(not kael.has("filo_arcano") and not kael.has("embuir"), "5: Kael se queda con el fuego de Filo Arcano")
+	# sin crítico: 40 Filos seguidos (con el 12 % de crítico, sin el arreglo saldría alguno casi siempre: 0,6 % de fallarlo) no pasan nunca del máximo sin crítico (11/11: con crítico tumbaba al Slime de élite)
+	var fis_max: int = int(kael["atk"] * kael.get("mult_fisico", 1.0)) + 3
+	var mag_max: int = int((c.NIVELES_MAGIA["Fuego"][0]["dano"] * lya.get("magia_mult", 1.0) + lya.get("magia_extra", 0)) * lya.get("mult_magia", 1.0)) + 3
+	var tope: int = int((fis_max + int(mag_max * c.FILO_ARCANO["parte_magia"])) * (1.0 + c.EMBUIR["extra"]))
+	var maximo := 0
+	for i in 40:
+		s["hp_max"] = 100000
+		s["hp"] = 100000
+		s["cargando"] = false
+		s["defendiendo"] = false
+		lya["mp"] = 40
+		lya["atb"] = c.ATB_MAX
+		c.actor = kael
+		await c._filo_arcano(s)
+		maximo = maxi(maximo, 100000 - int(s["hp"]))
+	_ok(maximo > 0 and maximo <= tope, "5: Filo Arcano hace %d, más que su máximo sin crítico (%d)" % [maximo, tope])
 
 
 func _quiebra_y_barrera() -> void:
@@ -321,10 +337,17 @@ func _elites() -> void:
 		Engine.set_meta("grupo_activo", caso[1])
 		Engine.set_meta("zona", "ceniza")
 		Engine.set_meta("encuentros_azar", caso[0])
-		var cc = load("res://combate.tscn").instantiate()
-		root.add_child(cc)
-		await _esperar(20)
-		cc.set_process(false)
+		var cc = null
+		for intento in 8:                             # un grupo con jefe (el Guardián) no cuenta: se repite
+			cc = load("res://combate.tscn").instantiate()
+			root.add_child(cc)
+			await _esperar(20)
+			cc.set_process(false)
+			if not cc.enemigos.any(func(e): return e.get("personalidad", "") in ["jefe", "bosque", "coloso"]):
+				break
+			_ok(int(Engine.get_meta("encuentros_azar", 0)) == caso[0], "7: un grupo con jefe cuenta para el élite")
+			cc.queue_free()
+			await _esperar(5)
 		var elites: Array = cc.enemigos.filter(func(e): return e.get("elite", false))
 		if caso[2]:
 			_ok(elites.size() == 1 and str(elites[0]["nombre"]).begins_with("★ ") and cc.registro.text.contains("élite")
