@@ -37,6 +37,8 @@ memoria en GitHub y lee `SESSION_HANDOFF.md`.
 | `fbab55c` | 106 | 0 | 43 | 0 |
 | `d3db250` | 106 | 0 | 43 | 0 |
 | `88987e3` | 107 | 0 | 43 | 0 |
+| `748ce06` | 108 | 0 | 43 | 0 |
+| `6c6dc27` (Filo sin crítico, élites) | 108 | 0 | 43 | 0 |
 
 La última, si existe, está en `INFORME_NOCTURNO.md`.
 
@@ -66,3 +68,15 @@ No edites archivos de esta copia mientras corre: la batería compara el estado d
 3. **Hito F:** más magias y equipo. La magia negra espera al personaje que la usará.
 4. **Hito G y H:** el mapamundi, el cielo y los jefes nuevos. Sin empezar.
 5. **En el Redmi, cuando vuelva** (ver `PENDIENTES_REDMI.md`): nada de la V11 se ha probado en el teléfono.
+
+## Cierre de la V11 (11/11, mediodía)
+
+- **Redmi:** la v542 (`c2b5feb`) se probó en el teléfono: el gremio, el minijuego, el élite, el panel y Filo Arcano
+  funcionan. El detalle está en `PENDIENTES_REDMI.md`.
+- **Arreglos tras el Redmi** (`6c6dc27`):
+  - Filo Arcano ya no hace crítico;
+  - los grupos con jefe no cuentan para el élite;
+  - el guardado se comprueba en disco.
+  - Ver `MEJORAS_COMBATE.md` §6.
+- **La V11 continúa en la V12:** `claude/rebelum-v12` (`D:\Aethelgard_v12`), con el Gran Desierto. Ver
+  `docs/v12/RETOMAR.md`.
