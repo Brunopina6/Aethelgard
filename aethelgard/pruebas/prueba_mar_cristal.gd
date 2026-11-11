@@ -150,7 +150,13 @@ func _process(_dt: float) -> bool:
 		"tormenta":
 			if _en(45):
 				_ok(_hito("mc_tormenta") and v.clima.en_tormenta() and v.clima.narrativa, "B: al ir al norte no se levanta la tormenta")
+				_poner(T.COBIJO.x, T.COBIJO.y)                   # con el diálogo abierto y en el cobijo: no debe amainar
+				_fase("tormenta_dialogo")
+		"tormenta_dialogo":
+			if _en(30 * 9):
+				_ok(not _hito("mc_ruinas") and v.clima.en_tormenta(), "B: la tormenta amaina con su diálogo abierto (Redmi, v581)")
 				_cortar()
+				_poner(50.0, 50.0)
 				_fase("tormenta2")
 		"tormenta2":
 			if _en(30 * 6):                                      # 6 s: ya es fuerte
@@ -261,8 +267,24 @@ func _process(_dt: float) -> bool:
 					_ok(v.get("_prohibido").call(Vector3(T.OASIS.x, 0, T.OASIS.y)) and v.get("_prohibido").call(Vector3(6, 0, 24)),
 						"D: el estanque o una roca se pueden pisar")
 					if PERFILES[ip] == "bajo":
-						return _siguiente()
-					_fase("gusano")
+						_fase("salida")
+					else:
+						_fase("gusano")
+		# ---------------------------------------------------------------- D2. la salida al mapa, señalada (Redmi, v581)
+		"salida":
+			_ok(v.get_node_or_null("MarcaSalida") != null and v.get_node_or_null("LetreroSalida") != null, "D: la salida no está señalada")
+			_ok(v.terreno.raiz.get_node_or_null("ArenaLejana") != null, "D: no hay arena más allá del borde (franja blanca)")
+			_poner(T.ENTRADA.x, T.ENTRADA.z)
+			v.salida["armada"] = v._dist_plana(v.kael.global_position, T.SALIDA) > v.ARMAR_SALIDA
+			v.destino = v._ajustar_destino(Vector3(T.SALIDA.x, 0, T.SALIDA.z + 0.3))
+			t_combate = Time.get_ticks_msec()
+			_fase("salida2")
+		"salida2":
+			if current_scene != null and current_scene.scene_file_path == "res://mapa.tscn":
+				return _siguiente()
+			if Time.get_ticks_msec() - t_combate > 30000:
+				_mal("D: andando desde la entrada no se sale al mapa")
+				return _siguiente()
 		# ---------------------------------------------------------------- E. Bramavidrio
 		"gusano":
 			v.clima.sistemicas = false
@@ -313,6 +335,7 @@ func _comprobar_carga() -> void:
 
 
 func _siguiente() -> bool:
+	t_combate = 0
 	ip += 1
 	if ip >= PERFILES.size():
 		return _fin()
