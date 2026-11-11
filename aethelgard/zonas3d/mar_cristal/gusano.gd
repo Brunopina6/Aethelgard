@@ -267,7 +267,7 @@ func _modelo_gusano() -> Node3D:
 	var garganta := _mat(Color(1.0, 0.72, 0.36), 0.5)
 	garganta.emission_enabled = true
 	garganta.emission = Color(1.0, 0.55, 0.22)
-	garganta.emission_energy_multiplier = 1.6
+	garganta.emission_energy_multiplier = 0.9
 	var y := 0.0
 	var arriba := Vector3.ZERO
 	for k in SEGMENTOS:                                         # de la arena (k = 0) a la boca
@@ -307,7 +307,7 @@ func _modelo_gusano() -> Node3D:
 				c.radial_segments = 6
 				placa.mesh = c
 				placa.material_override = vidrio
-				var a: float = lado * 0.55
+				var a: float = lado * 0.75
 				placa.position = Vector3(sin(a) * r * 0.95, 0.15, -cos(a) * r * 0.95)
 				placa.rotation = Vector3(-PI / 2.0 + 0.35, -a, 0)
 				seg.add_child(placa)
@@ -330,13 +330,13 @@ func _modelo_gusano() -> Node3D:
 	for i in 5:
 		var labio := MeshInstance3D.new()
 		var b := PrismMesh.new()
-		b.size = Vector3(0.95, 1.1, 0.16)
+		b.size = Vector3(1.05, 0.55, 0.2)                      # placas anchas y bajas: muelen (13:30: altas parecían una corona)
 		labio.mesh = b
 		labio.material_override = hueso
 		var ang := TAU * i / 5.0
 		labio.position = Vector3(sin(ang) * 0.82, 0.35, cos(ang) * 0.82)
 		labio.rotation = Vector3(0, ang, 0)
-		labio.rotate_object_local(Vector3.RIGHT, 0.55)          # abiertas hacia fuera
+		labio.rotate_object_local(Vector3.RIGHT, 1.05)          # abiertas hacia fuera, casi tumbadas
 		boca.add_child(labio)
 	var luz := OmniLight3D.new()                                # el brillo de las placas y la garganta
 	luz.light_color = Color(0.5, 0.9, 1.0)

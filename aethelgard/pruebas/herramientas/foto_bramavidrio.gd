@@ -49,7 +49,7 @@ func _foto() -> void:
 	var g = Gusano.new(null)
 	var cuerpo: Node3D = g._modelo_gusano()
 	vp.add_child(cuerpo)
-	cuerpo.rotation.y = deg_to_rad(-30.0)                        # tres cuartos: se ven las placas del lomo y la boca
+	cuerpo.rotation.y = deg_to_rad(-115.0)                       # de lado, inclinado hacia los héroes (a la derecha): se ven las placas del lomo
 	var monton := MeshInstance3D.new()                          # la arena que revienta alrededor
 	var s := SphereMesh.new()
 	s.radius = 1.0
@@ -66,6 +66,7 @@ func _foto() -> void:
 		await process_frame
 	await RenderingServer.frame_post_draw
 	var img := vp.get_texture().get_image()
+	img.flip_x()                                                # en el combate los héroes están a la derecha: que se incline hacia ellos
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(SALIDA.get_base_dir()))
 	var err := img.save_png(ProjectSettings.globalize_path(SALIDA))
 	print("foto_bramavidrio: %s (%d × %d) → %s" % [error_string(err), img.get_width(), img.get_height(), SALIDA])
