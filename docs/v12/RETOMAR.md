@@ -149,6 +149,7 @@ Aprobados: **Ismena** (cartógrafa) y **Oren** (su hermano); **Bramavidrio**, el
     (`D:\REBELUM_diagnostico\v12\portada_resoluciones`).
   - **Propuesta, sin hacer:** con `stretch/aspect` por defecto el juego entero sale con franjas negras en 20:9. Cambiarlo
     afectaría a toda la interfaz.
+- **La noche, cerrada a las 23:35:** todo integrado y batería final 120 · 0 · 50 · 0. Informe: `docs/v12/INFORME_NOCHE_12_11.md`. Los cinco especialistas terminaron; sus ramas y copias se conservan.
 - **Si la sesión se corta:**
   1. mira el estado de cada copia (`git -C <copia> log --oneline -5` y su informe);
   2. integra lo terminado copiando archivos (como siempre);
