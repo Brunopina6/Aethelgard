@@ -1,0 +1,15 @@
+{
+"@path": "res://addons/dialogic/Resources/character.gd",
+"@subpath": NodePath(""),
+&"_translation_id": "",
+&"color": Color(0.55, 0.88, 0.84, 1),
+&"custom_info": {},
+&"default_portrait": "",
+&"description": "Cartógrafa del campamento del Mar de Cristal (V12, propuesta pendiente de canon): dibuja mapas de un mar que el viento cambia cada noche; ironía cansada y cariño escondido. Hermana mayor de Oren. Presta a Kael el buscador. Provisional: sin retrato todavía.",
+&"display_name": "Ismena",
+&"mirror": false,
+&"nicknames": [],
+&"offset": Vector2(0, 0),
+&"portraits": {},
+&"scale": 0.72
+}

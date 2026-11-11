@@ -1,0 +1,14 @@
+join kael (vivo_pv) left
+join lya (vivo_pv) right
+update kael [extra_data="sorpresa"]
+kael: ¿Y esta señora? Corona de cristal y cara de no haberse reído nunca.
+update lya [extra_data="duda"]
+lya: Mira a la gente de abajo. Todos caminan hacia el mismo lago.
+update lya [extra_data="preocupada"]
+lya: Pero el agua flota, sin orilla. No es un lago. Es un espejismo.
+update lya [extra_data="decidida"]
+lya: Le rasparon el nombre. Solo queda el final: «…de los Espejismos».
+update kael [extra_data="ligero"]
+kael: Bonito apellido. Prefiero no conocer a la familia.
+leave lya
+leave kael

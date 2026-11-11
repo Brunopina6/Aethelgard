@@ -1,0 +1,5 @@
+join kael (vivo_pv) left
+update kael [extra_data="sorpresa"]
+kael: Eso no es una duna. Es el cielo, que viene a por mí.
+kael: Ni el buscador se oye. Roca… necesito roca. ¡El cañón del oeste!
+leave kael

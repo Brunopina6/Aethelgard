@@ -1,0 +1,16 @@
+join kael (vivo_pv) left
+join lya (vivo_pv) right
+update kael [extra_data="sorpresa"]
+kael: El toldo rojo. Es su carro… y ni una huella alrededor.
+update lya [extra_data="preocupada"]
+lya: El viento las ha borrado. Mira las correas: las mulas las rompieron al huir.
+garon: Algo las asustó.
+update kael [extra_data="ligero"]
+kael: Mulas listas. Ojalá su dueño también lo sea.
+update lya [extra_data="decidida"]
+lya: Si dejó una señal de metal, el viento no se la ha llevado.
+update kael [extra_data="decidido"]
+kael: Pues que hable el palo.
+[signal arg="mc:caravana"]
+leave lya
+leave kael

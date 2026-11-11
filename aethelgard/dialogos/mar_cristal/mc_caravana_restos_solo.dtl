@@ -1,0 +1,8 @@
+join kael (vivo_pv) left
+update kael [extra_data="sorpresa"]
+kael: El toldo rojo. Es su carro… y ni una huella alrededor.
+kael: Correas rotas. Las mulas huyeron de algo. Ojalá su dueño también.
+update kael [extra_data="decidido"]
+kael: Las huellas se las lleva el viento. El metal, no. A ver qué dice el palo.
+[signal arg="mc:caravana"]
+leave kael

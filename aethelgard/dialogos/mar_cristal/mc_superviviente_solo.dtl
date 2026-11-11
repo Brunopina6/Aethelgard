@@ -1,0 +1,13 @@
+join kael (vivo_pv) left
+oren: ¿Luz? ¿Una voz? Si eres un espejismo, trae agua de mentira. Me vale.
+update kael [extra_data="sorpresa"]
+kael: ¿Oren? Te busca tu hermana. Con un humor de perros.
+oren: Entonces estoy vivo. Ismena solo se enfada con los vivos.
+kael: Toma, bebe. Despacio. ¿Cuánto llevas aquí abajo?
+oren: Dos días. La arena tembló, las mulas huyeron y yo corrí al norte. Como siempre.
+oren: La llave estaba en la trampilla. Bajé, el viento la cerró y la llave cayó fuera.
+oren: Dos días a solas con esa de la pared. Te juro que me mira mal.
+update kael [extra_data="ligero"]
+kael: Pues vámonos antes de que te mire peor.
+[signal arg="mc:superviviente"]
+leave kael

@@ -1,0 +1,14 @@
+join kael (vivo_pv) left
+ismena: ¡Oren! Dos días. ¿Sabes cuántas veces he mirado por ese catalejo?
+oren: ¿Muchas?
+ismena: Todas.
+ismena: …Dejaste el sello mirando al norte, ¿a que sí?
+oren: Es la única regla tuya que me sé.
+ismena: Es la única que hacía falta.
+ismena: El buscador es tuyo. Lo he afinado: ahora oye más hondo.
+update kael [extra_data="ligero"]
+kael: Mi propio palo que pita. Se me va a subir a la cabeza.
+ismena: Tu paga, y esto, que aquí trae suerte a quien vuelve. Lo descuento de lo tuyo, Oren.
+oren: ¡Si yo no cobro!
+[signal arg="mc:fin"]
+leave kael
