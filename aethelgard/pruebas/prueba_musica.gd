@@ -88,7 +88,12 @@ func _contextos() -> void:
 			if ruta == "":
 				continue
 			var s = load(ruta) if ResourceLoader.exists(ruta) else null
-			if not s is AudioStreamWAV:
+			if s is AudioStreamOggVorbis:                 # V12: los vientos del desierto (OGG, bucle en su .import)
+				if not s.loop:
+					_fallo("1: %s (OGG) no es un bucle" % ruta)
+				elif "suno" in ruta.to_lower():
+					_fallo("1: %s parece una canción de Suno" % ruta)
+			elif not s is AudioStreamWAV:
 				_fallo("1: «%s» pide %s, que no existe" % [c, ruta])
 			elif s.loop_mode != AudioStreamWAV.LOOP_FORWARD or s.format != AudioStreamWAV.FORMAT_QOA:
 				_fallo("1: %s no es un bucle comprimido (bucle %d, formato %d)" % [ruta, s.loop_mode, s.format])
