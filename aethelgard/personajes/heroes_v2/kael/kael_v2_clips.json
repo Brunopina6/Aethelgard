@@ -1,0 +1,137 @@
+{
+ "heroe": "Kael",
+ "fps": 30,
+ "altura_blender": 1.6499,
+ "clips": {
+  "reposo": {
+   "duracion": 4.0,
+   "bucle": true,
+   "eventos": {}
+  },
+  "guardia": {
+   "duracion": 1.0,
+   "bucle": true,
+   "eventos": {}
+  },
+  "hablar": {
+   "duracion": 2.4,
+   "bucle": false,
+   "eventos": {}
+  },
+  "hablar_b": {
+   "duracion": 2.2,
+   "bucle": false,
+   "eventos": {}
+  },
+  "asentir": {
+   "duracion": 0.9,
+   "bucle": false,
+   "eventos": {}
+  },
+  "interactuar": {
+   "duracion": 1.4,
+   "bucle": false,
+   "eventos": {
+    "contacto": 0.6
+   }
+  },
+  "saltar": {
+   "duracion": 0.95,
+   "bucle": false,
+   "eventos": {
+    "despegue": 0.3,
+    "aterrizaje": 0.65
+   }
+  },
+  "girar": {
+   "duracion": 0.6,
+   "bucle": false,
+   "eventos": {}
+  },
+  "ataque": {
+   "duracion": 1.3,
+   "bucle": false,
+   "eventos": {
+    "impacto": 0.64
+   }
+  },
+  "recibir_golpe": {
+   "duracion": 0.7,
+   "bucle": false,
+   "eventos": {
+    "impacto": 0.0
+   }
+  },
+  "derribo": {
+   "duracion": 1.3,
+   "bucle": false,
+   "eventos": {
+    "suelo": 0.9
+   }
+  },
+  "derrota": {
+   "duracion": 3.0,
+   "bucle": true,
+   "eventos": {}
+  },
+  "levantarse": {
+   "duracion": 1.3,
+   "bucle": false,
+   "eventos": {}
+  },
+  "victoria": {
+   "duracion": 1.8,
+   "bucle": false,
+   "eventos": {}
+  },
+  "magia_lanzar": {
+   "duracion": 1.4,
+   "bucle": false,
+   "eventos": {
+    "lanzamiento": 0.85
+   }
+  },
+  "andar": {
+   "duracion": 1.0333,
+   "bucle": true,
+   "eventos": {},
+   "captura": true
+  },
+  "andar_pesado": {
+   "duracion": 9.9667,
+   "bucle": true,
+   "eventos": {},
+   "captura": true
+  },
+  "correr": {
+   "duracion": 0.6333,
+   "bucle": true,
+   "eventos": {},
+   "captura": true
+  },
+  "derribo_original": {
+   "duracion": 2.2,
+   "bucle": false,
+   "eventos": {},
+   "captura": true
+  },
+  "golpe_original": {
+   "duracion": 2.8333,
+   "bucle": false,
+   "eventos": {},
+   "captura": true
+  },
+  "magia_original": {
+   "duracion": 2.6667,
+   "bucle": false,
+   "eventos": {},
+   "captura": true
+  },
+  "reposo_original": {
+   "duracion": 9.9667,
+   "bucle": true,
+   "eventos": {},
+   "captura": true
+  }
+ }
+}

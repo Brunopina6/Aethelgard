@@ -13,6 +13,7 @@ maga.glb | Lya (Meshy) | Plan de Meshy sin confirmar
 garon.fbx | Garon (Meshy) | Plan de Meshy sin confirmar
 garon.glb | Garon (Meshy) | Plan de Meshy sin confirmar
 garon_escudo.glb | Escudo de Garon (Meshy) | Plan de Meshy sin confirmar
+personajes/heroes_v2/ | Héroes v2 (derivados de los modelos de Meshy de Kael, Lya y Garon) | Plan de Meshy sin confirmar
 goblin.fbx | Grimfang (Meshy) | Plan de Meshy sin confirmar
 goblin.glb | Grimfang (Meshy) | Plan de Meshy sin confirmar
 erebo.fbx | Érebo (Meshy) | Plan de Meshy sin confirmar
