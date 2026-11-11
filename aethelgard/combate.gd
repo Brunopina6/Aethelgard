@@ -657,7 +657,7 @@ func _climax_empezar() -> void:
 	_fogonazo(C_INVOCACION, 0.16, 0.8)
 	var aviso := _etiqueta("¡Momento decisivo!", 50, C_INVOCACION, menu.f_nombre)
 	aviso.add_theme_constant_override("outline_size", 10)
-	aviso.size = Vector2(1280, 70)
+	aviso.size = Vector2(1280 * 0.6, 70)            # centrado en el campo: el menú ocupa el 40 % derecho
 	aviso.position = Vector2(0, 150)
 	aviso.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	aviso.mouse_filter = Control.MOUSE_FILTER_IGNORE

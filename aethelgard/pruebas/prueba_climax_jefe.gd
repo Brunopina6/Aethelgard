@@ -143,6 +143,9 @@ func _uno_a_cinco() -> void:
 	await _esperar(2)
 	_ok(empezados.size() == 1, "2: al acabar el golpe no empieza (%d)" % empezados.size())
 	_ok(c.musica == c.musica_climax and c.musica_climax != null, "2: la canción no pasa a ser la música del combate")
+	var avisos: Array = c.capa.find_children("*", "Label", false, false).filter(func(l): return l.text == "¡Momento decisivo!")
+	_ok(avisos.size() == 1 and avisos[0].position.x + avisos[0].size.x <= 1280 * 0.6 + 0.5,
+		"2: el aviso no está o pisa el menú de órdenes (el 40 % derecho)")
 	_ok(sonidos.count(K.GOLPE) == 1, "2: el golpe de energía suena %d veces" % sonidos.count(K.GOLPE))
 	var m: AudioStreamPlayer = c.musica_climax
 	_ok(m.bus == &"Musica", "13: la canción no va por el bus Musica (%s)" % m.bus)
