@@ -63,6 +63,8 @@ extends Node
 # V9 (10/11): identidad sonora del Guardián del Bosque Olvidado («guardian_bosque_*» y su voz, familia «corteza») y el
 #   tratamiento de su combate (TRATAMIENTOS: la música con paso bajo y un bosque antiguo por debajo); el orbe del altar
 #   («orbe_vision», «orbe_cierra»). Dónde se piden: docs/audio/inventario_sonidos.md, sección V9.
+# V12 (11/11): el Mar de Cristal (EFECTOS_DESIERTO, en OGG): el viento en calma y la tormenta de arena (bucles del lugar),
+#   la fogata y el oasis (emisores 3D), el temblor y el rugido del gusano, la pala y los pitidos del buscador.
 
 const ARCHIVO := "user://ajustes.cfg"
 const BUSES := ["Musica", "Efectos", "Interfaz", "Ambiente"]
@@ -368,6 +370,36 @@ const EFECTOS := {
 	"gota_cueva": {"a": "ambiente/gota_cueva_", "n": 2, "bus": "Ambiente", "db": -14.0, "tono": 0.08, "p": 0, "max": 2, "espera": 0.5},
 }
 
+# V12 (11/11): el Mar de Cristal. Sus sonidos son OGG (audio/desierto/), así que van aparte de EFECTOS (cuyas comprobaciones
+# piden WAV en QOA: prueba_efectos) con el mismo formato y dos campos más: «dir» (carpeta) y «ext» (extensión). Volúmenes
+# sobre el derivado normalizado (medido el 11/11: el viento en calma, RMS −24; la tormenta, −19; la fogata, −32; el oasis,
+# −27); falta escucharlos. Procedencia y licencia: docs/memory/agents/sonido_v12_desierto.md.
+const DESIERTO := "res://audio/desierto/"
+const EFECTOS_DESIERTO := {
+	# ---- el lugar (bus Ambiente; «bucle»: un bucle del sitio, no un emisor). La tormenta, unos 9 dB por encima del viento
+	# en calma y con arena; se funden entre sí (quien lleve la región; ruta_de() da el archivo)
+	"desierto_viento": {"a": "viento", "dir": DESIERTO, "ext": ".ogg", "bus": "Ambiente", "db": -13.0, "bucle": true},
+	"desierto_tormenta": {"a": "tormenta", "dir": DESIERTO, "ext": ".ogg", "bus": "Ambiente", "db": -9.0, "bucle": true},
+	# ---- emisores 3D (bucles, con fuente_3d): la fogata del campamento (36, 92) y el agua y los juncos del oasis (74, 72)
+	"fogata_bucle": {"a": "fogata", "dir": DESIERTO, "ext": ".ogg", "bus": "Ambiente", "db": 2.0,
+		"tres_d": {"unidad": 3.0, "max": 24.0}},
+	"oasis_bucle": {"a": "oasis", "dir": DESIERTO, "ext": ".ogg", "bus": "Ambiente", "db": -4.0,
+		"tres_d": {"unidad": 7.0, "max": 32.0, "filtro": -8.0}},
+	# ---- el gusano (bus Efectos; con «pos», desde el surco): el aviso (temblor) y el rugido sordo bajo la arena. Prioridad 3:
+	# no los baja una victoria
+	"gusano_temblor": {"a": "gusano_temblor", "dir": DESIERTO, "ext": ".ogg", "db": -7.0, "tono": 0.05, "p": 3, "max": 1,
+		"espera": 1.5, "en_3d": {"unidad": 10.0, "max": 70.0, "filtro": -14.0}},
+	"gusano_rugido": {"a": "gusano_rugido", "dir": DESIERTO, "ext": ".ogg", "db": -6.0, "tono": 0.06, "p": 3, "max": 1,
+		"espera": 2.5, "en_3d": {"unidad": 12.0, "max": 90.0, "filtro": -18.0}},
+	# ---- el buscador y la pala (bus Efectos). Los pitidos, sin variar el tono (el ritmo dice la cercanía; el raro, más
+	# agudo y «de cristal»); dos a la vez como mucho para que los rápidos no se corten
+	"excavar_arena": {"a": "excavar_arena_", "n": 2, "dir": DESIERTO, "ext": ".ogg", "db": -6.0, "tono": 0.05, "p": 2,
+		"max": 1, "espera": 0.3},
+	"buscador_pitido": {"a": "buscador_pitido", "dir": DESIERTO, "ext": ".ogg", "db": -14.0, "p": 1, "max": 2, "espera": 0.05},
+	"buscador_pitido_raro": {"a": "buscador_pitido_raro", "dir": DESIERTO, "ext": ".ogg", "db": -14.0, "p": 1, "max": 2,
+		"espera": 0.05},
+}
+
 # Detalles de la naturaleza por contexto de Musica: cada cuánto (s, al azar entre los dos) y qué puede sonar.
 const DETALLES := {
 	"pradera": {"cada": [9.0, 20.0], "efectos": ["rafaga_hierba", "rafaga_hierba", "pajaro"]},
@@ -621,7 +653,7 @@ static func _wav(m: PackedFloat32Array, hz: int) -> AudioStreamWAV:
 # con «en_3d» del catálogo o de la petición; sin nadie que escuche en 3D, suena normal). Devuelve el reproductor, o null
 # si no suena (efecto que no existe, silencio, pausa, repetido demasiado pronto o sin voz libre).
 func efecto(nombre: String, op := {}) -> Node:
-	var d: Dictionary = EFECTOS.get(nombre, {})
+	var d: Dictionary = definicion(nombre)
 	if d.is_empty():
 		push_warning("Sonido: no hay efecto «%s»" % nombre)
 		return null
@@ -839,6 +871,28 @@ static func archivos() -> PackedStringArray:
 	return r
 
 
+# V12: la definición de un efecto, de EFECTOS o, si no está ahí, de EFECTOS_DESIERTO ({} si no existe).
+static func definicion(nombre: String) -> Dictionary:
+	if EFECTOS.has(nombre):
+		return EFECTOS[nombre]
+	return EFECTOS_DESIERTO.get(nombre, {})
+
+
+# V12: el archivo de un efecto del catálogo (variante i, de 0 a n − 1; −1 si no tiene variantes), con su «dir» y su «ext»
+# (OGG del desierto) o, si no los dice, en audio/efectos/ y en WAV, como siempre.
+static func ruta_archivo(d: Dictionary, i := -1) -> String:
+	return String(d.get("dir", EF)) + String(d.get("a", "")) + (str(i + 1) if i >= 0 else "") + String(d.get("ext", ".wav"))
+
+
+# V12: el archivo de un efecto por su nombre (la primera variante si tiene varias); "" si no existe o es de código. Para
+# poner los bucles del lugar con Musica u otro reproductor: Sonido.ruta_de("desierto_tormenta").
+static func ruta_de(nombre: String) -> String:
+	var d := definicion(nombre)
+	if d.is_empty() or d.has("codigo"):
+		return ""
+	return ruta_archivo(d, 0 if d.has("n") else -1)
+
+
 func _descartar(nombre: String, motivo: String) -> Node:
 	var k := nombre + ":" + motivo
 	descartes[k] = int(descartes.get(k, 0)) + 1
@@ -849,7 +903,7 @@ func _elegir(nombre: String, d: Dictionary, fija: int) -> String:
 	if d.has("codigo"):
 		return "codigo:" + String(d["codigo"])
 	if not d.has("n"):
-		return EF + d["a"] + ".wav"
+		return ruta_archivo(d)
 	var n := int(d["n"])
 	var i := fija
 	if i < 0 or i >= n:
@@ -857,7 +911,7 @@ func _elegir(nombre: String, d: Dictionary, fija: int) -> String:
 		if n > 1 and i == int(_variante.get(nombre, -1)):   # nunca la misma dos veces seguidas
 			i = (i + 1 + _rng.randi_range(0, n - 2)) % n
 	_variante[nombre] = i
-	return EF + d["a"] + str(i + 1) + ".wav"
+	return ruta_archivo(d, i)
 
 
 func _stream(ruta: String) -> AudioStream:
@@ -1480,7 +1534,7 @@ func fuente_3d(padre: Node3D, nombre: String, pos: Vector3, db := 0.0) -> AudioS
 # Emisor a lo largo de un segmento (un río, la caída de una cascada, el eje de un abismo): cada fotograma se pone en el
 # punto del segmento más cercano a quien escucha.
 func fuente_linea(padre: Node3D, nombre: String, a: Vector3, b: Vector3, db := 0.0) -> Node3D:
-	var d: Dictionary = EFECTOS.get(nombre, {})
+	var d: Dictionary = definicion(nombre)
 	if d.get("tres_d", {}).has("cada"):                    # tanda 5: de vez en cuando, no un bucle (las cuerdas)
 		return _fuente_cada(padre, nombre, a, b, db)
 	var f := FuenteLineal.new()
@@ -1543,8 +1597,8 @@ class FuenteCada extends Node3D:
 
 
 func _emisor(padre: Node3D, nombre: String, e: AudioStreamPlayer3D, db := 0.0) -> AudioStreamPlayer3D:
-	var d: Dictionary = EFECTOS.get(nombre, {})
-	var s := _stream(EF + String(d.get("a", "")) + ".wav") if d.has("tres_d") else null
+	var d: Dictionary = definicion(nombre)
+	var s := _stream(ruta_archivo(d)) if d.has("tres_d") else null
 	if padre == null or s == null:
 		e.free()
 		push_warning("Sonido: no se puede crear el emisor «%s»" % nombre)
@@ -1827,7 +1881,7 @@ class Agua2D extends AudioStreamPlayer2D:
 # (la taberna). Por el bus del catálogo (Ambiente), con la pausa, el silencio y el cambio de escena de siempre (es hija
 # de la escena y muere con ella). Devuelve el emisor, o null si el efecto no es de este tipo.
 func fuente_2d(padre: Node2D, nombre: String, pos: Vector2, quien: Node2D = null, casilla := 64.0) -> Node:
-	var d: Dictionary = EFECTOS.get(nombre, {})
+	var d: Dictionary = definicion(nombre)
 	if padre == null or not d.has("dos_d") or nombre in AGUA_2D.values():
 		push_warning("Sonido: no se puede crear la fuente 2D «%s»" % nombre)
 		return null
@@ -1850,7 +1904,7 @@ func fuente_2d(padre: Node2D, nombre: String, pos: Vector2, quien: Node2D = null
 	e.process_mode = Node.PROCESS_MODE_PAUSABLE
 	e.set_meta("efecto", nombre)
 	if e.cada.is_empty():
-		e.stream = _stream(EF + String(d["a"]) + ".wav")
+		e.stream = _stream(ruta_archivo(d))
 		if e.stream == null:
 			e.free()
 			return null
@@ -1863,7 +1917,7 @@ func fuente_2d(padre: Node2D, nombre: String, pos: Vector2, quien: Node2D = null
 # Una vez de una fuente 2D intermitente (el cuervo): su variante, su tono y su volumen por la distancia («nivel»
 # lineal), con las reglas de efecto() (pausa, silencio, espera).
 func _sonar_fuente(e: AudioStreamPlayer2D, nombre: String, nivel: float) -> bool:
-	var d: Dictionary = EFECTOS.get(nombre, {})
+	var d: Dictionary = definicion(nombre)
 	var bus: String = d.get("bus", "Ambiente")
 	var motivo := ""
 	if pausado:
