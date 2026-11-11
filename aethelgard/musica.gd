@@ -27,6 +27,9 @@ const CONTEXTOS := {
 	"desierto": {"musica": "", "ambiente": AMB + "desierto.wav", "db": -8.0},
 	"viento": {"musica": "", "ambiente": AMB + "viento.wav", "db": -10.0},
 	"mazmorra": {"musica": "", "ambiente": AMB + "mazmorra.wav", "db": -6.0},
+	# V12, el Mar de Cristal (sonido_v12_desierto.md §2): el viento en calma y la tormenta de arena (clima.gd los alterna)
+	"mar_cristal": {"musica": "", "ambiente": "res://audio/desierto/viento.ogg", "db": -13.0},
+	"tormenta_arena": {"musica": "", "ambiente": "res://audio/desierto/tormenta.ogg", "db": -9.0},
 }
 
 var capas := {}                                    # "musica"/"ambiente" → {a, b, activo, ruta}
@@ -77,6 +80,8 @@ static func contexto_de(e: Node) -> String:
 			return "mazmorra"
 		"res://zonas3d/pastos_verdes_3d.tscn", "res://prototipos/sendero_puente.tscn":
 			return "pradera"
+		"res://zonas3d/mar_cristal_3d.tscn":                     # V12: el Mar de Cristal (la tormenta la pide clima.gd)
+			return "mar_cristal"
 		"res://ciudad_oakhaven.tscn", "res://zonas3d/oakhaven_3d.tscn":   # Oakhaven hecha a mano (T-089) y la 3D (T-103): el ambiente
 			return "ciudad"                            # de las ciudades, como la Oakhaven generada (sus sonidos: fuente_2d)
 		"res://zona.tscn":

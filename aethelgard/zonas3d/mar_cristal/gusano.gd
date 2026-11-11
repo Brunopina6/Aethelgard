@@ -1,0 +1,314 @@
+extends RefCounted
+# Bramavidrio, el gusano colosal del Mar de Cristal (V12; nombre aprobado por el usuario el 11/11; DISENO_V12.md §4 y
+# NARRATIVA_DESIERTO.md §4). Original de REBELUM: corto y grueso, como una larva enorme con placas de vidrio fundido en el
+# lomo; boca de placas planas que muelen (nunca un anillo de dientes). Pasta el vidrio bajo la arena blanda; es
+# territorial, no cazador: no se monta, no lo atrae un ritmo y no guarda nada.
+#
+# En la arena que tiembla (trazado.gd, TEMBLOR), nunca en roca, en el camino ni durante un diálogo o una tormenta:
+#   1. calma: Kael pisa la arena blanda; a los ESPERA segundos, el aviso;
+#   2. aviso: la arena tiembla (sonido gusano_temblor, la cámara vibra), el aviso de texto y un SURCO que nace lejos y
+#      avanza hacia Kael con su polvo; a mitad de camino, el rugido sordo (gusano_rugido);
+#   3. si Kael sale de la arena blanda (o pisa el camino) antes de que llegue, el surco se hunde y se aleja (DESCANSO);
+#   4. si llega: la APARICIÓN (la arena estalla, el gusano sale con sus placas brillando, rugido y sacudida) y, la
+#      primera vez, el encuentro especial (combate fijo «mc_bramavidrio»). Después de vencerlo, respeta a Kael: el surco
+#      pasa por debajo, asoma, ruge y se va, sin combate.
+# Todo es barato: un puñado de mallas y dos emisores de partículas, solo mientras hay algo que ver.
+
+const T := preload("res://zonas3d/mar_cristal/trazado.gd")
+const COMBATE := "mc_bramavidrio"          # combate fijo (progreso.gd ganado): la primera vez
+const GRUPO_COMBATE := 13                  # combate.gd GRUPOS: Bramavidrio solo
+const ESPERA := 3.0                        # s en la arena blanda antes del aviso
+const VELOCIDAD := 5.0                     # m/s del surco (Kael anda a unos 3 y corre a unos 5,5: se puede huir)
+const DISTANCIA_SALIDA := 22.0             # m: dónde nace el surco
+const DESCANSO := 25.0                     # s sin avisos tras irse
+const ALCANCE := 1.6                       # m: el surco «llega»
+const TEXTO_AVISO := "La arena tiembla bajo tus pies. Algo enorme se mueve debajo. ¡Sal de la arena blanda!"
+const TEXTO_SE_VA := "El surco se hunde y se aleja. Bramavidrio vuelve a lo suyo."
+const TEXTO_RESPETA := "Bramavidrio asoma, te mira con sus placas de vidrio… y se hunde. Te recuerda."
+
+var region: Node3D
+var activo := true                         # las pruebas lo apagan o lo fuerzan
+var estado := "calma"                      # calma, aviso, aparicion, descanso
+var t_estado := 0.0
+var t_arena := 0.0
+var surco_pos := Vector3.ZERO
+var apariciones := 0
+var _rugio := false
+var _raiz: Node3D
+var _lomo: MeshInstance3D                  # el bulto de arena que avanza
+var _polvo: CPUParticles3D
+var _cuerpo: Node3D                        # el gusano al asomar
+var _estallido: CPUParticles3D
+var _sacudida := 0.0
+
+
+func _init(r: Node3D) -> void:
+	region = r
+
+
+# Bramavidrio solo se mueve bajo la arena blanda de su zona, lejos del camino.
+static func arena_blanda(p: Vector3) -> bool:
+	return T.en_temblor(p.x, p.z) and not T.en_camino(p.x, p.z)
+
+
+static func vencido() -> bool:
+	return load("res://progreso.gd").ganado(COMBATE)
+
+
+func actualizar(delta: float, pos: Vector3) -> void:
+	t_estado += delta
+	_sacudir(delta)
+	var calla: bool = not activo or region.ocupado() or (region.clima != null and region.clima.en_tormenta())
+	match estado:
+		"calma":
+			if calla or not arena_blanda(pos):
+				t_arena = 0.0
+				return
+			t_arena += delta
+			if t_arena >= ESPERA:
+				_empezar_aviso(pos)
+		"aviso":
+			if calla and region.ocupado():
+				return                                            # un diálogo: se queda quieto hasta que acabe
+			_avanzar_surco(delta, pos)
+		"aparicion":
+			_animar_aparicion(delta)
+		"descanso":
+			if t_estado >= DESCANSO:
+				_cambiar("calma")
+
+
+func _cambiar(e: String) -> void:
+	estado = e
+	t_estado = 0.0
+	t_arena = 0.0
+
+
+# ================================================================= el aviso y el surco
+
+func _empezar_aviso(pos: Vector3) -> void:
+	_cambiar("aviso")
+	_rugio = false
+	# nace lejos, dentro de la zona, del lado contrario al camino (al este de Kael, o al norte si no cabe)
+	var dir := Vector3(1.0, 0.0, -0.35).normalized()
+	var origen := pos + dir * DISTANCIA_SALIDA
+	if not T.en_temblor(origen.x, origen.z):
+		origen = Vector3(clampf(origen.x, T.TEMBLOR.position.x + 1.0, T.TEMBLOR.end.x - 1.0), 0.0,
+			clampf(origen.z, T.TEMBLOR.position.y + 1.0, T.TEMBLOR.end.y - 1.0))
+		if Vector2(origen.x - pos.x, origen.z - pos.z).length() < 10.0:
+			origen = pos + Vector3(-dir.x, 0.0, dir.z) * 14.0
+	surco_pos = Vector3(origen.x, T.altura(origen.x, origen.z), origen.z)
+	_construir()
+	_lomo.visible = true
+	_polvo.emitting = true
+	_sacudida = 0.6
+	region._mostrar_aviso(TEXTO_AVISO, 2.8)
+	_sonar("gusano_temblor", surco_pos)
+
+
+func _avanzar_surco(delta: float, pos: Vector3) -> void:
+	if not arena_blanda(pos):
+		_irse(TEXTO_SE_VA)
+		return
+	var falta := Vector3(pos.x - surco_pos.x, 0.0, pos.z - surco_pos.z)
+	var d := falta.length()
+	if d <= ALCANCE:
+		_aparecer(pos)
+		return
+	surco_pos += falta / d * minf(VELOCIDAD * delta, d)
+	surco_pos.y = T.altura(surco_pos.x, surco_pos.z)
+	_lomo.global_position = surco_pos + Vector3(0, 0.15 + 0.12 * sin(t_estado * 9.0), 0)
+	_lomo.look_at(surco_pos + falta / d * 3.0 + Vector3(0, 0.15, 0), Vector3.UP)
+	_polvo.global_position = surco_pos
+	_sacudida = maxf(_sacudida, clampf(1.0 - d / DISTANCIA_SALIDA, 0.15, 0.7))
+	if not _rugio and d < DISTANCIA_SALIDA * 0.55:
+		_rugio = true
+		_sonar("gusano_rugido", surco_pos)
+
+
+func _irse(texto: String) -> void:
+	region._mostrar_aviso(texto, 2.2)
+	if _lomo != null:
+		var t := _lomo.create_tween()
+		t.tween_property(_lomo, "position:y", _lomo.position.y - 1.2, 0.8)
+		t.tween_callback(func(): _lomo.visible = false)
+	if _polvo != null:
+		_polvo.emitting = false
+	_cambiar("descanso")
+
+
+# ================================================================= la aparición
+
+func _aparecer(pos: Vector3) -> void:
+	_cambiar("aparicion")
+	apariciones += 1
+	region._parar_kael()
+	_lomo.visible = false
+	_polvo.emitting = false
+	var sitio := pos + Vector3(2.6, 0.0, -2.6)                  # al lado de Kael, entre él y la cámara no
+	sitio.y = T.altura(sitio.x, sitio.z)
+	_estallido.global_position = sitio
+	_estallido.restart()
+	_estallido.emitting = true
+	_cuerpo.global_position = sitio + Vector3(0, -7.0, 0)
+	_cuerpo.visible = true
+	_cuerpo.look_at(Vector3(pos.x, _cuerpo.global_position.y, pos.z), Vector3.UP)
+	_sacudida = 1.4
+	_sonar("gusano_rugido", sitio)
+	var t := _cuerpo.create_tween()
+	t.tween_property(_cuerpo, "global_position:y", sitio.y - 0.4, 0.9).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	t.tween_interval(1.1)
+	if vencido():
+		t.tween_callback(func(): region._mostrar_aviso(TEXTO_RESPETA, 2.6))
+		t.tween_property(_cuerpo, "global_position:y", sitio.y - 8.0, 1.2).set_trans(Tween.TRANS_SINE)
+		t.tween_callback(func():
+			_cuerpo.visible = false
+			_cambiar("descanso"))
+	else:
+		t.tween_callback(func(): region.encuentro(COMBATE, GRUPO_COMBATE, "jefe", "¡Bramavidrio!"))
+
+
+func _animar_aparicion(_delta: float) -> void:
+	if _cuerpo == null or not _cuerpo.visible:
+		return
+	for i in _cuerpo.get_child_count():                          # el cuerpo ondula: cada anillo a su ritmo
+		var n := _cuerpo.get_child(i)
+		if n is MeshInstance3D and n.has_meta("anillo"):
+			var k: int = n.get_meta("anillo")
+			n.position.x = sin(t_estado * 3.0 + k * 0.7) * 0.18 * k
+
+
+# ================================================================= piezas (se crean la primera vez que hacen falta)
+
+func _construir() -> void:
+	if _raiz != null:
+		return
+	_raiz = Node3D.new()
+	_raiz.name = "Bramavidrio"
+	region.add_child(_raiz)
+	var arena := StandardMaterial3D.new()
+	arena.albedo_color = Color(0.86, 0.66, 0.44)
+	arena.roughness = 1.0
+	_lomo = MeshInstance3D.new()                                # el bulto alargado de arena removida
+	var s := SphereMesh.new()
+	s.radius = 1.0
+	s.height = 1.0
+	s.radial_segments = 16
+	s.rings = 8
+	_lomo.mesh = s
+	_lomo.scale = Vector3(1.5, 0.55, 3.2)
+	_lomo.material_override = arena
+	_lomo.visible = false
+	_raiz.add_child(_lomo)
+	_polvo = _particulas(36, 1.1, Vector3(1.2, 0.2, 1.2), 2.5, 0.22)
+	_estallido = _particulas(90, 1.6, Vector3(2.5, 0.3, 2.5), 9.0, 0.4)
+	_estallido.one_shot = true
+	_estallido.explosiveness = 0.85
+	_cuerpo = _modelo_gusano()
+	_cuerpo.visible = false
+	_raiz.add_child(_cuerpo)
+
+
+func _particulas(n: int, vida: float, caja: Vector3, vel: float, tam: float) -> CPUParticles3D:
+	var p := CPUParticles3D.new()
+	p.amount = n
+	p.lifetime = vida
+	p.emitting = false
+	p.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
+	p.emission_box_extents = caja
+	p.direction = Vector3(0, 1, 0)
+	p.spread = 40.0
+	p.initial_velocity_min = vel * 0.5
+	p.initial_velocity_max = vel
+	p.gravity = Vector3(0, -6.0, 0)
+	p.scale_amount_min = 0.6
+	p.scale_amount_max = 1.6
+	var q := QuadMesh.new()
+	q.size = Vector2(tam, tam)
+	var m := StandardMaterial3D.new()
+	m.albedo_color = Color(0.92, 0.76, 0.52, 0.8)
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+	q.material = m
+	p.mesh = q
+	_raiz.add_child(p)
+	return p
+
+
+# El gusano provisional (hasta que gráficos haga su modelo, modelos/desierto/bramavidrio.glb): anillos gruesos de piel
+# parda con placas de vidrio en el lomo que brillan, y una boca de placas planas. Si existe el modelo, se usa el suyo.
+func _modelo_gusano() -> Node3D:
+	var n := Node3D.new()
+	var ruta := "res://modelos/desierto/bramavidrio.glb"
+	if ResourceLoader.exists(ruta):
+		n.add_child((load(ruta) as PackedScene).instantiate())
+		return n
+	var piel := StandardMaterial3D.new()
+	piel.albedo_color = Color(0.55, 0.40, 0.30)
+	piel.roughness = 0.85
+	var vidrio := StandardMaterial3D.new()
+	vidrio.albedo_color = Color(0.62, 0.92, 0.95, 0.9)
+	vidrio.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	vidrio.roughness = 0.1
+	vidrio.metallic_specular = 1.0
+	vidrio.emission_enabled = true
+	vidrio.emission = Color(0.35, 0.85, 0.95)
+	vidrio.emission_energy_multiplier = 0.9
+	for k in 6:                                                 # de la boca (arriba) hacia la arena
+		var anillo := MeshInstance3D.new()
+		var c := CylinderMesh.new()
+		c.top_radius = 1.25 - k * 0.04
+		c.bottom_radius = 1.35 - k * 0.04
+		c.height = 1.15
+		c.radial_segments = 14
+		anillo.mesh = c
+		anillo.material_override = piel
+		anillo.position = Vector3(0, 6.2 - k * 1.1, 0)
+		anillo.set_meta("anillo", k)
+		n.add_child(anillo)
+		for j in 3:                                             # placas de vidrio en el lomo
+			var placa := MeshInstance3D.new()
+			var b := BoxMesh.new()
+			b.size = Vector3(0.75, 0.55, 0.12)
+			placa.mesh = b
+			placa.material_override = vidrio
+			var a := -0.9 + j * 0.9
+			placa.position = Vector3(sin(a) * 1.3, 0.1, -cos(a) * 1.3)
+			placa.rotation = Vector3(deg_to_rad(-18), -a, 0)
+			anillo.add_child(placa)
+	var boca := Node3D.new()                                    # placas planas que muelen, en cruz
+	boca.position = Vector3(0, 6.85, 0)
+	n.add_child(boca)
+	for i in 4:
+		var labio := MeshInstance3D.new()
+		var b2 := BoxMesh.new()
+		b2.size = Vector3(1.0, 0.18, 0.7)
+		labio.mesh = b2
+		labio.material_override = piel
+		labio.rotation = Vector3(deg_to_rad(28), TAU * i / 4.0, 0)
+		labio.position = Vector3(sin(TAU * i / 4.0) * 0.55, 0.1, cos(TAU * i / 4.0) * 0.55)
+		boca.add_child(labio)
+	var luz := OmniLight3D.new()                                # el brillo de las placas al comer
+	luz.light_color = Color(0.45, 0.9, 1.0)
+	luz.light_energy = 1.2
+	luz.omni_range = 6.0
+	luz.position = Vector3(0, 5.0, -1.2)
+	n.add_child(luz)
+	return n
+
+
+# ================================================================= sonido y cámara
+
+func _sonar(clave: String, pos: Vector3) -> void:
+	if not Sonido.definicion(clave).is_empty():
+		Sonido.efecto(clave, {"pos": pos})
+
+
+# La cámara vibra con la arena: un desplazamiento pequeño que se apaga solo (la región la recoloca cada fotograma).
+func _sacudir(delta: float) -> void:
+	if _sacudida <= 0.0 or region.cam == null:
+		return
+	_sacudida = maxf(0.0, _sacudida - delta * 0.8)
+	var a := _sacudida * 0.12
+	region.cam.global_position += Vector3(randf_range(-a, a), randf_range(-a, a), randf_range(-a, a))

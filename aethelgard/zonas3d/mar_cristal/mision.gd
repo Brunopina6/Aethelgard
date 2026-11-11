@@ -132,7 +132,7 @@ func accion(region: Node, id: String) -> void:
 				region._mostrar_aviso(TEXTOS["restos_despues"] if hecho("mc_sello") else TEXTOS["caravana"], 2.4)
 		"trampilla":
 			if hecho("mc_llave") and not hecho("mc_superviviente"):
-				Sonido.efecto("trampilla_abrir") if Sonido.EFECTOS.has("trampilla_abrir") else null
+				Sonido.efecto("trampilla_abrir") if not Sonido.definicion("trampilla_abrir").is_empty() else null
 				if region.terreno != null and region.terreno.has_method("abrir_trampilla"):
 					region.terreno.abrir_trampilla()
 				if not region.dialogo(dialogo_mc("mc_ruinas_mural")):
@@ -234,7 +234,7 @@ func _premio(region: Node) -> void:
 	if aguja != "":
 		texto += " " + aguja
 	region._mostrar_aviso(texto, 3.4)
-	if Sonido.EFECTOS.has("recompensa"):
+	if not Sonido.definicion("recompensa").is_empty():
 		Sonido.efecto("recompensa")
 	if region.hud != null:
 		region.hud.refrescar()
@@ -318,7 +318,7 @@ func _abrir_cofre(region: Node) -> void:
 	Inv.ganar_oro(80)
 	Inv.agregar_objeto("Reliquia de vidrio", 1)
 	Inv.agregar_objeto("Éter", 1)
-	if Sonido.EFECTOS.has("cofre"):
+	if not Sonido.definicion("cofre").is_empty():
 		Sonido.efecto("cofre")
 	region._mostrar_aviso("Dentro: 80 monedas, una Reliquia de vidrio y un Éter.", 2.8)
 	if region.terreno != null and region.terreno.has_method("abrir_cofre"):

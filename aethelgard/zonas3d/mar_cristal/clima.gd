@@ -77,16 +77,20 @@ func construir() -> void:
 	region.add_child(arena)
 
 
+# Los dos vientos son la capa «ambiente» de musica.gd (contextos «mar_cristal» y «tormenta_arena», que se funden entre
+# sí; docs/memory/agents/sonido_v12_desierto.md §2). Al salir de la escena, musica.gd pone el contexto de la siguiente.
 func empezar_sonido() -> void:
-	if Sonido.EFECTOS.has("desierto_viento"):
-		_viento = Sonido.efecto("desierto_viento", {"en": region})
+	_pedir_ambiente("tormenta_arena" if objetivo > 0.0 else "mar_cristal")
 
 
 func parar_sonido() -> void:
-	if _sonido_tormenta and Sonido.EFECTOS.has("desierto_tormenta"):
-		Sonido.cortar("desierto_tormenta")
-	if Sonido.EFECTOS.has("desierto_viento"):
-		Sonido.cortar("desierto_viento")
+	_sonido_tormenta = false
+
+
+func _pedir_ambiente(contexto: String) -> void:
+	var m = region.get_node_or_null("/root/Musica")
+	if m != null and m.has_method("pedir"):
+		m.pedir(contexto)
 
 
 func viento() -> float:
@@ -114,16 +118,15 @@ func empezar_tormenta(es_narrativa: bool) -> void:
 	objetivo = 1.0
 	t_tormenta = 0.0
 	t_cobijo = 0.0
-	if Sonido.EFECTOS.has("desierto_tormenta"):
-		Sonido.efecto("desierto_tormenta", {"en": region})
-		_sonido_tormenta = true
+	_pedir_ambiente("tormenta_arena")
+	_sonido_tormenta = true
 
 
 func _amainar() -> void:
 	objetivo = 0.0
 	t_enfriar = ENFRIAR
-	if _sonido_tormenta and Sonido.EFECTOS.has("desierto_tormenta"):
-		Sonido.cortar("desierto_tormenta")
+	if _sonido_tormenta:
+		_pedir_ambiente("mar_cristal")
 		_sonido_tormenta = false
 	amaino.emit(narrativa)
 	narrativa = false

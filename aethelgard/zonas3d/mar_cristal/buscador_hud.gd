@@ -26,6 +26,7 @@ var panel: Control
 var marcas: Array = []
 var estado: Label
 var boton_excavar: Button
+var boton_mejorar: Button
 var activo := false
 var cavando := 0.0
 var intensidad := 0.0
@@ -87,6 +88,15 @@ func construir() -> void:
 	boton_excavar.visible = false
 	boton_excavar.pressed.connect(excavar)
 	capa.add_child(boton_excavar)
+	boton_mejorar = Button.new()                                 # las investigaciones de Kael (buscador.gd, MEJORAS)
+	boton_mejorar.text = "MEJORAR"
+	boton_mejorar.position = Vector2(40, 404)
+	boton_mejorar.custom_minimum_size = Vector2(200, 56)
+	boton_mejorar.add_theme_font_size_override("font_size", 22)
+	boton_mejorar.focus_mode = Control.FOCUS_NONE
+	boton_mejorar.visible = false
+	boton_mejorar.pressed.connect(mejorar)
+	capa.add_child(boton_mejorar)
 	_jugador = AudioStreamPlayer.new()
 	_jugador.bus = "Efectos" if AudioServer.get_bus_index("Efectos") >= 0 else "Master"
 	region.add_child(_jugador)
@@ -114,13 +124,14 @@ func refrescar() -> void:
 		activo = false
 	panel.visible = activo
 	boton.text = "GUARDAR" if activo else "BUSCADOR"
+	boton_mejorar.visible = activo and Buscador.nivel() < 3
 
 
 func alternar() -> void:
 	if not Buscador.tiene() or cavando > 0.0:
 		return
 	activo = not activo
-	Sonido.efecto("ui_tic") if Sonido.EFECTOS.has("ui_tic") else null
+	Sonido.efecto("ui_tic") if not Sonido.definicion("ui_tic").is_empty() else null
 	refrescar()
 
 
@@ -169,7 +180,7 @@ func actualizar(delta: float, pos: Vector3, estorbo: float) -> void:
 
 func _pitar() -> void:
 	var clave := "buscador_pitido_raro" if raro else "buscador_pitido"
-	if Sonido.EFECTOS.has(clave):
+	if not Sonido.definicion(clave).is_empty():
 		Sonido.efecto(clave)
 		return
 	_jugador.stream = _tono_raro if raro else _tono
@@ -196,7 +207,7 @@ func excavar() -> void:
 	cavando = EXCAVAR_SEG
 	boton_excavar.visible = false
 	region._parar_kael()
-	if Sonido.EFECTOS.has("excavar_arena"):
+	if not Sonido.definicion("excavar_arena").is_empty():
 		Sonido.efecto("excavar_arena")
 	var polvo := CPUParticles3D.new()                           # una nube corta de arena donde cava
 	polvo.one_shot = true
@@ -229,8 +240,24 @@ func _terminar_excavar() -> void:
 		region._mostrar_aviso("Solo arena.")
 		return
 	region._mostrar_aviso(r["texto"], 2.6)
-	if r.get("raro", false) and Sonido.EFECTOS.has("hallazgo"):
+	if r.get("raro", false) and not Sonido.definicion("hallazgo").is_empty():
 		Sonido.efecto("hallazgo")
 	region.mision.hallazgo(region, r)
 	region.guardar_posicion()
 	load("res://progreso.gd").guardar(region.scene_file_path)   # lo desenterrado no se pierde (ni se repite al recargar)
+
+
+# Kael afina el buscador con lo desenterrado (nivel 2: 2 Fragmentos de espada y 1 Mineral rúnico; nivel 3: 2 Reliquias
+# de vidrio y 5 Monedas antiguas). Sin materiales, dice lo que falta. Se guarda al subir.
+func mejorar() -> void:
+	if cavando > 0.0:
+		return
+	var antes := Buscador.nivel()
+	region._mostrar_aviso(Buscador.investigar(), 2.8)
+	if Buscador.nivel() > antes:
+		if not Sonido.definicion("hallazgo").is_empty():
+			Sonido.efecto("hallazgo")
+		refrescar()
+		if not region.en_banco():
+			region.guardar_posicion()
+			load("res://progreso.gd").guardar(region.scene_file_path)

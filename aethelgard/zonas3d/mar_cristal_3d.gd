@@ -69,8 +69,14 @@ func _ready() -> void:
 	hud = Hud.new(self, capa_ui)
 	hud.construir()
 	gusano = Gusano.new(self)
+	Mision.registrar_dialogic()
 	_crear_cartografa()
+	poner_oren(Progreso.hito("mc_superviviente"))
 	terreno.poner_ruinas(mision.ruinas_reveladas())
+	if Progreso.hito("mc_superviviente"):
+		terreno.abrir_trampilla()
+	Sonido.fuente_3d(self, "fogata_bucle", Vector3(T.FOGATA.x, 0.4, T.FOGATA.y))   # sonido_v12_desierto.md §2
+	Sonido.fuente_3d(self, "oasis_bucle", Vector3(T.OASIS.x, 0.2, T.OASIS.y))
 	var vuelve: bool = Engine.get_meta("pos_3d_ok", false) and Engine.get_meta("pos_3d_lugar", -1) == INDICE \
 		and Engine.get_meta("pos_3d", null) is Vector3
 	_colocar_kael(Engine.get_meta("pos_3d") if vuelve else T.ENTRADA)
@@ -397,6 +403,40 @@ func _crear_cartografa() -> void:
 	ala.material_override = terreno._liso(Color(0.80, 0.62, 0.38))
 	ala.position.y = 1.86
 	cartografa.add_child(ala)
+
+
+# Oren, de vuelta en el campamento junto a su hermana (desde mc_superviviente): sencillo, como ella, en otros colores.
+var oren: Node3D
+
+
+func poner_oren(si: bool) -> void:
+	if not si or oren != null:
+		return
+	oren = Node3D.new()
+	oren.name = "Oren"
+	var p := Vector2(T.CARTOGRAFA.x - 1.6, T.CARTOGRAFA.y + 0.4)
+	oren.position = Vector3(p.x, T.altura(p.x, p.y), p.y)
+	add_child(oren)
+	if terreno.poner_modelo("oren", Vector3.ZERO, 1.0, null, oren):
+		return
+	for parte in [[CapsuleMesh, 0.30, 1.45, 0.73, Color(0.62, 0.36, 0.22)], [SphereMesh, 0.19, 0.38, 1.58, Color(0.84, 0.64, 0.48)]]:
+		var mi := MeshInstance3D.new()
+		var m = parte[0].new()
+		m.radius = parte[1]
+		m.height = parte[2]
+		mi.mesh = m
+		mi.material_override = terreno._liso(parte[4])
+		mi.position.y = parte[3]
+		oren.add_child(mi)
+	var panuelo := MeshInstance3D.new()                        # el pañuelo rojo del toldo de su carro
+	var c := CylinderMesh.new()
+	c.top_radius = 0.2
+	c.bottom_radius = 0.24
+	c.height = 0.14
+	panuelo.mesh = c
+	panuelo.material_override = terreno._liso(Color(0.80, 0.24, 0.20))
+	panuelo.position.y = 1.72
+	oren.add_child(panuelo)
 
 
 # ================================================================= guardado y salida

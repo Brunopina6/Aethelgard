@@ -438,6 +438,36 @@ func poner_ruinas(reveladas: bool) -> void:
 		arco_ruinas.position.y = T.altura(T.RUINAS.x, T.RUINAS.y) - (0.0 if reveladas else 4.2)
 
 
+# Al amainar la tormenta de la misión, el arco sale de la arena poco a poco (y su polvo).
+func destapar_ruinas() -> void:
+	if arco_ruinas == null:
+		return
+	var t := arco_ruinas.create_tween()
+	t.tween_property(arco_ruinas, "position:y", T.altura(T.RUINAS.x, T.RUINAS.y), 2.5).set_trans(Tween.TRANS_SINE)
+
+
+# El espejismo se apaga y deja ver el cofre de verdad (mision.gd); al abrirlo, la tapa se ladea.
+func revelar_cofre() -> void:
+	if espejismo != null:
+		espejismo.get_child(0).visible = false
+	if cofre_espejismo != null:
+		cofre_espejismo.visible = true
+
+
+func abrir_cofre() -> void:
+	revelar_cofre()
+	if cofre_espejismo != null:
+		cofre_espejismo.rotation.x = deg_to_rad(-12.0)
+
+
+# La trampilla de las ruinas se abre al usar la Llave de vidrio: la losa se aparta a un lado.
+func abrir_trampilla() -> void:
+	if trampilla == null:
+		return
+	var t := trampilla.create_tween()
+	t.tween_property(trampilla, "position:x", trampilla.position.x + 1.8, 0.8).set_trans(Tween.TRANS_SINE)
+
+
 # Lo que se mueve con el viento: las telas y las copas, más con la tormenta. Barato: unas pocas rotaciones.
 func animar(t: float, viento: float) -> void:
 	for i in telas.size():
