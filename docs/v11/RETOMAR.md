@@ -26,6 +26,7 @@ memoria en GitHub y lee `SESSION_HANDOFF.md`.
 | C | Gremio de aventureros (tablón, contratos, rangos) | `142b72b` | `GREMIO.md` |
 | C | Primer proyecto de reconstrucción (braseros de la plaza) | `fbab55c` | `GREMIO.md` |
 | E | «Las parejas del Cuervo» (minijuego completo) | `5e9ea5c` | `MINIJUEGOS.md` |
+| D | Lógica del buscador de metales (sin región) | `986f56c` | `BUSCADOR_METALES.md` |
 | — | Propuesta de narrativa (nombres, Brumín Rizo, Mar de Cristal) | `be55874` | `HISTORIA.md` |
 
 ## Baterías
@@ -58,7 +59,7 @@ No edites archivos de esta copia mientras corre: la batería compara el estado d
 
 ## Siguiente paso
 
-1. **Hito D:** el primer sector del Mar de Cristal y el buscador de metales.
+1. **Hito D:** el primer sector del Mar de Cristal, para que el buscador de metales (ya con su lógica) se pueda usar.
    - Hay una propuesta del encargo arqueológico en `HISTORIA.md` §3.
    - Es lo más grande que queda: una región 3D nueva.
 2. **Hito E:** el Brumín Rizo (`HISTORIA.md` §2). Necesita su modelo (gráficos) y su encargo en Pastos Verdes.
