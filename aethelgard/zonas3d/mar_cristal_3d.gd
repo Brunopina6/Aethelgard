@@ -16,6 +16,7 @@ const Hud := preload("res://zonas3d/mar_cristal/buscador_hud.gd")
 const Gusano := preload("res://zonas3d/mar_cristal/gusano.gd")
 const Buscador := preload("res://buscador.gd")
 const Progreso := preload("res://progreso.gd")
+const NPC_DESIERTO := preload("res://personajes/desierto/npc_desierto_3d.gd")   # V12 (12/11): Ismena y Oren nuevos, APAGADO por defecto
 
 const INDICE := 4                          # lugar del mapa (mapa.gd: Mar de Arena de Calid; modo3d.MAR_CRISTAL)
 const NOMBRE := "mar_cristal"              # progreso.gd: mazmorras[...] y encuentros
@@ -429,6 +430,9 @@ func _crear_cartografa() -> void:
 	cartografa.name = "Cartografa"
 	cartografa.position = Vector3(T.CARTOGRAFA.x, T.altura(T.CARTOGRAFA.x, T.CARTOGRAFA.y), T.CARTOGRAFA.y)
 	add_child(cartografa)
+	if NPC_DESIERTO.activado():                    # V12 (12/11): el prototipo de Ismena (npc_desierto_v12)
+		cartografa.add_child(NPC_DESIERTO.crear("ismena"))
+		return
 	if terreno.poner_modelo("cartografa", Vector3.ZERO, 1.0, null, cartografa):
 		return
 	var cuerpo := MeshInstance3D.new()                         # sencilla: túnica, pañuelo y sombrero de ala ancha
@@ -472,6 +476,9 @@ func poner_oren(si: bool) -> void:
 	add_child(oren)
 	if terreno.sombras != null:
 		terreno.sombras.mancha(oren)
+	if NPC_DESIERTO.activado():                    # V12 (12/11): el prototipo de Oren (npc_desierto_v12)
+		oren.add_child(NPC_DESIERTO.crear("oren"))
+		return
 	if terreno.poner_modelo("oren", Vector3.ZERO, 1.0, null, oren):
 		return
 	for parte in [[CapsuleMesh, 0.30, 1.45, 0.73, Color(0.62, 0.36, 0.22)], [SphereMesh, 0.19, 0.38, 1.58, Color(0.84, 0.64, 0.48)]]:

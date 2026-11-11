@@ -33,7 +33,7 @@ var _tw_giro: Tween
 
 
 static func activado() -> bool:
-	return bool(Engine.get_meta("npc_desierto_v12", ACTIVO_POR_DEFECTO))
+	return bool(Engine.get_meta("npc_desierto_v12", ACTIVO_POR_DEFECTO)) or "npc_desierto_v12" in OS.get_cmdline_user_args()
 
 
 static func crear(nombre: String) -> Node3D:
