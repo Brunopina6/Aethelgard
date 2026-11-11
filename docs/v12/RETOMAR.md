@@ -69,7 +69,9 @@ Aprobados: **Ismena** (cartógrafa) y **Oren** (su hermano); **Bramavidrio**, el
 
 ## Siguiente (en este orden)
 
-1. APK de auditoría para el Redmi (solo con permiso del usuario) y medir FPS reales del Mar de Cristal en bajo.
+1. **Probado en el Redmi el 11/11 (v581, `42d79d9`): `docs/v12/INFORME_REDMI_V12.md`.** Arreglar sus problemas 1-5
+   (salida sin señal y borde del mundo, SEGUIR solapado con la acción, Bramavidrio en combate, tormenta con diálogo
+   abierto, bajo lavado en el teléfono) antes de seguir.
 2. Enemigos del desierto al azar: Vidracrán y Tolvanera (nombres de narrativa, sin aprobar).
 3. Ismena y Oren tienen figura provisional (cápsulas): pedir modelos a gráficos o animaciones.
 4. Bramavidrio: GLB de gráficos (el provisional sirve para probar).
