@@ -189,8 +189,48 @@ func _rocas() -> void:
 		var alto: float = r[3]
 		var id := "roca_canon_c" if alto < 4.0 else ("roca_canon_d" if alto < 6.0 else ("roca_canon_a" if i % 2 == 0 else "roca_canon_b"))
 		var esc := clampf(alto / ALTO_ROCA[id], 0.5, 1.6)
-		if poner_modelo(id, c + Vector3(0, -0.3, 0), esc, null, null, fposmod(r[0] * 1.7 + r[1] * 0.9, TAU)):
+		var giro := fposmod(r[0] * 1.7 + r[1] * 0.9, TAU)
+		if poner_modelo(id, c + Vector3(0, -0.3, 0), esc, null, null, giro):
 			m.visible = false
+			_deformar(raiz.get_child(raiz.get_child_count() - 1), r[2], alto, i)
+			if alto >= 4.0:                                     # un bloque caído a su pie, del lado del sol
+				var pie := c + Vector3(cos(giro) * r[2] * 0.9, -0.2, sin(giro) * r[2] * 0.9)
+				pie.y = T.altura(pie.x, pie.z) - 0.2
+				if poner_modelo("roca_canon_c", pie, clampf(r[2] / 5.0, 0.45, 0.9), null, null, giro + 1.3):
+					_deformar(raiz.get_child(raiz.get_child_count() - 1), r[2] * 0.4, 1.4, i + 7)
+	_paredes_canon()
+
+
+# Rompe la silueta de una roca de gráficos para que no parezca un cilindro: más ancha que alta si su radio lo pide,
+# estirada en un sentido, y algo inclinada. Siempre igual para la misma roca (sin azar).
+func _deformar(n: Node, radio: float, alto: float, semilla: int) -> void:
+	if not n is Node3D:
+		return
+	var nd := n as Node3D
+	var k := float(semilla)
+	var ancho := clampf(radio / maxf(alto * 0.6, 1.0), 0.8, 1.7)
+	nd.scale = Vector3(nd.scale.x * ancho * (1.0 + 0.18 * sin(k * 1.9)), nd.scale.y * (1.0 + 0.1 * cos(k * 2.3)),
+		nd.scale.z * ancho * (1.0 - 0.15 * sin(k * 1.9)))
+	nd.rotation.x = deg_to_rad(4.0 * sin(k * 3.1))
+	nd.rotation.z = deg_to_rad(4.0 * cos(k * 2.7))
+
+
+# Las paredes del cañón del oeste: paños de pared de gráficos (roca_canon_b, 12 m de norte a sur) fuera de lo que se
+# anda (x < 2), de z 16 a 84, con alturas que suben y bajan; solo con las piezas de gráficos.
+func _paredes_canon() -> void:
+	if _modelos == 0:
+		return
+	var z := 16.0
+	var k := 0
+	while z < 86.0:
+		var alto := 1.0 + 0.25 * sin(k * 1.7)
+		var p := Vector3(0.5 + 0.8 * sin(k * 2.1), 0.0, z)
+		p.y = T.altura(p.x, p.z) - 0.4
+		if poner_modelo("roca_canon_b", p, 1.0, null, null, deg_to_rad(5.0 * sin(k * 1.3))):
+			var n: Node3D = raiz.get_child(raiz.get_child_count() - 1)
+			n.scale = Vector3(1.2, alto, 1.0)
+		z += 11.0
+		k += 1
 
 
 # La roca saliente del cobijo: un pilar al oeste y un techo de roca a 3,4 m; debajo se puede estar.
