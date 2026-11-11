@@ -92,3 +92,55 @@ el alto, de 60. Memoria: PSS total de la app.
 - La misión seguida de principio a fin sin partidas editadas.
 - Temperatura y batería en sesiones largas.
 - Mando y teclado reales.
+
+# V12 · Segunda prueba en el Redmi: v597 (11/11, 18:40-19:30)
+
+**APK:** «REBELUM Auditoría», versionCode **597**, del commit **`a9317a3`**. Archivo
+`D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261111-a9317a3.apk`, 292,4 MB, SHA-256
+`5dee787dd7040bf2c1135d85459af49ec36344578f98900955c955a10c3fb75f`. Firma v2 y v3 con el mismo certificado que la v581.
+Lleva la fase 1, el Bramavidrio de Blender con sus tres ataques y la pantalla de inicio alternativa (desactivada por
+defecto).
+
+- **Batería en `a9317a3`:** 114 superadas · 0 fallidas · 47 manuales · 0 no seguras.
+- **Respaldo de la partida de Auditoría:** `D:\REBELUM_respaldos\2026-11-11_redmi_auditoria_antes_v597`, íntegro.
+- **Instalación:** `adb install -r` a la primera. Las otras apps no cambian (estable v1, Exp v365, Prueba 3D v24).
+- **Al acabar:** la partida, su `.bak` y los ajustes se restauraron idénticos al respaldo.
+
+## Rendimiento: v597 frente a v581
+
+| Medida | v581 | v597 |
+|---|---|---|
+| Mar de Cristal, bajo | 30,3 FPS · 745 MB | **30,4** · 745 MB |
+| Mar de Cristal, medio | 30,4 · 774 MB | **30,4** · 761 MB |
+| Mar de Cristal, alto | 23,3 (p95 50) · 865 MB | **23,6** (p95 50) · 908 MB |
+| Combate con Bramavidrio (medio) | 62,4 (foto 2D) | **56,7-57,9** (modelo 3D; p95 33 ms) · 814 MB |
+| Pantalla de inicio | original: 30,4 · 749 MB | alternativa: **35,9-36,8** (p95 33) · 791 MB |
+| Carga hasta «empezar» | 15,2-15,8 s | original 15,4-15,6 s · alternativa 14,1 s |
+
+- Ningún fotograma perdido en ninguna medida.
+- Sin errores de script y sin cierres inesperados: el búfer de cierres está vacío.
+- **El modelo 3D de Bramavidrio cuesta unos 5 FPS en el combate** (de 62 a 57); sigue muy por encima de 30.
+- **La pantalla alternativa cuesta unos 42 MB más**, sin pérdida de fluidez.
+
+## Comprobado en el teléfono
+
+| Prueba | Resultado |
+|---|---|
+| Salida señalada | **bien**: disco, «Mapa del mundo» y postes bien visibles; tocar el disco lleva al mapa |
+| Franja blanca del borde | **arreglada**: dunas lejanas al sur |
+| Bramavidrio en exploración | **bien**: aviso y aparición, combate obligatorio |
+| Combate con el modelo 3D | **bien**: ocupa media pantalla e impone; vida «PV 1150/1150» visible entera; HUIR dice «Bramavidrio cierra el paso»; la Embestida alcanza (Lya a 19/86); recibe daño (925/1150) |
+| Pantalla alternativa | **bien**: se ve como en el PC; accesos de pruebas en Auditoría; «Continuar» entra en la partida |
+
+## Sigue pendiente
+
+- **El perfil bajo del desierto sigue algo lavado y con bruma en el teléfono.** Con brillo 1,15 mejora poco frente a
+  la v581. Probar 1,0 con más contraste, o menos bruma en el bajo, y medirlo en el teléfono.
+- **La Fractura y el Aliento no se cazaron en el teléfono.** Con toques a ciegas no llegué a verlos; están comprobados en
+  el PC por `prueba_bramavidrio_combate` y sus capturas. Nadie ha escuchado el combate.
+- **Rendimiento de los ataques especiales** en el teléfono (sus partículas): sin medir.
+- **Bramavidrio:**
+  - el vientre de frente aún flojo;
+  - los héroes se dibujan sobre el gusano caído;
+  - sin sonidos propios de succión, chorro y caída.
+- **Pantalla alternativa:** sin escuchar; Créditos, todavía una pantalla provisional.
