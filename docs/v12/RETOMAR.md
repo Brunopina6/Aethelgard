@@ -193,3 +193,14 @@ negra).
 | B: rig común y clips de los héroes, materiales y retrato de Garon (apagado) | `D:\Aethelgard_v12_heroes` · `claude/v12-fase2-heroes` | `personajes/` (nuevos), sus pruebas |
 
 **Siguen en marcha:** Naira (historia y conceptos).
+
+**Avance de la fase 2 (madrugada del 12/11):**
+- **Naira:** propuesta NO canon integrada (`87a37c9`, `docs/v12/NAIRA.md`, con 10 decisiones para el usuario) y modelo PROVISIONAL del concepto A, sin enganchar (`4f9e93b`). Los conceptos A, B y C están en `D:\REBELUM_diagnostico\animaciones\2026-11-12\naira\conceptos\`.
+- **La Garganta 3D, por defecto** (`36a84c2`): Báculo del Peregrino, 4 notas y brazalete con `zonas3d/examinables_3d.gd`; la 2D sigue elegible y las partidas son compatibles en los dos sentidos.
+- **En marcha:**
+  - la magia negra (`D:\Aethelgard_v12_magia`, desde `c703625`; **dueño de `combate.gd`, `artes.gd`, `grupo.gd` e `investigacion.gd`**);
+  - los héroes (`D:\Aethelgard_v12_heroes`, desde `c703625`);
+  - Oakhaven 3D completo (`D:\Aethelgard_v12_oakhaven`, desde `36a84c2`).
+- **Después:**
+  - **C, los enemigos:** por región, y Vidracrán, Tolvanera y Cencerrante en los encuentros. Va después de la magia, porque toca `combate.gd`.
+  - **El grupo con reserva** (base para Naira): también después de la magia.
