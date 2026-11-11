@@ -422,6 +422,7 @@ const CUADROS_PASO := [1, 6]
 
 # Voz de cada enemigo: por su clave en combate.gd (ENEMIGOS) o, si no se sabe, por su dibujo (MODELOS).
 const FAMILIAS := {"slime": "limo", "grimfang": "goblin", "gorthor": "gorthor", "guardian": "piedra", "golem_ambar": "ambar",
+	"bramavidrio": "piedra",                       # V12: el gusano, con voz de piedra hasta tener la suya (herido y caída)
 	# las bestias del bestiario (tanda 4): su clave en combate.gd, con el nombre de la ficha o el corto
 	"zarzalin": "zarzalin", "cencerrante": "cencerrante", "velaria": "velaria", "custodio_cal": "custodio", "custodio": "custodio",
 	"hilandera_eco": "hilandera", "hilandera": "hilandera", "posadero_hueco": "posadero", "posadero": "posadero",
