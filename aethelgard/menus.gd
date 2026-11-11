@@ -18,6 +18,10 @@ const COLOR_BIEN := Estilo.CURA
 const PESTANAS := ["Grupo", "Objetos", "Habilidades", "Ajustes"]
 
 var pestana := "Grupo"
+# Solo la pestaña de Ajustes: la pantalla de inicio alternativa (portada/inicio_alternativo.gd) abre así sus Opciones,
+# porque allí aún no hay partida cargada. Por defecto, false: el menú de siempre.
+var solo_ajustes := false
+var pestanas: Array = PESTANAS
 var heroe := ""
 var Grupo
 var Inv
@@ -31,6 +35,9 @@ func _ready() -> void:
 	Grupo = load("res://grupo.gd")
 	Inv = load("res://inventario.gd")
 	heroe = Grupo.activos()[0]
+	if solo_ajustes:
+		pestanas = ["Ajustes"]
+		pestana = "Ajustes"
 	size = Vector2(1280, 720)
 	var oscuro := ColorRect.new()
 	oscuro.color = Color(Estilo.SOMBRA, 0.55)
@@ -47,7 +54,7 @@ func _ready() -> void:
 	var arriba := HBoxContainer.new()
 	arriba.add_theme_constant_override("separation", 10)
 	todo.add_child(arriba)
-	for p in PESTANAS:
+	for p in pestanas:
 		var b := _boton(p, 22, Vector2(170, 44), "pestana:" + p)
 		b.set_meta("nombre", p)
 		botones_pestana.append(b)
@@ -69,7 +76,7 @@ func _ready() -> void:
 	cuerpo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	marco.add_child(cuerpo)
 	_pintar()
-	Entrada.enfocar(botones_pestana[PESTANAS.find(pestana)])
+	Entrada.enfocar(botones_pestana[pestanas.find(pestana)])
 	Sonido.efecto("ui_abrir")                      # sonido.gd (T-083)
 
 
@@ -101,9 +108,9 @@ func _unhandled_input(ev: InputEvent) -> void:
 		_cerrar()
 	elif ev.is_action_pressed("pestana_anterior") or ev.is_action_pressed("pestana_siguiente"):
 		var paso := -1 if ev.is_action_pressed("pestana_anterior") else 1
-		var p: String = PESTANAS[posmod(PESTANAS.find(pestana) + paso, PESTANAS.size())]
+		var p: String = pestanas[posmod(pestanas.find(pestana) + paso, pestanas.size())]
 		_ir_a_pestana(p)
-		botones_pestana[PESTANAS.find(p)].grab_focus(not Entrada.con_foco())
+		botones_pestana[pestanas.find(p)].grab_focus(not Entrada.con_foco())
 	elif ev.is_action_pressed("ui_down") or ev.is_action_pressed("ui_up"):
 		marco.scroll_vertical += 80 if ev.is_action_pressed("ui_down") else -80
 	else:
@@ -121,7 +128,7 @@ func _pintar_de_nuevo() -> void:
 	_pintar()
 	var defecto := Entrada.primero(cuerpo)          # si ese botón ya no sirve (p. ej. sin puntos), el más cercano
 	if defecto == null:
-		defecto = botones_pestana[PESTANAS.find(pestana)]
+		defecto = botones_pestana[pestanas.find(pestana)]
 	Entrada.restaurar(self, clave, defecto)
 
 
@@ -499,6 +506,23 @@ func _pintar_ajustes() -> void:
 			fm3.add_child(bm)
 		cuerpo.add_child(fm3)
 		cuerpo.add_child(_texto("Se nota la próxima vez que se entra en el Mar de Arena.", 16, COLOR_SUAVE))
+		# La pantalla de inicio (11/11): la original o la alternativa, en pruebas (portada/eleccion.gd, [portada]).
+		var por = load("res://portada/eleccion.gd")
+		var alt: bool = por.elegida()
+		cuerpo.add_child(_texto("Pantalla de inicio", 26, COLOR_TITULO))
+		var fp := HBoxContainer.new()
+		fp.add_theme_constant_override("separation", 8)
+		for op in [[false, "Original"], [true, "Alternativa (en pruebas)"]]:
+			var es_alt: bool = op[0]
+			var bp := _boton(("● " if es_alt == alt else "○ ") + op[1], 18, Vector2(260, 34),
+				"portada:%s" % ("alternativa" if es_alt else "original"))
+			bp.pressed.connect(func():
+				por.elegir(es_alt)
+				Sonido.efecto("ui_tic")
+				_pintar_de_nuevo())
+			fp.add_child(bp)
+		cuerpo.add_child(fp)
+		cuerpo.add_child(_texto("Se nota la próxima vez que se abre el juego.", 16, COLOR_SUAVE))
 
 
 # Calidad de las regiones 3D (encargo del 09/11; prototipos/calidad_auto.gd, sección [calidad] de user://ajustes.cfg):

@@ -56,6 +56,14 @@ var reproductor: AudioStreamPlayer
 
 
 func _ready() -> void:
+	# Pantalla de inicio alternativa, EN PRUEBAS (11/11): solo si se eligió en Ajustes (versión experimental) o con
+	# «-- portada_alternativa» (portada/eleccion.gd). Ella hace esta misma carga (hereda de este guion). Sin elegirla,
+	# esta pantalla sigue exactamente igual.
+	if load("res://portada/eleccion.gd").usar_alternativa():
+		set_process(false)
+		set_process_input(false)
+		get_tree().change_scene_to_file.call_deferred(load("res://portada/eleccion.gd").ESCENA)
+		return
 	Engine.max_fps = 60
 	_crear_pantalla()
 	pendientes = Recursos.listar()
