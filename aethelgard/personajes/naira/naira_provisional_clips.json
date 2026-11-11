@@ -1,0 +1,54 @@
+{
+ "PROVISIONAL": true,
+ "nombre": "Naira (provisional), concepto A «La Viajera del Eclipse»",
+ "altura_m": 1.55,
+ "triangulos": 14090,
+ "huesos": 23,
+ "fps": 30,
+ "clips": {
+  "reposo": {
+   "duracion": 4.0,
+   "bucle": true
+  },
+  "caminar": {
+   "duracion": 1.0,
+   "bucle": true
+  },
+  "correr": {
+   "duracion": 0.6,
+   "bucle": true
+  },
+  "ataque": {
+   "duracion": 1.2,
+   "bucle": false,
+   "impacto": 0.4
+  },
+  "recibir_golpe": {
+   "duracion": 0.8,
+   "bucle": false,
+   "impacto": 0.1
+  },
+  "victoria": {
+   "duracion": 2.0,
+   "bucle": false
+  },
+  "derrota": {
+   "duracion": 1.6,
+   "bucle": false
+  },
+  "lanzar_hechizo": {
+   "duracion": 1.5,
+   "bucle": false,
+   "impacto": 0.867
+  },
+  "concentracion": {
+   "duracion": 2.0,
+   "bucle": true
+  },
+  "magia_poderosa": {
+   "duracion": 2.5,
+   "bucle": false,
+   "impacto": 1.7
+  }
+ }
+}
