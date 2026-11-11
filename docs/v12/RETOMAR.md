@@ -54,3 +54,21 @@ Punto seguro del 11/11 a mediodía, con la ventana de contexto casi llena. Antes
   8. **Investigación de Kael** para subir el buscador: nivel 2 con 2 Fragmentos de espada y 1 Mineral rúnico; nivel 3
      con 2 Reliquias de vidrio y 5 Monedas antiguas.
 - **Ninguna prueba Android de la V12:** no se ha compilado ninguna APK de la V12.
+
+## Narrativa, integrada (`b13bb11`)
+
+- **Personajes:** `ismena.dch` (la cartógrafa) y `oren.dch` (su hermano), en `aethelgard/dialogos/personajes/mar_cristal/`.
+- **Diálogos:** 19 timelines `mc_*` en `aethelgard/dialogos/mar_cristal/`, con variantes según el grupo (`_lya`,
+  `_solo`) y según el hito (`mc_cartografa_espera_*`).
+- **Señales:** `mc:buscador`, `mc:caravana`, `mc:superviviente` y `mc:fin`.
+- **Cuál lanzar en cada momento:** `docs/v12/NARRATIVA_DESIERTO.md`, §2.1 y §2.2, con los textos de la región y los
+  enemigos.
+- **Falta, por parte del coordinador:**
+  - registrar `ismena` y `oren` en Dialogic, como `registrar_dialogic()` de Oakhaven, o lanzar las timelines por su
+    ruta;
+  - comprobar que cargan.
+  `mar_cristal_3d.gd` (`dialogo()`) ya las lanza por su ruta completa.
+- **Nombres propuestos, sin canon:** Ismena, que sustituye a Marga de la V11; Oren; Vidracrán, el escorpión de vidrio;
+  Tolvanera, el espíritu de polvo; y Tragaluz, el gusano, con las alternativas «el Sordo» y «Bramavidrio».
+- **Preguntas para el usuario:** si valen Ismena y Oren, el nombre del gusano, si el mural puede leer «…de los
+  Espejismos», y qué reliquia es la recompensa.
