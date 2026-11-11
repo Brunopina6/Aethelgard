@@ -33,7 +33,11 @@ sonidos/erebo_ | 7 sonidos de Érebo | Origen sin registrar en docs/recursos.md
 musica_combate_normal | Música de combate | Origen sin registrar en docs/recursos.md
 vegetacion_prueba/ | Quaternius MegaKit (CC0) y EmacE Stylized Grass | EmacE prohíbe redistribuir sus archivos (el preset excluye la carpeta)
 emace | EmacE Stylized Grass | Prohíbe redistribuir sus archivos
-modelos/ | Árboles, arbustos y guardián de Meshy | Plan de Meshy sin confirmar (el preset excluye la carpeta)
+# V12 (11/11): «modelos/» se partió en lo que de verdad atrapaba. Fuera quedan modelos/desierto/ (Blender, propio:
+# fuente/crear_desierto.py) y modelos/hojas/ (generado por código), registrados en docs/recursos.md.
+modelos/guardian/ | Guardián de Meshy | Plan de Meshy sin confirmar
+modelos/arce/ | Árboles y arbustos de Meshy | Plan de Meshy sin confirmar (el preset excluye la carpeta)
+oakhaven/modelos/ | Modelos de Oakhaven 3D (antes cubiertos por «modelos/») | Origen sin revisar en esta lista: se conserva la marca
 musica/ | Canciones de Pastos Verdes (Suno) | Plan de Suno sin confirmar (aún no están en el proyecto)
 audio/musica/ | Canciones de Pastos Verdes (Suno) | Plan de Suno sin confirmar (aún no están en el proyecto)
 #
@@ -51,7 +55,13 @@ decorado/hierba_alta | Decorado 2D | Origen sin registrar (¿render de Meshy?)
 decorado/pino | Decorado 2D | Origen sin registrar (¿render de Meshy?)
 decorado/platanera | Decorado 2D | Origen sin registrar (¿render de Meshy?)
 assets/personajes/ | Dibujos 2D (Hollín, Kael, Nyx, Kael en el mapa, NPC y slime) | Origen sin registrar; el slime es de «Free RPG Sprites», sin licencia registrada
-assets/enemigos/ | Enemigos 2D | Origen sin registrar
+# V12 (11/11): «assets/enemigos/» se partió por recurso; enemigos/bramavidrio/ es un render propio (docs/recursos.md).
+assets/enemigos/guardian.png | Enemigos 2D | Origen sin registrar
+assets/enemigos/hollin_ | Enemigos 2D (Hollín) | Origen sin registrar
+assets/enemigos/guardian_bosque/ | Guardián del Bosque | Origen sin registrar en esta lista: se conserva la marca
+assets/enemigos/coloso_falla/ | Coloso de la Falla | Origen sin registrar en esta lista: se conserva la marca
+assets/enemigos/zarzalin/ | Zarzalín | Origen sin registrar en esta lista: se conserva la marca
+assets/enemigos/cencerrante/ | Cencerrante | Origen sin registrar en esta lista: se conserva la marca
 assets/dialogos/retratos/ | Retratos de los diálogos | Origen sin registrar
 assets/objetos/ | Poción, éter y portal | Origen sin registrar
 hollin_ | Dibujos 2D de Hollín | Origen sin registrar
