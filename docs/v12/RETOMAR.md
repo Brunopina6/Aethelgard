@@ -67,6 +67,29 @@ Aprobados: **Ismena** (cartógrafa) y **Oren** (su hermano); **Bramavidrio**, el
 - **Rendimiento en el PC** (1280×720, al empezar, no vale para el Redmi): Mar de Cristal bajo 31 llamadas y 79 k
   primitivas; medio 52 y 158 k; alto 91 y 176 k (las sombras doblan las primitivas).
 
+## Operación «Calidad y espectáculo» (encargo del 11/11, 14:30)
+
+- **Fase 1 hecha** (`040bd00`…`8e328d9`), los 8 problemas del Redmi (`docs/v12/INFORME_REDMI_V12.md`): salida señalada
+  (disco, «Mapa del mundo», postes) y se arma a 2,4 m; dunas lejanas sin choque (sin franja blanca); botón de acción
+  oculto 1 s tras un diálogo; Bramavidrio en combate con la barra visible, sin plato de arena y «Bramavidrio cierra el
+  paso» en HUIR (obligatorio; foto anterior en `bramavidrio_v1.png`); la tormenta no amaina con un diálogo abierto; el
+  bajo del desierto con brillo 1,15 (antes 1,3: lavado en el Redmi; **falta verlo en el teléfono**); rocas bajas junto
+  al cobijo; licencias registradas (`docs/recursos.md`, `docs/versiones/licencias_pendientes.txt`).
+  `prueba_mar_cristal` comprueba la salida, la arena lejana y la tormenta con el diálogo abierto.
+- **Especialistas lanzados a las 14:40** (ramas LOCALES, sin push ni merge):
+
+| Encargo | Especialista | Copia | Rama | Informe esperado |
+|---|---|---|---|---|
+| Bramavidrio definitivo: concepto, modelo, rig y 10 clips en Blender, LOD, `bramavidrio_3d.gd` y la aparición en exploración | animaciones | `D:\Aethelgard_v12_bramavidrio` | `claude/v12-bramavidrio` | `docs/memory/agents/animaciones_v12_bramavidrio.md` |
+| Pantalla principal alternativa (la original intacta; selector en Ajustes) | gráficos/interfaz | `D:\Aethelgard_v12_portada` | `claude/v12-portada` | `docs/memory/agents/graficos_v12_portada.md` |
+
+- **Después:** el especialista de combate hará los tres ataques (Embestida del Abismo, Fractura del Mar de Cristal y
+  Aliento del Desierto Eterno) en `claude/v12-bramavidrio`, sobre el modelo; luego se integra todo, batería, APK de
+  Auditoría y medida en el Redmi frente a la v581. Referencia de presencia del usuario (de terceros, solo inspiración):
+  `D:\REBELUM_diagnostico\v12\referencias\bramavidrio_presencia_referencia.webp`.
+- **Bramavidrio anterior recuperable:** el provisional de `gusano.gd` (`_modelo_gusano`) se usa si falta el GLB; la
+  foto anterior, `enemigos/bramavidrio/bramavidrio_v1.png`.
+
 ## Siguiente (en este orden)
 
 1. **Probado en el Redmi el 11/11 (v581, `42d79d9`): `docs/v12/INFORME_REDMI_V12.md`.** Arreglar sus problemas 1-5
