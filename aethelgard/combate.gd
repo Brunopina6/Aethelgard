@@ -239,6 +239,10 @@ const MODELOS := {
 	# Respaldo 2D: el guardián de piedra, grande (más alto que dos héroes) y teñido de gris cálido (la imagen es verdosa).
 	# Con GRUPOS[12] en y = 90, los pies caen a unos 470 px de pantalla y la cabeza a unos 75: su vida y sus estados
 	# (Piel de piedra, Expuesto…) se leen encima, dentro de la pantalla (capturas de pruebas/fotos_coloso.gd).
+	# V12: Bramavidrio (zonas3d/mar_cristal/gusano.gd). Foto del modelo provisional (pruebas/herramientas/foto_bramavidrio.gd)
+	# hasta que gráficos haga su GLB; los pies abajo en el centro, como los jefes de imagen.
+	"bramavidrio": {"tipo": "imagen", "imagen": "res://enemigos/bramavidrio/bramavidrio.png", "cadera": Vector2(160, 470),
+		"tam": 1.15, "barra_y": -250.0, "centro_y": 60.0},
 	"coloso_falla2d": {"tipo": "imagen", "imagen": "res://enemigos/guardian.png", "cadera": Vector2(160, 470), "tam": 1.45,
 		"barra_y": -197.0, "centro_y": 90.0, "tinte": Color(1.05, 0.86, 0.8)},
 }
@@ -269,6 +273,11 @@ const ENEMIGOS := {
 	# puede leer sus inscripciones. «modelo»: «coloso_falla» cuando llegue su GLB (hoy, el respaldo 2D).
 	"coloso_falla": {"nombre": "Coloso de la Falla", "modelo": "coloso_falla", "hp": 520, "atk": 21, "vel": 8.0,
 		"exp": 80, "oro": 120, "personalidad": "coloso", "fases": true, "titulo": true},
+	# V12: Bramavidrio, el gusano colosal del Mar de Cristal (zonas3d/mar_cristal/gusano.gd; nombre aprobado el 11/11). Se
+	# anuncia como Zarzalín (personalidad «embiste»): se hunde un turno y emerge bajo quien eligió (Defender lo reduce).
+	"bramavidrio": {"nombre": "Bramavidrio", "modelo": "bramavidrio", "hp": 380, "atk": 20, "vel": 9.0, "exp": 85, "oro": 110,
+		"personalidad": "embiste", "titulo": true,
+		"texto_aviso": "%s se hunde en la arena: ¡va a emerger bajo %s!", "texto_golpe": "¡%s emerge bajo %s!"},
 }
 const GRUPOS := [
 	[["grimfang", Vector2(230, 150)], ["grimfang", Vector2(410, 115)]],
@@ -286,6 +295,7 @@ const GRUPOS := [
 	[["zarzalin", Vector2(250, 120)]],                                      # 10: Zarzalín (Pastos Verdes)
 	[["guardian_bosque", Vector2(150, -120)]],                               # 11: Guardián del Bosque (Pastos Verdes, fase 3)
 	[["coloso_falla", Vector2(47, -256)]],                                    # 12: Coloso de la Falla (Garganta 3D, V9)
+	[["bramavidrio", Vector2(250, 60)]],                                    # 13: Bramavidrio (Mar de Cristal, V12)
 ]
 const GRUPOS_AL_AZAR := 5           # solo los primeros salen en encuentros aleatorios (con el grupo de tres)
 # Encuentros al azar según cuántos héroes hay ahora en el grupo (grupo.gd, activos). Kael solo no tiene cura ni a
@@ -332,6 +342,7 @@ const ANIM := {
 	"guardian_bosque": {"distancia": 170.0},       # fase 3: ataca desde su sitio (_anim_guardian)
 	"coloso_falla2d": {"distancia": 170.0},        # V9: el Coloso de la Falla (respaldo 2D)
 	"coloso_falla": {"distancia": 170.0},          # V9: su modelo 3D, desde su sitio como el Guardián (_anim_guardian)
+	"bramavidrio": {"distancia": 170.0},          # V12: Bramavidrio (imagen; zonas3d/mar_cristal/gusano.gd)
 }
 
 var heroes: Array = [
@@ -2081,7 +2092,7 @@ func _turno_zarzalin(f: Dictionary, vivos: Array, mult: float) -> void:
 			objetivo = _elegir_objetivo("agresivo", vivos)
 		objetivo = _cubre(objetivo)                  # Garon puede cubrir al que avisó (recibe él la embestida, a la mitad)
 		f.erase("objetivo_carga")
-		registro.text = "¡%s embiste a %s!" % [f["nombre"], objetivo["nombre"]]
+		registro.text = String(f.get("texto_golpe", "¡%s embiste a %s!")) % [f["nombre"], objetivo["nombre"]]
 		f["ataque_3d"] = "embestida_espinosa"
 		await _animar_golpe(f, objetivo, int(f["atk"] * ZARZALIN["mult_embestida"] * mult) + randi_range(-2, 3), "")
 		f.erase("ataque_3d")
@@ -2091,7 +2102,7 @@ func _turno_zarzalin(f: Dictionary, vivos: Array, mult: float) -> void:
 		f["cargando"] = true
 		_marcar_aviso(f, true)
 		f["objetivo_carga"] = objetivo
-		registro.text = "%s baja el hocico: ¡va a embestir a %s!" % [f["nombre"], objetivo["nombre"]]
+		registro.text = String(f.get("texto_aviso", "%s baja el hocico: ¡va a embestir a %s!")) % [f["nombre"], objetivo["nombre"]]
 		_numero_flotante(f, "⚠ ¡Embestida!", Color(1.0, 0.8, 0.2), 32)
 		_actualizar()
 		if p != null and p.has_method("avisar"):
