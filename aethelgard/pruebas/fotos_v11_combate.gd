@@ -77,5 +77,12 @@ func _probar() -> void:
 	c.heroes[1]["atb"] = 60.0
 	c._menu_magia(9)
 	await _foto("08_duo_filo_arcano")
+	c.actor = c.heroes[1]
+	c.menu.heroe_actual = c.heroes[1]
+	c.heroes[2]["atb"] = 60.0
+	c._menu_magia(9)
+	await _foto("09_duo_barrera_runica")
+	await c._barrera_runica()
+	await _foto("10_barrera_puesta")
 	print("FIN")
 	quit(0)

@@ -1881,6 +1881,9 @@ func _vigilar_carga(f: Dictionary, d: int) -> void:
 	if not f.get("cargando", false) or f["hp"] <= 0 or not PATRONES.has(f.get("personalidad", "")):
 		return
 	var plan: Dictionary = PATRONES[f["personalidad"]]
+	if golpe_ruptura:                                 # Quiebra (Kael + Garon): corta siempre
+		_interrumpir(f, "¡Quiebra!", "¡Kael y Garon rompen la carga de %s!" % f["nombre"])
+		return
 	if plan.get("encoge", false) and golpe_magico:
 		_interrumpir(f, "¡Guardia rota!", "¡La magia rompe la guardia de %s!" % f["nombre"])
 		return
@@ -2727,30 +2730,126 @@ func _menu_magia(nivel := 0) -> void:
 # Filo Arcano (Kael + Lya): Lya prende en fuego la espada de Kael. En el turno de Kael, si Lya está en pie, con 8 PM y
 # con la mitad de su ATB: Kael golpea con su ataque más el 60 % del Fuego de Lya, con las llamas de Embuir (quema) y
 # como golpe de magia (rompe la guardia del Slime y cuenta para interrumpir). Gasta 8 PM de Lya y su turno (su ATB
-# vuelve a cero). Garon + Lya y Kael + Garon, pendientes.
+# vuelve a cero).
+# Quiebra (Kael + Garon), en la pestaña DÚO de Kael: Garon en pie y con la mitad de su ATB; Kael paga 6 PM. Los dos
+# golpean a la vez (el ataque de Kael más el 80 % del de Garon). Es un golpe de ruptura: a un enemigo que prepara su
+# golpe (Grimfang, Slime o Gólem) se lo corta siempre, y le quita la guardia. Gasta el turno de Garon.
+# Barrera Rúnica (Lya + Garon), en la pestaña DÚO de Lya: Garon en pie y con la mitad de su ATB; Lya paga 10 PM.
+# Garon traza las runas y Lya las enciende: todo el grupo en pie recibe una coraza del 25 % de su vida máxima (la de
+# las artes: no se suma a otra mayor). Para el golpe anunciado a todos (el Pisotón del Gólem). Gasta el turno de Garon.
 const PESTANA_DUO := 9
 const FILO_ARCANO := {"coste": 8, "parte_magia": 0.6, "atb_min": 0.5}
+const QUIEBRA := {"coste": 6, "parte_garon": 0.8, "atb_min": 0.5}
+const BARRERA_RUNICA := {"coste": 10, "barrera": 0.25, "atb_min": 0.5}
+const C_RUNA := Color(1.0, 0.82, 0.45)
+var golpe_ruptura := false                       # lo pone Quiebra mientras resuelve su golpe (_vigilar_carga)
+
+
+func _heroe_de_grupo(nombre: String) -> Dictionary:
+	for h in heroes:
+		if h["nombre"] == nombre:
+			return h
+	return {}
+
+
+# Por qué un compañero no puede prestar su turno ahora ("" si puede). «paga» y «coste»: quién pone los PM.
+func _motivo_duo(socio: Dictionary, paga: Dictionary, coste: int, atb_min: float) -> String:
+	if socio["hp"] <= 0:
+		return "%s ha caído" % socio["nombre"]
+	if not MODO_PRUEBAS and paga["mp"] < coste:
+		return "%s necesita %d PM" % [paga["nombre"], coste]
+	if socio["atb"] < ATB_MAX * atb_min:
+		return "%s aún no está lista (%d %%)" % [socio["nombre"], roundi(socio["atb"] / ATB_MAX * 100.0)] \
+			if socio["nombre"] == "Lya" else "%s aún no está listo (%d %%)" % [socio["nombre"], roundi(socio["atb"] / ATB_MAX * 100.0)]
+	return ""
+
+
+func _fila_duo(texto: String, icono: String, accion: Callable, coste: int, quien_paga: String, motivo: String,
+		desc: String) -> Dictionary:
+	return {"texto": texto, "icono": icono, "accion": accion, "apagado": motivo != "", "motivo": motivo,
+		"derecha": "PM ∞" if MODO_PRUEBAS else ("%d PM %s" % [coste, quien_paga]).strip_edges(),
+		"desc": desc if motivo == "" else motivo}
 
 
 func _duos_de(quien: Dictionary) -> Array:
-	if quien.get("nombre", "") != "Kael":
-		return []
-	var lyas: Array = heroes.filter(func(h): return h["nombre"] == "Lya")
-	if lyas.is_empty():
-		return []
-	var lya: Dictionary = lyas[0]
-	var motivo := ""
-	if lya["hp"] <= 0:
-		motivo = "Lya ha caído"
-	elif not MODO_PRUEBAS and lya["mp"] < FILO_ARCANO["coste"]:
-		motivo = "Lya necesita %d PM" % FILO_ARCANO["coste"]
-	elif lya["atb"] < ATB_MAX * FILO_ARCANO["atb_min"]:
-		motivo = "Lya aún no está lista (%d %%)" % roundi(lya["atb"] / ATB_MAX * 100.0)
-	return [{"texto": "Filo Arcano", "icono": "Fuego", "accion": _elegir_filo_arcano,
-		"derecha": "PM ∞" if MODO_PRUEBAS else "%d PM Lya" % FILO_ARCANO["coste"], "apagado": motivo != "",
-		"motivo": motivo,
-		"desc": ("Kael y Lya: la espada en llamas. Golpe que quema, rompe guardias y corta golpes preparados. " +
-			"Gasta %d PM y el turno de Lya.") % FILO_ARCANO["coste"] if motivo == "" else motivo}]
+	var r: Array = []
+	var lya := _heroe_de_grupo("Lya")
+	var garon := _heroe_de_grupo("Garon")
+	match quien.get("nombre", ""):
+		"Kael":
+			if not lya.is_empty():
+				r.append(_fila_duo("Filo Arcano", "Fuego", _elegir_filo_arcano, FILO_ARCANO["coste"], "Lya",
+					_motivo_duo(lya, lya, FILO_ARCANO["coste"], FILO_ARCANO["atb_min"]),
+					("Kael y Lya: la espada en llamas. Golpe que quema, rompe guardias y corta golpes preparados. " +
+					"Gasta %d PM y el turno de Lya.") % FILO_ARCANO["coste"]))
+			if not garon.is_empty():
+				r.append(_fila_duo("Quiebra", "", _elegir_quiebra, QUIEBRA["coste"], "",
+					_motivo_duo(garon, quien, QUIEBRA["coste"], QUIEBRA["atb_min"]),
+					"Kael y Garon a la vez: un golpe de ruptura que corta siempre un golpe preparado y quita la guardia. " +
+					"Gasta %d PM de Kael y el turno de Garon." % QUIEBRA["coste"]))
+		"Lya":
+			if not garon.is_empty():
+				r.append(_fila_duo("Barrera Rúnica", "Cura", _barrera_runica, BARRERA_RUNICA["coste"], "",
+					_motivo_duo(garon, quien, BARRERA_RUNICA["coste"], BARRERA_RUNICA["atb_min"]),
+					"Garon traza las runas y Lya las enciende: una coraza para todo el grupo. " +
+					"Gasta %d PM de Lya y el turno de Garon." % BARRERA_RUNICA["coste"]))
+	return r
+
+
+# El compañero presta su turno: su ATB a cero y fuera de la cola.
+func _prestar_turno(socio: Dictionary) -> void:
+	socio["atb"] = 0.0
+	cola = cola.filter(func(x): return not is_same(x, socio))
+	_numero_flotante(socio, "¡Dúo!", Color(1.0, 0.85, 0.45), 30)
+
+
+func _elegir_quiebra() -> void:
+	_pedir_objetivo(enemigos.filter(func(e): return e["hp"] > 0), _quiebra, _menu_magia.bind(PESTANA_DUO),
+		"TOCA UN ENEMIGO")
+
+
+func _quiebra(obj: Dictionary) -> void:
+	_ocultar_menu()
+	estado = "accion"
+	var kael: Dictionary = actor
+	var garon := _heroe_de_grupo("Garon")
+	_gastar_pm(kael, QUIEBRA["coste"])
+	_prestar_turno(garon)
+	registro.text = "Kael y Garon: ¡Quiebra!"
+	_destello(_centro(garon), C_RUNA, 1.0)
+	Sonido.golpe(true)
+	_actualizar()
+	await get_tree().create_timer(0.3).timeout
+	var dano: int = maxi(1, int(kael["atk"] * kael.get("mult_fisico", 1.0))) + randi_range(-2, 3) \
+		+ int(_dano_fisico(garon) * QUIEBRA["parte_garon"])
+	golpe_ruptura = true
+	await _animar_golpe(kael, obj, dano, "")
+	golpe_ruptura = false
+	_temblor(8.0)
+	_terminar_turno()
+
+
+func _barrera_runica() -> void:
+	_ocultar_menu()
+	estado = "accion"
+	var lya: Dictionary = actor
+	var garon := _heroe_de_grupo("Garon")
+	_gastar_pm(lya, BARRERA_RUNICA["coste"])
+	_prestar_turno(garon)
+	registro.text = "Garon y Lya: ¡Barrera Rúnica!"
+	var pl = _p3d(lya)
+	if pl != null and pl.has_method("lanzar_magia"):
+		pl.lanzar_magia()
+	_sonar("guardia")
+	_actualizar()
+	await get_tree().create_timer(0.4).timeout
+	for h in heroes.filter(func(x): return x["hp"] > 0):
+		var b: int = Artes.poner_barrera(h, BARRERA_RUNICA["barrera"])
+		_sena_arte("escarcha", h, {"color": C_RUNA})
+		_numero_flotante(h, "Coraza %d" % b, C_RUNA, 28)
+	_actualizar()
+	await get_tree().create_timer(0.8).timeout
+	_terminar_turno()
 
 
 func _elegir_filo_arcano() -> void:
@@ -2762,13 +2861,11 @@ func _filo_arcano(obj: Dictionary) -> void:
 	_ocultar_menu()
 	estado = "accion"
 	var kael: Dictionary = actor
-	var lya: Dictionary = heroes.filter(func(h): return h["nombre"] == "Lya")[0]
+	var lya := _heroe_de_grupo("Lya")
 	if not MODO_PRUEBAS:
 		lya["mp"] -= FILO_ARCANO["coste"]
-	lya["atb"] = 0.0                                  # presta su turno
-	cola = cola.filter(func(x): return not is_same(x, lya))
+	_prestar_turno(lya)                               # presta su turno
 	registro.text = "Kael y Lya: ¡Filo Arcano!"
-	_numero_flotante(lya, "¡Dúo!", Color(1.0, 0.85, 0.45), 30)
 	var pl = _p3d(lya)
 	if pl != null and pl.has_method("lanzar_magia"):
 		pl.lanzar_magia()                              # su gesto de lanzar, sin esperar

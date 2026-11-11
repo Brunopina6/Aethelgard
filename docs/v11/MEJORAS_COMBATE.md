@@ -79,7 +79,21 @@ pantalla no ayuda a decidir (no dice qué le pasa a cada enemigo).
 - **Coste:** 8 PM de Lya y su turno (su ATB vuelve a cero). Así es una decisión: el golpe fuerte ahora, o dos turnos.
 - **Presentación:** el gesto de lanzar de Lya, un destello de fuego en Kael, el sonido de Embuir, «¡Dúo!» sobre Lya y
   el golpe con llamas.
-- Garon + Lya (barrera rúnica) y Kael + Garon (ruptura): pendientes.
+### Quiebra (Kael + Garon) y Barrera Rúnica (Lya + Garon)
+- **Quiebra**, en la pestaña DÚO de Kael:
+  - **requisitos:** Garon en pie y con la mitad de su ATB; Kael paga 6 PM;
+  - **efecto:** los dos golpean a la vez (el ataque de Kael más el 80 % del de Garon). Es un golpe de ruptura: a
+    Grimfang, al Slime o al Gólem que preparan su golpe **se lo corta siempre**, aunque tengan mucha vida, y les quita
+    la guardia;
+  - **coste:** 6 PM de Kael y el turno de Garon.
+- **Barrera Rúnica**, en la pestaña DÚO de Lya:
+  - **requisitos:** Garon en pie y con la mitad de su ATB; Lya paga 10 PM;
+  - **efecto:** todo el grupo en pie recibe una coraza del 25 % de su vida máxima (la misma coraza que las artes de
+    Escarcha, sin sumarse a otra mayor), con cristales de runas dorados;
+  - es la respuesta al golpe anunciado a todos, el Pisotón del Gólem;
+  - **coste:** 10 PM de Lya y el turno de Garon.
+- Si algo falta, la fila sale apagada y dice qué («Garon aún no está listo (20 %)»).
+- Commit de las dos: el que sigue a `fb2d91a` (ver `git log`).
 
 ## 3. Pruebas
 
@@ -89,7 +103,8 @@ pantalla no ayuda a decidir (no dice qué le pasa a cada enemigo).
   - el panel y el área;
   - la interrupción, la guardia rota y que los jefes no cambian;
   - la lista de invocación;
-  - Filo Arcano.
+  - Filo Arcano, Quiebra y Barrera Rúnica.
+- Batería completa en `fbab55c` (con el gremio): **106 superadas, 0 fallidas, 43 manuales y 0 no seguras**.
 - Siguen pasando `prueba_patrones_enemigos`, `prueba_zarzalin_combate`, `prueba_hud_combate` y `prueba_combate_huella`
   (con la referencia nueva).
 - `prueba_artes_combate`: con Lya en el grupo, Kael tiene una pestaña más, «DÚO». Es el único cambio en lo que espera,
@@ -97,7 +112,7 @@ pantalla no ayuda a decidir (no dice qué le pasa a cada enemigo).
 - Capturas en `D:\REBELUM_diagnostico\fase2\2026-11-11_v11_fotos_combate\fotos3`, con `pruebas/fotos_v11_combate.gd`:
   - el menú, el panel y un derrotado apagado;
   - el área y la invocación;
-  - el aviso, el golpe interrumpido y la pestaña DÚO.
+  - el aviso, el golpe interrumpido, la pestaña DÚO de Kael y de Lya, y la Barrera Rúnica puesta (carpeta `fotos4`).
 
 ## 4. Pendiente del combate (por orden)
 
@@ -105,8 +120,8 @@ pantalla no ayuda a decidir (no dice qué le pasa a cada enemigo).
    - que la lista se lea y se toque bien con el dedo;
    - si el 25 % es justo;
    - FPS con la lista abierta.
-2. **Técnicas combinadas:** Kael + Lya está hecha (Filo Arcano). Faltan Garon + Lya y Kael + Garon, y una animación
-   propia del golpe combinado.
+2. **Técnicas combinadas:** las tres están hechas (Filo Arcano, Quiebra y Barrera Rúnica). Falta una animación propia
+   del golpe combinado; hoy reutilizan el golpe, el gesto de lanzar y las señales de las artes.
 3. Enemigos con comportamientos nuevos (proteger a otro, invocar refuerzos, cambiar de resistencia). Sin hacer.
 4. Variedad de encuentros (élite, emboscada, proteger, objetivo especial). Sin hacer.
 5. Cámara e impactos de los golpes fuertes. Sin tocar en la V11: se conservan los de la V9 y la V10.

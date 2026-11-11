@@ -70,4 +70,4 @@ ventana). Nada se ha probado en el Redmi. Los nombres y los textos son **PROPUES
 - El tablón en Oakhaven 3D (hoy solo está en la 2D, que es la de siempre en el móvil).
 - Un maestro o maestra del gremio con diálogo, rutina y retrato.
 
-- Batería completa en `fbab55c`: **106 superadas, 0 fallidas, 43 manuales y 0 no seguras** (`D:\REBELUM_diagnostico\pruebas�6-11-11_014928`).
+- Batería completa en `fbab55c`: **106 superadas, 0 fallidas, 43 manuales y 0 no seguras** (carpeta `pruebas/2026-11-11_014928` de `D:\REBELUM_diagnostico`).

@@ -75,6 +75,7 @@ func _probar() -> void:
 	await _interrupcion()
 	await _invocaciones()
 	await _filo_arcano()
+	await _quiebra_y_barrera()
 	c.queue_free()
 	await _esperar(5)
 	for k in P.CLAVES + ["partida_lista", "grupo_combate", "tipo_combate", "zona"]:
@@ -237,15 +238,15 @@ func _filo_arcano() -> void:
 	lya["mp"] = 20
 	lya["atb"] = c.ATB_MAX * 0.3
 	var d: Array = c._duos_de(kael)
-	_ok(d.size() == 1 and d[0]["apagado"] and str(d[0]["motivo"]).contains("no está lista"),
+	_ok(d.size() == 2 and d[0]["texto"] == "Filo Arcano" and d[0]["apagado"] and str(d[0]["motivo"]).contains("no está lista"),
 		"5: con Lya al 30 %% de ATB, Filo Arcano no sale apagado con su motivo: %s" % str(d))
-	_ok(c._duos_de(lya).is_empty(), "5: Lya tiene la pestaña DÚO (es de Kael)")
+	_ok(c._duos_de(lya).map(func(x): return x["texto"]) == ["Barrera Rúnica"], "5: Lya no tiene solo Barrera Rúnica en DÚO: %s" % str(c._duos_de(lya).map(func(x): return x["texto"])))
 	lya["atb"] = c.ATB_MAX * 0.6
 	d = c._duos_de(kael)
-	_ok(d.size() == 1 and not d[0]["apagado"], "5: con Lya lista, Filo Arcano sale apagado: %s" % str(d))
+	_ok(d.size() == 2 and not d[0]["apagado"], "5: con Lya lista, Filo Arcano sale apagado: %s" % str(d))
 	c._menu_magia(c.PESTANA_DUO)
 	await _esperar(2)
-	_ok(c.estado == "magia" and c.menu.filas.size() == 1 and c.menu.filas[0]["item"]["texto"] == "Filo Arcano",
+	_ok(c.estado == "magia" and c.menu.filas.map(func(f): return f["item"]["texto"]) == ["Filo Arcano", "Quiebra"],
 		"5: la pestaña DÚO no lista Filo Arcano (%s)" % str(c.menu.filas.map(func(f): return f["item"].get("texto", ""))))
 	c._ocultar_menu()
 	# el golpe: al Slime encogido le rompe la guardia, gasta 8 PM y el turno de Lya
@@ -264,3 +265,46 @@ func _filo_arcano() -> void:
 	_ok(s["hp"] < 400, "5: Filo Arcano no hace daño")
 	_ok(not s.get("cargando", false) and s.get("aturdido", false), "5: Filo Arcano no rompe la guardia del Slime encogido")
 	_ok(not kael.has("filo_arcano") and not kael.has("embuir"), "5: Kael se queda con el fuego de Filo Arcano")
+
+
+func _quiebra_y_barrera() -> void:
+	var kael: Dictionary = c.heroes.filter(func(h): return h["nombre"] == "Kael")[0]
+	var lya: Dictionary = c.heroes.filter(func(h): return h["nombre"] == "Lya")[0]
+	var garon: Dictionary = c.heroes.filter(func(h): return h["nombre"] == "Garon")[0]
+	# Quiebra: Garon presta su turno; corta siempre el golpe preparado (aunque sea poco daño) y gasta 6 PM de Kael
+	c.actor = kael
+	kael["mp"] = 20
+	garon["atb"] = c.ATB_MAX * 0.2
+	var q: Dictionary = c._duos_de(kael).filter(func(x): return x["texto"] == "Quiebra")[0]
+	_ok(q["apagado"] and str(q["motivo"]).contains("Garon aún no está listo"), "6: Quiebra sin Garon listo no sale apagada: %s" % str(q))
+	garon["atb"] = c.ATB_MAX * 0.7
+	var g: Dictionary = c.enemigos[0]
+	g["personalidad"] = "agresivo"
+	g["hp_max"] = 5000
+	g["hp"] = 5000
+	g["cargando"] = true
+	g["carga_recibido"] = 0
+	c.cola.append(garon)
+	await c._quiebra(g)
+	await _esperar(5)
+	_ok(not g.get("cargando", false) and g.get("aturdido", false), "6: Quiebra no corta el golpe preparado de un enemigo con mucha vida")
+	_ok(kael["mp"] == 14 or c.MODO_PRUEBAS, "6: Quiebra no gasta 6 PM de Kael (%d)" % kael["mp"])
+	_ok(garon["atb"] < c.ATB_MAX * 0.2 and not c.cola.any(func(x): return is_same(x, garon)), "6: Garon no pierde su turno")
+	_ok(not c.golpe_ruptura, "6: la ruptura se queda puesta tras el golpe")
+	# Barrera Rúnica: coraza del 25 % a todo el grupo en pie; gasta 10 PM de Lya y el turno de Garon
+	c.actor = lya
+	lya["mp"] = 30
+	garon["atb"] = c.ATB_MAX * 0.6
+	for h in c.heroes:
+		h["barrera"] = 0
+	await c._barrera_runica()
+	await _esperar(5)
+	_ok(c.heroes.filter(func(h): return h["hp"] > 0).all(func(h): return int(h.get("barrera", 0)) == maxi(1, int(h["hp_max"] * 0.25))),
+		"6: Barrera Rúnica no da el 25 %% a todos: %s" % str(c.heroes.map(func(h): return [h["nombre"], h.get("barrera", 0), h["hp_max"]])))
+	_ok(lya["mp"] == 20 or c.MODO_PRUEBAS, "6: Barrera Rúnica no gasta 10 PM de Lya (%d)" % lya["mp"])
+	_ok(garon["atb"] < c.ATB_MAX * 0.2, "6: Barrera Rúnica no gasta el turno de Garon")
+	# la coraza para un golpe: el Pisotón a todos le quita a la coraza antes que a los PV
+	var k_pv: int = kael["hp"]
+	var b0: int = int(kael["barrera"])
+	c._quitar_pv(kael, 3)
+	_ok(kael["hp"] == k_pv and int(kael["barrera"]) == b0 - 3, "6: la coraza de la Barrera Rúnica no para el golpe")
