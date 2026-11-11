@@ -416,6 +416,9 @@ const PIEZAS := [
 	# V11, hito C: el tablón del Gremio de aventureros en la plaza (gremio.gd; lo abre ciudad_oakhaven.gd)
 	{"id": "oak_tablon_gremio", "nombre": "Tablón del gremio", "casilla": Vector2(37, 23), "accion": "Leer el tablón",
 		"si": "", "senal": "", "texto": "", "texto_sin": ""},
+	# V11, hito E: la mesa de juego del Patio del Cuervo (taberna_parejas.gd; lo abre ciudad_oakhaven.gd)
+	{"id": "oak_mesa_parejas", "nombre": "Mesa de juego", "casilla": Vector2(14.5, 30.5), "accion": "Jugar a las parejas",
+		"si": "", "senal": "", "texto": "", "texto_sin": ""},
 ]
 
 # ================================================================= notas del Diario (lista aparte: no cuentan para las

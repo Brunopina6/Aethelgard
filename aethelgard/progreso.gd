@@ -61,7 +61,7 @@ const CLAVES := ["grupo", "inventario", "cofres_abiertos", "prologo_visto", "lug
 	"pos_zona", "pos_zona_ok", "pos_zona_lugar", "lore_visto", "incienso", "escena_guardada",
 	"mazmorras", "combates_ganados", "decisiones", "pos_isla", "pos_isla_ok",
 	"hitos", "pos_3d", "pos_3d_ok", "pos_3d_lugar", "grupo_activo",
-	"investigaciones", "gremio", "encuentros_azar"]   # investigaciones: investigacion.gd (fase 2); gremio: gremio.gd y encuentros_azar: los élites (V11). Las
+	"investigaciones", "gremio", "encuentros_azar", "taberna"]   # investigaciones: investigacion.gd (fase 2); gremio: gremio.gd, encuentros_azar: los élites y taberna: ciudades/taberna_juegos.gd (V11). Las
 	# partidas antiguas no las traen
 const MAPA := "res://mapa.tscn"
 

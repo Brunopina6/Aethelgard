@@ -120,6 +120,24 @@ var dormir_pendiente := false             # «Dormir» en «¿Qué va a ser?»: 
 var servicio_pendiente := ""              # V10: forja, armaduras o botica, que se abre al acabar el diálogo de quien atiende
 var servicio_abierto: Node = null          # V10: el servicio abierto ahora (servicios.gd), o null
 var gremio_abierto: Node = null            # V11: el tablón del gremio abierto (gremio_menu.gd), o null
+var juego_abierto: Node = null             # V11: el juego de la taberna abierto (taberna_parejas.gd), o null
+
+
+# V11, hito E: «Las parejas del Cuervo» en la mesa del Patio del Cuervo. Mientras se juega, Kael no anda; al salir se
+# guarda (récord y premio) y se pinta el oro.
+func _abrir_juego() -> void:
+	if tienda_abierta:
+		return
+	tienda_abierta = true
+	tiene_destino = false
+	var m = load("res://taberna_parejas.gd").new()
+	juego_abierto = m
+	m.cerrado.connect(func():
+		tienda_abierta = false
+		juego_abierto = null
+		_poner_oro()
+		_guardar())
+	add_child(m)
 var obras: Dictionary = {}                 # V11: id de proyecto → los nodos que puso (no se ponen dos veces)
 
 
@@ -722,6 +740,8 @@ func _pieza_provisional(p: Dictionary) -> Node2D:
 			return _poner_objeto("oak_barril", c * T)
 		"oak_tablon_gremio":                          # V11: el tablón del gremio, con su dibujo de tablón
 			return _poner_objeto("oak_tablon", c * T)
+		"oak_mesa_parejas":                           # V11: la mesa de juego (el dibujo del atril, a falta de una mesa)
+			return _poner_objeto("oak_atril", c * T)
 		"oak_torre":
 			return _poner_objeto("oak_puerta", Vector2(c.x, _rect("torre").end.y) * T)
 		"oak_ronda_bajar":
@@ -1359,6 +1379,9 @@ func _usar_pieza(e: Array) -> void:
 	var p: Dictionary = e[1]
 	if p["id"] == "oak_tablon_gremio":                # V11: el tablón del gremio abre su ventana
 		_abrir_gremio()
+		return
+	if p["id"] == "oak_mesa_parejas":                 # V11: la mesa de juego de la taberna
+		_abrir_juego()
 		return
 	if not Oak.cumple(p["si"]):
 		_avisar(p["texto_sin"], "examinar", true)
