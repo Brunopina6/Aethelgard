@@ -63,6 +63,8 @@ extends Node
 # V9 (10/11): identidad sonora del Guardián del Bosque Olvidado («guardian_bosque_*» y su voz, familia «corteza») y el
 #   tratamiento de su combate (TRATAMIENTOS: la música con paso bajo y un bosque antiguo por debajo); el orbe del altar
 #   («orbe_vision», «orbe_cierra»). Dónde se piden: docs/audio/inventario_sonidos.md, sección V9.
+# V12 (11/11): el Mar de Cristal (EFECTOS_DESIERTO, en OGG): el viento en calma y la tormenta de arena (bucles del lugar),
+#   la fogata y el oasis (emisores 3D), el temblor y el rugido del gusano, la pala y los pitidos del buscador.
 
 const ARCHIVO := "user://ajustes.cfg"
 const BUSES := ["Musica", "Efectos", "Interfaz", "Ambiente"]
@@ -366,6 +368,36 @@ const EFECTOS := {
 	"hojas": {"a": "ambiente/hojas_", "n": 2, "bus": "Ambiente", "db": -16.0, "tono": 0.06, "p": 0, "max": 1, "espera": 3.0},
 	"gota": {"a": "ambiente/gota_", "n": 3, "bus": "Ambiente", "db": -16.0, "tono": 0.1, "p": 0, "max": 2, "espera": 0.5},
 	"gota_cueva": {"a": "ambiente/gota_cueva_", "n": 2, "bus": "Ambiente", "db": -14.0, "tono": 0.08, "p": 0, "max": 2, "espera": 0.5},
+}
+
+# V12 (11/11): el Mar de Cristal. Sus sonidos son OGG (audio/desierto/), así que van aparte de EFECTOS (cuyas comprobaciones
+# piden WAV en QOA: prueba_efectos) con el mismo formato y dos campos más: «dir» (carpeta) y «ext» (extensión). Volúmenes
+# sobre el derivado normalizado (medido el 11/11: el viento en calma, RMS −24; la tormenta, −19; la fogata, −32; el oasis,
+# −27); falta escucharlos. Procedencia y licencia: docs/memory/agents/sonido_v12_desierto.md.
+const DESIERTO := "res://audio/desierto/"
+const EFECTOS_DESIERTO := {
+	# ---- el lugar (bus Ambiente; «bucle»: un bucle del sitio, no un emisor). La tormenta, unos 9 dB por encima del viento
+	# en calma y con arena; se funden entre sí (quien lleve la región; ruta_de() da el archivo)
+	"desierto_viento": {"a": "viento", "dir": DESIERTO, "ext": ".ogg", "bus": "Ambiente", "db": -13.0, "bucle": true},
+	"desierto_tormenta": {"a": "tormenta", "dir": DESIERTO, "ext": ".ogg", "bus": "Ambiente", "db": -9.0, "bucle": true},
+	# ---- emisores 3D (bucles, con fuente_3d): la fogata del campamento (36, 92) y el agua y los juncos del oasis (74, 72)
+	"fogata_bucle": {"a": "fogata", "dir": DESIERTO, "ext": ".ogg", "bus": "Ambiente", "db": 2.0,
+		"tres_d": {"unidad": 3.0, "max": 24.0}},
+	"oasis_bucle": {"a": "oasis", "dir": DESIERTO, "ext": ".ogg", "bus": "Ambiente", "db": -4.0,
+		"tres_d": {"unidad": 7.0, "max": 32.0, "filtro": -8.0}},
+	# ---- el gusano (bus Efectos; con «pos», desde el surco): el aviso (temblor) y el rugido sordo bajo la arena. Prioridad 3:
+	# no los baja una victoria
+	"gusano_temblor": {"a": "gusano_temblor", "dir": DESIERTO, "ext": ".ogg", "db": -7.0, "tono": 0.05, "p": 3, "max": 1,
+		"espera": 1.5, "en_3d": {"unidad": 10.0, "max": 70.0, "filtro": -14.0}},
+	"gusano_rugido": {"a": "gusano_rugido", "dir": DESIERTO, "ext": ".ogg", "db": -6.0, "tono": 0.06, "p": 3, "max": 1,
+		"espera": 2.5, "en_3d": {"unidad": 12.0, "max": 90.0, "filtro": -18.0}},
+	# ---- el buscador y la pala (bus Efectos). Los pitidos, sin variar el tono (el ritmo dice la cercanía; el raro, más
+	# agudo y «de cristal»); dos a la vez como mucho para que los rápidos no se corten
+	"excavar_arena": {"a": "excavar_arena_", "n": 2, "dir": DESIERTO, "ext": ".ogg", "db": -6.0, "tono": 0.05, "p": 2,
+		"max": 1, "espera": 0.3},
+	"buscador_pitido": {"a": "buscador_pitido", "dir": DESIERTO, "ext": ".ogg", "db": -14.0, "p": 1, "max": 2, "espera": 0.05},
+	"buscador_pitido_raro": {"a": "buscador_pitido_raro", "dir": DESIERTO, "ext": ".ogg", "db": -14.0, "p": 1, "max": 2,
+		"espera": 0.05},
 }
 
 # Detalles de la naturaleza por contexto de Musica: cada cuánto (s, al azar entre los dos) y qué puede sonar.
@@ -837,6 +869,28 @@ static func archivos() -> PackedStringArray:
 			if not ruta in r:
 				r.append(ruta)
 	return r
+
+
+# V12: la definición de un efecto, de EFECTOS o, si no está ahí, de EFECTOS_DESIERTO ({} si no existe).
+static func definicion(nombre: String) -> Dictionary:
+	if EFECTOS.has(nombre):
+		return EFECTOS[nombre]
+	return EFECTOS_DESIERTO.get(nombre, {})
+
+
+# V12: el archivo de un efecto del catálogo (variante i, de 0 a n − 1; −1 si no tiene variantes), con su «dir» y su «ext»
+# (OGG del desierto) o, si no los dice, en audio/efectos/ y en WAV, como siempre.
+static func ruta_archivo(d: Dictionary, i := -1) -> String:
+	return String(d.get("dir", EF)) + String(d.get("a", "")) + (str(i + 1) if i >= 0 else "") + String(d.get("ext", ".wav"))
+
+
+# V12: el archivo de un efecto por su nombre (la primera variante si tiene varias); "" si no existe o es de código. Para
+# poner los bucles del lugar con Musica u otro reproductor: Sonido.ruta_de("desierto_tormenta").
+static func ruta_de(nombre: String) -> String:
+	var d := definicion(nombre)
+	if d.is_empty() or d.has("codigo"):
+		return ""
+	return ruta_archivo(d, 0 if d.has("n") else -1)
 
 
 func _descartar(nombre: String, motivo: String) -> Node:
