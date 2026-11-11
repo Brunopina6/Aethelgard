@@ -204,3 +204,10 @@ negra).
 - **Después:**
   - **C, los enemigos:** por región, y Vidracrán, Tolvanera y Cencerrante en los encuentros. Va después de la magia, porque toca `combate.gd`.
   - **El grupo con reserva** (base para Naira): también después de la magia.
+- **Héroes v2 integrados APAGADOS** (`92a511d`). Para encenderlos faltan:
+  - `combate.gd:1325` y `:4208` (`HeroesV2.script_de(...)`), después de la magia;
+  - `vista3d.gd:48` y `grupo_3d.gd:157`, después de Oakhaven;
+  - enganchar `garon.dch` a los retratos nuevos;
+  - pulir la victoria de Kael (en la v2 la espada queda detrás de la cabeza).
+- **En marcha también:** C, los modelos propios del Guardián de piedra, el Gólem de ámbar y Gorthor
+  (`D:\Aethelgard_v12_enemigos`, desde `92a511d`; sin tocar `combate.gd`).
