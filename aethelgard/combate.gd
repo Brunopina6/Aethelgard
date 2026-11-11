@@ -255,7 +255,11 @@ const MODELOS := {
 		"tipo": "3d", "esc": 1.07, "script": "res://enemigos/bramavidrio/bramavidrio_3d.gd",
 		"gestos": "res://gestos_3d.gd", "rutas": ["res://enemigos/bramavidrio/bramavidrio.glb"],
 		"vp": Vector2i(1920, 1000), "alto_vista": 5.1, "centro_y": 1.45, "pies_como": 0.0, "barra_y": 498.0, "centro_3d": 1.9,
-		"centro_3d_v": Vector3(1.15, 1.92, 0.86), "pos_golpe": Vector2(200, 50), "respaldo": "bramavidrio2d"},
+		"centro_3d_v": Vector3(1.15, 1.92, 0.86), "pos_golpe": Vector2(200, 50), "respaldo": "bramavidrio2d",
+		# V12, Bramavidrio v2: dónde se plantan Garon y Lya para golpearle (sus pies en la escena: en pantalla, Garon en
+		# (495, 600), a la derecha de su hocico; Lya en (450, 650), delante de Garon y bajo su cabeza, sin pisarle), no
+		# dentro de su mandíbula. Kael salta (_anim_salto_3d) y ya cae a su derecha.
+		"pies_golpe": {"Garon": Vector2(444, 634), "Lya": Vector2(383, 701)}},
 	# La foto del modelo provisional (pruebas/herramientas/foto_bramavidrio.gd): los pies abajo en el centro, como los
 	# jefes de imagen.
 	"bramavidrio2d": {"tipo": "imagen", "imagen": "res://enemigos/bramavidrio/bramavidrio.png", "cadera": Vector2(160, 470),
@@ -313,7 +317,9 @@ const GRUPOS := [
 	[["zarzalin", Vector2(250, 120)]],                                      # 10: Zarzalín (Pastos Verdes)
 	[["guardian_bosque", Vector2(150, -120)]],                               # 11: Guardián del Bosque (Pastos Verdes, fase 3)
 	[["coloso_falla", Vector2(47, -256)]],                                    # 12: Coloso de la Falla (Garganta 3D, V9)
-	[["bramavidrio", Vector2(288, 600)]],                                   # 13: Bramavidrio (Mar de Cristal, V12; el agujero en (186, 575) de pantalla)
+	# 13: Bramavidrio (Mar de Cristal, V12). V12, Bramavidrio v2: 100 px de pantalla más a la izquierda que antes (288 →
+	# 108; el agujero en (86, 575)): en reposo su cabeza ya no tapa a Kael ni a Garon (Redmi, v610)
+	[["bramavidrio", Vector2(108, 600)]],
 ]
 const GRUPOS_AL_AZAR := 5           # solo los primeros salen en encuentros aleatorios (con el grupo de tres)
 # Encuentros al azar según cuántos héroes hay ahora en el grupo (grupo.gd, activos). Kael solo no tiene cura ni a
@@ -1120,6 +1126,8 @@ func _crear_rig(f: Dictionary) -> void:
 			f["pos"] += mover
 		if m.has("pos_golpe"):                     # V12: dónde se le ataca (_pos_ataque)
 			f["pos_golpe"] = m["pos_golpe"]
+		if m.has("pies_golpe"):                    # V12, Bramavidrio v2: un sitio propio para cada héroe (_sitio_golpe)
+			f["pies_golpe"] = m["pies_golpe"]
 		return
 	if m.get("tipo", "") == "imagen":
 		_crear_rig_imagen(f, m, raiz, base, esc)
@@ -1365,6 +1373,16 @@ func _p3d(f: Dictionary):
 # origen está fuera de la pantalla), un punto delante de su boca, en las medidas de la escena.
 func _pos_ataque(obj: Dictionary) -> Vector2:
 	return obj.get("pos_golpe", obj["pos"])
+
+
+# V12, Bramavidrio v2: dónde se planta «o» para golpear cuerpo a cuerpo a «obj» si el modelo de «obj» le da un sitio
+# propio («pies_golpe»: nombre del héroe → sus pies en la escena; Redmi, v610: Garon y Lya quedaban dentro de su
+# mandíbula). Es la posición de su rig; null si no tiene (y entonces, como siempre).
+func _sitio_golpe(o: Dictionary, obj: Dictionary):
+	var de: Dictionary = obj.get("pies_golpe", {})
+	if not de.has(o.get("nombre", "")) or not o.has("rig_base"):
+		return null
+	return o["rig_base"] + (de[o["nombre"]] - _suelo_de(o))
 
 
 # Enemigo de una sola imagen (foto de un modelo 3D). El cuerpo gira y respira desde los pies.
@@ -4421,6 +4439,10 @@ func _anim_fisico_3d(o: Dictionary, obj: Dictionary, impacto: Callable) -> void:
 	var base: Vector2 = o["rig_base"]
 	var dx: float = _pos_ataque(obj).x - o["pos"].x + ANIM[o["modelo"]]["distancia"]
 	var dy: float = (_pos_ataque(obj).y - o["pos"].y) * 0.8
+	var sitio = _sitio_golpe(o, obj)                 # V12, Bramavidrio v2: su sitio propio para este héroe
+	if sitio != null:
+		dx = sitio.x - base.x
+		dy = sitio.y - base.y
 	o["animando"] = true
 	rig.z_index = 5
 	maga.mirar(Vector3(-1, 0, 0.1), 0.15)
@@ -4497,6 +4519,9 @@ func _anim_ataque_3d(o: Dictionary, obj: Dictionary, impacto: Callable, metodo: 
 	var destino := base + Vector2(_centro(obj).x + hueco * lado - _centro(o).x, (_pos_ataque(obj).y - o["pos"].y) * 0.8)
 	if obj.has("centro_ofs") and o.has("centro_ofs"):  # los dos 3D: los pies a la misma altura
 		destino.y = base.y + (_suelo_de(obj).y - _suelo_de(o).y)
+	var sitio = _sitio_golpe(o, obj)                 # V12, Bramavidrio v2: su sitio propio para este héroe
+	if sitio != null:
+		destino = sitio
 	var ida := Vector3(-1 * lado, 0, 0.1)
 	o["animando"] = true
 	rig.z_index = 5

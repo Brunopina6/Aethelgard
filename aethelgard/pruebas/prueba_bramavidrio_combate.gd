@@ -21,6 +21,13 @@ extends SceneTree
 #   F. Combate real con ataques automáticos (los tres a nivel 10): termina sin bloquearse (se apunta quién gana). Ganar
 #      así no prueba la estrategia de un jugador.
 #   G. Detalles: el tambaleo quita TAMBALEO a quien no defiende y nada a quien defiende o ya espera turno; lo que se lee.
+#   V12, Bramavidrio v2 (11/11, efectos de los ataques): en cada turno, que se crean los efectos de ese ataque
+#     (Embestida: anticipación, destello, estela y golpe de arena; Fractura: sombra, grietas, placas, nube a ras de suelo,
+#     placas que se asientan y se acaban; Aliento: succión con los héroes inclinados mientras aspira, y el chorro que
+#     barre y alcanza a cada héroe en pie); que mientras ataca se dibuja delante de algún héroe y al acabar vuelve a su
+#     sitio, detrás de todos; que al morir se vuelve (DIR_DERROTA) y cae detrás de los héroes; que al acabar cada combate
+#     no queda ningún efecto suyo en la escena, los dibujos de los héroes vuelven a su sitio y no crecen los nodos
+#     huérfanos. Sirve con las dos versiones del modelo («-- bramavidrio_version=1» para la v1).
 # Con «medir» solo se mide el equilibrio (varias semillas, 2 y 3 héroes, jugador y automático) y se imprime.
 # Con «fotos=<carpeta>» (y ventana) saca capturas de cada ataque en su momento clave.
 
@@ -42,6 +49,9 @@ var sonidos: Array = []                 # [nombre, fotograma] que pide combate.g
 var impactos: Array = []                # [ataque, fotograma] (señal impacto del modelo)
 var avisos: Array = []
 var medir := false
+var huerfanos0 := -1                    # nodos huérfanos antes del primer combate (Performance)
+var frente_visto := {}                  # ataque → se dibujó delante de algún héroe (V12, Bramavidrio v2)
+var tiro_visto := false                 # los héroes se inclinaron mientras aspiraba
 
 
 func _initialize() -> void:
@@ -109,13 +119,37 @@ func _combate(activos: Dictionary, semilla: int, ganados := {}) -> void:
 
 func _cerrar() -> void:
 	if c != null:
+		await _sin_efectos()
 		c.queue_free()
 		c = null
 	await _esperar(5)
+	var h: int = int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT))
+	if huerfanos0 < 0:
+		huerfanos0 = h
+	_ok(h <= huerfanos0, "al cerrar el combate hay %d nodos huérfanos (antes %d)" % [h, huerfanos0])
+
+
+# V12, Bramavidrio v2: al acabar un combate, sus efectos se borran solos (se espera a que acaben los que duran más) y
+# los dibujos de los héroes vuelven a su sitio.
+func _sin_efectos() -> void:
+	if c.brama == null:
+		return
+	for i in 240:
+		if c.brama.efectos_vivos().is_empty():
+			break
+		await process_frame
+	_ok(c.brama.efectos_vivos().is_empty(), "quedan efectos de Bramavidrio en la escena: %s" % str(c.brama.efectos_vivos()))
+	_ok(c.brama.chorro == null or not is_instance_valid(c.brama.chorro), "el chorro sigue en la escena")
+	_ok(not c.brama._tirando, "los héroes siguen inclinados hacia él")
+	for h in c.heroes:
+		if h.has("cuerpo_pos0") and h["hp"] > 0:
+			_ok(h["cuerpo"].position.distance_to(h["cuerpo_pos0"]) < 0.5,
+				"el dibujo de %s no vuelve a su sitio (%s, debía %s)" % [h["nombre"], h["cuerpo"].position, h["cuerpo_pos0"]])
 
 
 func _probar() -> void:
 	await _esperar(10)
+	huerfanos0 = int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT))
 	if medir:
 		await _medir()
 	else:
@@ -161,6 +195,7 @@ func _jugar(estrategia: String, op := {}) -> Dictionary:
 		if c.estado == "enemigo" and not turno:            # (su turno empieza en el _process del combate: se compara
 			turno = true                                   # con cómo estaba el fotograma anterior)
 			ant = previo
+			frente_visto.clear()
 		elif c.estado != "enemigo" and turno:
 			turno = false
 			var que := _que_hizo(ant)
@@ -169,6 +204,12 @@ func _jugar(estrategia: String, op := {}) -> Dictionary:
 				_comprobar_turno(que, ant, r)
 			if tras_corte >= 0:
 				tras_corte += 1
+		if turno and c.brama != null and c.brama._frente:  # V12, Bramavidrio v2: delante de algún héroe al atacar
+			var i_gusano: int = z["rig"].get_index()
+			if c.heroes.any(func(h): return h["rig"].get_index() < i_gusano):
+				frente_visto["si"] = true
+		if c.brama != null and c.brama._tirando:
+			tiro_visto = true
 		if fotos != "":                                    # capturas: la anticipación de la embestida, un héroe que
 			_fotos_bucle()                                 # le ataca y el Aliento cortado
 		if c.estado != "enemigo":
@@ -237,7 +278,8 @@ func _foto_estado() -> Dictionary:
 		"recupera": z.get("recupera", false), "cont": c.brama.contador.duplicate() if c.brama != null else {},
 		"sonidos": sonidos.size(), "impactos": impactos.size(), "avisos": avisos.size(), "f": Engine.get_process_frames(),
 		"turnos_heroe": c.turnos_heroe, "aviso_turnos": int(z.get("aviso_turnos", -1)), "furia": z.get("furia", false),
-		"atk": z["atk"], "carga": int(z.get("carga_recibido", 0)), "umbral": B.umbral_de(z)}
+		"atk": z["atk"], "carga": int(z.get("carga_recibido", 0)), "umbral": B.umbral_de(z),
+		"creados": c.brama.creados.duplicate() if c.brama != null else {}}
 
 
 func _que_hizo(ant: Dictionary) -> String:
@@ -260,6 +302,37 @@ func _comprobar_turno(que: String, ant: Dictionary, r: Dictionary) -> void:
 	var nuevos_son: Array = sonidos.slice(ant["sonidos"])
 	var cuenta := func(n: String) -> Array: return nuevos_son.filter(func(s): return s[0] == n)
 	var mult := 1.5 if ant["furia"] else 1.0
+	# V12, Bramavidrio v2: los efectos de este turno (combate_bramavidrio.gd, «creados» y «contador»)
+	var creados: Dictionary = c.brama.creados
+	var hechos_fx := func(clase: String) -> int: return int(creados.get(clase, 0)) - int(ant["creados"].get(clase, 0))
+	var veces := func(k: String) -> int: return int(c.brama.contador.get(k, 0)) - int(ant["cont"].get(k, 0))
+	var i_gusano: int = z["rig"].get_index()
+	_ok(not c.brama._frente and c.heroes.all(func(h): return h["rig"].get_index() > i_gusano) or z["hp"] <= 0,
+		"%s: al acabar su turno no vuelve detrás de los héroes" % que)
+	match que:
+		"embestida":
+			if zp != null:
+				for k in ["anticipacion", "fija", "estela", "golpe_embestida"]:
+					_ok(hechos_fx.call(k) == 1, "embestida: el efecto «%s» sale %d veces" % [k, hechos_fx.call(k)])
+				_ok(frente_visto.has("si"), "embestida: no se dibuja delante de ningún héroe al lanzarse")
+				_ok(z["rig"].position.distance_to(z["rig_base"]) < 1.0, "embestida: su dibujo no vuelve a su agujero (%s, debía %s)" % [z["rig"].position, z["rig_base"]])
+		"fractura":
+			if zp != null:
+				for k in ["sombra_caida", "grietas", "nube_suelo"]:
+					_ok(hechos_fx.call(k) == 1, "fractura: el efecto «%s» sale %d veces" % [k, hechos_fx.call(k)])
+				_ok(hechos_fx.call("placa") == (4 if c.movil else 7), "fractura: %d placas" % hechos_fx.call("placa"))
+				for k in ["placas_suelo", "placas_asientan", "placas_fin"]:
+					_ok(veces.call(k) == 1, "fractura: «%s» sale %d veces" % [k, veces.call(k)])
+				_ok(frente_visto.has("si"), "fractura: no se dibuja delante de ningún héroe al caer")
+				_ok(c.brama._fx.is_empty(), "fractura: sus placas siguen apuntadas")
+		"aviso_aliento":
+			_ok(hechos_fx.call("succion") == 1 and c.brama.succion != null, "aviso del Aliento: no aspira arena del suelo")
+		"aliento":
+			var en_pie: int = c.heroes.filter(func(h): return int(ant["hp"][h["nombre"]]) > 0).size()
+			_ok(hechos_fx.call("chorro") == 1, "aliento: el chorro sale %d veces" % hechos_fx.call("chorro"))
+			_ok(veces.call("chorro_alcanza") == en_pie, "aliento: el chorro alcanza a %d de %d" % [veces.call("chorro_alcanza"), en_pie])
+			_ok(c.brama.succion == null and not c.brama._tirando, "aliento: sigue aspirando después de soltarlo")
+			_ok(tiro_visto, "aliento: los héroes no se inclinaron mientras aspiraba")
 	match que:
 		"embestida":
 			_ok(nuevos_imp.size() == 1 and nuevos_imp[0][0] == "embestida", "embestida: impactos %s" % str(nuevos_imp))
@@ -355,6 +428,15 @@ func _a() -> void:
 			_ok(Engine.get_meta("combates_ganados", {}).get(B.COMBATE, false), "A: el combate fijo no queda ganado")
 			_ok(load("res://zonas3d/mar_cristal/gusano.gd").vencido(), "A: en la región, el gusano no se da por vencido (gusano.gd vencido())")
 			_ok(zp._muerta, "A: no cae con su derrota")
+			# V12, Bramavidrio v2: al morir se vuelve hacia atrás y cae detrás de los héroes (no encima)
+			_ok(c.brama._girado, "A: al morir no se vuelve")
+			var meta: float = atan2(B.DIR_DERROTA.x, B.DIR_DERROTA.z) - zp._yaw0
+			_ok(absf(wrapf(zp.pivote.rotation.y - meta, -PI, PI)) < 0.05, "A: al morir no mira hacia DIR_DERROTA (%.2f, debía %.2f)" % [zp.pivote.rotation.y, meta])
+			_ok(c.heroes.all(func(h): return h["rig"].get_index() > z["rig"].get_index()), "A: caído, se dibuja delante de algún héroe")
+			var cab: Vector2 = c.brama._suelo_cabeza()
+			var garon: Array = c.heroes.filter(func(h): return h["nombre"] == "Garon")
+			if not garon.is_empty():
+				_ok(cab.y < c._suelo_de(garon[0]).y, "A: caído, su cabeza queda delante de Garon (%s, Garon %s)" % [cab, c._suelo_de(garon[0])])
 			_ok(_sonido("gusano_temblor") >= 1, "A: sin sonidos del gusano")
 			await _cerrar()
 			break
@@ -521,9 +603,13 @@ func _conectar_fotos() -> void:
 	zp.rompe_arena.connect(func(): _foto_en("entrada_rompe_arena", 6), CONNECT_ONE_SHOT)
 	zp.impacto.connect(func(a):
 		_foto_en("impacto_" + a, 4 if a != "aliento" else 6)
-		_foto_en("impacto_" + a + "_despues", 14))
+		_foto_en("impacto_" + a + "_despues", 14)
+		if a != "embestida":                              # V12, Bramavidrio v2: el final del barrido y el polvo que se posa
+			_foto_en("impacto_" + a + "_final", 21))
 	zp.aviso.connect(func(a): _foto_en("aviso_" + a, 24 if a == "aliento" else 12))
-	zp.caida.connect(func(): _foto_en("derrota_caida", 6))
+	zp.caida.connect(func():
+		_foto_en("derrota_caida", 6)
+		_foto_en("victoria", 45))
 
 
 func _foto_en(nombre: String, espera: int) -> void:
@@ -542,7 +628,8 @@ var _fotos_hechas := {}
 
 func _fotos_bucle() -> void:
 	var t: String = c.registro.text
-	for par in [["clava sus ocelos", "embestida_fija", 15], ["Kael ataca", "kael_ataca", 16], ["Garon ataca", "garon_ataca", 22],
+	for par in [["clava sus ocelos", "embestida_fija", 15], ["clava sus ocelos", "embestida_se_lanza", 27],
+			["Kael ataca", "kael_ataca", 16], ["Garon ataca", "garon_ataca", 22],
 			["Lya lanza", "lya_lanza", 30], ["se atraganta", "aliento_cortado", 6]]:
 		if t.contains(par[0]) and int(_fotos_hechas.get(par[1], 0)) < 1:
 			_fotos_hechas[par[1]] = 1
