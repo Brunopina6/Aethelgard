@@ -74,21 +74,32 @@ func _ready() -> void:
 		_seguir_banco.call_deferred()
 
 
-# Luz del perfil sin sombras (V12, 11/11; hallazgo de gráficos, docs/memory/agents/graficos_v12_desierto.md): en
-# Compatibility, con la sombra del sol activada, la luz ambiente y la bruma iluminan bastante más que sin ella, así que
-# el perfil bajo (sin sombras) se veía más oscuro que el medio y el alto en todas las regiones. Sin sombras, se sube la
-# luz ambiente de la escena (su WorldEnvironment) por AMBIENTE_SIN_SOMBRAS: medido con
-# pruebas/herramientas/medir_luz_perfiles.gd (antes y después). El alto y el medio no cambian. Engine
-# «luz_sin_compensar» lo desactiva (para medir el antes).
-const AMBIENTE_SIN_SOMBRAS := 1.0
+# Luz del perfil sin sombras (V12, 11/11; hallazgo de gráficos, docs/memory/agents/graficos_v12_desierto.md). En
+# Compatibility, con la sombra del sol activada la escena sale bastante más clara que sin ella, así que el perfil bajo
+# (sin sombras) se veía más oscuro que el medio y el alto en todas las regiones. Medido con
+# pruebas/herramientas/medir_luz_perfiles.gd (D:\REBELUM_diagnostico\v12\luz_*), cambiando un solo valor del perfil
+# cada vez: solo las sombras lo cambian (la resolución al 75 % y el MSAA, nada). Luminancia media alto/bajo: Mar de
+# Cristal ×1,32, Garganta ×1,21, Oakhaven ×1,18, Pastos ×1,08. La luz ambiente apenas mueve nada y el sol se comprime
+# en el mapeo de tonos (×2,2 de sol: solo +16 %), así que se sube el brillo final de la escena (adjustment_brightness
+# de su WorldEnvironment) por BRILLO_SIN_SOMBRAS, o por el que diga la región («brillo_sin_sombras»). El alto y el
+# medio no cambian. Engine «luz_sin_compensar» lo desactiva (para medir el antes).
+const BRILLO_SIN_SOMBRAS := 1.0           # por defecto nada: cada región dice el suyo (Pastos ya lo compensa con su exposición)
 
 
 func _compensar_sin_sombras() -> void:
 	if Engine.has_meta("luz_sin_compensar") or bool(load("res://prototipos/calidad_proto.gd").datos().get("sombras", false)):
 		return
+	var k: float = get("brillo_sin_sombras") if get("brillo_sin_sombras") != null else BRILLO_SIN_SOMBRAS
 	for n in get_children():
 		if n is WorldEnvironment and (n as WorldEnvironment).environment != null:
-			(n as WorldEnvironment).environment.ambient_light_energy *= AMBIENTE_SIN_SOMBRAS
+			var env := (n as WorldEnvironment).environment
+			if not env.adjustment_enabled:
+				env.adjustment_enabled = true
+				env.adjustment_brightness = 1.0
+				env.adjustment_contrast = 1.0
+				env.adjustment_saturation = 1.0
+			env.adjustment_brightness *= k
+			env.adjustment_contrast *= 1.0 + (k - 1.0) * 0.3       # sin esto, las sombras aclaradas se ven veladas
 
 
 # Perfil de calidad (prototipos/calidad_proto.gd): resolución del 3D (la interfaz va siempre a

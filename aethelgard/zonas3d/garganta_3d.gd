@@ -49,6 +49,7 @@ const ID_PUENTES := "garganta_puentes"   # progreso.gd, DETALLES[2]
 const ID_PILAR := "garganta_pilar"
 # V10, «El pedido de Maese Ferro» (datos/encargos_oakhaven.gd): al pie del pilar del peregrino, la veta del hierro que canta.
 const VETA_DESDE_PILAR := Vector3(1.3, 0, 0.6)
+var brillo_sin_sombras := 1.2               # V12: vista3d.gd, el perfil bajo sin sombras (medido alto/bajo ×1,21)
 var veta: Node3D
 const BOTONES_BANCO := ["PRUEBA", "DIAG", "TOPE", "ARB"]   # sus recorridos son los de Pastos Verdes: aquí no sirven
 const CAIDA_LEVADIZO := 2.6              # segundos que tarda en bajar

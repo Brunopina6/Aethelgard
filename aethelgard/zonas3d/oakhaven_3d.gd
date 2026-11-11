@@ -32,6 +32,7 @@ const BARKS_DIST := 7.0                    # a menos de esto, la taberna «se oy
 const CAMARA_CIUDAD := [52.0, 12.0, 19.0]       # más desde arriba: las casas del sur no tapan la calle
 const CAMARA_POSADA := [52.0, 9.0, 12.0]
 
+var brillo_sin_sombras := 1.17              # V12: vista3d.gd, el perfil bajo sin sombras (medido alto/bajo ×1,18)
 var perfil: Dictionary = {}
 var nombre_perfil := "alto"
 var mat: Materiales

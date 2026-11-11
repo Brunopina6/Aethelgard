@@ -11,7 +11,7 @@ extends SceneTree
 const REGIONES := {"mar_cristal": "res://zonas3d/mar_cristal_3d.tscn", "pastos": "res://zonas3d/pastos_verdes_3d.tscn",
 	"garganta": "res://zonas3d/garganta_3d.tscn", "oakhaven": "res://zonas3d/oakhaven_3d.tscn"}
 const PERFILES := ["bajo", "medio", "alto"]
-const ESPERA := 2500                       # ms reales tras cargar
+const ESPERA := 4500                       # ms reales tras cargar (la primera escena compila sombreadores)
 
 var salida := ""
 var lista: Array = []
@@ -19,6 +19,7 @@ var i := 0
 var t0 := 0
 var cargando := false
 var filas: Array = []
+var perfiles: Array = PERFILES.duplicate()
 
 
 func _initialize() -> void:
@@ -28,13 +29,21 @@ func _initialize() -> void:
 			salida = a.substr(7)
 		elif a == "sin_compensar":
 			Engine.set_meta("luz_sin_compensar", true)
+		elif a.begins_with("extra="):                      # extra=escala_3d:1.0,sombras:false (calidad_extra)
+			var ex := {}
+			for par in a.substr(6).split(","):
+				var kv := par.split(":")
+				ex[kv[0]] = (kv[1] == "true") if kv[1] in ["true", "false"] else float(kv[1])
+			Engine.set_meta("calidad_extra", ex)
+		elif a.begins_with("perfiles="):
+			perfiles = Array(a.substr(9).split(","))
 		elif a.begins_with("regiones="):
 			regiones = Array(a.substr(9).split(","))
 	if salida == "":
 		salida = OS.get_user_data_dir()
 	DirAccess.make_dir_recursive_absolute(salida)
 	for r in regiones:
-		for p in PERFILES:
+		for p in perfiles:
 			lista.append([r, p])
 	var P = load("res://progreso.gd")
 	for k in P.CLAVES:
