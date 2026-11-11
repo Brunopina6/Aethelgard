@@ -190,13 +190,14 @@ func _combate() -> void:
 		if c.estado != "magia":
 			_fallo("MAGIA no abre el menú de magia (estado %s)" % c.estado)
 			continue
-		if _pestanas() != ["I", "II", "Alba", "Escarcha"]:
+		# V11: con Lya en el grupo, Kael tiene además la pestaña DÚO (Filo Arcano, MEJORAS_COMBATE.md), al final
+		if _pestanas() != ["I", "II", "Alba", "Escarcha", "DÚO"]:
 			_fallo("las pestañas de Kael (nivel 9) son %s" % [_pestanas()])
 		# la pestaña del Alba (y vuelta atrás con Q / L1)
 		if d == "tactil":
 			var tabs := _nodos_pestana()
-			if tabs.size() != 4 or not is_equal_approx(tabs[2].size.x, 64.0) or not is_equal_approx(tabs[3].size.x, 64.0):
-				_fallo("las pestañas en pantalla no son cuatro con las del Alba y la Escarcha de 64 px (M3)")
+			if tabs.size() != 5 or not is_equal_approx(tabs[2].size.x, 64.0) or not is_equal_approx(tabs[3].size.x, 64.0):
+				_fallo("las pestañas en pantalla no son cinco con las del Alba y la Escarcha de 64 px (M3) y DÚO")
 			else:
 				await _tocar(tabs[2].get_global_rect().get_center())
 		else:

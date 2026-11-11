@@ -413,7 +413,9 @@ const PIEZAS := [
 	{"id": "oak_pagina_3", "nombre": "Página suelta", "casilla": Vector2(36.5, 12.5), "accion": "Recoger la página",
 		"si": ["hito:enc_formula_pip", "!estado:pagina_3"], "senal": "oak:pagina_3",
 		"texto": "A los pies del Árbol: «…y removerlo como quien acuna». Firmado: M.", "texto_sin": ""},
-
+	# V11, hito C: el tablón del Gremio de aventureros en la plaza (gremio.gd; lo abre ciudad_oakhaven.gd)
+	{"id": "oak_tablon_gremio", "nombre": "Tablón del gremio", "casilla": Vector2(37, 23), "accion": "Leer el tablón",
+		"si": "", "senal": "", "texto": "", "texto_sin": ""},
 ]
 
 # ================================================================= notas del Diario (lista aparte: no cuentan para las

@@ -119,6 +119,25 @@ var rumor_pendiente := ""                 # el rumor que la posadera cuenta al a
 var dormir_pendiente := false             # «Dormir» en «¿Qué va a ser?»: se descansa al acabar el diálogo
 var servicio_pendiente := ""              # V10: forja, armaduras o botica, que se abre al acabar el diálogo de quien atiende
 var servicio_abierto: Node = null          # V10: el servicio abierto ahora (servicios.gd), o null
+var gremio_abierto: Node = null            # V11: el tablón del gremio abierto (gremio_menu.gd), o null
+
+
+# V11, hito C: el tablón del Gremio de aventureros (gremio.gd). Mientras está abierto, Kael no anda (como la tienda);
+# al cerrarlo se guarda (lo aceptado o cobrado) y se pinta el oro.
+func _abrir_gremio() -> void:
+	if tienda_abierta:
+		return
+	tienda_abierta = true
+	tiene_destino = false
+	Sonido.efecto("examinar")
+	var m = load("res://gremio_menu.gd").new()
+	gremio_abierto = m
+	m.cerrado.connect(func():
+		tienda_abierta = false
+		gremio_abierto = null
+		_poner_oro()
+		_guardar())
+	add_child(m)
 var velo_patio: Polygon2D                 # el Patio de las Velas, a oscuras hasta pasar la grieta
 var r_ronda: Rect2                        # rectángulos de LUGARES que se miran en cada fotograma
 var r_raices: Rect2
@@ -684,6 +703,8 @@ func _pieza_provisional(p: Dictionary) -> Node2D:
 	match p["id"]:
 		"oak_barril":
 			return _poner_objeto("oak_barril", c * T)
+		"oak_tablon_gremio":                          # V11: el tablón del gremio, con su dibujo de tablón
+			return _poner_objeto("oak_tablon", c * T)
 		"oak_torre":
 			return _poner_objeto("oak_puerta", Vector2(c.x, _rect("torre").end.y) * T)
 		"oak_ronda_bajar":
@@ -1319,6 +1340,9 @@ func _accion() -> void:
 
 func _usar_pieza(e: Array) -> void:
 	var p: Dictionary = e[1]
+	if p["id"] == "oak_tablon_gremio":                # V11: el tablón del gremio abre su ventana
+		_abrir_gremio()
+		return
 	if not Oak.cumple(p["si"]):
 		_avisar(p["texto_sin"], "examinar", true)
 		_avisos_hallazgo(Hallazgos.al_examinar(Oak.INDICE, "pieza:" + p["id"]), 0.0)   # (hallazgos.gd)

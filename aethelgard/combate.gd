@@ -5394,6 +5394,8 @@ func _fin_combate(ganan: bool) -> void:
 		Engine.set_meta("combates_ganados", g)
 	if ganan:                                      # las investigaciones de Lya en curso avanzan (fase 3)
 		load("res://investigacion.gd").avanzar_en_curso()
+		# V11: los caídos cuentan para los contratos del gremio aceptados (gremio.gd; sin contratos, nada)
+		load("res://gremio.gd").contar_derrotas(enemigos.filter(func(e): return e["hp"] <= 0).map(func(e): return e["clave"]))
 	await _repartir_exp(ganan)
 	if aviso != "":
 		registro.text = aviso
