@@ -24,7 +24,7 @@ func _foto() -> void:
 	root.add_child(vp)
 	var cam := Camera3D.new()
 	cam.projection = Camera3D.PROJECTION_ORTHOGONAL
-	cam.size = 9.6
+	cam.size = 10.4
 	var env := Environment.new()
 	env.background_mode = Environment.BG_CLEAR_COLOR
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
@@ -33,7 +33,7 @@ func _foto() -> void:
 	cam.environment = env
 	vp.add_child(cam)
 	var ang := deg_to_rad(12.0)
-	cam.look_at_from_position(Vector3(0, 4.3 + sin(ang) * 12.0, cos(ang) * 12.0), Vector3(0, 4.3, 0))
+	cam.look_at_from_position(Vector3(0, 4.6 + sin(ang) * 12.0, cos(ang) * 12.0), Vector3(0, 4.6, 0))
 	cam.current = true
 	var luz := DirectionalLight3D.new()
 	luz.light_color = Color(1.0, 0.88, 0.70)
@@ -49,19 +49,7 @@ func _foto() -> void:
 	var g = Gusano.new(null)
 	var cuerpo: Node3D = g._modelo_gusano()
 	vp.add_child(cuerpo)
-	cuerpo.rotation.y = deg_to_rad(-25.0)
-	var k := 0
-	for n in cuerpo.get_children():                             # una curva: lo alto se inclina hacia los héroes
-		if n is MeshInstance3D and n.has_meta("anillo"):
-			k = n.get_meta("anillo")
-			var subir := 5 - k
-			n.position.z = subir * subir * 0.06
-			n.position.x = -subir * 0.12
-			n.rotation.x = subir * 0.07
-		elif n is Node3D and not n is Light3D and not n.has_meta("anillo"):
-			n.position.z = 25 * 0.06 + 0.3
-			n.position.x = -0.6
-			n.rotation.x = 0.45
+	cuerpo.rotation.y = deg_to_rad(-30.0)                        # tres cuartos: se ven las placas del lomo y la boca
 	var monton := MeshInstance3D.new()                          # la arena que revienta alrededor
 	var s := SphereMesh.new()
 	s.radius = 1.0

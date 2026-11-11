@@ -150,7 +150,7 @@ func _aparecer(pos: Vector3) -> void:
 	_estallido.global_position = sitio
 	_estallido.restart()
 	_estallido.emitting = true
-	_cuerpo.global_position = sitio + Vector3(0, -7.0, 0)
+	_cuerpo.global_position = sitio + Vector3(0, -9.0, 0)
 	_cuerpo.visible = true
 	_cuerpo.look_at(Vector3(pos.x, _cuerpo.global_position.y, pos.z), Vector3.UP)
 	_sacudida = 1.4
@@ -173,9 +173,9 @@ func _animar_aparicion(_delta: float) -> void:
 		return
 	for i in _cuerpo.get_child_count():                          # el cuerpo ondula: cada anillo a su ritmo
 		var n := _cuerpo.get_child(i)
-		if n is MeshInstance3D and n.has_meta("anillo"):
+		if n is Node3D and n.has_meta("anillo"):
 			var k: int = n.get_meta("anillo")
-			n.position.x = sin(t_estado * 3.0 + k * 0.7) * 0.18 * k
+			n.position.x = sin(t_estado * 3.0 + k * 0.7) * 0.06 * k
 
 
 # ================================================================= piezas (se crean la primera vez que hacen falta)
@@ -236,66 +236,122 @@ func _particulas(n: int, vida: float, caja: Vector3, vel: float, tam: float) -> 
 	return p
 
 
-# El gusano provisional (hasta que gráficos haga su modelo, modelos/desierto/bramavidrio.glb): anillos gruesos de piel
-# parda con placas de vidrio en el lomo que brillan, y una boca de placas planas. Si existe el modelo, se usa el suyo.
+# El gusano provisional (hasta que gráficos haga su modelo, modelos/desierto/bramavidrio.glb; si existe, se usa el suyo).
+# Corto y grueso, como una larva enorme: segmentos abultados que se estrechan hacia la boca y se curvan hacia delante;
+# lomo pardo oscuro y vientre claro; dos hileras de placas de vidrio fundido (hexágonos que brillan); la boca, cinco
+# placas planas abiertas alrededor de una garganta con luz (muelen; nunca un anillo de dientes). Unas 40 mallas
+# sencillas, solo mientras asoma.
+const SEGMENTOS := 8
+const ALTO_SEGMENTO := 0.95
+
+
 func _modelo_gusano() -> Node3D:
 	var n := Node3D.new()
 	var ruta := "res://modelos/desierto/bramavidrio.glb"
 	if ResourceLoader.exists(ruta):
 		n.add_child((load(ruta) as PackedScene).instantiate())
 		return n
-	var piel := StandardMaterial3D.new()
-	piel.albedo_color = Color(0.55, 0.40, 0.30)
-	piel.roughness = 0.85
+	var lomo := _mat(Color(0.42, 0.29, 0.21), 0.8)
+	var vientre := _mat(Color(0.74, 0.58, 0.42), 0.9)
+	var hueso := _mat(Color(0.86, 0.80, 0.68), 0.6)
 	var vidrio := StandardMaterial3D.new()
-	vidrio.albedo_color = Color(0.62, 0.92, 0.95, 0.9)
+	vidrio.albedo_color = Color(0.55, 0.90, 0.95, 0.88)
 	vidrio.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	vidrio.roughness = 0.1
+	vidrio.roughness = 0.08
 	vidrio.metallic_specular = 1.0
+	vidrio.rim_enabled = true
+	vidrio.rim = 0.6
 	vidrio.emission_enabled = true
-	vidrio.emission = Color(0.35, 0.85, 0.95)
-	vidrio.emission_energy_multiplier = 0.9
-	for k in 6:                                                 # de la boca (arriba) hacia la arena
-		var anillo := MeshInstance3D.new()
-		var c := CylinderMesh.new()
-		c.top_radius = 1.25 - k * 0.04
-		c.bottom_radius = 1.35 - k * 0.04
-		c.height = 1.15
-		c.radial_segments = 14
-		anillo.mesh = c
-		anillo.material_override = piel
-		anillo.position = Vector3(0, 6.2 - k * 1.1, 0)
-		anillo.set_meta("anillo", k)
-		n.add_child(anillo)
-		for j in 3:                                             # placas de vidrio en el lomo
-			var placa := MeshInstance3D.new()
-			var b := BoxMesh.new()
-			b.size = Vector3(0.75, 0.55, 0.12)
-			placa.mesh = b
-			placa.material_override = vidrio
-			var a := -0.9 + j * 0.9
-			placa.position = Vector3(sin(a) * 1.3, 0.1, -cos(a) * 1.3)
-			placa.rotation = Vector3(deg_to_rad(-18), -a, 0)
-			anillo.add_child(placa)
-	var boca := Node3D.new()                                    # placas planas que muelen, en cruz
-	boca.position = Vector3(0, 6.85, 0)
+	vidrio.emission = Color(0.30, 0.82, 0.95)
+	vidrio.emission_energy_multiplier = 1.1
+	var garganta := _mat(Color(1.0, 0.72, 0.36), 0.5)
+	garganta.emission_enabled = true
+	garganta.emission = Color(1.0, 0.55, 0.22)
+	garganta.emission_energy_multiplier = 1.6
+	var y := 0.0
+	var arriba := Vector3.ZERO
+	for k in SEGMENTOS:                                         # de la arena (k = 0) a la boca
+		var t := float(k) / (SEGMENTOS - 1)
+		var r := lerpf(1.55, 1.05, t)                           # más grueso abajo
+		var seg := Node3D.new()
+		seg.set_meta("anillo", SEGMENTOS - 1 - k)               # el que más ondula es el de arriba
+		seg.position = Vector3(0, y, t * t * 2.2)               # se curva hacia delante (+z: hacia quien mira)
+		seg.rotation.x = t * 0.55
+		n.add_child(seg)
+		var bulto := MeshInstance3D.new()                       # el segmento: una esfera achatada, el lomo
+		var s := SphereMesh.new()
+		s.radius = r
+		s.height = ALTO_SEGMENTO * 1.7
+		s.radial_segments = 18
+		s.rings = 9
+		bulto.mesh = s
+		bulto.material_override = lomo
+		seg.add_child(bulto)
+		var panza := MeshInstance3D.new()                       # el vientre claro, por delante
+		var sp := SphereMesh.new()
+		sp.radius = r * 0.8
+		sp.height = ALTO_SEGMENTO * 1.45
+		sp.radial_segments = 14
+		sp.rings = 7
+		panza.mesh = sp
+		panza.material_override = vientre
+		panza.position = Vector3(0, 0, r * 0.32)
+		seg.add_child(panza)
+		if k >= 1:                                              # placas de vidrio: dos hileras en el lomo (detrás)
+			for lado in [-1.0, 1.0]:
+				var placa := MeshInstance3D.new()
+				var c := CylinderMesh.new()
+				c.top_radius = 0.34 + 0.06 * (1.0 - t)
+				c.bottom_radius = c.top_radius
+				c.height = 0.16
+				c.radial_segments = 6
+				placa.mesh = c
+				placa.material_override = vidrio
+				var a: float = lado * 0.55
+				placa.position = Vector3(sin(a) * r * 0.95, 0.15, -cos(a) * r * 0.95)
+				placa.rotation = Vector3(-PI / 2.0 + 0.35, -a, 0)
+				seg.add_child(placa)
+		y += ALTO_SEGMENTO
+		arriba = seg.position
+	var boca := Node3D.new()                                    # la boca: cinco placas planas abiertas y la garganta
+	boca.position = arriba + Vector3(0, ALTO_SEGMENTO * 0.7, 0.35)
+	boca.rotation.x = 0.75
+	boca.set_meta("anillo", 0)
 	n.add_child(boca)
-	for i in 4:
+	var luz_g := MeshInstance3D.new()
+	var d := CylinderMesh.new()
+	d.top_radius = 0.6
+	d.bottom_radius = 0.75
+	d.height = 0.25
+	d.radial_segments = 16
+	luz_g.mesh = d
+	luz_g.material_override = garganta
+	boca.add_child(luz_g)
+	for i in 5:
 		var labio := MeshInstance3D.new()
-		var b2 := BoxMesh.new()
-		b2.size = Vector3(1.0, 0.18, 0.7)
-		labio.mesh = b2
-		labio.material_override = piel
-		labio.rotation = Vector3(deg_to_rad(28), TAU * i / 4.0, 0)
-		labio.position = Vector3(sin(TAU * i / 4.0) * 0.55, 0.1, cos(TAU * i / 4.0) * 0.55)
+		var b := PrismMesh.new()
+		b.size = Vector3(0.95, 1.1, 0.16)
+		labio.mesh = b
+		labio.material_override = hueso
+		var ang := TAU * i / 5.0
+		labio.position = Vector3(sin(ang) * 0.82, 0.35, cos(ang) * 0.82)
+		labio.rotation = Vector3(0, ang, 0)
+		labio.rotate_object_local(Vector3.RIGHT, 0.55)          # abiertas hacia fuera
 		boca.add_child(labio)
-	var luz := OmniLight3D.new()                                # el brillo de las placas al comer
-	luz.light_color = Color(0.45, 0.9, 1.0)
-	luz.light_energy = 1.2
-	luz.omni_range = 6.0
-	luz.position = Vector3(0, 5.0, -1.2)
+	var luz := OmniLight3D.new()                                # el brillo de las placas y la garganta
+	luz.light_color = Color(0.5, 0.9, 1.0)
+	luz.light_energy = 1.0
+	luz.omni_range = 7.0
+	luz.position = arriba + Vector3(0, 0.5, -1.6)
 	n.add_child(luz)
 	return n
+
+
+func _mat(c: Color, rugosidad: float) -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.albedo_color = c
+	m.roughness = rugosidad
+	return m
 
 
 # ================================================================= sonido y cámara
