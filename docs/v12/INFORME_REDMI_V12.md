@@ -144,3 +144,46 @@ defecto).
   - los héroes se dibujan sobre el gusano caído;
   - sin sonidos propios de succión, chorro y caída.
 - **Pantalla alternativa:** sin escuchar; Créditos, todavía una pantalla provisional.
+
+# V12 · Tercera prueba en el Redmi: v607, el clímax de los grandes jefes (11/11, 18:58-19:10)
+
+**APK:** «REBELUM Auditoría», versionCode **607**, del commit **`b7daacc`**. 301,8 MB, SHA-256
+`f99aba25913f1935282c50025491ef0868bc071e9c7da9470e446a7b55e2f7b9`, el mismo certificado. Lleva las tres canciones de Suno
+Pro y el clímax con Bramavidrio. Publicada en el repositorio privado `Brunopina6/Aethelgard-pruebas` («11/11/2026 ·
+Prueba v607», etiqueta `exp-20261111-b7daacc`).
+
+- **Respaldo:** `D:\REBELUM_respaldos\2026-11-11_redmi_auditoria_antes_climax`, íntegro.
+- **Instalación:** `adb install -r` la canceló MIUI (`INSTALL_FAILED_USER_RESTRICTED`: nadie aceptó en el teléfono).
+  La APK se copió a Descargas (SHA-256 comprobado) y el usuario la instaló a mano. Después se borró de Descargas.
+- **Partidas de prueba:** `mc7_gusano_fuerte.save` (la de `mc7_gusano` con fuerza 45, vitalidad 40 y defensa 25 para
+  llegar al 20 % en pocos turnos) y `cmp_pastos.save`, con `ajustes_v607.cfg` (medio y «Pastoral Pulse»). En
+  `D:\REBELUM_diagnostico\v12\redmi\partidas`.
+- **Los argumentos de pruebas no llegan en Android:** `--esa command_line_params` no tuvo efecto (sin `auto` ni
+  `nivel=`). Por eso se reforzaron los héroes en la partida.
+- **Al acabar:** partida, `.bak` y ajustes restaurados idénticos al respaldo. La Exp sigue en la v365. Sin cierres y
+  sin errores de script en logcat.
+
+| Medida (medio) | v597 | v607 |
+|---|---|---|
+| Pantalla de inicio con «When the World Forgets» | 35,9-36,8 FPS · 791 MB | **36,8** · 762 MB |
+| Carga hasta «empezar» | 14,1 s | **14,4-14,7 s** |
+| Combate con Bramavidrio | 56,7-57,9 | **55-56** antes del clímax |
+| **Combate durante el clímax** (10 s) | — | **57,2 FPS**, 0 perdidos · 896 MB |
+| Pastos Verdes con «Pastoral Pulse» | 30,4 · 809 MB (v581, sin música) | **30,4** · 828 MB |
+
+Capturas en `D:\REBELUM_diagnostico\v12\redmi\sesion_v607`.
+
+| Prueba | Resultado |
+|---|---|
+| Clímax | **bien**: el golpe de Kael lo deja en 213/1134 (18,8 %). Al acabar el golpe sale «¡Momento decisivo!» (`h3`). El contador baja a 45 FPS solo en ese instante, por el velo |
+| Una sola vez | **bien**: con más golpes no se repite |
+| Victoria | **bien**: el combate acaba normal («Kael aprende Llamarada»), sin errores |
+| Fractura del Mar de Cristal | **vista por fin en el teléfono** (`d3`): aviso, grietas rojas bajo Garon y «Fractura: defendeos» |
+| Pastos con «Pastoral Pulse» | **bien**: entra sin fallos de carga |
+
+**Pequeño defecto visual:** en el teléfono, «¡Momento decisivo!» toca el borde izquierdo del menú de órdenes («—
+ATACAR»). Se centra en los 1280 px de la pantalla, pero el menú ocupa el 40 % derecho. Arreglo: centrarlo en el campo de
+batalla, a la izquierda.
+
+**Sin comprobar:** no se ha escuchado nada (el teléfono mezcla todo en una sola pista, así que no se puede saber por
+`dumpsys` qué canción suena). Falta oír el volumen del clímax frente a los avisos y los empalmes de los bucles.
