@@ -125,3 +125,19 @@ pantalla no ayuda a decidir (no dice qué le pasa a cada enemigo).
 3. Enemigos con comportamientos nuevos (proteger a otro, invocar refuerzos, cambiar de resistencia). Sin hacer.
 4. Variedad de encuentros (élite, emboscada, proteger, objetivo especial). Sin hacer.
 5. Cámara e impactos de los golpes fuertes. Sin tocar en la V11: se conservan los de la V9 y la V10.
+
+## 5. Enemigos de élite (variedad de encuentros)
+
+- **Cuándo:** en los encuentros al azar con dos o más héroes, uno de cada seis (el 6.º, el 12.º…) trae un enemigo de
+  élite. Se cuenta en la partida (`encuentros_azar`), sin tirar dados: el azar de siempre no cambia, las pruebas con
+  semilla salen igual y no hay dos élites seguidos.
+- **Quién:** el enemigo con más vida del grupo. Nunca en combates fijos ni con jefes, y nunca con Kael solo.
+- **Cómo es:**
+  - lleva «★» en el nombre y sus PV y su barra salen en dorado;
+  - tiene un 60 % más de vida y un 20 % más de ataque;
+  - prepara su golpe más a menudo (+20 %);
+  - da el doble de experiencia y de monedas.
+- **Lo que ve el jugador:** el cartel «¡Combate! Un enemigo de élite ★» y, en la lista de objetivos, «Élite: doble
+  premio».
+- **Pruebas:** `prueba_v11_combate`, apartado 7 (el sexto sí, el séptimo no, con Kael solo no). Siguen pasando
+  `prueba_grupos_combate`, `prueba_zona3d`, `prueba_patrones_enemigos` y la huella del combate.

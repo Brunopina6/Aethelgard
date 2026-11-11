@@ -78,6 +78,7 @@ func _probar() -> void:
 	await _quiebra_y_barrera()
 	c.queue_free()
 	await _esperar(5)
+	await _elites()
 	for k in P.CLAVES + ["partida_lista", "grupo_combate", "tipo_combate", "zona"]:
 		if Engine.has_meta(k):
 			Engine.remove_meta(k)
@@ -308,3 +309,31 @@ func _quiebra_y_barrera() -> void:
 	var b0: int = int(kael["barrera"])
 	c._quitar_pv(kael, 3)
 	_ok(kael["hp"] == k_pv and int(kael["barrera"]) == b0 - 3, "6: la coraza de la Barrera Rúnica no para el golpe")
+
+
+# 7. Élites: con dos o más héroes, el encuentro al azar número 6 (12, 18…) trae uno; los demás y Kael solo, no.
+func _elites() -> void:
+	for caso in [[5, ["Kael", "Lya", "Garon"], true], [6, ["Kael", "Lya", "Garon"], false], [5, ["Kael"], false]]:
+		for k in P.CLAVES + ["partida_lista", "grupo_combate", "combate_fijo", "tipo_combate"]:
+			if Engine.has_meta(k):
+				Engine.remove_meta(k)
+		G.datos()
+		Engine.set_meta("grupo_activo", caso[1])
+		Engine.set_meta("zona", "ceniza")
+		Engine.set_meta("encuentros_azar", caso[0])
+		var cc = load("res://combate.tscn").instantiate()
+		root.add_child(cc)
+		await _esperar(20)
+		cc.set_process(false)
+		var elites: Array = cc.enemigos.filter(func(e): return e.get("elite", false))
+		if caso[2]:
+			_ok(elites.size() == 1 and str(elites[0]["nombre"]).begins_with("★ ") and cc.registro.text.contains("élite")
+				and int(Engine.get_meta("encuentros_azar", 0)) == 6,
+				"7: el sexto encuentro al azar no trae un élite (%d, «%s»)" % [elites.size(), cc.registro.text])
+			if elites.size() == 1:
+				var mas_vida: bool = cc.enemigos.all(func(e): return e["hp_max"] <= elites[0]["hp_max"])
+				_ok(mas_vida and cc._info_objetivo(elites[0], true).contains("Élite"), "7: el élite no es el de más vida o no se ve en la lista")
+		else:
+			_ok(elites.is_empty(), "7: hay élite donde no toca (%d encuentros, %d héroes)" % [caso[0], caso[1].size()])
+		cc.queue_free()
+		await _esperar(5)

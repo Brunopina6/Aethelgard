@@ -479,6 +479,10 @@ static func grupo_al_azar(cuantos: int) -> int:
 # Los repetidos se llaman "Slime A", "Slime B"...
 func _elegir_enemigos() -> void:
 	var grupo: Array = GRUPOS[grupo_al_azar(heroes.size())]
+	var al_azar: bool = not Engine.has_meta("grupo_combate") and not Engine.has_meta("combate_fijo")
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("grupo="):
+			al_azar = false
 	if Engine.has_meta("grupo_combate"):          # combate fijo: vale para este combate y se borra
 		grupo = GRUPOS[clampi(Engine.get_meta("grupo_combate"), 0, GRUPOS.size() - 1)]
 		Engine.remove_meta("grupo_combate")
@@ -512,6 +516,43 @@ func _elegir_enemigos() -> void:
 			vistos[g[0]] = vistos.get(g[0], 0) + 1
 		enemigos.append(e)
 	enemigos.sort_custom(func(a, b): return a["pos"].y < b["pos"].y)   # los de delante se dibujan encima
+	if al_azar and heroes.size() >= 2:
+		_quizas_elite()
+
+
+# ---------------------------------------------------------------- V11: enemigos de élite (MEJORAS_COMBATE.md)
+# En los encuentros al azar con dos o más héroes, uno de cada CADA_ELITE trae un enemigo de élite: el más fuerte del
+# grupo lleva «★», un tono dorado, ELITE["vida"] de vida, ELITE["ataque"] de ataque, prepara su golpe más a menudo y da
+# el doble de experiencia y de monedas. Se cuenta en la partida («encuentros_azar»), sin tirar dados: no cambia el azar
+# de siempre (las pruebas con semilla salen igual) y no hay dos élites seguidos. Los combates fijos y los jefes, no.
+const CADA_ELITE := 6
+const ELITE := {"vida": 1.6, "ataque": 1.2, "premio": 2.0, "prob_patron": 0.2}
+const C_ELITE := Color(1.0, 0.86, 0.5)
+
+
+func _quizas_elite() -> void:
+	var n := int(Engine.get_meta("encuentros_azar", 0)) + 1
+	Engine.set_meta("encuentros_azar", n)
+	if n % CADA_ELITE != 0:
+		return
+	var fuerte: Dictionary = {}
+	for e in enemigos:
+		if e.get("personalidad", "") in ["jefe", "bosque", "coloso"]:
+			return
+		if fuerte.is_empty() or int(e["hp_max"]) > int(fuerte["hp_max"]):
+			fuerte = e
+	if not fuerte.is_empty():
+		_hacer_elite(fuerte)
+
+
+func _hacer_elite(e: Dictionary) -> void:
+	e["elite"] = true
+	e["nombre"] = "★ " + e["nombre"]
+	e["hp_max"] = int(e["hp_max"] * ELITE["vida"])
+	e["hp"] = e["hp_max"]
+	e["atk"] = int(e["atk"] * ELITE["ataque"])
+	e["exp"] = int(e.get("exp", 0) * ELITE["premio"])
+	e["oro"] = int(e.get("oro", 0) * ELITE["premio"])
 
 
 func _iniciar_musica() -> void:
@@ -594,7 +635,8 @@ func _crear_interfaz() -> void:
 		_crear_vida_enemigo(e)
 
 	# texto de lo que pasa, arriba en el centro (sin ventana)
-	registro = _etiqueta("¡Combate!", 34, menu.LUZ_CLARA, menu.f_nombre)
+	registro = _etiqueta("¡Combate!" if not enemigos.any(func(e): return e.get("elite", false)) else
+		"¡Combate! Un enemigo de élite ★", 34, menu.LUZ_CLARA, menu.f_nombre)
 	registro.position = Vector2(240, 14)
 	registro.size = Vector2(800, 50)
 	registro.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -709,6 +751,8 @@ func _info_objetivo(f: Dictionary, ok: bool) -> String:
 	if f["hp"] <= 0 and not f.get("hero", false):
 		return "Derrotado"
 	var t: Array = ["PV %d/%d" % [f["hp"], f["hp_max"]]]
+	if f.get("elite", false):
+		t.append("Élite: doble premio")
 	if f.get("cargando", false):
 		var plan: Dictionary = PATRONES.get(f.get("personalidad", ""), {})
 		if plan.get("encoge", false):
@@ -860,7 +904,7 @@ func _crear_fondo() -> void:
 
 
 func _crear_vida_enemigo(e: Dictionary) -> void:
-	var l := _etiqueta("", 20, Color.WHITE)
+	var l := _etiqueta("", 20, C_ELITE if e.get("elite", false) else Color.WHITE)   # V11: el de élite, en dorado
 	l.position = _ancla_vida(e) + Vector2(0, -12)
 	capa.add_child(l)
 	var b := _barra(Vector2(120, 4), Color("FF7A3C"))
@@ -1954,7 +1998,7 @@ func _turno_patron(f: Dictionary, vivos: Array, mult: float, plan: Dictionary) -
 		f["descarga"] = false
 		f.erase("objetivo_carga")
 		return true
-	if randf() >= float(plan["prob"]):
+	if randf() >= float(plan["prob"]) + (ELITE["prob_patron"] if f.get("elite", false) else 0.0):
 		return false
 	var obj := _elegir_objetivo("agresivo", vivos)
 	f["cargando"] = true
