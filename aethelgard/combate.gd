@@ -56,6 +56,9 @@ const Coloso := preload("res://combate_coloso.gd")   # el Coloso de la Falla (V9
 # V12: Bramavidrio, el gusano del Mar de Cristal (combate_bramavidrio.gd: su IA, sus tres ataques, avisos y efectos). Es un
 # nodo hijo del combate que solo existe si hay un Bramavidrio; los ganchos de aquí llevan «V12, Bramavidrio».
 const Brama := preload("res://combate_bramavidrio.gd")
+# V12: el clímax musical de los grandes jefes (combate_climax.gd: qué jefes y qué canción; aquí, cuándo y cómo suena).
+# Ganchos «V12, clímax»: _quitar_pv lo vigila, _process lo empieza, _musica_fase2 no lo pisa.
+const Climax := preload("res://combate_climax.gd")
 # Menú de combate minimalista (menu_combate.gd). Ocupa el 40 % derecho de la pantalla, por eso los
 # héroes van más a la izquierda y los enemigos se juntan a la izquierda: x = x * ENEMIGOS_X.x + ENEMIGOS_X.y
 const ENEMIGOS_X := Vector2(0.75, -190.0)
@@ -414,6 +417,11 @@ var efectos_3d_activos := 0
 var ultimo_esquivado := false            # el último golpe físico lo esquivó un héroe (Pluma de arpía, T-092)
 var brama = null                         # V12, Bramavidrio: su nodo (combate_bramavidrio.gd), si está en el combate
 var turnos_heroe := 0                    # turnos de héroe empezados (V12, Bramavidrio: nada encadenado sin responder)
+var climax_pendiente: Dictionary = {}    # V12, clímax: el jefe que acaba de cruzar el umbral (empieza al acabar el golpe)
+var climax_hecho := false                # V12, clímax: ya se activó en este combate (una sola vez)
+var musica_climax: AudioStreamPlayer     # V12, clímax: su canción (desde que entra es también «musica»)
+var climax_jefe: Dictionary = {}         # V12, clímax: su jefe
+var climax_estallido := -1.0             # V12, clímax: segundo de la canción en que cae el destello (-1: hecho)
 
 
 func _ready() -> void:
@@ -610,6 +618,71 @@ func _iniciar_musica() -> void:
 	musica.bus = &"Musica"                           # buses y volúmenes: sonido.gd
 	add_child(musica)
 	musica.play()
+
+
+# ---------------------------------------------------------------- V12: el clímax musical de los grandes jefes
+# Reglas y configuración en combate_climax.gd. Aquí: al cruzar el umbral queda pendiente (_quitar_pv) y empieza en cuanto
+# el combate vuelve a esperar o a pedir órdenes (_process), sin tocar el estado, el ATB ni los menús. La canción pasa a
+# ser «musica»: la victoria, la derrota, la huida y el último aliento la tratan como a la de siempre.
+signal climax_empezado(jefe: String)
+
+
+func _climax_vigilar(f: Dictionary, hp_antes: int) -> void:
+	if climax_hecho or f.get("hero", false) or f.get("rendido", false) or Climax.de(f).is_empty():
+		return
+	if Climax.cruza(hp_antes, int(f["hp"]), int(f.get("hp_max", 0))):
+		climax_hecho = true                          # una sola vez por combate, aunque haya más jefes o se cure
+		climax_pendiente = f
+
+
+func _climax_empezar() -> void:
+	var jefe: Dictionary = climax_pendiente
+	climax_pendiente = {}
+	var conf := Climax.de(jefe)
+	if jefe["hp"] <= 0 or estado == "fin" or conf.is_empty():
+		return                                     # cayó antes de que acabara su golpe: no hay clímax
+	var pista: Dictionary = Climax.PISTAS[conf["pista"]]
+	var anterior := musica
+	musica_climax = Climax.reproductor(conf["pista"])
+	add_child(musica_climax)
+	musica = musica_climax                         # desde ya la cierran la victoria, la derrota y la huida
+	if anterior != null:                           # la habitual se aparta (0,9 s) y se quita
+		var t := create_tween()
+		t.tween_property(anterior, "volume_db", -40.0, Climax.FUNDIDO).set_trans(Tween.TRANS_SINE)
+		t.tween_callback(anterior.queue_free)
+	if Climax.GOLPE != "":
+		_sonar(Climax.GOLPE)                       # el golpe de energía, una vez (sonido.gd)
+	climax_empezado.emit(str(jefe.get("nombre", "")))
+	# lo que se ve, breve y sin parar nada: un velo dorado, «¡Momento decisivo!» y, con el estallido, un destello en él
+	_fogonazo(C_INVOCACION, 0.16, 0.8)
+	var aviso := _etiqueta("¡Momento decisivo!", 50, C_INVOCACION, menu.f_nombre)
+	aviso.add_theme_constant_override("outline_size", 10)
+	aviso.size = Vector2(1280, 70)
+	aviso.position = Vector2(0, 150)
+	aviso.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	aviso.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	aviso.modulate.a = 0.0
+	capa.add_child(aviso)
+	var ta := aviso.create_tween()
+	ta.tween_property(aviso, "modulate:a", 1.0, 0.3)
+	ta.tween_interval(1.6)
+	ta.tween_property(aviso, "modulate:a", 0.0, 0.5)
+	ta.tween_callback(aviso.queue_free)
+	get_tree().create_timer(Climax.FUNDIDO).timeout.connect(func():
+		if estado != "fin" and is_instance_valid(musica_climax) and musica == musica_climax:
+			musica_climax.play())                  # desde 0: el golpe de la canción cae a los 1,2 s
+	climax_jefe = jefe                             # el destello, cuando la canción llega a su estallido (_process: se mira
+	climax_estallido = float(pista["estallido"])   # su posición real, no un temporizador)
+
+
+# Con el estallido de la canción: un destello y una ráfaga corta de luz dorada sobre el jefe.
+func _climax_destello() -> void:
+	climax_estallido = -1.0
+	var jefe: Dictionary = climax_jefe
+	if estado != "fin" and jefe.get("hp", 0) > 0 and jefe.has("rig"):
+		_destello(_centro(jefe), Color(1.0, 0.85, 0.45), 2.4)
+		_particulas(_centro(jefe), Color(1.0, 0.9, 0.55, 1.0), Color(1.0, 0.6, 0.2, 0.0), 40, 0.9,
+			Vector2(120, 320), 60.0, Vector2(0, -1), 180.0, Vector2(0, 200), 0.07)
 
 
 func _bajar_musica() -> void:
@@ -1514,6 +1587,11 @@ func _process(delta: float) -> void:
 					f["cuerpo"].rotation_degrees = sin(t * 1.3 + f["fase"]) * 0.8
 		if f.has("sombra"):
 			_mover_sombra(f)
+	if not climax_pendiente.is_empty() and estado in ["esperando", "menu", "objetivo"]:
+		_climax_empezar()                            # V12, clímax: el golpe que lo provocó ya acabó
+	if climax_estallido >= 0.0 and musica_climax != null and musica_climax.playing \
+			and musica_climax.get_playback_position() >= climax_estallido:
+		_climax_destello()                           # V12, clímax: el estallido de la canción, en su momento real
 	if estado == "esperando":                        # jefes: cambio de fase y último aliento, antes de otro turno
 		for e in enemigos:
 			if e.get("fase2_pendiente", false):
@@ -3635,6 +3713,7 @@ func _quitar_pv(f: Dictionary, d: int) -> int:
 		var r: Dictionary = Artes.absorber(f, d)
 		_coraza_golpeada(f, r)
 		d = int(r["resto"])
+	var hp_antes: int = f["hp"]                         # (V12, clímax: para ver si este golpe cruza el umbral)
 	f["hp"] = maxi(0, f["hp"] - d)
 	if f.get("hero", false) and f["hp"] <= 0 and Artes.al_llegar_a_cero(f):   # M4: con Brasa se levanta (una vez)
 		_brasa_levanta(f)
@@ -3653,6 +3732,7 @@ func _quitar_pv(f: Dictionary, d: int) -> int:
 		f["rendido"] = true
 	if not f.get("hero", false) and d > 0:
 		_vigilar_carga(f, d)                          # V11: un golpe preparado se puede interrumpir
+		_climax_vigilar(f, hp_antes)                  # V12, clímax: cruza el umbral (queda pendiente)
 	return d
 
 
@@ -3797,7 +3877,7 @@ func _cambio_fase_coloso(f: Dictionary) -> void:
 
 
 func _musica_fase2() -> void:
-	if musica == null:
+	if musica == null or climax_hecho:            # V12, clímax: si ya suena (o va a sonar), la fase no la cambia
 		return
 	var ruta := ""
 	for r in [MUSICA_JEFE_FASE2.get_basename() + ".ogg", MUSICA_JEFE_FASE2]:

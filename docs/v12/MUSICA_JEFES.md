@@ -57,4 +57,49 @@ cae 1,2 s después.
 
 ## El sistema
 
-Lo integra el especialista de combate. Se documentará aquí al integrarlo.
+Integrado por el especialista de combate el 11/11 en `claude/v12-climax` (commits `d00ef60` y `74cadc0`). Probado en el
+PC (aislado). **Sin escuchar y sin probar en el Redmi.**
+
+**Dónde está:**
+- `aethelgard/combate_climax.gd`: la configuración y las cuentas (qué jefes, qué canción, el umbral);
+- `aethelgard/combate.gd`: cuándo y cómo suena (ganchos «V12, clímax»: `_quitar_pv`, `_process`, `_climax_empezar`,
+  `_musica_fase2`).
+
+**Cuándo se activa:**
+1. Un golpe deja al jefe autorizado **entre 1 PV y el 20 % de su vida máxima**, y antes estaba por encima. Si el golpe lo
+   mata, no hay clímax. Nunca con la vida sin poner (`hp_max` 0) ni si el jefe ya empezaba por debajo.
+2. Queda pendiente hasta que acaba ese golpe: empieza cuando el combate vuelve a esperar o a pedir órdenes (nunca a
+   mitad de una animación). Si el jefe cae antes, no empieza.
+3. **Una sola vez por combate:** ni más golpes, ni que se cure por encima del 20 %, ni otro jefe autorizado lo repiten.
+
+**Qué pasa:**
+1. La música del combate baja a −40 dB en 0,9 s y se quita.
+2. Suena el golpe de energía de la segunda fase (`fase2` de `sonido.gd`, ya licenciado), una vez.
+3. «¡Momento decisivo!» en dorado unos 2 s y un velo dorado muy suave: nada se pausa ni se oscurece.
+4. A los 0,9 s entra la canción **desde 0**, por el bus **Musica** (respeta el volumen del jugador), a −7 dB, en bucle
+   desde 13,62 s (`loop_offset` puesto al sonar).
+5. Cuando la canción llega a su estallido (1,2 s, mirando su posición real), un destello dorado sobre el jefe.
+6. La canción pasa a ser la música del combate: la victoria, la derrota y la huida la cierran con el fundido de siempre
+   (1,8 s) y suenan su victoria o su derrota de siempre. Al salir del combate no queda ningún reproductor.
+
+**Mezcla:** en combate, el bus Musica ya se aparta solo cuando suenan efectos (`sonido.gd`, `APARTAR_MUSICA_EN_COMBATE`,
+compresor que escucha a Efectos). La canción va por ese bus, así que avisos, golpes, interrupciones y menús quedan por
+encima sin tocar nada más. Falta escucharlo.
+
+**No toca:** el estado del combate, el ATB, las interrupciones, las invocaciones ni las técnicas combinadas. Si a la vez
+llega la segunda fase de un jefe con fases, la fase no cambia la canción.
+
+**Configuración por jefe** (`combate_climax.gd`):
+- `CATEGORIAS`: «normal», «elite» y «minijefe» no pueden tenerlo. «jefe» se puede elegir, «gran_jefe» es candidato y
+  «final» llevará su propia banda.
+- `JEFES`: clave de `ENEMIGOS`, su categoría, su pista y «activo». Hoy solo está activo `bramavidrio`. Están apuntados,
+  sin activar, el Coloso de la Falla, el Guardián del Bosque, Gorthor, el Guardián de piedra y el Gólem de ámbar.
+- `PISTAS`: la ruta, el `loop_offset`, el instante del estallido y el volumen de cada canción.
+- Un enemigo de élite nunca lo tiene.
+
+**Cómo desactivarlo:**
+- todo el sistema: `ACTIVO = false` en `combate_climax.gd`;
+- un jefe: su «activo»: false en `JEFES`.
+
+**Pruebas:** `pruebas/prueba_climax_jefe.gd` (en `lista_pruebas.txt`), superada. Capturas en
+`D:\REBELUM_diagnostico\combate\2026-11-11_climax\`.
