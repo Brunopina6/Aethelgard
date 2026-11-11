@@ -72,5 +72,10 @@ func _probar() -> void:
 	await _foto("06_aviso")
 	c._quitar_pv(g, int(g["hp_max"] * 0.3))
 	await _foto("07_interrumpido")
+	c.actor = c.heroes[0]
+	c.menu.heroe_actual = c.heroes[0]
+	c.heroes[1]["atb"] = 60.0
+	c._menu_magia(9)
+	await _foto("08_duo_filo_arcano")
 	print("FIN")
 	quit(0)

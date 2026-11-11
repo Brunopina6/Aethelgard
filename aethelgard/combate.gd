@@ -2683,15 +2683,28 @@ func _menu_magia(nivel := 0) -> void:
 			por_nivel[h[1] - 1].append(h)
 	if nivel == 0:
 		nivel = magia_nivel_menu.get(actor["nombre"], 1)
-	var p: Dictionary = Artes.pestanas_magia(por_nivel.map(func(x): return not x.is_empty()), familias, nivel)
-	nivel = p["valor"]
-	magia_nivel_menu[actor["nombre"]] = nivel     # 1-3: nivel; 4 y 5: primera y segunda familia
+	var duos := _duos_de(actor)                   # V11: técnicas combinadas (pestaña DÚO)
+	var quiere_duo: bool = nivel == PESTANA_DUO and not duos.is_empty()
+	var p: Dictionary = Artes.pestanas_magia(por_nivel.map(func(x): return not x.is_empty()), familias,
+		1 if quiere_duo else nivel)
+	nivel = PESTANA_DUO if quiere_duo else p["valor"]
+	magia_nivel_menu[actor["nombre"]] = nivel     # 1-3: nivel; 4 y 5: primera y segunda familia; 9: DÚO
 	var pestanas: Array = []
 	for t in p["pestanas"]:
 		var tab: Dictionary = t.duplicate()
 		tab["accion"] = _menu_magia.bind(t["valor"])
 		pestanas.append(tab)
+	var activa: int = p["activa"]
+	if not duos.is_empty():
+		if pestanas.is_empty():                       # una sola pestaña de magias: se nombra para poder volver a ella
+			pestanas.append({"texto": "MAGIA", "valor": p["valor"], "ancho": 140.0, "accion": _menu_magia.bind(p["valor"])})
+		pestanas.append({"texto": "DÚO", "valor": PESTANA_DUO, "ancho": 110.0, "accion": _menu_magia.bind(PESTANA_DUO)})
+		if quiere_duo:
+			activa = pestanas.size() - 1
 	var items: Array = []
+	if quiere_duo:
+		menu.submenu(duos, pestanas, activa)
+		return
 	if nivel >= 4:
 		var fam: String = familias[nivel - 4]
 		for it in Artes.filas_familia(fam, sabe[fam], actor, heroes, enemigos, cola, MODO_PRUEBAS, ATB_MAX):
@@ -2707,7 +2720,74 @@ func _menu_magia(nivel := 0) -> void:
 				"derecha": "PM ∞" if MODO_PRUEBAS else "%d PM" % d["coste"], "apagado": not paga, "falta_pm": not paga,
 				"area_enemigos": d["todos"] and not MAGIAS[h[0]].get("cura", false),
 				"desc": _desc_magia(h[0], d) if paga else Artes.motivo_pm(d["coste"], actor["mp"])})
-	menu.submenu(items, pestanas, p["activa"])
+	menu.submenu(items, pestanas, activa)
+
+
+# ---------------------------------------------------------------- V11: técnicas combinadas (MEJORAS_COMBATE.md)
+# Filo Arcano (Kael + Lya): Lya prende en fuego la espada de Kael. En el turno de Kael, si Lya está en pie, con 8 PM y
+# con la mitad de su ATB: Kael golpea con su ataque más el 60 % del Fuego de Lya, con las llamas de Embuir (quema) y
+# como golpe de magia (rompe la guardia del Slime y cuenta para interrumpir). Gasta 8 PM de Lya y su turno (su ATB
+# vuelve a cero). Garon + Lya y Kael + Garon, pendientes.
+const PESTANA_DUO := 9
+const FILO_ARCANO := {"coste": 8, "parte_magia": 0.6, "atb_min": 0.5}
+
+
+func _duos_de(quien: Dictionary) -> Array:
+	if quien.get("nombre", "") != "Kael":
+		return []
+	var lyas: Array = heroes.filter(func(h): return h["nombre"] == "Lya")
+	if lyas.is_empty():
+		return []
+	var lya: Dictionary = lyas[0]
+	var motivo := ""
+	if lya["hp"] <= 0:
+		motivo = "Lya ha caído"
+	elif not MODO_PRUEBAS and lya["mp"] < FILO_ARCANO["coste"]:
+		motivo = "Lya necesita %d PM" % FILO_ARCANO["coste"]
+	elif lya["atb"] < ATB_MAX * FILO_ARCANO["atb_min"]:
+		motivo = "Lya aún no está lista (%d %%)" % roundi(lya["atb"] / ATB_MAX * 100.0)
+	return [{"texto": "Filo Arcano", "icono": "Fuego", "accion": _elegir_filo_arcano,
+		"derecha": "PM ∞" if MODO_PRUEBAS else "%d PM Lya" % FILO_ARCANO["coste"], "apagado": motivo != "",
+		"motivo": motivo,
+		"desc": ("Kael y Lya: la espada en llamas. Golpe que quema, rompe guardias y corta golpes preparados. " +
+			"Gasta %d PM y el turno de Lya.") % FILO_ARCANO["coste"] if motivo == "" else motivo}]
+
+
+func _elegir_filo_arcano() -> void:
+	_pedir_objetivo(enemigos.filter(func(e): return e["hp"] > 0), _filo_arcano, _menu_magia.bind(PESTANA_DUO),
+		"TOCA UN ENEMIGO")
+
+
+func _filo_arcano(obj: Dictionary) -> void:
+	_ocultar_menu()
+	estado = "accion"
+	var kael: Dictionary = actor
+	var lya: Dictionary = heroes.filter(func(h): return h["nombre"] == "Lya")[0]
+	if not MODO_PRUEBAS:
+		lya["mp"] -= FILO_ARCANO["coste"]
+	lya["atb"] = 0.0                                  # presta su turno
+	cola = cola.filter(func(x): return not is_same(x, lya))
+	registro.text = "Kael y Lya: ¡Filo Arcano!"
+	_numero_flotante(lya, "¡Dúo!", Color(1.0, 0.85, 0.45), 30)
+	var pl = _p3d(lya)
+	if pl != null and pl.has_method("lanzar_magia"):
+		pl.lanzar_magia()                              # su gesto de lanzar, sin esperar
+	_destello(_centro(kael), Color(1.0, 0.55, 0.2), 1.2)
+	_sonar("embuir")
+	_actualizar()
+	await get_tree().create_timer(0.35).timeout
+	var antes = kael.get("embuir", null)
+	kael["embuir"] = "Fuego"
+	kael["filo_arcano"] = true
+	var dano: int = maxi(1, int(kael["atk"] * kael.get("mult_fisico", 1.0))) + randi_range(-2, 3) \
+		+ int(_dano_magia(lya, NIVELES_MAGIA["Fuego"][0]) * FILO_ARCANO["parte_magia"])
+	await _animar_golpe(kael, obj, dano, "")
+	kael.erase("filo_arcano")
+	if antes == null:
+		kael.erase("embuir")
+	else:
+		kael["embuir"] = antes
+	_terminar_turno()
 
 
 func _desc_magia(magia: String, d: Dictionary) -> String:
@@ -3910,7 +3990,7 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 			Sonido.golpe(critico, objetivo.get("defendiendo", false))
 			if origen.get("devora", false):
 				Sonido.voz(origen, "devorar")              # el mordisco de Gorthor
-		golpe_magico = magia != ""
+		golpe_magico = magia != "" or origen.get("filo_arcano", false)
 		var real: int = _quitar_pv(objetivo, dano)     # lo que llega a los PV (con coraza de Escarcha, menos; M3)
 		golpe_magico = false
 		origen["absorbido"] = dano - real              # lo que paró la coraza (el mordisco de Gorthor no se cura con eso)

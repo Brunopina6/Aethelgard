@@ -74,6 +74,7 @@ func _probar() -> void:
 	await _area()
 	await _interrupcion()
 	await _invocaciones()
+	await _filo_arcano()
 	c.queue_free()
 	await _esperar(5)
 	for k in P.CLAVES + ["partida_lista", "grupo_combate", "tipo_combate", "zona"]:
@@ -226,3 +227,40 @@ func _invocaciones() -> void:
 	await _esperar(2)
 	_ok(c.estado == "invocacion", "4: atrás desde el objetivo no vuelve a la lista de invocaciones (%s)" % c.estado)
 	c._atras()
+
+
+func _filo_arcano() -> void:
+	var kael: Dictionary = c.heroes.filter(func(h): return h["nombre"] == "Kael")[0]
+	var lya: Dictionary = c.heroes.filter(func(h): return h["nombre"] == "Lya")[0]
+	c.actor = kael
+	c.menu.heroe_actual = kael
+	lya["mp"] = 20
+	lya["atb"] = c.ATB_MAX * 0.3
+	var d: Array = c._duos_de(kael)
+	_ok(d.size() == 1 and d[0]["apagado"] and str(d[0]["motivo"]).contains("no está lista"),
+		"5: con Lya al 30 %% de ATB, Filo Arcano no sale apagado con su motivo: %s" % str(d))
+	_ok(c._duos_de(lya).is_empty(), "5: Lya tiene la pestaña DÚO (es de Kael)")
+	lya["atb"] = c.ATB_MAX * 0.6
+	d = c._duos_de(kael)
+	_ok(d.size() == 1 and not d[0]["apagado"], "5: con Lya lista, Filo Arcano sale apagado: %s" % str(d))
+	c._menu_magia(c.PESTANA_DUO)
+	await _esperar(2)
+	_ok(c.estado == "magia" and c.menu.filas.size() == 1 and c.menu.filas[0]["item"]["texto"] == "Filo Arcano",
+		"5: la pestaña DÚO no lista Filo Arcano (%s)" % str(c.menu.filas.map(func(f): return f["item"].get("texto", ""))))
+	c._ocultar_menu()
+	# el golpe: al Slime encogido le rompe la guardia, gasta 8 PM y el turno de Lya
+	var s: Dictionary = c.enemigos[2]
+	s["personalidad"] = "cobarde"
+	s["hp_max"] = 400
+	s["hp"] = 400
+	s["cargando"] = true
+	s["defendiendo"] = true
+	s["carga_recibido"] = 0
+	c.cola.append(lya)
+	await c._filo_arcano(s)
+	await _esperar(5)
+	_ok(lya["mp"] == 12 or c.MODO_PRUEBAS, "5: Filo Arcano no gasta 8 PM de Lya (le quedan %d)" % lya["mp"])
+	_ok(lya["atb"] < c.ATB_MAX * 0.2 and not c.cola.any(func(x): return is_same(x, lya)), "5: Lya no pierde su turno")
+	_ok(s["hp"] < 400, "5: Filo Arcano no hace daño")
+	_ok(not s.get("cargando", false) and s.get("aturdido", false), "5: Filo Arcano no rompe la guardia del Slime encogido")
+	_ok(not kael.has("filo_arcano") and not kael.has("embuir"), "5: Kael se queda con el fuego de Filo Arcano")

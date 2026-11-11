@@ -70,14 +70,34 @@ pantalla no ayuda a decidir (no dice qué le pasa a cada enemigo).
 - Todo lo demás sale igual línea a línea, con los mismos resultados.
 - La cabecera de la referencia lo explica.
 
+### Técnica combinada: Filo Arcano (Kael + Lya)
+- Está en MAGIA → pestaña **DÚO** de Kael, que sale solo si Lya va en el grupo.
+- **Requisitos:** Lya en pie, con 8 PM y con al menos la mitad de su ATB. Si falta algo, sale apagada y dice qué
+  («Lya aún no está lista (30 %)», «Lya necesita 8 PM», «Lya ha caído»).
+- **Efecto:** Kael golpea con su ataque más el 60 % del Fuego de Lya, con las llamas de Embuir (quema). Cuenta como
+  magia, así que rompe la guardia del Slime y suma para interrumpir.
+- **Coste:** 8 PM de Lya y su turno (su ATB vuelve a cero). Así es una decisión: el golpe fuerte ahora, o dos turnos.
+- **Presentación:** el gesto de lanzar de Lya, un destello de fuego en Kael, el sonido de Embuir, «¡Dúo!» sobre Lya y
+  el golpe con llamas.
+- Garon + Lya (barrera rúnica) y Kael + Garon (ruptura): pendientes.
+
 ## 3. Pruebas
 
-- `prueba_v11_combate` (nueva): comprueba el panel, el área, la interrupción, la guardia rota, los jefes y la lista de
-  invocación. Superada.
+- Batería completa en `4e1f734`: **105 superadas, 0 fallidas, 43 manuales y 0 no seguras**
+  (`D:\REBELUM_diagnostico\pruebas\2026-11-11_011705`).
+- `prueba_v11_combate` (nueva) comprueba:
+  - el panel y el área;
+  - la interrupción, la guardia rota y que los jefes no cambian;
+  - la lista de invocación;
+  - Filo Arcano.
 - Siguen pasando `prueba_patrones_enemigos`, `prueba_zarzalin_combate`, `prueba_hud_combate` y `prueba_combate_huella`
   (con la referencia nueva).
-- Capturas en `D:\REBELUM_diagnostico\fase2\2026-11-11_v11_fotos_combate\fotos2`, con `pruebas/fotos_v11_combate.gd`:
-  menú, panel, derrotado apagado, área, invocación, aviso e interrumpido.
+- `prueba_artes_combate`: con Lya en el grupo, Kael tiene una pestaña más, «DÚO». Es el único cambio en lo que espera,
+  y la prueba lo explica.
+- Capturas en `D:\REBELUM_diagnostico\fase2\2026-11-11_v11_fotos_combate\fotos3`, con `pruebas/fotos_v11_combate.gd`:
+  - el menú, el panel y un derrotado apagado;
+  - el área y la invocación;
+  - el aviso, el golpe interrumpido y la pestaña DÚO.
 
 ## 4. Pendiente del combate (por orden)
 
@@ -85,8 +105,8 @@ pantalla no ayuda a decidir (no dice qué le pasa a cada enemigo).
    - que la lista se lea y se toque bien con el dedo;
    - si el 25 % es justo;
    - FPS con la lista abierta.
-2. **Técnicas combinadas** (Kael + Lya, Garon + Lya y Kael + Garon), con coste, requisitos y animación. Solo diseño;
-   sin hacer.
+2. **Técnicas combinadas:** Kael + Lya está hecha (Filo Arcano). Faltan Garon + Lya y Kael + Garon, y una animación
+   propia del golpe combinado.
 3. Enemigos con comportamientos nuevos (proteger a otro, invocar refuerzos, cambiar de resistencia). Sin hacer.
 4. Variedad de encuentros (élite, emboscada, proteger, objetivo especial). Sin hacer.
 5. Cámara e impactos de los golpes fuertes. Sin tocar en la V11: se conservan los de la V9 y la V10.
