@@ -5,6 +5,8 @@ extends SceneTree
 #   3. Cavar: lejos, nada; encima, el objeto una sola vez (al inventario); el único no se repite.
 #   4. Falsas: dan «Chatarra» sin objeto; con el nivel 3 ya no pitan.
 #   5. Guardado: lo desenterrado y el nivel van en la partida; una partida antigua empieza en el nivel 1 sin nada.
+#   6. V12: tenerlo (dar), los únicos esperan su hito, ningún hallazgo cae en el estanque ni en las rocas, las
+#      investigaciones de Kael (gastan y suben; sin materiales, no) y la Aguja de Resonancia oye más lejos.
 # Imprime «FALLOS: n».
 
 const R := "mar_de_cristal_1"
@@ -34,10 +36,22 @@ func _probar() -> void:
 	var a: Array = B.hallazgos(R, 7)
 	var b: Array = B.hallazgos(R, 7)
 	var c: Array = B.hallazgos(R, 8)
-	_ok(a.size() == 21 and a.map(func(h): return h["pos"]) == b.map(func(h): return h["pos"]), "1: la misma semilla no da lo mismo")
+	_ok(a.size() == 22 and a.map(func(h): return h["pos"]) == b.map(func(h): return h["pos"]), "1: la misma semilla no da lo mismo")
 	_ok(a.map(func(h): return h["pos"]) != c.map(func(h): return h["pos"]), "1: otra semilla da lo mismo")
 	var u: Dictionary = a.filter(func(h): return h["id"] == "llave_vidrio")[0]
-	_ok(u["pos"] == Vector2(61.5, 18.0) and c.filter(func(h): return h["id"] == "llave_vidrio")[0]["pos"] == u["pos"], "1: el único no está en su sitio fijo")
+	_ok(u["pos"] == Vector2(49.0, 21.0) and c.filter(func(h): return h["id"] == "llave_vidrio")[0]["pos"] == u["pos"], "1: el único no está en su sitio fijo")
+	# 6a. V12: los únicos esperan su hito (la llave, mc_ruinas; el sello, mc_caravana): ni pitan ni salen antes
+	_ok(not B.tiene(), "6: sin dárselo, Kael ya tiene el buscador")
+	B.dar()
+	_ok(B.tiene() and B.nivel() == 1, "6: dar() no le da el buscador de nivel 1")
+	_ok(B.pendientes(R, 7).all(func(h): return h["id"] != "llave_vidrio" and h["id"] != "sello_caravana"), "6: un único pita antes de su hito")
+	_ok(B.excavar(R, 7, u["pos"]).get("objeto", "") != "Llave de vidrio" and Inv.cantidad("Llave de vidrio") == 0, "6: la llave sale antes de mc_ruinas")
+	for h in a:
+		_ok(h["pos"].distance_to(Vector2(74, 72)) > 5.0 and h["pos"].distance_to(Vector2(26, 30)) > 2.0, "6: un hallazgo cae en el estanque o en una roca (%s)" % h)
+	P.poner_hito("mc_ruinas")
+	P.poner_hito("mc_caravana")
+	_ok(B.pendientes(R, 7).any(func(h): return h["id"] == "llave_vidrio") and B.pendientes(R, 7).any(func(h): return h["id"] == "sello_caravana"),
+		"6: con su hito, el único no aparece")
 	# 2. señal
 	var lejos: Dictionary = B.senal(R, 7, u["pos"] + Vector2(5.5, 0))
 	var cerca: Dictionary = B.senal(R, 7, u["pos"] + Vector2(1.0, 0))
@@ -72,8 +86,28 @@ func _probar() -> void:
 	var vieja: Dictionary = d.duplicate(true)
 	vieja.erase("buscador")
 	P.restaurar(vieja)
-	_ok(B.nivel() == 1 and not B.desenterrado(R, "llave_vidrio"), "5: una partida antigua trae buscador")
+	_ok(B.nivel() == 1 and not B.desenterrado(R, "llave_vidrio") and not B.tiene(), "5: una partida antigua trae buscador")
 	P.restaurar(d)
-	_ok(B.nivel() == 3 and B.desenterrado(R, "llave_vidrio"), "5: al cargar, el buscador no es el mismo")
+	_ok(B.nivel() == 3 and B.desenterrado(R, "llave_vidrio") and B.tiene(), "5: al cargar, el buscador no es el mismo")
+	# 6b. investigaciones de Kael: sin materiales no sube ni gasta; con ellos, gasta lo justo y sube; en el 3, al máximo
+	B.mejorar(1)
+	var o: Dictionary = Inv.datos()["objetos"]
+	for k in ["Fragmento de espada", "Mineral rúnico", "Reliquia de vidrio", "Moneda antigua"]:
+		o.erase(k)
+	_ok(not B.investigar().begins_with("Kael") and B.nivel() == 1, "6: sin materiales, la investigación sube el nivel")
+	Inv.agregar_objeto("Fragmento de espada", 3)
+	Inv.agregar_objeto("Mineral rúnico", 1)
+	_ok(B.falta_mejora().is_empty() and B.investigar().begins_with("Kael") and B.nivel() == 2, "6: con materiales no sube al 2")
+	_ok(Inv.cantidad("Fragmento de espada") == 1 and Inv.cantidad("Mineral rúnico") == 0, "6: el nivel 2 no gasta lo justo")
+	Inv.agregar_objeto("Reliquia de vidrio", 2)
+	Inv.agregar_objeto("Moneda antigua", 4)
+	_ok(not B.falta_mejora().is_empty() and B.nivel() == 2, "6: con 4 monedas se puede subir al 3")
+	Inv.agregar_objeto("Moneda antigua", 1)
+	_ok(B.investigar().begins_with("Kael") and B.nivel() == 3 and Inv.cantidad("Moneda antigua") == 0, "6: no sube al 3")
+	_ok(B.falta_mejora() == ["Ya está al máximo."] and B.nivel() == 3, "6: pasa del nivel 3")
+	# 6c. la Aguja de Resonancia: oye 2 m más lejos
+	var al0: float = B.alcance()
+	load("res://equipo_extra.gd").conseguir("aguja_resonancia")
+	_ok(is_equal_approx(B.alcance(), al0 + B.ALCANCE_AGUJA), "6: la Aguja no amplía el alcance (%s → %s)" % [al0, B.alcance()])
 	print("FALLOS: %d" % fallos)
 	quit(1 if fallos > 0 else 0)
