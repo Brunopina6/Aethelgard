@@ -43,6 +43,7 @@ var movimiento := ""
 
 func _ready() -> void:
 	_crear_ambiente()
+	_compensar_sin_sombras()
 	_crear_escenario()
 	kael = load("res://kael_3d.gd").new()
 	kael.ruta_modelo = "res://kael.fbx"
@@ -71,6 +72,23 @@ func _ready() -> void:
 	_preparar_sombreados.call_deferred()            # cuando la escena hija ya ha puesto todo lo suyo
 	if Engine.has_meta("banco_proto"):
 		_seguir_banco.call_deferred()
+
+
+# Luz del perfil sin sombras (V12, 11/11; hallazgo de gráficos, docs/memory/agents/graficos_v12_desierto.md): en
+# Compatibility, con la sombra del sol activada, la luz ambiente y la bruma iluminan bastante más que sin ella, así que
+# el perfil bajo (sin sombras) se veía más oscuro que el medio y el alto en todas las regiones. Sin sombras, se sube la
+# luz ambiente de la escena (su WorldEnvironment) por AMBIENTE_SIN_SOMBRAS: medido con
+# pruebas/herramientas/medir_luz_perfiles.gd (antes y después). El alto y el medio no cambian. Engine
+# «luz_sin_compensar» lo desactiva (para medir el antes).
+const AMBIENTE_SIN_SOMBRAS := 1.0
+
+
+func _compensar_sin_sombras() -> void:
+	if Engine.has_meta("luz_sin_compensar") or bool(load("res://prototipos/calidad_proto.gd").datos().get("sombras", false)):
+		return
+	for n in get_children():
+		if n is WorldEnvironment and (n as WorldEnvironment).environment != null:
+			(n as WorldEnvironment).environment.ambient_light_energy *= AMBIENTE_SIN_SOMBRAS
 
 
 # Perfil de calidad (prototipos/calidad_proto.gd): resolución del 3D (la interfaz va siempre a
