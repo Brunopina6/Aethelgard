@@ -10,6 +10,10 @@
 # aliento el otro: son decisiones nuevas del enemigo (tiran randf y añaden turnos), así que E1, E2, E3, E5, E6, E7 y E9
 # cambian desde su primer turno de enemigo; E4 y E8 (Guardián y Gorthor, jefes) salen iguales línea a línea. Los
 # resultados no cambian (E1-E5, E8 y E9 victoria; E6 huida; E7 derrota). Las 12 magias, costes, fórmulas y ATB, igual.
+# V11 (11/11, claude/rebelum-v11): interrupción del golpe preparado (MEJORAS_COMBATE.md). En E2, una magia de Lya
+# rompe la guardia del Slime B encogido: recibe el daño entero, pierde el rebote y pasa su turno siguiente aturdido;
+# la Poción de Lya cura 21 en vez de 32. El resto, línea a línea igual, y los resultados, los mismos. SHA-256 del
+# texto nuevo sin cabecera, empieza por b17aec48041c6d2c (carpeta de la pasada: pruebas/2026-11-11_011242, dos pasadas).
 # No cuentan las líneas que empiezan por «#» ni las vacías.
 # Formato: «== combate · grupo · nivel · zona · tipo · semilla» y una línea por suceso con su fotograma: ▶ turno de un
 # héroe y lo que hace (guion de la prueba), ▷ turno de un enemigo, · cartel, Δ cambios de PV y PM, ■ fin y ◆ decisión.
@@ -148,25 +152,25 @@ partida · combates_ganados {  } · decisiones {  } · Armonía 1.00 · velocida
 00971   Lya: Rayo → Slime B
 00972 · Lya lanza Rayo
 00972   Δ Lya PM 26→19
+01015 · ¡La magia rompe la guardia de Slime B!
 01015   Δ Slime B PV 55→23
 01062 · (cartel vacío)
 01062 ▶ turno de Kael (PV 120/120 PM 16/16)
 01062   Kael: ataca a Slime B
 01063 · Kael ataca a Slime B
-01100   Δ Slime B PV 23→14
+01100   Δ Slime B PV 23→2
 01148 ▷ turno de Slime B
-01148 · ¡Slime B rebota contra Lya!
-01172   Δ Lya PV 59→48
-01207 · (cartel vacío)
-01207 ▶ turno de Lya (PV 48/80 PM 19/46)
-01207   Lya: Poción → Lya
-01208 · Lya usa Poción (+32 PV)
-01208   Δ Lya PV 48→80
+01148 · Slime B, aturdido, recupera el aliento
+01183 · (cartel vacío)
+01183 ▶ turno de Lya (PV 59/80 PM 19/46)
+01183   Lya: Poción → Lya
+01184 · Lya usa Poción (+21 PV)
+01184   Δ Lya PV 59→80
 01265 · (cartel vacío)
 01265 ▶ turno de Kael (PV 120/120 PM 16/16)
 01265   Kael: ataca a Slime B
 01266 · Kael ataca a Slime B
-01303   Δ Slime B PV 14→0
+01303   Δ Slime B PV 2→0
 01347 ■ fin del combate
 01347 · ¡Victoria!
 01378 · +60 EXP   +30 monedas

@@ -12,6 +12,7 @@ extends Control
 # apagadas (T-100) y Intro / A o soltar el dedo sobre ellas solo suena a error.
 
 signal atras
+signal marcado(item: Dictionary)                 # V11: la orden marcada (combate.gd enseña a quién alcanza)
 
 const Artes := preload("res://artes.gd")       # iconos de las familias nuevas y de los estados (T-091)
 
@@ -780,6 +781,13 @@ func _dibujar_icono(c: Control, icono) -> void:
 		"Cura":                                      # cruz
 			c.draw_rect(Rect2(m + Vector2(-4, -13), Vector2(8, 26)), col)
 			c.draw_rect(Rect2(m + Vector2(-13, -4), Vector2(26, 8)), col)
+		"Erebo":                                     # V11, la invocación: dos alas oscuras sobre un aro dorado
+			c.draw_circle(m, 14.0, Color(0.12, 0.08, 0.2))
+			c.draw_arc(m, 14.0, 0.0, TAU, 32, ORO, 2.0, true)
+			for s in [-1.0, 1.0]:
+				c.draw_colored_polygon(PackedVector2Array([m + Vector2(2 * s, 4), m + Vector2(15 * s, -10),
+					m + Vector2(11 * s, 1), m + Vector2(16 * s, 2), m + Vector2(4 * s, 9)]), Color(0.55, 0.4, 0.85))
+			c.draw_circle(m + Vector2(0, 2), 3.0, ORO)
 		_:
 			c.draw_circle(m, 8.0, col)
 
@@ -793,6 +801,7 @@ func _elegir(i: int, sonido: bool) -> void:
 		sonar("tic")
 	sel = i
 	_pintar()
+	marcado.emit(filas[i]["item"])
 
 
 func _ejecutar(i: int) -> void:

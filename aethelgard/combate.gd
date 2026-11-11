@@ -621,6 +621,176 @@ func _crear_interfaz() -> void:
 	obj_linea.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	obj_linea.visible = false
 	capa.add_child(obj_linea)
+	panel_obj = Control.new()                         # V11: la lista de objetivos a la derecha (encima de todo)
+	panel_obj.position = PANEL_OBJ.position
+	panel_obj.size = PANEL_OBJ.size
+	panel_obj.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel_obj.visible = false
+	capa.add_child(panel_obj)
+	menu.marcado.connect(_al_marcar_orden)
+
+
+# ---------------------------------------------------------------- V11: panel de objetivos (MEJORAS_COMBATE.md)
+# Al elegir a quién (ATACAR, MAGIA, artes, objetos, curas), a la derecha sale la lista con el nombre de cada uno (los
+# iguales ya llevan A, B…), sus PV, lo que se sabe de él (prepara un golpe, en guardia, aturdido, quemado, congelado) y
+# los derrotados apagados. El apuntado lleva «▶» y marco dorado, igual que la flecha sobre él. Cada fila se toca (o se
+# pasa el ratón) para apuntar y se suelta para confirmar; con teclado o mando, la selección de siempre la sigue. Con
+# una magia o un arte que alcanza a todos, la lista marca a quién alcanza: al marcar la orden y mientras se lanza.
+const PANEL_OBJ := Rect2(820, 214, 420, 316)
+const FILA_OBJ := 52.0
+var panel_obj: Control
+var filas_obj: Array = []                          # [{"f": luchador, "nodo": Control, "ok": bool}]
+var modo_panel := ""                               # "elegir" o "area"
+
+
+func _mostrar_panel(candidatos: Array, modo: String) -> void:
+	for n in panel_obj.get_children():
+		n.queue_free()
+	filas_obj = []
+	modo_panel = modo
+	var de_enemigos: bool = not candidatos.is_empty() and candidatos.all(func(f): return not f.get("hero", false))
+	var lista: Array = enemigos if de_enemigos else candidatos
+	var titulo := _etiqueta("LE ALCANZA" if modo == "area" else ("ENEMIGOS" if de_enemigos else "ALIADOS"), 18,
+		menu.ORO, menu.f_nombre)
+	titulo.position = Vector2(6, 0)
+	panel_obj.add_child(titulo)
+	var alto: float = minf(FILA_OBJ, (PANEL_OBJ.size.y - 30.0) / maxf(1.0, lista.size()) - 4.0)
+	for i in lista.size():
+		var f: Dictionary = lista[i]
+		var ok: bool = f["hp"] > 0 and candidatos.any(func(c): return is_same(c, f))
+		if f.get("hero", false):
+			ok = candidatos.any(func(c): return is_same(c, f))      # (revivir: un aliado caído también vale)
+		var fila := Control.new()
+		fila.position = Vector2(0, 30 + i * (alto + 4.0))
+		fila.size = Vector2(PANEL_OBJ.size.x, alto)
+		fila.mouse_filter = Control.MOUSE_FILTER_STOP if ok and modo == "elegir" else Control.MOUSE_FILTER_IGNORE
+		fila.clip_contents = true
+		panel_obj.add_child(fila)
+		var fondo := ColorRect.new()
+		fondo.name = "fondo"
+		fondo.size = fila.size
+		fondo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		fila.add_child(fondo)
+		var borde := ColorRect.new()
+		borde.name = "borde"
+		borde.size = Vector2(4, alto)
+		borde.color = menu.ORO
+		borde.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		fila.add_child(borde)
+		var nombre := _etiqueta(f["nombre"], 24 if alto >= 44.0 else 20, menu.COLOR_HEROE.get(f["nombre"], menu.LUZ_CLARA),
+			menu.f_nombre)
+		nombre.name = "nombre"
+		nombre.position = Vector2(14, 2)
+		fila.add_child(nombre)
+		var info := _etiqueta(_info_objetivo(f, ok), 16, Color(menu.LUZ_CLARA, 0.85), null)
+		info.position = Vector2(14, alto - 22.0)
+		info.size = Vector2(PANEL_OBJ.size.x - 20.0, 20)
+		fila.add_child(info)
+		var vida := ColorRect.new()                  # sus PV, en una raya fina a la derecha
+		vida.position = Vector2(PANEL_OBJ.size.x - 120.0, 14)
+		vida.size = Vector2(110.0 * clampf(float(f["hp"]) / maxf(1.0, f["hp_max"]), 0.0, 1.0), 4)
+		vida.color = Color(0.55, 0.9, 0.55) if f.get("hero", false) else Color(1.0, 0.45, 0.3)
+		vida.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		fila.add_child(vida)
+		if not ok:
+			fila.modulate = Color(1, 1, 1, 0.38)
+		elif modo == "elegir":
+			var quien = f
+			fila.gui_input.connect(func(ev: InputEvent): _toque_fila_obj(ev, quien, fila))
+			fila.mouse_entered.connect(func():
+				if estado == "objetivo":
+					_apuntar(quien))
+		filas_obj.append({"f": f, "nodo": fila, "ok": ok})
+	panel_obj.visible = true
+	_pintar_panel()
+
+
+func _info_objetivo(f: Dictionary, ok: bool) -> String:
+	if f["hp"] <= 0 and not f.get("hero", false):
+		return "Derrotado"
+	var t: Array = ["PV %d/%d" % [f["hp"], f["hp_max"]]]
+	if f.get("cargando", false):
+		var plan: Dictionary = PATRONES.get(f.get("personalidad", ""), {})
+		if plan.get("encoge", false):
+			t.append("⚠ Encogido: la magia rompe su guardia")
+		elif not plan.is_empty():
+			t.append("⚠ Prepara un golpe: dale fuerte y lo cortas")
+		else:
+			t.append("⚠ Prepara un golpe")
+	if f.get("aturdido", false):
+		t.append("Aturdido")
+	elif f.get("defendiendo", false) and not f.get("hero", false):
+		t.append("En guardia")
+	if int(f.get("quemadura", 0)) > 0:
+		t.append("Quemado")
+	if int(f.get("congelado", 0)) > 0:
+		t.append("Congelado")
+	if f.get("hero", false) and f["hp"] <= 0:
+		t.append("Caído")
+	if not ok and f["hp"] > 0:
+		t.append("No disponible")
+	return " · ".join(t)
+
+
+func _pintar_panel() -> void:
+	for r in filas_obj:
+		var marcado: bool = r["ok"] and (modo_panel == "area" or (objetivo_apuntado != null and is_same(r["f"], objetivo_apuntado)))
+		var nodo: Control = r["nodo"]
+		if not is_instance_valid(nodo):
+			continue
+		(nodo.get_node("fondo") as ColorRect).color = Color(0.16, 0.13, 0.08, 0.82) if marcado else Color(0.04, 0.05, 0.09, 0.62)
+		nodo.get_node("borde").visible = marcado
+		var n: Label = nodo.get_node("nombre")
+		var base: String = r["f"]["nombre"]
+		n.text = ("▶ " if marcado and modo_panel == "elegir" else ("◆ " if marcado else "")) + base
+
+
+func _toque_fila_obj(ev: InputEvent, f: Dictionary, fila: Control) -> void:
+	if estado != "objetivo" or not (ev is InputEventMouseButton) or ev.button_index != MOUSE_BUTTON_LEFT:
+		return
+	get_viewport().set_input_as_handled()
+	if ev.pressed:
+		_apuntar(f)
+	elif Rect2(Vector2.ZERO, fila.size).has_point(ev.position):
+		_confirmar_objetivo(f)
+
+
+func _ocultar_panel() -> void:
+	if panel_obj != null:
+		panel_obj.visible = false
+	filas_obj = []
+	modo_panel = ""
+	_quitar_flechas_area()
+
+
+# El menú avisa de la orden marcada: si alcanza a todos los enemigos, una flecha dorada sobre cada uno (la lista no:
+# taparía el submenú de las magias); si no, se quitan.
+var flechas_area: Array = []
+
+
+func _al_marcar_orden(item: Dictionary) -> void:
+	_quitar_flechas_area()
+	if estado == "objetivo" or not item.get("area_enemigos", false) or item.get("apagado", false):
+		return
+	for e in enemigos.filter(func(x): return x["hp"] > 0):
+		var fl := Control.new()
+		fl.size = flecha.size
+		fl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		fl.position = _pos_flecha(e)
+		fl.draw.connect(func():
+			var pts := PackedVector2Array([Vector2(0, 0), Vector2(36, 0), Vector2(18, 28)])
+			fl.draw_colored_polygon(pts, Color(menu.ORO, 0.85))
+			pts.append(pts[0])
+			fl.draw_polyline(pts, Color(menu.SOMBRA, 0.8), 2.0))
+		capa.add_child(fl)
+		flechas_area.append(fl)
+
+
+func _quitar_flechas_area() -> void:
+	for fl in flechas_area:
+		if is_instance_valid(fl):
+			fl.queue_free()
+	flechas_area = []
 
 
 func _etiqueta(texto: String, tam: int, color: Color, fuente: Font = null) -> Label:
@@ -1699,13 +1869,50 @@ const PATRONES := {
 	"bruto": {"prob": 0.3, "a": "todos", "mult": 1.0, "prepara": "levanta los puños", "aviso": "⚠ ¡Pisotón!",
 		"golpe": "¡%s da un pisotón que alcanza a todos!"},
 }
+# V11, interrupción (MEJORAS_COMBATE.md): mientras uno de estos prepara su golpe, si el grupo le quita de una vez o en
+# varias al menos esta parte de su vida máxima, el golpe se corta y pierde su turno siguiente (aturdido). Al Slime
+# encogido (en guardia) los golpes físicos le hacen la mitad, pero la magia le rompe la guardia. Así, ante un aviso hay
+# dos respuestas: defenderse o cargar contra él. Los jefes (Guardián, Coloso, Gorthor) siguen con lo suyo.
+const UMBRAL_INTERRUPCION := 0.25
+var golpe_magico := false                         # lo pone quien resuelve un golpe de magia, para _vigilar_carga
+
+
+func _vigilar_carga(f: Dictionary, d: int) -> void:
+	if not f.get("cargando", false) or f["hp"] <= 0 or not PATRONES.has(f.get("personalidad", "")):
+		return
+	var plan: Dictionary = PATRONES[f["personalidad"]]
+	if plan.get("encoge", false) and golpe_magico:
+		_interrumpir(f, "¡Guardia rota!", "¡La magia rompe la guardia de %s!" % f["nombre"])
+		return
+	f["carga_recibido"] = int(f.get("carga_recibido", 0)) + d
+	if f["carga_recibido"] >= ceili(f["hp_max"] * UMBRAL_INTERRUPCION):
+		_interrumpir(f, "¡Interrumpido!", "¡%s pierde el equilibrio y no suelta el golpe!" % f["nombre"])
+
+
+func _interrumpir(f: Dictionary, cartel: String, texto: String) -> void:
+	f["cargando"] = false
+	f["recupera"] = true                              # su turno siguiente lo pasa aturdido
+	f["aturdido"] = true
+	f.erase("objetivo_carga")
+	f.erase("carga_recibido")
+	_marcar_aviso(f, false)
+	if PATRONES[f["personalidad"]].get("encoge", false):
+		f["defendiendo"] = false
+		if f.has("rig") and is_instance_valid(f["rig"]):
+			create_tween().tween_property(f["rig"], "scale", f.get("escala_rig", Vector2.ONE), 0.15)
+	_sonar(Artes.SONIDO_ESTADO["rota"])
+	_numero_flotante(f, cartel, Color(1.0, 0.92, 0.45), 36, Vector2(0, -60))
+	registro.text = texto
+	_temblor(4.0)
+	_actualizar()
 
 
 # Devuelve true si este turno ha sido del patrón (avisar, golpear o recuperarse); false, el turno de siempre.
 func _turno_patron(f: Dictionary, vivos: Array, mult: float, plan: Dictionary) -> bool:
 	if f.get("recupera", false):
 		f["recupera"] = false
-		registro.text = "%s recupera el aliento" % f["nombre"]
+		registro.text = ("%s, aturdido, recupera el aliento" if f.get("aturdido", false) else "%s recupera el aliento") % f["nombre"]
+		f.erase("aturdido")
 		_numero_flotante(f, "Recupera", Color(0.8, 0.85, 0.75), 28)
 		await get_tree().create_timer(0.8).timeout
 		return true
@@ -1748,6 +1955,7 @@ func _turno_patron(f: Dictionary, vivos: Array, mult: float, plan: Dictionary) -
 		return false
 	var obj := _elegir_objetivo("agresivo", vivos)
 	f["cargando"] = true
+	f["carga_recibido"] = 0
 	f["objetivo_carga"] = obj
 	_marcar_aviso(f, true)
 	if plan["a"] == "todos":
@@ -1925,7 +2133,7 @@ func _atras() -> void:
 			volver_obj.call()
 		else:
 			_mostrar_menu()
-	elif estado in ["magia", "pocion"]:
+	elif estado in ["magia", "pocion", "invocacion"]:
 		_mostrar_menu()
 
 
@@ -1992,6 +2200,7 @@ func _pedir_objetivo(candidatos: Array, al_elegir: Callable, volver: Callable, t
 		z.mouse_entered.connect(func(): _apuntar(quien))
 		capa_zonas.add_child(z)
 	fuera.visible = true
+	_mostrar_panel(candidatos, "elegir")
 	_apuntar(candidatos[0])
 
 
@@ -2005,6 +2214,7 @@ func _apuntar(f: Dictionary) -> void:
 	obj_nombre.visible = true
 	obj_linea.visible = true
 	obj_linea.color = Color(menu.COLOR_HEROE.get(f["nombre"], menu.LUZ_CLARA), 0.85)
+	_pintar_panel()
 
 
 func _pos_flecha(f: Dictionary) -> Vector2:
@@ -2026,6 +2236,8 @@ func _limpiar_objetivo() -> void:
 		z.queue_free()
 	objetivos_posibles = []
 	objetivo_apuntado = null
+	if modo_panel == "elegir":
+		_ocultar_panel()
 	flecha.visible = false
 	obj_nombre.visible = false
 	obj_linea.visible = false
@@ -2035,6 +2247,7 @@ func _limpiar_objetivo() -> void:
 func _ocultar_menu() -> void:
 	menu.cerrar()
 	_limpiar_objetivo()
+	_ocultar_panel()
 
 
 func _puede_pagar(coste: int) -> bool:
@@ -2483,6 +2696,8 @@ func _menu_magia(nivel := 0) -> void:
 		var fam: String = familias[nivel - 4]
 		for it in Artes.filas_familia(fam, sabe[fam], actor, heroes, enemigos, cola, MODO_PRUEBAS, ATB_MAX):
 			it["accion"] = _elegir_hechizo.bind(fam, it["nivel"])
+			var da: Dictionary = Artes.datos(fam, it["nivel"])
+			it["area_enemigos"] = da.get("todos", false) and da.get("a", "") == "enemigos"
 			items.append(it)
 	else:
 		for h in por_nivel[nivel - 1]:
@@ -2490,6 +2705,7 @@ func _menu_magia(nivel := 0) -> void:
 			var paga := _puede_pagar(d["coste"])
 			items.append({"texto": d["nombre"], "accion": _elegir_hechizo.bind(h[0], h[1]), "icono": h[0],
 				"derecha": "PM ∞" if MODO_PRUEBAS else "%d PM" % d["coste"], "apagado": not paga, "falta_pm": not paga,
+				"area_enemigos": d["todos"] and not MAGIAS[h[0]].get("cura", false),
 				"desc": _desc_magia(h[0], d) if paga else Artes.motivo_pm(d["coste"], actor["mp"])})
 	menu.submenu(items, pestanas, p["activa"])
 
@@ -2569,6 +2785,8 @@ func _lanzar_arte(fam: String, nv: int, objs: Array) -> void:
 	_gastar_pm(quien, d["coste"])
 	_actualizar()
 	registro.text = "%s lanza %s" % [quien["nombre"], d["nombre"]]
+	if d.get("todos", false) and d.get("a", "") == "enemigos":
+		_mostrar_panel(objs, "area")                  # V11: a quién alcanza (se quita al acabar el turno)
 	quien["animando"] = true
 	var circulo := _carga_magia(quien, fam, 1.0 + 0.3 * (nv - 1))
 	var p = _p3d(quien)
@@ -2834,7 +3052,10 @@ func _aplicar_todos() -> void:
 	_gastar_pm(quien, d["coste"])
 	_actualizar()
 	registro.text = "%s lanza %s" % [quien["nombre"], d["nombre"]]
-	await _magia_grupal(quien, enemigos.filter(func(e): return e["hp"] > 0), magia_sel, nivel_sel, _dano_magia(quien, d))
+	var alcanzados: Array = enemigos.filter(func(e): return e["hp"] > 0)
+	_mostrar_panel(alcanzados, "area")                # V11: a quién alcanza, mientras se lanza
+	await _magia_grupal(quien, alcanzados, magia_sel, nivel_sel, _dano_magia(quien, d))
+	_ocultar_panel()
 	_terminar_turno()
 
 
@@ -3095,6 +3316,7 @@ func _escapar() -> void:
 
 
 func _terminar_turno(carga := true) -> void:
+	_ocultar_panel()
 	estado = "accion"
 	actor["atb"] = 0.0
 	var pm_extra: int = Extra.pm_al_terminar(actor)            # Gota de la cascada alta (sin ella, 0)
@@ -3153,6 +3375,8 @@ func _quitar_pv(f: Dictionary, d: int) -> int:
 	if f.get("ultimo_aliento", false) and f["hp"] <= 0 and not f.get("decidido", false):
 		f["hp"] = 1
 		f["rendido"] = true
+	if not f.get("hero", false) and d > 0:
+		_vigilar_carga(f, d)                          # V11: un golpe preparado se puede interrumpir
 	return d
 
 
@@ -3389,8 +3613,19 @@ func _apuntar_decision(f: Dictionary, que: String) -> void:
 #   Enemigo normal: 20 % de muerte instantánea; si falla, no le hace daño.
 #   Jefe: inmune a la muerte; pierde el 20 % de su vida ACTUAL.
 # Tocar la pantalla salta la cinemática (el resultado se aplica igual, una sola vez).
+# V11: INVOCACIÓN abre antes la lista de invocaciones (hoy, solo Érebo) con su emblema, su coste (la Armonía llena), lo
+# que hace, quién la invoca y si se puede ahora; al elegirla se toca al enemigo, como siempre. Las reglas no cambian.
 func _invocar() -> void:
-	_pedir_objetivo(enemigos.filter(func(e): return e["hp"] > 0), _invocar_sobre, _mostrar_menu, "TOCA UN ENEMIGO")
+	var inv := _estado_invocacion()
+	_limpiar_objetivo()
+	estado = "invocacion"                           # «atrás» vuelve al menú, como en Magia
+	menu.submenu([{"texto": "Érebo", "icono": "Erebo", "derecha": "100 %", "accion": _invocar_objetivo,
+		"apagado": not inv["lista"], "motivo": inv["motivo"],
+		"desc": "%s: %s Coste: la Armonía llena; la invoca Lya." % [INVOCACION["nombre"], INVOCACION["desc"]]}])
+
+
+func _invocar_objetivo() -> void:
+	_pedir_objetivo(enemigos.filter(func(e): return e["hp"] > 0), _invocar_sobre, _invocar, "TOCA UN ENEMIGO")
 
 
 func _invocar_sobre(obj: Dictionary) -> void:
@@ -3675,7 +3910,9 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 			Sonido.golpe(critico, objetivo.get("defendiendo", false))
 			if origen.get("devora", false):
 				Sonido.voz(origen, "devorar")              # el mordisco de Gorthor
+		golpe_magico = magia != ""
 		var real: int = _quitar_pv(objetivo, dano)     # lo que llega a los PV (con coraza de Escarcha, menos; M3)
+		golpe_magico = false
 		origen["absorbido"] = dano - real              # lo que paró la coraza (el mordisco de Gorthor no se cura con eso)
 		if magia == "":
 			Sonido.recibe(objetivo)                    # la voz del enemigo golpeado: herido o caída (sonido.gd)
@@ -4598,7 +4835,9 @@ func _magia_grupal(o: Dictionary, objs: Array, magia: String, nivel: int, dano: 
 		if not obj.get("hero", false):               # fase 3: el Guardián del Bosque y la Esencia de enfoque
 			d = Bosque.dano_recibido(d, magia, o, obj, _lya_sabe())
 			d = Coloso.dano_recibido(d, magia, o, obj)   # V9: el Coloso (coraza rúnica)
+		golpe_magico = true
 		_quitar_pv(obj, d)
+		golpe_magico = false
 		_golpe_visual(obj, d, magia, false, potencia)
 	if nivel == 2:
 		_fogonazo(color, 0.2, 0.4)

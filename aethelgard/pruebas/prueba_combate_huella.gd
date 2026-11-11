@@ -446,7 +446,9 @@ func _hacer(h: Dictionary, a: Array) -> String:
 			var obj := _enemigo(a[1])
 			c.armonia = 1.0                           # como «-- invocar»: la Armonía, llena
 			c.menu.poner_armonia(1.0)
-			c._invocar()
+			c._invocar()                              # V11: abre la lista de invocaciones…
+			if c.estado == "invocacion":
+				c._invocar_objetivo()                 # …y al elegir a Érebo se pide el objetivo, como antes
 			c._confirmar_objetivo(obj)
 			return "invoca a Érebo sobre %s (Armonía llenada por la prueba)" % obj["nombre"]
 	return ""
