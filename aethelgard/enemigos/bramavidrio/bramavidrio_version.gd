@@ -1,0 +1,65 @@
+extends RefCounted
+# Qué versión de Bramavidrio se usa (V12, 11/11). UN SOLO INTERRUPTOR para el combate (combate.gd) y la exploración
+# (zonas3d/mar_cristal/gusano.gd):
+#   1  la versión 1, el gusano de anillos acorazados (enemigos/bramavidrio/bramavidrio_3d.gd y bramavidrio*.glb), intacta
+#   2  la versión 2, «la Sierpe de la Vela» (enemigos/bramavidrio/v2/bramavidrio2_3d.gd y bramavidrio2*.glb)
+# Por orden manda:
+#   - el argumento de la línea de órdenes «bramavidrio_version=1» (o 2) después de «--» (pruebas);
+#   - Engine.set_meta("bramavidrio_version", 1) (o 2), antes de crear el combate o la región;
+#   - Ajustes → «Bramavidrio» (user://ajustes.cfg, [bramavidrio] version), para que el jugador compare las dos;
+#   - VERSION_DEFECTO (cambiar esta constante es la forma de volver a la v1 en el juego por defecto).
+# Si faltan los archivos de la versión pedida, se usa la otra. Detalles: docs/memory/agents/animaciones_v12_bramavidrio2.md.
+
+const VERSION_DEFECTO := 2
+const GUIONES := {1: "res://enemigos/bramavidrio/bramavidrio_3d.gd", 2: "res://enemigos/bramavidrio/v2/bramavidrio2_3d.gd"}
+const MODELOS := {1: "res://enemigos/bramavidrio/bramavidrio.glb", 2: "res://enemigos/bramavidrio/v2/bramavidrio2.glb"}
+
+
+static func pedida() -> int:
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("bramavidrio_version="):
+			return int(a.get_slice("=", 1))
+	if Engine.has_meta("bramavidrio_version"):
+		return int(Engine.get_meta("bramavidrio_version"))
+	return en_ajustes()
+
+
+# La elegida en Ajustes (o VERSION_DEFECTO si no se ha elegido).
+static func en_ajustes() -> int:
+	var c := ConfigFile.new()
+	if c.load("user://ajustes.cfg") != OK:
+		return VERSION_DEFECTO
+	return int(c.get_value("bramavidrio", "version", VERSION_DEFECTO))
+
+
+static func elegir_en_ajustes(v: int) -> Error:
+	var c := ConfigFile.new()
+	if FileAccess.file_exists("user://ajustes.cfg"):
+		var err := c.load("user://ajustes.cfg")
+		if err != OK:
+			return err
+	c.set_value("bramavidrio", "version", v)
+	return c.save("user://ajustes.cfg")
+
+
+static func version() -> int:
+	var v := pedida()
+	if not GUIONES.has(v):
+		v = VERSION_DEFECTO
+	if not (ResourceLoader.exists(GUIONES[v]) and ResourceLoader.exists(MODELOS[v])):
+		v = 1 if v == 2 else 2
+	return v
+
+
+static func guion() -> String:
+	return GUIONES[version()]
+
+
+static func modelo() -> String:
+	return MODELOS[version()]
+
+
+# El guion que corresponde a «ruta» (la de MODELOS de combate.gd): si es el de Bramavidrio (cualquier versión), el de la
+# versión en uso; si no, el mismo.
+static func elegir(ruta: String) -> String:
+	return guion() if ruta in GUIONES.values() else ruta

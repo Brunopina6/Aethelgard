@@ -543,6 +543,23 @@ func _pintar_ajustes() -> void:
 			fmp.add_child(bmp)
 		cuerpo.add_child(fmp)
 		cuerpo.add_child(_texto("Se nota la próxima vez que se entra en Pastos Verdes.", 16, COLOR_SUAVE))
+	# Bramavidrio (11/11): la versión nueva («la Sierpe de la Vela») o la anterior (el gusano de anillos), para que el
+	# usuario las compare antes de decidir (enemigos/bramavidrio/bramavidrio_version.gd, [bramavidrio] version).
+	var BV = load("res://enemigos/bramavidrio/bramavidrio_version.gd")
+	var vb: int = BV.en_ajustes()
+	cuerpo.add_child(_texto("Bramavidrio", 26, COLOR_TITULO))
+	var fbv := HBoxContainer.new()
+	fbv.add_theme_constant_override("separation", 8)
+	for op in [[2, "Nuevo (la Sierpe)"], [1, "Anterior"]]:
+		var v: int = op[0]
+		var bbv := _boton(("● " if v == vb else "○ ") + op[1], 18, Vector2(260, 34), "bramavidrio:%d" % v)
+		bbv.pressed.connect(func():
+			BV.elegir_en_ajustes(v)
+			Sonido.efecto("ui_tic")
+			_pintar_de_nuevo())
+		fbv.add_child(bbv)
+	cuerpo.add_child(fbv)
+	cuerpo.add_child(_texto("Se nota en el próximo encuentro con Bramavidrio.", 16, COLOR_SUAVE))
 
 
 # Calidad de las regiones 3D (encargo del 09/11; prototipos/calidad_auto.gd, sección [calidad] de user://ajustes.cfg):

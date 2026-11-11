@@ -19,18 +19,47 @@ extends SceneTree
 #    y rugir; la luz sigue a sus huesos
 #  - el encuadre propuesto para MODELOS de combate.gd (la cámara de _crear_rig_3d): qué clips caben en la ventana 3D
 
-const CARPETA := "res://enemigos/bramavidrio/"
-const GUION := CARPETA + "bramavidrio_3d.gd"
-const JSON_CLIPS := CARPETA + "bramavidrio_clips.json"
-const VERSIONES := {
-	"alto": {"glb": CARPETA + "bramavidrio.glb", "tex": CARPETA + "bramavidrio_piel.webp", "tris": 25000, "lado": 2048},
-	"medio": {"glb": CARPETA + "bramavidrio_medio.glb", "tex": CARPETA + "bramavidrio_piel_medio.webp", "tris": 12000, "lado": 1024},
-	"bajo": {"glb": CARPETA + "bramavidrio_bajo.glb", "tex": CARPETA + "bramavidrio_piel_bajo.webp", "tris": 6000, "lado": 512},
+# V12 (11/11, rediseño): hay DOS versiones del modelo y la prueba comprueba las dos (o la que diga «version=1» / «version=2»
+# después de «--»). La 1 (el gusano de anillos) con sus límites de siempre; la 2 («la Sierpe de la Vela»,
+# enemigos/bramavidrio/v2/, fuente/crear_bramavidrio2.py) con el presupuesto de la 1 como techo (19 359 / 8 823 / 3 124
+# triángulos), 52 huesos (los 43 de la 1 más aleta_izq, aleta_der, succion y losa_1…losa_6), la superficie «polvo»,
+# los mismos clips e instantes de la 1 más los nuevos, las placas del suelo solo en la Fractura y la arena que aspira
+# solo en el Aliento, y las señales nuevas (placas_suelo, fin_succion). Y el interruptor (bramavidrio_version.gd).
+const DATOS_VERSION := {
+	1: {"carpeta": "res://enemigos/bramavidrio/", "guion": "bramavidrio_3d.gd", "json": "bramavidrio_clips.json",
+		"glb": ["bramavidrio.glb", "bramavidrio_medio.glb", "bramavidrio_bajo.glb"],
+		"tex": ["bramavidrio_piel.webp", "bramavidrio_piel_medio.webp", "bramavidrio_piel_bajo.webp"],
+		"tris": [25000, 12000, 6000], "extra": [], "superficies": ["piel", "vidrio", "garganta", "arena", "chorro"]},
+	2: {"carpeta": "res://enemigos/bramavidrio/v2/", "guion": "bramavidrio2_3d.gd", "json": "bramavidrio2_clips.json",
+		"glb": ["bramavidrio2.glb", "bramavidrio2_medio.glb", "bramavidrio2_bajo.glb"],
+		"tex": ["bramavidrio2_piel.webp", "bramavidrio2_piel_medio.webp", "bramavidrio2_piel_bajo.webp"],
+		"tris": [19359, 8823, 3124], "extra": ["aleta_izq", "aleta_der", "succion", "losa_1", "losa_2", "losa_3", "losa_4",
+		"losa_5", "losa_6"], "superficies": ["piel", "vidrio", "garganta", "arena", "chorro", "polvo"]},
 }
+var VER := 1
+var CARPETA := ""
+var GUION := ""
+var JSON_CLIPS := ""
+var VERSIONES := {}
+var SUPERFICIES: Array = []
 const CLIPS := ["reposo", "subterraneo", "aviso", "emerger", "rugido", "ataque", "ataque_sismico", "ataque_aliento",
 	"herida", "derrota"]
 const BUCLES := ["reposo", "subterraneo"]
-const SUPERFICIES := ["piel", "vidrio", "garganta", "arena", "chorro"]
+
+
+func _usar_version(v: int) -> void:
+	var d: Dictionary = DATOS_VERSION[v]
+	VER = v
+	CARPETA = d["carpeta"]
+	GUION = CARPETA + d["guion"]
+	JSON_CLIPS = CARPETA + d["json"]
+	SUPERFICIES = d["superficies"]
+	VERSIONES = {}
+	var lados := [2048, 1024, 512]
+	var i := 0
+	for nivel in ["alto", "medio", "bajo"]:
+		VERSIONES[nivel] = {"glb": CARPETA + d["glb"][i], "tex": CARPETA + d["tex"][i], "tris": d["tris"][i], "lado": lados[i]}
+		i += 1
 const DT := 1.0 / 30.0
 # Encuadre propuesto (MODELOS["bramavidrio"] en combate.gd)
 const VP := Vector2i(1920, 1000)
@@ -58,15 +87,60 @@ func _esperar(n: int) -> void:
 
 
 func _correr() -> void:
-	print("== Bramavidrio: modelo, clips y guion")
-	var datos := _leer_json()
-	for v in VERSIONES:
-		await _comprobar_glb(v, datos)
-	_comprobar_json(datos)
-	await _comprobar_guion()
-	await _encuadre()
+	var lista := [1, 2]
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("version="):
+			lista = [int(a.get_slice("=", 1))]
+	for ver in lista:
+		_usar_version(ver)
+		print("== Bramavidrio, VERSIÓN %d: modelo, clips y guion (%s)" % [ver, GUION])
+		var datos := _leer_json()
+		for v in VERSIONES:
+			await _comprobar_glb(v, datos)
+		_comprobar_json(datos)
+		await _comprobar_guion()
+		await _encuadre()
+	_comprobar_interruptor()
 	print("FALLOS: %d" % fallos)
 	quit(1 if fallos > 0 else 0)
+
+
+# El interruptor (enemigos/bramavidrio/bramavidrio_version.gd): por defecto la 2; con la meta, la 1; elegir() solo
+# cambia el guion de Bramavidrio.
+func _comprobar_interruptor() -> void:
+	print("-- interruptor de versión")
+	var V = load("res://enemigos/bramavidrio/bramavidrio_version.gd")
+	var antes = Engine.get_meta("bramavidrio_version") if Engine.has_meta("bramavidrio_version") else null
+	if Engine.has_meta("bramavidrio_version"):
+		Engine.remove_meta("bramavidrio_version")
+	var por_linea := false
+	for a in OS.get_cmdline_user_args():
+		por_linea = por_linea or a.begins_with("bramavidrio_version=")
+	if not por_linea:
+		_ok(V.version() == V.VERSION_DEFECTO and V.VERSION_DEFECTO == 2, "por defecto, la versión %d (constante %d)" % [V.version(), V.VERSION_DEFECTO])
+		Engine.set_meta("bramavidrio_version", 1)
+		_ok(V.version() == 1 and V.guion() == DATOS_VERSION[1]["carpeta"] + DATOS_VERSION[1]["guion"], "con la meta a 1: %s" % V.guion())
+		Engine.set_meta("bramavidrio_version", 2)
+		_ok(V.version() == 2 and V.modelo().ends_with("bramavidrio2.glb"), "con la meta a 2: %s" % V.modelo())
+		_ok(V.elegir("res://enemigos/bramavidrio/bramavidrio_3d.gd") == V.guion() and V.elegir("res://zarzalin_3d.gd") == "res://zarzalin_3d.gd",
+			"elegir() cambia solo el guion de Bramavidrio")
+		# Ajustes → «Bramavidrio» (datos aislados de la prueba): la elección se guarda y manda sin meta; la meta, sobre ella
+		Engine.remove_meta("bramavidrio_version")
+		var cfg_antes := FileAccess.get_file_as_string("user://ajustes.cfg") if FileAccess.file_exists("user://ajustes.cfg") else ""
+		_ok(V.elegir_en_ajustes(1) == OK and V.en_ajustes() == 1 and V.version() == 1, "Ajustes a «Anterior»: versión %d" % V.version())
+		Engine.set_meta("bramavidrio_version", 2)
+		_ok(V.version() == 2, "la meta manda sobre Ajustes")
+		Engine.remove_meta("bramavidrio_version")
+		_ok(V.elegir_en_ajustes(2) == OK and V.version() == 2, "Ajustes a «Nuevo»: versión %d" % V.version())
+		if cfg_antes == "":
+			DirAccess.remove_absolute(ProjectSettings.globalize_path("user://ajustes.cfg"))
+		else:
+			var f := FileAccess.open("user://ajustes.cfg", FileAccess.WRITE)
+			f.store_string(cfg_antes)
+			f.close()
+	Engine.remove_meta("bramavidrio_version")
+	if antes != null:
+		Engine.set_meta("bramavidrio_version", antes)
 
 
 func _leer_json() -> Dictionary:
@@ -103,6 +177,7 @@ func _comprobar_glb(v: String, datos: Dictionary) -> void:
 		esperados.append("col_%02d" % k)
 	for k in range(2, 18):
 		esperados.append("placa_%02d" % k)
+	esperados.append_array(DATOS_VERSION[VER]["extra"])
 	var faltan := esperados.filter(func(h): return sk.find_bone(h) < 0)
 	_ok(faltan.is_empty() and sk.get_bone_count() == esperados.size(),
 		"[%s] %d huesos (faltan: %s)" % [v, sk.get_bone_count(), faltan])
@@ -112,6 +187,10 @@ func _comprobar_glb(v: String, datos: Dictionary) -> void:
 	_ok(lista.size() == CLIPS.size(), "[%s] solo esos 10 clips (%d)" % [v, lista.size()])
 	var dj: Dictionary = datos.get("clips", {})
 	var quietos := ["raiz", "brillo", "garganta", "chorro", "monticulo"]   # no giran nunca: el importador quita su pista
+	var de_datos := ["brillo", "garganta", "chorro", "monticulo"]
+	if VER == 2:                                                  # v2: la succión y las placas del suelo (escala)
+		quietos.append_array(["succion", "losa_1", "losa_2", "losa_3", "losa_4", "losa_5", "losa_6"])
+		de_datos.append_array(["succion", "losa_1", "losa_6"])
 	for c in lista:
 		var a := ap.get_animation(c)
 		var giran := {}
@@ -123,9 +202,9 @@ func _comprobar_glb(v: String, datos: Dictionary) -> void:
 			if ":" in p and a.track_get_type(k) == Animation.TYPE_SCALE_3D:
 				escalan[p.get_slice(":", 1)] = true
 		var sin_giro := esperados.filter(func(h): return not (h in quietos) and not giran.has(h))
-		var sin_escala := ["brillo", "garganta", "chorro", "monticulo"].filter(func(h): return not escalan.has(h))
-		_ok(sin_giro.is_empty() and sin_escala.is_empty(), "[%s] %s anima los %d huesos que se mueven y la escala de los 4 de datos (faltan %s %s)" %
-			[v, c, esperados.size() - quietos.size(), sin_giro, sin_escala])
+		var sin_escala := de_datos.filter(func(h): return not escalan.has(h))
+		_ok(sin_giro.is_empty() and sin_escala.is_empty(), "[%s] %s anima los %d huesos que se mueven y la escala de los %d de datos (faltan %s %s)" %
+			[v, c, esperados.size() - quietos.size(), de_datos.size(), sin_giro, sin_escala])
 		if dj.has(c):
 			_ok(absf(a.length - float(dj[c]["duracion"])) < DT * 0.6, "[%s] %s dura %.3f s (JSON %.3f)" % [v, c, a.length, float(dj[c]["duracion"])])
 	# malla, superficies y textura
@@ -206,6 +285,27 @@ func _comprobar_clips(ap: AnimationPlayer, sk: Skeleton3D) -> void:
 	_ok(giro_lat > 25.0, "rugido: las mandíbulas laterales se abren (%.1f°)" % giro_lat)
 	var g := _escala_max(ap.get_animation("ataque_aliento"), "garganta")
 	_ok(g > 2.0, "ataque_aliento: la garganta se enciende (escala máx. %.2f)" % g)
+	if VER == 2:
+		for c in CLIPS:                                      # v2: placas del suelo solo en la Fractura; arena, solo en el Aliento
+			var a := ap.get_animation(c)
+			var lo := _escala_max(a, "losa_1")
+			var su := _escala_max(a, "succion")
+			_ok((lo > 0.9) == (c == "ataque_sismico") and (su > 0.9) == (c == "ataque_aliento"),
+				"%s: placas del suelo %.2f, arena aspirada %.2f" % [c, lo, su])
+		var sis := ap.get_animation("ataque_sismico")
+		var k := _pista(sis, "losa_1", Animation.TYPE_SCALE_3D)
+		_ok(k >= 0 and sis.scale_track_interpolate(k, 2.50).x < 0.05 and sis.scale_track_interpolate(k, 2.70).x > 0.9 and
+			sis.scale_track_interpolate(k, sis.length).x < 0.05, "Fractura: las placas salen en el impacto (2,53) y se hunden al final")
+		var al2 := ap.get_animation("ataque_aliento")
+		k = _pista(al2, "succion", Animation.TYPE_SCALE_3D)
+		_ok(k >= 0 and al2.scale_track_interpolate(k, 0.40).x < 0.05 and al2.scale_track_interpolate(k, 1.2).x > 0.9 and
+			al2.scale_track_interpolate(k, 1.85).x < 0.05, "Aliento: aspira entre 0,45 y 1,7 (la arena se ve)")
+		var ap_lat := _pista(ap.get_animation("rugido"), "aleta_izq", Animation.TYPE_ROTATION_3D)
+		var giro_al := 0.0
+		if ap_lat >= 0:
+			var ru2 := ap.get_animation("rugido")
+			giro_al = rad_to_deg(ru2.rotation_track_interpolate(ap_lat, 0.55).angle_to(ru2.rotation_track_interpolate(ap_lat, 1.0)))
+		_ok(giro_al > 30.0, "rugido: las aletas del cuello se abren (%.1f°)" % giro_al)
 
 
 func _pista(a: Animation, hueso: String, tipo: int) -> int:
@@ -275,7 +375,7 @@ func _comprobar_json(datos: Dictionary) -> void:
 
 func _nuevo(exploracion := false) -> Node3D:
 	var g: Node3D = load(GUION).new()
-	g.ruta_modelo = CARPETA + "bramavidrio.glb"
+	g.ruta_modelo = VERSIONES["alto"]["glb"]
 	g.calidad = "medio"
 	if exploracion:
 		g.en_exploracion = true
@@ -283,8 +383,9 @@ func _nuevo(exploracion := false) -> Node3D:
 	root.add_child(g)
 	for s in ["aviso", "impacto", "ataque_terminado", "clip_terminado"]:
 		g.connect(s, func(a): _anotar(g, s, a))
-	for s in ["succion", "descarga", "fin_descarga", "rompe_arena", "rugido_pico", "caida"]:
-		g.connect(s, func(): _anotar(g, s, null))
+	for s in ["succion", "descarga", "fin_descarga", "rompe_arena", "rugido_pico", "caida", "placas_suelo", "fin_succion"]:
+		if g.has_signal(s):
+			g.connect(s, func(): _anotar(g, s, null))
 	return g
 
 
@@ -314,7 +415,8 @@ func _comprobar_guion() -> void:
 	_ok(_clip(g) == "reposo", "empieza en reposo (%s)" % _clip(g))
 	_ok(g.anim.get_animation("reposo").loop_mode == Animation.LOOP_LINEAR and
 		g.anim.get_animation("ataque").loop_mode == Animation.LOOP_NONE, "en bucle el reposo; los ataques no")
-	_ok(absf(g.alcance("embestida") - 11.52 * 0.32) < 0.01, "alcance de la embestida con la escala: %.2f m" % g.alcance("embestida"))
+	_ok(absf(g.alcance("embestida") - float(g.ALCANCES["embestida"]) * 0.32) < 0.01 and g.alcance("embestida") > 3.5,
+		"alcance de la embestida con la escala: %.2f m" % g.alcance("embestida"))
 	_ok(g.nombre_ataque("embestida_espinosa") == "embestida" and g.nombre_ataque("golpe_fuerte") == "sismico" and
 		g.nombre_ataque("chorro") == "aliento", "alias del combate (embestida_espinosa, golpe_fuerte, chorro)")
 	for a in ["embestida", "sismico", "aliento"]:
@@ -335,6 +437,14 @@ func _comprobar_guion() -> void:
 	pinta[0] = false
 	_ok(_veces("succion") == 1 and _veces("descarga") == 1 and _veces("fin_descarga") == 1,
 		"aliento: succión %d, descarga %d, fin %d" % [_veces("succion"), _veces("descarga"), _veces("fin_descarga")])
+	if VER == 2:
+		_ok(_veces("fin_succion") == 1 and registro["fin_succion"][0][0] < registro["descarga"][0][0],
+			"v2, aliento: fin_succion una vez y antes de la descarga (%d)" % _veces("fin_succion"))
+		registro.clear()
+		await g.atacar("sismico")
+		_ok(_veces("placas_suelo") == 1 and _veces("impacto") == 1 and registro["placas_suelo"][0][0] == registro["impacto"][0][0],
+			"v2, Fractura: placas_suelo una vez y en el fotograma del impacto (%d)" % _veces("placas_suelo"))
+		await _esperar(12)
 	# en el combate el chorro 3D se esconde (salía hacia la cámara; lo dibuja combate_bramavidrio.gd); en la
 	# exploración, sí se ve (coordinador, 11/11)
 	if g.en_exploracion:

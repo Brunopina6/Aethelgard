@@ -8,14 +8,17 @@ extends SceneTree
 #    las aletas, la emersión, el rugido y la cámara de la presentación → region_<perfil>.png (hoja) y cada foto.
 # No mide rendimiento. Los datos van a la carpeta aislada de la pasada (ejecutar_pruebas.ps1 -Manual).
 
-const GUION := "res://enemigos/bramavidrio/bramavidrio_3d.gd"
+# V12 (11/11): el guion de la versión en uso (enemigos/bramavidrio/bramavidrio_version.gd; «bramavidrio_version=1» para
+# fotografiar la v1). La región ya lo elige sola (gusano.gd).
+var GUION: String = load("res://enemigos/bramavidrio/bramavidrio_version.gd").guion()
 const REGION := "res://zonas3d/mar_cristal_3d.tscn"
 const TAM := Vector2i(900, 700)
 const ALTO_VISTA := 5.1                    # el encuadre propuesto (pasada 2: vp 1920 × 1000, alto_vista 5,1, centro_y 1,45)
 const CENTRO_Y := 1.45
-const TOMAS := [["reposo", 0.0], ["emerger", 0.45], ["emerger", 1.1], ["rugido", 0.9], ["ataque", 0.7],
-	["ataque", 1.0], ["ataque_sismico", 1.6], ["ataque_sismico", 2.55], ["ataque_aliento", 1.5],
-	["ataque_aliento", 2.1], ["herida", 0.15], ["derrota", 3.4]]
+const TOMAS := [["reposo", 0.0], ["emerger", 0.45], ["emerger", 1.1], ["rugido", 0.9], ["ataque", 0.6],
+	["ataque", 1.0], ["ataque_sismico", 1.6], ["ataque_sismico", 2.1], ["ataque_sismico", 2.65], ["ataque_aliento", 1.2],
+	["ataque_aliento", 2.1], ["ataque_aliento", 2.5], ["herida", 0.15], ["derrota", 1.7], ["derrota", 3.4],
+	["subterraneo", 0.5]]
 
 var salida := ""
 var perfiles: Array = ["alto", "medio", "bajo"]

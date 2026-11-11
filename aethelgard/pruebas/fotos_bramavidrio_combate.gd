@@ -17,8 +17,11 @@ const OPCIONES := {
 	"propuesta": {"vp": Vector2i(1920, 1000), "alto_vista": 5.1, "centro_y": 1.45, "esc": 1.07, "pies_como": 0.0,
 		"grupo": Vector2(288, 600)},
 }
-const POSES := [["reposo", 0.0], ["rugido", 0.9], ["ataque", 1.0], ["ataque_sismico", 1.6], ["ataque_sismico", 2.55],
-	["ataque_aliento", 2.1], ["emerger", 0.9]]
+# (11/11, rediseño: más instantes clave: la anticipación de la embestida, las placas del suelo de la Fractura, la arena
+# que aspira el Aliento y la derrota. El modelo es el de la versión en uso: combate.gd lo elige con bramavidrio_version.gd)
+const POSES := [["reposo", 0.0], ["rugido", 0.9], ["ataque", 0.6], ["ataque", 1.0], ["ataque_sismico", 1.6],
+	["ataque_sismico", 2.55], ["ataque_sismico", 2.7], ["ataque_aliento", 1.2], ["ataque_aliento", 2.1], ["emerger", 0.9],
+	["herida", 0.15], ["derrota", 3.4]]
 
 var salida := ""
 var elegidas: Array = []

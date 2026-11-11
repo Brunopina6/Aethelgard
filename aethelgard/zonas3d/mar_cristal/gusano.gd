@@ -286,9 +286,10 @@ const ALTO_SEGMENTO := 0.95
 # real; si no, en reposo y a la escala del combate), un GLB en modelos/desierto (si gráficos lo deja ahí) o el
 # provisional.
 func _modelo_gusano(en_region := false) -> Node3D:
-	if not Engine.get_meta("bramavidrio_provisional", false) and ResourceLoader.exists(GUION_3D) \
-			and ResourceLoader.exists(MODELO_3D):
-		var g: Node3D = load(GUION_3D).new()
+	var V = load("res://enemigos/bramavidrio/bramavidrio_version.gd")   # V12: la versión 1 o 2 (un solo interruptor)
+	if not Engine.get_meta("bramavidrio_provisional", false) and ResourceLoader.exists(V.guion()) \
+			and ResourceLoader.exists(V.modelo()):
+		var g: Node3D = load(V.guion()).new()
 		g.name = "Bramavidrio3D"
 		if en_region:
 			g.en_exploracion = true

@@ -56,6 +56,8 @@ const Coloso := preload("res://combate_coloso.gd")   # el Coloso de la Falla (V9
 # V12: Bramavidrio, el gusano del Mar de Cristal (combate_bramavidrio.gd: su IA, sus tres ataques, avisos y efectos). Es un
 # nodo hijo del combate que solo existe si hay un Bramavidrio; los ganchos de aquí llevan «V12, Bramavidrio».
 const Brama := preload("res://combate_bramavidrio.gd")
+# V12: qué versión del modelo de Bramavidrio (1, el gusano de anillos; 2, la Sierpe de la Vela): un solo interruptor
+const BramaVersion := preload("res://enemigos/bramavidrio/bramavidrio_version.gd")
 # V12: el clímax musical de los grandes jefes (combate_climax.gd: qué jefes y qué canción; aquí, cuándo y cómo suena).
 # Ganchos «V12, clímax»: _quitar_pv lo vigila, _process lo empieza, _musica_fase2 no lo pisa.
 const Climax := preload("res://combate_climax.gd")
@@ -1312,7 +1314,7 @@ func _crear_rig_3d(f: Dictionary, m: Dictionary, raiz: Node2D, base: Vector2, es
 	relleno.rotation_degrees = Vector3(-15, 140, 0)
 	vp.add_child(relleno)
 
-	var maga = load(m["script"]).new()
+	var maga = load(BramaVersion.elegir(m["script"])).new()   # V12: Bramavidrio, la versión elegida (las demás, igual)
 	maga.ruta_modelo = _ruta_3d(m)
 	vp.add_child(maga)
 
@@ -4185,7 +4187,7 @@ func _resultado_erebo(r: Dictionary, doble: Node3D, al_resultado: Callable) -> v
 func _doble_3d(obj: Dictionary) -> Node3D:
 	var m: Dictionary = MODELOS.get(obj["modelo"], {})
 	if m.get("tipo", "") == "3d" and _ruta_3d(m) != "":
-		var p = load(m["script"]).new()
+		var p = load(BramaVersion.elegir(m["script"])).new()   # V12: Bramavidrio, la versión elegida
 		p.ruta_modelo = _ruta_3d(m)
 		var s: float = clampf(m["esc"] / 0.6, 1.0, 1.6)   # los jefes, más grandes (sin pasarse: Érebo les mete la mano en el pecho)
 		p.scale = Vector3.ONE * s
