@@ -1,0 +1,148 @@
+{
+ "fps": 30,
+ "huesos": [
+  "raiz",
+  "col_18",
+  "col_17",
+  "col_16",
+  "col_15",
+  "col_14",
+  "col_13",
+  "col_12",
+  "col_11",
+  "col_10",
+  "col_09",
+  "col_08",
+  "col_07",
+  "col_06",
+  "col_05",
+  "col_04",
+  "col_03",
+  "col_02",
+  "col_01",
+  "cabeza",
+  "mandibula",
+  "garganta",
+  "chorro",
+  "mandibula_izq",
+  "mandibula_der",
+  "brillo",
+  "monticulo",
+  "placa_02",
+  "placa_03",
+  "placa_04",
+  "placa_05",
+  "placa_06",
+  "placa_07",
+  "placa_08",
+  "placa_09",
+  "placa_10",
+  "placa_11",
+  "placa_12",
+  "placa_13",
+  "placa_14",
+  "placa_15",
+  "placa_16",
+  "placa_17"
+ ],
+ "clips": {
+  "reposo": {
+   "duracion": 3.0,
+   "bucle": true,
+   "instantes": {},
+   "altura": 9.033,
+   "cabeza_delante": 9.161
+  },
+  "subterraneo": {
+   "duracion": 2.0,
+   "bucle": true,
+   "instantes": {}
+  },
+  "aviso": {
+   "duracion": 1.6,
+   "bucle": false,
+   "instantes": {
+    "vibracion": 0.1,
+    "fin_vibracion": 1.2
+   }
+  },
+  "emerger": {
+   "duracion": 2.8,
+   "bucle": false,
+   "instantes": {
+    "rompe_arena": 0.2333,
+    "pico": 0.8667,
+    "erguido": 2.45
+   }
+  },
+  "rugido": {
+   "duracion": 2.6,
+   "bucle": false,
+   "instantes": {
+    "inicio_rugido": 0.55,
+    "pico_rugido": 0.8,
+    "fin_rugido": 1.9
+   }
+  },
+  "ataque": {
+   "duracion": 2.3,
+   "bucle": false,
+   "instantes": {
+    "fijado": 0.55,
+    "impacto": 1.0
+   },
+   "alcance": 11.522,
+   "altura_impacto": 1.357
+  },
+  "ataque_sismico": {
+   "duracion": 3.8,
+   "bucle": false,
+   "instantes": {
+    "erguido": 1.0,
+    "rugido": 1.15,
+    "caida": 2.1,
+    "impacto": 2.5333
+   },
+   "alcance": 17.007,
+   "altura_max": 20.379
+  },
+  "ataque_aliento": {
+   "duracion": 3.6,
+   "bucle": false,
+   "instantes": {
+    "apertura": 0.3,
+    "inicio_succion": 0.45,
+    "carga_max": 1.6,
+    "descarga": 1.85,
+    "fin_descarga": 2.6
+   },
+   "alcance": 17.036
+  },
+  "herida": {
+   "duracion": 1.0,
+   "bucle": false,
+   "instantes": {
+    "golpe": 0.1
+   }
+  },
+  "derrota": {
+   "duracion": 3.4,
+   "bucle": false,
+   "instantes": {
+    "dolor": 0.5,
+    "caida": 1.6,
+    "apagado": 3.0
+   }
+  }
+ },
+ "triangulos": {
+  "alto": 19359,
+  "medio": 8823,
+  "bajo": 3124
+ },
+ "texturas": {
+  "alto": "bramavidrio_piel.webp",
+  "medio": "bramavidrio_piel_medio.webp",
+  "bajo": "bramavidrio_piel_bajo.webp"
+ }
+}

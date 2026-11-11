@@ -53,6 +53,9 @@ const OBJETOS_COMBATE := {
 }
 const Bosque := preload("res://combate_bosque.gd")   # el Guardián, la Esencia y el Elixir (fase 3)
 const Coloso := preload("res://combate_coloso.gd")   # el Coloso de la Falla (V9, jefe 2; Garganta 3D)
+# V12: Bramavidrio, el gusano del Mar de Cristal (combate_bramavidrio.gd: su IA, sus tres ataques, avisos y efectos). Es un
+# nodo hijo del combate que solo existe si hay un Bramavidrio; los ganchos de aquí llevan «V12, Bramavidrio».
+const Brama := preload("res://combate_bramavidrio.gd")
 # Menú de combate minimalista (menu_combate.gd). Ocupa el 40 % derecho de la pantalla, por eso los
 # héroes van más a la izquierda y los enemigos se juntan a la izquierda: x = x * ENEMIGOS_X.x + ENEMIGOS_X.y
 const ENEMIGOS_X := Vector2(0.75, -190.0)
@@ -239,9 +242,19 @@ const MODELOS := {
 	# Respaldo 2D: el guardián de piedra, grande (más alto que dos héroes) y teñido de gris cálido (la imagen es verdosa).
 	# Con GRUPOS[12] en y = 90, los pies caen a unos 470 px de pantalla y la cabeza a unos 75: su vida y sus estados
 	# (Piel de piedra, Expuesto…) se leen encima, dentro de la pantalla (capturas de pruebas/fotos_coloso.gd).
-	# V12: Bramavidrio (zonas3d/mar_cristal/gusano.gd). Foto del modelo provisional (pruebas/herramientas/foto_bramavidrio.gd)
-	# hasta que gráficos haga su GLB; los pies abajo en el centro, como los jefes de imagen.
-	"bramavidrio": {"tipo": "imagen", "imagen": "res://enemigos/bramavidrio/bramavidrio.png", "cadera": Vector2(160, 470),
+	# V12: Bramavidrio, modelo definitivo (animaciones; enemigos/bramavidrio/, fuente/crear_bramavidrio.py). El guion se
+	# escala solo a 0,32 (la cámara de _crear_rig_3d está a 6 m); recorta lo enterrado; versión según el perfil. Su origen
+	# es el agujero: «centro_3d_v» es el cuello en reposo (números, efectos y su vida encima), no la vertical del agujero.
+	# Ataca desde su sitio (combate_bramavidrio.gd). Si falta el GLB, la foto de antes («bramavidrio2d»).
+	"bramavidrio": {
+		"tipo": "3d", "esc": 1.07, "script": "res://enemigos/bramavidrio/bramavidrio_3d.gd",
+		"gestos": "res://gestos_3d.gd", "rutas": ["res://enemigos/bramavidrio/bramavidrio.glb"],
+		"vp": Vector2i(1920, 1000), "alto_vista": 5.1, "centro_y": 1.45, "pies_como": 0.0, "barra_y": 498.0, "centro_3d": 1.9,
+		"centro_3d_v": Vector3(1.15, 1.92, 0.86), "pos_golpe": Vector2(200, 50), "respaldo": "bramavidrio2d"},
+	# La foto del modelo provisional (pruebas/herramientas/foto_bramavidrio.gd): los pies abajo en el centro, como los
+	# jefes de imagen.
+	"bramavidrio2d": {"tipo": "imagen", "imagen": "res://enemigos/bramavidrio/bramavidrio.png", "cadera": Vector2(160, 470),
+		"pos_grupo": Vector2(250, 60),                        # su sitio de antes (el 3D va en GRUPOS[13], más abajo)
 		"tam": 1.15, "barra_y": -150.0, "centro_y": 60.0},      # barra y nombre dentro de la pantalla (Redmi, v581: salían cortados)
 	"coloso_falla2d": {"tipo": "imagen", "imagen": "res://enemigos/guardian.png", "cadera": Vector2(160, 470), "tam": 1.45,
 		"barra_y": -197.0, "centro_y": 90.0, "tinte": Color(1.05, 0.86, 0.8)},
@@ -273,11 +286,11 @@ const ENEMIGOS := {
 	# puede leer sus inscripciones. «modelo»: «coloso_falla» cuando llegue su GLB (hoy, el respaldo 2D).
 	"coloso_falla": {"nombre": "Coloso de la Falla", "modelo": "coloso_falla", "hp": 520, "atk": 21, "vel": 8.0,
 		"exp": 80, "oro": 120, "personalidad": "coloso", "fases": true, "titulo": true},
-	# V12: Bramavidrio, el gusano colosal del Mar de Cristal (zonas3d/mar_cristal/gusano.gd; nombre aprobado el 11/11). Se
-	# anuncia como Zarzalín (personalidad «embiste»): se hunde un turno y emerge bajo quien eligió (Defender lo reduce).
-	"bramavidrio": {"nombre": "Bramavidrio", "modelo": "bramavidrio", "hp": 380, "atk": 20, "vel": 9.0, "exp": 85, "oro": 110,
-		"personalidad": "embiste", "titulo": true,
-		"texto_aviso": "%s se hunde en la arena: ¡va a emerger bajo %s!", "texto_golpe": "¡%s emerge bajo %s!"},
+	# V12: Bramavidrio, el gusano colosal del Mar de Cristal (zonas3d/mar_cristal/gusano.gd; nombre aprobado el 11/11).
+	# Personalidad «bramavidrio» (combate_bramavidrio.gd): Embestida del Abismo, Fractura del Mar de Cristal (avisada, a
+	# todos) y, con la mitad de vida, el Aliento del Desierto Eterno (avisado un turno, se corta). No huye.
+	"bramavidrio": {"nombre": "Bramavidrio", "modelo": "bramavidrio", "hp": 1150, "atk": 34, "vel": 11.0, "exp": 85, "oro": 110,
+		"personalidad": "bramavidrio", "titulo": true},
 }
 const GRUPOS := [
 	[["grimfang", Vector2(230, 150)], ["grimfang", Vector2(410, 115)]],
@@ -295,7 +308,7 @@ const GRUPOS := [
 	[["zarzalin", Vector2(250, 120)]],                                      # 10: Zarzalín (Pastos Verdes)
 	[["guardian_bosque", Vector2(150, -120)]],                               # 11: Guardián del Bosque (Pastos Verdes, fase 3)
 	[["coloso_falla", Vector2(47, -256)]],                                    # 12: Coloso de la Falla (Garganta 3D, V9)
-	[["bramavidrio", Vector2(250, 60)]],                                    # 13: Bramavidrio (Mar de Cristal, V12)
+	[["bramavidrio", Vector2(288, 600)]],                                   # 13: Bramavidrio (Mar de Cristal, V12; el agujero en (186, 575) de pantalla)
 ]
 const GRUPOS_AL_AZAR := 5           # solo los primeros salen en encuentros aleatorios (con el grupo de tres)
 # Encuentros al azar según cuántos héroes hay ahora en el grupo (grupo.gd, activos). Kael solo no tiene cura ni a
@@ -342,7 +355,8 @@ const ANIM := {
 	"guardian_bosque": {"distancia": 170.0},       # fase 3: ataca desde su sitio (_anim_guardian)
 	"coloso_falla2d": {"distancia": 170.0},        # V9: el Coloso de la Falla (respaldo 2D)
 	"coloso_falla": {"distancia": 170.0},          # V9: su modelo 3D, desde su sitio como el Guardián (_anim_guardian)
-	"bramavidrio": {"distancia": 170.0},          # V12: Bramavidrio (imagen; zonas3d/mar_cristal/gusano.gd)
+	"bramavidrio": {"distancia": 170.0},          # V12: Bramavidrio, ataca desde su agujero (combate_bramavidrio.gd)
+	"bramavidrio2d": {"distancia": 170.0},        # V12: su foto de respaldo
 }
 
 var heroes: Array = [
@@ -398,6 +412,8 @@ var res_personajes := 0.75               # resolución de las ventanas 3D de Kae
 var max_efectos_3d := 8                  # efectos 3D a la vez como mucho
 var efectos_3d_activos := 0
 var ultimo_esquivado := false            # el último golpe físico lo esquivó un héroe (Pluma de arpía, T-092)
+var brama = null                         # V12, Bramavidrio: su nodo (combate_bramavidrio.gd), si está en el combate
+var turnos_heroe := 0                    # turnos de héroe empezados (V12, Bramavidrio: nada encadenado sin responder)
 
 
 func _ready() -> void:
@@ -463,6 +479,11 @@ func _ready() -> void:
 	_crear_interfaz()
 	for e in enemigos:                               # los que tienen entrada (Zarzalín): llegan de un salto, con un
 		var pe = _p3d(e)                             # fundido corto porque el clip empieza 0,85 m por detrás
+		if Brama.es(e) and brama == null:            # V12, Bramavidrio: su nodo y su emersión (arena, temblor, rugido)
+			brama = Brama.new()
+			brama.preparar(self, e)
+			add_child(brama)
+			brama.al_entrar(pe)
 		if pe != null and pe.has_method("entrada"):
 			e["rig"].modulate.a = 0.0
 			create_tween().tween_property(e["rig"], "modulate:a", 1.0, 0.15)
@@ -521,7 +542,8 @@ func _elegir_enemigos() -> void:
 			e["modelo"] = mod["respaldo"]
 		e["hp_max"] = e["hp"]
 		e["atb"] = randf() * 30.0
-		e["pos"] = Vector2(g[1].x * ENEMIGOS_X.x + ENEMIGOS_X.y, g[1].y)
+		var sitio: Vector2 = MODELOS[e["modelo"]].get("pos_grupo", g[1])   # V12: un respaldo 2D con otro sitio (Bramavidrio)
+		e["pos"] = Vector2(sitio.x * ENEMIGOS_X.x + ENEMIGOS_X.y, sitio.y)
 		if cuantos[g[0]] > 1:
 			e["nombre"] += " " + "ABCDEFGH"[vistos.get(g[0], 0)]
 			vistos[g[0]] = vistos.get(g[0], 0) + 1
@@ -765,7 +787,9 @@ func _info_objetivo(f: Dictionary, ok: bool) -> String:
 	var t: Array = ["PV %d/%d" % [f["hp"], f["hp_max"]]]
 	if f.get("elite", false):
 		t.append("Élite: doble premio")
-	if f.get("cargando", false):
+	if Brama.es(f):                                     # V12, Bramavidrio: qué prepara y cómo se responde
+		t.append_array(Brama.info(f))
+	elif f.get("cargando", false):
 		var plan: Dictionary = PATRONES.get(f.get("personalidad", ""), {})
 		if plan.get("encoge", false):
 			t.append("⚠ Encogido: la magia rompe su guardia")
@@ -1019,6 +1043,8 @@ func _crear_rig(f: Dictionary) -> void:
 			raiz.position += mover
 			f["rig_base"] = raiz.position
 			f["pos"] += mover
+		if m.has("pos_golpe"):                     # V12: dónde se le ataca (_pos_ataque)
+			f["pos_golpe"] = m["pos_golpe"]
 		return
 	if m.get("tipo", "") == "imagen":
 		_crear_rig_imagen(f, m, raiz, base, esc)
@@ -1246,7 +1272,8 @@ func _crear_rig_3d(f: Dictionary, m: Dictionary, raiz: Node2D, base: Vector2, es
 	f["p3d"] = maga
 	f["cam3d"] = cam
 	# centro del cuerpo en pantalla (para efectos y números de daño)
-	f["centro_ofs"] = cam.unproject_position(Vector3(0, m.get("centro_3d", 0.85), 0)) / q * esc
+	# («centro_3d_v», V12: el punto entero, para quien no tiene el cuerpo sobre su origen, como Bramavidrio)
+	f["centro_ofs"] = cam.unproject_position(m.get("centro_3d_v", Vector3(0, m.get("centro_3d", 0.85), 0))) / q * esc
 	if f.get("hero", false) and ResourceLoader.exists("res://inventario.gd"):   # C2: el arma especial, con su color
 		var arma: Dictionary = load("res://inventario.gd").arma_de(f["nombre"])
 		for k in ["espada", "espada_izq"]:           # (las de Kael y Lya ya salen teñidas: material_arma.de_arma)
@@ -1257,6 +1284,12 @@ func _crear_rig_3d(f: Dictionary, m: Dictionary, raiz: Node2D, base: Vector2, es
 # Personaje 3D (maga o Kael) de un luchador, o null si es 2D.
 func _p3d(f: Dictionary):
 	return f.get("p3d", null)
+
+
+# Adónde va quien ataca cuerpo a cuerpo a «obj»: su posición o, si su modelo lo dice («pos_golpe», V12: Bramavidrio, cuyo
+# origen está fuera de la pantalla), un punto delante de su boca, en las medidas de la escena.
+func _pos_ataque(obj: Dictionary) -> Vector2:
+	return obj.get("pos_golpe", obj["pos"])
 
 
 # Enemigo de una sola imagen (foto de un modelo 3D). El cuerpo gira y respira desde los pies.
@@ -1334,8 +1367,8 @@ func _anim_fisico_imagen(o: Dictionary, obj: Dictionary, impacto: Callable) -> v
 	var poses: bool = MODELOS[o["modelo"]].has("anims")
 	var k := 0.35 if poses else 1.0                  # con poses de verdad, menos balanceo de la imagen
 	var dist: float = ANIM[o["modelo"]]["distancia"]
-	var dx: float = obj["pos"].x - o["pos"].x - dist
-	var dy: float = (obj["pos"].y - o["pos"].y) * 0.8
+	var dx: float = _pos_ataque(obj).x - o["pos"].x - dist
+	var dy: float = (_pos_ataque(obj).y - o["pos"].y) * 0.8
 	o["animando"] = true
 	rig.z_index = 5
 	_pose_img(o, "andar")
@@ -1511,6 +1544,7 @@ func _siguiente_turno() -> void:
 		return
 	if f["hero"]:
 		actor = f
+		turnos_heroe += 1                        # V12, Bramavidrio: no suelta un especial sin un turno de héroe entre medias
 		if f.get("defendiendo", false):          # la defensa dura hasta su siguiente turno
 			f["defendiendo"] = false
 			f["rig"].modulate = Color(1, 1, 1)
@@ -1555,6 +1589,10 @@ func _turno_enemigo(f: Dictionary) -> void:
 	var mult := 1.5 if f.get("furia", false) else 1.0
 	if p == "bruto":
 		mult *= randf_range(0.9, 1.3)
+	if p == "bramavidrio" and brama != null:         # V12, Bramavidrio (combate_bramavidrio.gd): no huye nunca
+		await brama.turno(vivos, mult)
+		_fin_turno_enemigo(f)
+		return
 	# huir (en una «zona limpia», con el grupo muy por encima, los enemigos débiles huyen solos)
 	var limpia: bool = load("res://progreso.gd").zona_limpia(Engine.get_meta("zona", "llanura"))
 	if p != "jefe" and p != "bosque" and p != "coloso" and limpia and randf() < 0.7:   # (los jefes no huyen)
@@ -1934,6 +1972,9 @@ var golpe_magico := false                         # lo pone quien resuelve un go
 
 
 func _vigilar_carga(f: Dictionary, d: int) -> void:
+	if brama != null and Brama.es(f):                 # V12, Bramavidrio: su Aliento se corta (la Fractura no)
+		brama.vigilar(d)
+		return
 	if not f.get("cargando", false) or f["hp"] <= 0 or not PATRONES.has(f.get("personalidad", "")):
 		return
 	var plan: Dictionary = PATRONES[f["personalidad"]]
@@ -3198,7 +3239,7 @@ func _voz(quien: Dictionary, evento: String) -> void:
 
 func _sonar(nombre: String) -> void:
 	sonido_pedido.emit(nombre)
-	if Sonido.EFECTOS.has(nombre):
+	if Sonido.EFECTOS.has(nombre) or Sonido.EFECTOS_DESIERTO.has(nombre):   # V12: también el gusano (gusano_rugido…)
 		Sonido.efecto(nombre)
 
 
@@ -4175,6 +4216,8 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 		await _anim_magia_3d(origen, objetivo, magia, impacto)
 	elif magia != "":
 		await _anim_magia(origen, objetivo, magia, impacto)
+	elif brama != null and Brama.es(origen):                                   # V12, Bramavidrio: desde su agujero
+		await brama.animar_golpe(objetivo, impacto)
 	elif _p3d(origen) != null and _p3d(origen).has_method("avisar"):           # Zarzalín (T-097)
 		await _anim_zarzalin(origen, objetivo, impacto, str(origen.get("ataque_3d", "colmillo_lateral")))
 	elif _p3d(origen) != null and _p3d(origen).has_method("despertar"):        # Guardián del Bosque (fase 3): desde su sitio
@@ -4207,8 +4250,8 @@ func _anim_fisico_poses(o: Dictionary, obj: Dictionary, impacto: Callable) -> vo
 	var ps: Dictionary = a["poses"]
 	var rig: Node2D = o["rig"]
 	var base: Vector2 = o["rig_base"]
-	var dx: float = obj["pos"].x - o["pos"].x + a["distancia"]
-	var dy: float = (obj["pos"].y - o["pos"].y) * 0.8
+	var dx: float = _pos_ataque(obj).x - o["pos"].x + a["distancia"]
+	var dy: float = (_pos_ataque(obj).y - o["pos"].y) * 0.8
 	o["animando"] = true
 	rig.z_index = 5
 	_cara(o, "grito")
@@ -4234,8 +4277,8 @@ func _anim_fisico_frames(o: Dictionary, obj: Dictionary, impacto: Callable) -> v
 	var rig: Node2D = o["rig"]
 	var base: Vector2 = o["rig_base"]
 	var e: Sprite2D = o["partes"]["arma"]
-	var dx: float = obj["pos"].x - o["pos"].x + a["distancia"]
-	var dy: float = (obj["pos"].y - o["pos"].y) * 0.8
+	var dx: float = _pos_ataque(obj).x - o["pos"].x + a["distancia"]
+	var dy: float = (_pos_ataque(obj).y - o["pos"].y) * 0.8
 	o["animando"] = true
 	rig.z_index = 5
 	var t1 := create_tween().set_parallel(true)
@@ -4265,8 +4308,8 @@ func _anim_fisico_sprite(o: Dictionary, obj: Dictionary, impacto: Callable) -> v
 	var base: Vector2 = o["rig_base"]
 	var anim: AnimatedSprite2D = o["partes"]["anim"]
 	var dist: float = a["distancia"]
-	var dx: float = obj["pos"].x - o["pos"].x + (dist if o["hero"] else -dist)
-	var dy: float = (obj["pos"].y - o["pos"].y) * 0.8
+	var dx: float = _pos_ataque(obj).x - o["pos"].x + (dist if o["hero"] else -dist)
+	var dy: float = (_pos_ataque(obj).y - o["pos"].y) * 0.8
 	o["animando"] = true
 	rig.z_index = 5
 	anim.play("move")
@@ -4294,8 +4337,8 @@ func _anim_fisico_3d(o: Dictionary, obj: Dictionary, impacto: Callable) -> void:
 	var maga = _p3d(o)
 	var rig: Node2D = o["rig"]
 	var base: Vector2 = o["rig_base"]
-	var dx: float = obj["pos"].x - o["pos"].x + ANIM[o["modelo"]]["distancia"]
-	var dy: float = (obj["pos"].y - o["pos"].y) * 0.8
+	var dx: float = _pos_ataque(obj).x - o["pos"].x + ANIM[o["modelo"]]["distancia"]
+	var dy: float = (_pos_ataque(obj).y - o["pos"].y) * 0.8
 	o["animando"] = true
 	rig.z_index = 5
 	maga.mirar(Vector3(-1, 0, 0.1), 0.15)
@@ -4328,7 +4371,7 @@ func _anim_salto_3d(o: Dictionary, obj: Dictionary, impacto: Callable) -> void:
 	var k = _p3d(o)
 	var rig: Node2D = o["rig"]
 	var base: Vector2 = o["rig_base"]
-	var dx: float = obj["pos"].x - o["pos"].x + ANIM[o["modelo"]]["distancia"]
+	var dx: float = _pos_ataque(obj).x - o["pos"].x + ANIM[o["modelo"]]["distancia"]
 	var despegue := base + Vector2(dx + 70.0, 0.0)   # los pies de Kael y del enemigo están a la misma altura
 	o["animando"] = true
 	rig.z_index = 5
@@ -4369,7 +4412,7 @@ func _anim_ataque_3d(o: Dictionary, obj: Dictionary, impacto: Callable, metodo: 
 	var base: Vector2 = o["rig_base"]
 	var lado := 1.0 if o["hero"] else -1.0             # el héroe se para a la derecha del enemigo
 	var hueco: float = ANIM[o["modelo"]].get("distancia", 120.0) + ANIM[obj["modelo"]].get("distancia", 120.0) * 0.4
-	var destino := base + Vector2(_centro(obj).x + hueco * lado - _centro(o).x, (obj["pos"].y - o["pos"].y) * 0.8)
+	var destino := base + Vector2(_centro(obj).x + hueco * lado - _centro(o).x, (_pos_ataque(obj).y - o["pos"].y) * 0.8)
 	if obj.has("centro_ofs") and o.has("centro_ofs"):  # los dos 3D: los pies a la misma altura
 		destino.y = base.y + (_suelo_de(obj).y - _suelo_de(o).y)
 	var ida := Vector3(-1 * lado, 0, 0.1)
@@ -4544,8 +4587,8 @@ func _anim_fisico(o: Dictionary, obj: Dictionary, impacto: Callable) -> void:
 	var cuerpo: Node2D = o["cuerpo"]
 	var heroe: bool = o["hero"]
 	var dist: float = a["distancia"]
-	var dx: float = obj["pos"].x - o["pos"].x + (dist if heroe else -dist)
-	var dy: float = (obj["pos"].y - o["pos"].y) * 0.8
+	var dx: float = _pos_ataque(obj).x - o["pos"].x + (dist if heroe else -dist)
+	var dy: float = (_pos_ataque(obj).y - o["pos"].y) * 0.8
 	o["animando"] = true
 	rig.z_index = 5
 	var t1 := create_tween().set_parallel(true)
@@ -5429,7 +5472,7 @@ func _restablecer_color(f: Dictionary) -> void:
 			_p3d(f).morir()
 			if not f["hero"]:                          # enemigo 3D: cae y luego se desvanece
 				var t := create_tween()
-				t.tween_interval(0.9)
+				t.tween_interval(2.8 if Brama.es(f) else 0.9)   # V12, Bramavidrio: se ve desplomarse y hundirse
 				t.tween_property(rig, "modulate:a", 0.0, 0.5)
 		return
 	if not f["animando"]:
@@ -5548,6 +5591,8 @@ func _fin_combate(ganan: bool) -> void:
 			aviso = _premio_bosque()
 		elif not g.get(combate_fijo, false) and combate_fijo == Coloso.COMBATE:  # el Coloso de la Falla (V9), una vez
 			aviso = Coloso.dar_premio()
+		elif not g.get(combate_fijo, false) and combate_fijo == Brama.COMBATE:   # V12, Bramavidrio, una vez
+			aviso = Brama.dar_premio()
 		elif not g.get(combate_fijo, false) and RECOMPENSA_FIJO.has(combate_fijo) and Extra.disponible(RECOMPENSA_FIJO[combate_fijo]):
 			aviso = Extra.conseguir(RECOMPENSA_FIJO[combate_fijo])
 		g[combate_fijo] = true
@@ -5664,11 +5709,13 @@ func _actualizar() -> void:
 			var estados := PackedStringArray()
 			if e.get("congelado", 0) > 0:
 				estados.append("❄ Congelado")
-			if e.get("cargando", false):
+			if e.get("cargando", false) and not Brama.es(e):
 				estados.append("⚠ Cargando")
 			if e.get("furia", false):
 				estados.append("Furia")
 			if Coloso.es_coloso(e):                     # V9: piel de piedra, coraza rúnica, expuesto, runas leídas
 				estados.append_array(Coloso.estados(e))
+			if Brama.es(e):                             # V12, Bramavidrio: «⚠ Fractura» o «⚠ Aliento: córtalo n/m»
+				estados.append_array(Brama.estados(e))
 			e["lbl_estado"].text = "  ".join(estados)
 			e["lbl_estado"].visible = vivo

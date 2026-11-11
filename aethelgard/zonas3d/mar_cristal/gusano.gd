@@ -13,6 +13,14 @@ extends RefCounted
 #      primera vez, el encuentro especial (combate fijo «mc_bramavidrio»). Después de vencerlo, respeta a Kael: el surco
 #      pasa por debajo, asoma, ruge y se va, sin combate.
 # Todo es barato: un puñado de mallas y dos emisores de partículas, solo mientras hay algo que ver.
+#
+# V12 (11/11, animaciones): el modelo DEFINITIVO (enemigos/bramavidrio/bramavidrio_3d.gd, de fuente/crear_bramavidrio.py,
+# en la versión de la calidad en uso) sustituye al provisional cuando existe. Durante el aviso va bajo el surco (clip
+# «subterraneo»: solo asoma la hilera de aletas de vidrio) tras una vibración («aviso»); en la aparición sale de un
+# agujero a DIST_APARICION de Kael, al este-noreste (de tres cuartos para la cámara; nunca lo tapa), mirándolo;
+# revienta la arena («emerger»), ruge («rugido»), y la cámara se aleja y baja despacio para que se vea entero junto a
+# Kael (PRESENTACION), y vuelve a su sitio antes del combate. El provisional (_modelo_provisional) sigue aquí: se usa
+# si falta el modelo o con Engine.set_meta("bramavidrio_provisional", true).
 
 const T := preload("res://zonas3d/mar_cristal/trazado.gd")
 const COMBATE := "mc_bramavidrio"          # combate fijo (progreso.gd ganado): la primera vez
@@ -40,6 +48,14 @@ var _polvo: CPUParticles3D
 var _cuerpo: Node3D                        # el gusano al asomar
 var _estallido: CPUParticles3D
 var _sacudida := 0.0
+var _gusano3d: Node3D                      # el modelo definitivo (bramavidrio_3d.gd), si se usa
+var _sitio := Vector3.ZERO                 # el agujero por donde sale
+var _camara := 0.0                         # cuánto manda la presentación sobre la cámara (0…1)
+var _cam_meta := 0.0
+const DIST_APARICION := 11.0               # m del agujero a Kael: en reposo, la cabeza queda sobre él (9 m por delante)
+const PRESENTACION := [20.0, 34.0, 5.5]    # [inclinación, distancia, altura de la mirada] de la cámara al aparecer
+const GUION_3D := "res://enemigos/bramavidrio/bramavidrio_3d.gd"
+const MODELO_3D := "res://enemigos/bramavidrio/bramavidrio.glb"
 
 
 func _init(r: Node3D) -> void:
@@ -57,6 +73,7 @@ static func vencido() -> bool:
 
 func actualizar(delta: float, pos: Vector3) -> void:
 	t_estado += delta
+	_presentar(delta)
 	_sacudir(delta)
 	var calla: bool = not activo or region.ocupado() or (region.clima != null and region.clima.en_tormenta())
 	match estado:
@@ -99,6 +116,10 @@ func _empezar_aviso(pos: Vector3) -> void:
 			origen = pos + Vector3(-dir.x, 0.0, dir.z) * 14.0
 	surco_pos = Vector3(origen.x, T.altura(origen.x, origen.z), origen.z)
 	_construir()
+	if _gusano3d != null:                                       # bajo el surco: vibra y avanza (solo asoman las aletas)
+		_mostrar_3d(true)
+		_colocar_bajo_surco(pos)
+		_gusano3d.vibrar()
 	_lomo.visible = true
 	_polvo.emitting = true
 	_sacudida = 0.6
@@ -120,6 +141,8 @@ func _avanzar_surco(delta: float, pos: Vector3) -> void:
 	_lomo.global_position = surco_pos + Vector3(0, 0.15 + 0.12 * sin(t_estado * 9.0), 0)
 	_lomo.look_at(surco_pos + falta / d * 3.0 + Vector3(0, 0.15, 0), Vector3.UP)
 	_polvo.global_position = surco_pos
+	if _gusano3d != null:
+		_colocar_bajo_surco(pos)
 	_sacudida = maxf(_sacudida, clampf(1.0 - d / DISTANCIA_SALIDA, 0.15, 0.7))
 	if not _rugio and d < DISTANCIA_SALIDA * 0.55:
 		_rugio = true
@@ -134,6 +157,11 @@ func _irse(texto: String) -> void:
 		t.tween_callback(func(): _lomo.visible = false)
 	if _polvo != null:
 		_polvo.emitting = false
+	if _gusano3d != null and _gusano3d.visible:                  # se hunde y se aleja
+		var g := _gusano3d
+		var t2 := g.create_tween()
+		t2.tween_property(g, "global_position:y", g.global_position.y - 4.0, 1.2).set_trans(Tween.TRANS_SINE)
+		t2.tween_callback(func(): _mostrar_3d(false))
 	_cambiar("descanso")
 
 
@@ -145,6 +173,9 @@ func _aparecer(pos: Vector3) -> void:
 	region._parar_kael()
 	_lomo.visible = false
 	_polvo.emitting = false
+	if _gusano3d != null:
+		_aparecer_3d(pos)
+		return
 	var sitio := pos + Vector3(2.6, 0.0, -2.6)                  # al lado de Kael, entre él y la cámara no
 	sitio.y = T.altura(sitio.x, sitio.z)
 	_estallido.global_position = sitio
@@ -169,6 +200,9 @@ func _aparecer(pos: Vector3) -> void:
 
 
 func _animar_aparicion(_delta: float) -> void:
+	if _gusano3d != null:
+		region._parar_kael()                                    # mientras se presenta, Kael no se mueve
+		return
 	if _cuerpo == null or not _cuerpo.visible:
 		return
 	for i in _cuerpo.get_child_count():                          # el cuerpo ondula: cada anillo a su ritmo
@@ -204,9 +238,12 @@ func _construir() -> void:
 	_estallido = _particulas(90, 1.6, Vector3(2.5, 0.3, 2.5), 9.0, 0.4)
 	_estallido.one_shot = true
 	_estallido.explosiveness = 0.85
-	_cuerpo = _modelo_gusano()
+	_cuerpo = _modelo_gusano(true)
 	_cuerpo.visible = false
 	_raiz.add_child(_cuerpo)
+	if _cuerpo.has_method("emerger"):
+		_gusano3d = _cuerpo
+		_mostrar_3d(false)
 
 
 func _particulas(n: int, vida: float, caja: Vector3, vel: float, tam: float) -> CPUParticles3D:
@@ -245,12 +282,28 @@ const SEGMENTOS := 8
 const ALTO_SEGMENTO := 0.95
 
 
-func _modelo_gusano() -> Node3D:
+# El cuerpo del gusano: el modelo definitivo si está (en_region: preparado para la exploración, bajo la arena y a escala
+# real; si no, en reposo y a la escala del combate), un GLB en modelos/desierto (si gráficos lo deja ahí) o el
+# provisional.
+func _modelo_gusano(en_region := false) -> Node3D:
+	if not Engine.get_meta("bramavidrio_provisional", false) and ResourceLoader.exists(GUION_3D) \
+			and ResourceLoader.exists(MODELO_3D):
+		var g: Node3D = load(GUION_3D).new()
+		g.name = "Bramavidrio3D"
+		if en_region:
+			g.en_exploracion = true
+			g.recortar_suelo = false
+		return g
 	var n := Node3D.new()
 	var ruta := "res://modelos/desierto/bramavidrio.glb"
 	if ResourceLoader.exists(ruta):
 		n.add_child((load(ruta) as PackedScene).instantiate())
 		return n
+	return _modelo_provisional()
+
+
+func _modelo_provisional() -> Node3D:
+	var n := Node3D.new()
 	var lomo := _mat(Color(0.42, 0.29, 0.21), 0.8)
 	var vientre := _mat(Color(0.74, 0.58, 0.42), 0.9)
 	var hueso := _mat(Color(0.86, 0.80, 0.68), 0.6)
@@ -352,6 +405,106 @@ func _mat(c: Color, rugosidad: float) -> StandardMaterial3D:
 	m.albedo_color = c
 	m.roughness = rugosidad
 	return m
+
+
+# ================================================================= el modelo definitivo (bramavidrio_3d.gd)
+
+func _mostrar_3d(si: bool) -> void:
+	if _gusano3d == null:
+		return
+	_gusano3d.visible = si
+	_gusano3d.process_mode = Node.PROCESS_MODE_INHERIT if si else Node.PROCESS_MODE_DISABLED
+
+
+# Bajo el surco: la cabeza en el surco, mirando a Kael (el cuerpo queda detrás, enterrado).
+func _colocar_bajo_surco(pos: Vector3) -> void:
+	var g := _gusano3d
+	g.global_position = surco_pos
+	var d := Vector3(pos.x - surco_pos.x, 0.0, pos.z - surco_pos.z)
+	if d.length() > 0.1:
+		g.rotation = Vector3(0.0, atan2(d.x, d.z), 0.0)
+
+
+# Hacia dónde queda la cámara desde Kael, en el suelo (la cámara del juego no gira: el sur).
+func _atras_camara() -> Vector3:
+	if region.cam == null or region.kael == null:
+		return Vector3.BACK
+	var a: Vector3 = region.cam.global_position - region.kael.global_position
+	a.y = 0.0
+	return a.normalized() if a.length() > 0.1 else Vector3.BACK
+
+
+func _vivo() -> bool:
+	return is_instance_valid(region) and region.is_inside_tree() and is_instance_valid(_gusano3d)
+
+
+# La aparición: sale de un agujero al este-noreste de Kael (de tres cuartos para la cámara: se ve su silueta en S y no
+# tapa a Kael), mirándolo; revienta la
+# arena, se alza, baja la cabeza sobre él y ruge. La cámara se aleja y baja para que se vea entero, con Kael pequeño a sus
+# pies, y vuelve antes del combate (o mientras se hunde, si ya fue vencido).
+func _aparecer_3d(pos: Vector3) -> void:
+	var lejos := (-_atras_camara()).rotated(Vector3.UP, deg_to_rad(-65.0))   # al este-noreste: de tres cuartos para la cámara
+	_sitio = pos + lejos * DIST_APARICION
+	_sitio.y = T.altura(_sitio.x, _sitio.z)
+	var g := _gusano3d
+	g.global_position = _sitio
+	var d := pos - _sitio
+	g.rotation = Vector3(0.0, atan2(d.x, d.z), 0.0)
+	_mostrar_3d(true)
+	_cam_meta = 1.0
+	_estallido.global_position = _sitio
+	_polvo.global_position = _sitio
+	_sonar("gusano_temblor", _sitio)
+	_sacudida = maxf(_sacudida, 0.6)
+	g.rompe_arena.connect(func():
+		_estallido.restart()
+		_estallido.emitting = true
+		_polvo.emitting = true
+		_sacudida = 1.4
+		_sonar("gusano_rugido", _sitio), CONNECT_ONE_SHOT)
+	await g.emerger()
+	if not _vivo():
+		return
+	_polvo.emitting = false
+	g.rugido_pico.connect(func():
+		_sacudida = maxf(_sacudida, 0.8)
+		_sonar("gusano_rugido", _sitio), CONNECT_ONE_SHOT)
+	await g.rugir()
+	if not _vivo():
+		return
+	_cam_meta = 0.0
+	if vencido():
+		region._mostrar_aviso(TEXTO_RESPETA, 2.6)
+		var t := g.create_tween()
+		t.tween_property(g, "global_position:y", _sitio.y - 15.0, 1.8).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+		t.tween_callback(func():
+			_mostrar_3d(false)
+			_cambiar("descanso"))
+		return
+	await region.get_tree().create_timer(0.9).timeout            # la cámara vuelve a Kael antes del combate
+	if not _vivo():
+		return
+	region.encuentro(COMBATE, GRUPO_COMBATE, "jefe", "¡Bramavidrio te cierra el paso! No hay huida.")
+
+
+# La cámara de la presentación: sobre la que coloca la región en cada fotograma, se aleja y baja hacia un punto entre
+# Kael y el agujero, con una mezcla suave (sin giros bruscos: no marea). Vuelve sola cuando _cam_meta pasa a 0.
+func _presentar(delta: float) -> void:
+	_camara = move_toward(_camara, _cam_meta, delta / 0.9)
+	if _camara <= 0.0 or region.cam == null or region.kael == null:
+		return
+	var w := _camara * _camara * (3.0 - 2.0 * _camara)
+	var k: Vector3 = region.kael.global_position
+	var mira := k.lerp(_sitio, 0.5) + Vector3(0.0, PRESENTACION[2], 0.0)
+	var ang := deg_to_rad(PRESENTACION[0])
+	var ojo := mira + _atras_camara() * cos(ang) * PRESENTACION[1] + Vector3.UP * sin(ang) * PRESENTACION[1]
+	var f = region.get("foco")
+	var foco0: Vector3 = (f + Vector3(0, 0.9, 0)) if f is Vector3 else k + Vector3(0, 0.9, 0)
+	var cam: Camera3D = region.cam
+	cam.global_position = cam.global_position.lerp(ojo, w)
+	cam.look_at(foco0.lerp(mira, w), Vector3.UP)
+	if cam.projection == Camera3D.PROJECTION_ORTHOGONAL:
+		cam.size = lerpf(cam.size, 2.0 * PRESENTACION[1] * tan(deg_to_rad(19.0)), w)
 
 
 # ================================================================= sonido y cámara
