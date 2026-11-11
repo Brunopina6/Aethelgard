@@ -1,0 +1,92 @@
+# V11 · Mejoras del combate (hito B)
+
+Rama LOCAL `claude/rebelum-v11` (copia `D:\Aethelgard_v11`). Lo hecho en esta rama se marca con su commit. Todo está
+**probado solo en el PC** (sin ventana, con datos aislados, y capturas con ventana). Nada se ha probado en el Redmi.
+
+## 1. Por qué los combates se sienten iguales (análisis)
+
+Medido en la huella del combate (`pruebas/referencias/huella_combate.txt`, 9 combates con semilla fija, 30 FPS):
+
+| Combate | Duración | Turnos de héroe | Turnos de enemigo |
+|---|---|---|---|
+| E1, Kael solo contra Grimfang | 54 s | 8 | 4 |
+| E2, Kael y Lya contra el grupo 2 | 48 s | 10 | 8 |
+| E3, los tres contra dos Grimfang | 49 s | 9 | 2 |
+| E8, Gorthor (jefe) | 74 s | 12 | 3 |
+| E4, E5 y E9 (nivel 10) | 15-20 s | 3-4 | 0-1 |
+
+- **Espera:** con un héroe, unos 6,8 s entre decisiones. Los enemigos actúan poco: E3 tiene 9 turnos del grupo y 2 de
+  enemigo. El jugador casi siempre ataca a un rival que apenas responde.
+- **Repetición:** las órdenes más usadas son «ataca a…», «defiende» y Agua o Cura. A nivel 10, una magia de área acaba
+  el combate en 3 turnos.
+- **Decisiones:** antes de la V11, ante un golpe anunciado solo había una respuesta útil: defender.
+- **Información:** el objetivo se elegía tocando el dibujo y su nombre salía arriba a la izquierda; sin lista ni estado.
+  La invocación se lanzaba sin decir cuál era ni qué hacía.
+- **Lo que ya funcionaba y se conserva:** el ATB, las 12 magias, Esgrima, Embuir, la Armonía, Érebo, los patrones
+  anunciados de Grimfang, el Slime y el Gólem (T-097), y los jefes Guardián y Coloso con sus fases.
+
+**Causas principales:** el enemigo normal tiene una sola forma de amenazar y el jugador una sola de responder; y la
+pantalla no ayuda a decidir (no dice qué le pasa a cada enemigo).
+
+## 2. Hecho en la V11 (commit `4e1f734`)
+
+### Panel de objetivos a la derecha
+- Al elegir objetivo (ATACAR, MAGIA, artes, objetos, curas e invocación), a la derecha sale la lista:
+  - nombre de cada enemigo; los repetidos llevan A, B…;
+  - sus PV y una raya de vida;
+  - lo que se sabe de él: prepara un golpe (y cómo cortarlo), en guardia, aturdido, quemado o congelado;
+  - los derrotados, apagados con «Derrotado» y sin poder tocarlos.
+- El apuntado lleva «▶» y un marco dorado, igual que la flecha sobre su dibujo.
+- **Controles:**
+  - tocar una fila apunta y soltar elige; el ratón apunta al pasar;
+  - teclado y mando siguen igual (la lista sigue a la selección).
+- Al curar o elegir aliado, la lista es de aliados.
+- **Área:**
+  - al marcar una magia o un arte que alcanza a todos, sale una flecha dorada sobre cada enemigo;
+  - mientras se lanza, la lista dice «LE ALCANZA» y marca a todos con «◆».
+
+### Lista de INVOCACIÓN
+- INVOCACIÓN abre la lista de invocaciones. Hoy solo existe Érebo, y solo se lista lo que de verdad existe.
+- La fila lleva su emblema, el coste (100 % de Armonía) y lo que hace: el texto de siempre, «Ladrón de Corazones».
+- Si no se puede usar, sale apagada y dice por qué (por ejemplo, «Armonía al 50 %»).
+- Al elegirla se toca al enemigo, como siempre. Atrás vuelve a la lista. Las reglas no cambian.
+
+### Interrupción del golpe preparado (patrón táctico nuevo)
+- Cuando Grimfang (Hachazo), el Slime (Rebote) o el Gólem de ámbar (Pisotón) preparan su golpe, hay dos respuestas:
+  - **defender**, como antes;
+  - **cargar contra él:** si el grupo le quita, de una vez o en varias, el **25 % de su vida máxima**, el golpe se corta
+    («¡Interrumpido!»). Pierde además su turno siguiente («aturdido, recupera el aliento»).
+- **El Slime encogido (en guardia):** los golpes físicos le hacen la mitad, pero **la magia le rompe la guardia**
+  («¡Guardia rota!»). Es la ruptura de guardia, solo en este enemigo.
+- **Los jefes** (Guardián, Coloso y Gorthor) no cambian: tienen sus propias mecánicas.
+- La lista de objetivos lo explica: «⚠ Prepara un golpe: dale fuerte y lo cortas» o «⚠ Encogido: la magia rompe su
+  guardia».
+- **Por qué el 25 %:** con el grupo de tres, dos golpes o una magia bastan; con Kael solo cuesta más, y defender sigue
+  valiendo. Sin medir todavía con jugadores: hay que mirarlo en el Redmi.
+
+### Huella del combate
+- Solo cambia E2: la magia de Lya rompe la guardia del Slime B, que recibe el daño entero, pierde el rebote y pasa el
+  turno siguiente aturdido.
+- Todo lo demás sale igual línea a línea, con los mismos resultados.
+- La cabecera de la referencia lo explica.
+
+## 3. Pruebas
+
+- `prueba_v11_combate` (nueva): comprueba el panel, el área, la interrupción, la guardia rota, los jefes y la lista de
+  invocación. Superada.
+- Siguen pasando `prueba_patrones_enemigos`, `prueba_zarzalin_combate`, `prueba_hud_combate` y `prueba_combate_huella`
+  (con la referencia nueva).
+- Capturas en `D:\REBELUM_diagnostico\fase2\2026-11-11_v11_fotos_combate\fotos2`, con `pruebas/fotos_v11_combate.gd`:
+  menú, panel, derrotado apagado, área, invocación, aviso e interrumpido.
+
+## 4. Pendiente del combate (por orden)
+
+1. En el Redmi:
+   - que la lista se lea y se toque bien con el dedo;
+   - si el 25 % es justo;
+   - FPS con la lista abierta.
+2. **Técnicas combinadas** (Kael + Lya, Garon + Lya y Kael + Garon), con coste, requisitos y animación. Solo diseño;
+   sin hacer.
+3. Enemigos con comportamientos nuevos (proteger a otro, invocar refuerzos, cambiar de resistencia). Sin hacer.
+4. Variedad de encuentros (élite, emboscada, proteger, objetivo especial). Sin hacer.
+5. Cámara e impactos de los golpes fuertes. Sin tocar en la V11: se conservan los de la V9 y la V10.
