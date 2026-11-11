@@ -56,6 +56,7 @@ const FUERA := {
 	"corteza_guardian": "al derrotar al Guardián del Bosque, Pastos Verdes (fase 3; combate.gd, _premio_bosque)",
 	"amuleto_claro": "se fabrica en el taller conjunto (V9; talleres.gd, receta amuleto_claro)",
 	"fragmento_armadura": "al vencer al Coloso de la Falla, en la grieta de la Garganta 3D (V9, jefe 2; combate_coloso.gd, dar_premio)",
+	"aguja_resonancia": "premio de Ismena al acabar «La caravana perdida», en el Mar de Cristal (V12; zonas3d/mar_cristal/mision.gd)",
 }
 
 

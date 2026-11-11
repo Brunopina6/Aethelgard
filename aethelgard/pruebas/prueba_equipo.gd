@@ -71,7 +71,7 @@ func _borrar() -> void:
 
 # ---------------------------------------------------------------- 1. datos
 func _datos() -> void:
-	_ok(X.ACCESORIOS.size() == 12 and X.ARMAS.size() == 6,   # +2 de la fase 3 (Brote y Corteza) y +1 del Coloso (V9)
+	_ok(X.ACCESORIOS.size() == 13 and X.ARMAS.size() == 6,   # +2 de la fase 3 (Brote y Corteza), +1 del Coloso (V9) y la Aguja (V12)
 		 "1: hay %d accesorios y %d armas" % [X.ACCESORIOS.size(), X.ARMAS.size()])
 	var nombres := {}
 	for id in X.ACCESORIOS.keys() + X.ARMAS.keys():
@@ -205,8 +205,8 @@ func _disponible() -> void:
 	var c1 := ["C1"]
 	var en_c1: Array = (X.ACCESORIOS.keys() + X.ARMAS.keys()).filter(func(id): return X.disponible(id, c1))
 	en_c1.sort()
-	var esperado := ["amuleto_claro", "brote_guardian", "cinta_lumi", "diente_grimfang", "farol_peregrino", "gota_cascada", "moneda_aguila",
-		"pluma_arpia"]                               # brote_guardian: fase 3 (regen y PM, C1); la Corteza va con M3
+	var esperado := ["aguja_resonancia", "amuleto_claro", "brote_guardian", "cinta_lumi", "diente_grimfang", "farol_peregrino", "gota_cascada", "moneda_aguila",
+		"pluma_arpia"]                               # brote_guardian: fase 3 (regen y PM, C1); la Corteza va con M3; aguja_resonancia: V12 (esquiva y ATB, C1)
 	_ok(en_c1 == esperado, "5: con C1 están disponibles %s (el diseño: los 6 accesorios menos Lágrima y Brasa)" % [en_c1])
 	_ok(X.disponible("lagrima_ambar", ["C1", "M3"]) and X.disponible("brasa_frasco", ["C1", "M4"])
 		and X.disponible("fauces_gorthor", ["C2"]), "5: Lágrima (M3), Brasa (M4) o Fauces (C2) no se activan con su gancho")

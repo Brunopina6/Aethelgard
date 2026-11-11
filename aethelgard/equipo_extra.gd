@@ -124,6 +124,12 @@ const ACCESORIOS := {
 		"efecto": "Empieza con coraza (20 % de PV).",
 		"texto": "Una placa del Coloso, grabada con runas que ya nadie sabe leer enteras. Aún aguanta golpes.",
 		"donde": "Al vencer al Coloso de la Falla, en la grieta de la Garganta 3D (combate fijo «garganta_coloso»)"},
+	# V12, «La caravana perdida» (Mar de Cristal; zonas3d/mar_cristal/mision.gd): el premio de Ismena, una vez. Aprobada
+	# por el usuario el 11/11. Fuera del combate, el buscador de Kael oye un poco más lejos (buscador.gd, alcance).
+	"aguja_resonancia": {"nombre": "Aguja de Resonancia", "efectos": {"esquiva": 0.08, "atb_inicio": 20.0},
+		"efecto": "8 % de esquiva y algo de barra.",
+		"texto": "Una aguja de vidrio que zumba antes del golpe. Ismena dice que trae suerte a quien vuelve.",
+		"donde": "Premio de Ismena al acabar «La caravana perdida» (Mar de Cristal)"},
 	"brasa_frasco": {"nombre": "Brasa en frasco", "efectos": {"brasa": true},
 		"efecto": "Si cae, se levanta una vez.",
 		"texto": "Una brasa que no se apaga, en un frasco tapado con cera.",
