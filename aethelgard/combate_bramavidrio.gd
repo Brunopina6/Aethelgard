@@ -1009,6 +1009,9 @@ func _al_frente(si: bool) -> void:
 		_ordenar(_suelo_cabeza().y)
 	else:
 		_ordenar(-INF)
+		var rig_z = f.get("rig")                       # V12, v3: ordenar_en_combate le sube el z_index; al acabar, el de siempre
+		if rig_z != null and is_instance_valid(rig_z):
+			rig_z.z_index = 0
 
 
 func _ordenar(y_cabeza: float) -> void:
@@ -1568,8 +1571,12 @@ func _process(delta: float) -> void:
 		return
 	_reloj += delta
 	_revisar_citas()                                   # V12, Bramavidrio v2: los efectos que van con su clip
-	if _frente:
-		_ordenar(_suelo_cabeza().y)
+	if _frente:                                        # V12, v3: mientras ataca, el modelo decide delante de quién va
+		var p_orden = c._p3d(f)
+		if p_orden != null and p_orden.has_method("ordenar_en_combate"):
+			p_orden.ordenar_en_combate(c, f)
+		else:
+			_ordenar(_suelo_cabeza().y)
 	if succion != null and is_instance_valid(succion):
 		_seguir_boca()
 	if not _barrido.is_empty():

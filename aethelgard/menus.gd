@@ -545,14 +545,15 @@ func _pintar_ajustes() -> void:
 		cuerpo.add_child(_texto("Se nota la próxima vez que se entra en Pastos Verdes.", 16, COLOR_SUAVE))
 	# Bramavidrio (11/11): la versión nueva («la Sierpe de la Vela») o la anterior (el gusano de anillos), para que el
 	# usuario las compare antes de decidir (enemigos/bramavidrio/bramavidrio_version.gd, [bramavidrio] version).
+	# 12/11: y la prueba de la versión 3 («el Excavador», boca articulada); la de por defecto sigue siendo la 2.
 	var BV = load("res://enemigos/bramavidrio/bramavidrio_version.gd")
 	var vb: int = BV.en_ajustes()
 	cuerpo.add_child(_texto("Bramavidrio", 26, COLOR_TITULO))
 	var fbv := HBoxContainer.new()
 	fbv.add_theme_constant_override("separation", 8)
-	for op in [[2, "Nuevo (la Sierpe)"], [1, "Anterior"]]:
+	for op in [[2, "Nuevo (la Sierpe)"], [3, "Prueba v3: el Excavador"], [1, "Anterior"]]:
 		var v: int = op[0]
-		var bbv := _boton(("● " if v == vb else "○ ") + op[1], 18, Vector2(260, 34), "bramavidrio:%d" % v)
+		var bbv := _boton(("● " if v == vb else "○ ") + op[1], 18, Vector2(260 if v != 3 else 300, 34), "bramavidrio:%d" % v)
 		bbv.pressed.connect(func():
 			BV.elegir_en_ajustes(v)
 			Sonido.efecto("ui_tic")

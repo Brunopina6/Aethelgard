@@ -1,0 +1,421 @@
+{
+ "fps": 30,
+ "variante": "garras",
+ "huesos": [
+  "raiz",
+  "col_18",
+  "col_17",
+  "col_16",
+  "col_15",
+  "col_14",
+  "col_13",
+  "col_12",
+  "col_11",
+  "col_10",
+  "col_09",
+  "col_08",
+  "col_07",
+  "col_06",
+  "col_05",
+  "col_04",
+  "col_03",
+  "col_02",
+  "col_01",
+  "cabeza",
+  "mandibula",
+  "garganta",
+  "chorro",
+  "succion",
+  "brillo",
+  "monticulo",
+  "ceja_izq",
+  "ceja_der",
+  "placa_02",
+  "placa_03",
+  "placa_04",
+  "placa_05",
+  "placa_06",
+  "placa_07",
+  "placa_08",
+  "placa_09",
+  "placa_10",
+  "placa_11",
+  "placa_12",
+  "placa_13",
+  "placa_14",
+  "placa_15",
+  "placa_16",
+  "placa_17",
+  "hombro_izq",
+  "codo_izq",
+  "mano_izq",
+  "hombro_der",
+  "codo_der",
+  "mano_der",
+  "losa_1",
+  "losa_2",
+  "losa_3",
+  "losa_4",
+  "losa_5",
+  "losa_6"
+ ],
+ "clips": {
+  "reposo": {
+   "duracion": 3.0,
+   "bucle": true,
+   "instantes": {},
+   "altura": 9.033,
+   "cabeza_delante": 10.092,
+   "boca_max": 0.0,
+   "cierre_max_reposo": 0.0
+  },
+  "subterraneo": {
+   "duracion": 2.0,
+   "bucle": true,
+   "instantes": {},
+   "boca_max": 0.0,
+   "cierre_max_reposo": 0.0
+  },
+  "aviso": {
+   "duracion": 1.6,
+   "bucle": false,
+   "instantes": {
+    "vibracion": 0.1,
+    "fin_vibracion": 1.2
+   },
+   "boca_max": 0.0,
+   "cierre_max_reposo": 0.0
+  },
+  "emerger": {
+   "duracion": 2.8,
+   "bucle": false,
+   "instantes": {
+    "rompe_arena": 0.2333,
+    "pico": 0.8667,
+    "erguido": 2.45
+   },
+   "boca_max": 26.0,
+   "cierre_max_reposo": 0.0
+  },
+  "rugido": {
+   "duracion": 2.6,
+   "bucle": false,
+   "instantes": {
+    "inicio_rugido": 0.55,
+    "pico_rugido": 0.8,
+    "fin_rugido": 1.9
+   },
+   "boca_max": 55.9,
+   "cierre_max_reposo": 0.0
+  },
+  "ataque": {
+   "duracion": 2.3,
+   "bucle": false,
+   "instantes": {
+    "anticipacion": 0.2,
+    "fijado": 0.55,
+    "impacto": 1.0
+   },
+   "alcance": 12.726,
+   "altura_impacto": 1.475,
+   "boca_max": 45.83,
+   "cierre_max_reposo": 0.0
+  },
+  "ataque_sismico": {
+   "duracion": 3.8,
+   "bucle": false,
+   "instantes": {
+    "erguido": 1.0,
+    "rugido": 1.15,
+    "caida": 2.1,
+    "impacto": 2.5333,
+    "placas_suelo": 2.5333,
+    "placas_asientan": 3.1,
+    "placas_fin": 3.65
+   },
+   "alcance": 18.207,
+   "altura_max": 21.821,
+   "hocico_impacto": [
+    0.0,
+    -18.207
+   ],
+   "boca_max": 52.0,
+   "cierre_max_reposo": 0.0
+  },
+  "ataque_aliento": {
+   "duracion": 3.6,
+   "bucle": false,
+   "instantes": {
+    "apertura": 0.3,
+    "inicio_succion": 0.45,
+    "carga_max": 1.6,
+    "fin_succion": 1.7,
+    "descarga": 1.85,
+    "fin_descarga": 2.6
+   },
+   "alcance": 18.638,
+   "boca_max": 57.99,
+   "cierre_max_reposo": 0.0
+  },
+  "herida": {
+   "duracion": 1.0,
+   "bucle": false,
+   "instantes": {
+    "golpe": 0.1
+   },
+   "boca_max": 16.0,
+   "cierre_max_reposo": 0.0
+  },
+  "derrota": {
+   "duracion": 3.4,
+   "bucle": false,
+   "instantes": {
+    "dolor": 0.5,
+    "caida": 1.6,
+    "apagado": 3.0
+   },
+   "boca_max": 46.0,
+   "cierre_max_reposo": 0.0
+  }
+ },
+ "triangulos": {
+  "alto": 9197,
+  "medio": 4496,
+  "bajo": 2360
+ },
+ "texturas": {
+  "alto": "bramavidrio3_piel.webp",
+  "medio": "bramavidrio3_piel_medio.webp",
+  "bajo": "bramavidrio3_piel_bajo.webp"
+ },
+ "ajustes": {
+  "emerger_ua": -6.25,
+  "emerger_alto": 0.85,
+  "derrota_dz": -0.425,
+  "sismico_dz": 0.662
+ },
+ "losas_centro": [
+  0.0,
+  -16.907
+ ],
+ "puntos": {
+  "hocico": [
+   0.0,
+   -0.142,
+   5.041
+  ],
+  "boca": [
+   0.0,
+   -0.391,
+   3.692
+  ],
+  "garganta": [
+   0.0,
+   -0.284,
+   0.284
+  ],
+  "cierre": [
+   0.0,
+   -0.383,
+   3.976
+  ]
+ },
+ "intersecciones": {
+  "reposo": [
+   {
+    "s": 0.0,
+    "pares": 0,
+    "y": [],
+    "detalle": []
+   },
+   {
+    "s": 0.75,
+    "pares": 0,
+    "y": [],
+    "detalle": []
+   },
+   {
+    "s": 1.5,
+    "pares": 0,
+    "y": [],
+    "detalle": []
+   },
+   {
+    "s": 2.25,
+    "pares": 0,
+    "y": [],
+    "detalle": []
+   }
+  ],
+  "rugido": [
+   {
+    "s": 0.5,
+    "pares": 0,
+    "y": [],
+    "detalle": []
+   },
+   {
+    "s": 0.8,
+    "pares": 0,
+    "y": [],
+    "detalle": []
+   },
+   {
+    "s": 1.2,
+    "pares": 0,
+    "y": [],
+    "detalle": []
+   },
+   {
+    "s": 1.9,
+    "pares": 0,
+    "y": [],
+    "detalle": []
+   },
+   {
+    "s": 2.2,
+    "pares": 0,
+    "y": [],
+    "detalle": []
+   }
+  ],
+  "ataque": [
+   {
+    "s": 0.55,
+    "pares": 0,
+    "y": [],
+    "detalle": []
+   },
+   {
+    "s": 0.9,
+    "pares": 0,
+    "y": [],
+    "detalle": []
+   },
+   {
+    "s": 1.0,
+    "pares": 0,
+    "y": [],
+    "detalle": []
+   },
+   {
+    "s": 1.3,
+    "pares": 0,
+    "y": [],
+    "detalle": []
+   }
+  ],
+  "ataque_sismico": [
+   {
+    "s": 1.2,
+    "pares": 0,
+    "y": [],
+    "detalle": []
+   },
+   {
+    "s": 2.0,
+    "pares": 0,
+    "y": [],
+    "detalle": []
+   },
+   {
+    "s": 2.5333,
+    "pares": 0,
+    "y": [],
+    "detalle": []
+   },
+   {
+    "s": 3.0,
+    "pares": 0,
+    "y": [],
+    "detalle": []
+   }
+  ],
+  "ataque_aliento": [
+   {
+    "s": 0.4,
+    "pares": 0,
+    "y": [],
+    "detalle": []
+   },
+   {
+    "s": 1.2,
+    "pares": 0,
+    "y": [],
+    "detalle": []
+   },
+   {
+    "s": 1.9,
+    "pares": 0,
+    "y": [],
+    "detalle": []
+   },
+   {
+    "s": 2.4,
+    "pares": 0,
+    "y": [],
+    "detalle": []
+   },
+   {
+    "s": 3.0,
+    "pares": 0,
+    "y": [],
+    "detalle": []
+   }
+  ],
+  "herida": [
+   {
+    "s": 0.1,
+    "pares": 0,
+    "y": [],
+    "detalle": []
+   },
+   {
+    "s": 0.4,
+    "pares": 0,
+    "y": [],
+    "detalle": []
+   }
+  ],
+  "derrota": [
+   {
+    "s": 0.5,
+    "pares": 0,
+    "y": [],
+    "detalle": []
+   },
+   {
+    "s": 1.6,
+    "pares": 0,
+    "y": [],
+    "detalle": []
+   },
+   {
+    "s": 3.4,
+    "pares": 0,
+    "y": [],
+    "detalle": []
+   }
+  ],
+  "emerger": [
+   {
+    "s": 0.9,
+    "pares": 0,
+    "y": [],
+    "detalle": []
+   },
+   {
+    "s": 1.2,
+    "pares": 0,
+    "y": [],
+    "detalle": []
+   },
+   {
+    "s": 2.0,
+    "pares": 0,
+    "y": [],
+    "detalle": []
+   }
+  ]
+ }
+}

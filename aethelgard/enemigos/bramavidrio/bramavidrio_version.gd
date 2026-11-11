@@ -3,16 +3,21 @@ extends RefCounted
 # (zonas3d/mar_cristal/gusano.gd):
 #   1  la versión 1, el gusano de anillos acorazados (enemigos/bramavidrio/bramavidrio_3d.gd y bramavidrio*.glb), intacta
 #   2  la versión 2, «la Sierpe de la Vela» (enemigos/bramavidrio/v2/bramavidrio2_3d.gd y bramavidrio2*.glb)
+#   3  la versión 3, «el Excavador» (enemigos/bramavidrio/v3/bramavidrio3_3d.gd y bramavidrio3*.glb; 12/11, en prueba:
+#      el usuario la elige en Ajustes; VERSION_DEFECTO sigue siendo 2)
 # Por orden manda:
-#   - el argumento de la línea de órdenes «bramavidrio_version=1» (o 2) después de «--» (pruebas);
-#   - Engine.set_meta("bramavidrio_version", 1) (o 2), antes de crear el combate o la región;
-#   - Ajustes → «Bramavidrio» (user://ajustes.cfg, [bramavidrio] version), para que el jugador compare las dos;
+#   - el argumento de la línea de órdenes «bramavidrio_version=1» (o 2, o 3) después de «--» (pruebas);
+#   - Engine.set_meta("bramavidrio_version", 1) (o 2, o 3), antes de crear el combate o la región;
+#   - Ajustes → «Bramavidrio» (user://ajustes.cfg, [bramavidrio] version), para que el jugador las compare;
 #   - VERSION_DEFECTO (cambiar esta constante es la forma de volver a la v1 en el juego por defecto).
-# Si faltan los archivos de la versión pedida, se usa la otra. Detalles: docs/memory/agents/animaciones_v12_bramavidrio2.md.
+# Si faltan los archivos de la versión pedida, se usa la de VERSION_DEFECTO (y si tampoco está, la 1). Detalles:
+# docs/memory/agents/animaciones_v12_bramavidrio2.md y animaciones_v12_bramavidrio3.md.
 
 const VERSION_DEFECTO := 2
-const GUIONES := {1: "res://enemigos/bramavidrio/bramavidrio_3d.gd", 2: "res://enemigos/bramavidrio/v2/bramavidrio2_3d.gd"}
-const MODELOS := {1: "res://enemigos/bramavidrio/bramavidrio.glb", 2: "res://enemigos/bramavidrio/v2/bramavidrio2.glb"}
+const GUIONES := {1: "res://enemigos/bramavidrio/bramavidrio_3d.gd", 2: "res://enemigos/bramavidrio/v2/bramavidrio2_3d.gd",
+	3: "res://enemigos/bramavidrio/v3/bramavidrio3_3d.gd"}
+const MODELOS := {1: "res://enemigos/bramavidrio/bramavidrio.glb", 2: "res://enemigos/bramavidrio/v2/bramavidrio2.glb",
+	3: "res://enemigos/bramavidrio/v3/bramavidrio3.glb"}
 
 
 static func pedida() -> int:
@@ -46,8 +51,9 @@ static func version() -> int:
 	var v := pedida()
 	if not GUIONES.has(v):
 		v = VERSION_DEFECTO
-	if not (ResourceLoader.exists(GUIONES[v]) and ResourceLoader.exists(MODELOS[v])):
-		v = 1 if v == 2 else 2
+	for alternativa in [v, VERSION_DEFECTO, 1, 2]:
+		if ResourceLoader.exists(GUIONES[alternativa]) and ResourceLoader.exists(MODELOS[alternativa]):
+			return alternativa
 	return v
 
 
