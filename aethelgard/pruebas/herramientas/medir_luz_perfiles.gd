@@ -20,6 +20,7 @@ var t0 := 0
 var cargando := false
 var filas: Array = []
 var perfiles: Array = PERFILES.duplicate()
+var pos_kael := Vector3.INF
 
 
 func _initialize() -> void:
@@ -35,6 +36,9 @@ func _initialize() -> void:
 				var kv := par.split(":")
 				ex[kv[0]] = (kv[1] == "true") if kv[1] in ["true", "false"] else float(kv[1])
 			Engine.set_meta("calidad_extra", ex)
+		elif a.begins_with("pos="):                        # pos=x,z: dónde poner a Kael (solo el Mar de Cristal, lugar 4)
+			var xz := a.substr(4).split(",")
+			pos_kael = Vector3(float(xz[0]), 0.0, float(xz[1]))
 		elif a.begins_with("perfiles="):
 			perfiles = Array(a.substr(9).split(","))
 		elif a.begins_with("regiones="):
@@ -59,7 +63,10 @@ func _process(_d: float) -> bool:
 		return true
 	if not cargando:
 		Engine.set_meta("calidad_proto", lista[i][1])
-		Engine.set_meta("pos_3d_ok", false)
+		Engine.set_meta("pos_3d_ok", pos_kael != Vector3.INF)
+		if pos_kael != Vector3.INF:
+			Engine.set_meta("pos_3d", pos_kael)
+			Engine.set_meta("pos_3d_lugar", 4)
 		change_scene_to_file(REGIONES[lista[i][0]])
 		cargando = true
 		t0 = Time.get_ticks_msec()
@@ -67,7 +74,7 @@ func _process(_d: float) -> bool:
 	if Time.get_ticks_msec() - t0 < ESPERA:
 		return false
 	var img := root.get_texture().get_image()
-	var nombre := "%s_%s%s.png" % [lista[i][0], lista[i][1], "_antes" if Engine.has_meta("luz_sin_compensar") else ""]
+	var nombre := "%s_%s%s%s.png" % [lista[i][0], lista[i][1], "_antes" if Engine.has_meta("luz_sin_compensar") else "", "" if pos_kael == Vector3.INF else "_%d_%d" % [pos_kael.x, pos_kael.z]]
 	img.save_png(salida.path_join(nombre))
 	var m := _medir(img)
 	var llamadas := int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
