@@ -242,7 +242,7 @@ const MODELOS := {
 	# V12: Bramavidrio (zonas3d/mar_cristal/gusano.gd). Foto del modelo provisional (pruebas/herramientas/foto_bramavidrio.gd)
 	# hasta que gráficos haga su GLB; los pies abajo en el centro, como los jefes de imagen.
 	"bramavidrio": {"tipo": "imagen", "imagen": "res://enemigos/bramavidrio/bramavidrio.png", "cadera": Vector2(160, 470),
-		"tam": 1.15, "barra_y": -250.0, "centro_y": 60.0},
+		"tam": 1.15, "barra_y": -150.0, "centro_y": 60.0},      # barra y nombre dentro de la pantalla (Redmi, v581: salían cortados)
 	"coloso_falla2d": {"tipo": "imagen", "imagen": "res://enemigos/guardian.png", "cadera": Vector2(160, 470), "tam": 1.45,
 		"barra_y": -197.0, "centro_y": 90.0, "tinte": Color(1.05, 0.86, 0.8)},
 }
@@ -2344,8 +2344,10 @@ func _orden_objeto() -> Dictionary:
 
 
 func _orden_huir() -> Dictionary:
+	# V12: contra Bramavidrio se dice por qué (es obligatorio: emerge bajo los pies y no deja escapar; Redmi, v581)
+	var motivo := "Bramavidrio cierra el paso" if combate_fijo == "mc_bramavidrio" else "No se puede huir"
 	return {"texto": "HUIR", "accion": _escapar, "apagado": Engine.get_meta("tipo_combate", "normal") != "normal",
-		"motivo": "No se puede huir"}
+		"motivo": motivo}
 
 
 # ¿Se puede invocar a Érebo ahora? (T-101: la orden INVOCACIÓN y el HUD de la Armonía lo explican). Las reglas son las de

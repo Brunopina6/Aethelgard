@@ -165,7 +165,7 @@ func _aparecer(pos: Vector3) -> void:
 			_cuerpo.visible = false
 			_cambiar("descanso"))
 	else:
-		t.tween_callback(func(): region.encuentro(COMBATE, GRUPO_COMBATE, "jefe", "¡Bramavidrio!"))
+		t.tween_callback(func(): region.encuentro(COMBATE, GRUPO_COMBATE, "jefe", "¡Bramavidrio te cierra el paso! No hay huida."))
 
 
 func _animar_aparicion(_delta: float) -> void:

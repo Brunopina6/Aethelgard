@@ -50,18 +50,22 @@ func _foto() -> void:
 	var cuerpo: Node3D = g._modelo_gusano()
 	vp.add_child(cuerpo)
 	cuerpo.rotation.y = deg_to_rad(-115.0)                       # de lado, inclinado hacia los héroes (a la derecha): se ven las placas del lomo
-	var monton := MeshInstance3D.new()                          # la arena que revienta alrededor
-	var s := SphereMesh.new()
-	s.radius = 1.0
-	s.height = 1.0
-	monton.mesh = s
-	monton.scale = Vector3(3.0, 0.9, 2.2)
+	# la arena revuelta alrededor: montones irregulares, oscuros y bajos, del color del suelo del combate (el disco claro
+	# de antes parecía un plato; Redmi, v581). La imagen anterior queda en bramavidrio_v1.png.
 	var ma := StandardMaterial3D.new()
-	ma.albedo_color = Color(0.88, 0.70, 0.48)
+	ma.albedo_color = Color(0.58, 0.46, 0.34)
 	ma.roughness = 1.0
-	monton.material_override = ma
-	monton.position = Vector3(0, 0.15, 0)
-	vp.add_child(monton)
+	for i in 7:
+		var monton := MeshInstance3D.new()
+		var s := SphereMesh.new()
+		s.radius = 1.0
+		s.height = 1.0
+		monton.mesh = s
+		var a := TAU * i / 7.0 + 0.4
+		monton.scale = Vector3(0.9 + 0.35 * sin(i * 2.1), 0.45 + 0.15 * cos(i * 1.7), 0.7 + 0.3 * cos(i * 1.3))
+		monton.position = Vector3(cos(a) * 1.35, 0.0, sin(a) * 1.1)
+		monton.material_override = ma
+		vp.add_child(monton)
 	for i in 3:
 		await process_frame
 	await RenderingServer.frame_post_draw
