@@ -94,6 +94,10 @@ var aviso: Label
 var boton_accion: Button
 var tilo: Node3D
 var bosque = null                         # zonas3d/bosque_pastos.gd: «El bosque que no recuerda» (fase 3)
+# Rincones para explorar fuera de la misión (12/11, zonas3d/pastos_rincones.gd): pájaros que levantan el vuelo, el
+# montón de los peregrinos, el nido de la urraca y asomarse en el puente. null en los bancos de medida.
+const RINCONES := "res://zonas3d/pastos_rincones.gd"
+var rincones = null
 var estela: Node3D
 var grupo: Node3D                        # zonas3d/grupo_3d.gd (null si no sale nadie)
 var cofre: Node3D
@@ -137,6 +141,10 @@ func _ready() -> void:
 	bosque = load("res://zonas3d/bosque_pastos.gd").new()   # «El bosque que no recuerda» (fase 3)
 	add_child(bosque)
 	bosque.preparar(self)
+	if not en_banco():                   # rincones para explorar (12/11): pájaros, montón, nido y puente
+		rincones = load(RINCONES).new()
+		add_child(rincones)
+		rincones.preparar(self)
 	var vuelve: bool = Engine.get_meta("pos_3d_ok", false) and Engine.get_meta("pos_3d_lugar", -1) == INDICE
 	if vuelve and not en_banco():
 		_colocar_kael(Engine.get_meta("pos_3d"))       # vuelve del combate o de una partida guardada aquí
@@ -283,6 +291,8 @@ func _process(delta: float) -> void:
 	_comprobar_mision()
 	if bosque != null:
 		bosque.comprobar(p, delta)
+	if rincones != null:
+		rincones.comprobar(p, delta)
 	_comprobar_cerca()
 	_comentarios(delta, d)
 
@@ -347,6 +357,8 @@ func _quitar_comentarios() -> void:
 
 func ocupado() -> bool:
 	if bosque != null and bosque.ocupado():            # la pantalla de alquimia abierta (fase 3)
+		return true
+	if rincones != null and rincones.ocupado():        # Kael sube al nido de la urraca (un fundido corto)
 		return true
 	if _escena_pendiente != "":
 		return true
@@ -489,6 +501,9 @@ func _al_terminar_dialogo() -> void:
 func _tras_dialogo(id: String) -> void:
 	if (id.begins_with("bq_") or id.begins_with("enc_")) and bosque != null:   # la aventura del bosque y sus encargos
 		bosque.tras_dialogo(id)
+		return
+	if rincones != null and id.begins_with("res://dialogos/pastos/"):   # los rincones abren sus diálogos por ruta
+		rincones.tras_dialogo(id)
 		return
 	var P = load("res://progreso.gd")
 	match id:
@@ -745,6 +760,11 @@ func _comprobar_cerca() -> void:
 		if not b.is_empty():
 			cerca = "bq:" + b["id"]
 			boton_accion.text = b["boton"]
+	if cerca == "" and rincones != null:               # rincones para explorar (12/11)
+		var rc: Dictionary = rincones.cerca_de(p)
+		if not rc.is_empty():
+			cerca = "rin:" + rc["id"]
+			boton_accion.text = rc["boton"]
 	boton_accion.visible = cerca != ""
 
 
@@ -787,6 +807,9 @@ func _accion() -> void:
 		_:
 			if cerca.begins_with("bq:"):
 				bosque.accion(cerca.trim_prefix("bq:"))
+				return
+			if cerca.begins_with("rin:"):
+				rincones.accion(cerca.trim_prefix("rin:"))
 				return
 			if cerca.begins_with("nota:"):
 				_leer_nota(cerca.trim_prefix("nota:"))

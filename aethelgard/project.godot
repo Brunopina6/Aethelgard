@@ -149,7 +149,8 @@ directories/dtl_directory={
 "pv_07": "res://dialogos/pv_07.dtl",
 "pv_14": "res://dialogos/pv_14.dtl",
 "pv_tilo": "res://dialogos/pv_tilo.dtl",
-"pv_tilo_fin": "res://dialogos/pv_tilo_fin.dtl"
+"pv_tilo_fin": "res://dialogos/pv_tilo_fin.dtl",
+"rincon_nido": "res://dialogos/pastos/rincon_nido.dtl"
 }
 layout/end_behaviour=1
 layout/style_directory={}

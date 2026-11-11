@@ -1,0 +1,11 @@
+join kael (vivo_pv) left
+update kael [extra_data="duda"]
+kael: Ahí arriba brilla algo. Es un nido.
+garon: De urraca. Sube.
+update kael [extra_data="sorpresa"]
+kael: ¿Que suba? ¿Cómo que suba?
+garon: Pie en mis manos. Luego, la rama.
+update kael [extra_data="ligero"]
+kael: Si me caigo, que conste que fue idea tuya.
+garon: No te caes. Te sujeto.
+leave kael
