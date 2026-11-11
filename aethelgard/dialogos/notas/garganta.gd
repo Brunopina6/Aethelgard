@@ -3,7 +3,11 @@ extends RefCounted
 # aviso, unas cintas— que cuentan algo del sitio sin canon nuevo. Se leen al examinarlas y van al Diario, sección
 # «Notas» (progreso.gd, CIUDADES: este módulo es el del lugar 2; se apuntan en «lore_visto», sin clave nueva).
 #
-# ENGANCHE (garganta_3d.gd es de gráficos: no lo toco). Cada nota va en su «pos» (coordenadas de
+# ENGANCHADAS desde el 12/11 (V12, migración de la Garganta): garganta_3d.gd las pone con su objeto (piezas.gd, nota:
+# tabla, papel, escamas y cintas) y las lee con zonas3d/examinables_3d.gd (leer_nota, lo mismo que se describe abajo).
+# Dos sitios movidos para que su objeto no quede dentro de la decoración: el aviso del ascensor (estaba en el tronco
+# de un pino, escenario.gd) y las escamas (estaban sobre un peldaño de la bajada; ahora en la repisa).
+# ENGANCHE (lo que se pidió el 09/11). Cada nota va en su «pos» (coordenadas de
 # zonas3d/garganta/trazado.gd, ya sobre la cornisa) con un objeto pequeño que se vea (una tabla, un papel clavado, unas
 # cintas: piezas.gd) y, mientras no se ha leído, un destello. Con el estilo de garganta_3d.gd de hoy:
 #     const NotasGar := preload("res://dialogos/notas/garganta.gd")
@@ -31,10 +35,10 @@ const NOTAS := [
 		"pos": Vector3(-14.2, 0.0, 20.2), "donde": "al pie del primer puente colgante, en el lado del muro",
 		"texto": "Tabla de los puenteros: «Cuerdas nuevas en primavera. Si cruje, nada. Si canta, corre.»"},
 	{"id": "nota_gar_ascensor", "nombre": "Aviso del ascensor",
-		"pos": Vector3(-13.4, 0.0, 24.6), "donde": "en el muro, antes del ascensor de arriba (ASCENSOR_ARRIBA), sin tapar su botón",
+		"pos": Vector3(-14.0, 0.0, 28.3), "donde": "junto al muro, antes de llegar al ascensor de arriba (ASCENSOR_ARRIBA), a la altura de la escalera de la presa",
 		"texto": "Papel clavado: «El ascensor no baja si nadie tira de la palanca de abajo. El que esperó dos horas.»"},
 	{"id": "nota_gar_nido", "nombre": "Escamas de ámbar",
-		"pos": Vector3(6.2, -14.0, 11.6), "donde": "al pie de la bajada al nido (cerca de VUELTA_NIDO)",
+		"pos": Vector3(6.3, -14.0, 9.6), "donde": "en la repisa del nido, al pie de la bajada (cerca de VUELTA_NIDO)",
 		"texto": "Escamas de ámbar en la piedra, grandes como platos. Algo duerme aquí. Mejor no despertarlo."},
 	{"id": "nota_gar_cintas", "nombre": "Cintas de los peregrinos",
 		"pos": Vector3(10.2, -8.0, -28.6), "donde": "antes del pilar del peregrino (PILAR_PEREGRINO), sin pisar su botón",
@@ -43,6 +47,6 @@ const NOTAS := [
 # Dónde irían en la Garganta 2D (garganta.gd), APROXIMADO con la equivalencia que anota trazado.gd (x 2D ≈ 3 + (37 − z);
 # y 2D, la de la cornisa: 10,8 arriba, 34,2 abajo, 44 en el nido). Pendiente: que su responsable las ponga y las ajuste.
 const CASILLA_2D := {
-	"nota_gar_puenteros": Vector2(19.8, 10.8), "nota_gar_ascensor": Vector2(15.4, 10.8),
-	"nota_gar_nido": Vector2(29.7, 44.0), "nota_gar_cintas": Vector2(68.6, 34.2),
+	"nota_gar_puenteros": Vector2(19.8, 10.8), "nota_gar_ascensor": Vector2(11.7, 10.8),
+	"nota_gar_nido": Vector2(30.4, 44.0), "nota_gar_cintas": Vector2(68.6, 34.2),
 }

@@ -14,6 +14,8 @@ extends RefCounted
 # antigua no lo tiene y se puede encontrar. Si ya tenías el objeto (comprado, por ejemplo), se apunta igual.
 # Lo que aún no existe en el juego (la Arboleda Mítica: Gota de la cascada y Cinta de Lumi) o lo que ya da otra cosa
 # (las Fauces de Gorthor y la Lágrima de ámbar, combate.gd; el Farol y la Moneda, las tiendas) no está aquí.
+# Regiones 3D (V12, 12/11): las enganchan con zonas3d/examinables_3d.gd (hallazgo_al_examinar, hallazgo_pendiente),
+# que hace lo de abajo; la primera, la Garganta 3D (el Báculo del Peregrino al examinar el pilar).
 # Garganta 3D (garganta_3d.gd, de gráficos): al examinar el pilar del peregrino, la misma llamada que la 2D:
 #     var t: Array = Hallazgos.al_examinar(2, "detalle:garganta_pilar")   # [] si no hay nada (o ya se encontró)
 #     tras el aviso del detalle, cada texto de «t» con _mostrar_aviso(texto, 3.0), uno detrás de otro, y Sonido «tesoro»

@@ -16,7 +16,9 @@
   puente levadizo que baja la palanca. El nido está en una repisa del abismo, bajo P6: se ve brillar desde los puentes.
 - Paleta propia de mazmorra: roca fría en capas, luz del cielo desde una rendija, rebote cálido, niebla azul que se
   vuelve ámbar al bajar y acentos de fuego en el camino. Nada de cielo ni de pradera: es lo contrario de Pastos Verdes.
-- Se juega ya, de la entrada al nido y a Gorthor, con `-- 3d garganta3d`. La APK sigue llevando la 2D.
+- **Desde el 12/11 (V12, migración región a región) es la Garganta por defecto** con la exploración 3D (también en la
+  APK experimental). La 2D sigue entera y se elige en Ajustes («Garganta del Diablo: 3D / 2D (la de siempre)»). Ver §10.
+  Informe: `docs/memory/agents/migracion_v12_garganta.md`.
 
 ## 2. De la 2D a la 3D
 
@@ -303,14 +305,17 @@ del hueco que dé el coordinador, en el PC y en el Redmi.
 
 ## 10. Cómo se activa
 
-- **Ahora:** con la exploración 3D y el argumento:
-  `Godot --path aethelgard -- 3d garganta3d` (o la escena suelta, `zonas3d/garganta_3d.tscn`).
-- **Sin el argumento,** también en la APK experimental, el mapa lleva a la Garganta 2D. La APK estable excluye
+Desde el 12/11 (V12, `modo3d.gd`, `POR_DEFECTO_2D_ELEGIBLE`):
+- **Por defecto, la 3D,** con la exploración 3D activa (característica `rebelum3d` o `-- 3d`). La APK estable excluye
   `zonas3d/*`: no cambia nada.
-- **Activarla por defecto,** cuando la 3D supere las pruebas y la medida en el Redmi:
-  1. quitar `GARGANTA: "garganta3d"` de `EN_PRUEBAS` en `modo3d.gd`;
-  2. hacer los cambios de `progreso.gd` y `musica.gd` del §11;
-  3. en la lista de pruebas, el argumento `garganta3d` deja de hacer falta (no estorba).
+- **La 2D, si se elige:** Ajustes → «Garganta del Diablo» → «2D (la de siempre)» guarda `[regiones] garganta3d = false`
+  en `user://ajustes.cfg` (la misma clave de cuando estaba en pruebas: quien ya la había elegido la conserva). En
+  pruebas, `-- garganta2d`; `-- garganta3d` fuerza la 3D.
+- **Partidas:** una guardada en la 2D abre la 3D en el sitio equivalente; una guardada en la 3D con la 2D elegida abre
+  la 2D por su entrada (`escena_equivalente`). El progreso es el mismo en las dos (mismos ids).
+- **Lo que la 2D daba al explorar y faltaba:** el Báculo del Peregrino al examinar el pilar (`hallazgos.gd`, con
+  `zonas3d/examinables_3d.gd`) y las cuatro notas de `dialogos/notas/garganta.gd` (que la 2D tampoco tenía).
+- **Antes** (hasta el 11/11): solo con `-- 3d garganta3d`; sin él, la 2D.
 
 ## 11. Cambios que se piden en archivos de otros
 

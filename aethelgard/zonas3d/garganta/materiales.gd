@@ -727,6 +727,19 @@ func sillar() -> StandardMaterial3D:
 	return m
 
 
+# Tela con el color en los vértices (V12: las cintas de las notas; todas en un solo lote, una sola llamada de dibujo).
+func tela_color() -> StandardMaterial3D:
+	var clave := "tela_color"
+	if _cache.has(clave):
+		return _cache[clave]
+	var m := StandardMaterial3D.new()
+	m.vertex_color_use_as_albedo = true
+	m.cull_mode = BaseMaterial3D.CULL_DISABLED
+	m.roughness = 1.0
+	_cache[clave] = m
+	return m
+
+
 func madera_color() -> StandardMaterial3D:
 	var clave := "madera_color"
 	if _cache.has(clave):

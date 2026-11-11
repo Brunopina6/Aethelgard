@@ -2,7 +2,8 @@ extends SceneTree
 # Prueba de la Garganta del Diablo 3D (zonas3d/garganta_3d.tscn), con la exploración 3D y su argumento
 # («-- 3d garganta3d sin_prologo»). Recorre la mazmorra de verdad: escenas con Recursos.cambiar_escena, Kael andando
 # (física y zonas prohibidas de la región) y combate.tscn de verdad.
-#   0. modo3d: la 3D solo con el argumento (sin él, también la APK experimental, sigue la 2D); el cofre del nido tiene
+#   0. modo3d: desde el 12/11 (V12) la 3D va por defecto con la exploración 3D, también en la APK experimental, y
+#      «garganta2d» (o la 2D elegida en Ajustes: prueba_garganta3d_examinables) lleva a la 2D; el cofre del nido tiene
 #      el identificador de la 2D; las posiciones de la 2D se convierten a sitios de la 3D.
 #   1. Del mapa, el lugar 2 lleva a la Garganta 3D (no a la 2D); se entra por la entrada, con la zona «garganta».
 #   2. Los puentes colgantes se cruzan andando (la tablazón cuelga); el ritmo de encuentros es el de la 2D.
@@ -75,9 +76,10 @@ func _comprobar_modo3d() -> void:
 		return
 	if M3.escena_de(2) != REGION:
 		fallos.append("0: con «garganta3d», el lugar 2 no lleva a la Garganta 3D (lleva a «%s»)" % M3.escena_de(2))
-	var casos := [[PackedStringArray(["3d"]), false, false, "con «-- 3d» sin «garganta3d»"],
-		[PackedStringArray([]), true, false, "en la APK experimental (rebelum3d) sin argumento"],
+	var casos := [[PackedStringArray(["3d"]), false, true, "con «-- 3d» sin «garganta3d» (por defecto, V12)"],
+		[PackedStringArray([]), true, true, "en la APK experimental (rebelum3d) sin argumento (por defecto, V12)"],
 		[PackedStringArray(["garganta3d"]), false, false, "con «garganta3d» pero sin la exploración 3D"],
+		[PackedStringArray(["3d", "garganta2d"]), false, false, "con «-- 3d garganta2d» (la 2D elegida)"],
 		[PackedStringArray(["3d", "garganta3d"]), false, true, "con «-- 3d garganta3d»"]]
 	for c in casos:
 		if M3.region_activa_con(2, c[0], c[1]) != c[2]:

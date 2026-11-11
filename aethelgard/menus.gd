@@ -439,13 +439,15 @@ func _pintar_ajustes() -> void:
 			fm.add_child(b)
 		cuerpo.add_child(fm)
 		cuerpo.add_child(_texto("Se nota la próxima vez que se abre el mapa.", 16, COLOR_SUAVE))
-		# La Garganta del Diablo en 3D (T-095), todavía en pruebas: aquí se elige para verla en el móvil.
+		# La Garganta del Diablo (T-095). V12, migración de la Garganta (12/11): la 3D va por defecto y la 2D de siempre
+		# se puede elegir (modo3d.gd, POR_DEFECTO_2D_ELEGIBLE). Solo cambian el botón marcado (la versión en uso) y el
+		# texto y orden de las dos opciones.
 		var m3d = load("res://modo3d.gd")
-		var g3d: bool = m3d.elegida("garganta3d")
+		var g3d: bool = m3d.region_activa(m3d.GARGANTA)
 		cuerpo.add_child(_texto("Garganta del Diablo", 26, COLOR_TITULO))
 		var fg := HBoxContainer.new()
 		fg.add_theme_constant_override("separation", 8)
-		for op in [[false, "2D (la de siempre)"], [true, "3D (en pruebas)"]]:
+		for op in [[true, "3D"], [false, "2D (la de siempre)"]]:
 			var en_3d: bool = op[0]
 			var bg := _boton(("● " if en_3d == g3d else "○ ") + op[1], 18, Vector2(240, 34),
 				"garganta:%s" % ("3d" if en_3d else "2d"))

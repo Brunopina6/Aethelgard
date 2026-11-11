@@ -2,8 +2,10 @@ extends "res://prototipos/vista3d.gd"
 # La Garganta del Diablo en 3D (capítulo 4): la mazmorra de la Garganta 2D (garganta.gd), con su misma estructura y su
 # mismo progreso, en la exploración 3D. Diseño completo: docs/diseno/garganta_3d.md.
 #
-# Solo se llega con la exploración 3D activa y con el argumento «garganta3d» (modo3d.gd, EN_PRUEBAS): sin él, el mapa
-# sigue llevando a la Garganta 2D, que se queda como alternativa.
+# Desde el 12/11 (V12, migración región a región) es la Garganta por defecto con la exploración 3D activa; la 2D sigue
+# entera y se puede elegir en Ajustes («Garganta del Diablo: 3D / 2D (la de siempre)»; modo3d.gd,
+# POR_DEFECTO_2D_ELEGIBLE). Tiene también lo que la 2D da al explorar: el Báculo del Peregrino al examinar el pilar
+# (hallazgos.gd) y las notas de dialogos/notas/garganta.gd, con zonas3d/examinables_3d.gd.
 #
 # La garganta corre de sur a norte, por donde mira la cámara (que nunca gira): los muros quedan a los lados y el abismo
 # delante. El trazado (zonas3d/garganta/trazado.gd) conserva las piezas de la 2D en el mismo orden:
@@ -28,6 +30,14 @@ const Piezas := preload("res://zonas3d/garganta/piezas.gd")
 const Materiales := preload("res://zonas3d/garganta/materiales.gd")
 const Progreso := preload("res://progreso.gd")
 const Comentarios := preload("res://dialogos/comentarios.gd")   # lo que dicen los héroes al explorar (narrativa)
+# V12, migración (12/11): el Báculo del Peregrino (hallazgos.gd, el mismo de la 2D al examinar el pilar) y las notas
+# de la Garganta (dialogos/notas/garganta.gd, que nadie había enganchado), con el módulo común de las regiones 3D.
+const Examinables := preload("res://zonas3d/examinables_3d.gd")
+const NotasGar := preload("res://dialogos/notas/garganta.gd")
+const FORMA_NOTA := {"nota_gar_puenteros": "tabla", "nota_gar_ascensor": "papel", "nota_gar_nido": "escamas",
+	"nota_gar_cintas": "cintas"}                 # el objeto de cada nota (piezas.gd, nota), como dice su texto
+const TRAS_DETALLE := 4.6                    # cuándo queda libre el aviso tras el texto de un detalle (sin página nueva)
+const TRAS_PAGINA := 7.2                     # … y con «Nueva página en el Diario»
 
 const INDICE := 2                        # lugar del mapa (mapa.gd, INDICE_GARGANTA; modo3d.GARGANTA)
 const NOMBRE := "garganta"               # progreso.gd: mazmorras["garganta"], nivel de la zona y encuentros
@@ -113,6 +123,11 @@ var coloso: Node3D                       # el Coloso dormido (null si ya se le v
 var _armado_coloso := true
 var _coloso_hablando := false            # el aviso antes de su combate: Kael quieto
 var _coloso_dicho := false               # tras vencerle, «Solo quedan placas…», una vez por visita
+var baculo: Node3D                       # el Báculo del Peregrino junto al pilar (null si ya se encontró)
+var notas: Array = []                    # [{datos, pos, sitio, brillo}] (piezas.gd, nota)
+# V12: el brazalete de Kael brilla al acercarse a un detalle sin ver, como en la 2D (zona.gd, _brazalete: 260 px ≈ 4 m).
+const RADIO_BRAZALETE := 4.0
+var brillados := {}                      # detalle → ya ha brillado (se vuelve a armar al alejarse ×1,6)
 
 
 func _ready() -> void:
@@ -229,6 +244,10 @@ func _crear_piezas() -> void:
 		gorthor = piezas.gorthor(T.GORTHOR)
 	# la grieta oculta y la salida
 	piezas.pilar_peregrino(T.PILAR_PEREGRINO)
+	if Examinables.hallazgo_pendiente(INDICE, "detalle:" + ID_PILAR):   # V12: el báculo, apoyado en él (si no se cogió)
+		baculo = piezas.baculo(T.PILAR_PEREGRINO)
+	for n in NotasGar.NOTAS:                                           # V12: las notas, cada una con su objeto
+		notas.append(piezas.nota(n, FORMA_NOTA.get(n["id"], "tabla"), Progreso.visto(n["id"])))
 	# al fondo de la grieta, el Coloso de la Falla (V9): dormido o, ya vencido, sus placas caídas
 	if Progreso.ganado(ID_COLOSO):
 		FiguraColoso.ruinas(piezas.lotes, mat, COLOSO + Vector3(0.3, 0, -0.3))
@@ -432,6 +451,7 @@ func _unhandled_input(ev: InputEvent) -> void:
 
 func _paso() -> void:
 	pasos += 1
+	_brazalete()
 	if Progreso.paso_incienso():
 		_mostrar_aviso("El Incienso de Ceniza se ha consumido.")
 	var k := T.ritmo(kael.global_position)               # muchos en los puentes, pocos en las cornisas de abajo
@@ -536,17 +556,19 @@ func _piezas_al_alcance() -> Array:
 		lista.append(["cofre", T.COFRE_NIDO, "Abrir cofre"])
 	if Progreso.hito("enc_herrero_pista") and not Progreso.hito("enc_herrero_veta"):   # V10: la veta del encargo de Ferro
 		lista.append(["veta", T.PILAR_PEREGRINO + VETA_DESDE_PILAR, "Picar la veta"])
+	for n in notas:                                    # V12: las notas (con su radio, NotasGar.RADIO)
+		lista.append(["nota:" + n["datos"]["id"], n["pos"], "Examinar", NotasGar.RADIO])
 	return lista
 
 
 func _comprobar_cerca() -> void:
 	var p := kael.global_position
 	cerca = ""
-	var mejor := RADIO_PIEZA
+	var mejor := INF
 	for pz in _piezas_al_alcance():
 		var q: Vector3 = pz[1]
 		var d := _dist_plana(p, q)
-		if d < mejor and absf(p.y - q.y) < 2.5:
+		if d < mejor and d < (pz[3] if pz.size() > 3 else RADIO_PIEZA) and absf(p.y - q.y) < 2.5:
 			mejor = d
 			cerca = pz[0]
 			boton_accion.text = pz[2]
@@ -581,11 +603,20 @@ func _accion() -> void:
 		"cofre":
 			_abrir_cofre()
 		"detalle_p2", "detalle_p8":
-			_examinar(0 if cerca == "detalle_p2" else 1)
+			var libre := _examinar(0 if cerca == "detalle_p2" else 1)
 			if cerca == "detalle_p8":
-				_pista_herrero()
+				var antes := libre                     # V12: el Báculo del Peregrino (como zona.gd en la 2D)
+				libre = Examinables.hallazgo_al_examinar(self, INDICE, "detalle:" + ID_PILAR, libre)
+				if libre > antes:
+					_coger_baculo(antes)
+				_pista_herrero(libre)
 		"veta":
 			_picar_veta()
+		_:
+			if cerca.begins_with("nota:"):             # V12: una nota de la Garganta
+				for n in notas:
+					if "nota:" + n["datos"]["id"] == cerca:
+						Examinables.leer_nota(self, n)
 
 
 func _apagar_destello(altar: Node3D) -> void:
@@ -597,7 +628,8 @@ func _apagar_destello(altar: Node3D) -> void:
 
 # Los detalles de lore de la Garganta (progreso.gd, DETALLES[2]): el mismo texto y la misma página del Diario que en
 # la 2D. El pilar del peregrino completa, con los de Oakhaven y el Bosque, «El primer portador» (Acto I).
-func _examinar(i: int) -> void:
+# Devuelve cuándo queda libre el aviso (para lo que venga después: el báculo, la pista de Ferro).
+func _examinar(i: int) -> float:
 	var d: Dictionary = Progreso.detalles_de(INDICE)[i]
 	_mostrar_aviso(d["texto"], 4.0)
 	Sonido.efecto("examinar")                          # sonido.gd
@@ -608,6 +640,45 @@ func _examinar(i: int) -> void:
 				Sonido.efecto("pagina")
 				Sonido.efecto("misterio", {"retraso": 0.2})
 				_mostrar_aviso("Nueva página en el Diario: «%s»" % acto["escena"]))
+		return TRAS_PAGINA
+	return TRAS_DETALLE
+
+
+# V12: la pista del brazalete de la 2D (zona.gd, _brazalete y _brillo_brazalete): cerca de un detalle sin ver (los
+# pilares de los puentes, el pilar del peregrino), a la misma altura, un brillo en la muñeca de Kael y su sonido.
+func _brazalete() -> void:
+	var p := kael.global_position
+	for d in [[ID_PUENTES, T.DETALLE_PUENTES], [ID_PILAR, T.PILAR_PEREGRINO]]:
+		var q: Vector3 = d[1]
+		var dist := _dist_plana(p, q)
+		if dist > RADIO_BRAZALETE * 1.6 or absf(p.y - q.y) > 2.5:
+			brillados.erase(d[0])
+		elif dist < RADIO_BRAZALETE and not brillados.has(d[0]) and not Progreso.visto(d[0]):
+			brillados[d[0]] = true
+			_brillo_brazalete()
+
+
+func _brillo_brazalete() -> void:
+	Sonido.efecto("brazalete")                     # sonido.gd (T-083), muy bajo
+	var b: MeshInstance3D = piezas.destello(kael, Vector3(-0.28, 1.0, 0.12), 0.05, Color(1.0, 0.86, 0.42))
+	b.name = "BrilloBrazalete"
+	var t := b.create_tween()
+	t.tween_property(b, "scale", Vector3.ONE * 0.35, 0.25)
+	t.tween_property(b, "scale", Vector3.ONE * 0.02, 0.6)
+	t.tween_callback(b.queue_free)
+
+
+# V12: Kael coge el báculo cuando sale su aviso: sube un poco, se encoge y desaparece (el destello con él).
+func _coger_baculo(cuando: float) -> void:
+	if baculo == null:
+		return
+	var b := baculo
+	baculo = null
+	var t := b.create_tween()
+	t.tween_interval(maxf(cuando, 0.0))
+	t.tween_property(b, "position:y", b.position.y + 0.35, 0.35).set_trans(Tween.TRANS_SINE)
+	t.parallel().tween_property(b, "scale", Vector3.ONE * 0.05, 0.45).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	t.tween_callback(b.queue_free)
 
 
 # ================================================================= la palanca
@@ -940,12 +1011,12 @@ func _comentar(momento: String) -> void:
 # ================================================================= V10: el hierro que canta (encargo de Maese Ferro)
 # Con el encargo pedido, examinar el pilar del peregrino da la pista (Garon lee el hierro de las inscripciones) y
 # aparece la veta; picarla da un Hierro de la Falla, una vez. Se guarda con los hitos de siempre.
-func _pista_herrero() -> void:
+func _pista_herrero(cuando := TRAS_DETALLE) -> void:
 	if not Progreso.hito("enc_herrero_pedido") or Progreso.hito("enc_herrero_pista"):
 		return
 	Progreso.poner_hito("enc_herrero_pista")
 	var garon: bool = load("res://grupo.gd").activos().has("Garon")
-	get_tree().create_timer(4.6).timeout.connect(func():
+	get_tree().create_timer(cuando).timeout.connect(func():
 		if is_instance_valid(self):
 			_mostrar_aviso(("Garon: «Las letras del pilar las grabaron con el hierro de aquí. Mirad: la veta brilla.»" if garon
 				else "Al pie del pilar, la roca tiene vetas oscuras que brillan como el metal."), 4.0)

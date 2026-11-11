@@ -9,10 +9,14 @@ extends RefCounted
 # Cada región 3D cumple el mismo «contrato» que una zona 2D (zona.gd): encuentros por pasos con progreso.gd,
 # combate y vuelta con escena_retorno, Dialogic, menús, guardado automático y salida al mapa.
 #
-# Regiones en pruebas (EN_PRUEBAS): existen y se pueden jugar, pero solo con su argumento. Hoy, la Garganta del Diablo
-# 3D: «-- 3d garganta3d». Sin él, el mapa sigue llevando a la Garganta 2D (garganta.tscn), también en la APK
-# experimental. Para que vaya por defecto, se quita su línea de EN_PRUEBAS (docs/diseno/garganta_3d.md, «Activarla
-# por defecto»).
+# Regiones en pruebas (EN_PRUEBAS): existen y se pueden jugar, pero solo con su argumento o elegidas en Ajustes (hoy
+# Oakhaven 3D y el Mar de Cristal).
+# Regiones por defecto con la 2D elegible (POR_DEFECTO_2D_ELEGIBLE; V12, fase 2, migración región a región): la 3D va
+# por defecto y la 2D de siempre se puede elegir en Ajustes. Desde el 12/11, la Garganta del Diablo: sin nada en
+# user://ajustes.cfg, la 3D; con [regiones] garganta3d = false (quien eligió «2D (la de siempre)»), la 2D, como antes.
+# Argumentos para las pruebas: «garganta3d» fuerza la 3D y «garganta2d», la 2D (el primero manda).
+# Una partida guardada en una de ellas abre la versión en uso: la de la 2D, la 3D en el sitio equivalente
+# (escena_equivalente); la de la 3D con la 2D elegida, la 2D por su entrada.
 
 const PASTOS_VERDES := 10                     # índice del lugar en el mapa (mapa.gd, LUGAR_PASTOS)
 const GARGANTA := 2                           # índice del lugar en el mapa (mapa.gd, INDICE_GARGANTA)
@@ -21,7 +25,10 @@ const MAR_CRISTAL := 4                        # el Mar de Arena de Calid (mapa.g
 const REGIONES := {PASTOS_VERDES: "res://zonas3d/pastos_verdes_3d.tscn",
 	GARGANTA: "res://zonas3d/garganta_3d.tscn", OAKHAVEN: "res://zonas3d/oakhaven_3d.tscn",
 	MAR_CRISTAL: "res://zonas3d/mar_cristal_3d.tscn"}
-const EN_PRUEBAS := {GARGANTA: "garganta3d", OAKHAVEN: "oakhaven3d", MAR_CRISTAL: "mardecristal"}  # región → argumento que hace falta para usarla
+const EN_PRUEBAS := {OAKHAVEN: "oakhaven3d", MAR_CRISTAL: "mardecristal"}  # región → argumento que hace falta para usarla
+# Región → [clave de Ajustes (y argumento que fuerza la 3D), argumento que fuerza la 2D]. La clave es la misma que
+# cuando la región estaba en pruebas: la elección de quien ya había elegido algo se conserva.
+const POR_DEFECTO_2D_ELEGIBLE := {GARGANTA: ["garganta3d", "garganta2d"]}
 # Escenas 2D que tienen versión 3D: una partida guardada dentro de la 2D vuelve a la 3D si esta se usa (escena_equivalente).
 const EQUIVALENTES := {"res://garganta.tscn": GARGANTA, "res://ciudad_oakhaven.tscn": OAKHAVEN}
 
@@ -31,13 +38,25 @@ static func activo() -> bool:
 
 
 # ¿Se usa la versión 3D de este lugar? Con la exploración 3D activa y, si la región está en pruebas, con su argumento
-# o elegida en Ajustes (solo en la versión experimental: menus.gd; [regiones] en user://ajustes.cfg).
+# o elegida en Ajustes (solo en la versión experimental: menus.gd; [regiones] en user://ajustes.cfg). Si es de las que
+# van en 3D por defecto, salvo que se haya elegido la 2D en Ajustes (o con su argumento).
 static func region_activa(indice: int) -> bool:
 	var args := OS.get_cmdline_user_args()
 	var hace_falta: String = EN_PRUEBAS.get(indice, "")
 	if hace_falta != "" and not hace_falta in args and elegida(hace_falta):
 		args.append(hace_falta)
+	var claves: Array = POR_DEFECTO_2D_ELEGIBLE.get(indice, [])
+	if not claves.is_empty() and not claves[0] in args and eleccion(claves[0]) == false:
+		args.append(claves[1])                       # eligió la 2D en Ajustes
 	return region_activa_con(indice, args, OS.has_feature("rebelum3d"))
+
+
+# Lo elegido en Ajustes para una región: true, false, o null si nunca se ha elegido (sin archivo o sin la clave).
+static func eleccion(clave: String) -> Variant:
+	var c := ConfigFile.new()
+	if c.load(AJUSTES) != OK or not c.has_section_key("regiones", clave):
+		return null
+	return bool(c.get_value("regiones", clave))
 
 
 const AJUSTES := "user://ajustes.cfg"            # el mismo archivo que el volumen (sonido.gd) y el mapa (mapa_arte.gd)
@@ -64,6 +83,9 @@ static func elegir(clave: String, si: bool) -> Error:
 static func region_activa_con(indice: int, args: PackedStringArray, rebelum3d: bool) -> bool:
 	if not (rebelum3d or "3d" in args) or not REGIONES.has(indice):
 		return false
+	var claves: Array = POR_DEFECTO_2D_ELEGIBLE.get(indice, [])
+	if not claves.is_empty():
+		return claves[0] in args or not claves[1] in args      # «garganta3d» manda sobre «garganta2d»
 	var hace_falta: String = EN_PRUEBAS.get(indice, "")
 	return hace_falta == "" or hace_falta in args
 
@@ -82,6 +104,14 @@ static func escena_de(indice: int) -> String:
 # 2D no se cuela. La escena 3D convierte la posición (posicion_desde_2d); sin posición, se entra por el principio.
 static func escena_equivalente(escena: String) -> String:
 	if not EQUIVALENTES.has(escena):
+		# Al revés (V12): una partida guardada en la 3D de una región que va en 3D por defecto, con la 2D elegida en
+		# Ajustes: la 2D, por su entrada (pos_zona_ok = false; los trazados no se corresponden casilla a casilla).
+		for e2 in EQUIVALENTES:
+			var i2: int = EQUIVALENTES[e2]
+			if POR_DEFECTO_2D_ELEGIBLE.has(i2) and REGIONES.get(i2, "") == escena and activo() and not region_activa(i2):
+				Engine.set_meta("pos_zona_ok", false)
+				Engine.set_meta("pos_3d_ok", false)
+				return e2
 		return ""
 	var indice: int = EQUIVALENTES[escena]
 	var ruta := escena_de(indice)

@@ -403,6 +403,8 @@ func palanca(p: Vector3, bajada: bool) -> Dictionary:
 	var sm := SphereMesh.new()
 	sm.radius = 0.12
 	sm.height = 0.24
+	sm.radial_segments = 12                          # V12: la de Godot por defecto (64 × 32) daba 4 224 triángulos
+	sm.rings = 6                                     # para un pomo de 24 cm; así, 144 (a la vista, igual)
 	puno.mesh = sm
 	puno.material_override = mat.liso(Color(0.55, 0.24, 0.18), 0.6)
 	puno.position.y = 1.5
@@ -1214,6 +1216,158 @@ func pilar_peregrino(p: Vector3) -> StaticBody3D:
 	haz.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	region.add_child(haz)
 	return cuerpo
+
+
+# ================================================================= V12: el Báculo del Peregrino y las notas
+
+# El Báculo del Peregrino (hallazgos.gd, «hall_baculo_peregrino»): «al pie del pilar, apoyado en la piedra, un báculo
+# gastado por muchas manos». Madera clara y pulida, el puño envuelto en cuero, el anillo partido de los peregrinos en
+# la punta y una cinta roja; apoyado en la cara oeste del pilar (la que ve la cámara al llegar por la grieta), lejos
+# de las velas (al sur) y de la veta de Ferro (al este). Un destello pequeño mientras está. Es un nodo aparte (no va en
+# los lotes) para poder quitarlo al cogerlo. Sin choque: no estorba.
+const BACULO_PIE := Vector3(-1.15, 0.0, 0.35)      # en los ejes del pilar (girado como él)
+const BACULO_PUNTA := Vector3(-0.37, 1.2, 0.25)    # toca la cara oeste del fuste (a 1,2 m, x = −0,35), bajo su anillo
+
+
+func baculo(pilar: Vector3) -> Node3D:
+	var n := Node3D.new()
+	n.name = "BaculoPeregrino"
+	n.position = pilar
+	n.rotation.y = deg_to_rad(-20.0)                      # como el pilar (pilar_peregrino)
+	region.add_child(n)
+	var eje := BACULO_PUNTA - BACULO_PIE
+	var giro := Basis(Quaternion(Vector3.UP, eje.normalized()))
+	var largo := eje.length()
+	var vara := CylinderMesh.new()
+	vara.top_radius = 0.032
+	vara.bottom_radius = 0.038
+	vara.height = largo + 0.12
+	vara.radial_segments = 7
+	vara.rings = 1
+	var lb := Roca.Lotes.new()                            # vara, puño y cinta: una sola malla (color en los vértices)
+	lb.poner_color(vara, Transform3D(giro, BACULO_PIE + eje * 0.5), mat.madera_color(), Color(0.74, 0.58, 0.4))
+	var cuero := CylinderMesh.new()                       # el puño, envuelto en cuero oscuro
+	cuero.top_radius = 0.046
+	cuero.bottom_radius = 0.046
+	cuero.height = 0.22
+	cuero.radial_segments = 7
+	cuero.rings = 1
+	lb.poner_color(cuero, Transform3D(giro, BACULO_PIE + eje * 0.68), mat.madera_color(), Color(0.27, 0.17, 0.11))
+	var anillo := MeshInstance3D.new()                   # el anillo partido en la punta
+	anillo.mesh = anillo_partido(0.09, 0.02, 52.0, 18, 5)
+	anillo.material_override = mat.bronce()
+	anillo.transform = Transform3D(Basis(Vector3.UP, deg_to_rad(70.0)), BACULO_PUNTA + Vector3(-0.05, 0.13, 0.0))   # derecho, sin tocar el pilar
+	n.add_child(anillo)
+	var cinta := BoxMesh.new()                            # una cinta que cuelga bajo el anillo
+	cinta.size = Vector3(0.035, 0.34, 0.006)
+	lb.poner_color(cinta, Transform3D(Basis(Vector3.FORWARD, 0.12), BACULO_PUNTA + Vector3(-0.05, -0.17, 0.05)), mat.madera_color(),
+		Color(0.66, 0.16, 0.14))
+	lb.cerrar(n)
+	destello(n, BACULO_PUNTA + Vector3(0, 0.1, 0.1), 0.38)
+	return n
+
+
+# Las notas para encontrar (dialogos/notas/garganta.gd): cada una con su objeto, como dice su texto. Lo que no se mueve
+# va en los lotes; el destello (mientras no se ha leído) es aparte, para apagarlo. Devuelve {datos, pos (donde se
+# examina), brillo}. «forma»: tabla, papel, escamas o cintas.
+func nota(d: Dictionary, forma: String, leida: bool) -> Dictionary:
+	var p: Vector3 = d["pos"]
+	var donde := p                                   # donde se examina (y se apunta el botón)
+	var sitio := Vector3(p.x, T.altura(p.x, p.z), p.z) if p.y > T.NIDO + 1.0 else p
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(d["id"])
+	var alto_destello := 1.1
+	match forma:
+		"tabla":                                     # la tabla de los puenteros: un poste con su tabla, junto al muro
+			sitio.x -= 0.45
+			var madera := mat.madera_vieja()
+			var poste := CylinderMesh.new()
+			poste.top_radius = 0.05
+			poste.bottom_radius = 0.065
+			poste.height = 1.25
+			poste.radial_segments = 6
+			poste.rings = 1
+			lotes.poner(poste, Transform3D(Basis(), sitio + Vector3(0, 0.62, 0)), madera)
+			var giro := Basis(Vector3.UP, deg_to_rad(55.0)) * Basis(Vector3.RIGHT, deg_to_rad(-8.0))
+			var tabla := BoxMesh.new()
+			tabla.size = Vector3(0.74, 0.46, 0.05)
+			lotes.poner_color(tabla, Transform3D(giro, sitio + Vector3(0.04, 1.0, 0.03)), mat.madera_color(), Color(0.58, 0.46, 0.32))
+			for k in 3:                              # las muescas de los puenteros, en tres renglones
+				var bm := BoxMesh.new()
+				bm.size = Vector3(0.5 - k * 0.1, 0.022, 0.012)
+				lotes.poner_color(bm, Transform3D(giro, sitio + Vector3(0.04, 1.12 - k * 0.1, 0.03) + giro * Vector3(0, 0, 0.032)),
+					mat.madera_color(), Color(0.2, 0.14, 0.1))
+			# un rollo de cuerda nueva al pie
+			var rollo := TorusMesh.new()
+			rollo.inner_radius = 0.14
+			rollo.outer_radius = 0.24
+			rollo.rings = 12
+			rollo.ring_segments = 5
+			lotes.poner(rollo, Transform3D(Basis(), sitio + Vector3(0.32, 0.06, 0.12)), mat.cuerda())
+			alto_destello = 1.45
+		"papel":                                     # el aviso del ascensor: un papel clavado en un poste bajo
+			sitio.x -= 0.4
+			var poste := BoxMesh.new()
+			poste.size = Vector3(0.12, 1.5, 0.12)
+			lotes.poner(poste, Transform3D(Basis(), sitio + Vector3(0, 0.75, 0)), mat.madera_vieja())
+			var giro := Basis(Vector3.UP, deg_to_rad(60.0)) * Basis(Vector3.FORWARD, deg_to_rad(4.0))
+			var hoja := BoxMesh.new()
+			hoja.size = Vector3(0.3, 0.38, 0.008)
+			lotes.poner_color(hoja, Transform3D(giro, sitio + Vector3(0.0, 1.1, 0.0) + giro * Vector3(0, 0, 0.068)),
+				mat.madera_color(), Color(0.86, 0.81, 0.68))
+			var clavo := BoxMesh.new()
+			clavo.size = Vector3(0.025, 0.025, 0.03)
+			lotes.poner(clavo, Transform3D(giro, sitio + Vector3(0.0, 1.26, 0.0) + giro * Vector3(0, 0, 0.08)), mat.hierro())
+			alto_destello = 1.6
+		"escamas":                                   # escamas de ámbar del nido, grandes como platos, en el suelo
+			sitio = p                                # en la repisa del nido (dialogos/notas/garganta.gd)
+			for k in 5:
+				var c := CylinderMesh.new()
+				var r := rng.randf_range(0.13, 0.22)
+				c.top_radius = r
+				c.bottom_radius = r * 0.92
+				c.height = 0.025
+				c.radial_segments = 9
+				c.rings = 1
+				var a := TAU * k / 5.0 + rng.randf_range(-0.4, 0.4)
+				var q := sitio + Vector3(cos(a), 0, sin(a)) * rng.randf_range(0.2, 0.6) + Vector3(0, 0.03, 0)
+				var b := Basis(Vector3.UP, rng.randf() * TAU) * Basis(Vector3.RIGHT, rng.randf_range(-0.25, 0.25))
+				lotes.poner(c, Transform3D(b, q), mat.cristal_ambar())
+			alto_destello = 0.5
+		"cintas":                                    # cintas de colores atadas a una piedra, al pie del pilar
+			sitio.x -= 0.6
+			var piedra := SphereMesh.new()
+			piedra.radius = 0.3
+			piedra.height = 0.42
+			piedra.radial_segments = 8
+			piedra.rings = 4
+			lotes.poner(piedra, Transform3D(Basis(Vector3.UP, 0.4), sitio + Vector3(0, 0.15, 0)), mat.piedra_tallada())
+			var estaca := CylinderMesh.new()             # una estaca clavada en la piedra, con las cintas atadas arriba
+			estaca.top_radius = 0.022
+			estaca.bottom_radius = 0.03
+			estaca.height = 0.75
+			estaca.radial_segments = 5
+			estaca.rings = 1
+			lotes.poner(estaca, Transform3D(Basis(), sitio + Vector3(0, 0.4, 0)), mat.madera_vieja())
+			var colores := [Color(0.72, 0.18, 0.16), Color(0.86, 0.66, 0.2), Color(0.2, 0.42, 0.66), Color(0.3, 0.55, 0.3),
+				Color(0.86, 0.84, 0.78), Color(0.55, 0.3, 0.6)]
+			for k in colores.size():
+				var a := TAU * k / colores.size() + rng.randf_range(-0.2, 0.2)
+				var cinta := BoxMesh.new()
+				cinta.size = Vector3(0.07, rng.randf_range(0.42, 0.6), 0.008)
+				var arriba := sitio + Vector3(cos(a) * 0.03, 0.74, sin(a) * 0.03)
+				var caida := Basis(Vector3.UP, -a) * Basis(Vector3.FORWARD, rng.randf_range(0.2, 0.5))
+				lotes.poner_color(cinta, Transform3D(caida, arriba + caida * Vector3(0, -cinta.size.y * 0.5, 0)),
+					mat.tela_color(), colores[k])
+			alto_destello = 1.0
+	var brillo: MeshInstance3D = null
+	if not leida:
+		var ancla := Node3D.new()
+		ancla.name = d["id"]
+		ancla.position = sitio
+		region.add_child(ancla)
+		brillo = destello(ancla, Vector3(0, alto_destello, 0), 0.32)
+	return {"datos": d, "pos": donde, "sitio": sitio, "brillo": brillo}
 
 
 # ================================================================= salida
