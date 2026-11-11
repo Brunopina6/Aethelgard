@@ -38,8 +38,10 @@ emace | EmacE Stylized Grass | Prohíbe redistribuir sus archivos
 modelos/guardian/ | Guardián de Meshy | Plan de Meshy sin confirmar
 modelos/arce/ | Árboles y arbustos de Meshy | Plan de Meshy sin confirmar (el preset excluye la carpeta)
 oakhaven/modelos/ | Modelos de Oakhaven 3D (antes cubiertos por «modelos/») | Origen sin revisar en esta lista: se conserva la marca
-musica/ | Canciones de Pastos Verdes (Suno) | Plan de Suno sin confirmar (aún no están en el proyecto)
-audio/musica/ | Canciones de Pastos Verdes (Suno) | Plan de Suno sin confirmar (aún no están en el proyecto)
+# (11/11, V12) Quitados «musica/» y «audio/musica/»: el usuario confirmó que tiene Suno Pro y autorizó incluir sus dos
+# canciones, «REBELUM — When the World Forgets» (audio/musica/titulo/) y «Pastoral Pulse» (audio/musica/pastos/),
+# registradas en docs/recursos.md. Cualquier otra canción de Suno que entre en el proyecto se añade aquí con su ruta
+# exacta hasta que el usuario la confirme.
 #
 # Añadidos el 2026-11-07 con el inventario completo (docs/versiones/inventario_licencias.md).
 # Meshy: con plan gratuito, CC BY 4.0 (uso comercial con atribución); con plan de pago, del autor. Para distribuir

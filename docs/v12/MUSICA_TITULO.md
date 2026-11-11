@@ -19,14 +19,11 @@
 | Origen | Suno Pro (canción original para REBELUM; metadatos «made with suno», creada el 2026-11-11), voces en inglés, J-rock sinfónico con orquesta |
 | Duración y formato | 5:01,99 · MP3 48 kHz estéreo, 183 kb/s · SHA-256 `1d7deac78827bd8a8becbc81367e9da4252dacd4006ef9cc1dfee2fee0c5529d` |
 | Maestras (fuera de Git) | `D:\REBELUM_musica\maestros\`: el MP3 **idéntico** al original (mismo SHA-256) y `[MAESTRA 48k 24bit].wav` (decodificado sin pérdida) |
-| Versión del juego (fuera de Git) | `aethelgard/audio/musica/titulo/when_the_world_forgets.ogg`: Vorbis q5, 48 kHz estéreo, 5:01,96, 5,5 MB |
+| Versión del juego (en Git desde el 11/11) | `aethelgard/audio/musica/titulo/when_the_world_forgets.ogg`: Vorbis q5, 48 kHz estéreo, 5:01,96, 5,5 MB |
 
-**Licencia.** Norma vigente (CLAUDE.md, desde el 08/11): la música de Suno, solo en pruebas privadas locales, fuera de
-los commits y de cualquier APK que se distribuya.
-- `aethelgard/audio/musica/` está en `.gitignore`.
-- La APK de Auditoría la lleva, porque es una prueba privada en el Redmi; su comprobación de licencias la marca como
-  «NO DISTRIBUIR» (`audio/musica/`).
-- El usuario dice que es de Suno Pro. Si quiere cambiar la norma, debe decirlo y se registra en `docs/recursos.md`.
+**Licencia.** Suno Pro del autor: el 11/11 confirmó la suscripción y autorizó incluirla en el proyecto (Git y APK).
+Registrada en `docs/recursos.md`; quitada de `docs/versiones/licencias_pendientes.txt`. La norma de `CLAUDE.md` se
+actualizó: el resto de la música de Suno sigue necesitando su confirmación, canción a canción.
 
 ## Análisis (medido en la forma de onda; `D:\REBELUM_diagnostico\v12\musica\`)
 

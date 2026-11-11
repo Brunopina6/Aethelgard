@@ -10,8 +10,8 @@ amistad y los primeros misterios. Instrumental, hecha con Suno Pro para REBELUM.
 | Archivo usado | `C:\Users\G513\Downloads\Pastoral Pulse (1).mp3`, el adjuntado. El texto decía «(1)(1)», que no existe; en Descargas hay además `Pastoral Pulse.mp3`, otra toma de 3:10, que **no** se ha usado |
 | Original | 2:58,03 · MP3 48 kHz estéreo, 190 kb/s · «made with suno» · SHA-256 `4f220f44ff8bb5fc…` (completo en las maestras) |
 | Maestras (fuera de Git) | `D:\REBELUM_musica\maestros\Pastoral Pulse (1) [ORIGINAL].mp3` (idéntico al original) y `[MAESTRA 48k 24bit].wav` (decodificado sin pérdida) |
-| Versión del juego (fuera de Git) | `aethelgard/audio/musica/pastos/pastoral_pulse.ogg`: Vorbis q5, 48 kHz estéreo, 2:44,28, 3,1 MB |
-| Licencia | La de la música de Suno (CLAUDE.md): solo pruebas privadas, fuera de los commits (`.gitignore`) y de cualquier APK que se distribuya |
+| Versión del juego (en Git desde el 11/11) | `aethelgard/audio/musica/pastos/pastoral_pulse.ogg`: Vorbis q5, 48 kHz estéreo, 2:44,28, 3,1 MB |
+| Licencia | Suno Pro del autor: el 11/11 confirmó la suscripción y autorizó incluirla en el proyecto (Git y APK); registrada en `docs/recursos.md` |
 
 ## Estructura y bucle
 

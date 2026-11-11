@@ -30,10 +30,10 @@ const CONTEXTOS := {
 	# V12, el Mar de Cristal (sonido_v12_desierto.md §2): el viento en calma y la tormenta de arena (clima.gd los alterna)
 	"mar_cristal": {"musica": "", "ambiente": "res://audio/desierto/viento.ogg", "db": -13.0},
 	"tormenta_arena": {"musica": "", "ambiente": "res://audio/desierto/tormenta.ogg", "db": -9.0},
-	# V12 (11/11): «REBELUM — When the World Forgets», la canción del usuario (Suno Pro) para la pantalla de inicio
-	# nueva, y RESERVADA para el desenlace del juego (docs/v12/MUSICA_TITULO.md). «privada»: es de Suno, así que va fuera
-	# de Git (aethelgard/audio/musica/ en .gitignore; maestras en D:\REBELUM_musica\maestros) y solo en pruebas
-	# privadas (CLAUDE.md); sin el archivo, silencio. «bucle»: la canción entera se repite (acaba con su golpe y vuelve su
+	# V12 (11/11): «REBELUM — When the World Forgets», la canción del usuario (Suno Pro, incluida con su permiso) para la pantalla de inicio
+	# nueva, y RESERVADA para el desenlace del juego (docs/v12/MUSICA_TITULO.md). Está en Git desde el 11/11 (el usuario
+	# tiene Suno Pro y la autorizó; maestras en D:\REBELUM_musica\maestros). «privada»: si el archivo faltara en una
+	# copia, silencio. «bucle»: la canción entera se repite (acaba con su golpe y vuelve su
 	# introducción suave); «desde_cero»: al entrar en la pantalla de inicio empieza por el principio.
 	"titulo": {"musica": "res://audio/musica/titulo/when_the_world_forgets.ogg", "ambiente": "", "db_musica": -4.0,
 		"bucle": true, "desde_cero": true, "privada": true},
