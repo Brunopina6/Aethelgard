@@ -127,3 +127,30 @@ Aprobados: **Ismena** (cartógrafa) y **Oren** (su hermano); **Bramavidrio**, el
 - `--check-only` sin autoloads da «Identifier not found: Sonido» en cualquier guion que lo use: no es un error.
 - Con `--fixed-fps 30` sin ventana, los fotogramas van más rápido que el reloj: lo que carga en un hilo (el combate)
   se espera en milisegundos reales.
+
+## Noche del 11 al 12/11: desarrollo autónomo (el usuario duerme; sin Redmi)
+
+- **Punto de recuperación:** etiqueta local `v12-antes-noche-20261111` (= `373e7db`). Sin push, sin merges, sin releases.
+- **Especialistas lanzados** (cada uno en su copia y su rama local, con archivos separados; se integra copiando archivos):
+
+| Trabajo | Copia · rama (desde) | Archivos suyos | Informe |
+|---|---|---|---|
+| Bramavidrio v3: cabeza, boca, variantes y animaciones | `D:\Aethelgard_v12_bramavidrio3` · `claude/v12-bramavidrio3` (`373e7db`) | `enemigos/bramavidrio/v3/`, `fuente/crear_bramavidrio3.py`, `bramavidrio_version.gd` (v3 elegible; **por defecto sigue la 2**), el bloque «Bramavidrio» de `menus.gd`, `prueba_bramavidrio_modelo` | `docs/memory/agents/animaciones_v12_bramavidrio3.md` |
+| Sonido de Bramavidrio | `D:\Aethelgard_v12_sonido_brama` · `claude/v12-sonido-bramavidrio` (`373e7db`) | `audio/bramavidrio/`, claves nuevas de `sonido.gd`, llamadas en `combate_bramavidrio.gd` (es el único que lo edita) y quizá en `gusano.gd` | `docs/memory/agents/sonido_v12_bramavidrio.md` |
+| Mar de Cristal: perfil bajo lavado y riqueza visual | `D:\Aethelgard_v12_arte2` · `claude/v12-desierto-arte2` (`373e7db`) | `zonas3d/mar_cristal/terreno.gd`, `clima.gd`, `mar_cristal_3d.gd/.tscn`, `materiales_arte.gd`, `modelos/desierto/` | `docs/memory/agents/graficos_v12_desierto2.md` |
+| Ismena, Oren, Vidracrán y Tolvanera: conceptos y prototipos apagados | `D:\Aethelgard_v12_personajes` · `claude/v12-personajes-desierto` (`373e7db`) | `personajes/desierto/`, `enemigos/vidracran/`, `enemigos/tolvanera/`, pruebas propias | `docs/memory/agents/animaciones_v12_desierto_personajes.md` |
+| Exploración en Pastos Verdes (y Oakhaven si da tiempo) | `D:\Aethelgard_v12_exploracion` · `claude/v12-exploracion` (`9f85e77`) | `zonas3d/pastos_verdes_3d.*`, `bosque_pastos.gd`, Oakhaven 3D | `docs/memory/agents/narrativa_v12_exploracion.md` |
+
+- **Hecho por el coordinador:**
+  - **Música revisada:** los tres OGG están y pasan sus pruebas.
+  - **Clímax a −4,5 dB** (`9f85e77`): medido con `ebur128`, a −7 dB sonaba 2,7 dB por debajo de la música que sustituye.
+  - **No existe música de jefe:** `musica_jefe*`; los jefes usan la normal (`MUSICA_JEFES.md`).
+  - **Pantalla de inicio en 1600×720, 1024×768 y 2340×1080:** sin errores y legible, con carga de 7,8-9,5 s en el PC
+    (`D:\REBELUM_diagnostico\v12\portada_resoluciones`).
+  - **Propuesta, sin hacer:** con `stretch/aspect` por defecto el juego entero sale con franjas negras en 20:9. Cambiarlo
+    afectaría a toda la interfaz.
+- **Si la sesión se corta:**
+  1. mira el estado de cada copia (`git -C <copia> log --oneline -5` y su informe);
+  2. integra lo terminado copiando archivos (como siempre);
+  3. pasa la batería completa;
+  4. no des por buenos los prototipos.
