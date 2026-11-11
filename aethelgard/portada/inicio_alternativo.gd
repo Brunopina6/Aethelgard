@@ -226,8 +226,10 @@ func _crear_portada() -> void:
 	ui.add_child(menu)
 	fuente_menu = M.fuente(M.FUENTE_ORDEN_FUERTE, 5, 0)
 
-	# Los accesos de pruebas: los mismos dos de carga.gd, con otro estilo, y solo donde carga.gd los enseña hoy.
-	if load("res://modo3d.gd").activo():
+	# Los accesos de pruebas: los mismos dos de carga.gd, con otro estilo. En esta pantalla, solo en la compilación de
+	# Auditoría (característica «auditoria» de su preset) o en desarrollo (editor, o con «-- 3d» al arrancar), como pidió
+	# el usuario el 11/11; la APK experimental no los enseña aquí.
+	if load("res://modo3d.gd").activo() and modo_pruebas():
 		pruebas_titulo = _etiqueta("PRUEBAS · solo en la versión de pruebas", M.fuente(M.FUENTE_ORDEN, 3, 0), 14,
 			Color(0.62, 0.9, 0.9, 0.8))
 		pruebas_titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
@@ -322,6 +324,11 @@ func _filete(lado: int) -> Control:
 	r.position = Vector2(110 if lado < 0 else 0, 0.5)
 	c.add_child(r)
 	return c
+
+
+# ¿Se enseñan los accesos de pruebas? Auditoría (característica de su preset), el editor, o arrancado con «-- 3d».
+static func modo_pruebas() -> bool:
+	return OS.has_feature("auditoria") or OS.has_feature("editor") or "3d" in OS.get_cmdline_user_args()
 
 
 func _boton_prueba(texto: String, pos: Vector2, tam: Vector2) -> Button:
