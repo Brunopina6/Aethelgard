@@ -1,10 +1,11 @@
 extends RefCounted
-# Qué pantalla de inicio se usa (encargo del 11/11): la ORIGINAL (carga.tscn, la escena principal, que no cambia) o la
-# ALTERNATIVA, en pruebas (portada/inicio_alternativo.tscn). Se elige así, y sin nada de esto todo sigue como siempre:
-#   - con un argumento: «-- portada_alternativa» la usa y «-- portada_original» la impide (gana sobre lo demás);
-#   - en Ajustes (menus.gd, solo en la versión experimental, como las demás opciones en pruebas): sección [portada],
-#     clave «alternativa» de user://ajustes.cfg. Lo de Ajustes solo vale con la exploración 3D activa (modo3d.gd), así
-#     que la versión estable, que comparte user:// en el PC, nunca la ve.
+# Qué pantalla de inicio se usa (encargo del 11/11): la NUEVA (portada/inicio_alternativo.tscn) o la ORIGINAL
+# (carga.tscn, que sigue siendo la escena principal y no cambia: si se elige, se queda ella).
+# Desde el 11/11 por la noche, el usuario eligió la nueva como la de siempre, conservando la original. Así se decide:
+#   - con un argumento: «-- portada_original» usa la original y «-- portada_alternativa» la nueva (gana sobre lo demás);
+#   - en Ajustes (menus.gd, en cualquier versión): sección [portada], clave «alternativa» de user://ajustes.cfg; false
+#     vuelve a la original;
+#   - sin nada de eso, la nueva.
 # carga.gd la mira al empezar (enganche mínimo y comentado en su _ready).
 
 const ESCENA := "res://portada/inicio_alternativo.tscn"
@@ -13,25 +14,28 @@ const SECCION := "portada"
 const CLAVE := "alternativa"
 const ARG_SI := "portada_alternativa"
 const ARG_NO := "portada_original"
+const POR_DEFECTO := true                         # sin elección guardada: la nueva (lo eligió el usuario el 11/11)
 
 
 static func usar_alternativa() -> bool:
-	return usar_con(OS.get_cmdline_user_args(), load("res://modo3d.gd").activo(), elegida())
+	return usar_con(OS.get_cmdline_user_args(), elegida())
 
 
 # Lo mismo con los datos dados (así lo comprueban las pruebas sin tocar los argumentos).
-static func usar_con(args: PackedStringArray, experimental: bool, en_ajustes: bool) -> bool:
+static func usar_con(args: PackedStringArray, en_ajustes: bool) -> bool:
 	if ARG_NO in args:
 		return false
 	if ARG_SI in args:
 		return ResourceLoader.exists(ESCENA)
-	return experimental and en_ajustes and ResourceLoader.exists(ESCENA)
+	return en_ajustes and ResourceLoader.exists(ESCENA)
 
 
-# ¿Está elegida en Ajustes? Sin archivo o sin la clave, no.
+# ¿Está elegida la nueva? Sin archivo o sin la clave, lo de POR_DEFECTO (la nueva).
 static func elegida() -> bool:
 	var c := ConfigFile.new()
-	return c.load(AJUSTES) == OK and bool(c.get_value(SECCION, CLAVE, false))
+	if c.load(AJUSTES) != OK:
+		return POR_DEFECTO
+	return bool(c.get_value(SECCION, CLAVE, POR_DEFECTO))
 
 
 # La elige o la quita, sin tocar lo demás del archivo (volumen, mapa, regiones, calidad).

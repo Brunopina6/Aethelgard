@@ -506,23 +506,24 @@ func _pintar_ajustes() -> void:
 			fm3.add_child(bm)
 		cuerpo.add_child(fm3)
 		cuerpo.add_child(_texto("Se nota la próxima vez que se entra en el Mar de Arena.", 16, COLOR_SUAVE))
-		# La pantalla de inicio (11/11): la original o la alternativa, en pruebas (portada/eleccion.gd, [portada]).
-		var por = load("res://portada/eleccion.gd")
-		var alt: bool = por.elegida()
-		cuerpo.add_child(_texto("Pantalla de inicio", 26, COLOR_TITULO))
-		var fp := HBoxContainer.new()
-		fp.add_theme_constant_override("separation", 8)
-		for op in [[false, "Original"], [true, "Alternativa (en pruebas)"]]:
-			var es_alt: bool = op[0]
-			var bp := _boton(("● " if es_alt == alt else "○ ") + op[1], 18, Vector2(260, 34),
-				"portada:%s" % ("alternativa" if es_alt else "original"))
-			bp.pressed.connect(func():
-				por.elegir(es_alt)
-				Sonido.efecto("ui_tic")
-				_pintar_de_nuevo())
-			fp.add_child(bp)
-		cuerpo.add_child(fp)
-		cuerpo.add_child(_texto("Se nota la próxima vez que se abre el juego.", 16, COLOR_SUAVE))
+	# La pantalla de inicio (11/11): desde el 11/11 por la noche, el usuario eligió la nueva como la de siempre; la original
+	# sigue entera y se puede volver a ella aquí, en cualquier versión (portada/eleccion.gd, [portada]).
+	var por = load("res://portada/eleccion.gd")
+	var alt: bool = por.elegida()
+	cuerpo.add_child(_texto("Pantalla de inicio", 26, COLOR_TITULO))
+	var fp := HBoxContainer.new()
+	fp.add_theme_constant_override("separation", 8)
+	for op in [[true, "Nueva"], [false, "Original"]]:
+		var es_alt: bool = op[0]
+		var bp := _boton(("● " if es_alt == alt else "○ ") + op[1], 18, Vector2(260, 34),
+			"portada:%s" % ("alternativa" if es_alt else "original"))
+		bp.pressed.connect(func():
+			por.elegir(es_alt)
+			Sonido.efecto("ui_tic")
+			_pintar_de_nuevo())
+		fp.add_child(bp)
+	cuerpo.add_child(fp)
+	cuerpo.add_child(_texto("Se nota la próxima vez que se abre el juego.", 16, COLOR_SUAVE))
 
 
 # Calidad de las regiones 3D (encargo del 09/11; prototipos/calidad_auto.gd, sección [calidad] de user://ajustes.cfg):

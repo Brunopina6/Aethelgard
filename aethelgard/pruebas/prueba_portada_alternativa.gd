@@ -116,7 +116,8 @@ func _dejar_como_estaba() -> void:
 	for f in DirAccess.get_files_at("user://"):
 		if f.begins_with("partida_exp.save.antes_de_nueva_") or f.begins_with("partida.save.antes_de_nueva_"):
 			DirAccess.remove_absolute(ProjectSettings.globalize_path("user://" + f))
-	if E.elegida():
+	var cfg_fin := ConfigFile.new()
+	if cfg_fin.load(E.AJUSTES) == OK and cfg_fin.has_section_key(E.SECCION, E.CLAVE) and antes.get(E.AJUSTES) == null:
 		_fallo("no se pudo dejar la portada sin elegir")
 
 
@@ -124,24 +125,28 @@ func _dejar_como_estaba() -> void:
 
 func _pasada_experimental() -> void:
 	# 0. La elección
-	var casos := [[[], false, true, false], [[], true, false, false], [[], true, true, true],
-		[["portada_original"], true, true, false], [["portada_alternativa"], false, false, true]]
+	# desde el 11/11 por la noche la nueva es la de por defecto (lo eligió el usuario); la original, con
+	# «portada_original» o eligiéndola en Ajustes
+	var casos := [[[], true, true], [[], false, false], [["portada_original"], true, false],
+		[["portada_alternativa"], false, true]]
 	for c in casos:
-		if E.usar_con(PackedStringArray(c[0]), c[1], c[2]) != c[3]:
-			_fallo("0: usar_con(%s, experimental=%s, ajustes=%s) debería ser %s" % c)
-	if E.elegida() or E.usar_alternativa():
-		_fallo("0: sin tocar nada, la alternativa ya está elegida")
+		if E.usar_con(PackedStringArray(c[0]), c[1]) != c[2]:
+			_fallo("0: usar_con(%s, ajustes=%s) debería ser %s" % c)
+	if not E.elegida() or not E.usar_alternativa():
+		_fallo("0: sin tocar nada, la nueva no es la de por defecto")
 	var cfg := ConfigFile.new()
 	cfg.load(E.AJUSTES)                            # (puede no existir: la carpeta aislada es de toda la pasada)
 	cfg.set_value("prueba_portada", "marca", 55)
 	cfg.save(E.AJUSTES)
 	hechos.append("elección")
 
-	# 1. Sin elegirla, la de siempre
+	# 1. Con «Original» elegida en Ajustes, la de siempre (y queda intacta)
+	if E.elegir(false) != OK or E.elegida():
+		_fallo("1: no se pudo elegir la original")
 	change_scene_to_file(CARGA)
 	await _esperar(5)
 	if _escena() != CARGA or current_scene.get_script().resource_path != "res://carga.gd":
-		_fallo("1: sin elegirla, carga.tscn no se queda en la pantalla de siempre (%s)" % _escena())
+		_fallo("1: con la original elegida, carga.tscn no se queda en la pantalla de siempre (%s)" % _escena())
 	elif not await _hasta(func(): return current_scene.listo and current_scene.boton_prueba != null \
 			and current_scene.boton_prueba.visible, 240.0):
 		_fallo("1: la pantalla de siempre no termina o no enseña sus botones de prueba")
