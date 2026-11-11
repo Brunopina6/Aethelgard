@@ -1,0 +1,57 @@
+{
+ "reposo": {
+  "duracion": 2.0,
+  "bucle": true
+ },
+ "aviso_rafaga": {
+  "duracion": 0.8,
+  "aviso": 0.3
+ },
+ "rafaga": {
+  "duracion": 1.2,
+  "impacto": 0.43333333333333335,
+  "alcance_m": 0.4,
+  "desde_aviso": true
+ },
+ "torbellino": {
+  "duracion": 1.6,
+  "impacto": 0.8666666666666667,
+  "area": "todos"
+ },
+ "curarse_viento": {
+  "duracion": 1.3333333333333333,
+  "curacion": 0.7333333333333333
+ },
+ "agua_asienta": {
+  "duracion": 1.3333333333333333,
+  "barro": [
+   0.13333333333333333,
+   1.0
+  ]
+ },
+ "recibir_golpe": {
+  "duracion": 0.5
+ },
+ "derrota": {
+  "duracion": 1.6333333333333333
+ },
+ "entrada": {
+  "duracion": 1.2
+ },
+ "correr": {
+  "duracion": 0.6666666666666666,
+  "bucle": true
+ },
+ "_modelo": {
+  "triangulos": 1144,
+  "huesos": 10,
+  "atlas": 256,
+  "superficies": [
+   "nucleo",
+   "polvo",
+   "falda",
+   "brasas",
+   "escombros"
+  ]
+ }
+}

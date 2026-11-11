@@ -1,0 +1,53 @@
+{
+ "reposo": {
+  "duracion": 2.0,
+  "bucle": true
+ },
+ "pinzas": {
+  "duracion": 1.0,
+  "impacto": 0.4666666666666667,
+  "alcance_m": 0.25
+ },
+ "enterrarse": {
+  "duracion": 1.4,
+  "oculto_desde": 1.0
+ },
+ "enterrado": {
+  "duracion": 2.0,
+  "bucle": true
+ },
+ "aviso_aguijon": {
+  "duracion": 0.8,
+  "latidos": [
+   0.13333333333333333,
+   0.4
+  ]
+ },
+ "emerger_aguijon": {
+  "duracion": 1.3333333333333333,
+  "impacto": 0.5,
+  "visible_desde": 0.13333333333333333
+ },
+ "recibir_golpe": {
+  "duracion": 0.5
+ },
+ "derrota": {
+  "duracion": 1.6
+ },
+ "entrada": {
+  "duracion": 1.2
+ },
+ "correr": {
+  "duracion": 0.6,
+  "bucle": true
+ },
+ "_modelo": {
+  "triangulos": 2330,
+  "huesos": 34,
+  "atlas": 512,
+  "superficies": [
+   "caparazon",
+   "brillo"
+  ]
+ }
+}
