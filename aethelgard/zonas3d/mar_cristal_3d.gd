@@ -141,6 +141,7 @@ func _crear_ambiente() -> void:
 func _crear_escenario() -> void:
 	terreno = Terreno.new(self, perfil)
 	terreno.construir()
+	terreno.efectos_arte()
 
 
 func _prohibido(p: Vector3) -> bool:
@@ -152,7 +153,7 @@ func _dist_plana(a: Vector3, b: Vector3) -> float:
 
 
 func suelo_de_pasos(p: Vector3) -> String:
-	return "arena" if not T.en_camino(p.x, p.z) else "tierra"
+	return "arena" if not T.en_camino(p.x, p.z) else "grava"      # sonido.gd: paso_arena y paso_grava
 
 
 # ================================================================= Kael, cámara y grupo
@@ -227,7 +228,7 @@ func _process(delta: float) -> void:
 	if kael == null:
 		return
 	if terreno != null:
-		terreno.animar(_t, clima.viento() if clima != null else 0.2)
+		terreno.animar(_t, clima.viento() if clima != null else 0.2, kael.global_position)
 	if clima != null:
 		clima.actualizar(delta, kael.global_position, ocupado())
 	if en_banco():
@@ -236,6 +237,8 @@ func _process(delta: float) -> void:
 	if ocupado():
 		_parar_kael()
 		boton_accion.visible = false
+		if hud != null and hud.ocupado():                         # cavando: el buscador sigue su cuenta hasta sacar lo enterrado
+			hud.actualizar(delta, kael.global_position, clima.buscador_estorbado() if clima != null else 0.0)
 		_colocar_camara(1.0 - exp(-suavizado * delta))
 		_oclusion()
 		return
@@ -461,6 +464,8 @@ func _salir() -> void:
 func _exit_tree() -> void:
 	if clima != null:
 		clima.parar_sonido()
+	if terreno != null:
+		terreno.liberar()
 	super()
 
 

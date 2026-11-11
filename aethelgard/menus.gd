@@ -483,6 +483,22 @@ func _pintar_ajustes() -> void:
 			fo.add_child(bo)
 		cuerpo.add_child(fo)
 		cuerpo.add_child(_texto("Se nota la próxima vez que se entra en Oakhaven.", 16, COLOR_SUAVE))
+		# El Mar de Cristal (V12), en pruebas: el primer sector del Mar de Arena de Calid en 3D.
+		var mc3d: bool = m3d.elegida("mardecristal")
+		cuerpo.add_child(_texto("Mar de Arena de Calid", 26, COLOR_TITULO))
+		var fm3 := HBoxContainer.new()
+		fm3.add_theme_constant_override("separation", 8)
+		for op in [[false, "2D (la de siempre)"], [true, "Mar de Cristal 3D (en pruebas)"]]:
+			var en_3d: bool = op[0]
+			var bm := _boton(("● " if en_3d == mc3d else "○ ") + op[1], 18, Vector2(300, 34),
+				"mardecristal:%s" % ("3d" if en_3d else "2d"))
+			bm.pressed.connect(func():
+				m3d.elegir("mardecristal", en_3d)
+				Sonido.efecto("ui_tic")
+				_pintar_de_nuevo())
+			fm3.add_child(bm)
+		cuerpo.add_child(fm3)
+		cuerpo.add_child(_texto("Se nota la próxima vez que se entra en el Mar de Arena.", 16, COLOR_SUAVE))
 
 
 # Calidad de las regiones 3D (encargo del 09/11; prototipos/calidad_auto.gd, sección [calidad] de user://ajustes.cfg):
