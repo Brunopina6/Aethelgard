@@ -32,6 +32,8 @@ var _modelos := 0                                 # cuántas piezas de gráficos
 var espejismo_modelo := false
 
 const RUTA_ARTE := "res://zonas3d/mar_cristal/materiales_arte.gd"
+const COLORES_ARENA := {"color_arena": Vector3(0.80, 0.63, 0.44), "color_valle": Vector3(0.66, 0.49, 0.35),   # vec3 del sombreado
+	"color_claro": Vector3(0.90, 0.79, 0.61), "color_sombra": Vector3(0.52, 0.48, 0.58)}
 # Los nombres de terreno.gd frente a los de gráficos (docs/memory/agents/graficos_v12_desierto.md).
 const ALIAS := {"tienda": "tienda_a", "palmera_1": "palmera_a", "palmera_2": "palmera_b", "ruinas_trampilla": "trampilla",
 	"huesos_colosales": "huesos_costillas", "ruinas_columna": "ruinas_columna_a"}
@@ -82,6 +84,10 @@ func _material_arena() -> Material:
 	if ResourceLoader.exists(RUTA_ARTE):
 		var m = load(RUTA_ARTE).mat_arena(perfil)
 		if m != null:
+			# 11/11, 13:20: con la luz de la región, los colores de fábrica se veían naranja tostado. Arena dorada clara
+			# (el mismo material sirve a los montones de las piezas: siguen fundiéndose con el suelo).
+			for par in COLORES_ARENA:
+				m.set_shader_parameter(par, COLORES_ARENA[par])
 			return m
 	var s := StandardMaterial3D.new()
 	s.vertex_color_use_as_albedo = true
@@ -124,8 +130,18 @@ func _vertice(x: float, z: float) -> Vector3:
 
 # Más clara en las crestas y la cara al sol (sureste), más oscura en los senos; el camino, pisado y más pardo.
 func _color_arena(x: float, z: float, y: float) -> Color:
-	var c := ARENA.lerp(ARENA_CLARA, clampf(y / 3.0, 0.0, 1.0))
 	var pend := T.altura(x + 0.8, z) - T.altura(x - 0.8, z) + 0.5 * (T.altura(x, z + 0.8) - T.altura(x, z - 0.8))
+	if not mat_arena is StandardMaterial3D:
+		# el sombreado de gráficos MULTIPLICA su color por el de vértice (ALBEDO = c · COLOR): aquí solo un matiz casi
+		# blanco (11/11, 13:25: con los colores de arena de abajo, dos naranjas multiplicados daban arena de lava)
+		var v := lerpf(0.94, 1.0, clampf(y / 3.0, 0.0, 1.0)) - clampf(-pend * 0.2, 0.0, 0.16)
+		var t := Color(v, v, v)
+		if T.en_camino(x, z):
+			t = t * Color(0.93, 0.90, 0.86)                     # pisado y más pardo
+		if T.en_temblor(x, z):
+			t = t * Color(0.95, 0.94, 0.93)                     # la arena que tiembla, algo más oscura
+		return t
+	var c := ARENA.lerp(ARENA_CLARA, clampf(y / 3.0, 0.0, 1.0))
 	c = c.lerp(ARENA_SOMBRA, clampf(-pend * 0.45, 0.0, 0.55))
 	if T.en_camino(x, z):
 		c = c.lerp(ARENA_CAMINO, 0.55)

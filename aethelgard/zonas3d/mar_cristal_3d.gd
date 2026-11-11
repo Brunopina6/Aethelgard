@@ -54,6 +54,7 @@ var salida := {"armada": false}
 var _dist_jugador := 17.0
 var _dist_puesta := 17.0
 var dialogo_actual := ""
+var brillo_sin_sombras := 1.3               # vista3d.gd: el desierto sin sombras pierde más (medido ×1,32)
 
 
 func _ready() -> void:
@@ -105,32 +106,36 @@ func en_banco() -> bool:
 
 func _crear_ambiente() -> void:
 	var env := Environment.new()
+	# 11/11, 13:20 (capturas en D:\REBELUM_diagnostico\v12\luz_*): con ambiente tan cálido como el sol y saturación al
+	# 110 %, la arena se veía naranja como lava y plana. Ahora: cielo y ambiente fríos frente a un sol cálido y más bajo
+	# (las dunas se dibujan con sus sombras), saturación normal y algo más de contraste.
 	env.background_mode = Environment.BG_COLOR                 # un cielo de desierto: azul pálido, casi blanco abajo
-	env.background_color = Color(0.70, 0.80, 0.90)
+	env.background_color = Color(0.66, 0.77, 0.90)
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.95, 0.82, 0.66)          # el rebote cálido de la arena
-	env.ambient_light_energy = 0.75
+	env.ambient_light_color = Color(0.72, 0.76, 0.86)          # la luz del cielo: fría, para que la sombra sea azulada
+	env.ambient_light_energy = 0.30
 	env.fog_enabled = true
-	env.fog_light_color = Color(0.96, 0.84, 0.66)              # bruma cálida
+	env.fog_light_color = Color(0.93, 0.86, 0.76)              # bruma clara del desierto
 	env.fog_density = 0.006
 	env.adjustment_enabled = true
-	env.adjustment_saturation = 1.10
-	env.adjustment_contrast = 1.06
-	env.tonemap_exposure = 1.0
+	env.adjustment_saturation = 0.96
+	env.adjustment_contrast = 1.08
+	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	env.tonemap_exposure = 0.88
 	if nombre_perfil == "alto":
 		env.glow_enabled = true
-		env.glow_intensity = 0.35
-		env.glow_bloom = 0.04
-		env.glow_hdr_threshold = 1.0
+		env.glow_intensity = 0.22
+		env.glow_bloom = 0.02
+		env.glow_hdr_threshold = 1.2
 	var we := WorldEnvironment.new()
 	we.environment = env
 	we.name = "Ambiente"
 	add_child(we)
 	var sol := DirectionalLight3D.new()                        # sol alto de la tarde, cálido, desde el suroeste
 	sol.name = "Sol"
-	sol.rotation_degrees = Vector3(-52.0, -138.0, 0.0)
-	sol.light_color = Color(1.0, 0.90, 0.74)
-	sol.light_energy = perfil.get("luz_sol", 1.0) * 1.15
+	sol.rotation_degrees = Vector3(-36.0, -132.0, 0.0)          # más bajo: sombras largas en las dunas
+	sol.light_color = Color(1.0, 0.89, 0.72)
+	sol.light_energy = perfil.get("luz_sol", 1.0) * 0.72
 	sol.shadow_enabled = perfil.get("sombras", false)
 	sol.directional_shadow_max_distance = perfil.get("dist_sombras", 40.0)
 	sol.shadow_blur = 1.2
