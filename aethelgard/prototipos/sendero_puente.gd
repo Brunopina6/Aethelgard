@@ -212,7 +212,31 @@ func _color_terreno(x: float, z: float, y: float, pendiente: float) -> Color:
 	return hierba.lerp(roca, smoothstep(0.5, 0.85, pendiente))   # roca solo en las paredes de verdad
 
 
+# V12 (12/11, rendimiento): la malla del terreno sale igual en cada entrada (alturas y colores de constantes) y costaba
+# unos 370 ms en el PC, el 75 % de _crear_escenario, también al volver de cada combate. Se guarda con su forma de choque en
+# Recursos, grupo «zona» (se libera al salir al mapa del mundo, no al ir y volver de un combate). La clave lleva el guion de
+# la escena porque una variante (vegetacion_paquetes.gd) pinta otros colores. pruebas/medir_escenas.gd, «carga_vuelta».
 func _crear_terreno() -> void:
+	var clave := "terreno://%s|%s|%s" % [get_script().resource_path, TAM, PASO]
+	var malla: ArrayMesh = Recursos.obtener(clave) if Recursos.esta(clave) else null
+	var choque: Shape3D = Recursos.obtener(clave + "|choque") if Recursos.esta(clave + "|choque") else null
+	if malla == null or choque == null:
+		malla = _hacer_terreno()
+		choque = malla.create_trimesh_shape()
+		Recursos.guardar(clave, malla, "zona")
+		Recursos.guardar(clave + "|choque", choque, "zona")
+	var mi := MeshInstance3D.new()
+	mi.mesh = malla
+	mi.material_override = _mat_detalle(Color.WHITE, 0.45, true, 0.5)
+	var cuerpo := StaticBody3D.new()
+	add_child(cuerpo)
+	cuerpo.add_child(mi)
+	var col := CollisionShape3D.new()
+	col.shape = choque
+	cuerpo.add_child(col)
+
+
+func _hacer_terreno() -> ArrayMesh:
 	var n := int(TAM / PASO)
 	var x0 := -TAM * 0.5 + 3.0
 	var z0 := -TAM * 0.5
@@ -241,16 +265,7 @@ func _crear_terreno() -> void:
 			st.add_index(a); st.add_index(a + 1); st.add_index(a + n + 1)
 			st.add_index(a + 1); st.add_index(a + n + 2); st.add_index(a + n + 1)
 	st.generate_normals()
-	var malla := st.commit()
-	var mi := MeshInstance3D.new()
-	mi.mesh = malla
-	mi.material_override = _mat_detalle(Color.WHITE, 0.45, true, 0.5)
-	var cuerpo := StaticBody3D.new()
-	add_child(cuerpo)
-	cuerpo.add_child(mi)
-	var col := CollisionShape3D.new()
-	col.shape = malla.create_trimesh_shape()
-	cuerpo.add_child(col)
+	return st.commit()
 
 
 # Zonas que no se pisan (Skill aet-fisica-recorrido): fuera de la zona jugable (así la cámara nunca

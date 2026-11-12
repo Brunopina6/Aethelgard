@@ -166,7 +166,47 @@ func _arena_sin_sombras() -> float:
 
 # ---------------------------------------------------------------- arena
 
+# V12 (12/11, rendimiento): la arena y la falda son mallas hechas vértice a vértice en GDScript (610 y 325 ms en el PC, el
+# 93 % de _crear_escenario) y salían idénticas en cada entrada, también al volver de cada combate. Se guardan en Recursos,
+# grupo «zona» (se liberan al salir de la región al mapa del mundo, no al ir y volver de un combate). Dependen solo de las
+# alturas (T.altura: llanos_extra, la explanada de Naira) y del tipo de material (colores de vértice distintos).
+# pruebas/medir_escenas.gd, «carga_vuelta» del combate de Bramavidrio.
+func _clave_malla(nombre: String) -> String:
+	return "mar_cristal://%s|%s|%s" % [nombre, str(T.llanos_extra), "sh" if mat_arena is ShaderMaterial else "std"]
+
+
+func _malla_guardada(nombre: String) -> Resource:
+	var R = Engine.get_main_loop().root.get_node_or_null("Recursos")
+	return R.obtener(_clave_malla(nombre)) if R != null and R.esta(_clave_malla(nombre)) else null
+
+
+func _guardar_malla(nombre: String, r: Resource) -> void:
+	var R = Engine.get_main_loop().root.get_node_or_null("Recursos")
+	if R != null:
+		R.guardar(_clave_malla(nombre), r, "zona")
+
+
 func _arena() -> void:
+	var malla: ArrayMesh = _malla_guardada("arena")
+	var choque: Shape3D = _malla_guardada("arena_choque")
+	if malla == null or choque == null:
+		malla = _hacer_arena()
+		choque = malla.create_trimesh_shape()
+		_guardar_malla("arena", malla)
+		_guardar_malla("arena_choque", choque)
+	var mi := MeshInstance3D.new()
+	mi.name = "Arena"
+	mi.mesh = malla
+	mi.material_override = mat_arena
+	raiz.add_child(mi)
+	var cuerpo := StaticBody3D.new()
+	var forma := CollisionShape3D.new()
+	forma.shape = choque
+	cuerpo.add_child(forma)
+	raiz.add_child(cuerpo)
+
+
+func _hacer_arena() -> ArrayMesh:
 	var nx := int(T.TAM.x / PASO) + 1
 	var nz := int(T.TAM.y / PASO) + 1
 	var st := SurfaceTool.new()
@@ -180,17 +220,7 @@ func _arena() -> void:
 					st.set_color(_color_arena(v[k].x, v[k].z, v[k].y))
 					st.add_vertex(v[k])
 	st.generate_normals()
-	var malla := st.commit()
-	var mi := MeshInstance3D.new()
-	mi.name = "Arena"
-	mi.mesh = malla
-	mi.material_override = mat_arena
-	raiz.add_child(mi)
-	var cuerpo := StaticBody3D.new()
-	var forma := CollisionShape3D.new()
-	forma.shape = malla.create_trimesh_shape()
-	cuerpo.add_child(forma)
-	raiz.add_child(cuerpo)
+	return st.commit()
 
 
 # Las dunas siguen más allá del sector (V12, Redmi v581: al sur y al este se veía el vacío blanco). Malla gruesa
@@ -202,6 +232,19 @@ const FALDA_BAJA := 0.08
 
 
 func _falda() -> void:
+	var malla: ArrayMesh = _malla_guardada("falda")
+	if malla == null:
+		malla = _hacer_falda()
+		_guardar_malla("falda", malla)
+	var mi := MeshInstance3D.new()
+	mi.name = "ArenaLejana"
+	mi.mesh = malla
+	mi.material_override = mat_arena
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	raiz.add_child(mi)
+
+
+func _hacer_falda() -> ArrayMesh:
 	var nx := int(FALDA.size.x / FALDA_PASO)
 	var nz := int(FALDA.size.y / FALDA_PASO)
 	var st := SurfaceTool.new()
@@ -219,12 +262,7 @@ func _falda() -> void:
 					st.set_color(_color_arena(v[k].x, v[k].z, v[k].y))
 					st.add_vertex(v[k])
 	st.generate_normals()
-	var mi := MeshInstance3D.new()
-	mi.name = "ArenaLejana"
-	mi.mesh = st.commit()
-	mi.material_override = mat_arena
-	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	raiz.add_child(mi)
+	return st.commit()
 
 
 func _vertice_falda(e: Vector2) -> Vector3:
