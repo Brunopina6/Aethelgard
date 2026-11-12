@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://ciy27ny0d78r7"
-path="res://.godot/imported/lya_v2_BakedMaterial_baseColor.webp-7137c364cbe098560a194b4f8c2b163d.ctex"
+path.s3tc="res://.godot/imported/lya_v2_BakedMaterial_baseColor.webp-7137c364cbe098560a194b4f8c2b163d.s3tc.ctex"
+path.etc2="res://.godot/imported/lya_v2_BakedMaterial_baseColor.webp-7137c364cbe098560a194b4f8c2b163d.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "d84133aef4ffd238b6028d621b045c7e"
@@ -14,11 +16,11 @@ generator_parameters={
 [deps]
 
 source_file="res://personajes/heroes_v2/lya/lya_v2_BakedMaterial_baseColor.webp"
-dest_files=["res://.godot/imported/lya_v2_BakedMaterial_baseColor.webp-7137c364cbe098560a194b4f8c2b163d.ctex"]
+dest_files=["res://.godot/imported/lya_v2_BakedMaterial_baseColor.webp-7137c364cbe098560a194b4f8c2b163d.s3tc.ctex", "res://.godot/imported/lya_v2_BakedMaterial_baseColor.webp-7137c364cbe098560a194b4f8c2b163d.etc2.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

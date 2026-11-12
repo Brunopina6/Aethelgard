@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://d2evllyxxi7cb"
-path="res://.godot/imported/garon_v2_BakedMaterial_metallic-BakedMaterial_roughness.webp-23e3df7d5ab2ee000379a287043f5d3d.ctex"
+path.s3tc="res://.godot/imported/garon_v2_BakedMaterial_metallic-BakedMaterial_roughness.webp-23e3df7d5ab2ee000379a287043f5d3d.s3tc.ctex"
+path.etc2="res://.godot/imported/garon_v2_BakedMaterial_metallic-BakedMaterial_roughness.webp-23e3df7d5ab2ee000379a287043f5d3d.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "fb5855c93c77965f422602dbd9b1c3f1"
@@ -14,11 +16,11 @@ generator_parameters={
 [deps]
 
 source_file="res://personajes/heroes_v2/garon/garon_v2_BakedMaterial_metallic-BakedMaterial_roughness.webp"
-dest_files=["res://.godot/imported/garon_v2_BakedMaterial_metallic-BakedMaterial_roughness.webp-23e3df7d5ab2ee000379a287043f5d3d.ctex"]
+dest_files=["res://.godot/imported/garon_v2_BakedMaterial_metallic-BakedMaterial_roughness.webp-23e3df7d5ab2ee000379a287043f5d3d.s3tc.ctex", "res://.godot/imported/garon_v2_BakedMaterial_metallic-BakedMaterial_roughness.webp-23e3df7d5ab2ee000379a287043f5d3d.etc2.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://chg7udjsfewl1"
-path="res://.godot/imported/kael_v2_BakedMaterial_baseColor.webp-09cedfae435f4da43f1a46e8592e110f.ctex"
+path.s3tc="res://.godot/imported/kael_v2_BakedMaterial_baseColor.webp-09cedfae435f4da43f1a46e8592e110f.s3tc.ctex"
+path.etc2="res://.godot/imported/kael_v2_BakedMaterial_baseColor.webp-09cedfae435f4da43f1a46e8592e110f.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "6ea8ac7432c56167e0fbcebfe77f8639"
@@ -14,11 +16,11 @@ generator_parameters={
 [deps]
 
 source_file="res://personajes/heroes_v2/kael/kael_v2_BakedMaterial_baseColor.webp"
-dest_files=["res://.godot/imported/kael_v2_BakedMaterial_baseColor.webp-09cedfae435f4da43f1a46e8592e110f.ctex"]
+dest_files=["res://.godot/imported/kael_v2_BakedMaterial_baseColor.webp-09cedfae435f4da43f1a46e8592e110f.s3tc.ctex", "res://.godot/imported/kael_v2_BakedMaterial_baseColor.webp-09cedfae435f4da43f1a46e8592e110f.etc2.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

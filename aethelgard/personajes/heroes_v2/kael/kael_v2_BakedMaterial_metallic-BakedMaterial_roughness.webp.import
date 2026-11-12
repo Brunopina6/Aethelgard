@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bsrikxmqk4xi4"
-path="res://.godot/imported/kael_v2_BakedMaterial_metallic-BakedMaterial_roughness.webp-566f8b98896e033c3b5c74e76245e081.ctex"
+path.s3tc="res://.godot/imported/kael_v2_BakedMaterial_metallic-BakedMaterial_roughness.webp-566f8b98896e033c3b5c74e76245e081.s3tc.ctex"
+path.etc2="res://.godot/imported/kael_v2_BakedMaterial_metallic-BakedMaterial_roughness.webp-566f8b98896e033c3b5c74e76245e081.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "2fd33a17ad4669426170e2b3e996f725"
@@ -14,11 +16,11 @@ generator_parameters={
 [deps]
 
 source_file="res://personajes/heroes_v2/kael/kael_v2_BakedMaterial_metallic-BakedMaterial_roughness.webp"
-dest_files=["res://.godot/imported/kael_v2_BakedMaterial_metallic-BakedMaterial_roughness.webp-566f8b98896e033c3b5c74e76245e081.ctex"]
+dest_files=["res://.godot/imported/kael_v2_BakedMaterial_metallic-BakedMaterial_roughness.webp-566f8b98896e033c3b5c74e76245e081.s3tc.ctex", "res://.godot/imported/kael_v2_BakedMaterial_metallic-BakedMaterial_roughness.webp-566f8b98896e033c3b5c74e76245e081.etc2.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
