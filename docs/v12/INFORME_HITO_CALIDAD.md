@@ -14,7 +14,7 @@ anterior al hito: etiqueta `v12-antes-hito-calidad` (= `a0bab37`).
 | 4 | Encuentro nuevo del desierto | `2c0f872` | Vidracrán, **apagado** (`encuentro_desierto_v12`) |
 | 5 | Interacción del Mar de Cristal | `514d022` | Rincón opcional «el hito del cobijo» (una vez, 2 Pociones) |
 | 6 | Música verificada | `1f9abfa` | Las tres canciones elegidas suenan desde sus rutas reales; SHA-256 iguales a los maestros |
-| — | Bramavidrio v4 «el Ancestral» (encargo del usuario con su referencia) | ver RETOMAR | Elegible en Ajustes; **no predeterminado** (`VERSION_DEFECTO` = 2) |
+| — | Bramavidrio v4 «el Ancestral» (encargo del usuario con su referencia) | `fb8b680` | Elegible en Ajustes; **no predeterminado** (`VERSION_DEFECTO` = 2) |
 
 ## 2. Propuestas apagadas (no cambian nada mientras estén apagadas)
 
@@ -53,7 +53,11 @@ llegan en Android).
 
 - Batería completa tras el pulido y las cargas: **132 · 0 · 60 · 0**.
 - Tras Vidracrán: 132 · 1 · 60 · 0; la prueba nueva era frágil, se rehízo determinista (3/3 y 2/2).
-- Con la v4 integrada: ver RETOMAR (fila de la batería de la v4).
+- Con la v4 integrada (`fb8b680`): **132 · 1 · 60 · 0**. El fallo era `prueba_mc_rincon`, que era inestable (fallaba
+  1 de cada 3 veces): cortaba el diálogo mientras Dialogic escribía una frase. Ahora espera a que la frase esté escrita
+  y pasa 5/5.
+- Bramavidrio con cada versión (combate, clímax, sonido y Mar de Cristal): v1, v3 y v4, 4/4 cada una; la v2, en la
+  batería.
 
 ## 6. Problemas que persisten
 

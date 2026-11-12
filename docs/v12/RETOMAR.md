@@ -312,3 +312,10 @@ negra).
   - **El usuario no quiere que se le pida permiso.** El Redmi, desconectado.
 - **v656 medida en el Redmi:** la carga del título baja de 19,2 a 10,6 s y la memoria unos 200-250 MB
   (`INFORME_REDMI_V12.md`, octava prueba).
+- **14:30, Bramavidrio v4 integrado** (`fb8b680`, de `claude/v12-bramavidrio4` @ `acfbb52`, copiando archivos): elegible
+  en Ajustes («Prueba v4: el Ancestral»); **por defecto sigue la v2**. Batería 132 · 1 · 60 · 0; el fallo,
+  `prueba_mc_rincon`, era inestable y ya está arreglado (5/5). v1, v3 y v4, 4/4 cada una. Procedencia en
+  `docs/recursos.md`.
+- **Informe final del hito:** `docs/v12/INFORME_HITO_CALIDAD.md`.
+- **En marcha: Humbaba** en `D:\Aethelgard_v12_humbaba` · `claude/v12-humbaba` (desde `2c0f872`), especialista de
+  animaciones con `ENCARGO_HUMBABA.md`: primero el prototipo con rig y tres animaciones; apagado (`humbaba_v12`).
