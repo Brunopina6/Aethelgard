@@ -267,5 +267,5 @@ negra).
 - Siguiente: cuando se permita acceso USB, identificar Redmi y versión instalada, respaldar y verificar Auditoría antes de cualquier escritura, y validar v646: Garganta, Oakhaven y Gran Bosque en bajo/medio; luego comparaciones opcionales. Conservar todas las otras apps y partidas. APK sin publicar.
 - **09:10-09:45, esta sesión (con ADB):**
   - **v646 validada en el Redmi:** el Gran Bosque no llegaba (27 en bajo, 14 en medio) y lo demás iba a 30 (`INFORME_REDMI_V12.md`, sexta prueba). Partida restaurada.
-  - **Gran Bosque optimizado** (`e8f59cb`); APK v655 (`e8f59cb`) para medirlo.
+  - **Gran Bosque optimizado** (`e8f59cb`); APK v649 (`e8f59cb`) para medirlo.
   - La nota de arriba la escribió otra sesión (sin ADB) mientras tanto; se conserva.
