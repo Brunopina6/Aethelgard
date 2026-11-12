@@ -305,3 +305,10 @@ negra).
   - **Pendiente:**
     1. una APK nueva para medir en el Redmi las cargas (arranque, «Continuar», del aviso al combate, caché de sombreadores) y la memoria;
     2. la decisión del usuario sobre la caída de la Fractura y los sitios de golpe por versión (ver el informe del pulido).
+- **13:20, en cola tras el Bramavidrio v4: Humbaba**, el jefe del bosque profundo (`docs/v12/ENCARGO_HUMBABA.md`, con la
+  referencia en `D:\REBELUM_diagnostico\v12\referencias\humbaba_referencia_usuario.webp`).
+  - **Herramientas:** Blender. **No usar Hunyuan3D:** su licencia excluye la UE.
+  - **Encaje:** jefe nuevo, que no sustituye al Guardián del Bosque. Sitio propuesto: el Gran Bosque Verde, apagado.
+  - **El usuario no quiere que se le pida permiso.** El Redmi, desconectado.
+- **v656 medida en el Redmi:** la carga del título baja de 19,2 a 10,6 s y la memoria unos 200-250 MB
+  (`INFORME_REDMI_V12.md`, octava prueba).
