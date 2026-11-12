@@ -362,3 +362,11 @@ negra).
 - **Programas del PC:** el usuario pide usar todo lo instalado; inventario en la sección final de `REGLAS_COMUNES.md`.
 - **En cola** (cuando acabe alguno): geometría nueva de los
   protagonistas con Blender.
+- **Integrado y subido** (todo APAGADO salvo las optimizaciones sin cambio visible; `origin/claude/rebelum-v12` = `b3c4e0f`, `main` intacta):
+  - `16edd37`: accesorios v12 (`accesorios_v12`), 11 objetos; diseño en `docs/v12/ACCESORIOS_V12.md`.
+  - `fa80e3e`: Firmamento de los Ecos, tablero de Orbes (`orbes_v12`), tres conceptos; `docs/v12/FIRMAMENTO_DE_LOS_ECOS.md`.
+  - `b3c4e0f`: rendimiento (orden de dibujo del Gran Bosque, precalentado del combate, precarga de guiones; `gb_matas_casco` apagado) y el Centinela del Anillo (`enemigos_v12`).
+  - Batería: 139 · 0 · 64 · 0.
+- **Entregado, sin integrar todavía:** mundo y NPC (`claude/v12-mundo` @ `fb561e7`; pulido de NPC en curso), animación de combate (`claude/v12-combate2` @ `2c7ef79`; segunda pasada en curso) y Bramavidrio v5 (`claude/v12-bramavidrio5` @ `8e389aa`; la boca no convence: segunda vuelta pedida). Al integrar la v5: arreglar `prueba_cargas.gd:116` (aceptar el mapa de normales) y añadir su fila a `docs/recursos.md` (texto en §10 de su informe).
+- **En curso:** segunda pasada de rendimiento (retrato de Dialogic, mipmaps de hojas, otras regiones), Gólem de ámbar y desfase del daño de los «jefe» (enemigos), protagonistas v3.
+- **Aviso del especialista de mundo:** `desierto_comun.py` (`por_altura`) deja vértices sin peso y el exportador añade `neutral_bone`; Ismena y Oren podrían tenerlo.
