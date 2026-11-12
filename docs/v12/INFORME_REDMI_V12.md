@@ -283,3 +283,35 @@ la Vela», con los efectos de sus tres ataques.
 - los sonidos propios de los ataques (placas, succión, chorro y latigazo);
 - escucharlo todo;
 - la decisión del usuario entre la v2 y la v1 (Ajustes → «Bramavidrio»).
+
+# V12 · Sexta prueba en el Redmi: v646, la segunda gran fase (12/11, 09:10-09:45)
+
+**APK (sin publicar):** «REBELUM Auditoría», versionCode **646** (`b719ea0`), 371,3 MB, SHA-256
+`652273eff55844fa32f199b15ea759e77454413c580eb220b0749e7a01689883`. MIUI canceló `adb install -r` y el usuario la
+instaló desde Descargas; luego se borró de allí.
+
+- **Partida:** respaldo `..._antes_v610`, igual al estado del teléfono antes de la prueba; restaurada idéntica al acabar.
+- **Estabilidad:** sin cierres ni errores en logcat.
+- **Carga:** de 18,5 a 21,2 s hasta «Carga terminada» (antes, 15,5 s). Las primeras medidas de la Garganta salieron de
+  la pantalla de inicio porque el toque llegó antes de que acabara la carga; se repitieron esperando a la carga.
+
+| Lugar (punto de entrada y andando) | Bajo FPS | Medio FPS | Memoria PSS |
+|---|---|---|---|
+| Garganta 3D (por defecto) | **30,4 / 30,4** | **30,4 / 29,6** | 1,04-1,10 GB |
+| Oakhaven 3D completo (por defecto) | **30,3 / 30,4** | **30,4 / 30,2** | 1,03-1,10 GB |
+| **Gran Bosque Verde 3D (por defecto)** | **27,3 / 25,9** | **14,3 / 13,7** | 1,03-1,09 GB |
+| Mar de Cristal (arte de la noche) | **30,4 / 30,3** | **30,4 / 30,4** | 0,98-1,02 GB |
+| Combate con Bramavidrio v2 (medio) | 60,0 en reposo · 59,3 atacando | | 1,06-1,10 GB |
+
+- **0 fotogramas perdidos** en todas las medidas.
+- **El Gran Bosque NO sirve en el Redmi:** el medio va a 14 FPS y el bajo a 26-27.
+  - **Causa probable:** las copas que se disuelven cerca de la cámara (tramado de transparencia a pantalla casi completa)
+    y la densidad de follaje, el sobredibujado que ya se conocía en el Mali-G57.
+  - **Se va a optimizar antes de darlo por bueno.**
+- **Memoria:** el PSS sube a unos 1,0-1,1 GB, frente a los 745-948 MB de la v581/v597. Puede venir del precalentado de la
+  carga (812 archivos) o de lo nuevo, pero está sin investigar.
+- **El bajo del Mar de Cristal ya no se ve lavado:** arena cálida y personajes nítidos (`sesion_v646\marcristal_bajo_entrada.png`).
+- **No probado en el teléfono:** lo que va apagado (héroes v2, magia negra, Naira, enemigos v12), porque los argumentos de
+  pruebas no llegan en Android.
+
+Capturas y `--timestats`: `D:\REBELUM_diagnostico\v12\redmi\sesion_v646`.
