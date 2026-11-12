@@ -5,9 +5,12 @@ Punto seguro del 11/11 a las 13:35 (sesión «REBELUM V12 desarrollo continuo»)
 
 ## Git
 
-- **Trabajo:** `claude/rebelum-v12` en `D:\Aethelgard_v12`, LOCAL. Ver `git -C D:\Aethelgard_v12 log --oneline -15`.
-- **Sin push ni merge** (orden del usuario). La integración de especialistas se hace copiando sus archivos de su rama
-  (`git checkout <rama> -- <rutas>`), no fusionando ramas.
+- **Trabajo:** `claude/rebelum-v12` en `D:\Aethelgard_v12`. Ver `git -C D:\Aethelgard_v12 log --oneline -15`.
+- **Publicada en GitHub desde el 12/11** (autorización expresa del usuario): `origin/claude/rebelum-v12`, primera
+  subida `d8a65d3`. Se suben a esa misma rama los hitos probados, sin force. **Sin merge** con `main` (`d4b2d16`),
+  `desarollo` ni otras compartidas; sin releases. Las ramas `claude/v12-*` de los especialistas siguen locales. La
+  integración de especialistas se hace copiando sus archivos de su rama (`git checkout <rama> -- <rutas>`), no
+  fusionando ramas.
 - **La sesión anterior** («Aethelgard documento base en Godot») está detenida desde las 12:50: no escribe en esta copia.
 - **Especialistas, todos terminados e integrados:**
 
@@ -335,3 +338,25 @@ negra).
   1. medir en el Redmi lo de la §9 del informe;
   2. decidir qué se deja de precargar en el arranque (184 MB);
   3. arreglar los tirones del primer combate.
+
+### Expansión del mundo y evolución de personajes (12/11, noche; sin Redmi)
+
+- **Encargo:** «REBELUM V12 — Expansión del mundo y evolución de personajes» (subida a GitHub, rendimiento, gráficos,
+  combate, mundo 3D, NPC chibi, accesorios y el tablero de Orbes Cristalinos «Firmamento de los Ecos»).
+- **Fase 0 hecha:** rama publicada, `origin/claude/rebelum-v12` = `d8a65d3` (comprobado con `ls-remote`); `main`
+  sigue en `d4b2d16` y `desarollo` en `2d1adc4`. Revisado antes: sin claves de firma ni tokens, sin archivos de más
+  de 20 MB; los 86 sonidos nuevos en el remoto tienen licencia registrada (Sonniss GDC y Suno Pro del usuario).
+- **Punto de recuperación:** etiqueta local `v12-antes-expansion` (= `d8a65d3`).
+- **Reglas comunes de los especialistas:** `D:\REBELUM_diagnostico\v12\expansion\REGLAS_COMUNES.md`.
+- **Especialistas lanzados** (desde `d8a65d3`, copias y ramas locales, se integra copiando archivos):
+
+| Trabajo | Copia · rama | Archivos suyos | Informe |
+|---|---|---|---|
+| Rendimiento: Gran Bosque, tirones del primer combate, creación del grupo, arranque | `D:\Aethelgard_v12_rend2` · `claude/v12-rend2` | `zonas3d/gran_bosque*`, vegetación, `carga.gd`, `recursos.gd`, precalentado | `docs/memory/agents/rendimiento_v12_rend2.md` |
+| Tablero de Orbes Cristalinos: 3 conceptos, prototipo, tablero funcional | `D:\Aethelgard_v12_orbes` · `claude/v12-orbes` | servicio y tablero nuevos; bloques en `grupo.estadisticas()`, final de `efectos_de()`, `menus.gd`, guardado | `docs/memory/agents/interfaz_v12_orbes.md` |
+| Accesorios y equipamiento | `D:\Aethelgard_v12_accesorios` · `claude/v12-accesorios` | `equipo_extra.gd` (ACCESORIOS, EFECTOS), ganchos en `combate.gd` | `docs/memory/agents/rpg_v12_accesorios.md` |
+| Inventario del mundo, NPC chibi y Oakhaven vivo | `D:\Aethelgard_v12_mundo` · `claude/v12-mundo` | `docs/v12/INVENTARIO_MUNDO.md`, `personajes/npc_v12/`, Oakhaven 3D | `docs/memory/agents/mundo_v12_npc.md` |
+| Animación de combate, cámaras y efectos | `D:\Aethelgard_v12_combate2` · `claude/v12-combate2` | clips de los héroes v2, módulo de animación de combate, cámaras, `vfx/` | `docs/memory/agents/animaciones_v12_combate2.md` |
+
+- **En cola** (cuando acabe alguno): Bramavidrio (cabeza, mandíbula y movimientos) y geometría nueva de los
+  protagonistas con Blender.
