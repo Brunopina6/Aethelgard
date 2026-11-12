@@ -15,7 +15,11 @@ extends RefCounted
 #   - las sombras de las copas en el suelo van pintadas en el color de los vértices (manchas de sol); con sombras
 #     reales (medio, alto), más suaves;
 #   - un hueco en las copas y troncos entre la cámara y Kael (sombreado), en vez de la transparencia por pieza: sirve
-#     también para los MultiMesh.
+#     también para los MultiMesh. Desde el 12/11 (rendimiento en el Redmi), en las copas se hace en el VÉRTICE (cada mata
+#     o lóbulo se encoge hacia su centro: lo de dentro no dibuja ni un píxel); en los troncos sigue el tramado;
+#   - bajo y medio (12/11): copas de hojas sin las matas de dentro, con un núcleo opaco (_copa_vieja); copas macizas con
+#     una mezcla triplanar más corta; el suelo con UV en vez de triplanar. Cifras y capturas:
+#     docs/memory/agents/rendimiento_v12_gran_bosque.md.
 
 const T := preload("res://zonas3d/gran_bosque/trazado.gd")
 const D := preload("res://zonas3d/gran_bosque/disposicion_2d.gd")
@@ -32,22 +36,23 @@ const HACES := {"bajo": 3, "medio": 5, "alto": 7}
 
 # ---------------------------------------------------------------- sombreados
 const HUECO := """
-	vec3 ab_h = hueco_b - hueco_a;
-	float largo_h = max(length(ab_h), 0.001);
-	float t_h = clamp(dot(mundo - hueco_a, ab_h) / (largo_h * largo_h), 0.0, 1.0);
-	float corte_h = 1.0;
-	if (hueco_r > 0.0) {
-		// un cono de la cámara (ancho) a Kael (hueco_r), por encima de sus pies, y lo que está muy cerca de la cámara
-		float r_h = hueco_r * mix(2.4, 1.0, t_h);
-		float d_h = length(mundo - (hueco_a + ab_h * t_h)) / r_h;
-		if (t_h < 0.985 && mundo.y > hueco_b.y - 0.75) {
-			corte_h = smoothstep(0.62, 1.0, d_h);
-		}
-		corte_h = min(corte_h, smoothstep(0.44, 0.52, distance(mundo, hueco_a) / largo_h));
-	}
+	float corte_h = corte_hueco(mundo);
 	if (corte_h < 0.999 && corte_h < ruido_h(FRAGCOORD.xy)) {
 		discard;
 	}
+"""
+# Rendimiento (12/11, medido: docs/memory/agents/rendimiento_v12_gran_bosque.md): en las copas el hueco ya no se hace
+# píxel a píxel (tramado + discard: dentro del hueco se seguían sombreando todas las capas de matas, hasta 7 por píxel en
+# la entrada), sino en el vértice: cada mata (o lóbulo de copa maciza) se encoge hacia su centro (CUSTOM0) según lo que
+# valga el hueco allí, y lo que está dentro no llega a dibujar ni un píxel. El borde del hueco se ve como hojas que se
+# apartan, sin grano. Las copas macizas, además, quedan sin discard (opacas de verdad).
+# CUSTOM0.w: 0 en las matas; en los lóbulos (núcleos, copas macizas), su radio: se mira el punto del lóbulo que da a la
+# cámara, para que se vayan antes que las matas de fuera (si no, el núcleo oscuro se quedaba a la vista).
+const HUECO_VERTICE := """
+	vec3 centro_h = (MODEL_MATRIX * vec4(CUSTOM0.xyz, 1.0)).xyz;
+	float radio_h = CUSTOM0.w * length(MODEL_MATRIX[0].xyz);
+	float encoge_h = corte_hueco(centro_h + normalize(hueco_a - centro_h + vec3(0.0, 0.001, 0.0)) * radio_h);
+	VERTEX = mix(CUSTOM0.xyz, VERTEX, encoge_h);
 """
 const UNIFORMES_HUECO := """
 uniform vec3 hueco_a = vec3(0.0, -1000.0, 0.0);
@@ -56,6 +61,23 @@ uniform float hueco_r = 0.0;
 varying vec3 mundo;
 float ruido_h(vec2 p) {
 	return fract(52.9829189 * fract(0.06711056 * p.x + 0.00583715 * p.y));
+}
+// 1: se ve; 0: dentro del hueco. Un cono de la cámara (ancho) a Kael (hueco_r), por encima de sus pies, y lo que está muy
+// cerca de la cámara.
+float corte_hueco(vec3 p) {
+	if (hueco_r <= 0.0) {
+		return 1.0;
+	}
+	vec3 ab_h = hueco_b - hueco_a;
+	float largo_h = max(length(ab_h), 0.001);
+	float t_h = clamp(dot(p - hueco_a, ab_h) / (largo_h * largo_h), 0.0, 1.0);
+	float corte_h = 1.0;
+	float r_h = hueco_r * mix(2.4, 1.0, t_h);
+	float d_h = length(p - (hueco_a + ab_h * t_h)) / r_h;
+	if (t_h < 0.985 && p.y > hueco_b.y - 0.75) {
+		corte_h = smoothstep(0.62, 1.0, d_h);
+	}
+	return min(corte_h, smoothstep(0.44, 0.52, distance(p, hueco_a) / largo_h));
 }
 """
 # Copas de hojas (las de arbol_estilizado.gd, con el hueco y el tinte de cada árbol en su color)
@@ -68,6 +90,7 @@ uniform float viento = 0.045;
 uniform vec3 translucidez : source_color = vec3(0.16, 0.22, 0.06);
 %s
 void vertex() {
+%s
 	vec3 w = (MODEL_MATRIX * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
 	float h = max(VERTEX.y, 0.0);
 	float s = sin(TIME * 1.3 + w.x * 0.3 + w.z * 0.2 + VERTEX.y * 0.5) * 0.65 + sin(TIME * 2.4 + VERTEX.x * 1.6) * 0.35;
@@ -104,9 +127,12 @@ uniform float hojas = 0.0;                       // 1: copa «pintada» con las 
 uniform vec2 celda = vec2(0.0, 0.0);
 uniform float hojas_escala = 0.42;
 uniform vec3 hojas_fondo : source_color = vec3(0.09, 0.16, 0.07);
+uniform float afilar = 1.0;                      // mezcla triplanar: 1 = la de siempre (alto)
+uniform float umbral = 0.0;                      // caras que pesan menos que esto no se leen
 varying vec3 nmundo;
 %s
 void vertex() {
+%s
 	vec3 w = (MODEL_MATRIX * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
 	float h = max(VERTEX.y - viento_altura, 0.0);
 	float s = sin(TIME * 1.2 + w.x * 0.25 + w.z * 0.19) * 0.7 + sin(TIME * 2.1 + w.x * 0.9 + VERTEX.y) * 0.3;
@@ -121,14 +147,27 @@ vec3 matas(vec2 uv) {
 }
 void fragment() {
 %s
-	float g = mix(1.0, texture(grano, vec2(mundo.x + mundo.z, mundo.y) * grano_escala).r * 1.2, grano_fuerza);
-	vec3 c = COLOR.rgb * g;
-	if (hojas > 0.5) {
-		vec3 pesos = abs(nmundo);
+	vec3 c;
+	if (hojas > 0.5) {                               // (el grano, solo si no es copa pintada: antes se leía y se tiraba)
+		// triplanar; con «afilar» > 1 (bajo, medio) la mezcla entre caras es más corta y la cara que casi no pesa no se
+		// lee (de 3 lecturas del atlas por píxel a ~1,4; medido en el PC)
+		vec3 pesos = pow(abs(nmundo), vec3(afilar));
 		pesos = pesos / (pesos.x + pesos.y + pesos.z);
-		vec3 m = matas(mundo.xz * hojas_escala) * pesos.y + matas(mundo.zy * hojas_escala + 0.3) * pesos.x
-			+ matas(mundo.xy * hojas_escala + 0.6) * pesos.z;
+		vec3 m = vec3(0.0);
+		if (pesos.y > umbral) {
+			m += matas(mundo.xz * hojas_escala) * pesos.y;
+		}
+		if (pesos.x > umbral) {
+			m += matas(mundo.zy * hojas_escala + 0.3) * pesos.x;
+		}
+		if (pesos.z > umbral) {
+			m += matas(mundo.xy * hojas_escala + 0.6) * pesos.z;
+		}
+		m /= max(step(umbral, pesos.y) * pesos.y + step(umbral, pesos.x) * pesos.x + step(umbral, pesos.z) * pesos.z, 0.001);
 		c = COLOR.rgb * m * 1.5;
+	} else {
+		float g = mix(1.0, texture(grano, vec2(mundo.x + mundo.z, mundo.y) * grano_escala).r * 1.2, grano_fuerza);
+		c = COLOR.rgb * g;
 	}
 	ALBEDO = c;
 	ROUGHNESS = 0.92;
@@ -269,40 +308,51 @@ func _shader(codigo: String) -> Shader:
 
 
 func _materiales() -> void:
+	# «gb_hueco_pixel» (solo para medir el antes, calidad_extra): el hueco de las copas píxel a píxel, como hasta el 12/11
+	var pixel: bool = perfil.get("gb_hueco_pixel", false)
 	for tipo in ["pradera", "abedul", "magico"]:
 		var m := ShaderMaterial.new()
-		m.shader = _shader(SHADER_HOJAS % [UNIFORMES_HUECO, HUECO])
+		var cod: String = SHADER_HOJAS % [UNIFORMES_HUECO, "" if pixel else HUECO_VERTICE, HUECO if pixel else ""]
+		if perfil.get("gb_hojas_ligeras", false):         # (prueba A/B: sin brillo especular ni la pasada de la sombra)
+			cod = cod.replace("render_mode cull_disabled, specular_schlick_ggx;", "render_mode cull_disabled, specular_disabled, diffuse_lambert, shadows_disabled;")
+		elif perfil.get("gb_hojas_sin_brillo", false):    # (prueba A/B: solo sin el brillo especular, que con 0,12 apenas se ve)
+			cod = cod.replace("render_mode cull_disabled, specular_schlick_ggx;", "render_mode cull_disabled, specular_disabled;")
+		m.shader = _shader(cod)
 		m.set_shader_parameter("atlas", load(Arbol.ATLAS))
 		m.set_shader_parameter("color", Color(0.5, 0.63, 0.46) if tipo != "magico" else Color(0.8, 0.74, 0.88))
 		_mat_hojas[tipo] = m
 		mats_hueco.append(m)
 	_mat_macizo = ShaderMaterial.new()
-	_mat_macizo.shader = _shader(SHADER_MACIZO % ["cull_back", UNIFORMES_HUECO, HUECO])
+	_mat_macizo.shader = _shader(SHADER_MACIZO % ["cull_back", UNIFORMES_HUECO, "", HUECO])
 	_mat_macizo.set_shader_parameter("grano", grano)
 	_mat_macizo.set_shader_parameter("grano_fuerza", 0.35)
 	_mat_macizo.set_shader_parameter("grano_escala", 0.9)
 	_mat_macizo.set_shader_parameter("viento", 0.012)
 	_mat_macizo.set_shader_parameter("viento_altura", 2.2)
 	mats_hueco.append(_mat_macizo)
+	var sh_maciza := _shader(SHADER_MACIZO % ["cull_back", UNIFORMES_HUECO, "" if pixel else HUECO_VERTICE, HUECO if pixel else ""])
 	for receta in ["pradera", "abedul"]:              # las copas macizas, pintadas con las matas de Pastos
 		var mc := ShaderMaterial.new()
-		mc.shader = _mat_macizo.shader
+		mc.shader = sh_maciza
 		mc.set_shader_parameter("grano", grano)
 		mc.set_shader_parameter("viento", 0.012)
 		mc.set_shader_parameter("viento_altura", 2.2)
 		mc.set_shader_parameter("atlas", load(Arbol.ATLAS))
 		mc.set_shader_parameter("hojas", 1.0)
 		mc.set_shader_parameter("celda", Vector2(0.0, 0.0) if receta == "pradera" else Vector2(0.5, 0.0))
+		if nombre_perfil != "alto":                     # bajo y medio: mezcla triplanar más corta (menos lecturas)
+			mc.set_shader_parameter("afilar", float(perfil.get("gb_afilar", 3.0)))
+			mc.set_shader_parameter("umbral", float(perfil.get("gb_umbral", 0.06)))
 		_mat_copa_maciza[receta] = mc
 		mats_hueco.append(mc)
 	_mat_macizo_fino = ShaderMaterial.new()                 # helechos, matas y setas: doble cara, sin hueco
-	_mat_macizo_fino.shader = _shader(SHADER_MACIZO % ["cull_disabled", UNIFORMES_HUECO, ""])
+	_mat_macizo_fino.shader = _shader(SHADER_MACIZO % ["cull_disabled", UNIFORMES_HUECO, "", ""])
 	_mat_macizo_fino.set_shader_parameter("grano", grano)
 	_mat_macizo_fino.set_shader_parameter("grano_fuerza", 0.2)
 	_mat_macizo_fino.set_shader_parameter("viento", 0.05)
 	_mat_macizo_fino.set_shader_parameter("viento_altura", 0.1)
 	_mat_tronco = ShaderMaterial.new()
-	_mat_tronco.shader = _shader(SHADER_MACIZO % ["cull_back", UNIFORMES_HUECO, HUECO])
+	_mat_tronco.shader = _shader(SHADER_MACIZO % ["cull_back", UNIFORMES_HUECO, "", HUECO])
 	_mat_tronco.set_shader_parameter("grano", grano)
 	_mat_tronco.set_shader_parameter("grano_fuerza", 0.6)
 	_mat_tronco.set_shader_parameter("grano_escala", 1.6)
@@ -410,8 +460,33 @@ func _malla_estilizada(tipo: String) -> Dictionary:
 	var factor: float = perfil.get("arbol_matas", 1.0)
 	var clave := "est_%s_%.2f" % [tipo, factor]
 	if not _mallas.has(clave):
-		_mallas[clave] = Arbol._construir(tipo, grano, factor)
+		var m: Dictionary = Arbol._construir(tipo, grano, factor)
+		m["copa"] = _con_centros(m["copa"])
+		_mallas[clave] = m
 	return _mallas[clave]
+
+
+# La copa de matas con el centro de cada mata en CUSTOM0 (HUECO_VERTICE la encoge hacia él). Cada mata de
+# arbol_estilizado.gd son dos triángulos (0, 1, 2 · 0, 2, 3): su centro, el punto medio de la diagonal 0-2.
+func _con_centros(malla: Mesh) -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.create_from(malla, 0)
+	st.deindex()
+	var a: Array = st.commit_to_arrays()
+	var vs: PackedVector3Array = a[Mesh.ARRAY_VERTEX]
+	var cen := PackedFloat32Array()
+	cen.resize(vs.size() * 4)
+	for k in range(0, vs.size() - 5, 6):
+		var c: Vector3 = (vs[k] + vs[k + 2]) * 0.5
+		for j in 6:
+			cen[(k + j) * 4] = c.x
+			cen[(k + j) * 4 + 1] = c.y
+			cen[(k + j) * 4 + 2] = c.z
+			cen[(k + j) * 4 + 3] = 0.0
+	a[Mesh.ARRAY_CUSTOM0] = cen
+	var am := ArrayMesh.new()
+	am.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, a, [], {}, Mesh.ARRAY_CUSTOM_RGBA_FLOAT << Mesh.ARRAY_FORMAT_CUSTOM0_SHIFT)
+	return am
 
 
 # Copa maciza: lóbulos de bolas bajas, deformadas un poco, con el color de vértice sombreado (lo de abajo y lo de dentro,
@@ -429,6 +504,7 @@ func _copa_maciza(receta: String) -> Mesh:
 	centro /= lob.size()
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	st.set_custom_format(0, SurfaceTool.CUSTOM_RGBA_FLOAT)            # el centro del lóbulo (HUECO_VERTICE)
 	var usados := [0, 1, 2, 3] if receta == "abedul" else [0, 1, 2, 5]   # cuatro lóbulos: la silueta, con pocos triángulos
 	for k in usados:
 		var l: Array = lob[k]
@@ -453,6 +529,7 @@ func _copa_maciza(receta: String) -> Mesh:
 			var ao := clampf(0.55 + 0.45 * (n.y * 0.5 + 0.5) + (q.y - centro.y) * 0.08, 0.45, 1.12)
 			st.set_normal(hacia)
 			st.set_color(Color(ao, ao, ao))
+			st.set_custom(0, Color(c.x, c.y, c.z, rad))
 			st.add_vertex(q)
 	var m := st.commit()
 	_mallas[clave] = m
@@ -567,7 +644,10 @@ func _arbol(tipo: String, pie: Vector3, escala: float, giro: float, tinte: Color
 			_poner("tronco_" + tipo, m["tronco"], _mat_tronco, t, Color(0.82, 0.86, 0.8) if tipo != "abedul" else Color.WHITE, sombra, dist)
 		else:
 			_poner("tronco", _tronco_simple(), _mat_tronco, tb, Color(1.55, 1.6, 1.5) if tipo == "abedul" else Color.WHITE, sombra, dist)
-		_poner("hojas_" + tipo, m["copa"], _mat_hojas[tipo], t, tinte, sombra if alto else no, dist)
+		var cv := _copa_vieja(tipo)                    # bajo y medio: sin las matas de dentro y con núcleo (como los viejos)
+		_poner("hojas_" + tipo, cv["copa"], _mat_hojas[tipo], t, tinte, sombra if alto else no, dist)
+		if cv["nucleo"] != null:
+			_poner("nucleo_" + receta, cv["nucleo"], _mat_copa_maciza[receta], t, tinte, no, dist)
 	else:
 		_poner("tronco", _tronco_simple(), _mat_tronco, tb, Color(1.55, 1.6, 1.5) if tipo == "abedul" else Color.WHITE, sombra, dist)
 		_poner("maciza_" + receta, _copa_maciza(receta), _mat_copa_maciza[receta], t, tinte * Color(0.62, 0.70, 0.58), sombra if alto else no, dist)
@@ -587,7 +667,7 @@ func _repartir_arboles() -> void:
 		_libres.append([T.mundo(c), 3.5 if c != T.MIRADOR_2D else T.MIRADOR_RADIO * T.K + 0.6])
 	for v in VIEJOS:
 		_libres.append([T.mundo(v[0]), 2.2 * v[2]])
-	var hasta: float = HOJAS_HASTA[nombre_perfil]
+	var hasta: float = perfil.get("gb_hojas_hasta", HOJAS_HASTA[nombre_perfil])
 	for o in D.OBJETOS:
 		var tipo: String = o[0]
 		var c: Vector2 = o[1]
@@ -657,9 +737,78 @@ const VIEJOS := [[Vector2(35.0, 52.6), "pradera", 1.6, 0.4], [Vector2(46.6, 51.4
 	[Vector2(33.6, 3.8), "pradera", 1.85, 0.9], [Vector2(42.6, 4.0), "pradera", 1.8, 2.6], [Vector2(38.2, 2.6), "magico", 1.5, 1.4]]
 
 
+# Bajo y medio (rendimiento, 12/11): la copa de un árbol viejo sin las matas de dentro (las de «hondo» < HONDO_NUCLEO,
+# la «mata de sombra» que solo se ve por los huecos) y, en su lugar, un núcleo opaco y oscuro (lóbulos al 62 %, pintado
+# con las matas como las copas macizas, sin discard). Por los huecos se sigue viendo hojarasca oscura, pero cada píxel de
+# la copa pasa por menos matas recortadas (la entrada tiene dos de estos árboles a cada lado del camino).
+const HONDO_NUCLEO := 0.56
+
+
+func _copa_vieja(tipo: String) -> Dictionary:
+	var m: Dictionary = _malla_estilizada(tipo)
+	if nombre_perfil == "alto" or not perfil.get("gb_viejos_nucleo", true):
+		return {"copa": m["copa"], "nucleo": null}
+	var hondo: float = perfil.get("gb_hondo", HONDO_NUCLEO)
+	var clave := "vieja_%s_%s_%.2f" % [tipo, nombre_perfil, hondo]
+	if _mallas.has(clave):
+		return _mallas[clave]
+	var lob: Array = Arbol.TIPOS[tipo]["lobulos"]
+	var a: Array = m["copa"].surface_get_arrays(0)
+	var vs: PackedVector3Array = a[Mesh.ARRAY_VERTEX]
+	var quedan := PackedInt32Array()
+	for k in range(0, vs.size() - 5, 6):
+		var mata := k / 6
+		var l: Array = lob[mata % lob.size()]                  # arbol_estilizado.gd: la mata k va en el lóbulo k % n
+		var centro: Vector3 = (vs[k] + vs[k + 2]) * 0.5
+		if (centro - l[0]).length() / l[1] >= hondo:
+			for j in 6:
+				quedan.append(k + j)
+	var nuevo := []
+	nuevo.resize(Mesh.ARRAY_MAX)
+	for t in Mesh.ARRAY_MAX:
+		if a[t] == null or t == Mesh.ARRAY_INDEX:
+			continue
+		var por := 1
+		if t == Mesh.ARRAY_CUSTOM0:
+			por = 4
+		elif t == Mesh.ARRAY_TANGENT:
+			por = 4
+		var origen = a[t]
+		var dest = origen.duplicate()
+		dest.resize(quedan.size() * por)
+		for i in quedan.size():
+			for p in por:
+				dest[i * por + p] = origen[quedan[i] * por + p]
+		nuevo[t] = dest
+	var copa := ArrayMesh.new()
+	copa.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, nuevo, [], {}, Mesh.ARRAY_CUSTOM_RGBA_FLOAT << Mesh.ARRAY_FORMAT_CUSTOM0_SHIFT)
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	st.set_custom_format(0, SurfaceTool.CUSTOM_RGBA_FLOAT)
+	for l in lob:
+		var esf := SphereMesh.new()
+		esf.radius = l[1] * 0.62
+		esf.height = l[1] * 1.15
+		esf.radial_segments = 8
+		esf.rings = 4
+		var ea := esf.get_mesh_arrays()
+		var ev: PackedVector3Array = ea[Mesh.ARRAY_VERTEX]
+		var en: PackedVector3Array = ea[Mesh.ARRAY_NORMAL]
+		for i in ea[Mesh.ARRAY_INDEX]:
+			var ao := clampf(0.42 + 0.18 * (en[i].y * 0.5 + 0.5), 0.4, 0.6)
+			st.set_normal(en[i])
+			st.set_color(Color(ao, ao * 1.04, ao * 0.95))
+			st.set_custom(0, Color(l[0].x, l[0].y, l[0].z, l[1]))
+			st.add_vertex(l[0] + ev[i])
+	var res := {"copa": copa, "nucleo": st.commit()}
+	_mallas[clave] = res
+	return res
+
+
 func _arbol_viejo(c: Vector2, tipo: String, escala: float, giro: float) -> Node3D:
 	var pie := T.en_mundo(c) - Vector3(0, 0.1, 0)
 	var m: Dictionary = _malla_estilizada(tipo)
+	var cv := _copa_vieja(tipo)
 	var nodo := Node3D.new()
 	nodo.name = "ArbolViejo"
 	nodo.position = pie
@@ -671,9 +820,16 @@ func _arbol_viejo(c: Vector2, tipo: String, escala: float, giro: float) -> Node3
 	tronco.material_override = _mat_tronco
 	nodo.add_child(tronco)
 	var copa := MeshInstance3D.new()
-	copa.mesh = m["copa"]
+	copa.mesh = cv["copa"]
 	copa.material_override = _mat_hojas[tipo]
 	nodo.add_child(copa)
+	if cv["nucleo"] != null:
+		var nucleo := MeshInstance3D.new()
+		nucleo.name = "Nucleo"
+		nucleo.mesh = cv["nucleo"]
+		nucleo.material_override = _mat_copa_maciza["abedul" if tipo == "abedul" else "pradera"]
+		nucleo.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		nodo.add_child(nucleo)
 	if perfil.get("sombras", false) and perfil.get("arbol_sombra_simple", false):
 		copa.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		var s := MeshInstance3D.new()
@@ -807,11 +963,21 @@ func _crear_terreno() -> void:
 			st.add_index(a); st.add_index(a + 1); st.add_index(a + nx)
 			st.add_index(a + 1); st.add_index(a + nx + 1); st.add_index(a + nx)
 	st.generate_normals()
+	# bajo y medio: el grano (y el relieve del medio) con las UV del suelo (x, z · 0,25) en vez de triplanar: 1 lectura
+	# por textura en vez de 3 en toda la pantalla; el suelo es casi llano y el grano es un ruido suave (no se nota)
+	var plano: bool = nombre_perfil != "alto" and perfil.get("gb_suelo_plano", true)
+	if plano and perfil.get("relieve", true):       # tangentes solo para el relieve del medio (+40 ms en el PC)
+		st.generate_tangents()
 	var malla := st.commit()
 	var mi := MeshInstance3D.new()
 	mi.name = "Suelo"
 	mi.mesh = malla
-	mi.material_override = mat_detalle(Color.WHITE, 0.45, true, 0.5)
+	var ms := mat_detalle(Color.WHITE, 0.45, true, 0.5)
+	if plano:
+		ms.uv1_triplanar = false
+		ms.uv1_world_triplanar = false
+		ms.uv1_scale = Vector3.ONE * (0.45 / 0.25)
+	mi.material_override = ms
 	if nombre_perfil != "alto":                  # el suelo recibe sombra, no la da (salvo en alto: la loma del mirador)
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var cuerpo := StaticBody3D.new()
