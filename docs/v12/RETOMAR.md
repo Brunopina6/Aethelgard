@@ -269,3 +269,23 @@ negra).
   - **v646 validada en el Redmi:** el Gran Bosque no llegaba (27 en bajo, 14 en medio) y lo demás iba a 30 (`INFORME_REDMI_V12.md`, sexta prueba). Partida restaurada.
   - **Gran Bosque optimizado** (`e8f59cb`); APK v649 (`e8f59cb`) para medirlo.
   - La nota de arriba la escribió otra sesión (sin ADB) mientras tanto; se conserva.
+
+### Hito «Siguiente hito de calidad» (12/11, desde las 10:45; el Redmi, desconectado)
+
+- **Punto de recuperación:** etiqueta `v12-antes-hito-calidad` (= `a0bab37`).
+- **Estado comprobado:**
+  - HEAD `a0bab37`;
+  - el Gran Bosque optimizado en `e8f59cb`;
+  - la APK v649 (`e8f59cb`) existe, **sin instalar**; el Redmi tiene la v646.
+- **Música verificada:** las rutas reales son las tres canciones elegidas y los originales de `D:\REBELUM_musica\maestros` tienen el mismo SHA-256 que los de Descargas. Pruebas de música, título, clímax, portadas y foco: 8/8.
+- **En marcha:**
+
+| Trabajo | Copia · rama |
+|---|---|
+| Cargas sin esperas a ciegas (es el dueño de `carga.gd`, `recursos.gd`, la carga de `combate.gd` y `gusano.gd`) | `D:\Aethelgard_v12_cargas` · `claude/v12-hito-cargas` |
+| Pulir Bramavidrio (es el dueño de `enemigos/bramavidrio/**` y `combate_bramavidrio.gd`) | `D:\Aethelgard_v12_brama_pulido` · `claude/v12-hito-brama-pulido` |
+| Una interacción opcional del Mar de Cristal (es el dueño de `mision.gd`/`rincones.gd` y del enganche en `mar_cristal_3d.gd`) | `D:\Aethelgard_v12_mc_interaccion` · `claude/v12-hito-mc-interaccion` |
+
+- **Después:**
+  1. el encuentro nuevo del desierto (toca `combate.gd`), cuando acabe el de las cargas;
+  2. la validación en Android, cuando vuelva el Redmi.
