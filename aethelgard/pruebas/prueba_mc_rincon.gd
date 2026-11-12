@@ -421,6 +421,9 @@ func _variantes() -> void:
 						_fallo("6: sin Garon, Garon habla: %s" % e[1])
 			else:
 				await _esperar(60)                      # (con los retratos ya puestos: cortar en su entrada da errores de Dialogic)
+				# y con la frase ya escrita: si se corta mientras Dialogic la escribe, al acabarla mira un
+				# evento que ya no existe (is_question con índice -1); la prueba fallaba 1 de cada 3 veces
+				await _hasta(func(): return D.current_state == D.States.IDLE, 5.0)
 				D.end_timeline(true)                    # cortado a medias: el premio igual
 		await _esperar(10)
 		if not RC.visto() or Inv.cantidad("Poción") != pociones + RC.POCIONES:

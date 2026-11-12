@@ -19,6 +19,11 @@ extends SceneTree
 #    y rugir; la luz sigue a sus huesos
 #  - el encuadre propuesto para MODELOS de combate.gd (la cámara de _crear_rig_3d): qué clips caben en la ventana 3D
 
+# V12 (12/11, tarde): y la 4 («el Ancestral», enemigos/bramavidrio/v4/, fuente/crear_bramavidrio4.py): boca circular sin
+# mandíbula (esfínter y doce sectores con colmillos), presupuesto 18 000 / 8 000 / 3 500, y _comprobar_boca4: cerrada en
+# el reposo, abierta con fuerza al rugir y en el Aliento, cerrada en el mordisco, los colmillos pegados al labio en cada
+# fotograma y, desde la cámara del combate, el ORIGEN DEL CHORRO (el anclaje de la garganta) dentro de la boca en cada
+# fotograma de la descarga. «version=4» para solo esa.
 # V12 (12/11): hay TRES versiones; la 3 («el Excavador», enemigos/bramavidrio/v3/) se comprueba como la 2 y además su
 # boca fotograma a fotograma (_comprobar_boca: cerrada en reposo, nunca «de más», abierta con fuerza al rugir y en el
 # Aliento, cerrada en el mordisco) y que sus garras no patinan en el reposo. «version=3» para solo esa.
@@ -46,6 +51,16 @@ const DATOS_VERSION := {
 		"tris": [15197, 5528, 2430], "sin": ["mandibula_izq", "mandibula_der"],
 		"extra": ["ceja_izq", "ceja_der", "succion", "losa_1", "losa_2", "losa_3", "losa_4", "losa_5", "losa_6",
 			"hombro_izq", "codo_izq", "mano_izq", "hombro_der", "codo_der", "mano_der"],
+		"superficies": ["piel", "vidrio", "garganta", "arena", "chorro", "polvo"]},
+	# V12 (12/11): la 4, «el Ancestral» (enemigos/bramavidrio/v4/, fuente/crear_bramavidrio4.py): sin mandíbula; esfínter,
+	# anclaje del chorro y doce sectores de colmillos
+	4: {"carpeta": "res://enemigos/bramavidrio/v4/", "guion": "bramavidrio4_3d.gd", "json": "bramavidrio4_clips.json",
+		"glb": ["bramavidrio4.glb", "bramavidrio4_medio.glb", "bramavidrio4_bajo.glb"],
+		"tex": ["bramavidrio4_piel.webp", "bramavidrio4_piel_medio.webp", "bramavidrio4_piel_bajo.webp"],
+		"tris": [18000, 8000, 3500], "sin": ["mandibula", "mandibula_izq", "mandibula_der"],
+		"extra": ["esfinter", "garganta_ancla", "succion", "losa_1", "losa_2", "losa_3", "losa_4", "losa_5", "losa_6",
+			"labio_01", "labio_02", "labio_03", "labio_04", "labio_05", "labio_06", "labio_07", "labio_08", "labio_09",
+			"labio_10", "labio_11", "labio_12"],
 		"superficies": ["piel", "vidrio", "garganta", "arena", "chorro", "polvo"]},
 }
 var VER := 1
@@ -99,7 +114,7 @@ func _esperar(n: int) -> void:
 
 
 func _correr() -> void:
-	var lista := [1, 2, 3]
+	var lista := [1, 2, 3, 4]
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("version="):
 			lista = [int(a.get_slice("=", 1))]
@@ -137,6 +152,9 @@ func _comprobar_interruptor() -> void:
 		Engine.set_meta("bramavidrio_version", 3)
 		_ok(V.version() == 3 and V.modelo().ends_with("bramavidrio3.glb") and V.guion().ends_with("bramavidrio3_3d.gd"),
 			"con la meta a 3: %s" % V.guion())
+		Engine.set_meta("bramavidrio_version", 4)
+		_ok(V.version() == 4 and V.modelo().ends_with("bramavidrio4.glb") and V.guion().ends_with("bramavidrio4_3d.gd"),
+			"con la meta a 4: %s" % V.guion())
 		Engine.set_meta("bramavidrio_version", 9)
 		_ok(V.version() == V.VERSION_DEFECTO, "una versión que no existe usa la de por defecto (%d)" % V.version())
 		_ok(V.elegir("res://enemigos/bramavidrio/bramavidrio_3d.gd") == V.guion() and V.elegir("res://zarzalin_3d.gd") == "res://zarzalin_3d.gd",
@@ -149,6 +167,7 @@ func _comprobar_interruptor() -> void:
 		_ok(V.version() == 2, "la meta manda sobre Ajustes")
 		Engine.remove_meta("bramavidrio_version")
 		_ok(V.elegir_en_ajustes(3) == OK and V.en_ajustes() == 3 and V.version() == 3, "Ajustes a «Prueba v3»: versión %d" % V.version())
+		_ok(V.elegir_en_ajustes(4) == OK and V.en_ajustes() == 4 and V.version() == 4, "Ajustes a «Prueba v4»: versión %d" % V.version())
 		_ok(V.elegir_en_ajustes(2) == OK and V.version() == 2, "Ajustes a «Nuevo»: versión %d" % V.version())
 		if cfg_antes == "":
 			DirAccess.remove_absolute(ProjectSettings.globalize_path("user://ajustes.cfg"))
@@ -210,6 +229,9 @@ func _comprobar_glb(v: String, datos: Dictionary) -> void:
 	if VER >= 2:                                                  # v2 y v3: la succión y las placas del suelo (escala)
 		quietos.append_array(["succion", "losa_1", "losa_2", "losa_3", "losa_4", "losa_5", "losa_6"])
 		de_datos.append_array(["succion", "losa_1", "losa_6"])
+	if VER >= 4:                                                  # v4: el anclaje va con la cabeza; el esfínter escala
+		quietos.append_array(["garganta_ancla", "esfinter"])
+		de_datos.append("esfinter")
 	for c in lista:
 		var a := ap.get_animation(c)
 		var giran := {}
@@ -297,11 +319,17 @@ func _comprobar_clips(ap: AnimationPlayer, sk: Skeleton3D) -> void:
 	for c in ["subterraneo", "aviso"]:
 		_ok(_escala_max(ap.get_animation(c), "monticulo") < 0.05, "%s: sin montículo (está bajo la arena)" % c)
 	var ru := ap.get_animation("rugido")
-	var k_lat := _pista(ru, "mandibula_izq" if VER < 3 else "mandibula", Animation.TYPE_ROTATION_3D)
-	var giro_lat := 0.0
-	if k_lat >= 0:
-		giro_lat = rad_to_deg(ru.rotation_track_interpolate(k_lat, 0.0).angle_to(ru.rotation_track_interpolate(k_lat, 1.2)))
-	_ok(giro_lat > (25.0 if VER < 3 else 40.0), "rugido: %s se abre (%.1f°)" % ["las mandíbulas laterales" if VER < 3 else "la boca", giro_lat])
+	if VER >= 4:                                                  # v4: el esfínter se abre (su escala, de 0,02 a 1)
+		var ke := _pista(ru, "esfinter", Animation.TYPE_SCALE_3D)
+		var e0 := ru.scale_track_interpolate(ke, 0.0).x if ke >= 0 else 1.0
+		var e1 := ru.scale_track_interpolate(ke, 1.2).x if ke >= 0 else 0.0
+		_ok(e0 < 0.05 and e1 > 0.95, "rugido: la boca circular se abre (esfínter %.2f → %.2f)" % [e0, e1])
+	else:
+		var k_lat := _pista(ru, "mandibula_izq" if VER < 3 else "mandibula", Animation.TYPE_ROTATION_3D)
+		var giro_lat := 0.0
+		if k_lat >= 0:
+			giro_lat = rad_to_deg(ru.rotation_track_interpolate(k_lat, 0.0).angle_to(ru.rotation_track_interpolate(k_lat, 1.2)))
+		_ok(giro_lat > (25.0 if VER < 3 else 40.0), "rugido: %s se abre (%.1f°)" % ["las mandíbulas laterales" if VER < 3 else "la boca", giro_lat])
 	var g := _escala_max(ap.get_animation("ataque_aliento"), "garganta")
 	_ok(g > 2.0, "ataque_aliento: la garganta se enciende (escala máx. %.2f)" % g)
 	if VER >= 2:
@@ -326,6 +354,10 @@ func _comprobar_clips(ap: AnimationPlayer, sk: Skeleton3D) -> void:
 				var ru2 := ap.get_animation("rugido")
 				giro_al = rad_to_deg(ru2.rotation_track_interpolate(ap_lat, 0.55).angle_to(ru2.rotation_track_interpolate(ap_lat, 1.0)))
 			_ok(giro_al > 30.0, "rugido: las aletas del cuello se abren (%.1f°)" % giro_al)
+		elif VER >= 4:                                       # v4: las crestas se erizan al rugir
+			var kp := _pista(ru, "placa_04", Animation.TYPE_ROTATION_3D)
+			var eriza := 0.0 if kp < 0 else rad_to_deg(ru.rotation_track_interpolate(kp, 0.55).angle_to(ru.rotation_track_interpolate(kp, 0.8)))
+			_ok(eriza > 20.0, "v4, rugido: las crestas se erizan (%.1f°)" % eriza)
 		else:                                                # v3: el ceño se frunce al atacar
 			var at := ap.get_animation("ataque")
 			var kc := _pista(at, "ceja_izq", Animation.TYPE_ROTATION_3D)
@@ -472,10 +504,12 @@ func _comprobar_guion() -> void:
 		await _esperar(12)
 	if VER == 3:
 		await _comprobar_boca(g)
+	if VER >= 4:
+		await _comprobar_boca4(g)
 	# en el combate el chorro 3D se esconde (salía hacia la cámara; lo dibuja combate_bramavidrio.gd); en la
 	# exploración, sí se ve (coordinador, 11/11)
-	if g.en_exploracion:
-		_ok(visto[0] > 0.8, "aliento: en la exploración el chorro no se ve (fuerza máx. %.2f)" % visto[0])
+	if g.en_exploracion or VER >= 4:                  # v4: el chorro 3D va por dentro, de la garganta a la boca: se ve
+		_ok(visto[0] > 0.8, "aliento: el chorro 3D se ve (fuerza máx. %.2f)" % visto[0])
 	else:
 		_ok(visto[0] < 0.01, "aliento: en el combate se ve el chorro 3D, que sale hacia la cámara (fuerza máx. %.2f)" % visto[0])
 	await _esperar(12)
@@ -585,6 +619,94 @@ func _comprobar_boca(g: Node3D) -> void:
 	print("   apertura máxima por clip (°): %s" % str(max_abierta))
 	_ok(max_abierta["rugido"] > 40.0 and max_abierta["ataque_aliento"] > 40.0,
 		"la boca se abre con fuerza al rugir (%.1f°) y en el Aliento (%.1f°)" % [max_abierta["rugido"], max_abierta["ataque_aliento"]])
+	g.anim.speed_scale = 1.0
+	g.reposo()
+	await _esperar(3)
+
+
+# v4 (12/11): la boca circular, medida en cada fotograma de cada clip con el modelo de verdad:
+#  - reposo: CERRADA en todo el bucle (la entrada de la garganta a menos de 3 cm de radio) y nunca «invertida»
+#  - se abre con fuerza al rugir y en el Aliento (> 40° nominales: el esfínter > 0,66) y está cerrada en el mordisco
+#  - los colmillos de los doce sectores, pegados al labio que tienen debajo (sin piezas sueltas: < 5 mm)
+#  - desde la cámara del combate (la de _crear_rig_3d: ortográfica, 12° desde arriba; el gusano mirando a los héroes),
+#    el ORIGEN DEL CHORRO (el anclaje de la garganta) cae DENTRO de la boca en cada fotograma de la descarga (1,85 a
+#    2,6 s): dentro del collar y dentro de la entrada del embudo, y el chorro 3D sale de él
+func _comprobar_boca4(g: Node3D) -> void:
+	print("-- v4: la boca circular, los sectores y el origen del chorro, fotograma a fotograma")
+	g._eventos = []
+	g._espera = []
+	var max_abierta := {}
+	var min_apertura := {}
+	var peor_holgura := 0.0
+	var peor_reposo := 0.0
+	var ang := deg_to_rad(12.0)
+	var cam_pos := g.global_position + Vector3(0, CENTRO_Y + sin(ang) * 6.0, cos(ang) * 6.0)
+	var adelante := (Vector3(0, CENTRO_Y, 0) - Vector3(0, CENTRO_Y + sin(ang) * 6.0, cos(ang) * 6.0)).normalized()
+	var derecha := adelante.cross(Vector3.UP).normalized()
+	var arriba := derecha.cross(adelante).normalized()
+	var en_pantalla := func(p: Vector3) -> Vector2: return Vector2((p - cam_pos).dot(derecha), (p - cam_pos).dot(arriba))
+	var fotos_descarga := 0
+	var fuera_collar := 0
+	var fuera_entrada := 0
+	var peor_ratio := 0.0
+	var chorro_desde_garganta := 0
+	for c in CLIPS:
+		g._clip = c
+		g.anim.play(c, 0.0)
+		g.anim.speed_scale = 0.0
+		var largo: float = g.anim.get_animation(c).length
+		var t := 0.0
+		max_abierta[c] = 0.0
+		min_apertura[c] = INF
+		while t <= largo + 0.001:
+			g.anim.seek(t, true)
+			g.anim.advance(0.0)
+			var ab: float = g.angulo_boca()
+			max_abierta[c] = maxf(max_abierta[c], ab)
+			min_apertura[c] = minf(min_apertura[c], g.apertura())
+			if c == "reposo":
+				peor_reposo = maxf(peor_reposo, g.abertura_boca())
+			for k in g.N_SECTORES:
+				peor_holgura = maxf(peor_holgura, g.holgura_colmillo(k))
+			if c == "ataque" and absf(t - 1.0) < 0.001:
+				_ok(g.abertura_boca() < 0.05, "embestida: en el mordisco (1,0 s) la boca está cerrada (entrada %.3f m)" % g.abertura_boca())
+			if c == "ataque_aliento" and t >= 1.85 - 0.001 and t <= 2.6 + 0.001:
+				fotos_descarga += 1
+				var o: Vector2 = en_pantalla.call(g.origen_chorro())
+				var collar := PackedVector2Array()
+				for q in g.borde_boca(32):
+					collar.append(en_pantalla.call(q))
+				var entrada := PackedVector2Array()
+				for q in g.borde_boca(32, true):
+					entrada.append(en_pantalla.call(q))
+				if not Geometry2D.is_point_in_polygon(o, collar):
+					fuera_collar += 1
+				if not Geometry2D.is_point_in_polygon(o, entrada):
+					fuera_entrada += 1
+				var cen := Vector2.ZERO
+				for q in entrada:
+					cen += q
+				cen /= entrada.size()
+				var r_ent := 0.0
+				for q in entrada:
+					r_ent += q.distance_to(cen) / entrada.size()
+				peor_ratio = maxf(peor_ratio, o.distance_to(cen) / maxf(r_ent, 0.0001))
+				# el chorro 3D sale del anclaje: el hueso «chorro» está en el mismo sitio y apunta a la boca
+				var ic: int = g.skel.find_bone("chorro")
+				var p_ch: Vector3 = g.skel.global_transform * g.skel.get_bone_global_pose(ic).origin
+				if p_ch.distance_to(g.origen_chorro()) < 0.01 and g.direccion_chorro().dot(g.boca() - g.origen_chorro()) > 0.0:
+					chorro_desde_garganta += 1
+			t += DT
+	print("   apertura máxima por clip (° nominales): %s" % str(max_abierta))
+	_ok(peor_reposo < 0.03 and max_abierta["reposo"] < 2.0, "reposo: la boca CERRADA en todo el bucle (entrada %.4f m, %.2f°)" % [peor_reposo, max_abierta["reposo"]])
+	var invertida := CLIPS.filter(func(x): return min_apertura[x] < 0.015)
+	_ok(invertida.is_empty(), "ningún clip cierra de más (el esfínter nunca baja de 0,015: %s)" % str(invertida))
+	_ok(max_abierta["rugido"] > 40.0 and max_abierta["ataque_aliento"] > 40.0,
+		"la boca se abre con fuerza al rugir (%.1f°) y en el Aliento (%.1f°)" % [max_abierta["rugido"], max_abierta["ataque_aliento"]])
+	_ok(peor_holgura < 0.005, "los colmillos de los 12 sectores siguen al labio en todos los clips (holgura máx. %.4f m)" % peor_holgura)
+	_ok(fotos_descarga >= 20 and fuera_collar == 0, "Aliento: el origen del chorro cae dentro de la boca (collar) en los %d fotogramas de la descarga (fuera: %d)" % [fotos_descarga, fuera_collar])
+	_ok(fuera_entrada == 0, "Aliento: y dentro de la entrada de la garganta (fuera: %d; peor distancia al centro / radio %.2f)" % [fuera_entrada, peor_ratio])
+	_ok(chorro_desde_garganta == fotos_descarga, "Aliento: el chorro 3D nace en el anclaje y sale hacia la boca (%d de %d)" % [chorro_desde_garganta, fotos_descarga])
 	g.anim.speed_scale = 1.0
 	g.reposo()
 	await _esperar(3)

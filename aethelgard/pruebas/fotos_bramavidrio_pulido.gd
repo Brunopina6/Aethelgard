@@ -2,7 +2,7 @@ extends SceneTree
 # Bramavidrio, pulido (12/11; informe docs/memory/agents/animaciones_v12_bramavidrio_pulido.md). Con ventana: combates
 # de verdad que CORREN (no congelados) desde la cámara real del combate fijo «mc_bramavidrio» (grupo 13, Kael, Lya y
 # Garon, la interfaz), con la versión y el perfil pedidos. No toca el combate ni el modelo: solo mira y saca fotos.
-#   --script res://pruebas/fotos_bramavidrio_pulido.gd -- salida=<carpeta> version=<1|2|3> perfil=<bajo|medio|alto>
+#   --script res://pruebas/fotos_bramavidrio_pulido.gd -- salida=<carpeta> version=<1|2|3|4> perfil=<bajo|medio|alto>
 #        [movil]        (efectos y resolución del teléfono)  [sin_fotos] (solo las medidas)  [solo=1,2,3] (combates)
 # Combate 1, «secuencia»: reposo, dos Embestidas, el aviso y la Fractura (defendida), el Aliento (defendido: succión,
 #   descarga, barrido), los héroes atacándole, la derrota y la victoria. La vida del gusano la ajusta esta herramienta
@@ -281,7 +281,7 @@ func _puntos() -> PackedVector3Array:
 	var sk: Skeleton3D = zp.skel if "skel" in zp else null
 	if sk == null:
 		return pts
-	var nombres := ["cabeza", "mandibula", "mano_izq", "mano_der"]
+	var nombres := ["cabeza", "mandibula", "mano_izq", "mano_der", "esfinter", "garganta_ancla"]   # (v4: la boca)
 	for i in range(1, 19):
 		nombres.append("col_%02d" % i)
 	for n in nombres:

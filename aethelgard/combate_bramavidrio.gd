@@ -1257,7 +1257,7 @@ func _empezar_succion() -> void:
 	if sonido("succion") == "brama_succion":           # V12, sonido: sigue aspirando en bucle (lo corta _parar_succion)
 		c.sonido_pedido.emit(BUCLE_SUCCION)
 		Sonido.efecto(BUCLE_SUCCION, {"en": self})
-	var boca := _boca()
+	var boca := _origen_chorro()                        # V12, v4: la arena converge hacia DENTRO de la boca (la garganta)
 	var n := _efecto("succion", boca, 0.0)               # lo borra _parar_succion
 	var puntos := _puntos_suelo(boca)
 	succion = _emisor(n, {"n": 70, "n_movil": 26, "vida": 1.0, "una_vez": false, "forma": "puntos", "puntos": puntos,
@@ -1298,7 +1298,7 @@ func _seguir_boca() -> void:
 	var n := succion.get_parent() as Node2D
 	if n == null:
 		return
-	var b := _boca()
+	var b := _origen_chorro()
 	if b.distance_squared_to(n.position) < 1.0:
 		return
 	n.position = b
@@ -1383,6 +1383,8 @@ func _chorro_barrido(vivos: Array) -> void:
 		u.append(float(i + 1) / float(camino.size() - 1))
 	chorro = _efecto("chorro", Vector2.ZERO, 3.0)
 	var curva := [Vector2(0, 0.3), Vector2(0.55, 0.88), Vector2(1, 1)]
+	if _desde_garganta():                                # V12, v4: nace estrecho en la garganta y se abre al salir
+		curva = [Vector2(0, 0.12), Vector2(0.2, 0.42), Vector2(0.55, 0.88), Vector2(1, 1)]
 	var sombra: Line2D = null                            # (en el móvil, sin sombra ni rayas: menos relleno para la GPU)
 	if not c.movil:
 		sombra = _banda(chorro, 380.0, curva,                        # su sombra en el suelo: lo separa del fondo
@@ -1407,7 +1409,7 @@ func _chorro_barrido(vivos: Array) -> void:
 	frente.modulate = Color(0.78, 0.6, 0.38, 0.8)
 	frente.scale = Vector2.ONE * 1.8
 	chorro.add_child(frente)
-	var boca := _boca()
+	var boca := _origen_chorro()
 	var dir0 := (camino[0] - boca).normalized()
 	var rayas := _emisor(chorro, {"n": 90, "n_movil": 32, "vida": 0.42, "una_vez": false, "segundos": 0.75,
 		"pos": boca, "radio": 30.0, "dir": dir0, "apertura": 8.0, "vel": Vector2(1500, 2100), "escala": Vector2(0.7, 1.3),
@@ -1439,7 +1441,7 @@ func _actualizar_chorro(delta: float) -> void:
 	b["t"] += delta
 	var t: float = b["t"] / b["dur"]
 	var u := clampf(t, 0.0, 1.0)
-	var boca := _boca()
+	var boca := _origen_chorro()
 	var punta := _en_camino(b["camino"], u)
 	var dir := (punta - boca).normalized()
 	var normal := Vector2(-dir.y, dir.x)
@@ -1525,6 +1527,20 @@ func _caida_cuerpo() -> void:
 
 
 # ================================================================= puntos de la escena
+
+# V12, Bramavidrio v4 (animaciones, 12/11): el chorro del Aliento y la succión NACEN EN LA GARGANTA. Si el modelo da su
+# anclaje (origen_chorro(): el hueso garganta_ancla, dentro de la garganta, que sigue la animación, la orientación y la
+# escala), se usa su proyección con la cámara del combate; si no (v1, v2, v3), la boca de siempre.
+func _desde_garganta() -> bool:
+	var p = c._p3d(f)
+	return p != null and f.has("cam3d") and p.has_method("origen_chorro")
+
+
+func _origen_chorro() -> Vector2:
+	if not _desde_garganta():
+		return _boca()
+	return _en_escena(c._p3d(f).origen_chorro())
+
 
 func _boca() -> Vector2:
 	var p = c._p3d(f)

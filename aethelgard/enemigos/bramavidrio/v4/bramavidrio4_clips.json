@@ -1,0 +1,819 @@
+{
+ "fps": 30,
+ "variante": "ancestral",
+ "huesos": [
+  "raiz",
+  "col_18",
+  "col_17",
+  "col_16",
+  "col_15",
+  "col_14",
+  "col_13",
+  "col_12",
+  "col_11",
+  "col_10",
+  "col_09",
+  "col_08",
+  "col_07",
+  "col_06",
+  "col_05",
+  "col_04",
+  "col_03",
+  "col_02",
+  "col_01",
+  "cabeza",
+  "esfinter",
+  "garganta",
+  "garganta_ancla",
+  "chorro",
+  "succion",
+  "brillo",
+  "monticulo",
+  "labio_01",
+  "labio_02",
+  "labio_03",
+  "labio_04",
+  "labio_05",
+  "labio_06",
+  "labio_07",
+  "labio_08",
+  "labio_09",
+  "labio_10",
+  "labio_11",
+  "labio_12",
+  "placa_02",
+  "placa_03",
+  "placa_04",
+  "placa_05",
+  "placa_06",
+  "placa_07",
+  "placa_08",
+  "placa_09",
+  "placa_10",
+  "placa_11",
+  "placa_12",
+  "placa_13",
+  "placa_14",
+  "placa_15",
+  "placa_16",
+  "placa_17",
+  "losa_1",
+  "losa_2",
+  "losa_3",
+  "losa_4",
+  "losa_5",
+  "losa_6"
+ ],
+ "clips": {
+  "reposo": {
+   "duracion": 3.0,
+   "bucle": true,
+   "instantes": {},
+   "altura": 9.085,
+   "cabeza_delante": 9.356,
+   "boca_max": 0.0,
+   "abertura_max_reposo_m": 0.018
+  },
+  "subterraneo": {
+   "duracion": 2.0,
+   "bucle": true,
+   "instantes": {},
+   "boca_max": 0.0,
+   "abertura_max_reposo_m": 0.018
+  },
+  "aviso": {
+   "duracion": 1.6,
+   "bucle": false,
+   "instantes": {
+    "vibracion": 0.1,
+    "fin_vibracion": 1.2
+   },
+   "boca_max": 0.0,
+   "abertura_max_reposo_m": 0.018
+  },
+  "emerger": {
+   "duracion": 2.8,
+   "bucle": false,
+   "instantes": {
+    "rompe_arena": 0.2333,
+    "pico": 0.8667,
+    "erguido": 2.45
+   },
+   "boca_max": 33.8,
+   "abertura_max_reposo_m": 0.018
+  },
+  "rugido": {
+   "duracion": 2.6,
+   "bucle": false,
+   "instantes": {
+    "inicio_rugido": 0.55,
+    "pico_rugido": 0.8,
+    "fin_rugido": 1.9
+   },
+   "boca_max": 67.53,
+   "abertura_max_reposo_m": 0.018
+  },
+  "ataque": {
+   "duracion": 2.3,
+   "bucle": false,
+   "instantes": {
+    "anticipacion": 0.2,
+    "fijado": 0.55,
+    "impacto": 1.0
+   },
+   "alcance": 11.186,
+   "altura_impacto": 1.461,
+   "boca_max": 56.82,
+   "abertura_max_reposo_m": 0.018
+  },
+  "ataque_sismico": {
+   "duracion": 3.8,
+   "bucle": false,
+   "instantes": {
+    "erguido": 1.0,
+    "rugido": 1.15,
+    "caida": 2.1,
+    "impacto": 2.5333,
+    "placas_suelo": 2.5333,
+    "placas_asientan": 3.1,
+    "placas_fin": 3.65
+   },
+   "alcance": 11.563,
+   "altura_max": 12.361,
+   "hocico_impacto": [
+    0.0,
+    -11.563
+   ],
+   "boca_max": 62.0,
+   "abertura_max_reposo_m": 0.018
+  },
+  "ataque_aliento": {
+   "duracion": 3.6,
+   "bucle": false,
+   "instantes": {
+    "apertura": 0.3,
+    "inicio_succion": 0.45,
+    "carga_max": 1.6,
+    "fin_succion": 1.7,
+    "descarga": 1.85,
+    "fin_descarga": 2.6
+   },
+   "alcance": 18.404,
+   "boca_max": 66.0,
+   "abertura_max_reposo_m": 0.018
+  },
+  "herida": {
+   "duracion": 1.0,
+   "bucle": false,
+   "instantes": {
+    "golpe": 0.1
+   },
+   "boca_max": 18.0,
+   "abertura_max_reposo_m": 0.018
+  },
+  "derrota": {
+   "duracion": 3.4,
+   "bucle": false,
+   "instantes": {
+    "dolor": 0.5,
+    "caida": 1.6,
+    "apagado": 3.0
+   },
+   "boca_max": 52.0,
+   "abertura_max_reposo_m": 0.018
+  }
+ },
+ "triangulos": {
+  "alto": 13659,
+  "medio": 7146,
+  "bajo": 3474
+ },
+ "texturas": {
+  "alto": "bramavidrio4_piel.webp",
+  "medio": "bramavidrio4_piel_medio.webp",
+  "bajo": "bramavidrio4_piel_bajo.webp"
+ },
+ "ajustes": {
+  "emerger_ua": -3.8,
+  "emerger_alto": 0.85,
+  "derrota_dz": -0.6,
+  "sismico_dz": 2.115
+ },
+ "losas_centro": [
+  0.0,
+  -10.263
+ ],
+ "puntos": {
+  "hocico": [
+   0.0,
+   0.0,
+   2.65
+  ],
+  "boca": [
+   0.0,
+   0.0,
+   2.45
+  ],
+  "garganta": [
+   0.0,
+   0.0,
+   0.15
+  ],
+  "esfinter": [
+   0.0,
+   0.0,
+   1.356
+  ]
+ },
+ "boca_v4": {
+  "r_labio": 2.3,
+  "r_boca": 0.9,
+  "r_colmillo": 1.55,
+  "s_min": 0.02,
+  "t_cierre": 0.85,
+  "boca_abierta": 60.0,
+  "pend": 0.7813,
+  "peso_colmillo": 0.31741,
+  "sectores": 12
+ },
+ "esfinter": {
+  "paso_radial_minimo_m": 0.00133,
+  "hueco_colmillo_labio_max_m": 0.0,
+  "radio_abertura_cerrada_m": 0.018,
+  "radio_abertura_abierta_m": 0.9,
+  "colmillos_cerrada_radio_punta_m": 0.515
+ },
+ "garganta_desde_camara": {
+  "max_collar": 0.531,
+  "max_entrada": 0.62,
+  "angulo_max": 28.0,
+  "fotogramas": [
+   {
+    "s": 1.833,
+    "angulo_vista": 21.7,
+    "collar": 0.398,
+    "entrada": 0.463
+   },
+   {
+    "s": 1.867,
+    "angulo_vista": 22.4,
+    "collar": 0.412,
+    "entrada": 0.45
+   },
+   {
+    "s": 1.9,
+    "angulo_vista": 21.3,
+    "collar": 0.39,
+    "entrada": 0.426
+   },
+   {
+    "s": 1.933,
+    "angulo_vista": 22.5,
+    "collar": 0.415,
+    "entrada": 0.454
+   },
+   {
+    "s": 1.967,
+    "angulo_vista": 23.7,
+    "collar": 0.439,
+    "entrada": 0.482
+   },
+   {
+    "s": 2.0,
+    "angulo_vista": 22.9,
+    "collar": 0.422,
+    "entrada": 0.465
+   },
+   {
+    "s": 2.033,
+    "angulo_vista": 22.3,
+    "collar": 0.41,
+    "entrada": 0.452
+   },
+   {
+    "s": 2.067,
+    "angulo_vista": 23.5,
+    "collar": 0.435,
+    "entrada": 0.482
+   },
+   {
+    "s": 2.1,
+    "angulo_vista": 24.8,
+    "collar": 0.462,
+    "entrada": 0.513
+   },
+   {
+    "s": 2.133,
+    "angulo_vista": 23.9,
+    "collar": 0.443,
+    "entrada": 0.495
+   },
+   {
+    "s": 2.167,
+    "angulo_vista": 22.6,
+    "collar": 0.416,
+    "entrada": 0.466
+   },
+   {
+    "s": 2.2,
+    "angulo_vista": 23.8,
+    "collar": 0.44,
+    "entrada": 0.496
+   },
+   {
+    "s": 2.233,
+    "angulo_vista": 26.2,
+    "collar": 0.492,
+    "entrada": 0.557
+   },
+   {
+    "s": 2.267,
+    "angulo_vista": 26.6,
+    "collar": 0.5,
+    "entrada": 0.568
+   },
+   {
+    "s": 2.3,
+    "angulo_vista": 24.8,
+    "collar": 0.463,
+    "entrada": 0.528
+   },
+   {
+    "s": 2.333,
+    "angulo_vista": 24.3,
+    "collar": 0.452,
+    "entrada": 0.518
+   },
+   {
+    "s": 2.367,
+    "angulo_vista": 26.1,
+    "collar": 0.49,
+    "entrada": 0.564
+   },
+   {
+    "s": 2.4,
+    "angulo_vista": 27.6,
+    "collar": 0.523,
+    "entrada": 0.604
+   },
+   {
+    "s": 2.433,
+    "angulo_vista": 27.2,
+    "collar": 0.514,
+    "entrada": 0.596
+   },
+   {
+    "s": 2.467,
+    "angulo_vista": 26.6,
+    "collar": 0.501,
+    "entrada": 0.583
+   },
+   {
+    "s": 2.5,
+    "angulo_vista": 27.3,
+    "collar": 0.516,
+    "entrada": 0.602
+   },
+   {
+    "s": 2.533,
+    "angulo_vista": 28.0,
+    "collar": 0.531,
+    "entrada": 0.62
+   },
+   {
+    "s": 2.567,
+    "angulo_vista": 27.2,
+    "collar": 0.514,
+    "entrada": 0.601
+   },
+   {
+    "s": 2.6,
+    "angulo_vista": 26.6,
+    "collar": 0.501,
+    "entrada": 0.586
+   }
+  ]
+ },
+ "triangulos_por_parte": {
+  "alto": {
+   "cuerpo": 2136,
+   "armadura": 3332,
+   "cresta": 1386,
+   "vela": 264,
+   "craneo": 1170,
+   "collar": 480,
+   "labio": 1344,
+   "garganta": 336,
+   "cuerno": 240,
+   "marco": 266,
+   "diente": 1550,
+   "colmillo": 552,
+   "suelo": 275,
+   "chorro": 168,
+   "succion": 160
+  },
+  "medio": {
+   "cuerpo": 848,
+   "armadura": 1768,
+   "cresta": 572,
+   "vela": 176,
+   "craneo": 626,
+   "collar": 360,
+   "labio": 576,
+   "garganta": 252,
+   "cuerno": 180,
+   "marco": 154,
+   "diente": 725,
+   "colmillo": 492,
+   "suelo": 193,
+   "chorro": 112,
+   "succion": 112
+  },
+  "bajo": {
+   "cuerpo": 350,
+   "armadura": 918,
+   "cresta": 162,
+   "vela": 48,
+   "craneo": 266,
+   "collar": 200,
+   "labio": 200,
+   "garganta": 140,
+   "cuerno": 120,
+   "marco": 154,
+   "diente": 390,
+   "colmillo": 240,
+   "suelo": 138,
+   "chorro": 84,
+   "succion": 64
+  }
+ },
+ "intersecciones": {
+  "reposo": [
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 0.0,
+    "total": 0
+   },
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 0.75,
+    "total": 0
+   },
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 1.5,
+    "total": 0
+   },
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 2.25,
+    "total": 0
+   }
+  ],
+  "rugido": [
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 0.5,
+    "total": 0
+   },
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 0.8,
+    "total": 0
+   },
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 1.2,
+    "total": 0
+   },
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 1.9,
+    "total": 0
+   },
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 2.0,
+    "total": 0
+   },
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 2.1,
+    "total": 0
+   },
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 2.2,
+    "total": 0
+   }
+  ],
+  "ataque": [
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 0.55,
+    "total": 0
+   },
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 0.85,
+    "total": 0
+   },
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 0.9,
+    "total": 0
+   },
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 0.95,
+    "total": 0
+   },
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 1.0,
+    "total": 0
+   },
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 1.3,
+    "total": 0
+   }
+  ],
+  "ataque_sismico": [
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 1.2,
+    "total": 0
+   },
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 2.0,
+    "total": 0
+   },
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 2.5333,
+    "total": 0
+   },
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 3.0,
+    "total": 0
+   }
+  ],
+  "ataque_aliento": [
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 0.2,
+    "total": 0
+   },
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 0.4,
+    "total": 0
+   },
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 1.2,
+    "total": 0
+   },
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 1.7,
+    "total": 0
+   },
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 1.9,
+    "total": 0
+   },
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 2.4,
+    "total": 0
+   },
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 3.0,
+    "total": 0
+   },
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 3.3,
+    "total": 0
+   }
+  ],
+  "herida": [
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 0.05,
+    "total": 0
+   },
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 0.1,
+    "total": 0
+   },
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 0.4,
+    "total": 0
+   }
+  ],
+  "derrota": [
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 0.5,
+    "total": 0
+   },
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 1.6,
+    "total": 0
+   },
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 3.4,
+    "total": 0
+   }
+  ],
+  "emerger": [
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 0.9,
+    "total": 0
+   },
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 1.2,
+    "total": 0
+   },
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 1.6,
+    "total": 0
+   },
+   {
+    "colmillos_entre_si": 0,
+    "colmillo_labio": 0,
+    "colmillo_dientes": 0,
+    "colmillo_cabeza": 0,
+    "dientes_labio": 0,
+    "s": 2.0,
+    "total": 0
+   }
+  ]
+ }
+}
