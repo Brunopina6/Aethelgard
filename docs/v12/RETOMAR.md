@@ -220,3 +220,10 @@ negra).
     - las claves `negra_*` de `sonido.gd`;
     - el botón del taller arcano en `menus.gd` y su título en `alquimia_menu.gd`;
     - que la tabla de afinidades se aplique a las 12 magias de siempre: lo decide el usuario.
+- **03:00:**
+  - **Oakhaven 3D completo y por defecto** (`9f02435`; batería **124 · 0 · 55 · 0**).
+  - **Modelos de enemigos integrados SIN enganchar** (`cc3557d`; parche en `pruebas/herramientas/parche_enemigos_v12.gd`). Hay que aplicarlo en `combate.gd` detrás de un interruptor después de integrar el grupo. Gorthor nuevo es más sencillo que el actual: no sustituir sin comparación.
+  - **En marcha:**
+    - el grupo con reserva y Naira (`D:\Aethelgard_v12_grupo`);
+    - el sonido de la magia negra (`D:\Aethelgard_v12_sonido_magia`);
+    - el Gran Bosque Verde 3D (`D:\Aethelgard_v12_gran_bosque`, desde `cc3557d`).
