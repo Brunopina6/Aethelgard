@@ -415,7 +415,8 @@ static func restaurar(d: Dictionary) -> String:
 		# V12: con Oakhaven 3D en uso (por defecto desde el 12/11), esa versión, por la Puerta del Sur
 		var oak3d: String = load("res://modo3d.gd").escena_equivalente("res://ciudad_oakhaven.tscn")
 		return oak3d if oak3d != "" else "res://ciudad_oakhaven.tscn"
-	var en_3d: String = load("res://modo3d.gd").escena_equivalente(escena)
+	# V12, Gran Bosque Verde: la zona generada de un lugar con versión 3D (zona.tscn y el lugar 1) también (modo3d.gd)
+	var en_3d: String = load("res://modo3d.gd").escena_equivalente(escena, indice_lugar)
 	if en_3d != "":
 		return en_3d
 	if escena != MAPA:

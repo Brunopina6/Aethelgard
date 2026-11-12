@@ -121,6 +121,8 @@ static func contexto_de(e: Node) -> String:
 			return "pradera_musica" if musica_pastos_elegida() else "pradera"   # V12: la música nueva, si se eligió
 		"res://zonas3d/mar_cristal_3d.tscn":                     # V12: el Mar de Cristal (la tormenta la pide clima.gd)
 			return "mar_cristal"
+		"res://zonas3d/gran_bosque_3d.tscn":                     # V12, fase D: el Gran Bosque Verde 3D, el ambiente del bosque de la 2D
+			return "bosque"
 		"res://ciudad_oakhaven.tscn", "res://zonas3d/oakhaven_3d.tscn":   # Oakhaven hecha a mano (T-089) y la 3D (T-103): el ambiente
 			return "ciudad"                            # de las ciudades, como la Oakhaven generada (sus sonidos: fuente_2d)
 		"res://zona.tscn":

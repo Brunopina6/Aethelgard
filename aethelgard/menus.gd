@@ -649,6 +649,24 @@ func _pintar_ajustes() -> void:
 			fo.add_child(bo)
 		cuerpo.add_child(fo)
 		cuerpo.add_child(_texto("Se nota la próxima vez que se entra en Oakhaven.", 16, COLOR_SUAVE))
+		# --- V12, migración del Gran Bosque Verde (12/11) --- el bosque 3D va por defecto y la 2D de siempre se puede
+		# elegir (modo3d.gd, POR_DEFECTO_2D_ELEGIBLE), como la Garganta y Oakhaven.
+		var b3d: bool = m3d.region_activa(m3d.GRAN_BOSQUE)
+		cuerpo.add_child(_texto("Gran Bosque Verde", 26, COLOR_TITULO))
+		var fb := HBoxContainer.new()
+		fb.add_theme_constant_override("separation", 8)
+		for op in [[true, "3D"], [false, "2D (la de siempre)"]]:
+			var en_3d: bool = op[0]
+			var bb := _boton(("● " if en_3d == b3d else "○ ") + op[1], 18, Vector2(240, 34),
+				"granbosque:%s" % ("3d" if en_3d else "2d"))
+			bb.pressed.connect(func():
+				m3d.elegir("granbosque3d", en_3d)
+				Sonido.efecto("ui_tic")
+				_pintar_de_nuevo())
+			fb.add_child(bb)
+		cuerpo.add_child(fb)
+		cuerpo.add_child(_texto("Se nota la próxima vez que se entra en el Gran Bosque.", 16, COLOR_SUAVE))
+		# --- fin del bloque del Gran Bosque Verde ---
 		# El Mar de Cristal (V12), en pruebas: el primer sector del Mar de Arena de Calid en 3D.
 		var mc3d: bool = m3d.elegida("mardecristal")
 		cuerpo.add_child(_texto("Mar de Arena de Calid", 26, COLOR_TITULO))

@@ -23,17 +23,25 @@ const PASTOS_VERDES := 10                     # índice del lugar en el mapa (ma
 const GARGANTA := 2                           # índice del lugar en el mapa (mapa.gd, INDICE_GARGANTA)
 const OAKHAVEN := 0                           # índice del lugar en el mapa (ciudades/oakhaven.gd, INDICE; T-103)
 const MAR_CRISTAL := 4                        # el Mar de Arena de Calid (mapa.gd); su primer sector, el Mar de Cristal (V12)
+const GRAN_BOSQUE := 1                        # V12, migración del Gran Bosque Verde (12/11): mapa.gd, LUGARES[1]
 const REGIONES := {PASTOS_VERDES: "res://zonas3d/pastos_verdes_3d.tscn",
 	GARGANTA: "res://zonas3d/garganta_3d.tscn", OAKHAVEN: "res://zonas3d/oakhaven_3d.tscn",
-	MAR_CRISTAL: "res://zonas3d/mar_cristal_3d.tscn"}
+	MAR_CRISTAL: "res://zonas3d/mar_cristal_3d.tscn", GRAN_BOSQUE: "res://zonas3d/gran_bosque_3d.tscn"}
 const EN_PRUEBAS := {MAR_CRISTAL: "mardecristal"}  # región → argumento que hace falta para usarla
 # Región → [clave de Ajustes (y argumento que fuerza la 3D), argumento que fuerza la 2D]. La clave es la misma que
 # cuando la región estaba en pruebas: la elección de quien ya había elegido algo se conserva.
 # V12, migración de Oakhaven (12/11): Oakhaven 3D completa (vecinos, misiones, cofres, secretos, notas, gremio, tienda,
 # parejas, colina, crematorio, torre y ronda) va por defecto; la 2D, elegible con «oakhaven3d» = false u «oakhaven2d».
-const POR_DEFECTO_2D_ELEGIBLE := {GARGANTA: ["garganta3d", "garganta2d"], OAKHAVEN: ["oakhaven3d", "oakhaven2d"]}
+# V12, migración del Gran Bosque Verde (12/11): el bosque 3D (el mismo trazado que la zona generada, con sus cofres, el
+# detalle, los hallazgos y los encuentros) va por defecto; la 2D, elegible con «granbosque3d» = false o «granbosque2d».
+const POR_DEFECTO_2D_ELEGIBLE := {GARGANTA: ["garganta3d", "garganta2d"], OAKHAVEN: ["oakhaven3d", "oakhaven2d"],
+	GRAN_BOSQUE: ["granbosque3d", "granbosque2d"]}
 # Escenas 2D que tienen versión 3D: una partida guardada dentro de la 2D vuelve a la 3D si esta se usa (escena_equivalente).
 const EQUIVALENTES := {"res://garganta.tscn": GARGANTA, "res://ciudad_oakhaven.tscn": OAKHAVEN}
+# V12, Gran Bosque: lugares cuya 2D es la zona generada (zona.tscn, la misma escena para varios lugares): la equivalencia
+# va por el índice del lugar de la partida («lugar»), no por la ruta.
+const ZONA_2D := "res://zona.tscn"
+const EQUIVALENTES_ZONA := [GRAN_BOSQUE]
 
 
 static func activo() -> bool:
@@ -105,12 +113,16 @@ static func escena_de(indice: int) -> String:
 # la posición equivalente («pos_3d»), o "" si no hay que cambiar nada. Pensado para progreso.gd (restaurar), después de
 # poner la partida en Engine: así una partida con la Garganta 2D a medias sigue en la 3D, en el sitio equivalente, y la
 # 2D no se cuela. La escena 3D convierte la posición (posicion_desde_2d); sin posición, se entra por el principio.
-static func escena_equivalente(escena: String) -> String:
-	if not EQUIVALENTES.has(escena):
+static func escena_equivalente(escena: String, lugar := -1) -> String:
+	var es_zona := escena == ZONA_2D and lugar in EQUIVALENTES_ZONA    # V12, Gran Bosque: la zona generada de ese lugar
+	if not EQUIVALENTES.has(escena) and not es_zona:
 		# Al revés (V12): una partida guardada en la 3D de una región que va en 3D por defecto, con la 2D elegida en
 		# Ajustes: la 2D, por su entrada (pos_zona_ok = false; los trazados no se corresponden casilla a casilla).
-		for e2 in EQUIVALENTES:
-			var i2: int = EQUIVALENTES[e2]
+		var de_2d := EQUIVALENTES.duplicate()
+		for iz in EQUIVALENTES_ZONA:                          # V12, Gran Bosque: su 2D es zona.tscn con su lugar
+			de_2d[ZONA_2D + "#%d" % iz] = iz
+		for e2 in de_2d:
+			var i2: int = de_2d[e2]
 			if POR_DEFECTO_2D_ELEGIBLE.has(i2) and REGIONES.get(i2, "") == escena and activo() and not region_activa(i2):
 				Engine.set_meta("pos_zona_ok", false)
 				# V12, Oakhaven: con el mismo trazado en las dos, la escena 3D sabe qué casilla de la 2D es (posicion_a_2d)
@@ -122,9 +134,12 @@ static func escena_equivalente(escena: String) -> String:
 					Engine.set_meta("pos_zona_ok", true)
 					Engine.set_meta("pos_zona_lugar", i2)
 				Engine.set_meta("pos_3d_ok", false)
+				if String(e2).begins_with(ZONA_2D):               # zona.tscn sabe qué lugar es por Engine «lugar»
+					_lugar_zona(i2)
+					return ZONA_2D
 				return e2
 		return ""
-	var indice: int = EQUIVALENTES[escena]
+	var indice: int = lugar if es_zona else EQUIVALENTES[escena]
 	var ruta := escena_de(indice)
 	if ruta == "":
 		return ""
@@ -137,3 +152,13 @@ static func escena_equivalente(escena: String) -> String:
 	else:
 		Engine.set_meta("pos_3d_ok", false)
 	return ruta
+
+
+# V12, Gran Bosque: el «lugar» de Engine que zona.tscn necesita (como lo deja mapa.gd al entrar), si la partida no lo trae.
+static func _lugar_zona(indice: int) -> void:
+	var l = Engine.get_meta("lugar", {})
+	if l is Dictionary and int(l.get("indice", -1)) == indice:
+		return
+	var m: Dictionary = load("res://mapa.gd").LUGARES[indice]
+	Engine.set_meta("lugar", {"indice": indice, "nombre": m["nombre"], "tipo": m["tipo"],
+		"zona": load("res://mapa.gd").ZONA_LUGAR[indice], "texto": m["texto"]})
