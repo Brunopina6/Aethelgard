@@ -4,9 +4,13 @@ extends "res://prototipos/vista3d.gd"
 #   la Puerta del Sur (Aldric, con su diálogo de siempre) → la Calle Mayor → la Plaza del Tapiz → la Calle del Cuervo →
 #   la Taberna del Cuervo Oxidado, que se recorre por dentro, con la posadera y sus servicios (dormir, comer, rumores:
 #   ciudades/oakhaven_posada.gd) → y vuelta a la calle y al mapa.
-# El resto de la ciudad se ve (los modelos de gráficos, T-089) pero sus vecinos, misiones y cofres siguen en la 2D hasta
-# el siguiente tramo. Solo se llega con la exploración 3D activa y con «oakhaven3d» (argumento o Ajustes; modo3d.gd,
-# EN_PRUEBAS): sin eso, el mapa sigue llevando a la ciudad 2D, que se queda como alternativa.
+# V12 (12/11), Oakhaven 3D COMPLETA y por defecto con la exploración 3D (la 2D, elegible en Ajustes u «oakhaven2d»;
+# modo3d.gd, POR_DEFECTO_2D_ELEGIBLE): la geografía que faltaba (oakhaven/barrios.gd: muralla, Torre de la Campana y
+# ronda en alto, la colina con el crematorio y el jardín de urnas, el callejón con la grieta y el Patio de las Velas) y
+# todos los sistemas de la 2D con sus mismos datos y claves (oakhaven/vida3d.gd: los vecinos con su diálogo y su rutina,
+# las cuatro misiones, los encargos, los 4 cofres, los secretos y las vistas, las piezas, las 5 notas, los detalles de
+# canon, los hallazgos, el gremio, la tienda, las parejas y el brazalete). Sin ellos (Engine «oakhaven_sin_vida»), el
+# primer tramo de antes.
 # Contrato de región (como la Garganta 3D): guardado automático al entrar, al pausar o cerrar la app (guardar_posicion),
 # Dialogic, grupo detrás de Kael, salida al mapa y partidas antiguas (posicion_desde_2d, modo3d.escena_equivalente).
 
@@ -16,6 +20,11 @@ const Vida := preload("res://ciudades/oakhaven_vida.gd")
 const Ciudad := preload("res://zonas3d/oakhaven/ciudad.gd")
 const Sala := preload("res://zonas3d/oakhaven/posada3d.gd")
 const Distrito := preload("res://zonas3d/oakhaven/distrito.gd")   # V10: el distrito de los oficios, junto a la plaza
+# V12, Oakhaven 3D completo (migración región a región): la geografía que faltaba (muralla, torre y ronda en alto, colina,
+# crematorio, callejón y Patio de las Velas…) y los sistemas de la 2D (vecinos con rutina, misiones, cofres, piezas,
+# notas, gremio, tienda, parejas). Sin ellos (Engine «oakhaven_sin_vida»), el tramo de antes, con el Aldric de primitivas.
+const Barrios := preload("res://zonas3d/oakhaven/barrios.gd")
+const Vida3D := preload("res://zonas3d/oakhaven/vida3d.gd")
 const Materiales := preload("res://zonas3d/garganta/materiales.gd")
 const Progreso := preload("res://progreso.gd")
 
@@ -31,6 +40,7 @@ const BARKS_DIST := 7.0                    # a menos de esto, la taberna «se oy
 # Zonas de cámara: [x0, x1, z0, z1, inclinación, distancia mínima, distancia máxima]
 const CAMARA_CIUDAD := [52.0, 12.0, 19.0]       # más desde arriba: las casas del sur no tapan la calle
 const CAMARA_POSADA := [52.0, 9.0, 12.0]
+const CAMARA_RONDA := [62.0, 9.0, 11.0]          # V12: en el adarve de la ronda (en alto)
 
 var brillo_sin_sombras := 1.17              # V12: vista3d.gd, el perfil bajo sin sombras (medido alto/bajo ×1,18)
 var perfil: Dictionary = {}
@@ -39,6 +49,9 @@ var mat: Materiales
 var ciudad                                 # zonas3d/oakhaven/ciudad.gd
 var sala                                   # zonas3d/oakhaven/posada3d.gd
 var distrito                               # zonas3d/oakhaven/distrito.gd (null sin él)
+var barrios                                # V12: zonas3d/oakhaven/barrios.gd (null sin él)
+var vida                                   # V12: zonas3d/oakhaven/vida3d.gd (null sin él)
+var _veces_posadera := 0
 var grupo: Node3D
 var capa_ui: CanvasLayer
 var fundido: ColorRect
@@ -68,7 +81,11 @@ func _ready() -> void:
 	super()
 	info.visible = false
 	_crear_interfaz()
-	_crear_aldric()
+	if Engine.has_meta("oakhaven_sin_vida"):
+		_crear_aldric()                                        # el tramo de antes (T-103)
+	else:
+		vida = Vida3D.crear(self, barrios, mat)
+	_lugar_oakhaven()
 	var vuelve: bool = Engine.get_meta("pos_3d_ok", false) and Engine.get_meta("pos_3d_lugar", -1) == INDICE \
 		and Engine.get_meta("pos_3d", null) is Vector3
 	_colocar_kael(Engine.get_meta("pos_3d") if vuelve else INICIO)
@@ -80,6 +97,11 @@ func _ready() -> void:
 		dg.timeline_ended.connect(_al_terminar_dialogo)
 	Engine.set_meta("zona", "ciudad")
 	_sonido_3d()
+	if vida != null:                                           # V12: lo que suena en la ciudad 2D, en su sitio
+		Sonido.fuente_3d(self, "plaza_murmullo", Vector3(Oak.PLAZA.x, 1.0, Oak.PLAZA.y))
+		Sonido.fuente_3d(self, "fuente_plaza", Vector3(Oak.PLAZA.x, 0.8, Oak.PLAZA.y))
+		Sonido.fuente_3d(self, "mercado_murmullo", Vector3(54.0, 1.0, 29.5))
+		Sonido.efecto("campana", {"retraso": 1.5})
 	_titulo_zona("Oakhaven")
 	if not en_banco():
 		Progreso.guardar(scene_file_path)                      # guardado automático al entrar (como zona.gd)
@@ -87,6 +109,16 @@ func _ready() -> void:
 
 func en_banco() -> bool:
 	return Engine.has_meta("banco_proto")
+
+
+# V12: la tienda y lo demás que mira el lugar (tienda.gd, Engine «lugar») saben que esto es Oakhaven aunque se entre sin
+# pasar por el mapa (una partida, una prueba).
+func _lugar_oakhaven() -> void:
+	var l = Engine.get_meta("lugar", {})
+	if l is Dictionary and int(l.get("indice", -1)) == INDICE:
+		return
+	var m: Dictionary = load("res://mapa.gd").LUGARES[INDICE]
+	Engine.set_meta("lugar", {"indice": INDICE, "nombre": m["nombre"], "tipo": m["tipo"], "zona": "ciudad", "texto": m["texto"]})
 
 
 # ================================================================= mundo
@@ -129,6 +161,8 @@ func _crear_escenario() -> void:
 	ciudad = Ciudad.new(self, mat, perfil, nombre_perfil)
 	ciudad.construir()
 	distrito = Distrito.crear(self, ciudad, mat, perfil, nombre_perfil)
+	if not Engine.has_meta("oakhaven_sin_vida"):
+		barrios = Barrios.crear(self, ciudad, mat, perfil, nombre_perfil)
 	sala = Sala.new(self, mat, perfil)
 	sala.construir()
 
@@ -146,6 +180,11 @@ func _prohibido(p: Vector3) -> bool:
 		return false
 	if p.x < 0.8 or p.x > Oak.TAM.x - 0.8 or p.z < 0.8 or p.z > Oak.TAM.y - 0.1:
 		return true
+	if barrios != null:                                        # V12: en alto, solo el adarve de la ronda
+		if barrios.prohibido(p):
+			return true
+		if Barrios.en_alto(p):
+			return false
 	return ciudad.bloqueado(p.x, p.z, 0.3)
 
 
@@ -158,29 +197,52 @@ func _dist_plana(a: Vector3, b: Vector3) -> float:
 static func posicion_desde_2d(px: Vector2) -> Vector3:
 	var c := px / 64.0                                          # zona.gd: T = 64 píxeles por casilla
 	var p := Vector3(clampf(c.x, 1.0, Oak.TAM.x - 1.0), 0.0, clampf(c.y, 1.0, Oak.TAM.y - 0.5))
-	if Ciudad.lugar_en(p.x, p.z) == "":
+	var en_ronda: bool = Barrios.RONDA_ALTA.has_point(Vector2(p.x, p.z))
+	if Ciudad.lugar_en(p.x, p.z) == "" and not en_ronda:
 		return Vector3(Oak.PLAZA.x, 0.0, Oak.PLAZA.y + 3.0)       # no es una calle (un edificio, un jardín): la plaza
+	if en_ronda:                                              # V12: la ronda va en alto (y su adarve, algo más adentro)
+		return Vector3(clampf(p.x, Barrios.ADARVE.position.x + 0.4, Barrios.ADARVE.end.x - 0.4), Barrios.ALTO_RONDA,
+			clampf(p.z, Barrios.ADARVE.position.y + 0.4, Barrios.ADARVE.end.y - 0.4))
+	p.y = Barrios.altura(p.x, p.z)                            # V12: el altozano de la colina y su subida
 	return p
+
+
+# V12 (al revés): una posición de la 3D → su casilla en la Oakhaven 2D (en píxeles, «pos_zona»). Lo usa
+# modo3d.escena_equivalente para una partida guardada en la 3D con la 2D elegida: el mismo trazado, la misma casilla (si
+# allí no se puede estar en la 2D, la 2D pone a Kael en la Puerta del Sur).
+static func posicion_a_2d(p: Vector3) -> Vector2:
+	if Sala.en_sala(p):
+		p = PUERTA_TABERNA + Vector3(0, 0, 0.5)
+	return Vector2(clampf(p.x, 1.0, Oak.TAM.x - 1.0), clampf(p.z, 1.0, Oak.TAM.y - 0.5)) * 64.0
 
 
 # ================================================================= Kael, cámara y grupo
 
 func _colocar_kael(p: Vector3) -> void:
+	if barrios != null and not Sala.en_sala(p) and not Barrios.en_alto(p):
+		p.y = Barrios.altura(p.x, p.z)                         # V12: en la colina, sobre el altozano (no debajo)
 	kael.global_position = p
 	seguro = p
 	foco = p
 	destino = null
-	var z: Array = CAMARA_POSADA if Sala.en_sala(p) else (distrito.camara(p, CAMARA_CIUDAD) if distrito != null else CAMARA_CIUDAD)
+	var z: Array = CAMARA_POSADA if Sala.en_sala(p) else _zona_camara(p)
 	inclinacion = z[0]
 	distancia = clampf(_dist_jugador, z[1], z[2])
 	_dist_puesta = distancia
 	_colocar_camara(1.0)
 
 
+# V12: en la ronda, más cerca y desde más arriba (a 52° y 12-19 m la cámara quedaba dentro de la Torre de la Campana).
+func _zona_camara(p: Vector3) -> Array:
+	if barrios != null and Barrios.en_alto(p):
+		return CAMARA_RONDA
+	return distrito.camara(p, CAMARA_CIUDAD) if distrito != null else CAMARA_CIUDAD
+
+
 func _camara_zona(delta: float) -> void:
 	if absf(distancia - _dist_puesta) > 0.0001:
 		_dist_jugador = clampf(_dist_jugador + distancia - _dist_puesta, DIST_MIN, DIST_MAX)
-	var z: Array = CAMARA_POSADA if en_posada else (distrito.camara(kael.global_position, CAMARA_CIUDAD) if distrito != null else CAMARA_CIUDAD)
+	var z: Array = CAMARA_POSADA if en_posada else _zona_camara(kael.global_position)
 	var k := 1.0 - exp(-2.2 * delta)
 	inclinacion = lerpf(inclinacion, z[0], k)
 	distancia = lerpf(distancia, clampf(_dist_jugador, z[1], z[2]), k)
@@ -214,7 +276,7 @@ func _parar_kael() -> void:
 func ocupado() -> bool:
 	var dg = get_node_or_null("/root/Dialogic")
 	return cambiando or (panel_servicios != null and panel_servicios.visible) or (dg != null and dg.current_timeline != null) \
-		or (distrito != null and distrito.ocupado())
+		or (distrito != null and distrito.ocupado()) or (vida != null and vida.ocupado())
 
 
 # El panel del prototipo trae bancos de medida de Pastos Verdes: aquí solo CAL y RND.
@@ -277,6 +339,16 @@ func _voces(delta: float) -> void:
 				_mostrar_aviso("%s: «%s»" % [v["nombre"], texto], Vida.duracion(texto))
 				_t_voz = Vida.duracion(texto) + 4.0
 				return
+	# V12: los vecinos también dicen algo al pasar cerca (oakhaven_vida.gd, como en la 2D), uno cada vez y con su pausa
+	if vida != null and (vida.avisos.is_empty()):
+		for e in vida.vecinos_cerca(kael.global_position, Vida.RADIO):
+			var texto: String = Vida.frase(e[0], franja, voz_dichos)
+			vida.callar(e[0], Vida.PAUSA_QUIEN)
+			if texto != "":
+				voz_dichos[texto] = true
+				_mostrar_aviso("%s: «%s»" % [Oak.npc(e[0]).get("corto", e[0]), texto], Vida.duracion(texto))
+				_t_voz = Vida.duracion(texto) + Vida.PAUSA
+				return
 	_t_voz = 1.0
 
 
@@ -284,8 +356,12 @@ func _piezas_al_alcance() -> Array:
 	if en_posada:
 		return [["posadera", Sala.ORIGEN + Sala.MOSTRADOR, 1.6, "Hablar con la posadera"],
 			["salir_posada", Sala.ORIGEN + Sala.PUERTA - Vector3(0, 0, 0.6), 1.3, "Salir a la calle"]]
-	return [["aldric", ALDRIC, 2.2, "Hablar con Aldric"],
-		["posada", PUERTA_TABERNA, RADIO_ACCION, "Entrar en la posada"]] + (distrito.piezas() if distrito != null else [])
+	var r: Array = [["posada", PUERTA_TABERNA, RADIO_ACCION, "Entrar en la posada"]]
+	if vida == null:
+		r.append(["aldric", ALDRIC, 2.2, "Hablar con Aldric"])
+	else:
+		r.append_array(vida.piezas())                          # V12: vecinos, cofres, piezas, notas, detalles…
+	return r + (distrito.piezas() if distrito != null else [])
 
 
 func _comprobar_cerca() -> void:
@@ -293,6 +369,8 @@ func _comprobar_cerca() -> void:
 	var mejor := INF
 	for pz in _piezas_al_alcance():
 		var d := _dist_plana(kael.global_position, pz[1])
+		if absf(kael.global_position.y - (pz[1] as Vector3).y) > Vida3D.ALTO_ALCANCE:
+			continue                                           # V12: lo de la ronda no se usa desde abajo (ni al revés)
 		if d < pz[2] and d < mejor:
 			mejor = d
 			cerca = pz[0]
@@ -318,7 +396,7 @@ func _accion() -> void:
 		return
 	_bloqueo = 0.4
 	match cerca:
-		"aldric":
+		"aldric" when vida == null:
 			_hablar_aldric()
 		"posada":
 			_entrar_posada()
@@ -327,7 +405,9 @@ func _accion() -> void:
 		"posadera":
 			_abrir_servicios()
 		_:
-			if distrito != null:
+			if vida != null and vida.atiende(cerca):
+				vida.accion(cerca)                         # V12: lo de la ciudad 2D (vida3d.gd)
+			elif distrito != null:
 				distrito.accion(cerca)                     # los oficios y el pozo del distrito
 
 
@@ -444,6 +524,15 @@ func _abrir_servicios() -> void:
 	titulo.add_theme_font_size_override("font_size", 28)
 	caja.add_child(titulo)
 	var primero: Button = null
+	if vida != null:                                         # V12: hablar con ella (sus favores, como en la 2D)
+		var bh := Button.new()
+		bh.text = "Hablar"
+		bh.add_theme_font_size_override("font_size", 24)
+		bh.custom_minimum_size = Vector2(420, 56)
+		bh.set_meta("servicio", "hablar")
+		bh.pressed.connect(_hablar_posadera)
+		caja.add_child(bh)
+		primero = bh
 	for s in Posada.servicios():
 		var b := Button.new()
 		var precio: int = int(s.get("precio", 0))
@@ -472,6 +561,14 @@ func _cerrar_servicios() -> void:
 	_bloqueo = 0.4
 
 
+# V12: «Hablar» con la posadera (ciudades/oakhaven.gd: lo de «Tres favores para el Cuervo» primero; si no, se turnan).
+func _hablar_posadera() -> String:
+	_cerrar_servicios()
+	var r: String = vida.hablar_posadera(_veces_posadera) if vida != null else ""
+	_veces_posadera += 1
+	return r
+
+
 # Un servicio de la posadera (ciudades/oakhaven_posada.gd): dormir, comer o un rumor. Devuelve lo que pasó (las pruebas).
 func _servicio(id: String) -> Dictionary:
 	var r: Dictionary = {}
@@ -482,6 +579,9 @@ func _servicio(id: String) -> Dictionary:
 				_cerrar_servicios()
 				await _fundir(func():
 					franja = "manana"                 # ha amanecido: los vecinos lo notan (oakhaven_vida.gd)
+					if vida != null:                  # V12: y van a su sitio de la mañana (la misma hora que la 2D)
+						vida.franja_t = 0.0
+						vida.poner_franja("manana", true)
 					voz_dichos.clear(), 1.0)
 				_mostrar_aviso(r["texto"], 3.0)
 				var dg = get_node_or_null("/root/Dialogic")
@@ -535,7 +635,10 @@ func _sonido_3d() -> void:
 func suelo_de_pasos(p: Vector3) -> String:
 	if Sala.en_sala(p):
 		return "madera"
-	return "piedra" if Ciudad.lugar_en(p.x, p.z) != "" else "hierba"
+	if Barrios.en_alto(p):
+		return "piedra"                                       # V12: el adarve de la ronda
+	var l := Ciudad.lugar_en(p.x, p.z)
+	return "piedra" if l != "" and not l in ["colina", "raices", "jardin_urnas"] else "hierba"
 
 
 # ================================================================= interfaz

@@ -45,9 +45,8 @@ static func avisos(region: Node, textos: Array, desde: float, dura := DURA_AVISO
 		if cuando <= 0.0:
 			region._mostrar_aviso(t, dura)
 		else:
-			region.get_tree().create_timer(cuando).timeout.connect(func():
-				if is_instance_valid(region):
-					region._mostrar_aviso(t, dura))
+			# (un método de la región, no una lambda que la guarde: si se sale antes, la conexión se va con ella; V12, Oakhaven)
+			region.get_tree().create_timer(cuando).timeout.connect(region._mostrar_aviso.bind(t, dura))
 
 
 # La nota más cercana a «p» dentro de «radio» (en planta, con la altura parecida), o {}. Cada nota, un diccionario con
@@ -77,10 +76,8 @@ static func leer_nota(region: Node, nota: Dictionary) -> bool:
 	if not Progreso.ver_nota(d["id"]):
 		return false
 	var nombre: String = d["nombre"]
-	region.get_tree().create_timer(TRAS_NOTA).timeout.connect(func():
-		if is_instance_valid(region):
-			_sonido(region, "pagina")
-			region._mostrar_aviso("Nueva nota en el Diario: «%s»" % nombre, 2.4))
+	region.get_tree().create_timer(TRAS_NOTA).timeout.connect(region._mostrar_aviso.bind("Nueva nota en el Diario: «%s»" % nombre, 2.4))
+	_sonido(region, "pagina", {"retraso": TRAS_NOTA})
 	_guardar(region)
 	return true
 

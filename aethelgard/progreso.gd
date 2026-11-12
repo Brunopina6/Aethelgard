@@ -411,7 +411,9 @@ static func restaurar(d: Dictionary) -> String:
 	var indice_lugar: int = int(lugar.get("indice", -1)) if lugar is Dictionary else -1
 	if escena == "res://zona.tscn" and indice_lugar == 0 and ResourceLoader.exists("res://ciudad_oakhaven.tscn"):
 		Engine.set_meta("pos_zona_ok", false)
-		return "res://ciudad_oakhaven.tscn"
+		# V12: con Oakhaven 3D en uso (por defecto desde el 12/11), esa versión, por la Puerta del Sur
+		var oak3d: String = load("res://modo3d.gd").escena_equivalente("res://ciudad_oakhaven.tscn")
+		return oak3d if oak3d != "" else "res://ciudad_oakhaven.tscn"
 	var en_3d: String = load("res://modo3d.gd").escena_equivalente(escena)
 	if en_3d != "":
 		return en_3d

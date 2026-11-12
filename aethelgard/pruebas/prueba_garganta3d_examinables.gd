@@ -126,7 +126,8 @@ func _elegir() -> void:
 			_fallo("0: la Garganta 3D %s debería estar %s" % [c[3], "activa" if c[2] else "apagada (va la 2D)"])
 	if M3.EN_PRUEBAS.has(M3.GARGANTA):
 		_fallo("0: la Garganta sigue en EN_PRUEBAS")
-	for k in [M3.OAKHAVEN, M3.MAR_CRISTAL]:                # las demás regiones en pruebas, como estaban
+	for k in [M3.MAR_CRISTAL]:                             # las demás regiones en pruebas, como estaban (Oakhaven va
+	                                                       # por defecto desde el 12/11: prueba_oakhaven3d_completo)
 		if M3.region_activa_con(k, PackedStringArray(["3d"]), false):
 			_fallo("0: la región %d ya no está en pruebas" % k)
 	if FileAccess.file_exists(AJUSTES):

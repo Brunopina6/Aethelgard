@@ -10,13 +10,14 @@ extends RefCounted
 # combate y vuelta con escena_retorno, Dialogic, menús, guardado automático y salida al mapa.
 #
 # Regiones en pruebas (EN_PRUEBAS): existen y se pueden jugar, pero solo con su argumento o elegidas en Ajustes (hoy
-# Oakhaven 3D y el Mar de Cristal).
+# el Mar de Cristal; Oakhaven 3D lo estuvo hasta el 12/11).
 # Regiones por defecto con la 2D elegible (POR_DEFECTO_2D_ELEGIBLE; V12, fase 2, migración región a región): la 3D va
 # por defecto y la 2D de siempre se puede elegir en Ajustes. Desde el 12/11, la Garganta del Diablo: sin nada en
 # user://ajustes.cfg, la 3D; con [regiones] garganta3d = false (quien eligió «2D (la de siempre)»), la 2D, como antes.
-# Argumentos para las pruebas: «garganta3d» fuerza la 3D y «garganta2d», la 2D (el primero manda).
+# Argumentos para las pruebas: «garganta3d» fuerza la 3D y «garganta2d», la 2D (el primero manda). Desde el 12/11 también
+# Oakhaven («oakhaven3d» / «oakhaven2d», la misma clave de Ajustes que tenía en pruebas).
 # Una partida guardada en una de ellas abre la versión en uso: la de la 2D, la 3D en el sitio equivalente
-# (escena_equivalente); la de la 3D con la 2D elegida, la 2D por su entrada.
+# (escena_equivalente); la de la 3D con la 2D elegida, la 2D por su entrada (Oakhaven, en la misma casilla: posicion_a_2d).
 
 const PASTOS_VERDES := 10                     # índice del lugar en el mapa (mapa.gd, LUGAR_PASTOS)
 const GARGANTA := 2                           # índice del lugar en el mapa (mapa.gd, INDICE_GARGANTA)
@@ -25,10 +26,12 @@ const MAR_CRISTAL := 4                        # el Mar de Arena de Calid (mapa.g
 const REGIONES := {PASTOS_VERDES: "res://zonas3d/pastos_verdes_3d.tscn",
 	GARGANTA: "res://zonas3d/garganta_3d.tscn", OAKHAVEN: "res://zonas3d/oakhaven_3d.tscn",
 	MAR_CRISTAL: "res://zonas3d/mar_cristal_3d.tscn"}
-const EN_PRUEBAS := {OAKHAVEN: "oakhaven3d", MAR_CRISTAL: "mardecristal"}  # región → argumento que hace falta para usarla
+const EN_PRUEBAS := {MAR_CRISTAL: "mardecristal"}  # región → argumento que hace falta para usarla
 # Región → [clave de Ajustes (y argumento que fuerza la 3D), argumento que fuerza la 2D]. La clave es la misma que
 # cuando la región estaba en pruebas: la elección de quien ya había elegido algo se conserva.
-const POR_DEFECTO_2D_ELEGIBLE := {GARGANTA: ["garganta3d", "garganta2d"]}
+# V12, migración de Oakhaven (12/11): Oakhaven 3D completa (vecinos, misiones, cofres, secretos, notas, gremio, tienda,
+# parejas, colina, crematorio, torre y ronda) va por defecto; la 2D, elegible con «oakhaven3d» = false u «oakhaven2d».
+const POR_DEFECTO_2D_ELEGIBLE := {GARGANTA: ["garganta3d", "garganta2d"], OAKHAVEN: ["oakhaven3d", "oakhaven2d"]}
 # Escenas 2D que tienen versión 3D: una partida guardada dentro de la 2D vuelve a la 3D si esta se usa (escena_equivalente).
 const EQUIVALENTES := {"res://garganta.tscn": GARGANTA, "res://ciudad_oakhaven.tscn": OAKHAVEN}
 
@@ -110,6 +113,14 @@ static func escena_equivalente(escena: String) -> String:
 			var i2: int = EQUIVALENTES[e2]
 			if POR_DEFECTO_2D_ELEGIBLE.has(i2) and REGIONES.get(i2, "") == escena and activo() and not region_activa(i2):
 				Engine.set_meta("pos_zona_ok", false)
+				# V12, Oakhaven: con el mismo trazado en las dos, la escena 3D sabe qué casilla de la 2D es (posicion_a_2d)
+				var g3 = load(escena.get_basename() + ".gd")
+				var sabe := g3 is Script and (g3 as Script).get_script_method_list().any(func(m): return m["name"] == "posicion_a_2d")
+				if sabe and Engine.get_meta("pos_3d_ok", false) \
+						and int(Engine.get_meta("pos_3d_lugar", -1)) == i2 and Engine.get_meta("pos_3d", null) is Vector3:
+					Engine.set_meta("pos_zona", g3.posicion_a_2d(Engine.get_meta("pos_3d")))
+					Engine.set_meta("pos_zona_ok", true)
+					Engine.set_meta("pos_zona_lugar", i2)
 				Engine.set_meta("pos_3d_ok", false)
 				return e2
 		return ""

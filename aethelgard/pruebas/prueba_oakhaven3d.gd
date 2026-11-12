@@ -50,8 +50,11 @@ func _mal(t: String) -> void:
 func _comprobar_modo3d() -> void:
 	if not M.region_activa_con(0, PackedStringArray(["3d", "oakhaven3d"]), false):
 		_mal("Oakhaven 3D no está activa con «3d oakhaven3d»")
-	if M.region_activa_con(0, PackedStringArray(["3d"]), false):
-		_mal("Oakhaven 3D se usa sin «oakhaven3d» (debe seguir la 2D)")
+	# V12, migración de Oakhaven (12/11): la 3D va por defecto y la 2D se elige con «oakhaven2d» (o en Ajustes)
+	if not M.region_activa_con(0, PackedStringArray(["3d"]), false):
+		_mal("Oakhaven 3D no va por defecto con la exploración 3D")
+	if M.region_activa_con(0, PackedStringArray(["3d", "oakhaven2d"]), false):
+		_mal("con «oakhaven2d» sigue la 3D (debe ser la 2D)")
 	if M.region_activa_con(0, PackedStringArray([]), false):
 		_mal("Oakhaven 3D se usa sin la exploración 3D")
 	Engine.set_meta("pos_zona", Vector2(40.0 * 64.0, 29.0 * 64.0))      # una partida guardada en la plaza de la 2D

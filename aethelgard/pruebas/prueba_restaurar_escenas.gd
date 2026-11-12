@@ -13,8 +13,10 @@ var fallos: Array = []
 func _initialize() -> void:
 	var P = load("res://progreso.gd")
 	var r: String = P.restaurar({"escena_guardada": "res://zona.tscn", "lugar": {"indice": 0, "nombre": "Oakhaven", "tipo": "ciudad", "zona": "ciudad", "texto": "x"}})
-	if r != "res://ciudad_oakhaven.tscn" or Engine.get_meta("pos_zona_ok", true):
-		fallos.append("1: la Oakhaven generada no abre la ciudad hecha a mano por su entrada (%s)" % r)
+	# V12 (12/11): con Oakhaven 3D en uso (por defecto con la exploración 3D), la 3D por la Puerta del Sur
+	var oak: String = "res://zonas3d/oakhaven_3d.tscn" if load("res://modo3d.gd").region_activa(0) else "res://ciudad_oakhaven.tscn"
+	if r != oak or Engine.get_meta("pos_zona_ok", true) or (r != "res://ciudad_oakhaven.tscn" and Engine.get_meta("pos_3d_ok", true)):
+		fallos.append("1: la Oakhaven generada no abre la ciudad en uso por su entrada (%s)" % r)
 	r = P.restaurar({"escena_guardada": "res://zona.tscn", "lugar": {"indice": 5, "nombre": "Sunken City", "tipo": "ciudad", "zona": "ciudad", "texto": "x"}})
 	if r != "res://zona.tscn" or not Engine.get_meta("pos_zona_ok", false):
 		fallos.append("2: Sunken City ya no abre su zona en el mismo sitio (%s)" % r)
