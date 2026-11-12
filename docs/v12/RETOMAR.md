@@ -227,3 +227,15 @@ negra).
     - el grupo con reserva y Naira (`D:\Aethelgard_v12_grupo`);
     - el sonido de la magia negra (`D:\Aethelgard_v12_sonido_magia`);
     - el Gran Bosque Verde 3D (`D:\Aethelgard_v12_gran_bosque`, desde `cc3557d`).
+- **03:30:**
+  - **Integrados** (`73a4cef`, `3e032c3`):
+    - el grupo con reserva y la Formación;
+    - Naira combatiente APAGADA (`naira_v12`);
+    - los enemigos v12 enganchados en `combate.gd` detrás de `enemigos_v12` (APAGADO);
+    - los 20 sonidos de la magia negra, con `naira_eclipse` provisional;
+    - los héroes v2 enganchados en exploración y combate (APAGADOS).
+  - **Batería:** 127 · 1 · 57 · 0. La fallida (la clave del Eclipse) está arreglada y repetida.
+  - **En marcha:**
+    - el Gran Bosque Verde 3D;
+    - la misión de Naira como prototipo apagado (`D:\Aethelgard_v12_naira_mision`, desde `3e032c3`).
+  - **Para probar con todo encendido:** `-- heroes_v2 magia_negra_v12 naira_v12 enemigos_v12`, o la meta de Engine de cada uno.
