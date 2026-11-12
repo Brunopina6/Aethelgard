@@ -1,0 +1,14 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/investigacion.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "arcano_invierno_eterno"
+taller = "arcano"
+nombre = "Cartas del invierno largo"
+desc = "Mediciones del frío de los astros en las noches más largas."
+requisitos = [{"tipo": "material", "id": "Hierba lunar", "cantidad": 2}]
+pasos = 3
+desbloquea = PackedStringArray("magia:negra_hielo:4")
+borrador = true

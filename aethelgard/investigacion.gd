@@ -7,6 +7,9 @@ extends RefCounted
 #     Una partida antigua no la tiene y empieza vacía; un id que ya no existe se conserva tal cual (no se borra nada).
 #   Estados: «bloqueada» (faltan requisitos), «disponible», «en_curso» y «completada».
 # Empezar NO gasta materiales: «tener» es el requisito. Cuánto cuesta investigar se decide en la fase 3.
+# V12, fase E: «estudiar hechizos / conocimientos antiguos» es una categoría más, no un sistema aparte. Una
+# investigación (taller «arcano») desbloquea magia con «magia:<escuela>:<nivel>» en su mismo campo «desbloquea»
+# (magia_negra.gd). Se guarda igual que las demás (clave «investigaciones»): una partida antigua no sabe nada nuevo.
 
 const Catalogo := preload("res://datos/catalogo.gd")
 
@@ -118,3 +121,29 @@ static func avanzar_en_curso(n := 1) -> Array:
 		if estado(id) == "en_curso" and avanzar(id, n):
 			r.append(id)
 	return r
+
+
+# V12, fase E: ¿hay alguna investigación completada que desbloquee este hechizo («magia:<escuela>:<nivel>»)?
+static func magia_desbloqueada(escuela: String, nivel: int) -> bool:
+	var clave := "magia:%s:%d" % [escuela, nivel]
+	for id in completadas():
+		var v := _datos(id)
+		if v != null and clave in v.desbloquea:
+			return true
+	return false
+
+
+# Lo que desbloquea de magia una investigación (sus «magia:…»), para los talleres y las pruebas.
+static func magias_de(id: String) -> Array:
+	var v := _datos(id)
+	if v == null:
+		return []
+	return Array(v.desbloquea).filter(func(x): return str(x).begins_with("magia:"))
+
+
+# Recetas que desbloquea (sin las de magia): lo que el taller enseña como «Desbloquea: …».
+static func recetas_que_desbloquea(id: String) -> Array:
+	var v := _datos(id)
+	if v == null:
+		return []
+	return Array(v.desbloquea).filter(func(x): return not str(x).begins_with("magia:"))

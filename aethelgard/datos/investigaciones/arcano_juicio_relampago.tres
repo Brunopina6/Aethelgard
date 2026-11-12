@@ -1,0 +1,14 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/investigacion.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "arcano_juicio_relampago"
+taller = "arcano"
+nombre = "El relámpago que juzga"
+desc = "Inscripciones que dicen cómo llamar al rayo y dejarlo caer en un solo punto."
+requisitos = [{"tipo": "material", "id": "Mineral rúnico", "cantidad": 1}]
+pasos = 3
+desbloquea = PackedStringArray("magia:negra_rayo:4")
+borrador = true

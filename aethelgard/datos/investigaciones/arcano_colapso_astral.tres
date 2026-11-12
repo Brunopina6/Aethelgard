@@ -1,0 +1,14 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/investigacion.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "arcano_colapso_astral"
+taller = "arcano"
+nombre = "El peso de las estrellas"
+desc = "Plomadas, cuerdas y cifras: lo que pesa la luz cuando cae."
+requisitos = [{"tipo": "material", "id": "Hierro de la Falla", "cantidad": 1}]
+pasos = 4
+desbloquea = PackedStringArray("magia:negra_gravedad:3")
+borrador = true

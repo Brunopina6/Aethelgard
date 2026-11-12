@@ -58,6 +58,7 @@ const Coloso := preload("res://combate_coloso.gd")   # el Coloso de la Falla (V9
 const Brama := preload("res://combate_bramavidrio.gd")
 # V12: qué versión del modelo de Bramavidrio (1, el gusano de anillos; 2, la Sierpe de la Vela): un solo interruptor
 const BramaVersion := preload("res://enemigos/bramavidrio/bramavidrio_version.gd")
+const HeroesV2 := preload("res://personajes/heroes_v2/heroes_v2.gd")   # V12, fase B: héroes v2 (interruptor heroes_v2, APAGADO)
 # V12: el clímax musical de los grandes jefes (combate_climax.gd: qué jefes y qué canción; aquí, cuándo y cómo suena).
 # Ganchos «V12, clímax»: _quitar_pv lo vigila, _process lo empieza, _musica_fase2 no lo pisa.
 const Climax := preload("res://combate_climax.gd")
@@ -85,6 +86,12 @@ const PIVOTE_ESCENA := Vector2(640, 505)
 # Ampliaciones de T-091 y T-092 (docs/diseno/combate_enganches.md): las artes van por su propia ruta (_elegir_arte y
 # _lanzar_arte) y no tocan MAGIAS ni NIVELES_MAGIA; los accesorios solo suman sus efectos (equipo_extra.gd).
 const Artes := preload("res://artes.gd")             # familias nuevas de T-091 (Alba, Escarcha y Lumbre)
+# V12, fase E: escuelas de magia negra (magia_negra.gd) y afinidades de los enemigos (combate_afinidades.gd). Su ruta
+# propia (_elegir_negra, _lanzar_negra, _resolver_negra y _vfx_negra) no toca MAGIAS ni NIVELES_MAGIA, y los ganchos
+# del resto del combate («V12, magia negra») solo hacen algo si hay un estado nuevo (f["mn"]) o un conjuro en curso:
+# sin usarla, el combate y su huella (C0) son los de siempre. Hoy no la tiene nadie (interruptor magia_negra_v12).
+const MN := preload("res://magia_negra.gd")
+const Afinidades := preload("res://combate_afinidades.gd")
 const Extra := preload("res://equipo_extra.gd")       # accesorios y armas especiales de T-092 (C1)
 
 # Magias: cambia aquí el coste, el daño y los colores.
@@ -886,6 +893,15 @@ func _info_objetivo(f: Dictionary, ok: bool) -> String:
 		t.append("Quemado")
 	if int(f.get("congelado", 0)) > 0:
 		t.append("Congelado")
+	if f.has("mn"):                                     # V12, magia negra: sus estados («Lento 2», «Marca 3»…)
+		t.append_array(MN.textos_estado(f))
+	if negra_sel != "" and f["hp"] > 0:                 # V12, magia negra: qué le hará lo que se va a lanzar
+		var linea := Afinidades.linea(f, MN.ELEMENTO.get(negra_sel, ""))
+		if linea != "":
+			t.append(linea)
+		var est: Dictionary = MN.datos(negra_sel, negra_nv_sel).get("estado", {})
+		if not est.is_empty() and Afinidades.clase_estado(f, est["tipo"]) == "inmune":
+			t.append("Inmune: %s" % MN.ESTADOS[est["tipo"]]["corto"])
 	if f.get("hero", false) and f["hp"] <= 0:
 		t.append("Caído")
 	if not ok and f["hp"] > 0:
@@ -1322,7 +1338,7 @@ func _crear_rig_3d(f: Dictionary, m: Dictionary, raiz: Node2D, base: Vector2, es
 	relleno.rotation_degrees = Vector3(-15, 140, 0)
 	vp.add_child(relleno)
 
-	var maga = load(BramaVersion.elegir(m["script"])).new()   # V12: Bramavidrio, la versión elegida (las demás, igual)
+	var maga = load(HeroesV2.script_de(BramaVersion.elegir(m["script"]))).new()   # V12: Bramavidrio, la versión elegida (las demás, igual)
 	maga.ruta_modelo = _ruta_3d(m)
 	vp.add_child(maga)
 
@@ -1627,7 +1643,10 @@ func _process(delta: float) -> void:
 		return
 	for f in heroes + enemigos:
 		if f["hp"] > 0 and f["atb"] < ATB_MAX:
-			f["atb"] = min(ATB_MAX, f["atb"] + f["vel"] * delta)
+			if f.has("mn"):                          # V12, magia negra: «Lento» (sin estados, la cuenta de siempre)
+				f["atb"] = min(ATB_MAX, f["atb"] + f["vel"] * MN.mult_vel(f) * delta)
+			else:
+				f["atb"] = min(ATB_MAX, f["atb"] + f["vel"] * delta)
 			if f["atb"] >= ATB_MAX:
 				cola.append(f)
 	_siguiente_turno()
@@ -1648,6 +1667,9 @@ func _siguiente_turno() -> void:
 			f["rig"].modulate = Color(1, 1, 1)
 		_quitar_guardia(f["nombre"])             # la guardia de Garon, también (sin guardia, nada)
 		_tic_estados_heroe(f)                    # Segundo Aliento y Cinta de Lumi (sin ellos, nada)
+		if f.has("conjuro"):                     # V12, magia negra: el conjuro preparado se suelta (sin menú)
+			_resolver_conjuro(f)
+			return
 		_mostrar_menu()
 	else:
 		estado = "enemigo"
@@ -1677,6 +1699,15 @@ func _turno_enemigo(f: Dictionary) -> void:
 				estado = "esperando"
 			return
 	_tic_congelacion(f)
+	if f.has("mn"):                                  # V12, magia negra: maldición, marca, prisión y estados que acaban
+		if await _tic_estados_negra(f):
+			_fin_turno_enemigo(f)
+			return
+		if f["hp"] <= 0:
+			f["atb"] = 0.0
+			if not _comprobar_fin():
+				estado = "esperando"
+			return
 	var p: String = f.get("personalidad", "agresivo")
 	var vivos := heroes.filter(func(h): return h["hp"] > 0)
 	var aliados := enemigos.filter(func(e): return e["hp"] > 0)
@@ -1687,6 +1718,8 @@ func _turno_enemigo(f: Dictionary) -> void:
 	var mult := 1.5 if f.get("furia", false) else 1.0
 	if p == "bruto":
 		mult *= randf_range(0.9, 1.3)
+	if f.has("mn"):                                  # V12, magia negra: «Ataque ↓» (Manto del Eclipse)
+		mult *= MN.mult_ataque(f)
 	if p == "bramavidrio" and brama != null:         # V12, Bramavidrio (combate_bramavidrio.gd): no huye nunca
 		await brama.turno(vivos, mult)
 		_fin_turno_enemigo(f)
@@ -2331,6 +2364,8 @@ func _atras() -> void:
 			volver_obj.call()
 		else:
 			_mostrar_menu()
+	elif estado == "magia_negra":                      # V12: de una escuela, a la lista de escuelas
+		_menu_magia(PESTANA_NEGRA)
 	elif estado in ["magia", "pocion", "invocacion"]:
 		_mostrar_menu()
 
@@ -2460,7 +2495,7 @@ func _mostrar_menu() -> void:
 		_menu_garon()
 		return
 	var coste_min := 999
-	for h in _hechizos(actor):
+	for h in _hechizos(actor) + MN.hechizos(actor["nombre"]):   # V12: y la magia negra (hoy, nadie la tiene)
 		coste_min = min(coste_min, h[2]["coste"])
 	var inv := _estado_invocacion()                  # Érebo lo invoca Lya, con la Armonía llena
 	menu.abrir(actor, [
@@ -2517,6 +2552,12 @@ func _pruebas_menu() -> void:
 			actor["hp"] = int(actor["hp_max"] * 0.4)
 			_usar_objeto.call_deferred(a.substr(7), actor)
 			return
+	for a in OS.get_cmdline_user_args():          # pruebas: -- negra=negra_rayo:2 (magia negra, sola, en cada turno)
+		if a.begins_with("negra="):
+			for h in MN.hechizos(actor["nombre"]):
+				if "%s:%d" % [h[0], h[1]] == a.substr(6) and (MODO_PRUEBAS or actor["mp"] >= h[2]["coste"]):
+					_elegir_negra.call_deferred(h[0], h[1], true)
+					return
 	for a in OS.get_cmdline_user_args():          # pruebas: godot ... -- magia=Fuego:3 (lanza sola en cada turno)
 		if a.begins_with("magia="):
 			for h in _hechizos(actor):
@@ -2871,6 +2912,7 @@ const NIVELES_ROMANOS := ["I", "II", "III"]
 
 func _menu_magia(nivel := 0) -> void:
 	estado = "magia"
+	negra_sel = ""
 	var por_nivel := [[], [], []]
 	var familias: Array = []                      # artes (artes.gd), en el orden de sus pestañas
 	var sabe := {}                                # familia → nivel que puede usar
@@ -2881,29 +2923,52 @@ func _menu_magia(nivel := 0) -> void:
 			sabe[h[0]] = h[1]
 		else:
 			por_nivel[h[1] - 1].append(h)
+	var sabe_negra := {}                          # V12, magia negra: escuela → hechizos que sabe (hoy, nadie)
+	for h in MN.hechizos(actor["nombre"]):
+		sabe_negra[h[0]] = h[1]
+	var hay_negra := not sabe_negra.is_empty()
+	var solo_negra: bool = hay_negra and familias.is_empty() and por_nivel.all(func(x): return x.is_empty())
 	if nivel == 0:
-		nivel = magia_nivel_menu.get(actor["nombre"], 1)
+		nivel = magia_nivel_menu.get(actor["nombre"], PESTANA_NEGRA if solo_negra else 1)
 	var duos := _duos_de(actor)                   # V11: técnicas combinadas (pestaña DÚO)
 	var quiere_duo: bool = nivel == PESTANA_DUO and not duos.is_empty()
+	var quiere_negra: bool = hay_negra and not quiere_duo and (nivel == PESTANA_NEGRA or solo_negra)
 	var p: Dictionary = Artes.pestanas_magia(por_nivel.map(func(x): return not x.is_empty()), familias,
-		1 if quiere_duo else nivel)
-	nivel = PESTANA_DUO if quiere_duo else p["valor"]
-	magia_nivel_menu[actor["nombre"]] = nivel     # 1-3: nivel; 4 y 5: primera y segunda familia; 9: DÚO
+		1 if quiere_duo or quiere_negra else nivel)
+	nivel = PESTANA_DUO if quiere_duo else (PESTANA_NEGRA if quiere_negra else p["valor"])
+	magia_nivel_menu[actor["nombre"]] = nivel     # 1-3: nivel; 4 y 5: primera y segunda familia; 8: magia negra; 9: DÚO
 	var pestanas: Array = []
 	for t in p["pestanas"]:
 		var tab: Dictionary = t.duplicate()
 		tab["accion"] = _menu_magia.bind(t["valor"])
 		pestanas.append(tab)
 	var activa: int = p["activa"]
+	if hay_negra:                                 # V12: una sola pestaña «Magia negra» (icono del eclipse), antes del DÚO
+		if pestanas.is_empty() and not solo_negra:    # una sola pestaña de magias: se nombra para poder volver a ella
+			pestanas.append({"texto": "MAGIA", "valor": p["valor"], "ancho": 140.0, "accion": _menu_magia.bind(p["valor"])})
+		pestanas.append({"texto": "", "icono": "Negra", "valor": PESTANA_NEGRA, "ancho": 64.0,
+			"accion": _menu_magia.bind(PESTANA_NEGRA)})
+		if quiere_negra:
+			activa = pestanas.size() - 1
 	if not duos.is_empty():
 		if pestanas.is_empty():                       # una sola pestaña de magias: se nombra para poder volver a ella
 			pestanas.append({"texto": "MAGIA", "valor": p["valor"], "ancho": 140.0, "accion": _menu_magia.bind(p["valor"])})
 		pestanas.append({"texto": "DÚO", "valor": PESTANA_DUO, "ancho": 110.0, "accion": _menu_magia.bind(PESTANA_DUO)})
 		if quiere_duo:
 			activa = pestanas.size() - 1
+	if hay_negra:
+		if pestanas.size() == 1:                      # solo magia negra, sin DÚO: sin pestañas (como hoy con una)
+			pestanas.clear()
+		_encajar_pestanas(pestanas)
 	var items: Array = []
 	if quiere_duo:
 		menu.submenu(duos, pestanas, activa)
+		return
+	if quiere_negra:                              # V12: la lista de escuelas (en páginas); cada una abre su página
+		for it in MN.filas_escuelas(sabe_negra):
+			it["accion"] = _menu_escuela.bind(it["escuela"], 0)
+			items.append(it)
+		menu.submenu(_paginar(items, pagina_negra, _pagina_escuelas), pestanas, activa)
 		return
 	if nivel >= 4:
 		var fam: String = familias[nivel - 4]
@@ -3103,6 +3168,9 @@ func _elegir_hechizo(magia: String, nivel: int, sola := false) -> void:
 	if Artes.es_arte(magia):                        # familias nuevas (artes.gd): su ruta; las 12 de siempre, igual
 		_elegir_arte(magia, nivel, sola)
 		return
+	if MN.es_negra(magia):                          # V12: escuelas de magia negra (magia_negra.gd), su ruta
+		_elegir_negra(magia, nivel, sola)
+		return
 	nivel_sel = nivel
 	if MAGIAS[magia].get("cura", false):           # magia de curación: se elige a un aliado
 		magia_sel = magia
@@ -3216,8 +3284,736 @@ func _lanzar_arte(fam: String, nv: int, objs: Array) -> void:
 	_terminar_turno()
 
 
+# ---------------------------------------------------------------- V12, fase E: magia negra (magia_negra.gd)
+# Menú: una pestaña «Magia negra» (icono del eclipse) con la lista de escuelas; cada escuela abre su página, con una
+# pestaña de icono por escuela arriba (6 × 64 px caben en los 432 px) para pasar de una a otra con Q / E o L1 / R1, y
+# «‹» vuelve a la lista. Así I · II · III, las artes y el DÚO siguen en su sitio; si no caben todas, se estrechan
+# (_encajar_pestanas), solo para quien sabe magia negra.
+# Lanzar: sin preparación, como un arte (gasta los PM y acaba el turno). Con preparación («prep»), el héroe gasta los PM,
+# queda «conjurando» (círculo en el suelo e icono de reloj de arena) y su barra empieza más arriba; al llenarse, el
+# hechizo se suelta solo, sin menú (_siguiente_turno). Si recibe un golpe fuerte (MN.UMBRAL_ROTURA), se rompe: pierde los
+# PM y la barra sigue. La Armonía sube una vez, al soltarlo. El sonido, una vez, al resolverse (aunque alcance a varios).
+const PESTANA_NEGRA := 8
+const ANCHO_PESTANAS := 432.0                    # de x = 808 a X_DERECHA = 1240 (menu_combate.gd)
+var negra_sel := ""                              # la escuela que se está apuntando (el panel enseña su afinidad)
+var negra_nv_sel := 1
+var escuela_menu := {}                           # última escuela abierta por cada héroe
+var pagina_negra := 0                            # página de la lista de escuelas
+# Filas por página: con las pestañas arriba caben 4 filas de 64 px y la línea de explicación sin pisar el bloque del
+# grupo (capturas del 12/11). Con más, 3 y una fila «Más ›» (o «‹ Antes» en la última página).
+const FILAS_PAGINA := 4
+
+
+func _paginar(items: Array, pagina: int, ir: Callable) -> Array:
+	if items.size() <= FILAS_PAGINA:
+		return items
+	var por := FILAS_PAGINA - 1
+	var paginas := ceili(items.size() / float(por))
+	pagina = clampi(pagina, 0, paginas - 1)
+	var r: Array = items.slice(pagina * por, (pagina + 1) * por)
+	if pagina < paginas - 1:
+		var siguen: Array = items.slice((pagina + 1) * por).map(func(x): return str(x["texto"]))
+		r.append({"texto": "Más ›", "accion": ir.bind(pagina + 1), "derecha": "%d/%d" % [pagina + 1, paginas],
+			"desc": "También: %s." % ", ".join(siguen), "pagina": true})
+	else:
+		r.append({"texto": "‹ Antes", "accion": ir.bind(pagina - 1), "derecha": "%d/%d" % [pagina + 1, paginas],
+			"desc": "Vuelve a la página anterior.", "pagina": true})
+	return r
+
+
+func _pagina_escuelas(p: int) -> void:
+	pagina_negra = p
+	_menu_magia(PESTANA_NEGRA)
+
+
+# Si las pestañas no caben, todas igual de anchas (como poco 56 px: el icono mide 34).
+func _encajar_pestanas(pestanas: Array) -> void:
+	var n := pestanas.size()
+	if n == 0:
+		return
+	var total := 4.0 * (n - 1)
+	for t in pestanas:
+		total += float(t.get("ancho", 96.0))
+	if total <= ANCHO_PESTANAS:
+		return
+	var ancho := maxf(56.0, floorf((ANCHO_PESTANAS - 4.0 * (n - 1)) / n))
+	for t in pestanas:
+		t["ancho"] = ancho
+
+
+func _menu_escuela(fam: String, pagina := 0) -> void:
+	estado = "magia_negra"
+	negra_sel = ""
+	var sabe := {}
+	for h in MN.hechizos(actor["nombre"]):
+		sabe[h[0]] = h[1]
+	if not sabe.has(fam):
+		_menu_magia(PESTANA_NEGRA)
+		return
+	escuela_menu[actor["nombre"]] = fam
+	var pestanas: Array = []
+	var activa := 0
+	for e in MN.ESCUELAS:
+		if sabe.has(e):
+			if e == fam:
+				activa = pestanas.size()
+			pestanas.append({"texto": "", "icono": e, "valor": 100 + pestanas.size(), "ancho": 64.0,
+				"accion": _menu_escuela.bind(e, 0)})
+	if pestanas.size() < 2:
+		pestanas.clear()
+	_encajar_pestanas(pestanas)
+	var items: Array = []
+	for it in MN.filas_escuela(fam, sabe[fam], actor, enemigos, MODO_PRUEBAS):
+		it["accion"] = _elegir_negra.bind(fam, it["nivel"])
+		items.append(it)
+	menu.submenu(_paginar(items, pagina, func(p): _menu_escuela(fam, p)), pestanas, activa)
+
+
+# Las de uno piden objetivo (el panel dice «Débil», «Resiste» o «Inmune»); las de todos, no. «sola»: pruebas.
+func _elegir_negra(fam: String, nv: int, sola := false) -> void:
+	var d := MN.datos(fam, nv)
+	var vivos := enemigos.filter(func(e): return e["hp"] > 0 and not e.get("huido", false))
+	if vivos.is_empty() or not _puede_pagar(int(d["coste"])):
+		return
+	if d["a"] == "enemigos":
+		_lanzar_negra(fam, nv, vivos)
+	elif sola:
+		_lanzar_negra(fam, nv, [vivos[0]])
+	else:
+		negra_sel = fam
+		negra_nv_sel = nv
+		_pedir_objetivo(vivos, func(f): _lanzar_negra(fam, nv, [f]),
+			_menu_escuela.bind(fam, 0 if nv < FILAS_PAGINA else 1), "TOCA UN ENEMIGO")
+
+
+func _existe_sonido(k: String) -> bool:
+	return Sonido.EFECTOS.has(k) or Sonido.EFECTOS_DESIERTO.has(k)
+
+
+func _lanzar_negra(fam: String, nv: int, objs: Array) -> void:
+	negra_sel = ""
+	_ocultar_menu()
+	estado = "accion"
+	var quien = actor
+	var d := MN.datos(fam, nv)
+	_gastar_pm(quien, int(d["coste"]))
+	_actualizar()
+	if float(d.get("prep", 0.0)) > 0.0:             # preparar: se suelta cuando se llene su barra
+		registro.text = "%s prepara %s" % [quien["nombre"], d["nombre"]]
+		quien["conjuro_nodo"] = _carga_magia(quien, fam, 1.0 + 0.2 * (nv - 1))
+		_sonar(MN.sonido_de(MN.SONIDO_PREPARAR, _existe_sonido))
+		_numero_flotante(quien, "◷ %s" % d["nombre"], MN.COLOR[fam], 28)
+		var atb := MN.preparar(quien, fam, nv, objs, ATB_MAX)
+		_actualizar()
+		await get_tree().create_timer(0.5).timeout
+		_terminar_turno(false)                         # la Armonía, al soltarlo
+		quien["atb"] = atb
+		return
+	registro.text = "%s lanza %s" % [quien["nombre"], d["nombre"]]
+	await _resolver_negra(quien, fam, nv, objs)
+	_terminar_turno_negra(quien, d)
+
+
+# Su barra se ha llenado: el hechizo preparado sale solo (a los que sigan en pie).
+func _resolver_conjuro(f: Dictionary) -> void:
+	estado = "accion"
+	var c: Dictionary = f["conjuro"]
+	f.erase("conjuro")
+	var fam: String = c["familia"]
+	var nv: int = int(c["nivel"])
+	var d := MN.datos(fam, nv)
+	var objs := MN.objetivos_al_resolver(d, c["objs"], enemigos)
+	var circulo = f.get("conjuro_nodo", null)
+	f.erase("conjuro_nodo")
+	_actualizar()
+	if objs.is_empty():
+		_quitar_carga(circulo)
+		registro.text = "%s deja ir %s: ya no hay a quién" % [f["nombre"], d["nombre"]]
+		_terminar_turno(false)
+		return
+	registro.text = "%s suelta %s" % [f["nombre"], d["nombre"]]
+	await _resolver_negra(f, fam, nv, objs, circulo)
+	_terminar_turno_negra(f, d)
+
+
+func _conjuro_roto(f: Dictionary) -> void:
+	_quitar_carga(f.get("conjuro_nodo", null))
+	f.erase("conjuro_nodo")
+	_sonar(MN.sonido_de(MN.SONIDO_ROTO, _existe_sonido))
+	_numero_flotante(f, "¡Conjuro roto!", Color(1.0, 0.92, 0.45), 32, Vector2(-30, -60))
+	registro.text = "¡Rompen el conjuro de %s!" % f["nombre"]
+	_actualizar()
+
+
+func _punto_magia(o: Dictionary) -> Vector2:
+	var maga = _p3d(o)
+	if maga != null and maga.has_method("punto_magia") and o.has("cam3d"):
+		var cam: Camera3D = o["cam3d"]
+		var spr: Sprite2D = o["partes"]["sprite"]
+		return escena.to_local(spr.to_global(cam.unproject_position(maga.punto_magia())))
+	return _centro(o) + Vector2(0, -80)
+
+
+# Aplica el hechizo y lo dibuja. Cada objetivo recibe su golpe una vez, en el instante de su impacto (_vfx_negra).
+func _resolver_negra(quien: Dictionary, fam: String, nv: int, objs: Array, circulo = null) -> void:
+	var d := MN.datos(fam, nv)
+	var col: Color = MN.COLOR[fam]
+	quien["animando"] = true
+	if circulo == null or not is_instance_valid(circulo):
+		circulo = _carga_magia(quien, fam, 1.0 + 0.2 * (nv - 1))
+	var p = _p3d(quien)
+	if p != null and p.has_method("lanzar_magia"):
+		await p.lanzar_magia()
+	else:
+		await get_tree().create_timer(0.45).timeout
+	if d["a"] == "enemigos":
+		_mostrar_panel(objs, "area")
+	var base: int = Formulas.dano_magia(quien, d) if int(d["dano"]) > 0 else 0
+	var golpes: Array = MN.cadena(objs[0], enemigos, d["saltos"]) if d.has("saltos") else objs.map(func(o): return [o, 1.0])
+	var sonado := [false]
+	var forma: String = d["forma"]
+	var impacto := func(i: int) -> void:
+		if not sonado[0]:                               # una vez por hechizo, al primer impacto
+			sonado[0] = true
+			_sonar(MN.sonido(fam, forma, _existe_sonido))
+		_golpe_negra(quien, fam, d, golpes[i][0], float(golpes[i][1]), base, golpes.size())
+	await _vfx_negra(forma, _punto_magia(quien), golpes, col, impacto)
+	_quitar_carga(circulo)
+	_actualizar()
+	await get_tree().create_timer(0.7).timeout
+	if p != null and p.has_method("fin_magia"):
+		p.fin_magia()
+	await get_tree().create_timer(0.3).timeout
+	quien["animando"] = false
+
+
+# Acaba el turno de quien lanzó; con la Aguja Glacial conserva parte de su barra (_terminar_turno la pone a 0).
+func _terminar_turno_negra(quien: Dictionary, d: Dictionary) -> void:
+	_terminar_turno()
+	if d.has("atb_propio") and quien["hp"] > 0:
+		quien["atb"] = minf(ATB_MAX - 0.1, float(d["atb_propio"]))
+
+
+# El golpe de un hechizo sobre un enemigo: afinidad, daño, quemadura y estado, con sus textos.
+func _golpe_negra(quien: Dictionary, fam: String, d: Dictionary, obj: Dictionary, parte: float, base: int, alcanza: int) -> void:
+	if obj["hp"] <= 0 or obj.get("huido", false):
+		return
+	var dano := MN.dano_base(d, int(round(base * parte)), obj, alcanza)
+	var r := MN.con_afinidad(dano, fam, obj)
+	dano = int(r["dano"])
+	var clase: String = r["clase"]
+	if dano > 0 and obj.get("defendiendo", false) and not d.get("atraviesa", false):
+		dano = maxi(1, int(dano * 0.5))
+	if dano > 0:
+		dano = Bosque.dano_recibido(dano, "Negra", quien, obj, false)   # sus ganchos (enfoque, coraza rúnica), no su fuego
+		dano = Coloso.dano_recibido(dano, "Negra", quien, obj)
+	if clase != "":
+		_numero_flotante(obj, Afinidades.TEXTO[clase], Afinidades.COLOR[clase], 30, Vector2(-10, -58))
+	if dano > 0:
+		golpe_magico = true
+		var real := _quitar_pv(obj, dano)
+		golpe_magico = false
+		_golpe_visual(obj, real, fam)
+		if d.get("rompe_carga", false) and obj["hp"] > 0 and obj.get("cargando", false) \
+				and PATRONES.has(obj.get("personalidad", "")):
+			_interrumpir(obj, "¡Juicio!", "¡El relámpago corta la carga de %s!" % obj["nombre"])
+		if int(d.get("quema", 0)) > 0 and obj["hp"] > 0:
+			obj["quemadura"] = maxi(int(obj.get("quemadura", 0)), int(d["quema"]))
+			_encender_llama(obj)
+	if d.has("estado") and obj["hp"] > 0 and clase != "inmune":
+		var tipo: String = d["estado"]["tipo"]
+		var res := MN.aplicar_estado(obj, tipo, int(d["estado"]["turnos"]))
+		var e: Dictionary = MN.ESTADOS[tipo]
+		if res == "inmune":
+			_numero_flotante(obj, "Inmune: %s" % e["corto"], Afinidades.COLOR["inmune"], 26, Vector2(-30, -84))
+		else:
+			_numero_flotante(obj, e["texto"] + (" (resiste)" if res == "resiste" else ""), e["color"], 26, Vector2(-30, -84))
+			if tipo == "prision":
+				_prision_visual(obj)
+				if obj.get("cargando", false) and PATRONES.has(obj.get("personalidad", "")):
+					_interrumpir(obj, "¡Atrapado!", "¡El hielo encierra a %s y su golpe se pierde!" % obj["nombre"])
+			elif tipo == "marca":
+				_marca_visual(obj)
+	_actualizar()
+
+
+# Al empezar el turno de un enemigo con estados de magia negra. true si pierde el turno (Prisión).
+func _tic_estados_negra(f: Dictionary) -> bool:
+	var r := MN.al_empezar_turno(f)
+	for t in r["acaban"]:
+		if t == "prision":
+			_quitar_nodo_negra(f, "mn_prision_nodo", true)
+		elif t == "marca":
+			_quitar_nodo_negra(f, "mn_marca_nodo")
+	if int(r["maldicion"]) > 0:
+		_numero_flotante(f, "Maldición", MN.ESTADOS["maldicion"]["color"], 26, Vector2(-30, -84))
+		_golpe_visual(f, _quitar_pv(f, int(r["maldicion"])), "negra_debilitamiento", false, 0.6)
+		await get_tree().create_timer(0.5).timeout
+	if int(r["marca"]) > 0 and f["hp"] > 0:
+		registro.text = "La marca pesa sobre %s" % f["nombre"]
+		_onda(_centro(f), MN.COLOR["negra_sombras"], 160.0, 10.0, 0.45, 8.0)
+		_numero_flotante(f, "¡La marca pesa!", MN.COLOR["negra_sombras"], 28, Vector2(-30, -84))
+		_golpe_visual(f, _quitar_pv(f, int(r["marca"])), "negra_sombras")
+		await get_tree().create_timer(0.5).timeout
+	_actualizar()
+	if r["prision"] and f["hp"] > 0:
+		registro.text = "%s no puede moverse: prisión de hielo" % f["nombre"]
+		_numero_flotante(f, "Prisión", MN.ESTADOS["prision"]["color"], 30)
+		await get_tree().create_timer(0.8).timeout
+		return true
+	await get_tree().process_frame
+	return false
+
+
+# Si el marcado cae, lo que guardaba pesa sobre los demás enemigos.
+func _marca_reparte(f: Dictionary) -> void:
+	_quitar_nodo_negra(f, "mn_prision_nodo")
+	_quitar_nodo_negra(f, "mn_marca_nodo")
+	for x in MN.reparto_marca(f, enemigos):
+		var e: Dictionary = x[0]
+		_onda(_centro(e), MN.COLOR["negra_sombras"], 20.0, 150.0, 0.5, 6.0)
+		_numero_flotante(e, "La marca pesa", MN.COLOR["negra_sombras"], 24, Vector2(-30, -84))
+		_golpe_visual(e, _quitar_pv(e, int(x[1])), "negra_sombras", false, 0.7)
+
+
+func _quitar_nodo_negra(f: Dictionary, clave: String, rompe := false) -> void:
+	var n = f.get(clave, null)
+	f.erase(clave)
+	if n == null or not is_instance_valid(n):
+		return
+	if rompe:                                          # la prisión salta en esquirlas
+		_particulas(n.position, Color(0.9, 0.98, 1.0, 1.0), Color(0.5, 0.8, 1.0, 0.0), 30, 0.7, Vector2(80, 220), 50.0,
+			Vector2(0, -1), 180.0, Vector2(0, 300), 0.06)
+	var t := create_tween()
+	t.tween_property(n, "modulate:a", 0.0, 0.3)
+	t.tween_callback(n.queue_free)
+
+
+# «Defensa ↓» a los golpes y «Resistencia mágica ↓» a cualquier magia (también las de siempre, sobre quien la lleve).
+func _con_estados_negra(dano: int, magia: String, obj: Dictionary) -> int:
+	var m := MN.mult_fisico_recibido(obj) if magia == "" else MN.mult_magia_recibida(obj)
+	if is_equal_approx(m, 1.0):
+		return dano
+	return maxi(1, int(round(dano * m)))
+
+
+func _color_magia(magia: String) -> Color:
+	if MAGIAS.has(magia):
+		return MAGIAS[magia]["color"]
+	if Artes.COLOR.has(magia):
+		return Artes.COLOR[magia]
+	if MN.COLOR.has(magia):
+		return MN.COLOR[magia]
+	return Color(1, 1, 1)
+
+
+# ---- efectos de la magia negra: dibujados por código (anillos, trazos, partículas), con la forma de cada escuela.
+# Cada uno llama a impacto.call(i) una sola vez por objetivo, en el instante en que llega. Sin el generador global.
+
+func _dibujo(pos: Vector2, dur: float, pinta: Callable, aditivo := true, queda := false) -> Node2D:
+	var n := Node2D.new()
+	n.position = pos
+	if aditivo:
+		n.material = mat_aditivo
+	escena.add_child(n)
+	var est := {"k": 0.0}
+	n.draw.connect(func(): pinta.call(n, float(est["k"])))
+	var t := create_tween().bind_node(n)
+	t.tween_method(func(v: float):
+		est["k"] = v
+		n.queue_redraw(), 0.0, 1.0, dur)
+	if not queda:
+		t.tween_callback(n.queue_free)
+	return n
+
+
+func _bola_negra(desde: Vector2, hasta: Vector2, col: Color, tam: float, dur: float, arco := -70.0, aguja := false) -> void:
+	var b := _brillo(col)
+	b.position = desde
+	b.scale = Vector2(tam, tam)
+	if aguja:                                          # alargada y orientada hacia donde va
+		b.scale = Vector2(tam * 2.6, tam * 0.3)
+		b.rotation = (hasta - desde).angle()
+	escena.add_child(b)
+	var nucleo := _brillo(Color(1, 1, 1, 0.85))
+	nucleo.scale = Vector2(0.45, 0.45)
+	b.add_child(nucleo)
+	var estela := _particulas(desde, Color(col.lightened(0.3), 0.9), Color(col, 0.0), 26, 0.35, Vector2(5, 30), 8.0,
+		Vector2(0, -1), 180.0, Vector2(0, 40), 0.1, true)
+	var medio := desde.lerp(hasta, 0.5) + Vector2(0, arco)
+	var t := create_tween()
+	t.tween_method(func(k: float):
+		var q := desde.lerp(medio, k).lerp(medio.lerp(hasta, k), k)
+		b.position = q
+		estela.position = q, 0.0, 1.0, dur).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	await t.finished
+	estela.emitting = false
+	get_tree().create_timer(0.5).timeout.connect(estela.queue_free)
+	b.queue_free()
+
+
+func _trazo_luz(pts: PackedVector2Array, col: Color, ancho := 1.0, dur := 0.3) -> void:
+	var nodo := Node2D.new()
+	nodo.material = mat_aditivo
+	escena.add_child(nodo)
+	for c in [[26.0, Color(col, 0.45)], [10.0, Color(col.lightened(0.4), 0.9)], [4.0, Color(1, 1, 1, 1)]]:
+		var l := Line2D.new()
+		l.points = pts
+		l.width = float(c[0]) * ancho
+		l.default_color = c[1]
+		l.use_parent_material = true
+		l.joint_mode = Line2D.LINE_JOINT_ROUND
+		l.end_cap_mode = Line2D.LINE_CAP_ROUND
+		nodo.add_child(l)
+	var t := create_tween()
+	t.tween_property(nodo, "modulate:a", 0.35, 0.04)
+	t.tween_property(nodo, "modulate:a", 1.0, 0.04)
+	t.tween_property(nodo, "modulate:a", 0.0, dur).set_ease(Tween.EASE_IN)
+	t.tween_callback(nodo.queue_free)
+
+
+# Sombra: una mancha oscura que no suma luz (lo aditivo con colores oscuros no se vería).
+func _mancha(pos: Vector2, col: Color, tam: float, dur: float) -> void:
+	var g := Sprite2D.new()
+	g.texture = glow_tex
+	g.modulate = col
+	g.position = pos
+	g.scale = Vector2(0.2, 0.2) * tam
+	escena.add_child(g)
+	var t := create_tween().set_parallel(true)
+	t.tween_property(g, "scale", Vector2(1.4, 1.4) * tam, dur)
+	t.tween_property(g, "modulate:a", 0.0, dur).set_ease(Tween.EASE_IN)
+	t.chain().tween_callback(g.queue_free)
+
+
+func _centro_de(golpes: Array) -> Vector2:
+	var c := Vector2.ZERO
+	for g in golpes:
+		c += _centro(g[0])
+	return c / maxf(1.0, golpes.size())
+
+
+func _vfx_negra(forma: String, desde: Vector2, golpes: Array, col: Color, impacto: Callable) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(forma)                             # mismo dibujo cada vez y sin tocar el azar del combate
+	var c0: Vector2 = _centro(golpes[0][0])
+	match forma:
+		"ascua":                                       # una brasa pequeña con arco
+			await _bola_negra(desde, c0, col, 0.35, 0.36)
+			impacto.call(0)
+			_particulas(c0, Color(1.0, 0.75, 0.35, 1.0), Color(col, 0.0), 24, 0.6, Vector2(60, 160), 20.0, Vector2(0, -1),
+				60.0, Vector2(0, 160), 0.06)
+			_onda(_suelo_de(golpes[0][0]), col, 20.0, 110.0, 0.4, 5.0)
+		"llama_voraz":                                 # el fuego se encoge sobre él y estalla
+			_dibujo(c0, 0.5, func(n: Node2D, k: float):
+				for i in 12:
+					var a := TAU * i / 12.0 + k * 2.0
+					n.draw_circle(Vector2(cos(a), sin(a)) * lerpf(170.0, 6.0, k), 7.0 * (1.0 - k * 0.5), Color(col, 0.9)))
+			_onda(c0, col, 170.0, 8.0, 0.5, 6.0)
+			await get_tree().create_timer(0.5).timeout
+			impacto.call(0)
+			_destello(c0, col, 1.8)
+			_onda(c0, Color(1.0, 0.8, 0.4), 10.0, 240.0, 0.6, 10.0)
+			_particulas(c0, Color(1.0, 0.85, 0.5, 1.0), Color(col, 0.0), 60, 0.7, Vector2(160, 380), 20.0, Vector2(0, -1),
+				180.0, Vector2(0, 220), 0.09)
+			_luz(col, 2.0, 6.0, 0.6, c0)
+			_temblor(8.0)
+		"lluvia_brasas":                               # brasas que caen del cielo sobre cada uno
+			_fogonazo(col, 0.15, 0.6)
+			for g in golpes:
+				var c := _centro(g[0])
+				for j in 4:
+					var dx := rng.randf_range(-90, 90)
+					_bola_negra(c + Vector2(dx - 160, -620), c + Vector2(dx * 0.6, rng.randf_range(-20, 40)), col, 0.25,
+						0.5 + j * 0.06, 0.0)
+			await get_tree().create_timer(0.56).timeout
+			for i in golpes.size():
+				impacto.call(i)
+				_particulas(_centro(golpes[i][0]), Color(1.0, 0.7, 0.3, 1.0), Color(col, 0.0), 30, 0.6, Vector2(80, 200),
+					30.0, Vector2(0, -1), 80.0, Vector2(0, 200), 0.07)
+			_temblor(6.0)
+		"sol_ceniza":                                  # un sol que nace arriba, cae y deja ceniza
+			var c := _centro_de(golpes) + Vector2(0, -300)
+			_fogonazo(Color(1.0, 0.45, 0.1), 0.22, 1.4)
+			var sol := _dibujo(c, 1.3, func(n: Node2D, k: float):
+				var r := lerpf(10.0, 120.0, minf(1.0, k * 1.6))
+				n.draw_circle(Vector2.ZERO, r, Color(col.lightened(0.2), 0.85))
+				n.draw_circle(Vector2.ZERO, r * 0.65, Color(1.0, 0.92, 0.7, 0.9))
+				for i in 16:
+					var a := TAU * i / 16.0 + k * 1.5
+					n.draw_line(Vector2(cos(a), sin(a)) * (r + 8.0), Vector2(cos(a), sin(a)) * (r + 30.0 + 14.0 * (i % 2)),
+						Color(col, 0.8), 4.0))
+			await get_tree().create_timer(0.85).timeout
+			var t := create_tween()
+			t.tween_property(sol, "position", _centro_de(golpes), 0.4).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+			await t.finished
+			for i in golpes.size():
+				impacto.call(i)
+			_fogonazo(Color(1.0, 0.9, 0.7), 0.5, 0.6)
+			_onda(_centro_de(golpes), col, 30.0, 520.0, 0.8, 14.0)
+			_luz(col, 2.5, 14.0, 1.0, _centro_de(golpes))
+			_particulas(_centro_de(golpes) + Vector2(0, -500), Color(0.55, 0.52, 0.5, 0.9), Color(0.3, 0.3, 0.3, 0.0), 70, 2.0,
+				Vector2(20, 60), 420.0, Vector2(0, 1), 30.0, Vector2(0, 120), 0.05)
+			for g in golpes:
+				_humo(_suelo_de(g[0]), Color(0.18, 0.15, 0.14), 30)
+			_temblor(12.0)
+		"aguja_glacial":                               # aguja rápida y recta
+			await _bola_negra(desde, c0, col, 0.4, 0.18, 0.0, true)
+			impacto.call(0)
+			_particulas(c0, Color(0.92, 0.98, 1.0, 1.0), Color(col, 0.0), 26, 0.5, Vector2(100, 260), 10.0, Vector2(-1, 0),
+				70.0, Vector2(0, 260), 0.05)
+			_onda(c0, col, 10.0, 90.0, 0.3, 4.0)
+		"escarcha_profunda":                           # el suelo se escarcha y suben cristales
+			var s := _suelo_de(golpes[0][0])
+			var esc := _dibujo(s, 0.9, func(n: Node2D, k: float):
+				for i in 9:
+					var a := TAU * i / 9.0
+					var r := 160.0 * minf(1.0, k * 2.0)
+					n.draw_line(Vector2.ZERO, Vector2(cos(a), sin(a)) * r, Color(col, 0.9 * (1.0 - k * 0.6)), 4.0)
+				n.draw_arc(Vector2.ZERO, 150.0 * minf(1.0, k * 2.0), 0.0, TAU, 48, Color(col, 0.7 * (1.0 - k)), 3.0))
+			esc.scale = Vector2(1.0, 0.32)                 # tumbado en el suelo
+			await get_tree().create_timer(0.3).timeout
+			impacto.call(0)
+			_particulas(s, Color(0.9, 0.97, 1.0, 1.0), Color(col, 0.0), 36, 0.9, Vector2(60, 180), 90.0, Vector2(0, -1), 15.0,
+				Vector2(0, -40), 0.07)
+		"prision_hielo":                               # el hielo crece y lo encierra (la jaula se queda: _prision_visual)
+			_dibujo(_suelo_de(golpes[0][0]), 0.45, func(n: Node2D, k: float):
+				for i in 6:
+					var x := lerpf(-90.0, 90.0, i / 5.0)
+					n.draw_line(Vector2(x, 0), Vector2(x * 0.8, -300.0 * k), Color(col, 0.9), 6.0))
+			await get_tree().create_timer(0.45).timeout
+			impacto.call(0)
+			_fogonazo(Color(0.75, 0.92, 1.0), 0.2, 0.4)
+		"invierno_eterno":                             # el cielo se vuelve blanco y nieva sobre todos
+			_fogonazo(Color(0.75, 0.9, 1.0), 0.35, 1.6)
+			_particulas(_centro_de(golpes) + Vector2(0, -520), Color(1, 1, 1, 0.95), Color(0.7, 0.85, 1.0, 0.0), 90, 1.6,
+				Vector2(80, 180), 520.0, Vector2(0, 1), 20.0, Vector2(-40, 120), 0.06)
+			for g in golpes:
+				_onda(_suelo_de(g[0]), col, 20.0, 200.0, 1.0, 8.0)
+			await get_tree().create_timer(0.7).timeout
+			for i in golpes.size():
+				impacto.call(i)
+				_particulas(_centro(golpes[i][0]), Color(0.92, 0.98, 1.0, 1.0), Color(col, 0.0), 30, 0.7, Vector2(60, 200),
+					60.0, Vector2(0, -1), 180.0, Vector2(0, 160), 0.07)
+			_fogonazo(Color(1, 1, 1), 0.3, 0.5)
+			_temblor(7.0)
+		"chispa":                                      # un arco corto y rápido
+			_trazo_luz(_zigzag(rng, desde, c0, 30.0, 16.0), col, 0.6, 0.18)
+			await get_tree().create_timer(0.1).timeout
+			impacto.call(0)
+			_destello(c0, col, 0.9)
+		"rayo_encadenado":                             # salta de uno a otro, un trazo por salto
+			var a := desde
+			for i in golpes.size():
+				var b := _centro(golpes[i][0])
+				_trazo_luz(_zigzag(rng, a, b, 34.0, 22.0), col, 0.9 - 0.15 * i, 0.25)
+				await get_tree().create_timer(0.08).timeout
+				impacto.call(i)
+				_destello(b, col, 1.1 - 0.2 * i)
+				a = b
+				await get_tree().create_timer(0.16).timeout
+		"tormenta_cielo_roto":                         # el cielo se agrieta y caen rayos de la grieta
+			_fogonazo(Color(0.12, 0.05, 0.22), 0.55, 1.4)
+			var cx := _centro_de(golpes)
+			var grieta := _zigzag(rng, cx + Vector2(-560, -560), cx + Vector2(560, -600), 40.0, 30.0)
+			_trazo_luz(grieta, col, 0.7, 0.9)
+			await get_tree().create_timer(0.3).timeout
+			for i in golpes.size():
+				var b := _centro(golpes[i][0])
+				_trazo_luz(_zigzag(rng, Vector2(b.x + rng.randf_range(-80, 80), cx.y - 580), b, 40.0, 30.0), col, 1.0, 0.3)
+				impacto.call(i)
+				_destello(b, col, 1.2)
+			for j in 3:                                    # rayos de adorno, sin daño
+				var x := cx.x + rng.randf_range(-500, 500)
+				_trazo_luz(_zigzag(rng, Vector2(x, cx.y - 580), Vector2(x + rng.randf_range(-60, 60), cx.y + 140), 40.0, 30.0),
+					col, 0.6, 0.3)
+			_temblor(8.0)
+		"juicio_relampago":                            # un sello en el cielo y una columna de luz enorme
+			_fogonazo(Color(0.08, 0.04, 0.16), 0.6, 1.3)
+			_dibujo(c0 + Vector2(0, -330), 0.6, func(n: Node2D, k: float):
+				var r := 110.0 * minf(1.0, k * 2.0)
+				n.draw_arc(Vector2.ZERO, r, 0.0, TAU, 48, Color(col, 0.9), 4.0)
+				n.draw_arc(Vector2.ZERO, r * 0.7, 0.0, TAU, 48, Color(col, 0.7), 2.0)
+				for i in 8:
+					var a := TAU * i / 8.0 + k
+					n.draw_line(Vector2(cos(a), sin(a)) * r * 0.7, Vector2(cos(a), sin(a)) * r, Color(col, 0.9), 3.0))
+			await get_tree().create_timer(0.55).timeout
+			var col_luz := _brillo(Color(col.lightened(0.5), 1.0))
+			col_luz.position = c0 + Vector2(0, -200)
+			col_luz.scale = Vector2(0.9, 9.0)
+			escena.add_child(col_luz)
+			create_tween().tween_property(col_luz, "modulate:a", 0.0, 0.7).set_delay(0.15)
+			get_tree().create_timer(0.9).timeout.connect(col_luz.queue_free)
+			_trazo_luz(_zigzag(rng, c0 + Vector2(0, -700), c0, 50.0, 20.0), col, 1.6, 0.4)
+			impacto.call(0)
+			_fogonazo(Color(1, 1, 1), 0.6, 0.5)
+			_onda(_suelo_de(golpes[0][0]), col, 20.0, 360.0, 0.7, 12.0)
+			_temblor(14.0)
+		"aguja_umbria":                                # una aguja de sombra (oscura: no suma luz)
+			var b := Sprite2D.new()
+			b.texture = glow_tex
+			b.modulate = Color(0.16, 0.06, 0.3, 0.95)
+			b.position = desde
+			b.scale = Vector2(1.1, 0.16)
+			b.rotation = (c0 - desde).angle()
+			escena.add_child(b)
+			var borde := _brillo(Color(col, 0.7))
+			borde.scale = Vector2(0.8, 0.5)
+			b.add_child(borde)
+			var t := create_tween()
+			t.tween_property(b, "position", c0, 0.24).set_ease(Tween.EASE_IN)
+			await t.finished
+			b.queue_free()
+			impacto.call(0)
+			_mancha(c0, Color(0.12, 0.04, 0.22, 0.85), 1.4, 0.6)
+			_humo(c0, Color(0.2, 0.1, 0.32), 20)
+		"manto_eclipse":                               # un eclipse sobre ellos: la luz queda tapada
+			var c := _centro_de(golpes) + Vector2(0, -280)
+			_dibujo(c, 1.1, func(n: Node2D, k: float):
+				n.draw_circle(Vector2.ZERO, 70.0, Color(1.0, 0.88, 0.6, 0.9 * (1.0 - k * 0.3)))
+				n.draw_arc(Vector2.ZERO, 82.0, 0.0, TAU, 48, Color(col, 0.8), 6.0))
+			_dibujo(c, 1.1, func(n: Node2D, k: float):
+				n.draw_circle(Vector2(lerpf(-150.0, 0.0, minf(1.0, k * 1.6)), 0.0), 68.0, Color(0.03, 0.02, 0.06, 0.97)),
+				false)
+			await get_tree().create_timer(0.75).timeout
+			_fogonazo(Color(0.05, 0.02, 0.1), 0.45, 0.9)
+			for i in golpes.size():
+				impacto.call(i)
+				_humo(_centro(golpes[i][0]), Color(0.16, 0.08, 0.26), 26)
+		"marca_vacio":                                 # un sello que se posa sobre él (se queda: _marca_visual)
+			_mancha(c0, Color(0.1, 0.03, 0.2, 0.8), 1.2, 0.5)
+			await get_tree().create_timer(0.3).timeout
+			impacto.call(0)
+		"noche_absoluta":                              # se hace de noche: estrellas y una corona sobre cada uno
+			var negro := ColorRect.new()
+			negro.color = Color(0.0, 0.0, 0.03, 0.0)
+			negro.position = -escena.position / TAM_ESCENA
+			negro.size = Vector2(1280, 720) / TAM_ESCENA
+			negro.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			escena.add_child(negro)
+			var t := create_tween()
+			t.tween_property(negro, "color:a", 0.78, 0.6)
+			_particulas(_centro_de(golpes) + Vector2(0, -220), Color(1, 1, 1, 0.95), Color(0.75, 0.7, 1.0, 0.0), 60, 1.8,
+				Vector2(2, 10), 520.0, Vector2(0, -1), 180.0, Vector2.ZERO, 0.04)
+			await get_tree().create_timer(0.8).timeout
+			for i in golpes.size():
+				var b := _centro(golpes[i][0])
+				_onda(b, Color(0.85, 0.75, 1.0), 120.0, 20.0, 0.4, 6.0)
+				impacto.call(i)
+			await get_tree().create_timer(0.4).timeout
+			var t2 := create_tween()
+			t2.tween_property(negro, "color:a", 0.0, 0.8)
+			t2.tween_callback(negro.queue_free)
+		"peso_abismo":                                 # anillos que bajan y se cierran sobre él
+			for j in 3:
+				_onda(c0 + Vector2(0, -40 * (2 - j)), col, 200.0, 20.0, 0.5, 6.0)
+				await get_tree().create_timer(0.12).timeout
+			_particulas(c0 + Vector2(0, -160), Color(col, 0.9), Color(col, 0.0), 30, 0.5, Vector2(200, 380), 80.0,
+				Vector2(0, 1), 10.0, Vector2(0, 600), 0.06)
+			await get_tree().create_timer(0.25).timeout
+			impacto.call(0)
+			_onda(_suelo_de(golpes[0][0]), col, 30.0, 180.0, 0.5, 8.0)
+			_temblor(5.0)
+		"pozo_gravitatorio":                           # un remolino que tira de todos hacia un punto
+			var c := _centro_de(golpes)
+			_dibujo(c, 1.0, func(n: Node2D, k: float):
+				for brazo in 4:
+					var pts := PackedVector2Array()
+					for i in 18:
+						var u := i / 17.0
+						var a := TAU * brazo / 4.0 + u * 4.0 + k * 6.0
+						pts.append(Vector2(cos(a), sin(a) * 0.45) * lerpf(320.0, 10.0, u) * (1.0 - k * 0.4))
+					n.draw_polyline(pts, Color(col, 0.85 * (1.0 - k * 0.5)), 4.0))
+			for g in golpes:
+				_dibujo(_centro(g[0]), 0.8, func(n: Node2D, k: float):
+					var hacia := (c - n.position) * k * 0.6
+					n.draw_line(Vector2.ZERO, hacia, Color(col, 0.7 * (1.0 - k)), 6.0)
+					n.draw_circle(hacia, 8.0, Color(col, 0.9)))
+			await get_tree().create_timer(0.8).timeout
+			_destello(c, col, 1.6)
+			for i in golpes.size():
+				impacto.call(i)
+			_onda(c, col, 20.0, 380.0, 0.6, 10.0)
+			_temblor(9.0)
+		"colapso_astral":                              # estrellas que caen de los bordes a un punto y colapsan
+			var c := _centro_de(golpes)
+			_fogonazo(Color(0.04, 0.02, 0.1), 0.6, 1.8)
+			var estrellas: Array = []
+			for i in 14:
+				var a := rng.randf_range(0.0, TAU)
+				estrellas.append(Vector2(cos(a), sin(a)) * rng.randf_range(600.0, 800.0))
+			_dibujo(c, 0.95, func(n: Node2D, k: float):
+				var e := pow(k, 2.2)
+				for s in estrellas:
+					var p0: Vector2 = s * (1.0 - e)
+					n.draw_line(p0, p0 * 1.12 + (s * 0.04), Color(1.0, 0.95, 0.8, 0.8), 3.0)
+					n.draw_circle(p0, 5.0, Color(1, 1, 1, 0.95)))
+			await get_tree().create_timer(0.95).timeout
+			_fogonazo(Color(1, 1, 1), 0.7, 0.6)
+			_mancha(c, Color(0.02, 0.0, 0.05, 0.9), 2.4, 0.9)
+			for i in golpes.size():
+				impacto.call(i)
+			for j in 3:
+				_onda(c, col if j != 1 else Color(1, 1, 1), 20.0, 300.0 + 140.0 * j, 0.6 + 0.15 * j, 12.0)
+			_luz(col, 2.5, 14.0, 1.0, c)
+			_temblor(16.0)
+		_:                                             # «sello» (Debilitamiento): un sello baja sobre cada uno
+			for g in golpes:
+				var sello := _dibujo(_centro(g[0]) + Vector2(0, -170), 0.5, func(n: Node2D, k: float):
+					var r := 46.0
+					n.draw_arc(Vector2.ZERO, r, 0.0, TAU, 32, Color(col, 0.9 * (1.0 - k * 0.4)), 3.0)
+					for i in 3:
+						var a := TAU * i / 3.0 + k * 3.0 - PI / 2.0
+						n.draw_line(Vector2(cos(a), sin(a)) * r, Vector2(cos(a + 2.09), sin(a + 2.09)) * r, Color(col, 0.8), 2.0)
+					n.draw_line(Vector2(0, -r * 0.5), Vector2(0, r * 0.5), Color(col, 0.9), 3.0))
+				create_tween().bind_node(sello).tween_property(sello, "position:y", sello.position.y + 130.0, 0.5)
+			await get_tree().create_timer(0.5).timeout
+			for i in golpes.size():
+				impacto.call(i)
+				_onda(_centro(golpes[i][0]), col, 70.0, 10.0, 0.35, 5.0)
+
+
+# La jaula de hielo que se queda mientras dura la Prisión.
+func _prision_visual(obj: Dictionary) -> void:
+	_quitar_nodo_negra(obj, "mn_prision_nodo")
+	var col: Color = MN.COLOR["negra_hielo"]
+	var n := Node2D.new()
+	n.position = _suelo_de(obj)
+	n.material = mat_aditivo
+	escena.add_child(n)
+	n.draw.connect(func():
+		for i in 7:
+			var x := lerpf(-100.0, 100.0, i / 6.0)
+			n.draw_line(Vector2(x, 0), Vector2(x * 0.85, -310.0), Color(col, 0.5), 5.0)
+		for y in [0.0, -310.0]:                          # aros tumbados (elipses), como la base y la tapa de la jaula
+			n.draw_set_transform(Vector2(0, y), 0.0, Vector2(1.0, 0.3))
+			n.draw_arc(Vector2.ZERO, 100.0 if y == 0.0 else 85.0, 0.0, TAU, 32, Color(col, 0.6), 5.0)
+		n.draw_set_transform(Vector2.ZERO))
+	n.modulate.a = 0.0
+	create_tween().tween_property(n, "modulate:a", 1.0, 0.2)
+	obj["mn_prision_nodo"] = n
+
+
+# El sello de la Marca del Vacío, girando despacio sobre el marcado mientras dura.
+func _marca_visual(obj: Dictionary) -> void:
+	_quitar_nodo_negra(obj, "mn_marca_nodo")
+	var col: Color = MN.COLOR["negra_sombras"]
+	var n := Node2D.new()
+	n.position = _centro(obj) + Vector2(0, -150)
+	n.material = mat_aditivo
+	escena.add_child(n)
+	n.draw.connect(func():
+		n.draw_arc(Vector2.ZERO, 34.0, 0.0, TAU, 32, Color(col, 0.95), 3.0)
+		n.draw_rect(Rect2(-17, -17, 34, 34), Color(col, 0.8), false, 2.0)
+		n.draw_circle(Vector2.ZERO, 6.0, Color(0.9, 0.8, 1.0, 0.95)))
+	n.scale = Vector2(0.2, 0.2)
+	create_tween().tween_property(n, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_BACK)
+	create_tween().bind_node(n).set_loops().tween_property(n, "rotation", TAU, 6.0).from(0.0)
+	obj["mn_marca_nodo"] = n
+
+
 const SenaArte := preload("res://vfx/sena_arte.gd")
-const SENA_VIAJE_LUMBRE := 0.45                      # lo que tarda la brasa de la Lumbre en llegar al caído
+const SENA_VIAJE_LUMBRE := 0.45                     # lo que tarda la brasa de la Lumbre en llegar al caído
 const COLOR_OCASO := Color(0.7, 0.5, 0.96)
 
 
@@ -3753,6 +4549,13 @@ func _quitar_pv(f: Dictionary, d: int) -> int:
 	if not f.get("hero", false) and d > 0:
 		_vigilar_carga(f, d)                          # V11: un golpe preparado se puede interrumpir
 		_climax_vigilar(f, hp_antes)                  # V12, clímax: cruza el umbral (queda pendiente)
+	if f.has("mn") and not f.get("hero", false):      # V12, magia negra: la Marca guarda; si cae, pesa sobre los demás
+		MN.al_recibir(f, d)
+		if f["hp"] <= 0:
+			_marca_reparte(f)
+	if f.has("conjuro") and f.get("hero", false):     # V12, magia negra: un golpe fuerte rompe el conjuro
+		if MN.golpe_en_conjuro(f, d):
+			_conjuro_roto(f)
 	return d
 
 
@@ -4205,7 +5008,7 @@ func _resultado_erebo(r: Dictionary, doble: Node3D, al_resultado: Callable) -> v
 func _doble_3d(obj: Dictionary) -> Node3D:
 	var m: Dictionary = MODELOS.get(obj["modelo"], {})
 	if m.get("tipo", "") == "3d" and _ruta_3d(m) != "":
-		var p = load(BramaVersion.elegir(m["script"])).new()   # V12: Bramavidrio, la versión elegida
+		var p = load(HeroesV2.script_de(BramaVersion.elegir(m["script"]))).new()   # V12: Bramavidrio, la versión elegida
 		p.ruta_modelo = _ruta_3d(m)
 		var s: float = clampf(m["esc"] / 0.6, 1.0, 1.6)   # los jefes, más grandes (sin pasarse: Érebo les mete la mano en el pecho)
 		p.scale = Vector3.ONE * s
@@ -4275,6 +5078,8 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 	if not objetivo["hero"]:                          # fase 3: el Guardián del Bosque y la Esencia de enfoque
 		dano = Bosque.dano_recibido(dano, magia, origen, objetivo, _lya_sabe())
 		dano = Coloso.dano_recibido(dano, magia, origen, objetivo)   # V9: el Coloso (piel, ventana, coraza rúnica)
+		if objetivo.has("mn"):                        # V12, magia negra: «Defensa ↓» y «Resistencia mágica ↓»
+			dano = _con_estados_negra(dano, magia, objetivo)
 	var congela: bool = magia == "" and origen["hero"] and _lleva_frostfang(origen) and randf() < PROB_CONGELAR
 	# Pluma de arpía: un héroe esquiva un golpe físico (solo tira el dado con la pluma puesta: sin ella, nada cambia)
 	var esquiva: bool = magia == "" and objetivo["hero"] and Extra.esquiva(objetivo.get("efectos", {}))
@@ -4656,7 +5461,7 @@ func _impacto_fuerte(impacto: Callable) -> void:
 # Personaje 3D: alza las manos (o el sable), la luz nace ahí y sale disparada hacia el enemigo.
 func _anim_magia_3d(o: Dictionary, obj: Dictionary, magia: String, impacto: Callable) -> void:
 	var maga = _p3d(o)
-	var color: Color = MAGIAS[magia]["color"]
+	var color: Color = _color_magia(magia)
 	o["animando"] = true
 	var circulo := _carga_magia(o, magia)
 	await maga.lanzar_magia()
@@ -4737,7 +5542,7 @@ func _anim_fisico(o: Dictionary, obj: Dictionary, impacto: Callable) -> void:
 func _anim_magia(o: Dictionary, obj: Dictionary, magia: String, impacto: Callable) -> void:
 	var p: Dictionary = o["partes"]
 	var a: Dictionary = ANIM[o["modelo"]]
-	var color: Color = MAGIAS[magia]["color"]
+	var color: Color = _color_magia(magia)
 	o["animando"] = true
 	_set_ojos(o, true)
 	var circulo := _carga_magia(o, magia)
@@ -4864,6 +5669,12 @@ func _golpe_visual(objetivo: Dictionary, dano: int, magia: String, critico := fa
 			if objetivo["hp"] > 0:
 				objetivo["quemadura"] = RONDAS_QUEMADURA
 				_encender_llama(objetivo)
+		"negra_fuego", "negra_hielo", "negra_rayo", "negra_sombras", "negra_gravedad", "negra_debilitamiento":
+			var cn: Color = MN.COLOR[magia]                # V12, magia negra: el destello y el tinte de su escuela
+			_destello(centro, cn, 0.9 * potencia)
+			rig.modulate = Color(0.55 + cn.r, 0.55 + cn.g, 0.55 + cn.b)
+			_numero_flotante(objetivo, str(dano), C_DANO)
+			_temblor(3.0 * potencia)
 		_:
 			if critico and dano > 0:
 				_destello(centro, Color(1.0, 0.85, 0.4), 1.8)
@@ -5005,7 +5816,7 @@ func _suelo_de(f: Dictionary) -> Vector2:
 
 # Círculo mágico que gira en el suelo bajo quien lanza la magia, con chispas que suben.
 func _carga_magia(o: Dictionary, magia: String, tam := 1.0) -> Node2D:
-	var color: Color = MAGIAS[magia]["color"] if MAGIAS.has(magia) else Artes.COLOR[magia]   # las artes, su color
+	var color: Color = _color_magia(magia)          # las de siempre, las artes y la magia negra, cada una su color
 	var raiz := Node2D.new()
 	raiz.position = _suelo_de(o)
 	raiz.scale = Vector2(1.0, 0.32) * tam         # aplastado: parece tumbado en el suelo
@@ -5064,7 +5875,7 @@ func _quitar_carga(c: Node2D) -> void:
 
 # Bola de fuego o de agua que vuela hasta el enemigo dejando una estela.
 func _proyectil(desde: Vector2, hasta: Vector2, magia: String) -> void:
-	var color: Color = MAGIAS[magia]["color"]
+	var color: Color = _color_magia(magia)
 	var bola := _brillo(color)
 	bola.position = desde
 	bola.scale = Vector2(0.55, 0.55)
@@ -5189,7 +6000,7 @@ func _humo(pos: Vector2, color: Color, cantidad: int) -> void:
 # Nivel II: la carga se divide en un proyectil para cada enemigo.
 # Nivel III: Infierno hace caer meteoros sobre cada enemigo; Maremoto lanza una ola gigante.
 func _magia_grupal(o: Dictionary, objs: Array, magia: String, nivel: int, dano: int) -> void:
-	var color: Color = MAGIAS[magia]["color"]
+	var color: Color = _color_magia(magia)
 	o["animando"] = true
 	var circulo := _carga_magia(o, magia, 1.3 if nivel == 2 else 1.7)
 	var maga = _p3d(o)
@@ -5225,6 +6036,8 @@ func _magia_grupal(o: Dictionary, objs: Array, magia: String, nivel: int, dano: 
 		if not obj.get("hero", false):               # fase 3: el Guardián del Bosque y la Esencia de enfoque
 			d = Bosque.dano_recibido(d, magia, o, obj, _lya_sabe())
 			d = Coloso.dano_recibido(d, magia, o, obj)   # V9: el Coloso (coraza rúnica)
+			if obj.has("mn"):                        # V12, magia negra: «Resistencia mágica ↓»
+				d = _con_estados_negra(d, magia, obj)
 		golpe_magico = true
 		_quitar_pv(obj, d)
 		golpe_magico = false
@@ -5781,6 +6594,9 @@ func _repartir_exp(ganan: bool) -> void:
 			for x in Artes.nuevas_al_subir(h["nombre"], gr.datos()[h["nombre"]], nivel - subidos, nivel):   # artes
 				await get_tree().create_timer(1.0).timeout
 				registro.text = "%s aprende %s" % [h["nombre"], Artes.datos(x[0], x[1])["nombre"]]
+			for x in MN.nuevas_al_subir(h["nombre"], gr.datos()[h["nombre"]], nivel - subidos, nivel):   # V12: magia negra
+				await get_tree().create_timer(1.0).timeout
+				registro.text = "%s aprende %s" % [h["nombre"], MN.datos(x[0], x[1])["nombre"]]
 	await get_tree().create_timer(0.6).timeout
 
 
@@ -5824,5 +6640,10 @@ func _actualizar() -> void:
 				estados.append_array(Coloso.estados(e))
 			if Brama.es(e):                             # V12, Bramavidrio: «⚠ Fractura» o «⚠ Aliento: córtalo n/m»
 				estados.append_array(Brama.estados(e))
+			if e.has("mn"):                             # V12, magia negra: «Lento 2», «Def ↓ 3», «Prisión 1»…
+				estados.append_array(MN.textos_estado(e))
+				if not vivo:                            # (huido o caído sin pasar por _quitar_pv: su jaula y su sello, fuera)
+					_quitar_nodo_negra(e, "mn_prision_nodo")
+					_quitar_nodo_negra(e, "mn_marca_nodo")
 			e["lbl_estado"].text = "  ".join(estados)
 			e["lbl_estado"].visible = vivo

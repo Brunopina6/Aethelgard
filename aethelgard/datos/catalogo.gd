@@ -9,7 +9,8 @@ extends RefCounted
 
 const TIPOS := ["materiales", "recetas", "investigaciones"]
 # Los tres talleres previstos (fase 3) y quién lleva cada uno.
-const TALLERES := {"alquimia": "Lya", "forja": "Kael", "armaduras": "Garon", "conjunto": "Kael, Lya y Garon"}
+const TALLERES := {"alquimia": "Lya", "forja": "Kael", "armaduras": "Garon", "conjunto": "Kael, Lya y Garon",
+	"arcano": "la maga negra (V12, fase E: estudiar hechizos; sin pantalla hasta que llegue)"}
 const REQUISITOS := ["material", "hito", "investigacion", "nivel"]
 const HEROES := ["Kael", "Lya", "Garon"]
 
@@ -122,6 +123,10 @@ static func validar() -> Array:
 		if v.pasos <= 0:
 			errores.append("investigación «%s»: pasos no positivos" % id)
 		for rid in v.desbloquea:
+			if str(rid).begins_with("magia:"):        # V12, fase E: un hechizo (magia_negra.gd), no una receta
+				if not load("res://magia_negra.gd").desbloqueo_valido(str(rid)):
+					errores.append("investigación «%s»: desbloquea la magia «%s», que no existe" % [id, rid])
+				continue
 			if not recetas.has(rid):
 				errores.append("investigación «%s»: desbloquea la receta «%s», que no existe" % [id, rid])
 		for q in v.requisitos:

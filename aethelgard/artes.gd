@@ -80,9 +80,11 @@ const FICHAS := [
 	["Tomos", "Un tomo escondido enseña antes de tiempo el nivel III. Se lee una vez.", "Alba", 3],
 ]
 # Estados de los héroes, en el orden en que se dibujan sus iconos junto al nombre.
-const ESTADOS := ["barrera", "aliento", "brasa", "guardia"]   # guardia: la de Garon (combate.gd, T-100)
+const ESTADOS := ["barrera", "aliento", "brasa", "guardia", "conjuro"]   # guardia: la de Garon (combate.gd, T-100)
 const COLOR_ESTADO := {"barrera": Color("BFE6FF"), "aliento": Color("B8E07A"), "brasa": Color("FF9A4A"),
-	"guardia": Color("C9D2E0")}
+	"guardia": Color("C9D2E0"), "conjuro": Color("A98BE8")}
+# conjuro (V12, fase E): el héroe prepara un hechizo de magia negra (magia_negra.gd); se rompe si le pegan fuerte.
+const MagiaNegra := preload("res://magia_negra.gd")
 
 
 # ================================================================= datos y aprendizaje
@@ -405,6 +407,8 @@ static func estados_de(f: Dictionary) -> Array:
 		r.append("brasa")
 	if str(f.get("guardia_de", "")) != "":           # le cubre Garon (combate.gd, la Guardia)
 		r.append("guardia")
+	if f.has("conjuro"):                             # V12, fase E: prepara un hechizo de magia negra
+		r.append("conjuro")
 	return r
 
 
@@ -478,7 +482,7 @@ static func filas_familia(familia: String, nivel_usable_: int, actor: Dictionary
 # Devuelve false si no es una familia nueva (entonces dibuja el de siempre).
 static func dibujar_icono(c: CanvasItem, familia: String, tam: Vector2) -> bool:
 	if not COLOR.has(familia):
-		return false
+		return MagiaNegra.dibujar_icono(c, familia, tam)   # V12, fase E: escuelas de magia negra y su pestaña
 	var col: Color = COLOR[familia]
 	var m := tam * 0.5
 	match familia:
@@ -550,4 +554,9 @@ static func dibujar_estado(c: CanvasItem, estado: String, tam: Vector2) -> bool:
 			pts.append(pts[0])
 			c.draw_polyline(pts, col, 1.5)
 			c.draw_line(m + Vector2(0, -r * 0.6), m + Vector2(0, r * 0.7), Color(0.62, 0.17, 0.17), 2.0)
+		"conjuro":                               # V12, fase E: reloj de arena (prepara un hechizo)
+			c.draw_colored_polygon(PackedVector2Array([m + Vector2(-r * 0.7, -r), m + Vector2(r * 0.7, -r), m]), Color(col, 0.75))
+			c.draw_colored_polygon(PackedVector2Array([m, m + Vector2(r * 0.7, r), m + Vector2(-r * 0.7, r)]), Color(col, 0.4))
+			c.draw_line(m + Vector2(-r * 0.8, -r), m + Vector2(r * 0.8, -r), col, 1.5)
+			c.draw_line(m + Vector2(-r * 0.8, r), m + Vector2(r * 0.8, r), col, 1.5)
 	return true

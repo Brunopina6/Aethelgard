@@ -1,0 +1,14 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/investigacion.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "arcano_sol_ceniza"
+taller = "arcano"
+nombre = "Tratado del sol de ceniza"
+desc = "Notas antiguas sobre cómo encerrar el calor de una brasa hasta que pesa como un sol."
+requisitos = [{"tipo": "material", "id": "Corazón de roble", "cantidad": 1}]
+pasos = 3
+desbloquea = PackedStringArray("magia:negra_fuego:4")
+borrador = true
