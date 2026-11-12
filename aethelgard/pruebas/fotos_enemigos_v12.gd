@@ -35,16 +35,9 @@ func _initialize() -> void:
 			solo = a.substr(5)
 	DirAccess.make_dir_recursive_absolute(salida)
 	seed(7)
-	var r: Dictionary = PARCHE.aplicar(FileAccess.get_file_as_string("res://combate.gd"))
-	print("parche: ok=%s faltan=%s repetidos=%s" % [r["ok"], r["faltan"], r["repetidos"]])
-	if not r["ok"]:
-		print("FALLO: el parche ya no encaja en combate.gd")
-		print("FALLOS: 1")
-		quit(1)
-		return
-	guion_parcheado = GDScript.new()
-	guion_parcheado.source_code = r["texto"]
-	var err := guion_parcheado.reload()
+	# 12/11: el parche ya está en combate.gd; «después» = el interruptor enemigos_v12, «antes» = sin él.
+	guion_parcheado = load("res://combate.gd")
+	var err := OK
 	if err != OK:
 		print("FALLO: el guion parcheado no compila (%d)" % err)
 		print("FALLOS: 1")
@@ -92,7 +85,9 @@ func _empezar(caso: Dictionary, parche: bool) -> void:
 	Engine.set_meta("desde_mapa", false)
 	c = load("res://combate.tscn").instantiate()
 	if parche:
-		c.set_script(guion_parcheado)
+		Engine.set_meta("enemigos_v12", true)
+	elif Engine.has_meta("enemigos_v12"):
+		Engine.remove_meta("enemigos_v12")
 	root.add_child(c)
 	await _esperar(5)
 	for f in c.heroes + c.enemigos:                 # el ATB quieto: los momentos los pone la prueba

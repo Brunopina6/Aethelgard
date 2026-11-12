@@ -26,12 +26,14 @@ const Afinidades := preload("res://combate_afinidades.gd")
 
 const ESCUELAS := ["negra_fuego", "negra_hielo", "negra_rayo", "negra_sombras", "negra_gravedad", "negra_debilitamiento"]
 const NOMBRE_ESCUELA := {"negra_fuego": "Fuego", "negra_hielo": "Hielo", "negra_rayo": "Rayo",
-	"negra_sombras": "Sombras", "negra_gravedad": "Gravedad", "negra_debilitamiento": "Debilitamiento"}
+	"negra_sombras": "Sombras", "negra_gravedad": "Gravedad", "negra_debilitamiento": "Debilitamiento",
+	"naira_eclipse": "Eclipse"}
 const ELEMENTO := {"negra_fuego": "Fuego", "negra_hielo": "Hielo", "negra_rayo": "Rayo", "negra_sombras": "Sombras",
-	"negra_gravedad": "Gravedad", "negra_debilitamiento": ""}
+	"negra_gravedad": "Gravedad", "negra_debilitamiento": "", "naira_eclipse": ""}
 # Colores propios, distintos de los de siempre (Fuego FF7A3C, Rayo F2E36B) para que no se confundan en pantalla.
 const COLOR := {"negra_fuego": Color("E8572A"), "negra_hielo": Color("7FD8FF"), "negra_rayo": Color("B49CFF"),
-	"negra_sombras": Color("8A63E0"), "negra_gravedad": Color("C8924A"), "negra_debilitamiento": Color("B9C96A")}
+	"negra_sombras": Color("8A63E0"), "negra_gravedad": Color("C8924A"), "negra_debilitamiento": Color("B9C96A"),
+	"naira_eclipse": Color("E8D9A0")}               # oro pálido de corona de eclipse (NAIRA.md §6.1)
 const COLOR_NEGRA := Color("A98BE8")              # la pestaña «Magia negra» y su icono
 const DESC_ESCUELA := {
 	"negra_fuego": "Brasas y soles de ceniza. Queman.",
@@ -40,16 +42,26 @@ const DESC_ESCUELA := {
 	"negra_sombras": "Tapan la luz del enemigo: menos fuerza, marcas.",
 	"negra_gravedad": "Peso que frena, junta y aplasta.",
 	"negra_debilitamiento": "Maldiciones breves: menos defensa, menos resistencia.",
+	"naira_eclipse": "Su firma: tapa la luz de todos y los deja en penumbra.",
 }
 # Para agruparlas más adelante con los nombres de la propuesta de Naira (docs/v12/NAIRA.md: Umbra, Gravedad, Maldición
 # y Astros). Solo un dato: hoy no cambia nada. Su magia «tapa y pesa; nunca borra»: ninguna descripción dice borrar.
 const GRUPO_NAIRA := {"negra_sombras": "Umbra", "negra_gravedad": "Gravedad", "negra_debilitamiento": "Maldición",
-	"negra_fuego": "Astros", "negra_hielo": "Astros", "negra_rayo": "Astros"}
+	"negra_fuego": "Astros", "negra_hielo": "Astros", "negra_rayo": "Astros", "naira_eclipse": "Firma"}
 
-# Quién las usa. Hoy nadie. Cuando Naira entre en grupo.gd (HEROES y EN_EL_GRUPO, detrás de su hito), basta con:
-#   const DE_HEROE := {"Naira": PARA_NAIRA}
+# Quién las usa. DE_HEROE: los que las tienen siempre (hoy nadie). DE_RECLUTA (V12, grupo con reserva, 12/11): las de un
+# recluta, solo mientras grupo.gd lo tiene disponible (Naira: tras su hito «nr_union» o con el interruptor «naira_v12»,
+# APAGADO). Así, sin Naira, nadie sabe magia negra y todo queda como antes.
 const DE_HEROE := {}
 const PARA_NAIRA := ["negra_fuego", "negra_hielo", "negra_rayo", "negra_sombras", "negra_gravedad", "negra_debilitamiento"]
+# V12: la firma de Naira, el Eclipse (NAIRA.md §5.5, PROPUESTA): una «escuela» de un solo hechizo, fuera de ESCUELAS (el
+# interruptor de pruebas magia_negra_v12 no la da; las 24 de la fase E no cambian). Va por la misma ruta de la magia
+# negra: preparación interrumpible, afinidades, sonido una vez y el estado nuevo «penumbra».
+const FIRMAS := ["naira_eclipse"]
+const TODAS := ["naira_eclipse", "negra_fuego", "negra_hielo", "negra_rayo", "negra_sombras", "negra_gravedad",
+	"negra_debilitamiento"]                          # la firma primero: a mano en la primera página de Naira
+const DE_RECLUTA := {"Naira": ["negra_fuego", "negra_hielo", "negra_rayo", "negra_sombras", "negra_gravedad",
+	"negra_debilitamiento", "naira_eclipse"]}
 
 const UMBRAL_ROTURA := 0.25                      # parte de sus PV máximos que rompe un conjuro en preparación
 const PREP_MAX := 0.9
@@ -117,6 +129,12 @@ const HECHIZOS := {
 		{"nombre": "Herida Elemental", "coste": 14, "dano": 0, "a": "enemigo", "prep": 0.35, "forma": "sello",
 			"estado": {"tipo": "vulnerable", "turnos": 3}, "umbral": 12, "investigacion": "arcano_herida_elemental",
 			"mejora": "Dura hasta que reciba un golpe débil."}],
+	# V12: la firma de Naira (NAIRA.md §5.5: 30 PM, a todos, daño 90, un turno de preparación y «Penumbra» 2 turnos).
+	# La forma es la del Manto del Eclipse (un eclipse tapa la luz). Se aprende al unirse (umbral 1).
+	"naira_eclipse": [
+		{"nombre": "Eclipse", "coste": 30, "dano": 90, "a": "enemigos", "prep": 0.7, "forma": "manto_eclipse",
+			"estado": {"tipo": "penumbra", "turnos": 2}, "umbral": 1,
+			"mejora": "Observaciones: +10 % cada tres (NAIRA.md §5.5)."}],
 }
 const DESCRIPCION := {
 	"Ascua": "Una brasa rápida a un enemigo. Quema.",
@@ -143,6 +161,7 @@ const DESCRIPCION := {
 	"Paso Torcido": "Todos los enemigos van lentos dos turnos.",
 	"Maldición Menguante": "Cada vez que actúe pierde un poco de vida (3 turnos).",
 	"Herida Elemental": "Prepara: lo que resiste deja de resistirlo y lo demás le hace más daño.",
+	"Eclipse": "Prepara mucho: tapa la luz de todos. En penumbra, todo les hace un 20 % más (2 turnos).",
 }
 # Sonido al resolverse (una vez por hechizo, aunque alcance a varios): [la clave que pedirá el especialista de sonido,
 # la que existe hoy en sonido.gd y se usa mientras tanto]. combate.gd usa la primera si existe y si no, la segunda.
@@ -150,6 +169,7 @@ const SONIDO := {
 	"negra_fuego": ["negra_fuego", "brasa"], "negra_hielo": ["negra_hielo", "congelar"],
 	"negra_rayo": ["negra_rayo", "golpe_critico"], "negra_sombras": ["negra_sombras", "arte_ocaso"],
 	"negra_gravedad": ["negra_gravedad", "arte_ocaso"], "negra_debilitamiento": ["negra_maldicion", "arte_ocaso"],
+	"naira_eclipse": ["naira_eclipse", "arte_ocaso"],
 }
 const SONIDO_FORMA := {"prision_hielo": ["negra_prision", "arte_escarcha"], "invierno_eterno": ["negra_invierno", "arte_escarcha"],
 	"sol_ceniza": ["negra_sol_ceniza", "brasa"], "juicio_relampago": ["negra_juicio", "golpe_critico"],
@@ -168,8 +188,12 @@ const ESTADOS := {
 	"marca": {"texto": "Marca del Vacío", "corto": "Marca", "color": Color("8A63E0"), "guarda": 0.3},
 	"maldicion": {"texto": "Maldición", "corto": "Maldito", "color": Color("B9C96A"), "pierde": 0.06},
 	"vulnerable": {"texto": "Vulnerable", "corto": "Vulnerable", "color": Color("FFC46A")},
+	# V12, el Eclipse de Naira (PROPUESTA): golpes y magia le hacen un 20 % más (NAIRA.md dice «los demás héroes»; aquí,
+	# por sencillez, también los de Naira: anotado en el informe).
+	"penumbra": {"texto": "Penumbra", "corto": "Penumbra", "color": Color("E8D9A0"), "fisico": 1.2, "magia": 1.2},
 }
-const ORDEN_ESTADOS := ["prision", "lento", "def_baja", "res_baja", "atk_baja", "marca", "maldicion", "vulnerable"]
+const ORDEN_ESTADOS := ["prision", "lento", "def_baja", "res_baja", "atk_baja", "marca", "maldicion", "vulnerable",
+	"penumbra"]
 
 
 # ================================================================= interruptor de desarrollo (APAGADO)
@@ -208,6 +232,8 @@ static func cuantos(fam: String) -> int:
 static func familias_de(heroe: String) -> Array:
 	if heroe != "" and heroe == heroe_de_prueba():
 		return ESCUELAS.duplicate()
+	if DE_RECLUTA.has(heroe) and ResourceLoader.exists("res://grupo.gd") and load("res://grupo.gd").disponible(heroe):
+		return DE_RECLUTA[heroe].duplicate()
 	return DE_HEROE.get(heroe, [])
 
 
@@ -311,7 +337,7 @@ static func nombre_desbloqueo(id: String) -> String:
 # Filas de la pestaña «Magia negra»: una por escuela que puede usar (con cuántos hechizos sabe).
 static func filas_escuelas(sabe: Dictionary) -> Array:
 	var r: Array = []
-	for fam in ESCUELAS:
+	for fam in TODAS:                                 # (la firma de Naira, primero; nadie más la sabe)
 		if int(sabe.get(fam, 0)) <= 0:
 			continue
 		r.append({"texto": NOMBRE_ESCUELA[fam], "icono": fam, "escuela": fam,
@@ -420,11 +446,17 @@ static func mult_vel(f: Dictionary) -> float:
 
 
 static func mult_fisico_recibido(f: Dictionary) -> float:
-	return float(ESTADOS["def_baja"]["fisico"]) if turnos(f, "def_baja") > 0 else 1.0
+	var m := float(ESTADOS["def_baja"]["fisico"]) if turnos(f, "def_baja") > 0 else 1.0
+	if turnos(f, "penumbra") > 0:                   # V12, el Eclipse de Naira
+		m *= float(ESTADOS["penumbra"]["fisico"])
+	return m
 
 
 static func mult_magia_recibida(f: Dictionary) -> float:
-	return float(ESTADOS["res_baja"]["magia"]) if turnos(f, "res_baja") > 0 else 1.0
+	var m := float(ESTADOS["res_baja"]["magia"]) if turnos(f, "res_baja") > 0 else 1.0
+	if turnos(f, "penumbra") > 0:                   # V12, el Eclipse de Naira
+		m *= float(ESTADOS["penumbra"]["magia"])
+	return m
 
 
 static func mult_ataque(f: Dictionary) -> float:
@@ -572,6 +604,12 @@ static func dibujar_icono(c: CanvasItem, fam: String, tam: Vector2) -> bool:
 			c.draw_arc(m, 8.5, 0.0, TAU, 24, col, 2.0, true)
 			c.draw_circle(m, 3.5, col)
 			c.draw_line(m + Vector2(0, -16), m + Vector2(0, -9), col, 2.0)
+		"naira_eclipse":                          # V12: eclipse total, el disco oscuro dentro de su corona
+			c.draw_arc(m, 13.5, 0.0, TAU, 32, col, 2.5, true)
+			c.draw_circle(m, 11.0, Color(0.06, 0.04, 0.12))
+			for i in 8:
+				var a := TAU * i / 8.0
+				c.draw_line(m + Vector2.from_angle(a) * 15.0, m + Vector2.from_angle(a) * 18.5, Color(col, 0.7), 1.5)
 		"negra_debilitamiento":                   # sello con una flecha hacia abajo
 			c.draw_arc(m, 13.0, 0.0, TAU, 28, col, 2.0, true)
 			c.draw_line(m + Vector2(0, -8), m + Vector2(0, 8), col, 2.5)

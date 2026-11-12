@@ -70,6 +70,9 @@ extends Node
 #   «brama»). Los pide combate_bramavidrio.gd en los instantes de sus clips. Interruptor: BRAMAVIDRIO_IDENTIDAD (o
 #   «bramavidrio_sonido=anterior» en la línea de órdenes) vuelve a los sonidos de antes (gusano_* y la voz de piedra).
 #   Procedencia: docs/memory/agents/sonido_v12_bramavidrio.md.
+# V12 (12/11): la magia negra (EFECTOS_MAGIA_NEGRA, en OGG, audio/magia_negra/): las seis escuelas (con dos variantes),
+#   los avanzados con forma propia, preparar y la rotura del conjuro. Los pide combate.gd con las tablas de
+#   magia_negra.gd (si falta una clave, su respaldo). Procedencia: docs/memory/agents/sonido_v12_magia_negra.md.
 
 const ARCHIVO := "user://ajustes.cfg"
 const BUSES := ["Musica", "Efectos", "Interfaz", "Ambiente"]
@@ -459,6 +462,50 @@ static func identidad_bramavidrio() -> bool:
 	if Engine.has_meta("bramavidrio_sonido"):
 		return String(Engine.get_meta("bramavidrio_sonido")) != "anterior"
 	return BRAMAVIDRIO_IDENTIDAD
+
+
+# V12 (12/11): la magia negra (magia_negra.gd: 6 escuelas y 24 hechizos, para Naira; hoy apagada). Una identidad común
+# («tapa y pesa»): la misma sala arcana oscura y una firma (cristal frotado una octava abajo sobre un dron grave: la luz
+# tapada) en la cola de todos; cada escuela con su materia (brasa, hielo, chispa violeta, aire que se traga, peso,
+# sello de campana sorda) y nada estridente (los brillos, con paso bajo). Los avanzados tienen su propia forma, no son
+# los de su escuela más fuertes. OGG en audio/magia_negra/ (mismo formato que EFECTOS_BRAMAVIDRIO: «dir» y «ext»).
+# Todos los archivos tienen el mismo LUFS momentáneo máximo (−12): el «db» de aquí es su papel en la mezcla (en el
+# juego, Mmax + db: las escuelas −22, como golpe_critico y arte_escarcha; la Prisión −20; los avanzados −17, por debajo
+# de «jefe» −16 y como la victoria −17 (p4, que no los baja: solo baja p0-p2); la Noche −18; preparar −22, sin golpe:
+# crece hasta el segundo y queda bajo la música; la rotura −21). Medido, no escuchado. Los pide combate.gd (_resolver_negra, _lanzar_negra, _conjuro_roto) con
+# las tablas SONIDO, SONIDO_FORMA, SONIDO_PREPARAR y SONIDO_ROTO de magia_negra.gd; si una clave no existe, suena su
+# respaldo. Una vez por hechizo (en el primer impacto); las escuelas alternan dos variantes y varían un 3 % el tono.
+# Procedencia y licencia de cada capa: docs/memory/agents/sonido_v12_magia_negra.md.
+const MAGIA_NEGRA := "res://audio/magia_negra/"
+const EFECTOS_MAGIA_NEGRA := {
+	# ---- las seis escuelas (Ascua, Aguja Glacial, Chispa… todos los de su escuela que no tienen sonido propio)
+	"negra_fuego": {"a": "fuego_", "n": 2, "dir": MAGIA_NEGRA, "ext": ".ogg", "db": -10.0, "tono": 0.03, "p": 3, "max": 1,
+		"espera": 0.3},
+	"negra_hielo": {"a": "hielo_", "n": 2, "dir": MAGIA_NEGRA, "ext": ".ogg", "db": -10.0, "tono": 0.03, "p": 3, "max": 1,
+		"espera": 0.3},
+	"negra_rayo": {"a": "rayo_", "n": 2, "dir": MAGIA_NEGRA, "ext": ".ogg", "db": -10.0, "tono": 0.03, "p": 3, "max": 1,
+		"espera": 0.3},
+	"negra_sombras": {"a": "sombras_", "n": 2, "dir": MAGIA_NEGRA, "ext": ".ogg", "db": -10.0, "tono": 0.03, "p": 3, "max": 1,
+		"espera": 0.3},
+	"negra_gravedad": {"a": "gravedad_", "n": 2, "dir": MAGIA_NEGRA, "ext": ".ogg", "db": -10.0, "tono": 0.03, "p": 3,
+		"max": 1, "espera": 0.3},
+	"negra_maldicion": {"a": "maldicion_", "n": 2, "dir": MAGIA_NEGRA, "ext": ".ogg", "db": -10.0, "tono": 0.03, "p": 3,
+		"max": 1, "espera": 0.3},
+	# ---- los que tienen forma propia (sin variar el tono: cada uno suena una vez por combate o casi)
+	"negra_prision": {"a": "prision", "dir": MAGIA_NEGRA, "ext": ".ogg", "db": -8.0, "p": 3, "max": 1, "espera": 0.5},
+	"negra_sol_ceniza": {"a": "sol_ceniza", "dir": MAGIA_NEGRA, "ext": ".ogg", "db": -5.0, "p": 3, "max": 1, "espera": 1.0},
+	"negra_invierno": {"a": "invierno", "dir": MAGIA_NEGRA, "ext": ".ogg", "db": -5.0, "p": 3, "max": 1, "espera": 1.0},
+	"negra_juicio": {"a": "juicio", "dir": MAGIA_NEGRA, "ext": ".ogg", "db": -5.0, "p": 3, "max": 1, "espera": 1.0},
+	"negra_noche": {"a": "noche", "dir": MAGIA_NEGRA, "ext": ".ogg", "db": -6.0, "p": 3, "max": 1, "espera": 1.0},
+	"negra_colapso": {"a": "colapso", "dir": MAGIA_NEGRA, "ext": ".ogg", "db": -5.0, "p": 3, "max": 1, "espera": 1.0},
+	# ---- el Eclipse de Naira (12/11, PROVISIONAL): el mismo sonido que Noche Absoluta hasta que tenga uno propio
+	"naira_eclipse": {"a": "noche", "dir": MAGIA_NEGRA, "ext": ".ogg", "db": -6.0, "p": 3, "max": 1, "espera": 1.0},
+	# ---- preparar (empieza a conjurar: suave, sin golpe) y que se lo rompan
+	"negra_preparar": {"a": "preparar", "dir": MAGIA_NEGRA, "ext": ".ogg", "db": -10.0, "tono": 0.02, "p": 2, "max": 1,
+		"espera": 0.3},
+	"negra_conjuro_roto": {"a": "roto", "dir": MAGIA_NEGRA, "ext": ".ogg", "db": -9.0, "tono": 0.03, "p": 3, "max": 1,
+		"espera": 0.3},
+}
 
 # Detalles de la naturaleza por contexto de Musica: cada cuánto (s, al azar entre los dos) y qué puede sonar.
 const DETALLES := {
@@ -934,13 +981,15 @@ static func archivos() -> PackedStringArray:
 	return r
 
 
-# V12: la definición de un efecto, de EFECTOS o, si no está ahí, de EFECTOS_DESIERTO o EFECTOS_BRAMAVIDRIO (12/11) ({} si
-# no existe).
+# V12: la definición de un efecto, de EFECTOS o, si no está ahí, de EFECTOS_BRAMAVIDRIO, EFECTOS_MAGIA_NEGRA o
+# EFECTOS_DESIERTO (12/11) ({} si no existe).
 static func definicion(nombre: String) -> Dictionary:
 	if EFECTOS.has(nombre):
 		return EFECTOS[nombre]
 	if EFECTOS_BRAMAVIDRIO.has(nombre):
 		return EFECTOS_BRAMAVIDRIO[nombre]
+	if EFECTOS_MAGIA_NEGRA.has(nombre):                    # V12 (12/11): la magia negra
+		return EFECTOS_MAGIA_NEGRA[nombre]
 	return EFECTOS_DESIERTO.get(nombre, {})
 
 

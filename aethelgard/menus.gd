@@ -28,6 +28,8 @@ var Inv
 var cuerpo: VBoxContainer
 var marco: ScrollContainer
 var botones_pestana: Array = []
+var vista_formacion := false                     # V12: en la pestaña Grupo, la Formación en vez de la ficha
+var aviso_formacion := ""                        # por qué no se pudo el último cambio de la Formación
 
 
 func _ready() -> void:
@@ -104,7 +106,9 @@ func _cerrar() -> void:
 # Teclado y mando (lo que los botones con el foco no usan): cerrar, cambiar de pestaña y, si no hay botones más abajo,
 # desplazar el texto.
 func _unhandled_input(ev: InputEvent) -> void:
-	if ev.is_action_pressed("ui_cancel"):
+	if ev.is_action_pressed("ui_cancel") and vista_formacion and pestana == "Grupo":   # V12: de la Formación, a la ficha
+		_salir_formacion()
+	elif ev.is_action_pressed("ui_cancel"):
 		_cerrar()
 	elif ev.is_action_pressed("pestana_anterior") or ev.is_action_pressed("pestana_siguiente"):
 		var paso := -1 if ev.is_action_pressed("pestana_anterior") else 1
@@ -147,18 +151,40 @@ func _pintar() -> void:
 # ---------------------------------------------------------------- Grupo
 
 func _pintar_grupo() -> void:
+	if vista_formacion and Grupo.hay_formacion():  # V12: la Formación (activos y reserva)
+		_pintar_formacion()
+		return
+	vista_formacion = false
 	var fila_heroes := HBoxContainer.new()
 	fila_heroes.add_theme_constant_override("separation", 8)
 	cuerpo.add_child(fila_heroes)
-	for n in Grupo.activos():
+	var reserva: Array = Grupo.reserva()             # V12: la reserva también tiene ficha (sin reserva, como siempre)
+	if not heroe in Grupo.en_el_grupo():
+		heroe = Grupo.activos()[0]
+	for n in Grupo.activos() + reserva:
+		if not reserva.is_empty() and n == reserva[0]:
+			fila_heroes.add_child(_texto("  Reserva:", 18, COLOR_SUAVE))
 		var b := _boton(n, 22, Vector2(140, 40), "heroe:" + n)
 		if n == heroe:
 			b.add_theme_color_override("font_color", COLOR_TITULO)
+		elif n in reserva:
+			b.add_theme_color_override("font_color", COLOR_SUAVE)
 		b.pressed.connect(func():
 			heroe = n
 			Sonido.efecto("ui_tic")
 			_pintar_de_nuevo())
 		fila_heroes.add_child(b)
+	if Grupo.hay_formacion():                        # V12: solo cuando hay a quién cambiar
+		var hueco := Control.new()
+		hueco.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		fila_heroes.add_child(hueco)
+		var f := _boton("Formación", 22, Vector2(180, 40), "formacion")
+		f.add_theme_color_override("font_color", COLOR_TITULO)
+		f.pressed.connect(func():
+			vista_formacion = true
+			Sonido.efecto("ui_tic")
+			_pintar_de_nuevo())
+		fila_heroes.add_child(f)
 
 	var h: Dictionary = Grupo.datos()[heroe]
 	var e: Dictionary = Grupo.estadisticas(heroe)
@@ -171,7 +197,19 @@ func _pintar_grupo() -> void:
 	izq.custom_minimum_size = Vector2(520, 0)
 	izq.add_theme_constant_override("separation", 6)
 	columnas.add_child(izq)
-	izq.add_child(_texto("%s — %s" % [heroe, Grupo.HEROES[heroe]["clase"]], 26, COLOR_TITULO))
+	var cabecera := "%s — %s" % [heroe, Grupo.HEROES[heroe]["clase"]]
+	if heroe in reserva:
+		cabecera += "  (reserva)"
+	izq.add_child(_texto(cabecera, 26, COLOR_TITULO))
+	if Grupo.HEROES[heroe].get("provisional", false):   # V12: Naira es una propuesta (NAIRA.md), no canon
+		izq.add_child(_texto("Personaje provisional, en pruebas.", 16, COLOR_SUAVE))
+	if Grupo.CRECIMIENTO.has(heroe) and int(h["puntos"]) > 0:   # V12: su reparto recomendado (los puntos, a mano igual)
+		var rep := _boton("Repartir como recomienda", 18, Vector2(300, 36), "repartir:" + heroe)
+		rep.pressed.connect(func():
+			if Grupo.repartir_recomendado(heroe) > 0:
+				Sonido.efecto("ui_mejora")
+				_pintar_de_nuevo())
+		izq.add_child(rep)
 	izq.add_child(_texto("Nivel %d     EXP %d / %d" % [h["nivel"], h["exp"], Grupo.exp_para(h["nivel"])], 20, COLOR_TEXTO))
 	var barra := ProgressBar.new()
 	barra.custom_minimum_size = Vector2(420, 3)
@@ -237,6 +275,107 @@ func _pintar_grupo() -> void:
 		der.add_child(f)
 		if id != "" and Inv.resumen(id) != "":
 			der.add_child(_texto("      " + Inv.resumen(id), 16, COLOR_BIEN))
+
+
+# ---------------------------------------------------------------- V12: Formación (activos y reserva)
+# Solo sale si hay reserva o más miembros que sitios (grupo.gd hay_formacion): con los tres de siempre, nunca. Una
+# tarjeta por miembro (retrato, nivel, PV y PM) con su botón «Al grupo» / «A la reserva». Kael va siempre en el grupo
+# (grupo.gd KAEL_SIEMPRE_ACTIVO, pendiente del usuario). Botones grandes para el dedo; con teclado o mando, el foco
+# pasa de botón en botón y Esc / B vuelve a la ficha.
+const RETRATOS := {"Kael": "res://dialogos/retratos/kael_reposo.png", "Lya": "res://dialogos/retratos/lya_reposo.png",
+	"Garon": "res://dialogos/retratos/garon_reposo.png",
+	"Naira": "res://personajes/naira/naira_retrato_provisional.png"}   # el de Naira, PROVISIONAL (de su modelo)
+
+
+func _pintar_formacion() -> void:
+	var arriba := HBoxContainer.new()
+	arriba.add_theme_constant_override("separation", 18)
+	cuerpo.add_child(arriba)
+	arriba.add_child(_texto("Formación", 26, COLOR_TITULO))
+	var activos: Array = Grupo.activos()
+	var cuenta := _texto("En el grupo: %d de %d" % [activos.size(), Grupo.MAX_ACTIVOS], 20, COLOR_TEXTO)
+	cuenta.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	arriba.add_child(cuenta)
+	var hueco := Control.new()
+	hueco.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	arriba.add_child(hueco)
+	var volver := _boton("Volver", 20, Vector2(150, 40), "formacion_volver")
+	volver.pressed.connect(_salir_formacion)
+	arriba.add_child(volver)
+	var ayuda := "Combaten los del grupo; la reserva viaja con vosotros, descansa y gana la mitad de la experiencia."
+	if Grupo.KAEL_SIEMPRE_ACTIVO:
+		ayuda += " Kael va siempre."
+	cuerpo.add_child(_texto(ayuda, 16, COLOR_SUAVE))
+	if aviso_formacion != "":
+		cuerpo.add_child(_texto(aviso_formacion, 18, Estilo.ORO))
+	var fila := HBoxContainer.new()
+	fila.add_theme_constant_override("separation", 14)
+	cuerpo.add_child(fila)
+	for n in Grupo.en_el_grupo():
+		fila.add_child(_tarjeta_formacion(n, n in activos))
+
+
+func _tarjeta_formacion(n: String, activo: bool) -> Control:
+	var caja := PanelContainer.new()
+	caja.custom_minimum_size = Vector2(236, 0)          # 4 × 236 + 3 × 14 caben en la lista (1080 px con su barra)
+	var fondo := StyleBoxFlat.new()
+	fondo.bg_color = Color(Estilo.SOMBRA, 0.75 if activo else 0.45)
+	fondo.border_color = Color(Estilo.ORO, 0.8 if activo else 0.25)
+	fondo.set_border_width_all(2 if activo else 1)
+	fondo.set_corner_radius_all(8)
+	fondo.set_content_margin_all(10)
+	caja.add_theme_stylebox_override("panel", fondo)
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 4)
+	caja.add_child(v)
+	var ret := TextureRect.new()
+	ret.custom_minimum_size = Vector2(212, 215)
+	ret.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	ret.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	if RETRATOS.has(n) and ResourceLoader.exists(RETRATOS[n]):
+		ret.texture = load(RETRATOS[n])
+	if not activo:
+		ret.modulate = Color(0.6, 0.6, 0.65)
+	v.add_child(ret)
+	var d: Dictionary = Grupo.datos()[n]
+	var e: Dictionary = Grupo.estadisticas(n)
+	v.add_child(_texto(n, 24, COLOR_TITULO if activo else COLOR_TEXTO))
+	v.add_child(_texto("%s · nivel %d" % [Grupo.HEROES[n]["clase"], int(d["nivel"])], 17, COLOR_SUAVE))
+	v.add_child(_texto("PV %d/%d   PM %d/%d" % [e["pv"], e["pv_max"], e["pm"], e["pm_max"]], 17, COLOR_SUAVE))
+	v.add_child(_texto("En el grupo" if activo else "En la reserva", 19, COLOR_BIEN if activo else COLOR_SUAVE))
+	var quiere: Array = Grupo.activos()
+	if activo:
+		quiere.erase(n)
+	else:
+		quiere.append(n)
+	var motivo: String = Grupo.motivo_formacion(quiere)
+	var b := _boton("A la reserva" if activo else "Al grupo", 20, Vector2(212, 48), "formacion:" + n)
+	b.disabled = motivo != ""
+	b.tooltip_text = motivo
+	b.pressed.connect(func():
+		aviso_formacion = Grupo.alternar(n)
+		Sonido.efecto("ui_confirmar" if aviso_formacion == "" else "ui_tic")
+		_pintar_de_nuevo())
+	v.add_child(b)
+	if motivo != "":
+		var nota := _texto(_motivo_corto(motivo), 15, COLOR_SUAVE)
+		nota.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART   # en dos líneas: la tarjeta no se ensancha
+		nota.custom_minimum_size = Vector2(212, 0)
+		v.add_child(nota)
+	return caja
+
+
+func _motivo_corto(motivo: String) -> String:
+	if motivo.begins_with("Solo caben"):
+		return "Grupo lleno: pasa antes a alguien a la reserva."
+	return motivo + "."
+
+
+func _salir_formacion() -> void:
+	vista_formacion = false
+	aviso_formacion = ""
+	Sonido.efecto("ui_tic")
+	_pintar_de_nuevo()
 
 
 # Pasa al objeto anterior o siguiente que puede llevar en esa ranura (o a ninguno).
@@ -368,10 +507,26 @@ func _pintar_habilidades() -> void:
 	var niveles: Dictionary = load("res://combate.gd").NIVELES_MAGIA
 	var Artes = load("res://artes.gd")              # artes (T-091): solo los niveles que ya están en el juego
 	var romano := ["I", "II", "III"]
-	for n in Grupo.activos():
-		cuerpo.add_child(_texto("%s (nivel %d)" % [n, Grupo.datos()[n]["nivel"]], 24, COLOR_TITULO))
-		if Grupo.HEROES[n]["magias"].is_empty():
+	var MN = load("res://magia_negra.gd")           # V12: la magia negra de Naira (sin ella, nadie la sabe)
+	var reserva: Array = Grupo.reserva()
+	for n in Grupo.en_el_grupo():                   # (la reserva también: sin reserva, los activos de siempre)
+		cuerpo.add_child(_texto("%s (nivel %d)%s" % [n, Grupo.datos()[n]["nivel"], "  · reserva" if n in reserva else ""],
+			24, COLOR_TITULO))
+		var familias_negra: Array = MN.familias_de(n)
+		if Grupo.HEROES[n]["magias"].is_empty() and familias_negra.is_empty():
 			cuerpo.add_child(_texto("   No usa magia.", 18, COLOR_SUAVE))
+		for fam in familias_negra:                  # V12: escuela por escuela, con lo que sabe y cuándo aprende el resto
+			var sabe_n: int = MN.nivel(n, fam)
+			for i in MN.cuantos(fam):
+				var d: Dictionary = MN.datos(fam, i + 1)
+				var texto := "   %s — %s, %d PM, %s%s" % [MN.NOMBRE_ESCUELA[fam], d["nombre"], int(d["coste"]),
+					"a todos" if d["a"] == "enemigos" else "a uno", ", se prepara" if float(d.get("prep", 0.0)) > 0.0 else ""]
+				if i < sabe_n:
+					cuerpo.add_child(_texto(texto + "   ✔", 18, COLOR_BIEN))
+				elif d.has("investigacion") and int(Grupo.datos()[n]["nivel"]) >= int(d["umbral"]):
+					cuerpo.add_child(_texto(texto + "   (falta su investigación)", 18, COLOR_SUAVE))
+				else:
+					cuerpo.add_child(_texto(texto + "   (se aprende al nivel %d)" % int(d["umbral"]), 18, COLOR_SUAVE))
 		for m in Grupo.HEROES[n]["magias"]:
 			var tiene: int = Grupo.nivel_magia(n, m)
 			for i in 3:

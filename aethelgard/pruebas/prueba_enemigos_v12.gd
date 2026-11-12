@@ -94,15 +94,8 @@ func _todo() -> void:
 # enemigo lleva su modelo nuevo, que sus golpes llegan (impacto) y, con Gorthor, que la fase 2 y el último aliento
 # ponen sus clips. Los errores de guion los cuenta el ejecutor.
 func _combate_real() -> void:
-	print("== combate de verdad con el parche (en memoria)")
-	var PARCHE = load("res://pruebas/herramientas/parche_enemigos_v12.gd")
-	var r: Dictionary = PARCHE.aplicar(FileAccess.get_file_as_string("res://combate.gd"))
-	_ok(r["ok"], "el parche encaja en combate.gd (faltan %s, repetidos %s)" % [r["faltan"], r["repetidos"]])
-	if not r["ok"]:
-		return
-	var gd := GDScript.new()
-	gd.source_code = r["texto"]
-	_ok(gd.reload() == OK, "el combate.gd parcheado compila")
+	print("== combate de verdad con los modelos propios (interruptor enemigos_v12; el parche ya está en combate.gd)")
+	Engine.set_meta("enemigos_v12", true)
 	for caso in [[4, "", "guardian", "guardian3d"], [6, "garganta_nido", "golem_ambar", "golem_ambar3d"],
 			[5, "garganta_gorthor", "gorthor", "gorthor_v12"]]:
 		for k in ["grupo_combate", "combate_fijo"]:
@@ -113,7 +106,6 @@ func _combate_real() -> void:
 			Engine.set_meta("combate_fijo", caso[1])
 		Engine.set_meta("desde_mapa", false)
 		var c = load("res://combate.tscn").instantiate()
-		c.set_script(gd)
 		root.add_child(c)
 		await _esperar(5)
 		var e: Dictionary = {}
@@ -150,6 +142,7 @@ func _combate_real() -> void:
 			_ok(clips.has("rendirse") or clips.has("rendido"), "    el último aliento lo pone de rodillas")
 		c.queue_free()
 		await _esperar(5)
+	Engine.remove_meta("enemigos_v12")
 
 
 func _triangulos(p: Node) -> int:

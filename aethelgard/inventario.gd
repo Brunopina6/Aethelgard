@@ -44,7 +44,17 @@ const ARMAS := {
 		"modelo": "res://hoja_infernal.obj", "color": "res://hoja_infernal_color.jpg", "normal": "res://hoja_infernal_normal.png",
 		"metal": "res://hoja_infernal_metal.png", "rugosidad": "res://hoja_infernal_rugosidad.png", "brillo": "res://hoja_infernal_brillo.png",
 		"largo": 1.1, "punta": 0.9},
+	# V12: el arma inicial de Naira (PROPUESTA, NO CANON: docs/v12/NAIRA.md §4.5). Tipo cetro para usar el equipo de
+	# siempre; solo ella. Su modelo provisional ya lleva el astrolabio colgado (personajes/naira/): la vara no se dibuja
+	# (su esqueleto no tiene dedos), así que la malla es la de la vara solo como respaldo. Entra en el inventario al unirse.
+	"astrolabio_bronce": {"nombre": "Astrolabio de Bronce", "tipo": "cetro", "ataque": 1, "magia": 6, "solo": "Naira",
+		"texto": "Un astrolabio viejo con un eclipse grabado en el centro. Pesa más de lo que parece.",
+		"modelo": "res://vara.obj", "color": "res://vara_color.jpg", "normal": "res://vara_normal.png",
+		"metal": "res://vara_metal.png", "rugosidad": "res://vara_rugosidad.png", "brillo": "",
+		"largo": 1.05, "punta": 0.55},
 }
+# V12: lo que trae cada recluta al unirse (grupo.gd unir → preparar_recluta). Los de siempre, en INICIAL.
+const EQUIPO_RECLUTA := {"Naira": {"arma": "astrolabio_bronce"}}
 
 # Protecciones y accesorios: "bonus" suma atributos (fuerza, magia, defensa, velocidad, vitalidad,
 # espiritu). "para" = quién puede llevarlo: "todos", "espada" (espadachines) o "cetro" (magos).
@@ -98,6 +108,20 @@ static func datos() -> Dictionary:
 	if not d["equipo"].has("Garon"):
 		d["equipo"]["Garon"] = {"arma": "hoja_infernal"}
 	return d
+
+
+# V12: un recluta se une (grupo.gd): su equipo inicial entra en el inventario y se lo pone, si nadie lo lleva. No toca
+# nada de los demás. Las partidas sin él no cambian (no se llama hasta que se une).
+static func preparar_recluta(heroe: String) -> void:
+	var d := datos()
+	if not d["equipo"].has(heroe):
+		d["equipo"][heroe] = {}
+	for ranura in EQUIPO_RECLUTA.get(heroe, {}):
+		var id: String = EQUIPO_RECLUTA[heroe][ranura]
+		if not id in d["equipables"]:
+			d["equipables"].append(id)
+		if quien_lleva(id) == "" and not d["equipo"][heroe].has(ranura):
+			equipar(heroe, ranura, id)
 
 
 static func cantidad(objeto: String) -> int:

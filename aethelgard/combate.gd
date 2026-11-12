@@ -59,6 +59,13 @@ const Brama := preload("res://combate_bramavidrio.gd")
 # V12: qué versión del modelo de Bramavidrio (1, el gusano de anillos; 2, la Sierpe de la Vela): un solo interruptor
 const BramaVersion := preload("res://enemigos/bramavidrio/bramavidrio_version.gd")
 const HeroesV2 := preload("res://personajes/heroes_v2/heroes_v2.gd")   # V12, fase B: héroes v2 (interruptor heroes_v2, APAGADO)
+# V12, fase C: los modelos propios de Blender del Guardián de piedra, el Gólem de ámbar y Gorthor (enemigos/<nombre>/).
+# APAGADOS hasta que el usuario los compare con los de siempre: Engine.set_meta("enemigos_v12", true) o «-- enemigos_v12».
+const ENEMIGOS_V12 := {"guardian": "guardian3d", "golem_ambar": "golem_ambar3d", "gorthor": "gorthor_v12"}
+
+
+static func _enemigos_v12() -> bool:
+	return bool(Engine.get_meta("enemigos_v12", false)) or "enemigos_v12" in OS.get_cmdline_user_args()
 # V12: el clímax musical de los grandes jefes (combate_climax.gd: qué jefes y qué canción; aquí, cuándo y cómo suena).
 # Ganchos «V12, clímax»: _quitar_pv lo vigila, _process lo empieza, _musica_fase2 no lo pisa.
 const Climax := preload("res://combate_climax.gd")
@@ -190,6 +197,12 @@ const MODELOS := {
 	"garon3d": {
 		"tipo": "3d", "esc": 0.67, "script": "res://garon_3d.gd", "gestos": "res://gestos_3d.gd", "base": "res://maga_3d.gd",
 		"rutas": ["res://garon.fbx"], "vp": Vector2i(700, 860), "alto_vista": 3.2, "centro_y": 1.45},
+	# V12: Naira (PROPUESTA, NO CANON; modelo PROVISIONAL, personajes/naira/naira_3d.gd). Solo sale con su hito o con el
+	# interruptor «naira_v12» (grupo.gd). El encuadre de Lya; 0,61 para quedar entre Lya y Kael (1,55 m).
+	"naira3d": {
+		"tipo": "3d", "esc": 0.61, "script": "res://personajes/naira/naira_3d.gd", "gestos": "res://gestos_3d.gd",
+		"base": "res://maga_3d.gd", "rutas": ["res://personajes/naira/naira_provisional.glb"],
+		"vp": Vector2i(580, 640), "alto_vista": 2.25, "centro_y": 1.05},
 	# Grimfang el goblin (goblin_3d.gd), con el hacha del Hollín. Mira a los héroes por sí solo: no se refleja.
 	"grimfang": {
 		"tipo": "3d", "esc": 0.6, "script": "res://goblin_3d.gd", "gestos": "res://gestos_3d.gd", "base": "res://maga_3d.gd",
@@ -274,6 +287,24 @@ const MODELOS := {
 		"tam": 1.15, "barra_y": -150.0, "centro_y": 60.0},      # barra y nombre dentro de la pantalla (Redmi, v581: salían cortados)
 	"coloso_falla2d": {"tipo": "imagen", "imagen": "res://enemigos/guardian.png", "cadera": Vector2(160, 470), "tam": 1.45,
 		"barra_y": -197.0, "centro_y": 90.0, "tinte": Color(1.05, 0.86, 0.8)},
+	# V12, fase C (animaciones, 12/11): modelos propios de Blender (enemigos/<nombre>/fuente/), con la interfaz de
+	# goblin_3d.gd (corren hasta el objetivo: atacar_hacha / golpe_fuerte) y los ganchos de enemigo_v12_3d.gd (cargar,
+	# aturdido, fase2, devorar, rendirse, retirarse). Encuadre de pruebas/prueba_enemigos_v12.gd; «respaldo»: lo de antes.
+	"guardian3d": {
+		"tipo": "3d", "esc": 0.6, "script": "res://enemigos/guardian_piedra/guardian_piedra_3d.gd",
+		"gestos": "res://gestos_3d.gd", "rutas": ["res://enemigos/guardian_piedra/guardian_piedra.glb"],
+		"vp": Vector2i(1280, 1300), "alto_vista": 4.7, "centro_y": 1.8, "barra_y": 216.0, "centro_3d": 1.35,
+		"pos_grupo": Vector2(-191, -186), "caida": 1.6, "respaldo": "guardian"},
+	"golem_ambar3d": {
+		"tipo": "3d", "esc": 0.6, "script": "res://enemigos/golem_ambar/golem_ambar_3d.gd",
+		"gestos": "res://gestos_3d.gd", "rutas": ["res://enemigos/golem_ambar/golem_ambar.glb"],
+		"vp": Vector2i(1000, 910), "alto_vista": 3.3, "centro_y": 1.15, "barra_y": 49.0, "centro_3d": 1.25,
+		"pos_grupo": Vector2(-79, 37), "caida": 1.4, "respaldo": "guardian"},
+	"gorthor_v12": {
+		"tipo": "3d", "esc": 0.6, "script": "res://enemigos/gorthor/gorthor_3d.gd",
+		"gestos": "res://gestos_3d.gd", "rutas": ["res://enemigos/gorthor/gorthor.glb"],
+		"vp": Vector2i(1420, 1520), "alto_vista": 5.2, "centro_y": 1.6, "barra_y": 183.0, "centro_3d": 1.6,
+		"pos_grupo": Vector2(-60, -247), "caida": 1.4, "respaldo": "gorthor3d"},
 }
 
 # Enemigos disponibles y grupos que pueden aparecer en un encuentro (se elige uno al azar).
@@ -368,7 +399,11 @@ const ANIM := {
 	"hollin": {"distancia": 140.0},
 	"gorthor": {"distancia": 170.0},
 	"garon3d": {"distancia": 130.0},
+	"naira3d": {"distancia": 110.0},               # V12: Naira (como Lya)
 	"guardian": {"distancia": 150.0},
+	"guardian3d": {"distancia": 310.0},         # V12, fase C: el mandoble llega 2 m por delante
+	"golem_ambar3d": {"distancia": 220.0},      # V12, fase C: el puño
+	"gorthor_v12": {"distancia": 220.0},        # V12, fase C: la cuchilla
 	"guardian_bosque2d": {"distancia": 170.0},     # fase 3: el Guardián del Bosque (respaldo 2D)
 	"guardian_bosque": {"distancia": 170.0},       # fase 3: ataca desde su sitio (_anim_guardian)
 	"coloso_falla2d": {"distancia": 170.0},        # V9: el Coloso de la Falla (respaldo 2D)
@@ -386,6 +421,14 @@ var heroes: Array = [
 	{"nombre": "Garon", "modelo": "garon3d", "hero": true, "hp": 150, "hp_max": 150, "mp": 4, "mp_max": 4,
 		"atk": 28, "vel": 16.0, "atb": 0.0, "pos": Vector2(270, 100)},
 ]
+# V12, grupo con reserva (grupo.gd): los reclutas no tienen sitio propio. Ocupan el SITIO de uno de los de siempre que no
+# esté en el combate, en este orden de preferencia (Naira, maga de la fila de atrás: el de Lya; si no, el de Garon o el
+# de Kael), y su puesto en la lista (HUD, cola). Con los tres de siempre, nada cambia (ni sitios ni orden).
+const RECLUTAS_COMBATE := [
+	{"nombre": "Naira", "modelo": "naira3d", "hero": true, "hp": 70, "hp_max": 70, "mp": 40, "mp_max": 40,
+		"atk": 5, "vel": 19.0, "atb": 0.0, "pos": Vector2(548, 95)},
+]
+const SITIO_DE_RECLUTA := {"Naira": ["Lya", "Garon", "Kael"]}
 
 var enemigos: Array = []
 
@@ -458,7 +501,7 @@ func _ready() -> void:
 	heroes = heroes.filter(func(h): return RESPALDO.has(h["modelo"]) or _ruta_3d(MODELOS[h["modelo"]]) != "")   # Garon sin modelo: no sale
 	if ResourceLoader.exists("res://grupo.gd"):    # solo los que están ahora en el grupo (grupo.gd, activos)
 		var en_grupo: Array = load("res://grupo.gd").activos()
-		heroes = heroes.filter(func(h): return h["nombre"] in en_grupo)
+		heroes = _con_reclutas(heroes.filter(func(h): return h["nombre"] in en_grupo), en_grupo)
 	for h in heroes:
 		if RESPALDO.has(h["modelo"]) and _ruta_3d(MODELOS[h["modelo"]]) == "":
 			push_warning("Falta el modelo 3D de %s o sus scripts: se usa la versión 2D" % h["nombre"])
@@ -521,6 +564,37 @@ func _ready() -> void:
 			_presentar(e)
 
 
+# V12, grupo con reserva: los reclutas activos entran en el sitio y el puesto de uno de los de siempre que no esté
+# (RECLUTAS_COMBATE, SITIO_DE_RECLUTA). Sin reclutas activos devuelve «presentes» tal cual. Sin su modelo 3D, no sale
+# (como Garon sin el suyo).
+func _con_reclutas(presentes: Array, en_grupo: Array) -> Array:
+	var orden: Array = ["Kael", "Lya", "Garon"]
+	var sitio := {}                                  # los sitios de la lista «heroes» de arriba
+	for h in [{"nombre": "Kael", "pos": Vector2(352, -14)}, {"nombre": "Lya", "pos": Vector2(548, 95)},
+			{"nombre": "Garon", "pos": Vector2(270, 100)}]:
+		sitio[h["nombre"]] = h["pos"]
+	var puesto := {}                                 # sitio libre → recluta que lo ocupa
+	for r in RECLUTAS_COMBATE:
+		if not r["nombre"] in en_grupo or _ruta_3d(MODELOS[r["modelo"]]) == "":
+			continue
+		for s in SITIO_DE_RECLUTA.get(r["nombre"], orden):
+			if not s in en_grupo and not puesto.has(s):
+				var nuevo: Dictionary = r.duplicate(true)
+				nuevo["pos"] = sitio[s]
+				puesto[s] = nuevo
+				break
+	if puesto.is_empty():
+		return presentes
+	var lista: Array = []
+	for s in orden:
+		for h in presentes:
+			if h["nombre"] == s:
+				lista.append(h)
+		if puesto.has(s):
+			lista.append(puesto[s])
+	return lista
+
+
 # Índice de un grupo al azar para un encuentro con «cuantos» héroes (los de tres, como siempre).
 static func grupo_al_azar(cuantos: int) -> int:
 	var tabla: Dictionary = AL_AZAR_POR_TAMANO
@@ -559,6 +633,8 @@ func _elegir_enemigos() -> void:
 		Escalado.aplicar(e, zona_enc, nivel_grupo_enc, combate_fijo)   # en la base de la región, igual que ENEMIGOS
 		e["hero"] = false
 		e["clave"] = g[0]                              # qué enemigo es: su voz (sonido.gd, T-083)
+		if ENEMIGOS_V12.has(g[0]) and _enemigos_v12():     # V12, fase C: el modelo propio (interruptor enemigos_v12, APAGADO)
+			e["modelo"] = ENEMIGOS_V12[g[0]]
 		var mod: Dictionary = MODELOS[e["modelo"]]
 		if mod.get("tipo", "") == "3d" and _ruta_3d(mod) == "" and mod.has("respaldo"):   # falta el 3D: su dibujo 2D
 			push_warning("Falta el modelo 3D de %s: se usa su respaldo 2D" % e["nombre"])
@@ -1788,6 +1864,8 @@ func _turno_enemigo(f: Dictionary) -> void:
 	if p == "jefe" and not f.get("cargando", false) and randf() < (0.45 if f.get("fase2", false) else 0.35):
 		f["cargando"] = true
 		_marcar_aviso(f, true)                       # la señal de aviso sobre él, hasta que golpee (se lee sin partículas)
+		if _p3d(f) != null and _p3d(f).has_method("cargar"):   # V12, fase C: alza el arma y se queda en la carga
+			_p3d(f).cargar()
 		Sonido.efecto("carga_jefe")                 # sonido.gd
 		registro.text = "¡%s se prepara para un golpe devastador!" % f["nombre"]
 		_numero_flotante(f, "⚠ ¡Cuidado!", Color(1.0, 0.8, 0.2), 34)
@@ -2127,6 +2205,8 @@ func _interrumpir(f: Dictionary, cartel: String, texto: String) -> void:
 	f.erase("objetivo_carga")
 	f.erase("carga_recibido")
 	_marcar_aviso(f, false)
+	if _p3d(f) != null and _p3d(f).has_method("aturdido"):     # V12, fase C: se tambalea (el Gólem)
+		_p3d(f).aturdido()
 	if PATRONES[f["personalidad"]].get("encoge", false):
 		f["defendiendo"] = false
 		if f.has("rig") and is_instance_valid(f["rig"]):
@@ -2143,6 +2223,8 @@ func _turno_patron(f: Dictionary, vivos: Array, mult: float, plan: Dictionary) -
 	if f.get("recupera", false):
 		f["recupera"] = false
 		registro.text = ("%s, aturdido, recupera el aliento" if f.get("aturdido", false) else "%s recupera el aliento") % f["nombre"]
+		if _p3d(f) != null and _p3d(f).has_method("aturdido"):   # V12, fase C: deja de tambalearse
+			_p3d(f).reposo()
 		f.erase("aturdido")
 		_numero_flotante(f, "Recupera", Color(0.8, 0.85, 0.75), 28)
 		await get_tree().create_timer(0.8).timeout
@@ -2189,6 +2271,8 @@ func _turno_patron(f: Dictionary, vivos: Array, mult: float, plan: Dictionary) -
 	f["carga_recibido"] = 0
 	f["objetivo_carga"] = obj
 	_marcar_aviso(f, true)
+	if _p3d(f) != null and _p3d(f).has_method("cargar"):       # V12, fase C: el Gólem levanta los puños y se queda
+		_p3d(f).cargar()
 	if plan["a"] == "todos":
 		registro.text = "%s %s: ¡va a golpear a todos!" % [f["nombre"], plan["prepara"]]
 	else:
@@ -3022,7 +3106,7 @@ func _motivo_duo(socio: Dictionary, paga: Dictionary, coste: int, atb_min: float
 		return "%s necesita %d PM" % [paga["nombre"], coste]
 	if socio["atb"] < ATB_MAX * atb_min:
 		return "%s aún no está lista (%d %%)" % [socio["nombre"], roundi(socio["atb"] / ATB_MAX * 100.0)] \
-			if socio["nombre"] == "Lya" else "%s aún no está listo (%d %%)" % [socio["nombre"], roundi(socio["atb"] / ATB_MAX * 100.0)]
+			if socio["nombre"] in ["Lya", "Naira"] else "%s aún no está listo (%d %%)" % [socio["nombre"], roundi(socio["atb"] / ATB_MAX * 100.0)]
 	return ""
 
 
@@ -3055,7 +3139,117 @@ func _duos_de(quien: Dictionary) -> Array:
 					_motivo_duo(garon, quien, BARRERA_RUNICA["coste"], BARRERA_RUNICA["atb_min"]),
 					"Garon traza las runas y Lya las enciende: una coraza para todo el grupo. " +
 					"Gasta %d PM de Lya y el turno de Garon." % BARRERA_RUNICA["coste"]))
+	r.append_array(_duos_naira(quien))                # V12: los de Naira (solo si está en el combate)
 	return r
+
+
+# ---------------------------------------------------------------- V12: técnicas combinadas de Naira (PROPUESTA)
+# docs/v12/NAIRA.md §5.6, con las reglas de los dúos de la V11 (el compañero, en pie y con la mitad de su ATB, presta
+# su turno). Solo existen si Naira está en el combate (grupo.gd: su hito o el interruptor «naira_v12»).
+# Contrapeso (Kael + Naira), en la pestaña DÚO de Kael: Naira paga 8 PM y su turno. El ataque de Kael más el 50 % del
+#   Umbral de Naira (la Aguja Umbría de su escuela de Sombras); rompe la guardia como la magia. Si el enemigo va Lento
+#   (el «Lastre»), +30 % y se lo gasta.
+# Equinoccio (Lya + Naira), en la pestaña DÚO de Lya: Lya paga 10 PM y Naira presta su turno. Naira golpea a uno con su
+#   Umbral ×1,2 y Lya convierte la mitad del daño hecho en cura para el grupo en pie (el 20 % de la vida máxima de cada
+#   uno como mucho). Pide el hito «nr_l2» (o el interruptor de desarrollo).
+# Vigilia (Garon) y Doble Fondo (Kael) desvían los golpes de los enemigos hacia otro héroe: tocan la IA de todos los
+# enemigos y quedan documentadas, sin hacer (docs/memory/agents/combate_v12_grupo_naira.md).
+const CONTRAPESO := {"coste": 8, "parte_umbral": 0.5, "lastre": 1.3, "atb_min": 0.5}
+const EQUINOCCIO := {"coste": 10, "mult_umbral": 1.2, "parte_cura": 0.5, "tope_cura": 0.2, "atb_min": 0.5, "hito": "nr_l2"}
+
+
+func _duos_naira(quien: Dictionary) -> Array:
+	var r: Array = []
+	var naira := _heroe_de_grupo("Naira")
+	if naira.is_empty():
+		return r
+	match quien.get("nombre", ""):
+		"Kael":
+			r.append(_fila_duo("Contrapeso", "negra_gravedad", _elegir_contrapeso, CONTRAPESO["coste"], "Naira",
+				_motivo_duo(naira, naira, CONTRAPESO["coste"], CONTRAPESO["atb_min"]),
+				("Kael y Naira: ella le quita el peso y se lo devuelve de golpe. Rompe la guardia; contra un enemigo " +
+				"lento, más daño. Gasta %d PM y el turno de Naira.") % CONTRAPESO["coste"]))
+		"Lya":
+			var G = load("res://grupo.gd")
+			if G.naira_v12() or load("res://progreso.gd").hito(EQUINOCCIO["hito"]):
+				r.append(_fila_duo("Equinoccio", "Cura", _elegir_equinoccio, EQUINOCCIO["coste"], "",
+					_motivo_duo(naira, quien, EQUINOCCIO["coste"], EQUINOCCIO["atb_min"]),
+					("Naira golpea con su sombra y Lya convierte la mitad del daño en cura para el grupo. " +
+					"Gasta %d PM de Lya y el turno de Naira.") % EQUINOCCIO["coste"]))
+	return r
+
+
+func _umbral_de() -> Dictionary:
+	return MN.datos("negra_sombras", 1)                # Aguja Umbría = el Umbral de su propuesta (daño 42)
+
+
+func _elegir_contrapeso() -> void:
+	_pedir_objetivo(enemigos.filter(func(e): return e["hp"] > 0), _contrapeso, _menu_magia.bind(PESTANA_DUO),
+		"TOCA UN ENEMIGO")
+
+
+func _contrapeso(obj: Dictionary) -> void:
+	_ocultar_menu()
+	estado = "accion"
+	var kael: Dictionary = actor
+	var naira := _heroe_de_grupo("Naira")
+	_gastar_pm(naira, CONTRAPESO["coste"])
+	_prestar_turno(naira)
+	registro.text = "Kael y Naira: ¡Contrapeso!"
+	var pn = _p3d(naira)
+	if pn != null and pn.has_method("lanzar_magia"):
+		pn.lanzar_magia()                              # su gesto, sin esperar
+	_destello(_centro(kael), MN.COLOR["negra_gravedad"], 1.1)
+	_sonar(MN.sonido("negra_gravedad", "peso_abismo", _existe_sonido))
+	_actualizar()
+	await get_tree().create_timer(0.35).timeout
+	var dano: int = maxi(1, int(kael["atk"] * kael.get("mult_fisico", 1.0))) + randi_range(-2, 3) \
+		+ int(_dano_magia(naira, _umbral_de()) * CONTRAPESO["parte_umbral"])
+	if MN.turnos(obj, "lento") > 0:                   # el Lastre: más daño y se lo gasta
+		dano = int(dano * CONTRAPESO["lastre"])
+		obj["mn"].erase("lento")
+		_numero_flotante(obj, "¡Sin lastre!", MN.COLOR["negra_gravedad"], 26, Vector2(-30, -84))
+	kael["contrapeso"] = true                         # golpe que cuenta como magia (rompe guardias: _animar_golpe)
+	await _animar_golpe(kael, obj, dano, "")
+	kael.erase("contrapeso")
+	_terminar_turno()
+
+
+func _elegir_equinoccio() -> void:
+	_pedir_objetivo(enemigos.filter(func(e): return e["hp"] > 0), _equinoccio, _menu_magia.bind(PESTANA_DUO),
+		"TOCA UN ENEMIGO")
+
+
+func _equinoccio(obj: Dictionary) -> void:
+	_ocultar_menu()
+	estado = "accion"
+	var lya: Dictionary = actor
+	var naira := _heroe_de_grupo("Naira")
+	_gastar_pm(lya, EQUINOCCIO["coste"])
+	_prestar_turno(naira)
+	registro.text = "Naira y Lya: ¡Equinoccio!"
+	var pl = _p3d(lya)
+	if pl != null and pl.has_method("lanzar_magia"):
+		pl.lanzar_magia()
+	_actualizar()
+	var antes: int = obj["hp"]
+	var mult_antes: float = naira.get("magia_mult", 1.0)
+	naira["magia_mult"] = mult_antes * EQUINOCCIO["mult_umbral"]
+	await _resolver_negra(naira, "negra_sombras", 1, [obj])
+	naira["magia_mult"] = mult_antes
+	var hecho: int = maxi(0, antes - int(obj["hp"]))
+	var cura: int = int(hecho * EQUINOCCIO["parte_cura"])
+	if cura > 0:
+		_sonar("pocion")                         # (la cura de Lya: el mismo de las pociones)
+		for h in heroes.filter(func(x): return x["hp"] > 0):
+			var c: int = mini(cura, int(h["hp_max"] * EQUINOCCIO["tope_cura"]))
+			c = mini(c, h["hp_max"] - h["hp"])
+			if c > 0:
+				h["hp"] += c
+				_numero_flotante(h, "+%d" % c, C_CURA, 30)
+		_actualizar()
+	await get_tree().create_timer(0.4).timeout
+	_terminar_turno()
 
 
 # El compañero presta su turno: su ATB a cero y fuera de la cola.
@@ -3353,7 +3547,7 @@ func _menu_escuela(fam: String, pagina := 0) -> void:
 	escuela_menu[actor["nombre"]] = fam
 	var pestanas: Array = []
 	var activa := 0
-	for e in MN.ESCUELAS:
+	for e in MN.TODAS:                               # (V12: y la firma de Naira, el Eclipse, si la sabe)
 		if sabe.has(e):
 			if e == fam:
 				activa = pestanas.size()
@@ -3387,7 +3581,7 @@ func _elegir_negra(fam: String, nv: int, sola := false) -> void:
 
 
 func _existe_sonido(k: String) -> bool:
-	return Sonido.EFECTOS.has(k) or Sonido.EFECTOS_DESIERTO.has(k)
+	return Sonido.EFECTOS.has(k) or Sonido.EFECTOS_DESIERTO.has(k) or Sonido.EFECTOS_MAGIA_NEGRA.has(k)   # V12: magia negra
 
 
 func _lanzar_negra(fam: String, nv: int, objs: Array) -> void:
@@ -3403,6 +3597,9 @@ func _lanzar_negra(fam: String, nv: int, objs: Array) -> void:
 		quien["conjuro_nodo"] = _carga_magia(quien, fam, 1.0 + 0.2 * (nv - 1))
 		_sonar(MN.sonido_de(MN.SONIDO_PREPARAR, _existe_sonido))
 		_numero_flotante(quien, "◷ %s" % d["nombre"], MN.COLOR[fam], 28)
+		var pc = _p3d(quien)                         # V12: quien tiene clip de concentrarse (Naira) lo pone mientras prepara
+		if pc != null and pc.has_method("concentrar"):
+			pc.concentrar()
 		var atb := MN.preparar(quien, fam, nv, objs, ATB_MAX)
 		_actualizar()
 		await get_tree().create_timer(0.5).timeout
@@ -3462,7 +3659,9 @@ func _resolver_negra(quien: Dictionary, fam: String, nv: int, objs: Array, circu
 	if circulo == null or not is_instance_valid(circulo):
 		circulo = _carga_magia(quien, fam, 1.0 + 0.2 * (nv - 1))
 	var p = _p3d(quien)
-	if p != null and p.has_method("lanzar_magia"):
+	if p != null and MN.FIRMAS.has(fam) and p.has_method("magia_poderosa"):   # V12: el Eclipse, con su clip grande
+		await p.magia_poderosa()
+	elif p != null and p.has_method("lanzar_magia"):
 		await p.lanzar_magia()
 	else:
 		await get_tree().create_timer(0.45).timeout
@@ -4133,7 +4332,7 @@ func _voz(quien: Dictionary, evento: String) -> void:
 
 func _sonar(nombre: String) -> void:
 	sonido_pedido.emit(nombre)
-	if Sonido.EFECTOS.has(nombre) or Sonido.EFECTOS_DESIERTO.has(nombre):   # V12: también el gusano (gusano_rugido…)
+	if Sonido.EFECTOS.has(nombre) or Sonido.EFECTOS_DESIERTO.has(nombre) or Sonido.EFECTOS_MAGIA_NEGRA.has(nombre):   # V12: el gusano y la magia negra
 		Sonido.efecto(nombre)
 
 
@@ -4619,6 +4818,8 @@ func _cambio_fase(f: Dictionary) -> void:
 	_temblor(14.0)
 	menu.vibrar(60)
 	_numero_flotante(f, "¡FURIA DEL ABISMO!", Color("FF7A3C"), 40)
+	if _p3d(f) != null and _p3d(f).has_method("fase2"):         # V12, fase C: Gorthor ruge y se enciende
+		_p3d(f).fase2()
 	var rojo := Color(1.0, 0.62, 0.55)
 	if fondo_nodo != null:
 		create_tween().tween_property(fondo_nodo, "modulate", rojo, 1.2)
@@ -4732,7 +4933,10 @@ func _decidir(f: Dictionary) -> void:
 		f["brasas"].emitting = false
 	registro.text = "%s cae de rodillas. Te mira, sin fuerzas." % f["nombre"]
 	Sonido.voz(f, "caida")                         # se queja y las rodillas golpean el suelo (sonido.gd, T-083)
-	create_tween().tween_property(f["rig"], "position:y", f["rig_base"].y + 24.0, 0.5)
+	if _p3d(f) != null and _p3d(f).has_method("rendirse"):     # V12, fase C: Gorthor cae de rodillas
+		_p3d(f).rendirse()
+	else:
+		create_tween().tween_property(f["rig"], "position:y", f["rig_base"].y + 24.0, 0.5)
 	if musica != null:
 		create_tween().tween_property(musica, "volume_db", -18.0, 1.0)
 	await get_tree().create_timer(1.2).timeout
@@ -4748,6 +4952,8 @@ func _decidir(f: Dictionary) -> void:
 func _perdonar(f: Dictionary) -> void:
 	_apuntar_decision(f, "perdonado")
 	registro.text = "Kael baja la espada. %s se arrastra hacia el abismo." % f["nombre"].get_slice(" ", 0)
+	if _p3d(f) != null and _p3d(f).has_method("retirarse"):    # V12, fase C: a gatas, arrastrando la cuchilla
+		_p3d(f).retirarse()
 	var rig: Node2D = f["rig"]
 	var t := create_tween().set_parallel(true)
 	t.tween_property(rig, "position:x", rig.position.x - 420.0, 1.6).set_ease(Tween.EASE_IN)
@@ -5096,7 +5302,7 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 			Sonido.golpe(critico, objetivo.get("defendiendo", false))
 			if origen.get("devora", false):
 				Sonido.voz(origen, "devorar")              # el mordisco de Gorthor
-		golpe_magico = magia != "" or origen.get("filo_arcano", false)
+		golpe_magico = magia != "" or origen.get("filo_arcano", false) or origen.get("contrapeso", false)   # (V12: Contrapeso)
 		var real: int = _quitar_pv(objetivo, dano)     # lo que llega a los PV (con coraza de Escarcha, menos; M3)
 		golpe_magico = false
 		origen["absorbido"] = dano - real              # lo que paró la coraza (el mordisco de Gorthor no se cura con eso)
@@ -5130,7 +5336,10 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 	elif _p3d(origen) != null and _p3d(origen).has_method("atacar_hacha"):     # Grimfang y Gorthor
 		# golpe fuerte a dos manos con rabia o al descargar el golpe cargado; si no, el doble tajo
 		var fuerte: bool = origen.get("furia", false) or origen.get("descarga", false)
-		await _anim_ataque_3d(origen, objetivo, impacto, "golpe_fuerte" if fuerte else "atacar_hacha")
+		var metodo_3d := "golpe_fuerte" if fuerte else "atacar_hacha"
+		if origen.get("devora", false) and _p3d(origen).has_method("devorar"):   # V12, fase C: el mordisco de Gorthor
+			metodo_3d = "devorar"
+		await _anim_ataque_3d(origen, objetivo, impacto, metodo_3d)
 	elif _p3d(origen) != null and _p3d(origen).has_method("atacar_juicio"):    # Garon
 		await _anim_ataque_3d(origen, objetivo, impacto, "atacar_juicio")
 	elif _p3d(origen) != null and _p3d(origen).has_method("ataque_salto"):
@@ -5360,6 +5569,8 @@ func _anim_ataque_3d(o: Dictionary, obj: Dictionary, impacto: Callable, metodo: 
 			await p.atacar_juicio(al_golpear)
 		"atacar_giro":
 			await p.atacar_giro(al_golpear)
+		"devorar":                                     # V12, fase C: Gorthor muerde (impacto al cerrar las fauces)
+			await p.devorar(al_golpear)
 	if golpes[0] == 0:                                 # sin esa animación: el golpe igualmente
 		impacto.call()
 	if en_guardia:                                     # vuelve de espaldas, sin perder de vista al enemigo
@@ -6392,7 +6603,7 @@ func _restablecer_color(f: Dictionary) -> void:
 			_p3d(f).morir()
 			if not f["hero"]:                          # enemigo 3D: cae y luego se desvanece
 				var t := create_tween()
-				t.tween_interval(2.8 if Brama.es(f) else 0.9)   # V12, Bramavidrio: se ve desplomarse y hundirse
+				t.tween_interval(2.8 if Brama.es(f) else float(MODELOS[f["modelo"]].get("caida", 0.9)))   # V12: Bramavidrio se ve desplomarse y hundirse; fase C: «caida»
 				t.tween_property(rig, "modulate:a", 0.0, 0.5)
 		return
 	if not f["animando"]:
@@ -6597,6 +6808,10 @@ func _repartir_exp(ganan: bool) -> void:
 			for x in MN.nuevas_al_subir(h["nombre"], gr.datos()[h["nombre"]], nivel - subidos, nivel):   # V12: magia negra
 				await get_tree().create_timer(1.0).timeout
 				registro.text = "%s aprende %s" % [h["nombre"], MN.datos(x[0], x[1])["nombre"]]
+	# V12, grupo con reserva: la reserva gana su parte (grupo.gd, PARTE_EXP_RESERVA), sin avisos. Sin reserva, nada.
+	for n in gr.reserva():
+		var mult_r: float = Progreso.mult_exp(zona, tipo, gr.datos()[n]["nivel"])
+		gr.ganar_exp(n, int(Recompensas.exp_de_heroe(total, mult_r, false) * gr.PARTE_EXP_RESERVA))
 	await get_tree().create_timer(0.6).timeout
 
 

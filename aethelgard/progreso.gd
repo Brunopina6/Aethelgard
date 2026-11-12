@@ -61,7 +61,8 @@ const CLAVES := ["grupo", "inventario", "cofres_abiertos", "prologo_visto", "lug
 	"pos_zona", "pos_zona_ok", "pos_zona_lugar", "lore_visto", "incienso", "escena_guardada",
 	"mazmorras", "combates_ganados", "decisiones", "pos_isla", "pos_isla_ok",
 	"hitos", "pos_3d", "pos_3d_ok", "pos_3d_lugar", "grupo_activo",
-	"investigaciones", "gremio", "encuentros_azar", "taberna", "buscador"]   # investigaciones: investigacion.gd (fase 2); gremio: gremio.gd, encuentros_azar: los élites , taberna: ciudades/taberna_juegos.gd y buscador: buscador.gd (V11). Las
+	"investigaciones", "gremio", "encuentros_azar", "taberna", "buscador",
+	"grupo_miembros"]   # grupo_miembros: la reserva (grupo.gd, V12; solo si hay alguien en ella). investigaciones: investigacion.gd (fase 2); gremio: gremio.gd, encuentros_azar: los élites , taberna: ciudades/taberna_juegos.gd y buscador: buscador.gd (V11). Las
 	# partidas antiguas no las traen
 const MAPA := "res://mapa.tscn"
 
@@ -369,7 +370,7 @@ static func volcar(escena := "") -> Dictionary:
 
 # Versión del formato de la partida (10/11): se escribe al guardar para que una migración futura sepa de dónde parte.
 # Las partidas de antes no la llevan: son el formato 1, y cargan igual (restaurar() no la necesita).
-const FORMATO := 2
+const FORMATO := 3                 # 3 (V12, 12/11): puede traer «grupo_miembros» (la reserva); sin ella carga igual
 
 
 static func formato_de(d: Dictionary) -> int:

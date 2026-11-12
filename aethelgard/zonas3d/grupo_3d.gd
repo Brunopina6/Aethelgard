@@ -42,8 +42,10 @@ const ANDA_SI := 5.2             # ...y vuelve a andar por debajo de esta (así 
 const SUBE_MAX := 0.5            # escalón máximo, como Kael
 const PENDIENTE_MAX := 40.0      # grados, como Kael
 const RODILLAS := 0.6            # altura de la comprobación de obstáculos, como Kael (SUBE_MAX + 0,1)
-const RUTAS := {"Lya": "res://maga_3d.gd", "Garon": "res://garon_3d.gd"}
-const ESCALA := {"Lya": 0.6 / 0.67, "Garon": 1.0}
+# V12: Naira (PROPUESTA, NO CANON; modelo PROVISIONAL). Solo sale si va activa (grupo.gd: su hito o el interruptor
+# «naira_v12», APAGADO). 1,55 m: entre Lya (1,52) y Kael (1,7).
+const RUTAS := {"Lya": "res://maga_3d.gd", "Garon": "res://garon_3d.gd", "Naira": "res://personajes/naira/naira_3d.gd"}
+const ESCALA := {"Lya": 0.6 / 0.67, "Garon": 1.0, "Naira": 1.55 / 1.7}
 const UNIR_HOLGURA := 1.3        # al unirse alguien, metros libres a su alrededor (T-084)
 
 var escena: Node3D               # la región: _prohibido(p) y el mundo físico
@@ -61,6 +63,21 @@ func preparar(region: Node3D, lider: Node3D, nombres: Array) -> void:
 	kael = lider
 	for n in nombres:
 		_anadir(n)
+	for n in reclutas_activos(nombres):              # V12: los reclutas activos, detrás de los de siempre
+		_anadir(n)
+
+
+# V12, grupo con reserva: las regiones eligen a los acompañantes de entre los tres de siempre (grupo.gd EN_EL_GRUPO);
+# los reclutas activos (Naira) se añaden aquí, al final de la fila, sin tocar las regiones. Nunca más acompañantes
+# que los que caben en el grupo activo (MAX_ACTIVOS menos Kael). Sin reclutas activos, nada (la fila de siempre).
+static func reclutas_activos(nombres: Array) -> Array:
+	var G = load("res://grupo.gd")
+	var r: Array = []
+	var sitio: int = G.MAX_ACTIVOS - 1 - nombres.size()
+	for n in G.activos():
+		if n in G.RECLUTAS and not n in nombres and RUTAS.has(n) and r.size() < sitio:
+			r.append(n)
+	return r
 
 
 # Se une alguien en mitad de la escena (la misión): aparece en un sitio libre cerca de «desde», va el último de la fila
