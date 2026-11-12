@@ -239,3 +239,18 @@ negra).
     - el Gran Bosque Verde 3D;
     - la misión de Naira como prototipo apagado (`D:\Aethelgard_v12_naira_mision`, desde `3e032c3`).
   - **Para probar con todo encendido:** `-- heroes_v2 magia_negra_v12 naira_v12 enemigos_v12`, o la meta de Engine de cada uno.
+- **04:40, segunda gran fase cerrada en esta sesión** (informe: `docs/v12/INFORME_FASE2.md`):
+  - **Integrado:**
+    - Gran Bosque Verde 3D por defecto (`461df04`);
+    - la misión de Naira, apagada (`f8cb979`);
+    - `prueba_equilibrio` con semilla fija (`b719ea0`).
+  - **Batería final:** **130 · 0 · 58 · 0**.
+  - **APK de Auditoría v646** (`b719ea0`, SIN publicar ni instalar):
+    `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261112-b719ea0.apk`, 371,3 MB (60 MB más que la v615), SHA-256
+    `652273eff55844fa32f199b15ea759e77454413c580eb220b0749e7a01689883`, el mismo certificado.
+  - **Siguiente:**
+    1. con el Redmi, medir la Garganta, Oakhaven y el Gran Bosque 3D, y comparar lo apagado (interruptores en el informe);
+    2. las decisiones del usuario;
+    3. migrar las Cumbres y el Valle;
+    4. encuentros por región.
+  - **Etiqueta de recuperación:** `v12-antes-noche-20261111`. Hay 30 commits locales desde ella.
