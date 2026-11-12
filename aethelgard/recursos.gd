@@ -235,6 +235,10 @@ func listar(carpeta := "res://") -> PackedStringArray:
 		for g in GUIONES_RESIDENTES:
 			if ResourceLoader.exists(g):
 				r.append(g)
+		for c in CARPETAS_GUIONES_RESIDENTES:
+			for n in ResourceLoader.list_directory(c):
+				if n.ends_with(".gd"):
+					r.append(c.path_join(n))
 	return r
 
 
@@ -248,6 +252,10 @@ const GUIONES_RESIDENTES := ["res://menus.gd", "res://diario.gd", "res://tienda.
 	"res://gremio_menu.gd", "res://servicios_botica.gd", "res://taberna_parejas.gd", "res://investigacion.gd",
 	"res://inventario.gd", "res://kael_3d.gd", "res://maga_3d.gd", "res://garon_3d.gd", "res://gestos_3d.gd",
 	"res://esperas_3d.gd", "res://zonas3d/grupo_3d.gd"]
+# Y todos los de estas carpetas (segunda pasada, 12/11; pruebas/herramientas/sonda_retrato.gd): el primer «join» de un
+# diálogo hace que Dialogic lea y compile sus 16 animaciones de retrato (4-5 ms cada una en el PC). Era el tirón de
+# 102-162 ms del primer diálogo de la sesión (el de pv_02 al volver del primer combate en Pastos Verdes).
+const CARPETAS_GUIONES_RESIDENTES := ["res://addons/dialogic/Modules/Character/DefaultAnimations/"]
 
 
 # Modelos con versión ligera (X.glb y X_ligero.glb, como los edificios de Oakhaven 3D): se precarga solo la que usa el

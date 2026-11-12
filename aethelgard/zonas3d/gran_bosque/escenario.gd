@@ -318,12 +318,14 @@ func _materiales() -> void:
 	for tipo in ["pradera", "abedul", "magico"]:
 		var m := ShaderMaterial.new()
 		var cod: String = SHADER_HOJAS % [UNIFORMES_HUECO, "" if pixel else HUECO_VERTICE, HUECO if pixel else ""]
+		if perfil.get("gb_hojas_mipmaps", false) and float(perfil.get("gb_hojas_mip_sesgo", 0.0)) != 0.0:
+			cod = cod.replace("texture(atlas, UV)", "texture(atlas, UV, %.2f)" % float(perfil.get("gb_hojas_mip_sesgo", 0.0)))
 		if perfil.get("gb_hojas_ligeras", false):         # (prueba A/B: sin brillo especular ni la pasada de la sombra)
 			cod = cod.replace("render_mode cull_disabled, specular_schlick_ggx;", "render_mode cull_disabled, specular_disabled, diffuse_lambert, shadows_disabled;")
 		elif perfil.get("gb_hojas_sin_brillo", false):    # (prueba A/B: solo sin el brillo especular, que con 0,12 apenas se ve)
 			cod = cod.replace("render_mode cull_disabled, specular_schlick_ggx;", "render_mode cull_disabled, specular_disabled;")
 		m.shader = _shader(cod)
-		m.set_shader_parameter("atlas", load(Arbol.ATLAS))
+		m.set_shader_parameter("atlas", _atlas_hojas())
 		m.set_shader_parameter("color", Color(0.5, 0.63, 0.46) if tipo != "magico" else Color(0.8, 0.74, 0.88))
 		_mat_hojas[tipo] = m
 		mats_hueco.append(m)
@@ -335,14 +337,17 @@ func _materiales() -> void:
 	_mat_macizo.set_shader_parameter("viento", 0.012)
 	_mat_macizo.set_shader_parameter("viento_altura", 2.2)
 	mats_hueco.append(_mat_macizo)
-	var sh_maciza := _shader(SHADER_MACIZO % ["cull_back", UNIFORMES_HUECO, "" if pixel else HUECO_VERTICE, HUECO if pixel else ""])
+	var cod_maciza: String = SHADER_MACIZO % ["cull_back", UNIFORMES_HUECO, "" if pixel else HUECO_VERTICE, HUECO if pixel else ""]
+	if perfil.get("gb_hojas_mipmaps", false) and float(perfil.get("gb_hojas_mip_sesgo", 0.0)) != 0.0:   # (sesgo de los mipmaps)
+		cod_maciza = cod_maciza.replace("texture(atlas, celda + fract(uv) * 0.5)", "texture(atlas, celda + fract(uv) * 0.5, %.2f)" % float(perfil.get("gb_hojas_mip_sesgo", 0.0)))
+	var sh_maciza := _shader(cod_maciza)
 	for receta in ["pradera", "abedul"]:              # las copas macizas, pintadas con las matas de Pastos
 		var mc := ShaderMaterial.new()
 		mc.shader = sh_maciza
 		mc.set_shader_parameter("grano", grano)
 		mc.set_shader_parameter("viento", 0.012)
 		mc.set_shader_parameter("viento_altura", 2.2)
-		mc.set_shader_parameter("atlas", load(Arbol.ATLAS))
+		mc.set_shader_parameter("atlas", _atlas_hojas())
 		mc.set_shader_parameter("hojas", 1.0)
 		mc.set_shader_parameter("celda", Vector2(0.0, 0.0) if receta == "pradera" else Vector2(0.5, 0.0))
 		if nombre_perfil != "alto":                     # bajo y medio: mezcla triplanar más corta (menos lecturas)
@@ -372,6 +377,36 @@ func _materiales() -> void:
 			m.render_priority = int(perfil.get("gb_prio_recortado", PRIO_RECORTADO))
 		for m in _mat_copa_maciza.values():
 			m.render_priority = int(perfil.get("gb_prio_tapa", PRIO_TAPA))
+
+
+# Mipmaps del atlas de matas (rend2, segunda pasada, 12/11; APAGADO: «gb_hojas_mipmaps» en calidad_extra). El atlas se
+# importa sin mipmaps (modelos/hojas/matas.png.import), aunque los sombreados de las hojas y de las copas pintadas piden
+# filter_linear_mipmap: de lejos cada píxel lee un texel suelto de la textura de 1024² (centellea al moverse la cámara y
+# en el Mali gasta caché de texturas). Con el interruptor, aquí se hace una copia con mipmaps (una vez por partida, ~5 MB
+# más en memoria de vídeo) solo para el Gran Bosque: Pastos y el resto siguen con el atlas de siempre. Cambia el aspecto
+# (las hojas lejanas, más suaves; con alfa recortado, algo más finas): comparación en docs/memory/agents/rendimiento_v12_rend2.md.
+# «gb_hojas_mip_sesgo» (p. ej. -1.0, solo con los mipmaps): lee un mipmap más nítido (menos suave, algo más de centelleo).
+static var _atlas_mip: ImageTexture
+
+
+func _atlas_hojas() -> Texture2D:
+	return atlas_con_mipmaps() if perfil.get("gb_hojas_mipmaps", false) else load(Arbol.ATLAS)
+
+
+static func atlas_con_mipmaps() -> Texture2D:
+	if _atlas_mip == null:
+		var img: Image = (load(Arbol.ATLAS) as Texture2D).get_image().duplicate()
+		if img.is_compressed():
+			img.decompress()
+		img.generate_mipmaps()
+		_atlas_mip = ImageTexture.create_from_image(img)
+	return _atlas_mip
+
+
+# Para las medidas (medir_gpu_bosque.gd, «igualdad» y «parpadeo»): pone o quita los mipmaps en las hojas ya creadas.
+func alternar_mipmaps(con: bool) -> void:
+	for m in _mat_hojas.values() + _mat_copa_maciza.values():
+		m.set_shader_parameter("atlas", atlas_con_mipmaps() if con else load(Arbol.ATLAS))
 
 
 # El hueco entre la cámara y Kael (cada fotograma): las copas y los troncos que lo tapan no se dibujan en un cilindro.

@@ -14,6 +14,7 @@ garon.fbx | Garon (Meshy) | Plan de Meshy sin confirmar
 garon.glb | Garon (Meshy) | Plan de Meshy sin confirmar
 garon_escudo.glb | Escudo de Garon (Meshy) | Plan de Meshy sin confirmar
 personajes/heroes_v2/ | Héroes v2 (derivados de los modelos de Meshy de Kael, Lya y Garon) | Plan de Meshy sin confirmar
+personajes/heroes_v3/ | Héroes v3 (12/11): geometría, caras, atlas, textura de detalle y materiales PROPIOS (Blender por guion, sin mallas ni texturas de Meshy); DERIVADOS de Meshy solo el esqueleto (nombres, jerarquía y reposo, el rig común de los v2) y los clips de captura que se conservan (andar, correr, andar_pesado, reposo_original, golpe_original, derribo_original, magia_original, paseo, juicio, giro, morir_original) | Plan de Meshy sin confirmar (por el esqueleto y esos clips; si se rehacen, la v3 queda libre)
 goblin.fbx | Grimfang (Meshy) | Plan de Meshy sin confirmar
 goblin.glb | Grimfang (Meshy) | Plan de Meshy sin confirmar
 erebo.fbx | Érebo (Meshy) | Plan de Meshy sin confirmar

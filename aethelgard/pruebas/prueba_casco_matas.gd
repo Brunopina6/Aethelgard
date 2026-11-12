@@ -5,7 +5,9 @@ extends SceneTree
 #      bilineal, queda dentro del octógono de su celda (si alguien repinta el atlas, esto avisa).
 #   2. (Con el interruptor «gb_matas_casco», apagado por defecto.) Un cuadro de mata con atributos conocidos, recortado: cada vértice nuevo tiene la posición, la UV, el color y el
 #      centro que le tocan en el cuadro original (la misma interpolación), con el mismo sentido de giro, y el área en la
-#      celda es la del octógono. Sin ventana.
+#      celda es la del octógono.
+#   3. (Segunda pasada) Los mipmaps del atlas (interruptor «gb_hojas_mipmaps», APAGADO): sin él, el atlas de siempre;
+#      con él, una copia con mipmaps del mismo tamaño. Sin ventana.
 
 const E := preload("res://zonas3d/gran_bosque/escenario.gd")
 var fallos: Array = []
@@ -14,6 +16,7 @@ var fallos: Array = []
 func _initialize() -> void:
 	_atlas()
 	_malla()
+	_mipmaps()
 	for f in fallos:
 		print("FALLO: ", f)
 	print("FALLOS: %d" % fallos.size())
@@ -137,3 +140,16 @@ func _malla() -> void:
 	var esc2 = E.new(Node3D.new(), {}, "medio")
 	if esc2._casco_matas(m) != m:
 		fallos.append("sin gb_matas_casco la malla debería quedar igual (va apagado por defecto)")
+
+
+func _mipmaps() -> void:
+	var Arbol = load("res://prototipos/arbol_estilizado.gd")
+	var esc = E.new(Node3D.new(), {}, "medio")
+	if esc._atlas_hojas() != load(Arbol.ATLAS):
+		fallos.append("sin gb_hojas_mipmaps las hojas deberían usar el atlas de siempre")
+	var con = E.new(Node3D.new(), {"gb_hojas_mipmaps": true}, "medio")
+	var t: Texture2D = con._atlas_hojas()
+	var img := t.get_image()
+	print("atlas con mipmaps: %d × %d, mipmaps %s" % [img.get_width(), img.get_height(), img.has_mipmaps()])
+	if not img.has_mipmaps() or Vector2(img.get_size()) != (load(Arbol.ATLAS) as Texture2D).get_size():
+		fallos.append("con gb_hojas_mipmaps el atlas debería tener mipmaps y el mismo tamaño")

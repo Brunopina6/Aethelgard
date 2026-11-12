@@ -771,18 +771,19 @@ func _pintar_ajustes() -> void:
 		fbv.add_child(bbv)
 	cuerpo.add_child(fbv)
 	cuerpo.add_child(_texto("Se nota en el próximo encuentro con Bramavidrio.", 16, COLOR_SUAVE))
-	# Protagonistas (13/11): los modelos de siempre o los «héroes v2» en prueba (personajes/heroes_v2/heroes_v2.gd,
-	# [heroes] v2), para que el usuario los compare en el móvil. Por defecto, los originales.
+	# Protagonistas (13/11): los modelos de siempre, los «héroes v2» o (V12) los «héroes v3» en prueba
+	# (personajes/heroes_v2/heroes_v2.gd, [heroes] version), para que el usuario los compare en el móvil. Por defecto,
+	# los originales.
 	var HV = load("res://personajes/heroes_v2/heroes_v2.gd")
-	var hv: bool = HV.activado()
+	var hv: String = HV.version()
 	cuerpo.add_child(_texto("Protagonistas", 26, COLOR_TITULO))
 	var fhv := HBoxContainer.new()
 	fhv.add_theme_constant_override("separation", 8)
-	for op in [[false, "Originales"], [true, "v2 (prueba)"]]:
-		var si: bool = op[0]
-		var bhv := _boton(("● " if si == hv else "○ ") + op[1], 18, Vector2(260, 34), "heroes:%s" % ("v2" if si else "originales"))
+	for op in [["originales", "Originales"], ["v2", "v2 (prueba)"], ["v3", "v3 (prueba)"]]:
+		var vh: String = op[0]
+		var bhv := _boton(("● " if vh == hv else "○ ") + op[1], 18, Vector2(220, 34), "heroes:%s" % vh)
 		bhv.pressed.connect(func():
-			HV.elegir_en_ajustes(si)
+			HV.elegir_version(vh)
 			Sonido.efecto("ui_tic")
 			_pintar_de_nuevo())
 		fhv.add_child(bhv)

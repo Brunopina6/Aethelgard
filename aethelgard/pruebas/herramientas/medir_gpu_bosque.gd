@@ -18,7 +18,16 @@ extends SceneTree
 # Para parecerse al Mali-G57 (Godot no hace prepase de profundidad con Mali, Adreno, PowerVR ni Apple), lánzalo con un
 # override.cfg temporal con rendering/driver/depth_prepass/enable=false (ver el informe).
 
-const REGIONES := {"granbosque": "res://zonas3d/gran_bosque_3d.tscn", "pastos": "res://zonas3d/pastos_verdes_3d.tscn"}
+const REGIONES := {"granbosque": "res://zonas3d/gran_bosque_3d.tscn", "pastos": "res://zonas3d/pastos_verdes_3d.tscn",
+	"oakhaven": "res://zonas3d/oakhaven_3d.tscn", "garganta": "res://zonas3d/garganta_3d.tscn",
+	"marcristal": "res://zonas3d/mar_cristal_3d.tscn"}
+# Las demás regiones (rend2, segunda pasada): la llegada (donde deja a Kael la región) y sitios absolutos (los de
+# medir_escenas.gd) o relativos a la llegada («+»).
+const SITIOS_OTRAS := {
+	"oakhaven": {"llegada": null, "+norte_12m": Vector3(0, 0, -12), "+este_12m": Vector3(12, 0, 0)},
+	"garganta": {"llegada": null, "ruta_a": Vector3(-12, 0, 22), "ruta_b": Vector3(-12, 0, 10)},
+	"marcristal": {"llegada": null, "campamento": Vector3(45, 0, 96), "campamento_b": Vector3(39, 0, 95)},
+}
 const SITIOS_GB := {
 	"entrada": Vector2(40.0, 52.0),
 	"puente": Vector2(41.6, 33.4),
@@ -56,6 +65,9 @@ const VARIANTES := {
 	"-sombra_troncos": ["sombra_troncos"],
 	"~hojas_lambert": ["cod:render_mode cull_disabled, specular_schlick_ggx;=>render_mode cull_disabled, specular_disabled, diffuse_lambert;"],
 	"~maciza_lambert": ["cod:render_mode cull_back, diffuse_burley, specular_disabled;=>render_mode cull_back, diffuse_lambert, specular_disabled;"],
+	# rend2, segunda pasada: el orden de dibujo del Gran Bosque probado en cualquier región, sin tocar su código: lo
+	# recortado (discard o alfa recortado) después de lo opaco y lo más grande de lo opaco (el suelo) al final
+	"~orden_generico": ["orden_generico"],
 	"~hojas_sin_sombra": ["cod:render_mode cull_disabled, specular_schlick_ggx;=>render_mode cull_disabled, specular_schlick_ggx, shadows_disabled;"],
 }
 
@@ -69,6 +81,7 @@ var n_muestras := 60
 var etiqueta := ""
 var depurar := false
 var recuento := false
+var parpadeo := false                    # parpadeo: 8 fotogramas parados con la cámara corriéndose 3 cm, sin y con mipmaps
 var igualdad := false                    # igualdad: capturas con el tiempo parado, con y sin el orden de dibujo (rend2)
 var amplia := 1.0                       # amplia=2: el 3D al doble de resolución (×4 fragmentos) para medir el coste por píxel
 var R
@@ -110,6 +123,8 @@ func _initialize() -> void:
 			recuento = true
 		elif a == "igualdad":
 			igualdad = true
+		elif a == "parpadeo":
+			parpadeo = true
 	if salida == "":
 		salida = OS.get_user_data_dir()
 	DirAccess.make_dir_recursive_absolute(salida)
@@ -235,7 +250,8 @@ func _region(rg: String, pf: String) -> void:
 	var D = root.get_node_or_null("Dialogic")
 	if D != null and D.current_timeline != null:
 		D.end_timeline()
-	var sitios: Dictionary = SITIOS_GB if rg == "granbosque" else SITIOS_PV
+	var sitios: Dictionary = SITIOS_GB if rg == "granbosque" else (SITIOS_PV if rg == "pastos" else SITIOS_OTRAS[rg])
+	var llegada: Vector3 = v.kael.global_position
 	for s in sitios:
 		if not sitios_pedidos.is_empty() and not s in sitios_pedidos:
 			continue
@@ -243,8 +259,12 @@ func _region(rg: String, pf: String) -> void:
 		var p: Vector3
 		if rg == "granbosque":
 			p = v._sitio_libre(load("res://zonas3d/gran_bosque/trazado.gd").en_mundo(sitios[s]))
-		else:
+		elif rg == "pastos":
 			p = sitios[s]
+		elif sitios[s] == null:
+			p = llegada
+		else:
+			p = (llegada + sitios[s]) if s.begins_with("+") else sitios[s]
 		v._colocar_kael(p)
 		v.set("destino", null)
 		if s.ends_with("_34m"):
@@ -257,10 +277,12 @@ func _region(rg: String, pf: String) -> void:
 		await _esperar(60)
 		if igualdad:
 			await _capturas_igualdad(v, rg, pf, s)
+		if parpadeo:
+			await _capturas_parpadeo(v, rg, pf, s)
 		for var_n in variantes:
 			if not VARIANTES.has(var_n):
 				continue
-			if rg == "pastos" and not var_n in ["base", "-sombras", "-personajes", "-hierba", "-particulas"]:
+			if rg != "granbosque" and not var_n in ["base", "-sombras", "-personajes", "-hierba", "-particulas", "~orden_generico"]:
 				continue
 			var deshacer: Array = _aplicar(v, VARIANTES[var_n])
 			await _esperar(12)
@@ -460,6 +482,8 @@ func _aplicar(v, cats: Array) -> Array:
 				if sh.code.contains(par[0]):
 					hecho.append([sh, "code", sh.code])
 					sh.code = sh.code.replace(par[0], par[1])
+		elif c == "orden_generico":
+			hecho.append_array(_orden_generico(v))
 		elif c == "sombras":
 			for s in v.find_children("*", "DirectionalLight3D", true, false):
 				hecho.append([s, "shadow_enabled", s.shadow_enabled])
@@ -768,5 +792,70 @@ func _capturas_igualdad(v: Node, rg: String, pf: String, s: String) -> void:
 		root.get_texture().get_image().save_png(base + "_d.png")
 		esc.alternar_casco(true)
 		print("igualdad %s %s %s: %d copas con los cuadros enteros" % [rg, pf, s, n])
+	if v.get("escenario") == null or not v.get("escenario").has_method("alternar_mipmaps"):   # «f»: el orden genérico
+		var hecho_f := _orden_generico(v)
+		await _esperar(1)
+		root.get_texture().get_image().save_png(base + "_f.png")
+		_deshacer(hecho_f)
+		await _esperar(1)
+	if esc != null and esc.has_method("alternar_mipmaps"):   # «e»: el atlas de matas al revés que en el perfil (gb_hojas_mipmaps)
+		var con_mip: bool = bool(esc.perfil.get("gb_hojas_mipmaps", false))
+		esc.alternar_mipmaps(not con_mip)
+		await _esperar(1)
+		root.get_texture().get_image().save_png(base + "_e.png")
+		esc.alternar_mipmaps(con_mip)
 	Engine.time_scale = 1.0
 	await _esperar(3)
+
+
+# Parpadeo (rend2, segunda pasada): con el juego parado, la cámara se corre 3 cm por fotograma (8 fotogramas), sin y con
+# los mipmaps del atlas de matas. Lo que cambia de un fotograma al siguiente en las hojas lejanas es el centelleo.
+func _capturas_parpadeo(v: Node, rg: String, pf: String, s: String) -> void:
+	var esc = v.get("escenario")
+	if esc == null or not esc.has_method("alternar_mipmaps"):
+		return
+	Engine.time_scale = 0.0
+	await _esperar(3)
+	var foco0: Vector3 = v.foco
+	for con in [false, true]:
+		esc.alternar_mipmaps(con)
+		v.foco = foco0
+		for k in 8:
+			v.foco = foco0 + Vector3(0.03 * k, 0, 0)
+			await _esperar(2)
+			root.get_texture().get_image().save_png(salida.path_join("parpadeo_%s_%s_%s_%s_%d.png" % [rg, pf, s, "mip" if con else "sin", k]))
+	esc.alternar_mipmaps(bool(esc.perfil.get("gb_hojas_mipmaps", false)))
+	v.foco = foco0
+	Engine.time_scale = 1.0
+	await _esperar(3)
+
+
+# render_priority por tipo de material, en tiempo de ejecución (deshacible): recortado 1; la pieza opaca con la caja más
+# grande en planta (el suelo o el terreno) y el agua, 2. Devuelve lo cambiado para deshacerlo.
+func _orden_generico(v: Node) -> Array:
+	var hecho: Array = []
+	var mayor: GeometryInstance3D = null
+	var area := 0.0
+	var vistos := {}
+	for g in v.find_children("*", "GeometryInstance3D", true, false):
+		var gi := g as GeometryInstance3D
+		if not gi.is_visible_in_tree():
+			continue
+		var t := _tipo_material(gi)
+		var caja: AABB = gi.global_transform * gi.get_aabb()
+		if t == "opaco" and caja.size.x * caja.size.z > area and not gi is MultiMeshInstance3D:
+			area = caja.size.x * caja.size.z
+			mayor = gi
+		if t == "recortado":
+			for m in _materiales_de(gi):
+				if m is Material and not vistos.has(m) and (m as Material).render_priority == 0:
+					vistos[m] = true
+					hecho.append([m, "render_priority", 0])
+					(m as Material).render_priority = 1
+	if mayor != null:
+		for m in _materiales_de(mayor):
+			if m is Material and not vistos.has(m) and (m as Material).render_priority == 0:
+				hecho.append([m, "render_priority", 0])
+				(m as Material).render_priority = 2
+		print("  orden genérico: suelo = ", mayor.name, " · ", hecho.size(), " materiales")
+	return hecho

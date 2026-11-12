@@ -248,7 +248,9 @@ pantalla tapada) y prototipos apagados.
 
 ## 6. Pruebas
 
-- **Batería final** sobre `d8b11ce` (`...end2\pruebas6-11-12_203017esumen.md`): **23 · 0 · 0 · 0**:
+- **Batería final** sobre `d8b11ce` (`...
+end2\pruebas6-11-12_203017
+esumen.md`): **23 · 0 · 0 · 0**:
   `prueba_gran_bosque3d`, `prueba_casco_matas` (nueva), `prueba_precarga`, `prueba_cargas`, `prueba_precalentado`,
   `prueba_escenas`, `prueba_zona3d`, `prueba_grupo3d`, `prueba_grupos_combate`, `prueba_combate_huella`,
   `prueba_combate_seguro`, `prueba_huir`, `prueba_ia`, `prueba_equilibrio`, `prueba_hud_combate`,
@@ -298,3 +300,114 @@ COMPARTIDOS modificados: `aethelgard/zonas3d/gran_bosque/escenario.gd`, `aethelg
 
 Sin tocar: `carga.gd` (usa `Recursos.listar()` tal cual), `grupo.gd`, `equipo_extra.gd`, `inventario.gd`, `menus.gd`,
 Oakhaven 3D, los guiones de los personajes.
+
+
+# Segunda pasada (12/11, tarde) — misma rama, desde `b6eef67`
+
+Commits: `f5c904d` primer diálogo · `d2c9882` mipmaps (apagado) y herramienta · y el de este informe.
+
+## 10. Tirón del primer diálogo de la sesión (al volver del primer combate) [E]
+
+Sonda nueva `pruebas/herramientas/sonda_retrato.gd` (con ventana; con la carga común como el juego; entra en Pastos 3D,
+combate con ataques automáticos 600 fotogramas, vuelve y mide 5 s de juego; dos vueltas; apunta qué diálogo empezó, los
+nodos de ese fotograma y qué guiones se compilaron).
+
+- **Lo que era:** el primer diálogo de la sesión (aquí `pv_02`, el de Kael al volver del primer combate). Su primer
+  `join` hace que Dialogic lea y compile **sus 16 animaciones de retrato** (`addons/dialogic/Modules/Character/DefaultAnimations/*.gd`,
+  4-5 ms cada una en el PC). No era el retrato en sí (crear `RetratoVivo`: 0,2 ms), ni leer el diálogo (1,4 ms), ni
+  procesarlo (3,9 ms), ni los personajes (3,2 ms), ni la interfaz o el texto (probado: enseñar antes la interfaz vacía o
+  con texto no lo quita; enseñar antes el diálogo entero sí, y precompilar los guiones de Dialogic también).
+- **Arreglo:** `recursos.gd`, `CARPETAS_GUIONES_RESIDENTES`: esa carpeta se precarga en segundo plano en la pantalla de
+  carga con lo demás (~75 ms de compilar repartidos entre los hilos; con el PC tan ocupado el arranque no se puede medir con
+  esa precisión).
+- **Resultado** (3 pasadas intercaladas, `...\rend2\retrato\sonda_retrato_ab_*.json`): peor fotograma de la vuelta
+  **80,5 / 93,3 / 126,4 → 16,0 / 10,8 / 14,0 ms**. Vale para cualquier primer diálogo con retratos, no solo este.
+
+## 11. Mipmaps del atlas de las hojas (APAGADO: `gb_hojas_mipmaps`, `gb_hojas_mip_sesgo`)
+
+`modelos/hojas/matas.png` se importa sin mipmaps aunque los sombreados de las hojas y de las copas pintadas piden
+`filter_linear_mipmap`. Con `gb_hojas_mipmaps: true` (en `calidad_extra` o en el perfil), `escenario.gd` hace una copia
+con mipmaps (una vez por partida; ~5 MB más de memoria de vídeo) solo para el Gran Bosque. `gb_hojas_mip_sesgo: -1.0`
+(solo con los mipmaps) lee un mipmap más nítido. No se ha tocado el `.import` (afectaría a Pastos y a todo lo demás).
+
+Capturas con el tiempo parado y las mismas cámaras (`medir_gpu_bosque.gd igualdad`) y **parpadeo**: 8 fotogramas parados
+con la cámara corriéndose 3 cm cada uno; se mide cuánto cambia la imagen de uno al siguiente (lo que centellea):
+
+| Sitio | Píxeles que saltan > 32 entre fotogramas: sin mipmaps | con mipmaps | con mipmaps y sesgo −1 | Píxeles distintos de la imagen (con / con sesgo) |
+|---|---|---|---|---|
+| medio, mirador (lejos) | 6,98 % | **4,49 %** | **5,69 %** | 13,0 % / 7,3 % |
+| medio, entrada (cerca) | 7,46 % | 6,80 % | 7,32 % | 3,4 % / 1,4 % |
+| medio, claro | 6,95 % | 6,54 % | 7,02 % | 1,7 % / 0,6 % |
+| medio, ruinas | 5,20 % | 4,90 % | 5,07 % | 1,9 % / 0,8 % |
+| bajo, mirador | 5,06 % | **2,89 %** | 3,93 % | 11,5 % / 6,3 % |
+| bajo, entrada | 4,90 % | 4,54 % | 4,79 % | 2,8 % / 1,1 % |
+| alto, mirador | 10,19 % | 7,84 % | — | 13,8 % / — |
+
+- **Sin sesgo:** de lejos **centellea bastante menos** (mirador −36 % en medio, −43 % en bajo), pero **las hojas
+  cercanas se ven más blandas**: con esta cámara (13-22 m) cada mata ocupa 40-60 píxeles y ya lee mipmaps pequeños; se
+  pierde el recorte nítido de las hojas y las copas pintadas de lejos quedan más lisas (`...\capturas\mipmaps\*_original_mip_x3.png`:
+  izquierda original, derecha con mipmaps). **Pierde nitidez de cerca: no lo recomiendo así.**
+- **Con sesgo −1:** de cerca casi igual que ahora (1,4 % de píxeles distintos en la entrada, sin perder el recorte; a ojo
+  no se distingue cuál es cuál) y de lejos centellea menos (mirador −18 % en medio, −22 % en bajo)
+  (`...\capturas\mipmaps_sesgo\*_mipsesgo_original_x3.png`: **izquierda con mipmaps y sesgo, derecha original**).
+  **Es la opción que mejora el aspecto (menos parpadeo de lejos) sin perder nitidez de cerca: para que el usuario la vea**,
+  mejor en el teléfono y andando (el parpadeo se ve en movimiento).
+- **Coste:** malioc da los mismos ciclos con y sin (no puede ver la caché de texturas, que es donde estaría la ganancia en
+  el Mali); GPU del PC igual dentro del ruido (medio: 1,04-1,42 → 1,04-1,41 ms, 2 pasadas intercaladas, sin prepase y 3D
+  ×2). En el Mali, leer mipmaps pequeños de lejos debería gastar menos ancho de banda de textura [?].
+- `prueba_casco_matas` comprueba también el interruptor: sin él, el atlas de siempre; con él, la copia con mipmaps.
+
+## 12. Recortados y orden de dibujo en Oakhaven 3D, la Garganta y el Mar de Cristal [E]
+
+`medir_gpu_bosque.gd` mide ahora también estas regiones (la llegada y dos sitios más) y prueba, sin tocar su código, la
+variante `~orden_generico` (lo recortado después de lo opaco y la pieza opaca más grande en planta, el suelo, al final,
+con `render_priority` en tiempo de ejecución; se deshace). Recuento en medio (`...\rend2\regiones\`):
+
+| Medio | Capas | Recortado (capas / pantalla) | Opaco (capas) | Transparente (capas / pantalla) | Llamadas (sin sombra) | Primitivas |
+|---|---|---|---|---|---|---|
+| Oakhaven, llegada | 3,2 | 0,00 / 0 % | 3,07 | 0,08 / 10 % | 90 (77) | 258 k |
+| Oakhaven, +12 m al norte | 4,6 | 0,00 / 0 % | **4,25** | 0,27 / 30 % | 93 (80) | 260 k |
+| Garganta, llegada | 4,2 | 0,00 / 0 % | 2,82 | **1,34 / 63 %** | 213 (180) | 339 k |
+| Garganta, ruta | 4,5 | 0,00 / 0 % | 2,66 | **1,77 / 70 %** | 209 (166) | 350 k |
+| Mar de Cristal, llegada | 1,2 | 0,00 / 0 % | 0,90 | 0,24 / 21 % | 67 (41) | 170 k |
+
+- **Ninguna de las tres tiene recortados** (lo que pesaba en el Gran Bosque): ahí el orden de dibujo apenas tiene qué
+  ordenar.
+- **Misma imagen** con el orden genérico en las tres (solo cambian 0-530 píxeles del contador de FPS de arriba;
+  `...\capturas\orden_regiones\`).
+- **GPU del PC** (la segunda pasada, la más limpia): Garganta y Mar de Cristal **sin cambio** (0,67-1,23 → 0,68-1,22 ms);
+  **Oakhaven −10-15 % en medio** (llegada 1,64 → 1,40 ms, norte 1,82 → 1,61, este 1,68 → 1,51) y −9 % en bajo al este:
+  sus edificios tapan mucho suelo («Prado») y dibujarlo el último ahorra sombrearlo debajo.
+- **Decisión:** en la Garganta y el Mar de Cristal **no lo aplico** (misma imagen, pero sin ganancia medible ni recortados
+  que el Mali agradezca: no merece tocar sus archivos). En **Oakhaven no toco nada** (lo trabaja otro especialista):
+  **propuesta para él**, una línea: el material del suelo «Prado» con `render_priority = 2` (en Compatibility, en lo opaco,
+  mayor = después). En el Mali la ganancia será menor que en el PC, porque su FPK ya elimina lo opaco tapado [?]: medirlo.
+- **La Garganta** es la región con más transparencias (1,3-1,8 capas de mezcla en el 63-70 % de la pantalla: las capas de
+  niebla del abismo, los haces y la cascada, `zonas3d/garganta/materiales.gd`). En el Redmi va a 30 en medio (29,8 / 30,3
+  en la v649); si algún día no llega, es lo primero que mirar.
+- Oakhaven tiene el sobredibujado opaco más alto (3-4,3 capas): en el Mali lo resuelve el FPK; vigilarlo al añadir NPC.
+
+## 13. Pruebas de la segunda pasada
+
+- **Batería completa** sobre `d2c9882` (`...end2\pruebas6-11-12_210823esumen.md`): **136 · 0 · 63 · 0**
+  (superadas, fallidas, manuales, no seguras; la de referencia del 12/11 era 135 · 0 · 63 · 0: la de más es
+  `prueba_casco_matas`). Partida real y carpeta real de datos sin cambios; «proyecto cambiado» = este informe, aún sin
+  commit durante la pasada. Las 63 manuales (capturas «ventana», herramientas) no se han revisado una a una.
+- `prueba_casco_matas` con la comprobación de los mipmaps: superada (también suelta, 3 pasadas).
+
+## 14. Para validar en el Redmi (añadido)
+
+9. **Primer diálogo de la sesión** (por ejemplo, al volver del primer combate en Pastos, `pv_02`): sin parón.
+10. **Mipmaps de las hojas con sesgo** (`gb_hojas_mipmaps: true`, `gb_hojas_mip_sesgo: -1.0`): andar por el Gran Bosque y
+    mirar desde el mirador: ¿centellea menos de lejos sin perder nitidez de cerca? FPS igual o mejor.
+11. **Oakhaven**: si su especialista dibuja el suelo al final, comparar FPS en medio.
+
+## 15. Archivos de la segunda pasada
+
+NUEVOS: `aethelgard/pruebas/herramientas/sonda_retrato.gd`.
+
+COMPARTIDOS modificados: `aethelgard/recursos.gd` (`CARPETAS_GUIONES_RESIDENTES`), `aethelgard/zonas3d/gran_bosque/escenario.gd`
+(mipmaps apagados), `aethelgard/pruebas/herramientas/medir_gpu_bosque.gd` («parpadeo», más regiones, «~orden_generico»),
+`aethelgard/pruebas/prueba_casco_matas.gd`, `aethelgard/pruebas/lista_pruebas.txt` (la descripción de `prueba_casco_matas`).
+
+Sin tocar: Oakhaven 3D, la Garganta, el Mar de Cristal, `combate.gd`.

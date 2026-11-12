@@ -14,6 +14,7 @@ extends RefCounted
 # exploración les llaman igual; si falta el GLB nuevo, cargan el modelo original.
 
 const ACTIVO_POR_DEFECTO := false
+const HeroesV3 := preload("res://personajes/heroes_v3/heroes_v3.gd")
 
 const SCRIPTS := {
 	"res://kael_3d.gd": "res://personajes/heroes_v2/kael_v2_3d.gd",
@@ -35,41 +36,85 @@ const ORIGINALES := {
 
 
 static func activado() -> bool:
+	return version() != "originales"
+
+
+# V12, héroes v3 (personajes/heroes_v3/): qué protagonistas se usan: "originales", "v2" o "v3". Orden: la meta
+# «heroes_version» → la meta «heroes_v3» (true) → la meta «heroes_v2» → los argumentos «heroes_v3» o «heroes_v2» →
+# Ajustes ([heroes] version; o el [heroes] v2 de antes) → ACTIVO_POR_DEFECTO (originales).
+static func version() -> String:
+	if Engine.has_meta("heroes_version"):
+		return _version_valida(str(Engine.get_meta("heroes_version")))
+	if Engine.has_meta("heroes_v3") and bool(Engine.get_meta("heroes_v3")):
+		return "v3"
 	if Engine.has_meta("heroes_v2"):
-		return bool(Engine.get_meta("heroes_v2"))
-	if "heroes_v2" in OS.get_cmdline_user_args():
-		return true
-	return en_ajustes()
+		return "v2" if bool(Engine.get_meta("heroes_v2")) else "originales"
+	var args := OS.get_cmdline_user_args()
+	if "heroes_v3" in args:
+		return "v3"
+	if "heroes_v2" in args:
+		return "v2"
+	return version_en_ajustes()
+
+
+static func _version_valida(v: String) -> String:
+	return v if v in ["originales", "v2", "v3"] else "originales"
 
 
 # 13/11: Ajustes → «Protagonistas: originales / v2 (prueba)» (menus.gd), para compararlos en el móvil, donde no llegan
 # los argumentos. Se guarda en user://ajustes.cfg, [heroes] v2; sin elegir, ACTIVO_POR_DEFECTO (originales).
+# V12, v3: [heroes] version = "originales" | "v2" | "v3" (manda sobre [heroes] v2, que se sigue escribiendo).
 static func en_ajustes() -> bool:
+	return version_en_ajustes() != "originales"
+
+
+static func version_en_ajustes() -> String:
+	var defecto := "v2" if ACTIVO_POR_DEFECTO else "originales"
 	var c := ConfigFile.new()
 	if c.load("user://ajustes.cfg") != OK:
-		return ACTIVO_POR_DEFECTO
-	return bool(c.get_value("heroes", "v2", ACTIVO_POR_DEFECTO))
+		return defecto
+	if c.has_section_key("heroes", "version"):
+		return _version_valida(str(c.get_value("heroes", "version", defecto)))
+	return "v2" if bool(c.get_value("heroes", "v2", ACTIVO_POR_DEFECTO)) else "originales"
 
 
 # Lo elige en Ajustes: lo guarda y lo pone ya en Engine (los héroes que se creen desde ahora lo usan; los que ya
 # están en pantalla no cambian hasta el próximo combate o la próxima región).
 static func elegir_en_ajustes(si: bool) -> Error:
 	Engine.set_meta("heroes_v2", si)
+	if Engine.has_meta("heroes_version"):
+		Engine.remove_meta("heroes_version")
+	return _guardar("v2" if si else "originales")
+
+
+static func elegir_version(v: String) -> Error:
+	v = _version_valida(v)
+	Engine.set_meta("heroes_version", v)
+	return _guardar(v)
+
+
+static func _guardar(v: String) -> Error:
 	var c := ConfigFile.new()
 	if FileAccess.file_exists("user://ajustes.cfg"):
 		var err := c.load("user://ajustes.cfg")
 		if err != OK:
 			return err
-	c.set_value("heroes", "v2", si)
+	c.set_value("heroes", "v2", v == "v2")
+	c.set_value("heroes", "version", v)
 	return c.save("user://ajustes.cfg")
 
 
-# El script que hay que usar para un héroe: el v2 si el interruptor está encendido y existe; si no, el mismo.
+# El script que hay que usar para un héroe: el v3 o el v2 si están elegidos y existen; si no, el mismo. Con «v3», un
+# héroe que aún no tenga su v3 usa su v2.
 static func script_de(ruta: String) -> String:
-	if activado() and SCRIPTS.has(ruta) and ResourceLoader.exists(SCRIPTS[ruta]):
-		var heroe := _heroe_de_script(ruta)
-		if heroe == "" or ResourceLoader.exists(GLB[heroe]):
-			return SCRIPTS[ruta]
+	var v := version()
+	if v == "originales" or not SCRIPTS.has(ruta):
+		return ruta
+	var heroe := _heroe_de_script(ruta)
+	if v == "v3" and heroe != "" and HeroesV3.listo(heroe):
+		return HeroesV3.SCRIPTS[ruta]
+	if ResourceLoader.exists(SCRIPTS[ruta]) and (heroe == "" or ResourceLoader.exists(GLB[heroe])):
+		return SCRIPTS[ruta]
 	return ruta
 
 
