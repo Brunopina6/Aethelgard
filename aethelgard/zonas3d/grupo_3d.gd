@@ -171,7 +171,7 @@ func _anadir(n: String) -> bool:
 func _crear(n: String) -> Dictionary:
 	if not RUTAS.has(n) or not ResourceLoader.exists(RUTAS[n]):
 		return {}
-	var nodo = load(RUTAS[n]).new()
+	var nodo = load(load("res://personajes/heroes_v2/heroes_v2.gd").script_de(RUTAS[n])).new()   # V12, fase B: héroes v2 (APAGADO)
 	nodo.name = n
 	add_child(nodo)
 	if nodo.get("anim") == null or nodo.get("skel") == null:   # sin modelo no sale (como en el combate)

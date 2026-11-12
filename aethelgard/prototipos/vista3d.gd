@@ -45,7 +45,7 @@ func _ready() -> void:
 	_crear_ambiente()
 	_compensar_sin_sombras()
 	_crear_escenario()
-	kael = load("res://kael_3d.gd").new()
+	kael = load(load("res://personajes/heroes_v2/heroes_v2.gd").script_de("res://kael_3d.gd")).new()   # V12, fase B: héroes v2 (interruptor heroes_v2, APAGADO)
 	kael.ruta_modelo = "res://kael.fbx"
 	add_child(kael)
 	if kael.has_method("activar_esperas"):
