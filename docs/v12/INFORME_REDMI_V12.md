@@ -315,3 +315,43 @@ instaló desde Descargas; luego se borró de allí.
   pruebas no llegan en Android.
 
 Capturas y `--timestats`: `D:\REBELUM_diagnostico\v12\redmi\sesion_v646`.
+
+# V12 · Séptima prueba en el Redmi: v649, el Gran Bosque optimizado (12/11, 11:55-12:40)
+
+**APK (sin publicar):** «REBELUM Auditoría» `com.aethelgard.auditoria`, versionCode **649** (`e8f59cb`), SHA-256
+`80bf6f6e125714cb3f9f1fb211945388f3412bc5a0ee3e0ecce36f24072e6bfd`, certificado `3413edcd…7785f3`.
+
+- **Instalación:** MIUI canceló `adb install -r`. El usuario la instaló desde Descargas y luego se borró de allí.
+- **Partida:** respaldo `..._antes_v610` (idéntico al estado del teléfono); restaurada igual al acabar, con las mismas
+  huellas.
+- **La Exp sigue en la v365.**
+- **Errores:** sin cierres y sin errores en logcat.
+- **Temperatura de la batería:** de 31,4 °C a 37,8 °C; estado térmico 0 (sin limitación) en toda la sesión.
+
+Cada medida son 10 s de `--timestats`, sin fotogramas perdidos en ninguna:
+
+| Lugar | Bajo (entrada / andando / lejos) | Medio (entrada / andando / lejos) | PSS |
+|---|---|---|---|
+| Pantalla de inicio | 36,7 | — | 0,97 GB |
+| **Gran Bosque Verde optimizado** | **30,4 / 30,3 / 30,4** (v646: 27,3 / 25,9) | **21,3 / 23,1 / 24,6** (v646: 14,3 / 13,7) | 1,00-1,07 GB |
+| Pastos Verdes (referencia) | 30,3 / 30,3 | 30,4 / 30,4 | 1,04-1,08 GB |
+| Garganta 3D | (v646: 30,4 / 30,4) | 29,8 / 30,3 | 1,04-1,09 GB |
+| Oakhaven 3D | (v646: 30,3 / 30,4) | 30,3 / 30,4 | 1,11-1,15 GB |
+| Mar de Cristal | 30,4 / 30,4 | 30,4 / 30,4 | 0,98-1,00 GB |
+
+- **Arranque:** 2,7 s hasta la primera imagen y **19,2 s de carga** («Carga terminada»), 27,8 s de reloj hasta poder
+  tocar. Entre pasadas, de 18,7 a 20,4 s.
+- **Gran Bosque:** en bajo ya va a 30. En medio sube de 14 a 21-25 FPS, pero **no llega a 30**: el PC había estimado
+  unos 30, así que la relación PC→Redmi no es lineal en este caso. La detección automática del Redmi elige el bajo.
+  Quedan tres recortes ya programados y apagados para el medio (`gb_hojas_sin_brillo`, `gb_hondo`, `gb_hojas_ligeras`,
+  de 5 a 10 % cada uno), que no bastan para llegar a 30.
+- **Entrada al combate de Bramavidrio** (una captura por segundo y su brillo medio; `sesion_v649\entrada_v649\`):
+  - la región se ve 4,7 s después de «Continuar»;
+  - el aviso «¡Bramavidrio te cierra el paso!» sale a los 15,7 s;
+  - el combate ya está a los 18,2 s, así que **del aviso al combate pasan como mucho 2,5 s**;
+  - **ya no hay los ~18 s de negro** de la v615;
+  - quedan los tirones de la aparición (sombreadores compilados en el momento), que trata el trabajo de las cargas.
+- **Memoria:** comparada perfil a perfil, igual que en la v646 (1,0-1,15 GB). Es más alta que en la v581/v597 (745-948
+  MB); el trabajo de las cargas apunta al precalentado de recursos apagados.
+
+Capturas y datos: `D:\REBELUM_diagnostico\v12\redmi\sesion_v649`.
