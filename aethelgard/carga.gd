@@ -15,7 +15,7 @@ const MINIMO := 2.0               # segundos mínimos en pantalla
 const A_LA_VEZ := 6               # archivos cargándose a la vez en segundo plano
 # Sin ventana (pruebas), de uno en uno: el renderizador falso de Godot sin ventana no aguanta crear mallas desde varios
 # hilos a la vez (cierres en prueba_boton_prologo, 10/11). En el móvil y en el PC con ventana, como siempre.
-var a_la_vez := 1 if DisplayServer.get_name() == "headless" else A_LA_VEZ
+var a_la_vez := _a_la_vez()
 const FRAMES_SHADERS := 24        # fotogramas dibujando los modelos y efectos fuera de la vista
 const FRASES := [
 	"La niebla no perdona a nadie… salvo a uno.",
@@ -34,7 +34,7 @@ var hechos := 0
 var fallos := 0
 var progreso := 0.0               # 0..1 en toda la carga
 var frames_shader := 0
-var vista_3d: SubViewport
+var vista_3d: Node                   # agrupa los estudios del precalentado (combate.gd estudio_3d y estudio_vfx)
 var vista_2d: SubViewport
 var tareas_zona: Array = []
 var tareas_total := 1
@@ -255,7 +255,25 @@ func _process(delta: float) -> void:
 			boton_prologo.visible = true
 
 
+# V12 (12/11, cargas): en cada fotograma se recoge lo terminado y se piden más durante PRESUPUESTO_MS como mucho (antes,
+# una sola vuelta: un archivo que acababa esperaba al fotograma siguiente para dejar sitio al próximo, y con 930 archivos
+# la carga iba al ritmo de los fotogramas). La pantalla sigue moviéndose: nunca se pasa del presupuesto.
+const PRESUPUESTO_MS := 8.0
+
+
 func _paso_archivos() -> void:
+	var hasta := Time.get_ticks_usec() + int(PRESUPUESTO_MS * 1000.0)
+	while true:
+		_vuelta_archivos()
+		if (pendientes.is_empty() and en_curso.is_empty()) or Time.get_ticks_usec() >= hasta:
+			break
+		OS.delay_usec(300)                        # deja trabajar a los hilos de carga
+	if pendientes.is_empty() and en_curso.is_empty():
+		fase = "shaders"
+		_preparar_shaders()
+
+
+func _vuelta_archivos() -> void:
 	while en_curso.size() < a_la_vez and not pendientes.is_empty():
 		var ruta: String = pendientes[pendientes.size() - 1]
 		pendientes.remove_at(pendientes.size() - 1)
@@ -276,9 +294,15 @@ func _paso_archivos() -> void:
 			ResourceLoader.THREAD_LOAD_FAILED, ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
 				_fallo(ruta)
 				en_curso.erase(ruta)
-	if pendientes.is_empty() and en_curso.is_empty():
-		fase = "shaders"
-		_preparar_shaders()
+
+
+# Cuántos archivos a la vez: A_LA_VEZ; sin ventana, 1 (ver arriba). «-- a_la_vez=N» lo cambia para medir
+# (pruebas/herramientas/medir_cargas.gd).
+static func _a_la_vez() -> int:
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("a_la_vez="):
+			return maxi(1, int(a.substr(9)))
+	return 1 if DisplayServer.get_name() == "headless" else A_LA_VEZ
 
 
 func _fallo(ruta: String) -> void:
@@ -289,41 +313,30 @@ func _fallo(ruta: String) -> void:
 
 # Kael y Lya en 3D y cada efecto de vfx/ en una ventana 3D que no se ve; la hierba y el agua de las
 # zonas en una ventana 2D que tampoco se ve.
+# V12 (12/11, cargas): los personajes y los efectos se dibujan en LOS MISMOS estudios que usa el combate
+# (combate.gd estudio_3d y estudio_vfx: ventana transparente con su entorno, luz dorada y relleno). Antes iban todos en una
+# ventana con una sola luz y sin entorno: los sombreadores salían con otras variantes y el primer combate los volvía a
+# compilar (en el PC, 9 programas nuevos al entrar en el de Bramavidrio; en el Mali-G57, cada uno es un parón).
+# Pequeños (la cuarta parte): el tamaño no cambia lo que se compila.
 func _preparar_shaders() -> void:
-	vista_3d = SubViewport.new()
-	vista_3d.size = Vector2i(256, 256)
-	vista_3d.own_world_3d = true
-	vista_3d.transparent_bg = true
-	vista_3d.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	vista_3d = Node.new()
 	add_child(vista_3d)
-	var cam := Camera3D.new()
-	cam.projection = Camera3D.PROJECTION_ORTHOGONAL
-	cam.size = 5.0
-	vista_3d.add_child(cam)
-	cam.look_at_from_position(Vector3(0, 1.2, 6), Vector3(0, 1.0, 0))
-	var luz := DirectionalLight3D.new()
-	luz.rotation_degrees = Vector3(-35, -40, 0)
-	vista_3d.add_child(luz)
-	var combate_c: Dictionary = load("res://combate.gd").get_script_constant_map()
-	var x := -3.0
+	var C = load("res://combate.gd")
+	var combate_c: Dictionary = C.get_script_constant_map()
+	var movil: bool = OS.has_feature("mobile") or "movil" in OS.get_cmdline_user_args()
 	for k in ["kael3d", "nyx3d", "garon3d", "grimfang"]:
 		var m: Dictionary = combate_c["MODELOS"][k]
-		var ruta := ""
-		for r in m["rutas"]:
-			if ResourceLoader.exists(r):
-				ruta = r
-				break
-		if ruta == "" or not ResourceLoader.exists(m["script"]):
+		if C._ruta_3d(m) == "":
 			continue
-		var p = load(m["script"]).new()
-		p.ruta_modelo = ruta
-		p.position = Vector3(x, 0, 0)
-		vista_3d.add_child(p)
-		x += 2.0
+		var est: Dictionary = C.estudio_3d(vista_3d, m, 0.25, Color(1.0, 0.8, 0.6))
+		est["vp"].render_target_update_mode = SubViewport.UPDATE_ALWAYS
+		est["vp"].add_child(C.modelo_3d(m))
 	for ruta in Recursos.listar("res://vfx/"):
 		if ruta.get_extension() == "tscn":
+			var est: Dictionary = C.estudio_vfx(vista_3d, 0.25, true)
 			var ef: Node = load(ruta).instantiate()
-			vista_3d.add_child(ef)
+			C.brillo_vfx(est["env"], ef, movil)
+			est["vp"].add_child(ef)
 
 	vista_2d = SubViewport.new()
 	vista_2d.size = Vector2i(256, 256)
@@ -372,12 +385,15 @@ func _paso_shaders() -> void:
 	vista_3d.queue_free()
 	vista_2d.queue_free()
 	fase = "dialogos"
-	# una tarea por fotograma: atlas de cada estilo, objetos dibujados y matas
+	# una tarea por fotograma: atlas de cada estilo, objetos dibujados y matas. V12 (12/11, cargas): solo las que faltan en
+	# user://cache_zonas. Antes se leían también las que ya estaban, para nada (zona.gd las lee al entrar en cada zona):
+	# 0,6 s en el PC en cada arranque.
 	for s in zona_tmp.ESTILOS:
 		tareas_zona.append(_cache_atlas.bind(s))
 	for tipo in zona_tmp.OBJETOS:
-		tareas_zona.append(func(): zona_tmp._cargar_cache("obj_" + tipo, zona_tmp._dibujar_objeto.bind(tipo)))
-	if not ResourceLoader.exists(zona_tmp.TEXTURA_HIERBA):
+		if _falta_cache("obj_" + tipo):
+			tareas_zona.append(func(): zona_tmp._cargar_cache("obj_" + tipo, zona_tmp._dibujar_objeto.bind(tipo)))
+	if not ResourceLoader.exists(zona_tmp.TEXTURA_HIERBA) and _falta_cache("matas"):
 		tareas_zona.append(func(): zona_tmp._cargar_cache("matas", zona_tmp._dibujar_matas))
 	tareas_total = maxi(1, tareas_zona.size())
 
@@ -396,7 +412,14 @@ func _cache_atlas(s: String) -> void:
 	zona_tmp.nombre_estilo = s
 	zona_tmp.estilo = zona_tmp.ESTILOS[s]
 	zona_tmp.es_ciudad = s == "ciudad"
-	zona_tmp._cargar_cache("atlas_" + s + zona_tmp._firma_texturas(), zona_tmp._crear_atlas)
+	var nombre: String = "atlas_" + s + zona_tmp._firma_texturas()
+	if _falta_cache(nombre):
+		zona_tmp._cargar_cache(nombre, zona_tmp._crear_atlas)
+
+
+# La misma ruta que zona.gd _cargar_cache.
+func _falta_cache(nombre: String) -> bool:
+	return not FileAccess.file_exists("user://cache_zonas/%s_v%d.png" % [nombre, zona_tmp.VERSION_CACHE])
 
 
 func _paso_zonas() -> void:

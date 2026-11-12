@@ -60,6 +60,52 @@ const MODELO_3D := "res://enemigos/bramavidrio/bramavidrio.glb"
 
 func _init(r: Node3D) -> void:
 	region = r
+	if r != null and r.has_signal("ready"):
+		r.ready.connect(_precalentar, CONNECT_ONE_SHOT)
+
+
+# V12 (12/11, cargas; pruebas/herramientas/medir_cargas.gd): Bramavidrio se prepara AL ENTRAR en la región, con la pantalla
+# todavía tapada por Recursos.cambiar_escena, y no en el aviso. Antes sus piezas (el modelo, el surco y el polvo) se creaban
+# en el aviso y sus sombreadores se compilaban al dibujarse por primera vez, en mitad del aviso y de la aparición: en el
+# Redmi, segundos de imagen congelada antes del combate (v615: 35 y 61 fotogramas en ventanas de 5 s, «~18 s de negro»).
+# Aquí se crean y se dibujan dos fotogramas delante de la cámara, bajo el negro, y se esconden; siguen vivos toda la visita,
+# así que lo compilado sirve para cada aviso. Sin pantalla tapada (las pruebas que abren la región a mano), nada.
+# Su versión de COMBATE no se prepara aquí: sus sombreadores se crean con cada modelo (Shader.new con RECORTE en
+# bramavidrio*_3d.gd) y se liberan con él, así que lo compilado aquí solo serviría con la caché de sombreadores de Godot
+# (user://shader_cache) y, sin ella, se pagaría en cada entrada a la región. Lo paga el combate, bajo su aviso de carga.
+func _precalentar() -> void:
+	var R = region.get_node_or_null("/root/Recursos")
+	if not activo or R == null or not R.cambiando or region.kael == null or region.cam == null:
+		return
+	_construir()
+	var k: Vector3 = region.kael.global_position
+	var delante := k - _atras_camara() * 4.0
+	delante.y = T.altura(delante.x, delante.z)
+	_lomo.global_position = delante
+	_lomo.visible = true
+	_polvo.global_position = delante
+	_polvo.emitting = true
+	_estallido.global_position = delante
+	_estallido.emitting = true
+	if _gusano3d != null:
+		_gusano3d.global_position = delante
+		_mostrar_3d(true)
+	else:
+		_cuerpo.global_position = delante
+		_cuerpo.visible = true
+	for i in 2:
+		await region.get_tree().process_frame
+		if not is_instance_valid(region) or not region.is_inside_tree():
+			return
+	if estado != "calma":
+		return                                                  # ya avisa (no debería, tan pronto): no se toca
+	_lomo.visible = false
+	_polvo.emitting = false
+	_estallido.emitting = false
+	if _gusano3d != null:
+		_mostrar_3d(false)
+	else:
+		_cuerpo.visible = false
 
 
 # Bramavidrio solo se mueve bajo la arena blanda de su zona, lejos del camino.
@@ -106,6 +152,15 @@ func _cambiar(e: String) -> void:
 func _empezar_aviso(pos: Vector3) -> void:
 	_cambiar("aviso")
 	_rugio = false
+	# V12 (12/11, cargas): con el aviso empieza a pedirse en segundo plano lo del combate que aún no esté en memoria (la
+	# escena y el modelo de combate de la versión en uso); la arena tiembla unos segundos antes de que emerja.
+	var R = region.get_node_or_null("/root/Recursos")
+	if R != null and not vencido():
+		var V = load("res://enemigos/bramavidrio/bramavidrio_version.gd")
+		var rutas: Dictionary = load(V.guion()).get_script_constant_map().get("RUTAS", {})
+		var perfil: String = str(load("res://prototipos/calidad_proto.gd").actual()) \
+			if ResourceLoader.exists("res://prototipos/calidad_proto.gd") else "alto"
+		R.precargar(["res://combate.tscn", str(rutas.get(perfil, V.modelo()))])
 	# nace lejos, dentro de la zona, del lado contrario al camino (al este de Kael, o al norte si no cabe)
 	var dir := Vector3(1.0, 0.0, -0.35).normalized()
 	var origen := pos + dir * DISTANCIA_SALIDA

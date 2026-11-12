@@ -97,6 +97,8 @@ func _correr() -> void:
 		var base := "%s_%s_%.2f" % [etiqueta, pose[0], pose[1]]
 		if orden and p.has_method("ordenar_en_combate"):
 			await _foto(base + "_antes")
+			if p.has_method("fin_orden_combate"):   # (pulido, 12/11) cada pose, sin lo que tapaba la anterior
+				p.fin_orden_combate()
 			p.ordenar_en_combate(c, f)
 			print("      orden propuesto: índice %d → %d, z_index %d" % [indice0, rig.get_index(), rig.z_index])
 			await _esperar(2)

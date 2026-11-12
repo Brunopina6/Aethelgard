@@ -1012,6 +1012,9 @@ func _al_frente(si: bool) -> void:
 		var rig_z = f.get("rig")                       # V12, v3: ordenar_en_combate le sube el z_index; al acabar, el de siempre
 		if rig_z != null and is_instance_valid(rig_z):
 			rig_z.z_index = 0
+		var p_o = c._p3d(f)                            # (pulido, 12/11) y olvida a quién tapaba
+		if p_o != null and p_o.has_method("fin_orden_combate"):
+			p_o.fin_orden_combate()
 
 
 func _ordenar(y_cabeza: float) -> void:

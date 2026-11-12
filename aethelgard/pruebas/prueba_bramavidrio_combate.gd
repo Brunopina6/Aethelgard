@@ -28,6 +28,10 @@ extends SceneTree
 #     sitio, detrás de todos; que al morir se vuelve (DIR_DERROTA) y cae detrás de los héroes; que al acabar cada combate
 #     no queda ningún efecto suyo en la escena, los dibujos de los héroes vuelven a su sitio y no crecen los nodos
 #     huérfanos. Sirve con las dos versiones del modelo («-- bramavidrio_version=1» para la v1).
+#   Pulido (12/11): en cada turno suyo el orden frente a cada héroe cambia como mucho dos veces (delante al atacar y
+#     detrás al acabar: sin parpadeos; con la v3 Garon parpadeaba encima y debajo de la cabeza); al cerrar cada combate el
+#     bucle de la succión no suena. H: se cierra el combate a medias mientras aspira: el bucle calla y no quedan nodos
+#     sueltos. I: muere mientras aspira: el bucle calla, sin succión, héroes derechos, sin cartel y sin Aliento.
 # Con «medir» solo se mide el equilibrio (varias semillas, 2 y 3 héroes, jugador y automático) y se imprime.
 # Con «fotos=<carpeta>» (y ventana) saca capturas de cada ataque en su momento clave.
 
@@ -52,6 +56,8 @@ var medir := false
 var huerfanos0 := -1                    # nodos huérfanos antes del primer combate (Performance)
 var frente_visto := {}                  # ataque → se dibujó delante de algún héroe (V12, Bramavidrio v2)
 var tiro_visto := false                 # los héroes se inclinaron mientras aspiraba
+var cambios_orden := {}                 # (pulido, 12/11) héroe → veces que el gusano pasa de detrás a delante o al revés en su turno
+var encima_ant := {}
 
 
 func _initialize() -> void:
@@ -141,6 +147,7 @@ func _sin_efectos() -> void:
 	_ok(c.brama.efectos_vivos().is_empty(), "quedan efectos de Bramavidrio en la escena: %s" % str(c.brama.efectos_vivos()))
 	_ok(c.brama.chorro == null or not is_instance_valid(c.brama.chorro), "el chorro sigue en la escena")
 	_ok(not c.brama._tirando, "los héroes siguen inclinados hacia él")
+	_ok(not _bucle_suena(), "al acabar el combate el bucle de la succión sigue sonando")   # (pulido, 12/11)
 	for h in c.heroes:
 		if h.has("cuerpo_pos0") and h["hp"] > 0:
 			_ok(h["cuerpo"].position.distance_to(h["cuerpo_pos0"]) < 0.5,
@@ -157,7 +164,7 @@ func _probar() -> void:
 		for a in OS.get_cmdline_user_args():
 			if a.begins_with("solo="):
 				solo = a.substr(5)
-		for p in ["A", "B", "C", "D", "E", "F"]:
+		for p in ["A", "B", "C", "D", "E", "F", "H", "I"]:
 			if solo == "" or solo.contains(p):
 				await call("_" + p.to_lower())
 	_limpiar()
@@ -196,6 +203,8 @@ func _jugar(estrategia: String, op := {}) -> Dictionary:
 			turno = true                                   # con cómo estaba el fotograma anterior)
 			ant = previo
 			frente_visto.clear()
+			cambios_orden.clear()             # (pulido, 12/11) cuántas veces cambia delante/detrás de cada héroe
+			encima_ant.clear()
 		elif c.estado != "enemigo" and turno:
 			turno = false
 			var que := _que_hizo(ant)
@@ -204,6 +213,8 @@ func _jugar(estrategia: String, op := {}) -> Dictionary:
 				_comprobar_turno(que, ant, r)
 			if tras_corte >= 0:
 				tras_corte += 1
+		if turno:
+			_contar_cambios_orden()
 		if turno and c.brama != null and c.brama._frente:  # V12, Bramavidrio v2: delante de algún héroe al atacar
 			var i_gusano: int = z["rig"].get_index()
 			if c.heroes.any(func(h): return h["rig"].get_index() < i_gusano):
@@ -220,6 +231,13 @@ func _jugar(estrategia: String, op := {}) -> Dictionary:
 				tras_corte = 0
 		if op.get("hasta_corte", false) and tras_corte >= 1 and not turno:
 			break
+		if c.brama != null and c.brama.succion != null:     # (pulido, 12/11) H e I: mientras aspira
+			r["aspirando"] = int(r.get("aspirando", 0)) + 1
+			if op.get("hasta_aspirar", false) and r["aspirando"] >= 10:
+				break
+			if op.get("matar_aspirando", false) and r["aspirando"] == 10 and z["hp"] > 1:
+				z["hp"] = 1
+				r["bucle_al_matar"] = _bucle_suena()
 		if c.estado == "menu" and c.actor is Dictionary and c.turnos_heroe != decidido:
 			decidido = c.turnos_heroe
 			_decidir(estrategia, op)
@@ -309,6 +327,8 @@ func _comprobar_turno(que: String, ant: Dictionary, r: Dictionary) -> void:
 	var i_gusano: int = z["rig"].get_index()
 	_ok(not c.brama._frente and c.heroes.all(func(h): return h["rig"].get_index() > i_gusano) or z["hp"] <= 0,
 		"%s: al acabar su turno no vuelve detrás de los héroes" % que)
+	for n in cambios_orden:                            # (pulido, 12/11) sin parpadeos: delante y detrás, una vez cada uno
+		_ok(int(cambios_orden[n]) <= 2, "%s: el orden frente a %s cambia %d veces en su turno (parpadea)" % [que, n, cambios_orden[n]])
 	match que:
 		"embestida":
 			if zp != null:
@@ -634,3 +654,63 @@ func _fotos_bucle() -> void:
 		if t.contains(par[0]) and int(_fotos_hechas.get(par[1], 0)) < 1:
 			_fotos_hechas[par[1]] = 1
 			_foto_en(par[1], par[2])
+
+
+# ================================================================= pulido (12/11): orden sin parpadeos, salir y morir aspirando
+
+# Cada fotograma de su turno: si el gusano pasa de detrás a delante de un héroe (o al revés), se cuenta. Al acabar el
+# turno, _comprobar_turno pide como mucho dos cambios por héroe (delante al atacar y detrás al acabar): antes, con la
+# v3, la Embestida hacía parpadear a Garon encima y debajo de la cabeza (pruebas/fotos_bramavidrio_pulido.gd).
+func _contar_cambios_orden() -> void:
+	if z == null or not z.has("rig") or not is_instance_valid(z["rig"]):
+		return
+	var rig: Node2D = z["rig"]
+	for h in c.heroes:
+		var hr: Node2D = h["rig"]
+		var encima: bool = rig.z_index > hr.z_index or (rig.z_index == hr.z_index and rig.get_index() > hr.get_index())
+		if encima_ant.has(h["nombre"]) and encima_ant[h["nombre"]] != encima:
+			cambios_orden[h["nombre"]] = int(cambios_orden.get(h["nombre"], 0)) + 1
+		encima_ant[h["nombre"]] = encima
+
+
+# ¿Suena el bucle de la succión (y no se está apagando)?
+func _bucle_suena() -> bool:
+	for p in root.get_node("Sonido")._todas():
+		if is_instance_valid(p) and p.playing and String(p.get_meta("efecto", "")) == B.BUCLE_SUCCION \
+				and not p.get_meta("apagando", false):
+			return true
+	return false
+
+
+# H. Se sale del combate a medias mientras aspira (el combate se cierra de golpe, como al volver a la portada): el bucle
+#    de la succión, que sonaba, calla con el combate; no quedan nodos sueltos.
+func _h() -> void:
+	await _combate({"Kael": 10, "Lya": 10, "Garon": 10}, 81)
+	var r := await _jugar("jugador", {"vida": 0.5, "normales": 1, "defender_aliento": true, "hasta_aspirar": true,
+		"comprobar": false})
+	_ok(int(r.get("aspirando", 0)) >= 10, "H: no llega a aspirar: %s" % str(r["acciones"]))
+	_ok(_bucle_suena(), "H: mientras aspira no suena el bucle de la succión")
+	c.queue_free()
+	c = null
+	await _esperar(5)
+	_ok(not _bucle_suena(), "H: cerrado el combate a medias, el bucle de la succión sigue sonando")
+	var h: int = int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT))
+	_ok(h <= huerfanos0, "H: cerrado a medias quedan %d nodos huérfanos (antes %d)" % [h, huerfanos0])
+	hechos.append("H: salir aspirando")
+
+
+# I. Muere mientras aspira el Aliento: el bucle calla, la arena deja de subir, los héroes se enderezan y no queda el
+#    cartel; el combate acaba en victoria y se limpia.
+func _i() -> void:
+	await _combate({"Kael": 10, "Lya": 10, "Garon": 10}, 91)
+	var r := await _jugar("auto", {"vida": 0.5, "normales": 1, "matar_aspirando": true, "comprobar": false})
+	print("I: %s" % _resumen(r))
+	_ok(r.get("bucle_al_matar", false), "I: el bucle de la succión no sonaba al dejarlo a 1 PV")
+	_ok(r["gana"], "I: no muere")
+	_ok(not _bucle_suena(), "I: muerto aspirando, el bucle de la succión sigue sonando")
+	_ok(c.brama.succion == null and not c.brama._tirando and c.brama.cartel == null,
+		"I: muerto aspirando quedan la succión (%s), los héroes inclinados (%s) o el cartel (%s)" % [
+		c.brama.succion != null, c.brama._tirando, c.brama.cartel != null])
+	_ok(not impactos.any(func(x): return x[0] == "aliento"), "I: muerto aspirando, suelta el Aliento")
+	await _cerrar()
+	hechos.append("I: muere aspirando")

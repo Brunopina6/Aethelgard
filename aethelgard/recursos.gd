@@ -25,9 +25,15 @@ const MOSTRAR_FPS := true
 var grupos := {"comun": {}, "zona": {}}
 var capa: CanvasLayer
 var negro: ColorRect
-var linea_fondo: ColorRect
-var linea: ColorRect
 var cambiando := false
+# El aviso de carga sobre el negro (V12, 12/11): un rombo dorado que gira, sin cifra (no hay progreso real que contar), y
+# qué se prepara. Sustituye a la línea dorada de avance: solo medía la lectura de la escena, que ya estaba en memoria, y se
+# quedaba llena mientras el combate se montaba y compilaba sus sombreadores.
+var aviso_carga: Control
+var rombo: Control
+var lbl_carga: Label
+var texto_carga := ""                    # lo que dice ahora (lo leen las pruebas)
+var _giro := 0.0
 var lbl_fps: Label
 
 
@@ -47,16 +53,7 @@ func _ready() -> void:
 	negro.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	negro.visible = false
 	capa.add_child(negro)
-	linea_fondo = ColorRect.new()                    # la misma línea dorada fina de la carga, en pequeño
-	linea_fondo.color = Color(ORO, 0.2)
-	linea_fondo.position = Vector2(540, 400)
-	linea_fondo.size = Vector2(200, 1)
-	negro.add_child(linea_fondo)
-	linea = ColorRect.new()
-	linea.color = ORO
-	linea.position = linea_fondo.position
-	linea.size = Vector2(0, 1)
-	negro.add_child(linea)
+	_crear_aviso_carga()
 	if MOSTRAR_FPS:
 		lbl_fps = Label.new()
 		lbl_fps.position = Vector2(600, 2)
@@ -183,6 +180,33 @@ func guardar(ruta: String, recurso: Resource, grupo := "comun") -> void:
 	grupos[grupo][ruta] = recurso
 
 
+# Pide en segundo plano lo que se va a usar pronto (V12, 12/11, cargas; p. ej. el combate de Bramavidrio cuando suena su
+# aviso, zonas3d/mar_cristal/gusano.gd). No bloquea nada: si ya está en memoria o ya se pidió, no hace nada; lo que llega
+# se guarda en «grupo» (por defecto «zona»: se libera al volver al mapa del mundo). _process recoge lo terminado.
+var _en_hilo := {}
+
+
+func precargar(rutas: Array, grupo := "zona") -> void:
+	for r in rutas:
+		var ruta := str(r)
+		if ruta == "" or esta(ruta) or _en_hilo.has(ruta) or not ResourceLoader.exists(ruta):
+			continue
+		if ResourceLoader.load_threaded_request(ruta) == OK:
+			_en_hilo[ruta] = grupo
+
+
+func _recoger_precargas() -> void:
+	for ruta in _en_hilo.keys():
+		match ResourceLoader.load_threaded_get_status(ruta):
+			ResourceLoader.THREAD_LOAD_LOADED:
+				var r := ResourceLoader.load_threaded_get(ruta)
+				if r != null:
+					guardar(ruta, r, _en_hilo[ruta])
+				_en_hilo.erase(ruta)
+			ResourceLoader.THREAD_LOAD_FAILED, ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
+				_en_hilo.erase(ruta)
+
+
 func esta(ruta: String) -> bool:
 	for g in grupos:
 		if grupos[g].has(ruta):
@@ -251,8 +275,75 @@ func _textura_sin_uso(ruta: String) -> bool:
 	return not _deps_fbx[fbx].has(ruta)
 
 
+# V12 (12/11, rendimiento de cargas; pruebas/herramientas/listar_precarga.gd y medir_cargas.gd): lo que hoy NO se usa no
+# se precarga al arrancar (se quedaba en la memoria toda la partida: en el Redmi, la memoria pasó de 745-948 MB a 1,0-1,1 GB
+# y la carga del título de 15,5 a 18,5-21 s). Se carga cuando haga falta, con la pantalla tapada, como cualquier otro recurso.
+#   - Lo que va detrás de un interruptor APAGADO (carpeta → interruptor; se mira con su propia función, así que al encenderlo
+#     en las pruebas o en Ajustes se vuelve a precargar). Naira también sale con su hito de la partida, que al arrancar aún
+#     no se ha leído: entonces se carga al entrar en el combate o la región.
+#   - Los prototipos que no engancha nadie (Cencerrante, Vidracrán y Tolvanera).
+#   - De Bramavidrio, solo la versión en uso (bramavidrio_version.gd) y, de ella, solo el modelo y la piel del perfil
+#     gráfico (alto: sin sufijo; medio: _medio; bajo: _bajo), igual que elige bramavidrio*_3d.gd.
+const APAGADOS := {
+	"res://personajes/heroes_v2/": "heroes_v2",
+	"res://personajes/naira/": "naira_v12",
+	"res://personajes/desierto/": "npc_desierto_v12",
+	"res://enemigos/guardian_piedra/": "enemigos_v12",
+	"res://enemigos/golem_ambar/": "enemigos_v12",
+	"res://enemigos/gorthor/": "enemigos_v12",
+	"res://enemigos/v12_comun/": "enemigos_v12",
+	"res://enemigos/cencerrante/": "",
+	"res://enemigos/vidracran/": "",
+	"res://enemigos/tolvanera/": "",
+}
+const BRAMAVIDRIO := "res://enemigos/bramavidrio/"
+var _encendidos := {}
+
+
+func _encendido(interruptor: String) -> bool:
+	if interruptor == "":
+		return false
+	if not _encendidos.has(interruptor):
+		var si := false
+		match interruptor:
+			"heroes_v2":
+				si = ResourceLoader.exists("res://personajes/heroes_v2/heroes_v2.gd") \
+					and load("res://personajes/heroes_v2/heroes_v2.gd").activado()
+			"naira_v12":
+				si = ResourceLoader.exists("res://grupo.gd") and load("res://grupo.gd").naira_v12()
+			"npc_desierto_v12":
+				si = ResourceLoader.exists("res://personajes/desierto/npc_desierto_3d.gd") \
+					and load("res://personajes/desierto/npc_desierto_3d.gd").activado()
+			_:                                       # enemigos_v12 (combate.gd _enemigos_v12)
+				si = bool(Engine.get_meta(interruptor, false)) or interruptor in OS.get_cmdline_user_args()
+		_encendidos[interruptor] = si
+	return _encendidos[interruptor]
+
+
+func _sin_uso_hoy(ruta: String) -> bool:
+	for carpeta in APAGADOS:
+		if ruta.begins_with(carpeta):
+			return not _encendido(APAGADOS[carpeta])
+	if not ruta.begins_with(BRAMAVIDRIO) or not ruta.get_extension() in ["glb", "webp"]:
+		return false
+	var V = load(BRAMAVIDRIO + "bramavidrio_version.gd")
+	var carpeta_en_uso: String = V.modelo().get_base_dir() + "/"
+	if ruta.get_base_dir() + "/" != carpeta_en_uso:
+		return true
+	var perfil := "alto"
+	if ResourceLoader.exists("res://prototipos/calidad_proto.gd"):
+		perfil = str(load("res://prototipos/calidad_proto.gd").actual())
+	var base := ruta.get_basename()
+	var de := "alto"
+	if base.ends_with("_medio"):
+		de = "medio"
+	elif base.ends_with("_bajo"):
+		de = "bajo"
+	return de != perfil and not (perfil not in ["alto", "medio", "bajo"] and de == "alto")
+
+
 func _de_otro_perfil(ruta: String) -> bool:
-	if _textura_sin_uso(ruta):
+	if _textura_sin_uso(ruta) or _sin_uso_hoy(ruta):
 		return true
 	if not ruta.ends_with(".glb"):
 		return false
@@ -277,6 +368,14 @@ func _excluida(ruta: String) -> bool:
 
 # Quien llama ya ha fundido su pantalla a negro. Aquí sigue en negro mientras se carga la escena nueva.
 # Al volver de una zona al mapa del mundo se libera lo que solo usaba la zona.
+# V12 (12/11, cargas; pruebas/herramientas/medir_cargas.gd):
+#   - nada de negro mudo: sale el aviso de carga (qué se prepara y un rombo que gira, sin cifra) y se deja ver un fotograma
+#     ANTES de montar la escena nueva. En el móvil, montar el combate y compilar sus sombreadores puede congelar la imagen
+#     unos segundos: así lo que se queda en pantalla dice qué pasa;
+#   - mientras dura, la ventana no recibe toques, teclas ni botones (ni los acumulados durante una congelación): ni dobles
+#     pulsaciones ni órdenes que caigan en la escena nueva antes de verse;
+#   - al ir al combate, la música de la exploración empieza a fundirse ya (Musica, contexto «combate», recuerda por dónde
+#     iba), no cuando la escena nueva ya está montada.
 func cambiar_escena(ruta: String) -> void:
 	if cambiando:
 		return
@@ -285,18 +384,15 @@ func cambiar_escena(ruta: String) -> void:
 	var desde: String = esc.scene_file_path if esc != null else ""
 	negro.color.a = 1.0
 	negro.visible = true
-	linea.size.x = 0.0
-	linea.visible = false
-	linea_fondo.visible = false
+	get_tree().root.gui_disable_input = true
+	_mostrar_aviso_carga(_texto_de(ruta))
+	var musica = get_node_or_null("/root/Musica")
+	if ruta == ESCENA_COMBATE and musica != null and musica.has_method("pedir"):
+		musica.pedir("combate")
+	await get_tree().process_frame                 # el aviso se ve antes de cualquier trabajo largo
 	var escena: PackedScene = null
 	if ResourceLoader.load_threaded_request(ruta) == OK:
-		var t0 := Time.get_ticks_msec()
-		var avance := []
-		while ResourceLoader.load_threaded_get_status(ruta, avance) == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
-			if Time.get_ticks_msec() - t0 > 500:
-				linea.visible = true
-				linea_fondo.visible = true
-				linea.size.x = 200.0 * float(avance[0])
+		while ResourceLoader.load_threaded_get_status(ruta) == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
 			await get_tree().process_frame
 		escena = ResourceLoader.load_threaded_get(ruta) as PackedScene
 	if ruta == "res://mapa.tscn" and desde != ESCENA_COMBATE and desde != ruta:   # se sale de una zona o mazmorra
@@ -309,13 +405,63 @@ func cambiar_escena(ruta: String) -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	_poner_fps()
-	linea.visible = false
-	linea_fondo.visible = false
+	get_tree().root.gui_disable_input = false       # la escena nueva ya está montada y dibujada
 	var t := create_tween()
 	t.tween_property(negro, "color:a", 0.0, 0.3)
 	await t.finished
 	negro.visible = false
+	aviso_carga.visible = false
+	texto_carga = ""
 	cambiando = false
+
+
+# Qué se dice mientras se prepara cada escena (sin prometer tiempos ni cifras).
+func _texto_de(ruta: String) -> String:
+	if ruta == ESCENA_COMBATE:
+		return "Preparando el combate"
+	if ruta == "res://mapa.tscn":
+		return "Volviendo al mapa"
+	return "Cargando"
+
+
+func _crear_aviso_carga() -> void:
+	aviso_carga = Control.new()
+	aviso_carga.position = Vector2(440, 330)
+	aviso_carga.size = Vector2(400, 90)
+	aviso_carga.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	aviso_carga.visible = false
+	negro.add_child(aviso_carga)
+	rombo = Control.new()                            # un rombo dorado con un brillo que gira (como las chispas de la carga)
+	rombo.position = Vector2(200, 18)
+	rombo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rombo.draw.connect(func():
+		var r := 11.0
+		var pts := PackedVector2Array()
+		for i in 4:
+			var a := _giro + i * PI * 0.5
+			pts.append(Vector2(cos(a), sin(a) * 0.62) * r)
+		rombo.draw_colored_polygon(pts, Color(ORO, 0.85))
+		pts.append(pts[0])
+		rombo.draw_polyline(pts, Color(1.0, 0.95, 0.8, 0.9), 1.5)
+		for i in 3:                                  # tres chispas que lo rodean
+			var a := -_giro * 1.6 + i * TAU / 3.0
+			rombo.draw_circle(Vector2(cos(a), sin(a) * 0.5) * 24.0, 2.2, Color(ORO, 0.55)))
+	aviso_carga.add_child(rombo)
+	lbl_carga = Label.new()
+	lbl_carga.position = Vector2(0, 46)
+	lbl_carga.size = Vector2(400, 34)
+	lbl_carga.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl_carga.add_theme_font_size_override("font_size", 22)
+	lbl_carga.add_theme_color_override("font_color", Color(1.0, 0.93, 0.8, 0.85))
+	lbl_carga.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	aviso_carga.add_child(lbl_carga)
+
+
+func _mostrar_aviso_carga(texto: String) -> void:
+	texto_carga = texto
+	lbl_carga.text = texto + "…"
+	aviso_carga.visible = true
+	rombo.queue_redraw()
 
 
 # Al cerrar o dejar la app en segundo plano se guarda la partida justo donde estás (mapa o zona).
@@ -336,6 +482,11 @@ func _poner_fps() -> void:
 # Modo ahorro: con un menú abierto (grupo "menu_quieto") o un diálogo esperando a que toques,
 # el juego solo redibuja cuando algo cambia. En combate y al caminar, no.
 func _process(_d: float) -> void:
+	if not _en_hilo.is_empty():
+		_recoger_precargas()
+	if aviso_carga != null and aviso_carga.visible:   # el rombo gira mientras se prepara la escena (sin cifra)
+		_giro = fmod(_giro + _d * 2.4, TAU)
+		rombo.queue_redraw()
 	if lbl_fps != null:
 		var t := "%d FPS" % Engine.get_frames_per_second()
 		if lbl_fps.text != t:                        # solo cambia una vez por segundo (no despierta el modo ahorro)

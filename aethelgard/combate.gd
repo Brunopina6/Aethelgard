@@ -482,7 +482,20 @@ var climax_jefe: Dictionary = {}         # V12, clímax: su jefe
 var climax_estallido := -1.0             # V12, clímax: segundo de la canción en que cae el destello (-1: hecho)
 
 
+# Carga (V12, 12/11, rendimiento de cargas): lo que tarda cada parte de _ready, en ms. Solo se mide (dos lecturas del
+# reloj por parte); lo leen pruebas/herramientas/medir_cargas.gd y pruebas/prueba_cargas.gd.
+var tiempos_carga := {}
+var _t_carga := 0
+
+
+func _marca(parte: String) -> void:
+	var t := Time.get_ticks_usec()
+	tiempos_carga[parte] = float(tiempos_carga.get(parte, 0.0)) + (t - _t_carga) / 1000.0
+	_t_carga = t
+
+
 func _ready() -> void:
+	_t_carga = Time.get_ticks_usec()
 	var semilla := -1                              # pruebas: -- semilla=N (C0); en el juego, al azar como siempre
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("semilla="):
@@ -542,6 +555,7 @@ func _ready() -> void:
 		_aliento_al_empezar()                                      # Rama del Árbol Milenario (sin ella, nada)
 	_elegir_enemigos()
 	_crear_texturas()
+	_marca("datos")
 	_crear_interfaz()
 	for e in enemigos:                               # los que tienen entrada (Zarzalín): llegan de un salto, con un
 		var pe = _p3d(e)                             # fundido corto porque el clip empieza 0,85 m por detrás
@@ -556,12 +570,16 @@ func _ready() -> void:
 			_sonidos_bestia(e, pe)
 			_sonar(str(e.get("clave", "")) + "_entrada")   # al empezar su clip de entrada (sonido.gd, tanda 4)
 			pe.entrada()
+	_marca("entradas")
 	_iniciar_musica()
 	_actualizar()
+	_marca("musica")
 	_precalentar_efectos()
+	_marca("efectos")
 	for e in enemigos:                               # jefes: su nombre en grande al empezar
 		if e.get("titulo", false):
 			_presentar(e)
+	_marca("presentar")
 
 
 # V12, grupo con reserva: los reclutas activos entran en el sitio y el puesto de uno de los de siempre que no esté
@@ -802,6 +820,7 @@ func _crear_interfaz() -> void:
 	capa = CanvasLayer.new()
 	add_child(capa)
 	_crear_fondo()
+	_marca("fondo")
 	escena = Node2D.new()
 	escena.scale = Vector2(TAM_ESCENA, TAM_ESCENA)
 	escena.position = PIVOTE_ESCENA * (1.0 - TAM_ESCENA)
@@ -812,6 +831,7 @@ func _crear_interfaz() -> void:
 	for f in enemigos + heroes:
 		_crear_rig(f)
 		_crear_sombra(f)
+		_marca("rig " + str(f.get("modelo", "")))
 
 	# tocar fuera del menú: vuelve atrás (debajo del menú y de las zonas de objetivo)
 	fuera = Control.new()
@@ -868,6 +888,7 @@ func _crear_interfaz() -> void:
 	panel_obj.visible = false
 	capa.add_child(panel_obj)
 	menu.marcado.connect(_al_marcar_orden)
+	_marca("interfaz")
 
 
 # ---------------------------------------------------------------- V11: panel de objetivos (MEJORAS_COMBATE.md)
@@ -1361,30 +1382,19 @@ func _crear_rig_sprite(f: Dictionary, m: Dictionary, raiz: Node2D, base: Vector2
 	f["cab_cerrada"] = null
 
 
-# Devuelve la ruta del modelo 3D si existen el modelo y sus dos scripts; si no, "".
-func _ruta_3d(m: Dictionary) -> String:
-	if not ResourceLoader.exists(m["script"]) or not ResourceLoader.exists(m["gestos"]):
-		return ""
-	if m.has("base") and not ResourceLoader.exists(m["base"]):
-		return ""
-	for r in m["rutas"]:
-		if ResourceLoader.exists(r):
-			return r
-	return ""
-
-
-# Personaje 3D: se dibuja en una ventana 3D propia con fondo transparente
-# y esa imagen se coloca en el combate como si fuera un sprite más.
-func _crear_rig_3d(f: Dictionary, m: Dictionary, raiz: Node2D, base: Vector2, esc: float) -> void:
+# El «estudio» de un personaje 3D del combate (V12, 12/11, cargas): su ventana 3D con fondo transparente, la cámara, la
+# luz dorada y el relleno azul, dentro de «padre». Lo usan _crear_rig_3d y el precalentado de la carga (carga.gd), para que
+# los sombreadores se compilen allí con LAS MISMAS variantes que en el combate: con otra luz o sin este entorno se volvían a
+# compilar al entrar en el primer combate (pruebas/herramientas/medir_cargas.gd, «sombreadores_nuevos»).
+static func estudio_3d(padre: Node, m: Dictionary, q: float, luz_zona: Color) -> Dictionary:
 	var tam: Vector2i = m["vp"]
-	var q := res_personajes                          # se dibuja más pequeño (75 %, en el móvil 70 %) y se amplía
 	var vp := SubViewport.new()
-	vp.size = Vector2i(int(tam.x * q), int(tam.y * q))
+	vp.size = Vector2i(maxi(1, int(tam.x * q)), maxi(1, int(tam.y * q)))
 	vp.transparent_bg = true
 	vp.own_world_3d = true
 	vp.msaa_3d = Viewport.MSAA_DISABLED
 	vp.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE   # solo se dibuja mientras se ve
-	raiz.add_child(vp)
+	padre.add_child(vp)
 
 	var cy: float = m["centro_y"]
 	var cam := Camera3D.new()
@@ -1404,7 +1414,7 @@ func _crear_rig_3d(f: Dictionary, m: Dictionary, raiz: Node2D, base: Vector2, es
 	# Biblia de arte: luz dorada desde arriba a la izquierda (con un toque del color de la zona) y
 	# relleno azul al 30 % desde la derecha
 	var luz := DirectionalLight3D.new()
-	luz.light_color = LUZ_PRINCIPAL.lerp(luz_3d, 0.3)
+	luz.light_color = LUZ_PRINCIPAL.lerp(luz_zona, 0.3)
 	luz.light_energy = 1.3
 	luz.rotation_degrees = Vector3(-35, -40, 0)
 	vp.add_child(luz)
@@ -1413,9 +1423,37 @@ func _crear_rig_3d(f: Dictionary, m: Dictionary, raiz: Node2D, base: Vector2, es
 	relleno.light_energy = 0.3
 	relleno.rotation_degrees = Vector3(-15, 140, 0)
 	vp.add_child(relleno)
+	return {"vp": vp, "cam": cam}
 
-	var maga = load(HeroesV2.script_de(BramaVersion.elegir(m["script"]))).new()   # V12: Bramavidrio, la versión elegida (las demás, igual)
+
+# El personaje 3D de un modelo de MODELOS (sin añadir): V12, Bramavidrio en la versión elegida y los héroes v2 si su
+# interruptor está encendido; los demás, igual.
+static func modelo_3d(m: Dictionary) -> Node3D:
+	var maga = load(HeroesV2.script_de(BramaVersion.elegir(m["script"]))).new()
 	maga.ruta_modelo = _ruta_3d(m)
+	return maga
+
+
+# Devuelve la ruta del modelo 3D si existen el modelo y sus dos scripts; si no, "".
+static func _ruta_3d(m: Dictionary) -> String:
+	if not ResourceLoader.exists(m["script"]) or not ResourceLoader.exists(m["gestos"]):
+		return ""
+	if m.has("base") and not ResourceLoader.exists(m["base"]):
+		return ""
+	for r in m["rutas"]:
+		if ResourceLoader.exists(r):
+			return r
+	return ""
+
+
+# Personaje 3D: se dibuja en una ventana 3D propia con fondo transparente
+# y esa imagen se coloca en el combate como si fuera un sprite más.
+func _crear_rig_3d(f: Dictionary, m: Dictionary, raiz: Node2D, base: Vector2, esc: float) -> void:
+	var q := res_personajes                          # se dibuja más pequeño (75 %, en el móvil 70 %) y se amplía
+	var est := estudio_3d(raiz, m, q, luz_3d)
+	var vp: SubViewport = est["vp"]
+	var cam: Camera3D = est["cam"]
+	var maga = modelo_3d(m)
 	vp.add_child(maga)
 
 	var cuerpo := Node2D.new()                       # su punto de giro está en los pies
@@ -5966,29 +6004,12 @@ func _vfx_3d(ruta: String, suelo: Vector2, oculto := false) -> bool:
 		if efectos_3d_activos >= max_efectos_3d:   # demasiados a la vez: que se dibuje en 2D
 			return false
 		efectos_3d_activos += 1
-	var vp := SubViewport.new()
-	vp.size = Vector2i(int(512 * res_efectos), int(768 * res_efectos))
-	vp.own_world_3d = true
-	vp.transparent_bg = true
 	# el de precalentar no se ve, pero tiene que dibujarse para que se compilen sus shaders
-	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS if oculto else SubViewport.UPDATE_WHEN_VISIBLE
-	escena.add_child(vp)
-	var cam := Camera3D.new()
-	cam.projection = Camera3D.PROJECTION_ORTHOGONAL
-	cam.size = VFX_ALTO_VISTA
-	var env := Environment.new()
-	env.background_mode = Environment.BG_CLEAR_COLOR
-	cam.environment = env
-	vp.add_child(cam)
-	var ang := deg_to_rad(12.0)                      # misma inclinación que los personajes 3D
-	cam.look_at_from_position(Vector3(0, 1.4 + sin(ang) * 6.0, cos(ang) * 6.0), Vector3(0, 1.4, 0))
-	cam.current = true
+	var est := estudio_vfx(escena, res_efectos, oculto)
+	var vp: SubViewport = est["vp"]
+	var cam: Camera3D = est["cam"]
 	var fx = load(ruta).instantiate()
-	if fx.get_meta("bloom", false) and not movil:  # resplandor alrededor de lo que brilla (rayo)
-		env.glow_enabled = true
-		env.glow_intensity = 1.2
-		env.glow_bloom = 0.25
-		env.glow_hdr_threshold = 0.9
+	brillo_vfx(est["env"], fx, movil)
 	vp.add_child(fx)
 	var spr := Sprite2D.new()
 	spr.texture = vp.get_texture()
@@ -6011,7 +6032,38 @@ func _vfx_3d(ruta: String, suelo: Vector2, oculto := false) -> bool:
 	return true
 
 
-# Al empezar el combate se lanza una vez cada efecto 3D sin que se vea: así sus shaders se compilan
+# La ventana 3D de un efecto (V12, 12/11, cargas): como estudio_3d, la comparten _vfx_3d y el precalentado de la carga
+# (carga.gd), para que sus sombreadores se compilen allí con las mismas variantes.
+static func estudio_vfx(padre: Node, res: float, siempre := false) -> Dictionary:
+	var vp := SubViewport.new()
+	vp.size = Vector2i(maxi(1, int(512 * res)), maxi(1, int(768 * res)))
+	vp.own_world_3d = true
+	vp.transparent_bg = true
+	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS if siempre else SubViewport.UPDATE_WHEN_VISIBLE
+	padre.add_child(vp)
+	var cam := Camera3D.new()
+	cam.projection = Camera3D.PROJECTION_ORTHOGONAL
+	cam.size = VFX_ALTO_VISTA
+	var env := Environment.new()
+	env.background_mode = Environment.BG_CLEAR_COLOR
+	cam.environment = env
+	vp.add_child(cam)
+	var ang := deg_to_rad(12.0)                      # misma inclinación que los personajes 3D
+	cam.look_at_from_position(Vector3(0, 1.4 + sin(ang) * 6.0, cos(ang) * 6.0), Vector3(0, 1.4, 0))
+	cam.current = true
+	return {"vp": vp, "cam": cam, "env": env}
+
+
+# Resplandor alrededor de lo que brilla (rayo), salvo en el móvil.
+static func brillo_vfx(env: Environment, fx: Node, en_movil: bool) -> void:
+	if fx.get_meta("bloom", false) and not en_movil:
+		env.glow_enabled = true
+		env.glow_intensity = 1.2
+		env.glow_bloom = 0.25
+		env.glow_hdr_threshold = 0.9
+
+
+# Al empezar el combate se lanza una vez cada efecto 3D sin que se vea: así sus shaders se compilen
 # mientras sale «¡Combate!» y no a mitad de una magia (en el móvil eso daba un parón).
 func _precalentar_efectos() -> void:
 	for ruta in [VFX_FUEGO, VFX_AGUA, VFX_RAYO, VFX_CURA]:

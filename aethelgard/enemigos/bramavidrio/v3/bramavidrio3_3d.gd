@@ -786,9 +786,20 @@ func puntos_profundidad() -> PackedVector3Array:
 # mirando el hocico. Esto mira varios tramos del cuerpo: lo pone delante de cada héroe al que tapa un tramo más cercano
 # a la cámara (su sombra en la arena más abajo en pantalla que los pies del héroe) que cae encima de él, y le da el
 # z_index más alto de esos héroes (el 5 del que actúa). Sin héroes tapados, vuelve a su sitio y a z_index 0.
-# Lo llama combate_bramavidrio.gd en cada fotograma (cambio propuesto en el informe); aquí no se toca el combate.
+# Lo llama combate_bramavidrio.gd en cada fotograma mientras ataca (_frente); al acabar, _al_frente(false) lo devuelve.
+# Pulido (12/11, medido en combates que corren con pruebas/fotos_bramavidrio_pulido.gd): tenía tres fallos.
+#   1. Su sitio «de siempre» (_indice_combate) se apuntaba en la primera llamada, cuando _al_frente(true) ya lo había
+#      movido delante de Kael y Lya (_ordenar por el hocico): sin héroes tapados volvía a ESE sitio, no detrás de todos.
+#      Ahora su sitio es «justo antes del primer héroe del árbol», que no depende de lo que pasó antes.
+#   2. Un tramo contaba aunque pasara por encima de la cabeza del héroe (sin tocar su dibujo): ahora solo cuentan los que
+#      caen sobre su dibujo (de los pies a lo alto de su figura).
+#   3. Cambiaba de orden fotograma a fotograma cuando un tramo entraba y salía del ancho del héroe (en la Embestida, Garon
+#      se pintaba un fotograma encima de la cabeza y el siguiente debajo: 15 cambios en dos mordiscos y 7 en la
+#      Fractura). Ahora, una vez delante de un héroe en un ataque, sigue delante de él hasta que el ataque acaba
+#      (fin_orden_combate): decide por tramos mientras ataca y vuelve detrás al acabar, sin parpadeos.
 const RADIO_HEROE := 85.0                     # medio ancho de un héroe en la escena del combate (px)
-var _indice_combate := -1
+var _delante := {}                            # héroes (nombre) a los que ya ha tapado en este ataque
+const MARGEN_DELANTE := 4.0                   # px de escena que su sombra debe quedar por delante de los pies del héroe
 
 
 func ordenar_en_combate(c: Node, f: Dictionary) -> void:
@@ -805,24 +816,41 @@ func ordenar_en_combate(c: Node, f: Dictionary) -> void:
 			c.escena.to_local(spr.to_global(cam.unproject_position(Vector3(w.x, suelo, w.z))))])
 	var tras := -1
 	var z := 0
+	var primero := -1                                  # el primer héroe del árbol: su sitio de siempre es justo antes
 	for h in c.heroes:
 		if not h.has("rig") or not is_instance_valid(h["rig"]) or h["rig"].get_parent() != c.escena:
 			continue
+		var i_h: int = h["rig"].get_index()
+		primero = i_h if primero < 0 else mini(primero, i_h)
 		var pie: Vector2 = c._suelo_de(h)
+		var alto: float = maxf(120.0, (pie.y - c._centro(h).y) * 2.1)   # su figura, de los pies a lo alto
+		var tapa := false
 		for m in marcas:
-			if absf((m[0] as Vector2).x - pie.x) < RADIO_HEROE and (m[1] as Vector2).y > pie.y + 4.0:
-				tras = maxi(tras, h["rig"].get_index())
-				z = maxi(z, h["rig"].z_index)
+			var s: Vector2 = m[0]
+			if absf(s.x - pie.x) < RADIO_HEROE and s.y > pie.y - alto and s.y < pie.y + 10.0 \
+					and (m[1] as Vector2).y > pie.y + MARGEN_DELANTE:
+				tapa = true
 				break
-	if _indice_combate < 0:
-		_indice_combate = rig.get_index()
+		var nombre := str(h.get("nombre", i_h))
+		if tapa:
+			_delante[nombre] = true
+		if _delante.has(nombre):
+			tras = maxi(tras, i_h)
+			z = maxi(z, h["rig"].z_index)
 	var actual: int = rig.get_index()
-	var meta := _indice_combate
+	var meta := actual
 	if tras >= 0:
 		meta = tras if actual < tras else tras + 1
+	elif primero >= 0 and actual > primero:
+		meta = primero
 	if meta != actual:
 		c.escena.move_child(rig, meta)
 	rig.z_index = z
+
+
+# Al acabar el ataque (combate_bramavidrio.gd _al_frente(false)): olvida a quién tapaba.
+func fin_orden_combate() -> void:
+	_delante.clear()
 
 
 # El centro del cuello (números de daño, efectos sobre el cuerpo).
