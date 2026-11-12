@@ -211,3 +211,12 @@ negra).
   - pulir la victoria de Kael (en la v2 la espada queda detrás de la cabeza).
 - **En marcha también:** C, los modelos propios del Guardián de piedra, el Gólem de ámbar y Gorthor
   (`D:\Aethelgard_v12_enemigos`, desde `92a511d`; sin tocar `combate.gd`).
+- **02:10, después del corte por límite de uso (a la 1 h aprox.):**
+  - **Magia negra integrada APAGADA** (`fa0a818`, interruptor `magia_negra_v12`): 24 hechizos en 6 escuelas, tabla de afinidades y taller arcano en borrador. Batería: **123 · 0 · 54 · 0**.
+  - **Héroes v2:** enganchados en `combate.gd` (siguen apagados).
+  - **Oakhaven y enemigos:** se reanudaron con SendMessage después del corte.
+  - **F, en marcha:** el grupo con reserva y Naira como combatiente APAGADA (`D:\Aethelgard_v12_grupo`, desde `fa0a818`; dueño de `grupo.gd`, `combate.gd`, `magia_negra.gd`, `artes.gd`, `inventario.gd`, `menus.gd` y `grupo_3d.gd`).
+  - **Pendientes de la magia:**
+    - las claves `negra_*` de `sonido.gd`;
+    - el botón del taller arcano en `menus.gd` y su título en `alquimia_menu.gd`;
+    - que la tabla de afinidades se aplique a las 12 magias de siempre: lo decide el usuario.
