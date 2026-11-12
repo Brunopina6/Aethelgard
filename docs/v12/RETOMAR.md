@@ -254,3 +254,18 @@ negra).
     3. migrar las Cumbres y el Valle;
     4. encuentros por región.
   - **Etiqueta de recuperación:** `v12-antes-noche-20261111`. Hay 30 commits locales desde ella.
+
+### Reanudación del 12/11, 09:10: validación previa al Redmi
+
+- Rama comprobada: `claude/rebelum-v12`, HEAD `5ac3971`; sin cambios en archivos seguidos al iniciar. `.agents/` y `.codex/` ya estaban sin seguimiento y se conservan.
+- Memoria remota consultada solo en lectura: `806d4a9`, coincide con la copia local. Sin push, fusiones ni publicaciones.
+- APK existente verificada: `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261112-b719ea0.apk`, versionCode 646, paquete `com.aethelgard.auditoria`, etiqueta «REBELUM Auditoría». SHA-256 `652273eff55844fa32f199b15ea759e77454413c580eb220b0749e7a01689883`. Firma v2/v3 válida, certificado SHA-256 `3413edcd8c11ec1ce77a64566da5ed17582b4a2b31b869ccaeb0a120d17785f3`.
+- Pruebas repetidas sobre HEAD: 7 superadas, 0 fallidas (guardado, partida, Bramavidrio, clímax, Garganta, Oakhaven y Gran Bosque). Evidencia local: `.verificacion-local/redmi_v646/2026-11-12_090655/resumen.md`. No se ha repetido la batería completa de 130.
+- Los 170 archivos de datos reales del PC y la partida mantienen sus huellas. El aviso «proyecto cambiado» corresponde a la nueva carpeta de registros sin seguimiento; `git diff` vacío antes de añadir esta nota.
+- Limitaciones del entorno: CIM denegado, por lo que el contador de otros procesos Godot del ejecutor no es una comprobación fiable. La sonda sí confirmó user:// aislado. Garganta dejó avisos de recursos/ObjectDB pendientes al cerrar, pese a terminar con 0 fallos: revisar su limpieza aparte.
+- El usuario informa que el móvil está conectado. ADB no pudo iniciar dentro del entorno restringido; la solicitud de acceso USB ampliado fue rechazada. No se conoce la versión instalada, no se ha respaldado ni modificado la partida del teléfono, no se ha instalado nada ni medido FPS Android en esta sesión. No insistir por otra vía para eludir el rechazo.
+- Siguiente: cuando se permita acceso USB, identificar Redmi y versión instalada, respaldar y verificar Auditoría antes de cualquier escritura, y validar v646: Garganta, Oakhaven y Gran Bosque en bajo/medio; luego comparaciones opcionales. Conservar todas las otras apps y partidas. APK sin publicar.
+- **09:10-09:45, esta sesión (con ADB):**
+  - **v646 validada en el Redmi:** el Gran Bosque no llegaba (27 en bajo, 14 en medio) y lo demás iba a 30 (`INFORME_REDMI_V12.md`, sexta prueba). Partida restaurada.
+  - **Gran Bosque optimizado** (`e8f59cb`); APK v655 (`e8f59cb`) para medirlo.
+  - La nota de arriba la escribió otra sesión (sin ADB) mientras tanto; se conserva.
