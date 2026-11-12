@@ -289,3 +289,19 @@ negra).
 - **Después:**
   1. el encuentro nuevo del desierto (toca `combate.gd`), cuando acabe el de las cargas;
   2. la validación en Android, cuando vuelva el Redmi.
+- **12:20:**
+  - **Integrado** (`a23e131`):
+    - las cargas: precarga filtrada, aviso honesto sin cifras ni dobles toques, Bramavidrio preparado al entrar en la región;
+    - el pulido de Bramavidrio: el orden de la v3 estable.
+  - **Batería:** **132 · 0 · 60 · 0**.
+  - **v649 medida en el Redmi:** el Gran Bosque va a 30 en bajo y a 21-25 en medio; del aviso al combate, ≤ 2,5 s y sin negro (`INFORME_REDMI_V12.md`, séptima prueba).
+  - **En marcha:**
+
+| Trabajo | Copia · rama | Notas |
+|---|---|---|
+| **Bramavidrio v4, «el Ancestral»**, fiel a la referencia del usuario | `D:\Aethelgard_v12_bramavidrio4` · `claude/v12-bramavidrio4` | Referencia: `D:\REBELUM_diagnostico\v12\referencias\bramavidrio_v4_referencia_usuario.png` (de `Downloads\Concepto del gusano de arena ancestral.png`, SHA-256 `3a6044c0…a904c5d18`, aportada por el usuario; licencia sin registrar). Es dueño de `enemigos/bramavidrio/**`, `bramavidrio_version.gd`, el bloque Bramavidrio de `menus.gd` y el origen del chorro en `combate_bramavidrio.gd`. Elegible; `VERSION_DEFECTO` sigue en 2 |
+| Encuentro nuevo del desierto (Vidracrán o Tolvanera, detrás de un interruptor apagado) | `D:\Aethelgard_v12_encuentro` · `claude/v12-hito-encuentro-desierto` | Es dueño de `combate.gd` |
+
+  - **Pendiente:**
+    1. una APK nueva para medir en el Redmi las cargas (arranque, «Continuar», del aviso al combate, caché de sombreadores) y la memoria;
+    2. la decisión del usuario sobre la caída de la Fractura y los sitios de golpe por versión (ver el informe del pulido).
