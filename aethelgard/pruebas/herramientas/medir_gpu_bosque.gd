@@ -8,7 +8,12 @@ extends SceneTree
 # Uso:
 #   Godot --path aethelgard --resolution 1600x720 --script res://pruebas/herramientas/medir_gpu_bosque.gd --
 #         salida=<carpeta> [regiones=granbosque,pastos] [perfiles=bajo,medio] [sitios=entrada,...] [variantes=todas|base]
-#         [fotos] [n=60] [etiqueta=antes]
+#         [fotos] [n=60] [etiqueta=antes] [recuento]
+# «recuento» (rend2, 12/11): además, en cada sitio y solo con la variante base, el recuento por categoría y por tipo de
+# material (opaco, recortado = su sombreado tiene discard o alpha scissor, mezcla = transparente): piezas y vértices
+# dentro de la cámara, capas (fragmentos por píxel) y parte de la pantalla que cubren, materiales y sombreados
+# distintos, y las llamadas y primitivas sin la sombra del sol. Son las métricas que anticipan el coste en el Mali
+# (tile-based, sin prepase: lo recortado no usa su eliminación de píxeles ocultos y los vértices pesan en el tiler).
 # Las cifras del PC no son las del Redmi; sirven para comparar (antes/después, Gran Bosque/Pastos) en el mismo PC.
 # Para parecerse al Mali-G57 (Godot no hace prepase de profundidad con Mali, Adreno, PowerVR ni Apple), lánzalo con un
 # override.cfg temporal con rendering/driver/depth_prepass/enable=false (ver el informe).
@@ -63,6 +68,8 @@ var fotos := false
 var n_muestras := 60
 var etiqueta := ""
 var depurar := false
+var recuento := false
+var igualdad := false                    # igualdad: capturas con el tiempo parado, con y sin el orden de dibujo (rend2)
 var amplia := 1.0                       # amplia=2: el 3D al doble de resolución (×4 fragmentos) para medir el coste por píxel
 var R
 var filas: Array = []
@@ -99,6 +106,10 @@ func _initialize() -> void:
 			depurar = true
 		elif a.begins_with("amplia="):
 			amplia = float(a.substr(7))
+		elif a == "recuento":
+			recuento = true
+		elif a == "igualdad":
+			igualdad = true
 	if salida == "":
 		salida = OS.get_user_data_dir()
 	DirAccess.make_dir_recursive_absolute(salida)
@@ -244,6 +255,8 @@ func _region(rg: String, pf: String) -> void:
 		v.perfil_fps = 0
 		Engine.max_fps = 0
 		await _esperar(60)
+		if igualdad:
+			await _capturas_igualdad(v, rg, pf, s)
 		for var_n in variantes:
 			if not VARIANTES.has(var_n):
 				continue
@@ -269,13 +282,18 @@ func _region(rg: String, pf: String) -> void:
 				if fotos:
 					var img := root.get_texture().get_image()
 					img.save_png(salida.path_join("%s_%s_%s%s.png" % [rg, pf, s, "_" + etiqueta if etiqueta != "" else ""]))
+				var piezas: Array = _clasificar(v, rg) if recuento else []
 				var cambios := _poner_conteo(v)
 				await _esperar(4)
 				var od := root.get_texture().get_image()
 				fila["capas"] = _capas_medias(od)
 				if fotos:
 					od.save_png(salida.path_join("%s_%s_%s%s_capas.png" % [rg, pf, s, "_" + etiqueta if etiqueta != "" else ""]))
+				if recuento:
+					fila["recuento"] = await _recuento(piezas)
 				_deshacer(cambios)
+				if recuento:
+					fila["sin_sombra_sol"] = await _sin_sombra_sol(v)
 				RenderingServer.set_default_clear_color(_fondo)
 				root.use_hdr_2d = false
 				await _esperar(3)
@@ -487,3 +505,268 @@ func _deshacer(hecho: Array) -> void:
 	for h in hecho:
 		if is_instance_valid(h[0]) or h[0] is RefCounted:
 			h[0].set(h[1], h[2])
+
+
+# ---------------------------------------------------------------- recuento por categoría y por tipo de material (rend2)
+
+# El material con el que se dibuja una pieza (el de encima, el de la malla o el de las partículas).
+func _materiales_de(gi: GeometryInstance3D) -> Array:
+	if gi.material_override != null:
+		return [gi.material_override]
+	var r: Array = []
+	var malla: Mesh = null
+	if gi is MeshInstance3D:
+		malla = (gi as MeshInstance3D).mesh
+		for k in (gi as MeshInstance3D).get_surface_override_material_count():
+			var m := (gi as MeshInstance3D).get_surface_override_material(k)
+			if m != null:
+				r.append(m)
+	elif gi is MultiMeshInstance3D and (gi as MultiMeshInstance3D).multimesh != null:
+		malla = (gi as MultiMeshInstance3D).multimesh.mesh
+	elif gi is CPUParticles3D:
+		malla = (gi as CPUParticles3D).mesh
+	if r.is_empty() and malla != null:
+		for k in malla.get_surface_count():
+			if malla.surface_get_material(k) != null:
+				r.append(malla.surface_get_material(k))
+	return r
+
+
+# «recortado»: su sombreado tiene discard o alpha scissor/hash (en el Mali no aprovecha la eliminación de píxeles
+# ocultos y obliga a sombrear antes de saber si se ve); «mezcla»: transparente; «opaco»: lo demás.
+func _tipo_material(gi: GeometryInstance3D) -> String:
+	if gi is Label3D:
+		return "mezcla"
+	var peor := "opaco"
+	for m in _materiales_de(gi):
+		var t := "opaco"
+		if m is ShaderMaterial and (m as ShaderMaterial).shader != null:
+			var cod: String = (m as ShaderMaterial).shader.code
+			if cod.contains("discard") or cod.contains("ALPHA_SCISSOR") or cod.contains("ALPHA_HASH"):
+				t = "recortado"
+			elif cod.contains("blend_add") or cod.contains("blend_mix") and cod.contains("ALPHA") or cod.contains("ALPHA =") or cod.contains("depth_draw_never"):
+				t = "mezcla"
+		elif m is BaseMaterial3D:
+			var b := m as BaseMaterial3D
+			if b.transparency in [BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR, BaseMaterial3D.TRANSPARENCY_ALPHA_HASH]:
+				t = "recortado"
+			elif b.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED or b.blend_mode != BaseMaterial3D.BLEND_MODE_MIX:
+				t = "mezcla"
+		if t == "recortado" or (t == "mezcla" and peor == "opaco"):
+			peor = t
+	return peor
+
+
+func _vertices_malla(m: Mesh) -> int:
+	if m == null:
+		return 0
+	if _verts_cache.has(m):
+		return _verts_cache[m]
+	var n := 0
+	for k in m.get_surface_count():                 # (los índices, o los vértices si no tiene: lo que se procesa)
+		var s: Dictionary = RenderingServer.mesh_get_surface(m.get_rid(), k)
+		var idx: int = int(s.get("index_count", 0))
+		n += idx if idx > 0 else int(s.get("vertex_count", 0))
+	_verts_cache[m] = n
+	return n
+
+
+var _verts_cache := {}
+
+
+func _vertices(gi: GeometryInstance3D) -> int:
+	if gi is MeshInstance3D:
+		return _vertices_malla((gi as MeshInstance3D).mesh)
+	if gi is MultiMeshInstance3D and (gi as MultiMeshInstance3D).multimesh != null:
+		var mm := (gi as MultiMeshInstance3D).multimesh
+		var c: int = mm.visible_instance_count if mm.visible_instance_count >= 0 else mm.instance_count
+		return c * _vertices_malla(mm.mesh)
+	if gi is CPUParticles3D:
+		return (gi as CPUParticles3D).amount * _vertices_malla((gi as CPUParticles3D).mesh)
+	return 0
+
+
+func _dentro(gi: GeometryInstance3D, cam: Camera3D, planos: Array) -> bool:
+	if not gi.is_visible_in_tree():
+		return false
+	var caja: AABB = gi.global_transform * gi.get_aabb()
+	if gi.visibility_range_end > 0.0 and cam.global_position.distance_to(caja.get_center()) > gi.visibility_range_end:
+		return false
+	for pl in planos:
+		var fuera := true
+		for i in 8:
+			if (pl as Plane).distance_to(caja.get_endpoint(i)) <= 0.0:
+				fuera = false
+				break
+		if fuera:
+			return false
+	return true
+
+
+# [pieza, categoría, tipo de material, vértices, dentro de la cámara, da sombra, materiales]
+func _clasificar(v: Node, rg: String) -> Array:
+	var cam := root.get_camera_3d()
+	var planos: Array = cam.get_frustum()
+	var esc = v.get("escenario")
+	var pjs: Array = []
+	for nombre in ["kael", "grupo"]:
+		var k = v.get(nombre)
+		if k != null and k is Node:
+			pjs.append(k)
+	var r: Array = []
+	for g in v.find_children("*", "GeometryInstance3D", true, false):
+		var gi := g as GeometryInstance3D
+		var cat := ""
+		for p in pjs:
+			if p == gi or (p as Node).is_ancestor_of(gi):
+				cat = "personajes"
+		if cat == "" and rg == "granbosque":
+			cat = _categoria(gi, esc)
+		if cat == "":
+			if gi is CPUParticles3D or gi is GPUParticles3D:
+				cat = "particulas"
+			elif gi is MultiMeshInstance3D:
+				cat = "multimesh_" + String(gi.name).trim_prefix("@").get_slice("@", 0).to_lower()
+			else:
+				cat = "resto"
+		var dentro := _dentro(gi, cam, planos)
+		r.append([gi, cat, _tipo_material(gi), _vertices(gi), dentro,
+			gi.cast_shadow != GeometryInstance3D.SHADOW_CASTING_SETTING_OFF, _materiales_de(gi),
+			_vertices_utiles(gi, planos) if dentro else 0])
+	return r
+
+
+# Vértices de los ejemplares de un MultiMesh que caen de verdad en la cámara (su origen con un margen de 4 m): el resto
+# se envía igual (el trozo entero pasa el recorte) y en el Mali paga el sombreado de posición.
+func _vertices_utiles(gi: GeometryInstance3D, planos: Array) -> int:
+	if not gi is MultiMeshInstance3D or (gi as MultiMeshInstance3D).multimesh == null:
+		return _vertices(gi)
+	var mm := (gi as MultiMeshInstance3D).multimesh
+	var por := _vertices_malla(mm.mesh)
+	var n := 0
+	for k in mm.instance_count:
+		var o: Vector3 = gi.global_transform * (mm.get_instance_transform(k) * Vector3(0, 2.5, 0))
+		var fuera := false
+		for pl in planos:
+			if (pl as Plane).distance_to(o) > 4.0:
+				fuera = true
+				break
+		if not fuera:
+			n += por
+	return n
+
+
+func _capas_y_cobertura(img: Image) -> Array:
+	var tam := img.get_size()
+	var suma := 0.0
+	var cubre := 0
+	var n := 0
+	for y in range(int(tam.y * 0.1), tam.y, 4):
+		for x in range(int(tam.x * 0.12), int(tam.x * 0.88), 4):
+			var c := _capas_de(img.get_pixel(x, y).r)
+			suma += c
+			if c > 0.5:
+				cubre += 1
+			n += 1
+	return [suma / maxf(n, 1), float(cubre) / maxf(n, 1)]
+
+
+# Con los materiales de conteo puestos: para cada categoría y cada tipo de material, solo esas piezas a la vista.
+func _recuento(piezas: Array) -> Dictionary:
+	var grupos := {}
+	for p in piezas:
+		for clave in ["cat:" + p[1], "tipo:" + p[2]]:
+			if not grupos.has(clave):
+				grupos[clave] = {"piezas": 0, "dentro": 0, "vertices_dentro": 0, "vertices_utiles": 0, "vertices_sombra_dentro": 0,
+					"materiales": {}, "sombreados": {}}
+			var g: Dictionary = grupos[clave]
+			g["piezas"] += 1
+			if p[4]:
+				g["dentro"] += 1
+				g["vertices_dentro"] += p[3]
+				g["vertices_utiles"] += p[7]
+				if p[5]:
+					g["vertices_sombra_dentro"] += p[3]
+				for m in p[6]:
+					g["materiales"][m] = true
+					if m is ShaderMaterial:
+						g["sombreados"][(m as ShaderMaterial).shader] = true
+	var mats_total := {}
+	var sh_total := {}
+	for p in piezas:
+		if p[4]:
+			for m in p[6]:
+				mats_total[m] = true
+				if m is ShaderMaterial:
+					sh_total[(m as ShaderMaterial).shader] = true
+	for clave in grupos:
+		var cat_o_tipo: String = String(clave).get_slice(":", 1)
+		var es_cat: bool = String(clave).begins_with("cat:")
+		var ocultas: Array = []
+		for p in piezas:
+			var gi: GeometryInstance3D = p[0]
+			if (p[1] if es_cat else p[2]) != cat_o_tipo and gi.visible:
+				ocultas.append(gi)
+				gi.visible = false
+		await _esperar(3)
+		var cc := _capas_y_cobertura(root.get_texture().get_image())
+		for gi in ocultas:
+			gi.visible = true
+		var g: Dictionary = grupos[clave]
+		g["capas"] = snappedf(cc[0], 0.01)
+		g["cobertura"] = snappedf(cc[1], 0.001)
+		g["materiales"] = g["materiales"].size()
+		g["sombreados"] = g["sombreados"].size()
+	await _esperar(2)
+	return {"grupos": grupos, "materiales_a_la_vista": mats_total.size(), "sombreados_propios_a_la_vista": sh_total.size()}
+
+
+func _sin_sombra_sol(v: Node) -> Dictionary:
+	var luces: Array = []
+	for s in v.find_children("*", "DirectionalLight3D", true, false):
+		if s.shadow_enabled:
+			luces.append(s)
+			s.shadow_enabled = false
+	await _esperar(8)
+	var ll := 0.0
+	var pr := 0.0
+	for i in 10:
+		await process_frame
+		ll += RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME)
+		pr += RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME)
+	for s in luces:
+		s.shadow_enabled = true
+	await _esperar(4)
+	return {"llamadas": roundi(ll / 10.0), "primitivas": roundi(pr / 10.0), "luces_con_sombra": luces.size()}
+
+
+# ---------------------------------------------------------------- ¿se ve igual? (rend2)
+# Con el juego parado (time_scale 0: personajes, partículas y tweens quietos; el viento de los sombreados avanza un
+# fotograma), tres capturas seguidas: «a» y «b» con el orden de dibujo del escenario (el ruido de un fotograma a otro)
+# y «c» con todo render_priority a 0 (el orden de antes). Si c difiere de a como b, el orden no cambia la imagen.
+func _capturas_igualdad(v: Node, rg: String, pf: String, s: String) -> void:
+	Engine.time_scale = 0.0
+	await _esperar(4)
+	var base := salida.path_join("igualdad_%s_%s_%s" % [rg, pf, s])
+	root.get_texture().get_image().save_png(base + "_a.png")
+	await _esperar(1)
+	root.get_texture().get_image().save_png(base + "_b.png")
+	var hecho: Array = []
+	for g in v.find_children("*", "GeometryInstance3D", true, false):
+		for m in _materiales_de(g as GeometryInstance3D):
+			if m is Material and (m as Material).render_priority != 0:
+				hecho.append([m, "render_priority", (m as Material).render_priority])
+				(m as Material).render_priority = 0
+	await _esperar(1)
+	root.get_texture().get_image().save_png(base + "_c.png")
+	_deshacer(hecho)
+	print("igualdad %s %s %s: %d materiales con orden" % [rg, pf, s, hecho.size()])
+	var esc = v.get("escenario")                 # «d»: las copas de hojas con los cuadros enteros (sin recortar)
+	if esc != null and esc.has_method("alternar_casco"):
+		var n: int = esc.alternar_casco(false)
+		await _esperar(1)
+		root.get_texture().get_image().save_png(base + "_d.png")
+		esc.alternar_casco(true)
+		print("igualdad %s %s %s: %d copas con los cuadros enteros" % [rg, pf, s, n])
+	Engine.time_scale = 1.0
+	await _esperar(3)

@@ -320,7 +320,9 @@ def hacia(v, roll=0.0):
 
 
 VEL_ANILLO = {"reposo": 12.0, "caminar": 30.0, "correr": 45.0, "carga_espera": 45.0, "carga": 40.0,
-              "ataque": 20.0, "golpe_fuerte": 30.0, "recibir_golpe": 10.0, "victoria": 20.0}
+              "ataque": 20.0, "golpe_fuerte": 30.0, "recibir_golpe": 10.0, "victoria": 20.0,
+              # V2 (los bucles cierran: 18 × 2,0 = 36°; 22,5 × 1,6 = 36°)
+              "barrido": 60.0, "guardia": 30.0, "guardia_espera": 18.0, "aturdido": 22.5, "recibir_golpe_fuerte": 6.0}
 
 
 def anillo(arm_, pose, seg):
@@ -457,12 +459,69 @@ clip("derrota", [(0, REPOSO), (0.25, P(GOLPEADO, luz(0.2))), (0.4, P(GOLPEADO, l
                                    "pecho": (20, 0, 0), "mano.L@agarre": 0.0, "aureola@loc": (0, 0.1, -1.7)},
                          luz(0.0)))], eventos={"rodilla": 0.7, "suelo": 2.2})
 
+# ================================================================== V2 (12/11, especialista de enemigos y combate)
+# Clips nuevos para su módulo de combate (combate_centinela.gd), AÑADIDOS a los de arriba (que no cambian): con «v2»
+# en la línea de órdenes se escribe guardian_piedra_v2.glb y guardian_piedra_v2_clips.json; sin él, lo de siempre.
+#   barrido (1,8 s)              Barrido del Anillo: tensa el mandoble a su derecha (preparación, 0-0,6), lo pasa a
+#                                ras de cintura de derecha a izquierda (IMPACTO 0,85) y se recupera (a todos)
+#   guardia (0,9) + guardia_espera (2,0, bucle)   el anillo baja delante del pecho y crece: su escudo
+#   aturdido (1,6, bucle)        tambaleo tras perder la carga o el escudo: cabeza vencida, punta en el suelo
+#   recibir_golpe_fuerte (1,1)   un golpe grande: paso atrás, el mandoble se hunde y el anillo se ladea
+V2 = "v2" in argv
+if V2:
+    # Barrido: la preparación (tensa a su derecha, agachado), el corte a ras de cintura y el seguimiento
+    TENSA = P({"arma@pos": (-0.46, 0.06, 1.06), "arma@dir": hacia((-0.75, 0.62, -0.12)), "mano.L@agarre": 1.0,
+               "codo.R@polo": (-0.7, 0.5, -0.3), "codo.L@polo": (0.5, -0.6, -0.3),
+               "pecho": (6, 0, -38), "cadera": (0, 0, -14), "columna": (2, 0, -10), "cabeza": (4, 0, 30),
+               "raiz@loc": (0, 0.05, -0.12), "pie.R@ik": (-0.32, 0.14, 0.14)}, luz(2.0))
+    TENSA2 = P(TENSA, {"pecho": (8, 0, -44), "arma@pos": (-0.48, 0.10, 1.04), "raiz@loc": (0, 0.06, -0.15)}, luz(2.8))
+    CORTE = P({"arma@pos": (0.06, -0.58, 1.04), "arma@dir": hacia((0.55, -0.83, -0.05)), "mano.L@agarre": 1.0,
+               "codo.R@polo": (-0.5, 0.6, -0.4), "pecho": (12, 0, 10), "cadera": (0, 0, 5), "columna": (5, 0, 4),
+               "cabeza": (-4, 0, -6), "raiz@loc": (0, -0.20, -0.14),
+               "pie.L@ik": (0.34, -0.30, 0.14), "pie.R@ik": (-0.30, 0.10, 0.14)}, luz(3.2))
+    SIGUE = P(CORTE, {"arma@pos": (0.40, -0.30, 1.06), "arma@dir": hacia((0.92, 0.30, -0.12)),
+                      "pecho": (10, 0, 38), "cadera": (0, 0, 14), "columna": (4, 0, 10), "cabeza": (-2, 0, -24)},
+              luz(2.0))
+    clip("barrido", [(0, REPOSO), (0.35, TENSA), (0.6, TENSA2, "fren"), (0.85, CORTE, "acel"), (1.05, SIGUE, "fren"),
+                     (1.4, P(SIGUE, {"pecho": (6, 0, 24), "raiz@loc": (0, -0.12, -0.08)}, luz(1.4))),
+                     (1.8, REPOSO)], eventos={"tension": 0.35, "impacto": 0.85})
+
+    # Guardia: el anillo baja delante del pecho y crece (su escudo); el mandoble clavado delante, las manos en el pomo
+    ESCUDO = P(REPOSO, {"aureola@loc": (0, -0.86, -0.28), "aureola@esc": (1.32, 1.32, 1.32), "aureola": (-8, 0, 0),
+                        "raiz@loc": (0, 0.03, -0.08), "pecho": (9, 0, 0), "cabeza": (14, 0, 0)}, luz(2.4))
+    clip("guardia", [(0, REPOSO), (0.3, P(REPOSO, {"aureola@loc": (0, -0.2, 0.18), "cabeza": (-6, 0, 0)}, luz(1.8))),
+                     (0.55, P(ESCUDO, {"aureola@esc": (1.42, 1.42, 1.42)}, luz(3.0)), "acel"),
+                     (0.9, ESCUDO)], eventos={"escudo": 0.55})
+    clip("guardia_espera", [(0, ESCUDO), (1.0, P(ESCUDO, {"pecho": (10, 0, 0), "raiz@loc": (0, 0.03, -0.095),
+                                                        "aureola@loc": (0, -0.86, -0.31)}, luz(2.0))),
+                            (2.0, ESCUDO)], bucle=True)
+
+    # Aturdido: se tambalea de un lado a otro, la cabeza vencida, la luz baja y el anillo ladeado
+    AT_A = P(REPOSO, {"pecho": (14, 0, 8), "cabeza": (24, 0, 14), "columna": (4, 0, 4), "raiz@loc": (0.04, 0.03, -0.06),
+                      "arma@pos": (0.02, -0.40, 1.10), "arma@dir": (80, 0, 8), "aureola@loc": (0, 0, -0.16),
+                      "aureola": (9, 0, 7)}, luz(0.45))
+    AT_B = P(REPOSO, {"pecho": (12, 0, -8), "cabeza": (20, 0, -12), "columna": (4, 0, -4), "raiz@loc": (-0.04, 0.03, -0.07),
+                      "arma@pos": (-0.02, -0.40, 1.10), "arma@dir": (80, 0, -8), "aureola@loc": (0, 0, -0.20),
+                      "aureola": (-7, 0, -8)}, luz(1.0))
+    clip("aturdido", [(0, AT_A), (0.8, AT_B), (1.6, AT_A)], bucle=True)
+
+    # Recibir un golpe fuerte: paso atrás con el pie derecho, el mandoble se hunde y el anillo se ladea
+    GOLPE2 = P(REPOSO, {"pecho": (-20, 0, 10), "cabeza": (-24, 0, 12), "columna": (-8, 0, 0), "raiz@loc": (0, 0.16, -0.03),
+                        "arma@pos": (0.06, -0.30, 1.25), "arma@dir": (62, 10, 0), "aureola@loc": (0, 0.08, 0.06),
+                        "aureola": (-14, 0, 10), "pie.R@ik": (-0.27, 0.12, 0.26)}, luz(0.2))
+    clip("recibir_golpe_fuerte", [(0, REPOSO), (0.12, GOLPE2, "fren"),
+                                  (0.3, P(GOLPE2, {"pie.R@ik": (-0.27, 0.32, 0.14)}, luz(1.1)), "acel"),
+                                  (0.6, P(REPOSO, {"pecho": (8, 0, 0), "raiz@loc": (0, 0.12, -0.05),
+                                                   "pie.R@ik": (-0.27, 0.32, 0.14)}, luz(1.2))),
+                                  (0.85, P(REPOSO, {"raiz@loc": (0, 0.06, -0.02), "pie.R@ik": (-0.27, 0.12, 0.24)})),
+                                  (1.1, REPOSO)], eventos={"golpe": 0.0})
+
 # ================================================================== medidas, exportación y JSON
 
 def medir():
     """Alcance de la punta (en el impacto, hacia delante, respecto al cuerpo en reposo) y altura de la cabeza."""
     datos = {}
-    for c_, t in (("ataque", 0.8), ("golpe_fuerte", 0.92)):
+    for c_, t in (("ataque", 0.8), ("golpe_fuerte", 0.92)) + ((("barrido", 0.85),) if V2 else ()):
         p = E.punto_hueso(arm, rig, c_, t, "arma", (0, HOJA, 0))
         datos[c_] = {"punta_godot": [round(p.x, 3), round(p.z, 3), round(-p.y, 3)]}
     p = E.punto_hueso(arm, rig, "reposo", 0.0, "cabeza", (0, 0.33, 0))
@@ -477,14 +536,15 @@ for pb in arm.pose.bones:
     pb.location = Vector()
     pb.scale = Vector((1, 1, 1))
 
+SUFIJO = "_v2" if V2 else ""          # V2: GLB y JSON nuevos al lado; las texturas (las mismas) no se reescriben
 A.guardar(os.path.join(LAMINAS, NOMBRE + "_atlas.png"),
-          [(os.path.join(SALIDA, NOMBRE + ".webp"), 1024), (os.path.join(SALIDA, NOMBRE + "_bajo.webp"), 512)])
-E.exportar(os.path.join(SALIDA, NOMBRE + ".glb"))
-E.guardar_json(os.path.join(SALIDA, NOMBRE + "_clips.json"), {
-    "modelo": NOMBRE, "triangulos": TRIS, "huesos": len(HUESOS), "fps": E.FPS,
+          [] if V2 else [(os.path.join(SALIDA, NOMBRE + ".webp"), 1024), (os.path.join(SALIDA, NOMBRE + "_bajo.webp"), 512)])
+E.exportar(os.path.join(SALIDA, NOMBRE + SUFIJO + ".glb"))
+E.guardar_json(os.path.join(SALIDA, NOMBRE + SUFIJO + "_clips.json"), {
+    "modelo": NOMBRE + SUFIJO, "triangulos": TRIS, "huesos": len(HUESOS), "fps": E.FPS,
     "texturas": {"alto": NOMBRE + ".webp (1024)", "bajo": NOMBRE + "_bajo.webp (512)"},
     "color_brillo": BRILLO, "clips": CLIPS, "medidas": medidas,
-    "generador": "enemigos/guardian_piedra/fuente/crear_guardian_piedra.py (Blender 5.2.3)"})
+    "generador": "enemigos/guardian_piedra/fuente/crear_guardian_piedra.py%s (Blender 5.2.3)" % (" -- ... v2" if V2 else "")})
 print("clips:", {k: v["duracion"] for k, v in CLIPS.items()})
 print("medidas:", medidas)
 
@@ -494,7 +554,7 @@ if CON_LAMINAS:
     img = bpy.data.images.load(os.path.join(SALIDA, NOMBRE + ".webp"))
     E.material_vista(bpy.data.materials[NOMBRE + "_atlas"], img)
     E.material_vista(bpy.data.materials[NOMBRE + "_brillo"], None, emision=(*BRILLO, 2.2))
-    cam, xs = C.lamina_criatura(esc, arm, ob, RAIZ, os.path.join(LAMINAS, NOMBRE + "_lamina.png"),
+    cam, xs = C.lamina_criatura(esc, arm, ob, RAIZ, os.path.join(LAMINAS, NOMBRE + SUFIJO + "_lamina.png"),
                                 "Guardián de piedra — el Centinela del Anillo (V12, fase C)", sep=2.5,
                                 giros=(0, -40, -90), alto_cam=1.4, orto=13.0)
     for o in list(esc.objects):
@@ -509,9 +569,14 @@ if CON_LAMINAS:
     inst = [("reposo", 0.0), ("entrada", 0.3), ("ataque", 0.5), ("ataque", 0.8), ("carga_espera", 0.4),
             ("golpe_fuerte", 0.66), ("golpe_fuerte", 0.92), ("golpe_fuerte", 1.2), ("recibir_golpe", 0.12),
             ("caminar", 0.3), ("correr", 0.2), ("victoria", 1.3), ("derrota", 0.7), ("derrota", 2.4)]
+    if V2:                            # V2: las poses de los clips nuevos (preparación, impacto y recuperación)
+        inst = [("barrido", 0.0), ("barrido", 0.35), ("barrido", 0.6), ("barrido", 0.85), ("barrido", 1.05),
+                ("barrido", 1.4), ("guardia", 0.3), ("guardia_espera", 0.0), ("aturdido", 0.0), ("aturdido", 0.8),
+                ("recibir_golpe_fuerte", 0.12), ("recibir_golpe_fuerte", 0.3), ("recibir_golpe_fuerte", 0.6),
+                ("carga_espera", 0.4)]
     carpeta = os.path.join(LAMINAS, "poses")
     os.makedirs(carpeta, exist_ok=True)
-    rutas = E.poses_render(esc, arm, inst, carpeta, NOMBRE, objetivo=(0, -0.5, 1.4), azimut=-40, elev=12, orto=5.0)
-    E.componer(rutas, os.path.join(LAMINAS, NOMBRE + "_poses.png"), 7)
-    bpy.ops.wm.save_as_mainfile(filepath=os.path.join(LAMINAS, NOMBRE + ".blend"))
+    rutas = E.poses_render(esc, arm, inst, carpeta, NOMBRE + SUFIJO, objetivo=(0, -0.5, 1.4), azimut=-40, elev=12, orto=5.0)
+    E.componer(rutas, os.path.join(LAMINAS, NOMBRE + SUFIJO + "_poses.png"), 7)
+    bpy.ops.wm.save_as_mainfile(filepath=os.path.join(LAMINAS, NOMBRE + SUFIJO + ".blend"))
 print("hecho")

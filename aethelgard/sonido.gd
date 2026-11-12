@@ -376,6 +376,20 @@ const EFECTOS := {
 	"hojas": {"a": "ambiente/hojas_", "n": 2, "bus": "Ambiente", "db": -16.0, "tono": 0.06, "p": 0, "max": 1, "espera": 3.0},
 	"gota": {"a": "ambiente/gota_", "n": 3, "bus": "Ambiente", "db": -16.0, "tono": 0.1, "p": 0, "max": 2, "espera": 0.5},
 	"gota_cueva": {"a": "ambiente/gota_cueva_", "n": 2, "bus": "Ambiente", "db": -14.0, "tono": 0.08, "p": 0, "max": 2, "espera": 0.5},
+	# ---- V12, enemigos (12/11): el Guardián de piedra, «el Centinela del Anillo» (combate_centinela.gd; APAGADO, interruptor
+	# «enemigos_v12»). Derivados propios de los paquetes GDC 2018-2020 de Sonniss (#GameAudioGDC), WAV mono 48 kHz de
+	# audio/efectos/centinela/ (procedencia: docs/audio/efectos_procedencia.csv). «guardian_barrido» y «guardian_golpe» los pide
+	# combate.gd _sonidos_bestia en el impacto del clip (señal «impacto»); «guardian_entrada», al empezar su entrada; los
+	# «centinela_*», combate_centinela.gd (la tensión, el escudo y el derrumbe en su instante del clip). Volúmenes por el RMS
+	# medido de cada derivado (normalizado a −1 dBFS de pico): medido, no escuchado.
+	"guardian_entrada": {"a": "centinela/entrada", "db": -12.0, "p": 2, "max": 1, "espera": 1.0},
+	"guardian_barrido": {"a": "centinela/barrido", "db": -10.0, "tono": 0.03, "p": 3, "max": 1, "espera": 0.3},
+	"guardian_golpe": {"a": "centinela/juicio", "db": -8.0, "tono": 0.02, "p": 3, "max": 1, "espera": 0.5},
+	"centinela_tension": {"a": "centinela/tension", "db": -14.0, "tono": 0.03, "p": 2, "max": 1, "espera": 0.3},
+	"centinela_carga": {"a": "centinela/carga", "db": -14.0, "p": 3, "max": 1, "espera": 0.5},
+	"centinela_escudo": {"a": "centinela/escudo", "db": -2.0, "p": 3, "max": 1, "espera": 0.5},
+	"centinela_rota": {"a": "centinela/rota", "db": -9.0, "p": 3, "max": 1, "espera": 0.3},
+	"centinela_derrumbe": {"a": "centinela/derrumbe", "db": -2.0, "p": 3, "max": 1, "espera": 1.0},
 }
 
 # V12 (11/11): el Mar de Cristal. Sus sonidos son OGG (audio/desierto/), así que van aparte de EFECTOS (cuyas comprobaciones

@@ -231,7 +231,23 @@ func listar(carpeta := "res://") -> PackedStringArray:
 			r.append_array(listar(ruta))
 		elif nombre.get_extension().to_lower() in EXTENSIONES and not _de_otro_perfil(ruta):
 			r.append(ruta)
+	if carpeta == "res://":
+		for g in GUIONES_RESIDENTES:
+			if ResourceLoader.exists(g):
+				r.append(g)
 	return r
+
+
+# Guiones que el juego carga con load() en mitad de la partida (rend2, 12/11; pruebas/herramientas/sonda_guiones.gd):
+# la primera vez se leen y compilan ahí mismo. En el PC, tras la carga común: el menú 112 ms al abrirlo desde el mapa,
+# la tienda 65, la alquimia 65, el Diario 37, el gremio 36, la botica 26 y las parejas de la taberna 32 (en el móvil,
+# varias veces más). Con ellos se precargan en segundo plano en la pantalla de carga y se quedan en memoria (son
+# pequeños). También los de los personajes de las regiones y el grupo (Kael 22, Garon 33, Lya y gestos 13, el grupo 25):
+# se compilaban al entrar en la primera región.
+const GUIONES_RESIDENTES := ["res://menus.gd", "res://diario.gd", "res://tienda.gd", "res://alquimia_menu.gd",
+	"res://gremio_menu.gd", "res://servicios_botica.gd", "res://taberna_parejas.gd", "res://investigacion.gd",
+	"res://inventario.gd", "res://kael_3d.gd", "res://maga_3d.gd", "res://garon_3d.gd", "res://gestos_3d.gd",
+	"res://esperas_3d.gd", "res://zonas3d/grupo_3d.gd"]
 
 
 # Modelos con versión ligera (X.glb y X_ligero.glb, como los edificios de Oakhaven 3D): se precarga solo la que usa el
@@ -295,6 +311,10 @@ const APAGADOS := {
 	"res://enemigos/cencerrante/": "",
 	"res://enemigos/vidracran/": "",
 	"res://enemigos/tolvanera/": "",
+	# rend2 (12/11): Humbaba (APAGADO, combate_humbaba.gd activo()) y «Pastoral Pulse» (solo si se eligió en Ajustes,
+	# musica.gd): unos 12 MB y 3 MB que se precargaban sin usarse (pruebas/herramientas/listar_precarga.gd)
+	"res://enemigos/humbaba/": "humbaba_v12",
+	"res://audio/musica/pastos/pastoral_pulse.ogg": "musica_pastos",
 }
 const BRAMAVIDRIO := "res://enemigos/bramavidrio/"
 var _encendidos := {}
@@ -314,6 +334,10 @@ func _encendido(interruptor: String) -> bool:
 			"npc_desierto_v12":
 				si = ResourceLoader.exists("res://personajes/desierto/npc_desierto_3d.gd") \
 					and load("res://personajes/desierto/npc_desierto_3d.gd").activado()
+			"humbaba_v12":
+				si = ResourceLoader.exists("res://combate_humbaba.gd") and load("res://combate_humbaba.gd").activo()
+			"musica_pastos":
+				si = load("res://musica.gd").musica_pastos_elegida()
 			_:                                       # enemigos_v12 (combate.gd _enemigos_v12)
 				si = bool(Engine.get_meta(interruptor, false)) or interruptor in OS.get_cmdline_user_args()
 		_encendidos[interruptor] = si

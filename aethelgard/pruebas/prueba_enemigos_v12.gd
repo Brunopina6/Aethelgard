@@ -134,7 +134,7 @@ func _combate_real() -> void:
 			if str(c.get("estado")) == "fin":
 				break
 		print("    clips vistos: ", clips.keys())
-		var ataco: bool = clips.has("ataque") or clips.has("golpe_fuerte") or clips.has("devorar")
+		var ataco: bool = clips.has("ataque") or clips.has("golpe_fuerte") or clips.has("devorar") or clips.has("barrido")
 		_ok(ataco or clips.has("carga"), "    actúa: ataca o carga (con el azar puede caer antes de golpear)")
 		_ok(not ataco or golpes[0] >= 1, "    sus golpes llegan (%d impactos)" % golpes[0])
 		if caso[2] == "gorthor":

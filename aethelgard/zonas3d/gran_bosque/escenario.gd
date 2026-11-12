@@ -33,6 +33,11 @@ const DISTANCIAS := {"bajo": [52.0, 30.0, 26.0], "medio": [60.0, 36.0, 32.0], "a
 const HOJAS_HASTA := {"bajo": -1.0, "medio": 4.5, "alto": 999.0}
 const HELECHOS_EXTRA := {"bajo": 520, "medio": 760, "alto": 1100}
 const HACES := {"bajo": 3, "medio": 5, "alto": 7}
+# Orden de dibujo de lo opaco (render_priority; medido en Compatibility: en lo opaco, MAYOR = DESPUÉS): primero las
+# copas macizas y los núcleos (lo que más tapa), luego lo demás opaco (0), lo recortado y, al final, el suelo y el agua.
+const PRIO_TAPA := -1
+const PRIO_RECORTADO := 1
+const PRIO_FONDO := 2
 
 # ---------------------------------------------------------------- sombreados
 const HUECO := """
@@ -357,6 +362,16 @@ func _materiales() -> void:
 	_mat_tronco.set_shader_parameter("grano_fuerza", 0.6)
 	_mat_tronco.set_shader_parameter("grano_escala", 1.6)
 	mats_hueco.append(_mat_tronco)
+	# Orden de dibujo (rend2, 12/11): primero lo opaco que tapa (copas macizas, núcleos, sotobosque), después lo que
+	# tiene discard (copas de hojas, troncos y pinos con el tramado del hueco) y al final el suelo y el agua, que quedan
+	# detrás de casi todo. Con la profundidad ya escrita por lo de delante, los fragmentos tapados se rechazan antes
+	# de sombrearse (en el Mali, sin prepase, lo recortado no puede usar la eliminación de píxeles ocultos). La imagen
+	# es la misma: la prueba de profundidad decide igual en cualquier orden.
+	if perfil.get("gb_orden", true):
+		for m in _mat_hojas.values() + [_mat_tronco, _mat_macizo]:
+			m.render_priority = int(perfil.get("gb_prio_recortado", PRIO_RECORTADO))
+		for m in _mat_copa_maciza.values():
+			m.render_priority = int(perfil.get("gb_prio_tapa", PRIO_TAPA))
 
 
 # El hueco entre la cámara y Kael (cada fotograma): las copas y los troncos que lo tapan no se dibujan en un cilindro.
@@ -747,7 +762,10 @@ const HONDO_NUCLEO := 0.56
 func _copa_vieja(tipo: String) -> Dictionary:
 	var m: Dictionary = _malla_estilizada(tipo)
 	if nombre_perfil == "alto" or not perfil.get("gb_viejos_nucleo", true):
-		return {"copa": m["copa"], "nucleo": null}
+		var clave_alto := "casco_" + tipo
+		if not _mallas.has(clave_alto):
+			_mallas[clave_alto] = {"copa": _casco_matas(m["copa"]), "nucleo": null}
+		return _mallas[clave_alto]
 	var hondo: float = perfil.get("gb_hondo", HONDO_NUCLEO)
 	var clave := "vieja_%s_%s_%.2f" % [tipo, nombre_perfil, hondo]
 	if _mallas.has(clave):
@@ -800,9 +818,149 @@ func _copa_vieja(tipo: String) -> Dictionary:
 			st.set_color(Color(ao, ao * 1.04, ao * 0.95))
 			st.set_custom(0, Color(l[0].x, l[0].y, l[0].z, l[1]))
 			st.add_vertex(l[0] + ev[i])
-	var res := {"copa": copa, "nucleo": st.commit()}
+	var res := {"copa": _casco_matas(copa), "nucleo": st.commit()}
 	_mallas[clave] = res
 	return res
+
+
+# Rendimiento (rend2, 12/11): cada mata es un cuadro del atlas de matas, pero lo opaco (alfa >= 0,5) es solo el 26-42 %
+# de su celda; el resto se rasterizaba y se descartaba (en el Mali, sin poder usar la eliminación de píxeles ocultos y
+# con el sombreado hasta el descarte). Aquí cada cuadro se recorta a un octógono que contiene todo lo opaco de su celda
+# (con margen: alfa >= 100/255 y 3 % más, para el filtrado y los mipmaps), el 61-68 % del cuadro: un tercio menos de
+# fragmentos de hojas. Cada trozo cae dentro de uno de los dos triángulos del cuadro y sus atributos (posición, UV,
+# normal, color y centro de la mata) se interpolan con los pesos de ese triángulo. Polígonos calculados sobre
+# modelos/hojas/matas.png (pruebas/herramientas/casco_matas.py; prueba_casco_matas comprueba que lo cubren).
+# APAGADO por defecto («gb_matas_casco», calidad_extra): no da la misma imagen al píxel. El viento del sombreado mueve
+# cada vértice según su sitio (no es lineal) y la normal se guarda normalizada en los vértices nuevos: con el tiempo
+# parado, en medio cambian 10 000-35 000 píxeles de 921 600 (hojas desplazadas un poco o con otra luz), sin que se
+# note cuál es cuál. Comparación y medidas: docs/memory/agents/rendimiento_v12_rend2.md.
+const MATAS_CASCO := [
+	[Vector2(0.9685, 0.6872), Vector2(0.7341, 0.9216), Vector2(0.2971, 0.9216), Vector2(0.0296, 0.6540), Vector2(0.0296, 0.3284), Vector2(0.3030, 0.0550), Vector2(0.6892, 0.0550), Vector2(0.9685, 0.3343)],   # celda 0: 67 %
+	[Vector2(0.9431, 0.6618), Vector2(0.6775, 0.9275), Vector2(0.3186, 0.9275), Vector2(0.0686, 0.6775), Vector2(0.0686, 0.3245), Vector2(0.3011, 0.0921), Vector2(0.7185, 0.0921), Vector2(0.9431, 0.3167)],   # celda 1: 61 %
+	[Vector2(0.9529, 0.6501), Vector2(0.7009, 0.9021), Vector2(0.2718, 0.9021), Vector2(0.0471, 0.6775), Vector2(0.0471, 0.3499), Vector2(0.3186, 0.0784), Vector2(0.6872, 0.0784), Vector2(0.9529, 0.3440)],   # celda 2: 62 %
+	[Vector2(0.9568, 0.6989), Vector2(0.7048, 0.9509), Vector2(0.3128, 0.9509), Vector2(0.0530, 0.6911), Vector2(0.0530, 0.2991), Vector2(0.2971, 0.0550), Vector2(0.7029, 0.0550), Vector2(0.9568, 0.3089)],   # celda 3: 68 %
+]
+
+
+func _casco_matas(malla: ArrayMesh) -> ArrayMesh:
+	if not perfil.get("gb_matas_casco", false):
+		return malla
+	var a: Array = malla.surface_get_arrays(0)
+	if a[Mesh.ARRAY_INDEX] != null or a[Mesh.ARRAY_TEX_UV] == null:
+		return malla
+	var vs: PackedVector3Array = a[Mesh.ARRAY_VERTEX]
+	var uvs: PackedVector2Array = a[Mesh.ARRAY_TEX_UV]
+	# [tipo de array, valores por vértice]; lo que no esté se deja
+	var campos: Array = []
+	for t in [Mesh.ARRAY_VERTEX, Mesh.ARRAY_NORMAL, Mesh.ARRAY_TANGENT, Mesh.ARRAY_COLOR, Mesh.ARRAY_TEX_UV, Mesh.ARRAY_CUSTOM0]:
+		if a[t] != null:
+			campos.append([t, 4 if t in [Mesh.ARRAY_TANGENT, Mesh.ARRAY_CUSTOM0] else 1])
+	var sal := {}
+	for c in campos:
+		sal[c[0]] = []
+	var poner := func(idx: Array, pesos: Array) -> void:
+		for c in campos:
+			var org = a[c[0]]
+			if c[1] == 4:
+				for j in 4:
+					var x := 0.0
+					for i in idx.size():
+						x += org[idx[i] * 4 + j] * pesos[i]
+					sal[c[0]].append(x)
+			else:
+				var x = org[idx[0]] * pesos[0]
+				for i in range(1, idx.size()):
+					x += org[idx[i]] * pesos[i]
+				if c[0] == Mesh.ARRAY_NORMAL:
+					x = (x as Vector3).normalized()
+				sal[c[0]].append(x)
+	for k in range(0, vs.size() - 5, 6):
+		# el cuadro: A (celda 0,0), B (1,0), C (1,1) | A, C, D (0,1); si no es así, se deja tal cual
+		var uv0 := Vector2(floorf(uvs[k].x * 2.0 + 0.01), floorf(uvs[k].y * 2.0 + 0.01)) * 0.5
+		var loc: Array = []
+		for j in [k, k + 1, k + 2, k + 5]:
+			loc.append((uvs[j] - uv0) * 2.0)
+		var cuadro: bool = (loc[0].distance_to(Vector2(0, 0)) < 0.01 and loc[1].distance_to(Vector2(1, 0)) < 0.01
+			and loc[2].distance_to(Vector2(1, 1)) < 0.01 and loc[3].distance_to(Vector2(0, 1)) < 0.01
+			and uvs[k + 3].is_equal_approx(uvs[k]) and uvs[k + 4].is_equal_approx(uvs[k + 2]))
+		if not cuadro:
+			for j in 6:
+				poner.call([k + j], [1.0])
+			continue
+		var poli: Array = MATAS_CASCO[int(uv0.x > 0.25) + 2 * int(uv0.y > 0.25)]
+		for mitad in 2:
+			var trozo := _medio_plano(poli, 1.0 if mitad == 0 else -1.0)
+			for i in range(1, trozo.size() - 1):
+				var tri: Array = [trozo[0], trozo[i], trozo[i + 1]]
+				if (tri[1] - tri[0]).cross(tri[2] - tri[0]) < 0.0:   # el mismo sentido que el triángulo original
+					tri = [tri[0], tri[2], tri[1]]
+				for q in tri:
+					if mitad == 0:                      # A, B, C
+						poner.call([k, k + 1, k + 2], [1.0 - q.x, q.x - q.y, q.y])
+					else:                               # A, C, D
+						poner.call([k, k + 2, k + 5], [1.0 - q.y, q.x, q.y - q.x])
+	var nuevo := []
+	nuevo.resize(Mesh.ARRAY_MAX)
+	for c in campos:
+		match c[0]:
+			Mesh.ARRAY_VERTEX, Mesh.ARRAY_NORMAL:
+				nuevo[c[0]] = PackedVector3Array(sal[c[0]])
+			Mesh.ARRAY_COLOR:
+				nuevo[c[0]] = PackedColorArray(sal[c[0]])
+			Mesh.ARRAY_TEX_UV:
+				nuevo[c[0]] = PackedVector2Array(sal[c[0]])
+			_:
+				nuevo[c[0]] = PackedFloat32Array(sal[c[0]])
+	var r := ArrayMesh.new()
+	r.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, nuevo, [], {},
+		(Mesh.ARRAY_CUSTOM_RGBA_FLOAT << Mesh.ARRAY_FORMAT_CUSTOM0_SHIFT) if a[Mesh.ARRAY_CUSTOM0] != null else 0)
+	_sin_casco[r] = malla
+	return r
+
+
+var _sin_casco := {}                       # copa recortada → la de cuadros enteros (para comparar las dos)
+
+
+# Pone en las copas de hojas ya creadas las mallas recortadas o las de cuadros enteros; devuelve cuántas cambió. Solo lo
+# usan las medidas (pruebas/herramientas/medir_gpu_bosque.gd, «igualdad»): el juego nunca lo llama.
+func alternar_casco(recortadas: bool) -> int:
+	var n := 0
+	for g in r.find_children("*", "GeometryInstance3D", true, false):
+		var m: Mesh = null
+		if g is MultiMeshInstance3D and (g as MultiMeshInstance3D).multimesh != null:
+			m = (g as MultiMeshInstance3D).multimesh.mesh
+		elif g is MeshInstance3D:
+			m = (g as MeshInstance3D).mesh
+		var otra: Mesh = null
+		if not recortadas and _sin_casco.has(m):
+			otra = _sin_casco[m]
+		elif recortadas:
+			for k in _sin_casco:
+				if _sin_casco[k] == m:
+					otra = k
+		if otra != null:
+			if g is MultiMeshInstance3D:
+				(g as MultiMeshInstance3D).multimesh.mesh = otra
+			else:
+				(g as MeshInstance3D).mesh = otra
+			n += 1
+	return n
+
+
+# El trozo del polígono (convexo, en la celda) a un lado de la diagonal u = v: lado 1, u >= v (triángulo A, B, C);
+# lado -1, v >= u (A, C, D). Sutherland-Hodgman con un plano.
+func _medio_plano(poli: Array, lado: float) -> Array:
+	var r: Array = []
+	for i in poli.size():
+		var p: Vector2 = poli[i]
+		var q: Vector2 = poli[(i + 1) % poli.size()]
+		var dp := (p.x - p.y) * lado
+		var dq := (q.x - q.y) * lado
+		if dp >= 0.0:
+			r.append(p)
+		if dp * dq < 0.0:
+			r.append(p + (q - p) * (dp / (dp - dq)))
+	return r
 
 
 func _arbol_viejo(c: Vector2, tipo: String, escala: float, giro: float) -> Node3D:
@@ -977,6 +1135,8 @@ func _crear_terreno() -> void:
 		ms.uv1_triplanar = false
 		ms.uv1_world_triplanar = false
 		ms.uv1_scale = Vector3.ONE * (0.45 / 0.25)
+	if perfil.get("gb_orden", true):              # (rend2) el suelo, lo último de lo opaco: casi todo lo tapa
+		ms.render_priority = int(perfil.get("gb_prio_fondo", PRIO_FONDO))
 	mi.material_override = ms
 	if nombre_perfil != "alto":                  # el suelo recibe sombra, no la da (salvo en alto: la loma del mirador)
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -1098,6 +1258,8 @@ func _crear_agua() -> void:
 	mi.name = "Agua"
 	mi.mesh = st.commit()
 	mi.material_override = _mat_agua()
+	if perfil.get("gb_orden", true):              # (rend2) con el suelo, detrás de lo demás
+		mi.material_override.render_priority = int(perfil.get("gb_prio_fondo", PRIO_FONDO))
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	r.add_child(mi)
 	# piedras de la orilla y juncos en el arroyo

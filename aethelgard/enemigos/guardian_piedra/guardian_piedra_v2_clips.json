@@ -1,0 +1,146 @@
+{
+ "modelo": "guardian_piedra_v2",
+ "triangulos": 5720,
+ "huesos": 24,
+ "fps": 30,
+ "texturas": {
+  "alto": "guardian_piedra.webp (1024)",
+  "bajo": "guardian_piedra_bajo.webp (512)"
+ },
+ "color_brillo": [
+  0.3,
+  0.95,
+  0.85
+ ],
+ "clips": {
+  "reposo": {
+   "duracion": 3.0,
+   "bucle": true,
+   "eventos": {}
+  },
+  "caminar": {
+   "duracion": 1.2,
+   "bucle": true,
+   "eventos": {}
+  },
+  "correr": {
+   "duracion": 0.8,
+   "bucle": true,
+   "eventos": {}
+  },
+  "entrada": {
+   "duracion": 2.2,
+   "bucle": false,
+   "eventos": {
+    "despierta": 0.6,
+    "golpe_suelo": 1.75
+   }
+  },
+  "ataque": {
+   "duracion": 1.5,
+   "bucle": false,
+   "eventos": {
+    "impacto": 0.8
+   }
+  },
+  "carga": {
+   "duracion": 1.0,
+   "bucle": false,
+   "eventos": {
+    "en_alto": 1.0
+   }
+  },
+  "carga_espera": {
+   "duracion": 1.6,
+   "bucle": true,
+   "eventos": {}
+  },
+  "golpe_fuerte": {
+   "duracion": 1.9,
+   "bucle": false,
+   "eventos": {
+    "impacto": 0.92,
+    "carga": 0.5
+   }
+  },
+  "recibir_golpe": {
+   "duracion": 0.7,
+   "bucle": false,
+   "eventos": {
+    "golpe": 0.0
+   }
+  },
+  "victoria": {
+   "duracion": 2.0,
+   "bucle": false,
+   "eventos": {
+    "clavar": 0.8
+   }
+  },
+  "derrota": {
+   "duracion": 2.4,
+   "bucle": false,
+   "eventos": {
+    "rodilla": 0.7,
+    "suelo": 2.2
+   }
+  },
+  "barrido": {
+   "duracion": 1.8,
+   "bucle": false,
+   "eventos": {
+    "tension": 0.35,
+    "impacto": 0.85
+   }
+  },
+  "guardia": {
+   "duracion": 0.9,
+   "bucle": false,
+   "eventos": {
+    "escudo": 0.55
+   }
+  },
+  "guardia_espera": {
+   "duracion": 2.0,
+   "bucle": true,
+   "eventos": {}
+  },
+  "aturdido": {
+   "duracion": 1.6,
+   "bucle": true,
+   "eventos": {}
+  },
+  "recibir_golpe_fuerte": {
+   "duracion": 1.1,
+   "bucle": false,
+   "eventos": {
+    "golpe": 0.0
+   }
+  }
+ },
+ "medidas": {
+  "ataque": {
+   "punta_godot": [
+    0.817,
+    0.307,
+    1.978
+   ]
+  },
+  "golpe_fuerte": {
+   "punta_godot": [
+    -0.0,
+    0.003,
+    2.203
+   ]
+  },
+  "barrido": {
+   "punta_godot": [
+    0.86,
+    0.827,
+    1.987
+   ]
+  },
+  "alto_reposo": 2.343
+ },
+ "generador": "enemigos/guardian_piedra/fuente/crear_guardian_piedra.py -- ... v2 (Blender 5.2.3)"
+}

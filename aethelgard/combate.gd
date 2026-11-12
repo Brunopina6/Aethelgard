@@ -76,6 +76,10 @@ const Vidracran := preload("res://combate_vidracran.gd")
 # V12 (12/11): Humbaba, el Corazón del Bosque Muerto (combate_humbaba.gd: fases, ataques, estados y efectos). APAGADO: solo con
 # el interruptor «humbaba_v12» (el santuario del Gran Bosque) o en su combate de prueba (GRUPOS[17]).
 const Humbaba := preload("res://combate_humbaba.gd")
+# V12, enemigos (12/11): el Guardián de piedra, «el Centinela del Anillo», con su forma de luchar (combate_centinela.gd:
+# Tajo, Barrido, Juicio avisado y Escudo del Anillo). APAGADO: con el interruptor «enemigos_v12» (el de los modelos
+# propios) y en sus combates de prueba (GRUPOS[18] y [19]). Los ganchos de aquí llevan «V12, Centinela».
+const Centinela := preload("res://combate_centinela.gd")
 # Menú de combate minimalista (menu_combate.gd). Ocupa el 40 % derecho de la pantalla, por eso los
 # héroes van más a la izquierda y los enemigos se juntan a la izquierda: x = x * ENEMIGOS_X.x + ENEMIGOS_X.y
 const ENEMIGOS_X := Vector2(0.75, -190.0)
@@ -299,7 +303,8 @@ const MODELOS := {
 	# aturdido, fase2, devorar, rendirse, retirarse). Encuadre de pruebas/prueba_enemigos_v12.gd; «respaldo»: lo de antes.
 	"guardian3d": {
 		"tipo": "3d", "esc": 0.6, "script": "res://enemigos/guardian_piedra/guardian_piedra_3d.gd",
-		"gestos": "res://gestos_3d.gd", "rutas": ["res://enemigos/guardian_piedra/guardian_piedra.glb"],
+		"gestos": "res://gestos_3d.gd", "rutas": ["res://enemigos/guardian_piedra/guardian_piedra_v2.glb",   # V12, Centinela: v2
+			"res://enemigos/guardian_piedra/guardian_piedra.glb"],
 		"vp": Vector2i(1280, 1300), "alto_vista": 4.7, "centro_y": 1.8, "barra_y": 216.0, "centro_3d": 1.35,
 		"pos_grupo": Vector2(-191, -186), "caida": 1.6, "respaldo": "guardian"},
 	"golem_ambar3d": {
@@ -392,6 +397,9 @@ const GRUPOS := [
 	[["vidracran", Vector2(140, 105)], ["vidracran", Vector2(390, 130)]],   # 15: dos
 	[["vidracran", Vector2(160, 125)], ["grimfang", Vector2(420, 120)]],    # 16: con Grimfang
 	[["humbaba", Vector2(-260, -230)]],                                     # 17: Humbaba (V12, APAGADO; combate_humbaba.gd)
+	# V12, Centinela: combates de prueba del Guardián de piedra (combate_centinela.gd; con «enemigos_v12»); no salen al azar
+	[["guardian", Vector2(150, 120)]],                                      # 18: solo
+	[["guardian", Vector2(150, 120)], ["slime", Vector2(420, 125)]],        # 19: con un Slime
 ]
 const GRUPOS_AL_AZAR := 5           # solo los primeros salen en encuentros aleatorios (con el grupo de tres)
 # Encuentros al azar según cuántos héroes hay ahora en el grupo (grupo.gd, activos). Kael solo no tiene cura ni a
@@ -602,6 +610,8 @@ func _ready() -> void:
 			brama.al_entrar(pe)
 		if Vidracran.es(e) and pe != null and pe.has_method("recortar_suelo"):   # V12, encuentro del desierto: lo
 			pe.recortar_suelo(true)                  # enterrado no se dibuja (sale de la arena en su entrada)
+		if Centinela.es(e):                          # V12, Centinela: los sonidos de los instantes de sus clips
+			Centinela.al_entrar(self, e, pe)
 		if pe != null and pe.has_method("entrada"):
 			e["rig"].modulate.a = 0.0
 			create_tween().tween_property(e["rig"], "modulate:a", 1.0, 0.15)
@@ -613,6 +623,7 @@ func _ready() -> void:
 	_actualizar()
 	_marca("musica")
 	_precalentar_efectos()
+	_precalentar_2d()
 	_marca("efectos")
 	for e in enemigos:                               # jefes: su nombre en grande al empezar
 		if e.get("titulo", false):
@@ -697,6 +708,7 @@ func _elegir_enemigos() -> void:
 		e["clave"] = g[0]                              # qué enemigo es: su voz (sonido.gd, T-083)
 		if ENEMIGOS_V12.has(g[0]) and _enemigos_v12():     # V12, fase C: el modelo propio (interruptor enemigos_v12, APAGADO)
 			e["modelo"] = ENEMIGOS_V12[g[0]]
+			Centinela.preparar(e)                     # V12, Centinela: el Guardián, con su personalidad (si no, nada)
 		var mod: Dictionary = MODELOS[e["modelo"]]
 		if mod.get("tipo", "") == "3d" and _ruta_3d(mod) == "" and mod.has("respaldo"):   # falta el 3D: su dibujo 2D
 			push_warning("Falta el modelo 3D de %s: se usa su respaldo 2D" % e["nombre"])
@@ -1022,6 +1034,8 @@ func _info_objetivo(f: Dictionary, ok: bool) -> String:
 		t.append_array(Vidracran.info(f))
 	elif Humbaba.es(f):                                 # V12: Humbaba, su fase y cómo se le hace daño
 		t.append_array(Humbaba.info(f))
+	elif Centinela.es(f):                               # V12, Centinela: escudo, Juicio o aturdido
+		t.append_array(Centinela.info(f))
 	elif f.get("cargando", false):
 		var plan: Dictionary = PATRONES.get(f.get("personalidad", ""), {})
 		if plan.get("encoge", false):
@@ -1896,6 +1910,10 @@ func _turno_enemigo(f: Dictionary) -> void:
 		await Vidracran.turno(self, f, vivos, mult)
 		_fin_turno_enemigo(f)
 		return
+	if p == Centinela.PERSONALIDAD:                  # V12, Centinela: el Guardián de piedra (combate_centinela.gd); no huye
+		await Centinela.turno(self, f, vivos, mult)
+		_fin_turno_enemigo(f)
+		return
 	# huir (en una «zona limpia», con el grupo muy por encima, los enemigos débiles huyen solos)
 	var limpia: bool = load("res://progreso.gd").zona_limpia(Engine.get_meta("zona", "llanura"))
 	if p != "jefe" and p != "bosque" and p != "coloso" and limpia and randf() < 0.7:   # (los jefes no huyen)
@@ -2282,6 +2300,9 @@ var dano_magico_entrante := false                 # V12, accesorios: un ataque M
 func _vigilar_carga(f: Dictionary, d: int) -> void:
 	if brama != null and Brama.es(f):                 # V12, Bramavidrio: su Aliento se corta (la Fractura no)
 		brama.vigilar(d)
+		return
+	if Centinela.es(f):                               # V12, Centinela: corta el Juicio, rompe el escudo, herida fuerte
+		Centinela.vigilar(self, f, d)
 		return
 	if not f.get("cargando", false) or f["hp"] <= 0 or not PATRONES.has(f.get("personalidad", "")):
 		return
@@ -5486,6 +5507,8 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 		await Humbaba.animar_golpe(self, origen, objetivo, impacto)
 	elif Vidracran.es(origen):                                                 # V12, encuentro del desierto: pinzas o aguijón
 		await Vidracran.animar_golpe(self, origen, objetivo, impacto)
+	elif Centinela.es(origen):                                                # V12, Centinela: tajo, barrido o Juicio
+		await Centinela.animar_golpe(self, origen, objetivo, impacto)
 	elif _p3d(origen) != null and _p3d(origen).has_method("avisar"):           # Zarzalín (T-097)
 		await _anim_zarzalin(origen, objetivo, impacto, str(origen.get("ataque_3d", "colmillo_lateral")))
 	elif _p3d(origen) != null and _p3d(origen).has_method("despertar"):        # Guardián del Bosque (fase 3): desde su sitio
@@ -6189,6 +6212,46 @@ func _precalentar_efectos() -> void:
 		_vfx_3d(ruta, Vector2(-2000, -2000), true)
 
 
+# Rendimiento (rend2, 12/11; pruebas/herramientas/sonda_tirones_combate.gd): lo que la primera vez de cada combate costaba
+# en mitad del turno. En el PC, con lo común ya cargado como en el juego: el primer ataque, 11,5 ms en leer
+# investigacion.gd y su catálogo (_lya_sabe); la primera lista de objetivos, ~8 ms de más en dibujar letras nuevas.
+# Aquí se hace mientras el combate aparece: la ventaja de Lya se mira ya y los textos que salen la primera vez
+# (números con su contorno, el panel de objetivos y el nombre apuntado) se dibujan una vez en una ventana que no se ve,
+# con sus fuentes y tamaños, junto con un destello y unas chispas (mismo material aditivo).
+func _precalentar_2d() -> void:
+	if Engine.has_meta("sin_precalentar_2d") or "sin_precalentar_2d" in OS.get_cmdline_user_args():   # (para medir el antes)
+		return
+	_lya_sabe()
+	var vp := SubViewport.new()
+	vp.size = Vector2i(512, 256)
+	vp.transparent_bg = true
+	vp.render_target_update_mode = SubViewport.UPDATE_ONCE
+	add_child(vp)
+	var nombres := "▶ ◆ "
+	for f in heroes + enemigos:
+		nombres += str(f.get("nombre", ""))
+	var y := 0.0
+	for d in [["0123456789¡!", TAM_NUMERO, 8, null], ["0123456789¡!", 58, 8, null], ["¡Esquiva!+Réplica0123456789", 34, 8, null],
+			["Réplica", 28, 8, null], ["ENEMIGOS ALIADOS LE ALCANZA", 18, 5, menu.f_nombre], [nombres, 24, 5, menu.f_nombre],
+			[nombres, 20, 5, menu.f_nombre], [nombres, 44, 5, menu.f_nombre], ["PV 0123456789/ · Élite: doble premio ⚠", 16, 5, null]]:
+		var l := _etiqueta(d[0], d[1], Color.WHITE, d[3])
+		l.add_theme_constant_override("outline_size", d[2])
+		l.position = Vector2(0, y)
+		y += 8.0
+		vp.add_child(l)
+	var g := _brillo(Color.WHITE)
+	g.position = Vector2(256, 128)
+	vp.add_child(g)
+	var p := CPUParticles2D.new()
+	p.texture = glow_tex
+	p.material = mat_aditivo
+	p.amount = 3
+	p.explosiveness = 1.0
+	p.position = Vector2(256, 128)
+	vp.add_child(p)
+	get_tree().create_timer(0.3).timeout.connect(vp.queue_free)
+
+
 # Punto del suelo bajo los pies de un luchador (donde está su sombra).
 func _suelo_de(f: Dictionary) -> Vector2:
 	if f.has("sombra"):
@@ -6846,6 +6909,7 @@ func _comprobar_fin() -> bool:
 		_ocultar_menu()
 		Vidracran.al_acabar(enemigos)                 # V12, encuentro del desierto: su marca y sus puntos, fuera
 		Humbaba.al_acabar(self)                       # V12: sus raíces, marcas y estados, fuera
+		Centinela.al_acabar(enemigos)                 # V12, Centinela: la marca del Juicio, fuera
 		Sonido.efecto("victoria" if ganan else "derrota")   # sonido.gd
 		if ganan:                                      # el gesto de uno de los que siguen en pie (tanda 5)
 			voz_pedida.emit("", "victoria")
@@ -7038,6 +7102,10 @@ func _actualizar() -> void:
 					estados.append_array(Vidracran.estados(e))
 			if Humbaba.es(e) and vivo:                  # V12: Humbaba, «Fase n», «Corteza», «¡Núcleo al alcance!», «⚠ Réquiem»
 				estados.append_array(Humbaba.estados(e))
+			if Centinela.es(e):                          # V12, Centinela: «Escudo del Anillo», «⚠ Juicio: Kael», «Aturdido»
+				Centinela.repasar(e)
+				if vivo:
+					estados.append_array(Centinela.estados(e))
 			if e.has("mn"):                             # V12, magia negra: «Lento 2», «Def ↓ 3», «Prisión 1»…
 				estados.append_array(MN.textos_estado(e))
 				if not vivo:                            # (huido o caído sin pasar por _quitar_pv: su jaula y su sello, fuera)
