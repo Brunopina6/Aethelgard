@@ -53,7 +53,7 @@ prueba_audio_guardian | auto |                      | 400 | user://     | sonido
 prueba_audio_desierto | auto |                      | 120 | nada        | sonido del Mar de Cristal (muda, V12): las 9 claves de EFECTOS_DESIERTO cargan (OGG de audio/desierto/), duran lo esperado, los bucles están marcados como bucle y siguen sonando al dar la vuelta, ni mudas ni saturadas, la tormenta por encima del viento en calma, el pitido raro más agudo; se piden con efecto() y fuente_3d() y las claves de antes siguen en audio/efectos/
 prueba_cofre      | auto     |                      | 150 | user://     | cofres
 prueba_choque     | auto     | estilo=bosque        | 150 | user://     | colisiones en una zona de bosque
-prueba_equilibrio | auto     |                      | 240 | user://     | equilibrio de combate (10/11: con aserciones): D-H07 (golpe de Kael ×5, magia de Lya ×3), gasto de PM, Frostfang y Congelación
+prueba_equilibrio | auto     | semilla=7            | 240 | user://     | equilibrio de combate (10/11: con aserciones): D-H07 (golpe de Kael ×5, magia de Lya ×3), gasto de PM, Frostfang y Congelación
 prueba_ia         | auto     | auto semilla=7       | 180 | user://     | IA de los enemigos en un combate real (10/11: con aserciones): termina, actúan enemigos y héroes, final coherente
 prueba_menu_magia | auto     |                      | 150 | user://     | menú de magia
 prueba_menu_nuevo | manual     |                      | 150 | user://     | menú de combate: DIAGNÓSTICO DESFASADO (10/11), sus toques no caen en el menú desde el HUD nuevo (T-099); pendiente de reescribir con las posiciones de hoy
