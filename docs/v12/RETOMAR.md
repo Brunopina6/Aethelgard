@@ -319,3 +319,19 @@ negra).
 - **Informe final del hito:** `docs/v12/INFORME_HITO_CALIDAD.md`.
 - **En marcha: Humbaba** en `D:\Aethelgard_v12_humbaba` · `claude/v12-humbaba` (desde `2c0f872`), especialista de
   animaciones con `ENCARGO_HUMBABA.md`: primero el prototipo con rig y tres animaciones; apagado (`humbaba_v12`).
+
+### Rendimiento, personajes y estabilidad (12/11, tarde; sin Redmi)
+
+- **Informe:** `docs/v12/INFORME_RENDIMIENTO_PERSONAJES.md` (todo medido en el PC; la lista para el Redmi está en su §9).
+- **Punto de recuperación:** etiqueta `v12-antes-rendimiento-personajes` (= `fadb5fa`).
+- **Commits:**
+  - `e283167`: medida reproducible (`pruebas/medir_escenas.gd` y `.ps1`, `resumir_medidas.ps1`) y terreno guardado entre entradas. Vuelta del combate al Mar de Cristal 1,83 → 0,78 s; a Pastos 1,62 → 1,05 s.
+  - `cb82455`: Humbaba APAGADO y héroes v2 pulidos, elegibles en Ajustes.
+  - `ca71cd7` y `21dd706`: texturas comprimidas (héroes v2, Garon, goblin, Guardián). Memoria de vídeo −11 a −31 MB por región; con los v2, −102 MB.
+- **Batería:** 135 · 0 · 63 · 0.
+- **APK de Auditoría v665** (`21dd706`): en `D:\REBELUM_compilaciones\`, SHA-256 `851583…afb2`, firma `3413edcd…7785f3`. Sin instalar ni publicar.
+- **Especialistas:** los de Humbaba (`claude/v12-humbaba` @ `be9d435`) y del pulido de héroes (`claude/v12-heroes-pulido` @ `bc91a47`) han terminado y están integrados. No hay ninguno en marcha.
+- **Siguiente:**
+  1. medir en el Redmi lo de la §9 del informe;
+  2. decidir qué se deja de precargar en el arranque (184 MB);
+  3. arreglar los tirones del primer combate.
