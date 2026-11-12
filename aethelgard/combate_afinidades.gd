@@ -55,6 +55,9 @@ const TABLA := {
 	# V12, encuentro del desierto (12/11): Vidracrán (combate_vidracran.gd; demostración apagada). Solo escuelas nuevas.
 	"vidracran": {"debil": ["Hielo"], "resiste": ["Fuego"], "inmune": [], "estados_resiste": [], "estados_inmune": [],
 		"por_que": "Vidrio de arena fundida: el frío lo agrieta; el fuego lo templó."},
+	# V12 (12/11): Humbaba (combate_humbaba.gd; jefe apagado). Solo escuelas nuevas (a las de siempre, su fuego ×1,4).
+	"humbaba": {"debil": ["Fuego"], "resiste": ["Hielo", "Sombras"], "inmune": [], "estados_resiste": ["def_baja"],
+		"estados_inmune": ["prision", "lento"], "por_que": "Madera maldita: arde; la sombra del bosque muerto es suya y nada lo encierra."},
 }
 # Lo que se aplica a un enemigo que no está en la tabla (o a uno nuevo): nada especial. Los jefes nuevos, como poco,
 # son inmunes a la Prisión (JEFE_POR_DEFECTO), para que ningún jefe pierda turnos encadenados por descuido.

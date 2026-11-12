@@ -12,7 +12,7 @@ const HeroesV2 := preload("res://personajes/heroes_v2/heroes_v2.gd")
 const Ayudante := preload("res://personajes/heroes_v2/heroe_v2_ayudante.gd")
 const LANZA_MAGIA := 0.5               # magia_lanzar: «lanzamiento»
 const LANZA_PODEROSA := 1.5            # magia_poderosa: «lanzamiento»
-const PREPARA_GOLPE := 0.25            # ataque: fin de la preparación
+const PREPARA_GOLPE := 0.3             # ataque: fin de la preparación (13/11: el cetro atrás del todo, «prep»)
 const IMPACTO_GOLPE := 0.45            # ataque: «impacto»
 
 var v2: Node = null
@@ -92,7 +92,7 @@ func lanzar_magia() -> void:
 		return
 	gestos.quitar_todos(0.15)
 	v2.reproducir("magia_lanzar", 0.15)
-	v2.poner_expresion("entrecerrados", 0.35)
+	v2.poner_expresion("decidido", 0.35)          # 13/11: concentrada y firme (no entrecerrada)
 	await get_tree().create_timer(LANZA_MAGIA).timeout
 	v2.poner_expresion("grito", 0.5)
 
@@ -129,7 +129,7 @@ func preparar_golpe() -> void:
 	v2.reproducir("ataque", 0.15)
 	v2.poner_expresion("grito", 1.0)
 	get_tree().create_timer(PREPARA_GOLPE).timeout.connect(func():
-		if is_instance_valid(self) and anim.assigned_animation == "ataque" and anim.current_animation_position < 0.3:
+		if is_instance_valid(self) and anim.assigned_animation == "ataque" and anim.current_animation_position < 0.36:
 			anim.speed_scale = 0.0, CONNECT_ONE_SHOT)       # espera en la preparación a que el combate diga «golpea»
 
 

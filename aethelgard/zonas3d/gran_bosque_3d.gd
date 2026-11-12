@@ -24,6 +24,7 @@ const Ex := preload("res://zonas3d/examinables_3d.gd")
 const Hallazgos := preload("res://hallazgos.gd")
 const Progreso := preload("res://progreso.gd")
 const Comentarios := preload("res://dialogos/comentarios.gd")
+const Humbaba := preload("res://combate_humbaba.gd")   # V12 (12/11): el jefe del santuario, APAGADO (interruptor humbaba_v12)
 
 const INDICE := 1                          # lugar del mapa (mapa.gd, LUGARES[1]; modo3d.GRAN_BOSQUE)
 const ZONA := "bosque"                     # progreso.gd (nivel, zona limpia) y combate.gd (fondo, nivel, escalado)
@@ -41,6 +42,7 @@ const LLEGADA_COMENTARIO := 2.8            # zona.gd
 const CAMARA := [50.0, 13.0, 22.0]         # [inclinación, distancia mínima, máxima]
 const CAMARA_MIRADOR := [36.0, 27.0]       # en lo alto del mirador: más baja y más lejos (se ve el bosque)
 const HUECO_RADIO := 3.3
+const RADIO_HUMBABA := 6.5                 # V12: a qué distancia de Humbaba sale «Acercarse al Corazón»
 
 var perfil: Dictionary = {}
 var nombre_perfil := "alto"
@@ -65,6 +67,7 @@ var brillados := {}
 var _llegada_t := LLEGADA_COMENTARIO
 var _comentario := ""
 var _comentario_t := 0.0
+var humbaba: Node3D = null                  # V12: Humbaba dormido en el santuario (solo con su interruptor)
 var brillo_sin_sombras := 1.18              # vista3d.gd: el perfil bajo, sin sombras (a ojo en el PC; sin medir con medir_luz_perfiles ni en el Redmi)
 
 
@@ -78,6 +81,7 @@ func _ready() -> void:
 	_crear_interfaz()
 	_crear_cofres()
 	escenario.poner_hoja(Ex.hallazgo_pendiente(INDICE, "detalle:" + ID_DETALLE))
+	_humbaba_santuario()                    # V12: apagado, no hace nada
 	_marca_salida()
 	var vuelve: bool = Engine.get_meta("pos_3d_ok", false) and int(Engine.get_meta("pos_3d_lugar", -1)) == INDICE \
 		and Engine.get_meta("pos_3d", null) is Vector3
@@ -553,6 +557,8 @@ func piezas_al_alcance() -> Array:
 			r.append(["cofre:" + id, cf["pos"], RADIO_COFRE, "Abrir cofre"])
 	r.append(["detalle", _sitio_detalle(), RADIO_DETALLE, "Examinar"])
 	r.append(["altar", _sitio_altar(), RADIO_ALTAR, "Examinar"])
+	if humbaba != null:                                         # V12: el Corazón del Bosque (solo con su interruptor)
+		r.append(["humbaba", humbaba.global_position, RADIO_HUMBABA, "Acercarse al Corazón"])
 	return r
 
 
@@ -588,6 +594,8 @@ func _accion() -> void:
 		_abrir_cofre(cerca.substr(6))
 	elif cerca == "detalle":
 		_examinar_detalle()
+	elif cerca == "humbaba":
+		_despertar_humbaba()
 	elif cerca == "altar":
 		_examinar_altar()
 	_comprobar_cerca()
@@ -783,3 +791,36 @@ func _titulo_zona(nombre: String) -> void:
 	t.tween_interval(1.8)
 	t.tween_property(l, "modulate:a", 0.0, 0.9)
 	t.tween_callback(l.queue_free)
+
+
+# ================================================================= V12 (12/11): Humbaba, el Corazón del Bosque Muerto (APAGADO)
+# Solo con el interruptor «humbaba_v12» (combate_humbaba.gd, activo()) y si su combate fijo no está ganado: duerme de
+# rodillas detrás del altar, a escala real (12 m), mirando al camino; al acercarse, «Acercarse al Corazón» lo despierta
+# (ruge) y empieza su combate fijo (GRUPOS[17], jefe). Apagado no se crea nada y el bosque queda exactamente igual.
+func _humbaba_santuario() -> void:
+	if not Humbaba.activo() or Engine.get_meta("combates_ganados", {}).has(Humbaba.COMBATE):
+		return
+	if not ResourceLoader.exists("res://enemigos/humbaba/humbaba_3d.gd"):
+		return
+	var h = load("res://enemigos/humbaba/humbaba_3d.gd").new()
+	h.escala = 1.0
+	h.name = "Humbaba"
+	add_child(h)
+	var c := D.META + Vector2(-6.0, -1.0)                  # al oeste del altar, de cara al claro
+	h.global_position = T.en_mundo(c)
+	var hacia: Vector3 = _sitio_altar() - h.global_position
+	h.mirar(Vector3(hacia.x, 0, hacia.z).normalized(), 0.0)
+	h.vulnerable = true                      # «dormido»: de rodillas, con el núcleo apagándose (su clip «vulnerable»)
+	h.reposo()
+	humbaba = h
+
+
+func _despertar_humbaba() -> void:
+	if humbaba == null or saliendo:
+		return
+	_mostrar_aviso("El Corazón del Bosque Muerto despierta...", 2.4)
+	humbaba.vulnerable = false
+	humbaba.rugir()
+	Sonido.efecto("guardian_bosque_jefe")
+	await get_tree().create_timer(1.6).timeout
+	encuentro(Humbaba.COMBATE, Humbaba.GRUPO, "jefe", "¡Humbaba!")

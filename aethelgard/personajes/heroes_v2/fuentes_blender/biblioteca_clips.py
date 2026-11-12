@@ -308,12 +308,24 @@ def c_ataque(e):
         return clip("ataque", 1.3, [(0, g), (0.2, agacha), (0.32, despega), (0.5, alto), (0.64, corte), (0.82, sigue),
                                     (1.3, g)], eventos={"impacto": 0.64})
     if e["arma"] == "cetro":
-        # Lya: un golpe con el cetro (como el «golpe» de gestos_3d.gd), impacto a 0,45 s
-        prep = mezclar(cadera_mas(g, (-0.02, -0.03, 0)), {"columna": (-6, 0, -18),
-                       "mano_d": {"pos": (-0.15, 0.25, 0.4), "hoja": (-0.5, 0.9, 0.3), "codo": (-0.3, -0.5, 1)}})
-        golpe = mezclar(cadera_mas(g, (0.05, -0.06, 0)), {"columna": (16, 0, 10), "pie_i": {"pos": (0.14, 0, 0.03)},
-                        "mano_d": {"pos": (0.8, -0.2, 0.0), "hoja": (0.9, -0.3, -0.1), "codo": (0, -1, 0.6)}})
-        return clip("ataque", 1.0, [(0, g), (0.25, prep), (0.45, golpe), (0.6, golpe), (1.0, g)], eventos={"impacto": 0.45})
+        # Lya: un golpe con el cetro (como el «golpe» de gestos_3d.gd), impacto a 0,45 s (sin cambiar).
+        # 13/11 (pulido): más anticipación. Carga el peso atrás y enrosca el tronco con el cetro alto detrás del hombro
+        # (0,1-0,3 s), lo sostiene un instante (0,36), golpea rápido (0,45), sigue de largo (0,55) y vuelve.
+        carga = mezclar(cadera_mas(g, (-0.03, -0.02, 0)), {"columna": (-4, 0, -14), "cabeza": (0, 3, -2),
+                        "mano_d": {"pos": (0.05, 0.2, 0.45), "hoja": (-0.3, 0.95, 0.25), "codo": (-0.3, -0.6, 1)},
+                        "mano_i": {"pos": (0.55, -0.15, 0.1), "dedos": (1, 0.3, 0.0), "palma": (0, -0.3, -1), "cierre": 12}})
+        prep = mezclar(cadera_mas(g, (-0.05, -0.05, 0)), {"mirada": 6.0, "columna": (-10, 0, -28), "cabeza": (0, 3, 8),
+                       "pie_d": {"punta": 8},
+                       "mano_d": {"pos": (-0.22, 0.45, 0.38), "hoja": (-0.65, 0.75, 0.35), "codo": (-0.3, -0.4, 1)},
+                       "mano_i": {"pos": (0.6, -0.05, 0.05), "dedos": (1, 0.4, -0.1), "palma": (0, -0.3, -1), "cierre": 10}})
+        sost = mezclar(prep, {"columna": (-11, 0, -31), "mano_d": {"pos": (-0.25, 0.48, 0.38)}})
+        golpe = mezclar(cadera_mas(g, (0.06, -0.07, 0)), {"columna": (16, 0, 12), "pie_i": {"pos": (0.15, 0, 0.03)},
+                        "mano_d": {"pos": (0.8, -0.2, 0.0), "hoja": (0.9, -0.3, -0.1), "codo": (0, -1, 0.6)},
+                        "mano_i": {"pos": (0.2, -0.6, 0.45), "dedos": (-0.3, -1, 0.3)}})
+        sigue = mezclar(cadera_mas(golpe, (0.01, -0.01, 0)), {"columna": (20, 0, 16),
+                        "mano_d": {"pos": (0.72, -0.42, -0.12), "hoja": (0.7, -0.65, -0.25), "codo": (0, -1, 0.5)}})
+        return clip("ataque", 1.0, [(0, g), (0.12, carga), (0.3, prep), (0.36, sost), (0.45, golpe), (0.55, sigue),
+                                    (0.68, sigue), (1.0, g)], eventos={"impacto": 0.45})
     # Garon: tajo doble contundente (dos espadas de arriba abajo), impacto a 0,7 s
     prep = mezclar(cadera_mas(g, (-0.03, -0.04, 0)), {"columna": (-10, 0, -10), "cabeza": (0, 0, -4),
                    "mano_d": {"pos": (0.0, 0.8, 0.2), "hoja": (-0.6, 0.8, 0.1), "codo": (0, 0, 1)},
@@ -327,10 +339,12 @@ def c_ataque(e):
 
 def c_magia_lanzar(e):
     g = guardia_pose(e)
-    if e["arma"] == "sable":   # sable en vertical ante la cara y estocada: el hechizo sale de la punta a 0,85 s
-        alza = mezclar(cadera_mas(g, (0, 0.01, 0)), {"columna": (0, 0, -4), "cabeza": (4, 0, -4),
-                       "mano_d": {"pos": (0.45, 0.2, -0.15), "hoja": (0.1, 1.0, 0.0), "filo": (1, 0, 0), "codo": (0, -1, 0.7)},
-                       "mano_i": {"pos": (0.45, 0.25, -0.45), "dedos": (0.0, 1.0, 0.2), "palma": (1, 0, 0), "cierre": 5}})
+    if e["arma"] == "sable":   # sable en vertical y estocada: el hechizo sale de la punta a 0,85 s
+        # 13/11 (pulido): el sable MÁS ALTO, por encima de la cabeza y algo por fuera (antes, a la altura de la cara:
+        # la empuñadura la tapaba); la izquierda, abierta junto a la hoja. Mismos instantes.
+        alza = mezclar(cadera_mas(g, (0, 0.015, 0)), {"mirada": -6.0, "columna": (-5, 0, -4), "cabeza": (-2, 0, -4),
+                       "mano_d": {"pos": (0.35, 0.72, 0.18), "hoja": (0.08, 1.0, 0.05), "filo": (1, 0, 0), "codo": (0, -0.6, 1)},
+                       "mano_i": {"pos": (0.45, 0.4, -0.3), "dedos": (0.0, 1.0, 0.2), "palma": (1, 0, 0), "cierre": 5}})
         lanza = mezclar(cadera_mas(g, (0.05, -0.08, 0)), {"columna": (16, 0, -10), "cabeza": (0, 0, -10),
                         "pie_i": {"pos": (0.18, 0, 0.05)},
                         "mano_d": {"pos": (0.95, 0.05, 0.0), "hoja": (1.0, 0.2, -0.1), "filo": (0, -1, 0), "codo": (0, -1, 0.5)},
@@ -439,15 +453,24 @@ def c_victoria(e):
     g = guardia_pose(e)
     p = reposo_pose(e)
     if e["arma"] == "sable":
-        # alza el sable, da un saltito y acaba con el sable al hombro y el puño en la cadera, sonriendo
+        # 13/11 (pulido): alza el sable POR FUERA del hombro, da un saltito, lo baja en un barrido por el costado y
+        # acaba con el sable a un lado, en diagonal hacia delante y abajo, el puño en la cadera, sonriendo a la cámara.
+        # Antes acababa con el sable al hombro (su reposo) y, girado hacia la cámara del combate, la hoja asomaba por
+        # detrás de la cabeza como un pincho; y al bajar pasaba por dentro de ella («gira», con la mano hacia dentro).
+        # Ahora la mano no pasa por encima ni por dentro de la cabeza (fuera ≥ 0,38) y la punta no toca el suelo.
         alza = mezclar(cadera_mas(g, (0, 0.02, 0)), {"mirada": -15.0, "cadera_giro": (0, 0, 8), "columna": (-10, 0, -4), "cabeza": (-12, 0, 0),
-                       "mano_d": {"pos": (0.2, 1.0, 0.15), "hoja": (0.1, 1.0, 0.1), "filo": (1, 0, 0), "codo": (0, 0, 1)},
+                       "mano_d": {"pos": (0.2, 0.92, 0.38), "hoja": (0.1, 1.0, 0.3), "filo": (0.3, 0, 1), "codo": (0, -0.2, 1)},
                        "mano_i": {"pos": (0.3, -0.5, 0.3)}})
         salto = mezclar(cadera_mas(alza, (0, 0.08, 0)), {"pie_d": {"pos": (0.0, 0.06, 0.05), "punta": 30},
                                                           "pie_i": {"pos": (0.02, 0.08, 0.05), "punta": 30}})
-        final = mezclar(p, {"cabeza": suma(p["cabeza"], (-2, -8, 6)), "columna": suma(p["columna"], (-2, 3, 0))})
-        gira = mezclar(alza, {"mano_d": {"pos": (0.3, 0.55, -0.1), "hoja": (-0.3, 1.0, 0.05), "filo": (0.6, 0.3, 0)}})
-        return clip("victoria", 1.8, [(0, g), (0.35, alza), (0.6, salto), (0.74, gira), (0.9, cadera_mas(final, (0, -0.03, 0))),
+        sable_lado = {"pos": (0.22, -0.5, 0.42), "hoja": (0.3, -0.6, 0.72), "filo": (0.3, -0.75, -0.6), "codo": (-0.3, -1, 0.7),
+                      "cierre": 75}
+        final = mezclar(p, {"cabeza": suma(p["cabeza"], (-4, -6, 8)), "columna": suma(p["columna"], (-3, 3, 0)),
+                            "mano_d": sable_lado})
+        barre = mezclar(alza, {"cadera": suma(alza["cadera"], (0, -0.02, 0)), "columna": (2, 0, 4),
+                               "mano_d": {"pos": (0.4, 0.15, 0.6), "hoja": (0.55, 0.25, 0.8), "filo": (0.4, -1, 0), "codo": (-0.2, -1, 0.8)}})
+        asienta = cadera_mas(final, (0, -0.03, 0))
+        return clip("victoria", 1.8, [(0, g), (0.35, alza), (0.6, salto), (0.76, barre), (0.92, asienta),
                                       (1.2, final), (1.8, final)])
     if e["arma"] == "cetro":
         # gira el cetro en alto y lo apoya ante sí, con una sonrisa
@@ -456,7 +479,7 @@ def c_victoria(e):
                        "mano_d": {"pos": (0.3, 0.8, 0.3), "hoja": (0.1, 1.0, 0.0), "codo": (0, -0.3, 1)},
                        "mano_i": {"pos": (0.4, 0.3, 0.6), "dedos": (0.3, 1, 0.5), "palma": (1, 0, 0), "cierre": 5}})
         final = mezclar(p, {"cabeza": suma(p["cabeza"], (2, 6, 0)),
-                            "mano_d": {"pos": (0.45, -0.6, 0.05), "hoja": (0.1, 1.0, -0.15), "codo": (-0.3, -1, 0.8)},
+                            "mano_d": {"pos": (0.32, -0.6, 0.3), "hoja": (0.1, 1.0, 0.22), "codo": (-0.3, -1, 0.8)},   # 13/11: al lado, no ante la cara
                             "mano_i": {"pos": (0.5, -0.45, -0.25), "dedos": (0.4, 0.2, -1), "palma": (-0.3, 0.2, -1)}})
         return clip("victoria", 1.8, [(0, g), (0.45, alza), (0.9, final), (1.8, final)])
     # Garon: clava la mirada al frente, cruza las espadas y las baja; asiente una vez: disciplina

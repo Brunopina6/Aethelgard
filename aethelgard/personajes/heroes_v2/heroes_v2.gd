@@ -4,6 +4,7 @@ extends RefCounted
 # Se enciende con cualquiera de estas (para pruebas):
 #   - Engine.set_meta("heroes_v2", true)   (antes de crear a los héroes)
 #   - el argumento de usuario «heroes_v2»   (godot ... -- heroes_v2)
+#   - Ajustes → «Protagonistas» (user://ajustes.cfg, [heroes] v2; 13/11, para el móvil)
 #   - ACTIVO_POR_DEFECTO = true             (cuando el usuario lo apruebe)
 #
 # Quien crea a los héroes pide aquí qué script y qué modelo usar (ver docs/memory/agents/animaciones_v12_heroes.md,
@@ -38,7 +39,29 @@ static func activado() -> bool:
 		return bool(Engine.get_meta("heroes_v2"))
 	if "heroes_v2" in OS.get_cmdline_user_args():
 		return true
-	return ACTIVO_POR_DEFECTO
+	return en_ajustes()
+
+
+# 13/11: Ajustes → «Protagonistas: originales / v2 (prueba)» (menus.gd), para compararlos en el móvil, donde no llegan
+# los argumentos. Se guarda en user://ajustes.cfg, [heroes] v2; sin elegir, ACTIVO_POR_DEFECTO (originales).
+static func en_ajustes() -> bool:
+	var c := ConfigFile.new()
+	if c.load("user://ajustes.cfg") != OK:
+		return ACTIVO_POR_DEFECTO
+	return bool(c.get_value("heroes", "v2", ACTIVO_POR_DEFECTO))
+
+
+# Lo elige en Ajustes: lo guarda y lo pone ya en Engine (los héroes que se creen desde ahora lo usan; los que ya
+# están en pantalla no cambian hasta el próximo combate o la próxima región).
+static func elegir_en_ajustes(si: bool) -> Error:
+	Engine.set_meta("heroes_v2", si)
+	var c := ConfigFile.new()
+	if FileAccess.file_exists("user://ajustes.cfg"):
+		var err := c.load("user://ajustes.cfg")
+		if err != OK:
+			return err
+	c.set_value("heroes", "v2", si)
+	return c.save("user://ajustes.cfg")
 
 
 # El script que hay que usar para un héroe: el v2 si el interruptor está encendido y existe; si no, el mismo.

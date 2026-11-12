@@ -20,7 +20,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 import imgutil as U
 
 TIENE_CARA = {"Kael": True, "Lya": True, "Garon": False}
-EXPRESIONES = ["normal", "cerrados", "sonrisa", "dolor", "grito", "sorpresa", "entrecerrados", "normal2"]
+# 13/11 (pulido): la octava loseta, antes «normal2» (repetida), es «decidido» (párpado de arriba algo bajo y la boca
+# de siempre: determinación, sin gritar).
+EXPRESIONES = ["normal", "cerrados", "sonrisa", "dolor", "grito", "sorpresa", "entrecerrados", "decidido"]
 COLS, FILAS = 4, 2
 ALTO_LOSETA = 320
 
@@ -133,6 +135,7 @@ def crear(heroe, arm, malla, rig, carpeta, evid):
     feats = _rasgos(cfg, x0, x1, z0, z1, tw, th)
     for k, nombre in enumerate(EXPRESIONES):
         t = _expresion(loseta.copy(), nombre, feats)
+        t[:, :, 3] = _mascara(t, loseta)
         c, f = k % COLS, k // COLS
         atlas[f * th:(f + 1) * th, c * tw:(c + 1) * tw] = t
     ruta_atlas = os.path.join(evid, "%s_cara_atlas.png" % heroe.lower())   # va dentro del GLB (WebP)
@@ -162,6 +165,10 @@ def crear(heroe, arm, malla, rig, carpeta, evid):
     nt.links.new(mp.outputs["Vector"], ti.inputs["Vector"])
     nt.links.new(ti.outputs["Color"], bs.inputs["Base Color"])
     nt.links.new(ti.outputs["Alpha"], bs.inputs["Alpha"])
+    try:
+        mat.surface_render_method = 'BLENDED'          # transparencia de la loseta (glTF: alphaMode BLEND)
+    except Exception:
+        mat.blend_method = 'BLEND'
     cara.data.materials.clear()
     cara.data.materials.append(mat)
     c = Cara(cara, mp, tw, th)
@@ -172,6 +179,15 @@ def crear(heroe, arm, malla, rig, carpeta, evid):
 def _proyectar(cara, malla, x0, x1, z0, z1, tw, th, evid):
     sc = bpy.context.scene
     viejo = (sc.render.resolution_x, sc.render.resolution_y, sc.camera, sc.world, sc.render.filter_size)
+    # 13/11 (pulido): sin transformada de vista. Con la de fábrica de Blender 5 (AgX) el color proyectado salía más
+    # gris y oscuro que la textura (la piel blanca, beis): en el juego los párpados y la boca nuevos se veían como
+    # parches más oscuros que la piel de alrededor. Con «Standard», el PNG guarda el color de la textura tal cual.
+    vista_vieja = (sc.view_settings.view_transform, sc.view_settings.look, sc.view_settings.exposure,
+                   sc.view_settings.gamma)
+    sc.view_settings.view_transform = 'Standard'
+    sc.view_settings.look = 'None'
+    sc.view_settings.exposure = 0.0
+    sc.view_settings.gamma = 1.0
     malla.hide_render = True
     # material de emisión con el color base (solo para este render)
     mats = list(cara.data.materials)
@@ -216,6 +232,8 @@ def _proyectar(cara, malla, x0, x1, z0, z1, tw, th, evid):
         cara.data.materials.append(m)
     malla.hide_render = False
     sc.render.resolution_x, sc.render.resolution_y, sc.camera, sc.world, sc.render.filter_size = viejo
+    (sc.view_settings.view_transform, sc.view_settings.look, sc.view_settings.exposure,
+     sc.view_settings.gamma) = vista_vieja
     bpy.data.objects.remove(cam, do_unlink=True)
     return im
 
@@ -236,6 +254,22 @@ def _rasgos(cfg, x0, x1, z0, z1, tw, th):
     c = a_loseta(bx, by)
     w = a_loseta(bx + bw / 2, by)[0] - c[0]
     return {"ojos": ojos, "cejas": cejas, "boca": (c[0], c[1], w)}
+
+
+# 13/11 (pulido): transparencia de cada loseta = solo donde la expresión cambia la cara (ojos y boca), con borde
+# suave. Antes la loseta era opaca entera y, como la malla «cara_v2» va 0,8 mm por delante de la piel, tapaba los
+# mechones del flequillo pegados a la frente y dejaba ver la sombra pintada bajo ellos (en «sonrisa», una banda oscura
+# en la frente y el mechón central cortado). Ahora, fuera de ojos y boca, se ve la cara de siempre.
+def _mascara(t, orig, crecer=3, suavizar=2):
+    d = np.abs(t[:, :, :3] - orig[:, :, :3]).max(axis=2)
+    m = (d > 0.015).astype(np.float32)
+    for _ in range(crecer):
+        p = np.pad(m, 1, mode='edge')
+        m = np.maximum.reduce([m, p[:-2, 1:-1], p[2:, 1:-1], p[1:-1, :-2], p[1:-1, 2:]])
+    for _ in range(suavizar):
+        p = np.pad(m, 1, mode='edge')
+        m = (m * 2 + p[:-2, 1:-1] + p[2:, 1:-1] + p[1:-1, :-2] + p[1:-1, 2:]) / 6.0
+    return np.clip(m, 0, 1)
 
 
 # ------------------------------------------------------------------ pintar
@@ -299,22 +333,55 @@ def _tapar_ojo(img, caja, piel, alto=1.0):
     if alto < 1.0:   # solo la parte de arriba (párpado a media altura)
         yy = np.mgrid[0:h, 0:w][0].astype(np.float32)
         m *= np.clip((cy - ry + 2 * ry * alto) - yy + 1.5, 0, 1)
-    # piel con un poco de sombra del párpado
-    _mezclar(img, m, piel)
-    sombra = _elipse(h, w, cx, cy - ry * 0.2, rx * 0.85, ry * 0.5, 4.0) * 0.12
+    # 13/11 (pulido): la piel del párpado sale de la piel que rodea el ojo (relleno por difusión desde un anillo de
+    # piel clara alrededor), no de un color plano de la mejilla: el color plano era más oscuro y rosado que la piel
+    # junto al ojo y, con la luz del juego, el ojo cerrado se veía como un parche beis.
+    relleno = _piel_alrededor(img, cx, cy, rx, ry)
+    img[:, :, :3] = img[:, :, :3] * (1 - m[:, :, None]) + relleno * m[:, :, None]
+    sombra = _elipse(h, w, cx, cy - ry * 0.2, rx * 0.85, ry * 0.5, 4.0) * 0.06
     _mezclar(img, sombra * m, (piel[0] * 0.85, piel[1] * 0.78, piel[2] * 0.78))
     return img
+
+
+def _piel_alrededor(img, cx, cy, rx, ry, iteraciones=400):
+    """Imagen (h, w, 3) con el interior de la elipse rellenado por difusión desde la piel clara de un anillo a su
+    alrededor (sin pestañas ni cejas: solo los píxeles claros del anillo cuentan como conocidos)."""
+    h, w = img.shape[:2]
+    yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
+    d = np.sqrt(((xx - cx) / max(rx, 1e-3)) ** 2 + ((yy - cy) / max(ry, 1e-3)) ** 2)
+    rgb = img[:, :, :3].copy()
+    luz = rgb.sum(2)
+    anillo = (d >= 1.06) & (d <= 1.4)
+    if anillo.sum() < 8:
+        return rgb
+    claro = luz >= np.percentile(luz[anillo], 55)
+    conocido = anillo & claro
+    desconocido = (d < 1.4) & ~conocido
+    rgb[desconocido] = np.median(rgb[conocido], 0)
+    # solo la caja que rodea la elipse (rápido)
+    y0, y1 = max(0, int(cy - ry * 1.5)), min(h, int(cy + ry * 1.5) + 1)
+    x0, x1 = max(0, int(cx - rx * 1.5)), min(w, int(cx + rx * 1.5) + 1)
+    sub = rgb[y0:y1, x0:x1]
+    des = desconocido[y0:y1, x0:x1]
+    for _ in range(iteraciones):
+        p = np.pad(sub, ((1, 1), (1, 1), (0, 0)), mode='edge')
+        media = (p[:-2, 1:-1] + p[2:, 1:-1] + p[1:-1, :-2] + p[1:-1, 2:]) / 4
+        sub[des] = media[des]
+    rgb[y0:y1, x0:x1] = sub
+    return rgb
 
 
 def _tapar_boca(img, boca, piel):
     cx, cy, w = boca
     h, ww = img.shape[:2]
     m = _elipse(h, ww, cx, cy, w * 1.15, w * 0.55, 3.0)
-    return _mezclar(img, m, piel)
+    relleno = _piel_alrededor(img, cx, cy, w * 1.15, w * 0.55)     # 13/11: como el párpado, sin color plano
+    img[:, :, :3] = img[:, :, :3] * (1 - m[:, :, None]) + relleno * m[:, :, None]
+    return img
 
 
 def _expresion(img, nombre, f):
-    if nombre in ("normal", "normal2"):
+    if nombre == "normal":
         return img
     h, w = img.shape[:2]
     escala = h / 320.0
@@ -366,6 +433,12 @@ def _expresion(img, nombre, f):
             _tapar_ojo(img, o, piel, alto=0.22)
             _mezclar(img, _trazo(h, w, _arco((x0 + x1) / 2, y0 + (y1 - y0) * 0.24, (x1 - x0) * 0.98, -(y1 - y0) * 0.05),
                                  g * 1.2), raya)
+    elif nombre == "decidido":                 # el párpado de arriba baja un poco (mirada firme); la boca, la suya
+        for o, piel in zip(ojos, pieles):
+            x0, y0, x1, y1 = o
+            _tapar_ojo(img, o, piel, alto=0.2)
+            _mezclar(img, _trazo(h, w, _arco((x0 + x1) / 2, y0 + (y1 - y0) * 0.22, (x1 - x0) * 0.98, (y1 - y0) * 0.03),
+                                 g * 1.25), raya)
     elif nombre == "sorpresa":
         _tapar_boca(img, f["boca"], piel_boca)
         m = _elipse(h, w, cx, cy + bw * 0.15, bw * 0.38, bw * 0.48, 1.5)

@@ -103,7 +103,7 @@ func _actualizar_sable(sk: Skeleton3D) -> void:
 func reposo() -> void:
 	super.reposo()
 	if v2 != null and not _muerta:
-		v2.poner_expresion("normal")
+		v2.poner_expresion("normal" if _exploracion else "decidido")   # 13/11: en combate, mirada firme
 
 
 func herida() -> void:

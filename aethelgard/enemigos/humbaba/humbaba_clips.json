@@ -1,0 +1,2652 @@
+{
+ "fps": 30,
+ "huesos": [
+  "raiz",
+  "pelvis",
+  "columna_1",
+  "columna_2",
+  "columna_3",
+  "pecho",
+  "cuello_1",
+  "cuello_2",
+  "cabeza",
+  "mandibula",
+  "ojo",
+  "nucleo",
+  "luz",
+  "corona_c1",
+  "corona_c2",
+  "corona_i1",
+  "corona_i2",
+  "corona_d1",
+  "corona_d2",
+  "hombro_i",
+  "brazo_i",
+  "antebrazo_i",
+  "muneca_i",
+  "palma_i",
+  "dedo1_a_i",
+  "dedo1_b_i",
+  "dedo2_a_i",
+  "dedo2_b_i",
+  "dedo3_a_i",
+  "dedo3_b_i",
+  "pulgar_a_i",
+  "pulgar_b_i",
+  "hombro_d",
+  "brazo_d",
+  "antebrazo_d",
+  "muneca_d",
+  "palma_d",
+  "dedo1_a_d",
+  "dedo1_b_d",
+  "dedo2_a_d",
+  "dedo2_b_d",
+  "dedo3_a_d",
+  "dedo3_b_d",
+  "pulgar_a_d",
+  "pulgar_b_d",
+  "muslo_i",
+  "pierna_i",
+  "tobillo_i",
+  "pie_i",
+  "punta_i",
+  "muslo_d",
+  "pierna_d",
+  "tobillo_d",
+  "pie_d",
+  "punta_d",
+  "guadana",
+  "colgante1_a",
+  "colgante1_b",
+  "colgante1_c",
+  "colgante2_a",
+  "colgante2_b",
+  "colgante2_c",
+  "colgante3_a",
+  "colgante3_b",
+  "colgante3_c",
+  "colgante4_a",
+  "colgante4_b",
+  "colgante4_c",
+  "colgante5_a",
+  "colgante5_b",
+  "colgante5_c",
+  "baston"
+ ],
+ "huesos_deformantes": 72,
+ "controles": [
+  "ctrl_pie_i",
+  "polo_rodilla_i",
+  "ctrl_mano_i",
+  "polo_codo_i",
+  "ctrl_pie_d",
+  "polo_rodilla_d",
+  "ctrl_mano_d",
+  "polo_codo_d",
+  "ctrl_ojo",
+  "ctrl_baston"
+ ],
+ "triangulos": {
+  "alto": 35874,
+  "medio": 19249,
+  "bajo": 12005
+ },
+ "triangulos_por_parte": {
+  "alto": {
+   "tronco": 3064,
+   "cabeza": 182,
+   "frente": 432,
+   "ojo": 388,
+   "boca": 1502,
+   "nucleo": 1368,
+   "brazo_i": 2280,
+   "mano_i": 1070,
+   "brazo_d": 2148,
+   "mano_d": 958,
+   "pierna_i": 1848,
+   "pie_i": 1302,
+   "pierna_d": 1860,
+   "pie_d": 1344,
+   "corona": 4766,
+   "colgantes": 2052,
+   "musgo": 2192,
+   "guadana": 818,
+   "hombrera_i": 420,
+   "brazal_i": 344,
+   "hombrera_d": 420,
+   "brazal_d": 344,
+   "baston": 4772
+  },
+  "medio": {
+   "tronco": 1135,
+   "cabeza": 99,
+   "frente": 432,
+   "ojo": 302,
+   "boca": 1430,
+   "nucleo": 1268,
+   "brazo_i": 780,
+   "mano_i": 796,
+   "brazo_d": 750,
+   "mano_d": 712,
+   "pierna_i": 678,
+   "pie_i": 678,
+   "pierna_d": 668,
+   "pie_d": 714,
+   "corona": 1670,
+   "colgantes": 750,
+   "musgo": 1232,
+   "guadana": 818,
+   "hombrera_i": 420,
+   "brazal_i": 344,
+   "hombrera_d": 420,
+   "brazal_d": 344,
+   "baston": 2809
+  },
+  "bajo": {
+   "tronco": 427,
+   "cabeza": 63,
+   "frente": 432,
+   "ojo": 264,
+   "boca": 1406,
+   "nucleo": 546,
+   "brazo_i": 276,
+   "mano_i": 659,
+   "brazo_d": 254,
+   "mano_d": 589,
+   "pierna_i": 242,
+   "pie_i": 350,
+   "pierna_d": 242,
+   "pie_d": 350,
+   "corona": 546,
+   "colgantes": 200,
+   "musgo": 752,
+   "guadana": 818,
+   "hombrera_i": 420,
+   "brazal_i": 344,
+   "hombrera_d": 420,
+   "brazal_d": 344,
+   "baston": 2061
+  }
+ },
+ "texturas": {
+  "alto": {
+   "archivo": "humbaba_madera.webp",
+   "lado": 2048,
+   "bytes": 170746
+  },
+  "medio": {
+   "archivo": "humbaba_madera_medio.webp",
+   "lado": 1024,
+   "bytes": 76048
+  },
+  "bajo": {
+   "archivo": "humbaba_madera_bajo.webp",
+   "lado": 512,
+   "bytes": 31772
+  }
+ },
+ "clips": {
+  "idle": {
+   "duracion": 4.0,
+   "bucle": true,
+   "eventos": {},
+   "medidas": {
+    "pies_max_m": 0.0,
+    "punta_baston_min_z": -0.08,
+    "puno_min_z": 2.643,
+    "puno_min_t": 0.0,
+    "garra_d_min_z": 99.0,
+    "puntos": {}
+   }
+  },
+  "idle_angry": {
+   "duracion": 2.0,
+   "bucle": true,
+   "eventos": {},
+   "medidas": {
+    "pies_max_m": 0.0,
+    "punta_baston_min_z": 0.044,
+    "puno_min_z": 2.977,
+    "puno_min_t": 0.0,
+    "garra_d_min_z": 99.0,
+    "puntos": {}
+   }
+  },
+  "walk": {
+   "duracion": 2.4,
+   "bucle": true,
+   "eventos": {
+    "paso_d": 0.0,
+    "paso_i": 1.2
+   },
+   "medidas": {
+    "pies_max_m": 2.012,
+    "punta_baston_min_z": -0.05,
+    "puno_min_z": 2.519,
+    "puno_min_t": 0.0,
+    "garra_d_min_z": 99.0,
+    "puntos": {
+     "paso_d": {
+      "ojo": [
+       0.235,
+       10.645,
+       3.395
+      ],
+      "nucleo": [
+       0.146,
+       7.877,
+       2.105
+      ],
+      "boca": [
+       0.217,
+       9.695,
+       3.048
+      ],
+      "mano_i": [
+       2.909,
+       2.519,
+       -0.448
+      ],
+      "mano_d": [
+       -3.39,
+       4.397,
+       4.16
+      ],
+      "baston_punta": [
+       -3.318,
+       0.553,
+       3.925
+      ],
+      "baston_cabeza": [
+       -3.446,
+       11.852,
+       3.901
+      ]
+     },
+     "paso_i": {
+      "ojo": [
+       -0.235,
+       10.645,
+       3.395
+      ],
+      "nucleo": [
+       -0.146,
+       7.877,
+       2.105
+      ],
+      "boca": [
+       -0.217,
+       9.695,
+       3.048
+      ],
+      "mano_i": [
+       2.356,
+       2.774,
+       3.685
+      ],
+      "mano_d": [
+       -3.386,
+       3.809,
+       2.836
+      ],
+      "baston_punta": [
+       -3.323,
+       0.04,
+       3.11
+      ],
+      "baston_cabeza": [
+       -3.444,
+       11.27,
+       1.865
+      ]
+     }
+    }
+   }
+  },
+  "turn_left": {
+   "duracion": 1.6,
+   "bucle": false,
+   "eventos": {
+    "paso_1": 0.75,
+    "paso_2": 1.25
+   },
+   "medidas": {
+    "pies_max_m": 1.366,
+    "punta_baston_min_z": -0.06,
+    "puno_min_z": 2.544,
+    "puno_min_t": 1.0,
+    "garra_d_min_z": 99.0,
+    "puntos": {
+     "paso_1": {
+      "ojo": [
+       1.596,
+       11.091,
+       2.684
+      ],
+      "nucleo": [
+       1.023,
+       8.258,
+       1.735
+      ],
+      "boca": [
+       1.453,
+       10.124,
+       2.425
+      ],
+      "mano_i": [
+       3.314,
+       2.721,
+       -0.403
+      ],
+      "mano_d": [
+       -2.031,
+       3.715,
+       4.279
+      ],
+      "baston_punta": [
+       -1.981,
+       -0.058,
+       4.255
+      ],
+      "baston_cabeza": [
+       -2.152,
+       11.236,
+       3.936
+      ]
+     },
+     "paso_2": {
+      "ojo": [
+       2.187,
+       11.102,
+       2.232
+      ],
+      "nucleo": [
+       1.409,
+       8.271,
+       1.438
+      ],
+      "boca": [
+       1.979,
+       10.135,
+       2.02
+      ],
+      "mano_i": [
+       3.096,
+       2.643,
+       -0.883
+      ],
+      "mano_d": [
+       -0.157,
+       3.713,
+       4.698
+      ],
+      "baston_punta": [
+       -0.117,
+       -0.059,
+       4.655
+      ],
+      "baston_cabeza": [
+       -0.451,
+       11.234,
+       4.461
+      ]
+     }
+    }
+   }
+  },
+  "turn_right": {
+   "duracion": 1.6,
+   "bucle": false,
+   "eventos": {
+    "paso_1": 0.75,
+    "paso_2": 1.25
+   },
+   "medidas": {
+    "pies_max_m": 1.366,
+    "punta_baston_min_z": -0.151,
+    "puno_min_z": 2.412,
+    "puno_min_t": 0.5,
+    "garra_d_min_z": 99.0,
+    "puntos": {
+     "paso_1": {
+      "ojo": [
+       -1.596,
+       11.091,
+       2.684
+      ],
+      "nucleo": [
+       -1.023,
+       8.258,
+       1.735
+      ],
+      "boca": [
+       -1.453,
+       10.124,
+       2.425
+      ],
+      "mano_i": [
+       1.346,
+       2.547,
+       2.804
+      ],
+      "mano_d": [
+       -4.271,
+       3.623,
+       1.619
+      ],
+      "baston_punta": [
+       -4.209,
+       -0.135,
+       1.621
+      ],
+      "baston_cabeza": [
+       -4.253,
+       11.163,
+       1.396
+      ]
+     },
+     "paso_2": {
+      "ojo": [
+       -2.187,
+       11.102,
+       2.232
+      ],
+      "nucleo": [
+       -1.409,
+       8.271,
+       1.438
+      ],
+      "boca": [
+       -1.979,
+       10.135,
+       2.02
+      ],
+      "mano_i": [
+       0.946,
+       2.643,
+       3.078
+      ],
+      "mano_d": [
+       -4.701,
+       3.713,
+       -0.061
+      ],
+      "baston_punta": [
+       -4.657,
+       -0.059,
+       -0.022
+      ],
+      "baston_cabeza": [
+       -4.469,
+       11.234,
+       -0.36
+      ]
+     }
+    }
+   }
+  },
+  "roar": {
+   "duracion": 3.0,
+   "bucle": false,
+   "eventos": {
+    "rugido": 1.05,
+    "fin_rugido": 2.35
+   },
+   "medidas": {
+    "pies_max_m": 0.0,
+    "punta_baston_min_z": -0.06,
+    "puno_min_z": 2.208,
+    "puno_min_t": 0.467,
+    "garra_d_min_z": 99.0,
+    "puntos": {
+     "rugido": {
+      "ojo": [
+       0.001,
+       12.394,
+       -0.57
+      ],
+      "nucleo": [
+       0.0,
+       9.25,
+       1.521
+      ],
+      "boca": [
+       0.001,
+       11.325,
+       0.468
+      ],
+      "mano_i": [
+       7.631,
+       6.412,
+       1.57
+      ],
+      "mano_d": [
+       -4.031,
+       5.447,
+       3.907
+      ],
+      "baston_punta": [
+       -3.233,
+       1.664,
+       3.776
+      ],
+      "baston_cabeza": [
+       -5.266,
+       12.775,
+       3.463
+      ]
+     },
+     "fin_rugido": {
+      "ojo": [
+       0.0,
+       12.222,
+       1.446
+      ],
+      "nucleo": [
+       0.0,
+       8.954,
+       1.762
+      ],
+      "boca": [
+       0.0,
+       10.968,
+       1.598
+      ],
+      "mano_i": [
+       7.631,
+       6.061,
+       0.973
+      ],
+      "mano_d": [
+       -4.028,
+       5.528,
+       3.964
+      ],
+      "baston_punta": [
+       -3.22,
+       1.728,
+       3.837
+      ],
+      "baston_cabeza": [
+       -5.276,
+       12.833,
+       3.463
+      ]
+     }
+    }
+   }
+  },
+  "hit_light": {
+   "duracion": 0.7,
+   "bucle": false,
+   "eventos": {
+    "golpe": 0.04
+   },
+   "medidas": {
+    "pies_max_m": 0.0,
+    "punta_baston_min_z": -0.16,
+    "puno_min_z": 2.643,
+    "puno_min_t": 0.0,
+    "garra_d_min_z": 99.0,
+    "puntos": {
+     "golpe": {
+      "ojo": [
+       -0.0,
+       11.132,
+       3.091
+      ],
+      "nucleo": [
+       0.0,
+       8.282,
+       2.007
+      ],
+      "boca": [
+       0.0,
+       10.158,
+       2.805
+      ],
+      "mano_i": [
+       2.862,
+       2.656,
+       1.567
+      ],
+      "mano_d": [
+       -3.401,
+       3.71,
+       3.241
+      ],
+      "baston_punta": [
+       -3.342,
+       -0.062,
+       3.237
+      ],
+      "baston_cabeza": [
+       -3.444,
+       11.231,
+       2.87
+      ]
+     }
+    }
+   }
+  },
+  "hit_heavy": {
+   "duracion": 1.3,
+   "bucle": false,
+   "eventos": {
+    "golpe": 0.04,
+    "pisada": 0.5
+   },
+   "medidas": {
+    "pies_max_m": 0.9,
+    "punta_baston_min_z": -0.113,
+    "puno_min_z": 2.503,
+    "puno_min_t": 0.9,
+    "garra_d_min_z": 99.0,
+    "puntos": {
+     "golpe": {
+      "ojo": [
+       0.0,
+       11.133,
+       3.085
+      ],
+      "nucleo": [
+       0.0,
+       8.283,
+       2.003
+      ],
+      "boca": [
+       0.0,
+       10.159,
+       2.799
+      ],
+      "mano_i": [
+       2.879,
+       2.66,
+       1.578
+      ],
+      "mano_d": [
+       -3.401,
+       3.71,
+       3.241
+      ],
+      "baston_punta": [
+       -3.342,
+       -0.062,
+       3.237
+      ],
+      "baston_cabeza": [
+       -3.444,
+       11.231,
+       2.87
+      ]
+     },
+     "pisada": {
+      "ojo": [
+       -0.0,
+       11.425,
+       1.866
+      ],
+      "nucleo": [
+       0.0,
+       8.254,
+       1.482
+      ],
+      "boca": [
+       0.0,
+       10.296,
+       1.818
+      ],
+      "mano_i": [
+       6.736,
+       4.865,
+       2.129
+      ],
+      "mano_d": [
+       -3.397,
+       3.74,
+       3.289
+      ],
+      "baston_punta": [
+       -3.335,
+       -0.037,
+       3.291
+      ],
+      "baston_cabeza": [
+       -3.444,
+       11.254,
+       2.872
+      ]
+     }
+    }
+   }
+  },
+  "stagger": {
+   "duracion": 2.4,
+   "bucle": false,
+   "eventos": {
+    "golpe": 0.04,
+    "apoyo": 0.75
+   },
+   "medidas": {
+    "pies_max_m": 0.0,
+    "punta_baston_min_z": -0.166,
+    "puno_min_z": 0.925,
+    "puno_min_t": 1.433,
+    "garra_d_min_z": 99.0,
+    "puntos": {
+     "golpe": {
+      "ojo": [
+       -0.0,
+       11.113,
+       3.112
+      ],
+      "nucleo": [
+       0.0,
+       8.275,
+       2.01
+      ],
+      "boca": [
+       0.0,
+       10.144,
+       2.819
+      ],
+      "mano_i": [
+       2.83,
+       2.647,
+       1.553
+      ],
+      "mano_d": [
+       -3.401,
+       3.712,
+       3.244
+      ],
+      "baston_punta": [
+       -3.342,
+       -0.061,
+       3.241
+      ],
+      "baston_cabeza": [
+       -3.444,
+       11.233,
+       2.87
+      ]
+     },
+     "apoyo": {
+      "ojo": [
+       0.0,
+       6.469,
+       4.59
+      ],
+      "nucleo": [
+       0.0,
+       5.984,
+       2.48
+      ],
+      "boca": [
+       0.0,
+       6.47,
+       3.49
+      ],
+      "mano_i": [
+       2.651,
+       0.925,
+       3.853
+      ],
+      "mano_d": [
+       -3.323,
+       4.269,
+       3.76
+      ],
+      "baston_punta": [
+       -3.225,
+       0.385,
+       3.813
+      ],
+      "baston_cabeza": [
+       -3.446,
+       11.644,
+       2.868
+      ]
+     }
+    }
+   }
+  },
+  "phase_transition": {
+   "duracion": 3.6,
+   "bucle": false,
+   "eventos": {
+    "agarra": 0.5,
+    "cambio": 2.05,
+    "rugido": 2.1
+   },
+   "medidas": {
+    "pies_max_m": 0.381,
+    "punta_baston_min_z": -0.06,
+    "puno_min_z": 2.636,
+    "puno_min_t": 0.067,
+    "garra_d_min_z": 99.0,
+    "puntos": {
+     "agarra": {
+      "ojo": [
+       -0.0,
+       7.728,
+       4.192
+      ],
+      "nucleo": [
+       0.0,
+       7.031,
+       2.177
+      ],
+      "boca": [
+       0.0,
+       7.659,
+       3.064
+      ],
+      "mano_i": [
+       1.643,
+       9.437,
+       3.903
+      ],
+      "mano_d": [
+       -3.372,
+       4.045,
+       3.619
+      ],
+      "baston_punta": [
+       -3.296,
+       0.209,
+       3.656
+      ],
+      "baston_cabeza": [
+       -3.445,
+       11.481,
+       2.876
+      ]
+     },
+     "cambio": {
+      "ojo": [
+       -0.0,
+       12.178,
+       1.032
+      ],
+      "nucleo": [
+       0.0,
+       8.75,
+       1.786
+      ],
+      "boca": [
+       0.0,
+       10.812,
+       1.434
+      ],
+      "mano_i": [
+       6.129,
+       4.71,
+       2.116
+      ],
+      "mano_d": [
+       -3.903,
+       5.241,
+       3.896
+      ],
+      "baston_punta": [
+       -3.231,
+       1.427,
+       3.8
+      ],
+      "baston_cabeza": [
+       -4.935,
+       12.589,
+       3.353
+      ]
+     },
+     "rugido": {
+      "ojo": [
+       0.006,
+       12.395,
+       -0.565
+      ],
+      "nucleo": [
+       0.0,
+       9.25,
+       1.521
+      ],
+      "boca": [
+       0.005,
+       11.326,
+       0.469
+      ],
+      "mano_i": [
+       7.631,
+       6.412,
+       1.57
+      ],
+      "mano_d": [
+       -4.031,
+       5.447,
+       3.907
+      ],
+      "baston_punta": [
+       -3.233,
+       1.664,
+       3.776
+      ],
+      "baston_cabeza": [
+       -5.266,
+       12.775,
+       3.463
+      ]
+     }
+    }
+   }
+  },
+  "death": {
+   "duracion": 4.6,
+   "bucle": false,
+   "eventos": {
+    "golpe": 0.04,
+    "grito": 0.9,
+    "rodillas": 1.5,
+    "caida": 3.75
+   },
+   "medidas": {
+    "pies_max_m": 0.001,
+    "punta_baston_min_z": -1.362,
+    "puno_min_z": -0.447,
+    "puno_min_t": 3.6,
+    "garra_d_min_z": 99.0,
+    "puntos": {
+     "golpe": {
+      "ojo": [
+       0.0,
+       11.105,
+       3.121
+      ],
+      "nucleo": [
+       0.0,
+       8.272,
+       2.013
+      ],
+      "boca": [
+       0.0,
+       10.138,
+       2.826
+      ],
+      "mano_i": [
+       2.83,
+       2.644,
+       1.541
+      ],
+      "mano_d": [
+       -3.401,
+       3.713,
+       3.245
+      ],
+      "baston_punta": [
+       -3.342,
+       -0.06,
+       3.242
+      ],
+      "baston_cabeza": [
+       -3.444,
+       11.234,
+       2.871
+      ]
+     },
+     "grito": {
+      "ojo": [
+       -0.0,
+       12.029,
+       -0.217
+      ],
+      "nucleo": [
+       0.0,
+       8.748,
+       1.481
+      ],
+      "boca": [
+       0.0,
+       10.922,
+       0.698
+      ],
+      "mano_i": [
+       6.063,
+       5.779,
+       3.926
+      ],
+      "mano_d": [
+       -3.381,
+       3.736,
+       3.001
+      ],
+      "baston_punta": [
+       -3.31,
+       -0.022,
+       2.947
+      ],
+      "baston_cabeza": [
+       -3.443,
+       11.277,
+       2.855
+      ]
+     },
+     "rodillas": {
+      "ojo": [
+       -0.0,
+       6.883,
+       4.151
+      ],
+      "nucleo": [
+       0.0,
+       5.748,
+       2.355
+      ],
+      "boca": [
+       0.0,
+       6.581,
+       3.032
+      ],
+      "mano_i": [
+       2.756,
+       0.217,
+       0.737
+      ],
+      "mano_d": [
+       -4.119,
+       0.954,
+       1.521
+      ],
+      "baston_punta": [
+       -0.011,
+       0.728,
+       1.191
+      ],
+      "baston_cabeza": [
+       -11.155,
+       2.305,
+       2.194
+      ]
+     },
+     "caida": {
+      "ojo": [
+       -0.0,
+       1.471,
+       7.314
+      ],
+      "nucleo": [
+       0.0,
+       1.615,
+       3.996
+      ],
+      "boca": [
+       0.0,
+       1.275,
+       6.093
+      ],
+      "mano_i": [
+       0.249,
+       -0.378,
+       10.007
+      ],
+      "mano_d": [
+       -0.168,
+       -0.685,
+       9.135
+      ],
+      "baston_punta": [
+       2.803,
+       -1.354,
+       11.404
+      ],
+      "baston_cabeza": [
+       -5.824,
+       1.098,
+       4.53
+      ]
+     }
+    }
+   }
+  },
+  "atk_puno": {
+   "duracion": 2.6,
+   "bucle": false,
+   "eventos": {
+    "aviso": 0.9,
+    "impacto": 1.5
+   },
+   "medidas": {
+    "pies_max_m": 0.5,
+    "punta_baston_min_z": -0.19,
+    "puno_min_z": 1.791,
+    "puno_min_t": 1.5,
+    "garra_d_min_z": 99.0,
+    "puntos": {
+     "aviso": {
+      "ojo": [
+       0.141,
+       12.107,
+       0.121
+      ],
+      "nucleo": [
+       0.322,
+       8.983,
+       1.305
+      ],
+      "boca": [
+       0.202,
+       11.164,
+       0.556
+      ],
+      "mano_i": [
+       0.532,
+       13.539,
+       -4.364
+      ],
+      "mano_d": [
+       -3.402,
+       3.754,
+       2.857
+      ],
+      "baston_punta": [
+       -3.328,
+       0.002,
+       2.781
+      ],
+      "baston_cabeza": [
+       -3.444,
+       11.302,
+       2.847
+      ]
+     },
+     "impacto": {
+      "ojo": [
+       -0.491,
+       7.735,
+       4.911
+      ],
+      "nucleo": [
+       -0.253,
+       6.415,
+       2.719
+      ],
+      "boca": [
+       -0.399,
+       7.255,
+       3.866
+      ],
+      "mano_i": [
+       2.283,
+       1.791,
+       5.713
+      ],
+      "mano_d": [
+       -3.347,
+       4.138,
+       3.685
+      ],
+      "baston_punta": [
+       -3.267,
+       0.282,
+       3.729
+      ],
+      "baston_cabeza": [
+       -3.445,
+       11.548,
+       2.873
+      ]
+     }
+    }
+   }
+  },
+  "atk_raices": {
+   "duracion": 2.8,
+   "bucle": false,
+   "eventos": {
+    "aviso": 0.6,
+    "hundir": 1.35,
+    "impacto": 1.85
+   },
+   "medidas": {
+    "pies_max_m": 0.4,
+    "punta_baston_min_z": -0.164,
+    "puno_min_z": 1.162,
+    "puno_min_t": 2.133,
+    "garra_d_min_z": 99.0,
+    "puntos": {
+     "aviso": {
+      "ojo": [
+       -0.0,
+       12.131,
+       0.308
+      ],
+      "nucleo": [
+       0.0,
+       8.948,
+       1.431
+      ],
+      "boca": [
+       0.0,
+       11.344,
+       0.723
+      ],
+      "mano_i": [
+       1.011,
+       15.344,
+       0.636
+      ],
+      "mano_d": [
+       -3.332,
+       3.898,
+       2.898
+      ],
+      "baston_punta": [
+       -3.239,
+       0.141,
+       2.794
+      ],
+      "baston_cabeza": [
+       -3.442,
+       11.439,
+       2.848
+      ]
+     },
+     "hundir": {
+      "ojo": [
+       0.0,
+       8.369,
+       4.612
+      ],
+      "nucleo": [
+       0.0,
+       6.637,
+       2.576
+      ],
+      "boca": [
+       0.0,
+       7.747,
+       3.775
+      ],
+      "mano_i": [
+       2.307,
+       1.434,
+       3.854
+      ],
+      "mano_d": [
+       -3.381,
+       4.084,
+       3.646
+      ],
+      "baston_punta": [
+       -3.303,
+       0.24,
+       3.686
+      ],
+      "baston_cabeza": [
+       -3.446,
+       11.51,
+       2.875
+      ]
+     },
+     "impacto": {
+      "ojo": [
+       -0.0,
+       7.345,
+       4.911
+      ],
+      "nucleo": [
+       0.0,
+       6.191,
+       2.651
+      ],
+      "boca": [
+       0.0,
+       6.956,
+       3.915
+      ],
+      "mano_i": [
+       2.019,
+       1.23,
+       4.618
+      ],
+      "mano_d": [
+       -3.386,
+       4.126,
+       3.674
+      ],
+      "baston_punta": [
+       -3.304,
+       0.272,
+       3.717
+      ],
+      "baston_cabeza": [
+       -3.446,
+       11.54,
+       2.874
+      ]
+     }
+    }
+   }
+  },
+  "atk_aliento": {
+   "duracion": 3.4,
+   "bucle": false,
+   "eventos": {
+    "aviso": 0.9,
+    "aliento_inicio": 1.45,
+    "impacto": 1.8,
+    "aliento_fin": 2.7
+   },
+   "medidas": {
+    "pies_max_m": 0.0,
+    "punta_baston_min_z": -0.167,
+    "puno_min_z": 2.625,
+    "puno_min_t": 3.333,
+    "garra_d_min_z": 99.0,
+    "puntos": {
+     "aviso": {
+      "ojo": [
+       0.0,
+       12.35,
+       -0.204
+      ],
+      "nucleo": [
+       0.0,
+       9.075,
+       1.316
+      ],
+      "boca": [
+       0.0,
+       11.525,
+       0.432
+      ],
+      "mano_i": [
+       5.359,
+       5.335,
+       3.753
+      ],
+      "mano_d": [
+       -3.296,
+       4.035,
+       2.835
+      ],
+      "baston_punta": [
+       -3.186,
+       0.278,
+       2.688
+      ],
+      "baston_cabeza": [
+       -3.444,
+       11.574,
+       2.846
+      ]
+     },
+     "aliento_inicio": {
+      "ojo": [
+       0.001,
+       7.788,
+       4.084
+      ],
+      "nucleo": [
+       0.0,
+       7.39,
+       2.437
+      ],
+      "boca": [
+       0.0,
+       8.146,
+       2.762
+      ],
+      "mano_i": [
+       6.433,
+       4.123,
+       -0.233
+      ],
+      "mano_d": [
+       -3.401,
+       3.907,
+       3.494
+      ],
+      "baston_punta": [
+       -3.335,
+       0.099,
+       3.518
+      ],
+      "baston_cabeza": [
+       -3.445,
+       11.38,
+       2.877
+      ]
+     },
+     "impacto": {
+      "ojo": [
+       0.026,
+       7.789,
+       4.084
+      ],
+      "nucleo": [
+       0.0,
+       7.39,
+       2.437
+      ],
+      "boca": [
+       0.007,
+       8.148,
+       2.76
+      ],
+      "mano_i": [
+       6.433,
+       4.123,
+       -0.233
+      ],
+      "mano_d": [
+       -3.401,
+       3.907,
+       3.494
+      ],
+      "baston_punta": [
+       -3.335,
+       0.099,
+       3.518
+      ],
+      "baston_cabeza": [
+       -3.445,
+       11.38,
+       2.877
+      ]
+     },
+     "aliento_fin": {
+      "ojo": [
+       0.0,
+       7.788,
+       4.084
+      ],
+      "nucleo": [
+       0.0,
+       7.39,
+       2.437
+      ],
+      "boca": [
+       0.0,
+       8.141,
+       2.765
+      ],
+      "mano_i": [
+       6.433,
+       4.123,
+       -0.233
+      ],
+      "mano_d": [
+       -3.401,
+       3.907,
+       3.494
+      ],
+      "baston_punta": [
+       -3.335,
+       0.099,
+       3.518
+      ],
+      "baston_cabeza": [
+       -3.445,
+       11.38,
+       2.877
+      ]
+     }
+    }
+   }
+  },
+  "atk_guadana": {
+   "duracion": 2.4,
+   "bucle": false,
+   "eventos": {
+    "crece": 0.2,
+    "aviso": 0.55,
+    "impacto": 1.05,
+    "recoge": 1.95
+   },
+   "medidas": {
+    "pies_max_m": 0.364,
+    "punta_baston_min_z": -0.06,
+    "puno_min_z": 2.312,
+    "puno_min_t": 1.9,
+    "garra_d_min_z": 99.0,
+    "puntos": {
+     "crece": {
+      "ojo": [
+       0.0,
+       11.102,
+       3.125
+      ],
+      "nucleo": [
+       0.0,
+       8.271,
+       2.014
+      ],
+      "boca": [
+       0.0,
+       10.136,
+       2.828
+      ],
+      "mano_i": [
+       2.83,
+       2.643,
+       1.536
+      ],
+      "mano_d": [
+       -3.401,
+       3.713,
+       3.246
+      ],
+      "baston_punta": [
+       -3.342,
+       -0.06,
+       3.243
+      ],
+      "baston_cabeza": [
+       -3.444,
+       11.234,
+       2.871
+      ]
+     },
+     "aviso": {
+      "ojo": [
+       0.765,
+       11.408,
+       2.091
+      ],
+      "nucleo": [
+       0.629,
+       8.256,
+       1.73
+      ],
+      "boca": [
+       0.769,
+       10.399,
+       2.031
+      ],
+      "mano_i": [
+       7.906,
+       8.372,
+       -3.312
+      ],
+      "mano_d": [
+       -3.541,
+       3.725,
+       3.22
+      ],
+      "baston_punta": [
+       -3.49,
+       -0.051,
+       3.216
+      ],
+      "baston_cabeza": [
+       -3.452,
+       11.244,
+       2.869
+      ]
+     },
+     "impacto": {
+      "ojo": [
+       -0.133,
+       9.927,
+       4.038
+      ],
+      "nucleo": [
+       -0.079,
+       7.42,
+       2.451
+      ],
+      "boca": [
+       -0.112,
+       8.901,
+       3.338
+      ],
+      "mano_i": [
+       2.546,
+       6.039,
+       7.853
+      ],
+      "mano_d": [
+       -3.379,
+       3.954,
+       3.542
+      ],
+      "baston_punta": [
+       -3.309,
+       0.136,
+       3.57
+      ],
+      "baston_cabeza": [
+       -3.445,
+       11.414,
+       2.877
+      ]
+     },
+     "recoge": {
+      "ojo": [
+       -0.43,
+       10.926,
+       3.267
+      ],
+      "nucleo": [
+       -0.28,
+       8.058,
+       2.195
+      ],
+      "boca": [
+       -0.402,
+       9.956,
+       2.984
+      ],
+      "mano_i": [
+       2.294,
+       2.371,
+       2.385
+      ],
+      "mano_d": [
+       -3.37,
+       3.783,
+       3.355
+      ],
+      "baston_punta": [
+       -3.306,
+       -0.002,
+       3.363
+      ],
+      "baston_cabeza": [
+       -3.443,
+       11.286,
+       2.875
+      ]
+     }
+    }
+   }
+  },
+  "atk_ojo": {
+   "duracion": 3.4,
+   "bucle": false,
+   "eventos": {
+    "aviso": 0.6,
+    "carga": 1.2,
+    "rayo_inicio": 2.0,
+    "impacto": 2.2,
+    "rayo_fin": 2.8
+   },
+   "medidas": {
+    "pies_max_m": 0.0,
+    "punta_baston_min_z": -0.182,
+    "puno_min_z": 2.643,
+    "puno_min_t": 0.0,
+    "garra_d_min_z": 99.0,
+    "puntos": {
+     "aviso": {
+      "ojo": [
+       -0.0,
+       12.55,
+       0.327
+      ],
+      "nucleo": [
+       0.0,
+       9.201,
+       1.495
+      ],
+      "boca": [
+       0.0,
+       11.633,
+       0.878
+      ],
+      "mano_i": [
+       6.176,
+       5.825,
+       3.573
+      ],
+      "mano_d": [
+       -3.284,
+       4.058,
+       2.776
+      ],
+      "baston_punta": [
+       -3.171,
+       0.306,
+       2.623
+      ],
+      "baston_cabeza": [
+       -3.444,
+       11.601,
+       2.845
+      ]
+     },
+     "carga": {
+      "ojo": [
+       -0.0,
+       12.55,
+       0.327
+      ],
+      "nucleo": [
+       0.0,
+       9.201,
+       1.495
+      ],
+      "boca": [
+       0.0,
+       11.633,
+       0.878
+      ],
+      "mano_i": [
+       6.176,
+       5.825,
+       3.573
+      ],
+      "mano_d": [
+       -3.284,
+       4.058,
+       2.776
+      ],
+      "baston_punta": [
+       -3.171,
+       0.306,
+       2.623
+      ],
+      "baston_cabeza": [
+       -3.444,
+       11.601,
+       2.845
+      ]
+     },
+     "rayo_inicio": {
+      "ojo": [
+       -0.0,
+       10.164,
+       3.236
+      ],
+      "nucleo": [
+       0.0,
+       8.528,
+       1.943
+      ],
+      "boca": [
+       0.0,
+       9.704,
+       2.553
+      ],
+      "mano_i": [
+       6.176,
+       4.338,
+       1.88
+      ],
+      "mano_d": [
+       -3.407,
+       3.568,
+       2.909
+      ],
+      "baston_punta": [
+       -3.354,
+       -0.182,
+       2.87
+      ],
+      "baston_cabeza": [
+       -3.444,
+       11.118,
+       2.851
+      ]
+     },
+     "impacto": {
+      "ojo": [
+       0.0,
+       10.186,
+       3.239
+      ],
+      "nucleo": [
+       0.0,
+       8.528,
+       1.943
+      ],
+      "boca": [
+       0.0,
+       9.715,
+       2.565
+      ],
+      "mano_i": [
+       6.176,
+       4.338,
+       1.88
+      ],
+      "mano_d": [
+       -3.407,
+       3.568,
+       2.909
+      ],
+      "baston_punta": [
+       -3.354,
+       -0.182,
+       2.87
+      ],
+      "baston_cabeza": [
+       -3.444,
+       11.118,
+       2.851
+      ]
+     },
+     "rayo_fin": {
+      "ojo": [
+       -0.0,
+       10.13,
+       3.23
+      ],
+      "nucleo": [
+       0.0,
+       8.528,
+       1.943
+      ],
+      "boca": [
+       0.0,
+       9.689,
+       2.535
+      ],
+      "mano_i": [
+       6.176,
+       4.338,
+       1.88
+      ],
+      "mano_d": [
+       -3.407,
+       3.568,
+       2.909
+      ],
+      "baston_punta": [
+       -3.354,
+       -0.182,
+       2.87
+      ],
+      "baston_cabeza": [
+       -3.444,
+       11.118,
+       2.851
+      ]
+     }
+    }
+   }
+  },
+  "atk_llamada": {
+   "duracion": 3.0,
+   "bucle": false,
+   "eventos": {
+    "aviso": 0.7,
+    "impacto": 1.45,
+    "invocar": 1.8
+   },
+   "medidas": {
+    "pies_max_m": 0.0,
+    "punta_baston_min_z": -0.06,
+    "puno_min_z": 2.062,
+    "puno_min_t": 1.6,
+    "garra_d_min_z": 99.0,
+    "puntos": {
+     "aviso": {
+      "ojo": [
+       -0.0,
+       12.407,
+       -0.173
+      ],
+      "nucleo": [
+       0.0,
+       9.183,
+       1.342
+      ],
+      "boca": [
+       0.0,
+       11.441,
+       0.519
+      ],
+      "mano_i": [
+       6.234,
+       5.585,
+       3.312
+      ],
+      "mano_d": [
+       -2.383,
+       9.746,
+       4.17
+      ],
+      "baston_punta": [
+       -2.399,
+       5.528,
+       4.234
+      ],
+      "baston_cabeza": [
+       -2.561,
+       16.778,
+       3.181
+      ]
+     },
+     "impacto": {
+      "ojo": [
+       -0.0,
+       8.835,
+       4.523
+      ],
+      "nucleo": [
+       0.0,
+       7.036,
+       2.551
+      ],
+      "boca": [
+       0.0,
+       8.134,
+       3.426
+      ],
+      "mano_i": [
+       4.586,
+       2.097,
+       0.802
+      ],
+      "mano_d": [
+       -2.332,
+       4.057,
+       4.709
+      ],
+      "baston_punta": [
+       -2.341,
+       0.205,
+       4.919
+      ],
+      "baston_cabeza": [
+       -2.447,
+       11.426,
+       3.587
+      ]
+     },
+     "invocar": {
+      "ojo": [
+       -0.0,
+       8.801,
+       4.523
+      ],
+      "nucleo": [
+       0.0,
+       7.002,
+       2.551
+      ],
+      "boca": [
+       0.0,
+       8.1,
+       3.426
+      ],
+      "mano_i": [
+       4.586,
+       2.063,
+       0.802
+      ],
+      "mano_d": [
+       -2.33,
+       4.074,
+       4.718
+      ],
+      "baston_punta": [
+       -2.339,
+       0.218,
+       4.929
+      ],
+      "baston_cabeza": [
+       -2.447,
+       11.438,
+       3.586
+      ]
+     }
+    }
+   }
+  },
+  "atk_abrazo": {
+   "duracion": 3.8,
+   "bucle": false,
+   "eventos": {
+    "aviso": 0.75,
+    "agarre": 1.15,
+    "apretar_1": 2.2,
+    "apretar_2": 2.8,
+    "soltar": 3.15
+   },
+   "medidas": {
+    "pies_max_m": 0.45,
+    "punta_baston_min_z": -0.173,
+    "puno_min_z": 2.375,
+    "puno_min_t": 1.067,
+    "garra_d_min_z": 99.0,
+    "puntos": {
+     "aviso": {
+      "ojo": [
+       0.219,
+       11.991,
+       0.808
+      ],
+      "nucleo": [
+       0.251,
+       8.891,
+       1.405
+      ],
+      "boca": [
+       0.227,
+       11.162,
+       1.045
+      ],
+      "mano_i": [
+       7.448,
+       5.673,
+       0.107
+      ],
+      "mano_d": [
+       -3.405,
+       3.716,
+       2.879
+      ],
+      "baston_punta": [
+       -3.335,
+       -0.035,
+       2.812
+      ],
+      "baston_cabeza": [
+       -3.444,
+       11.264,
+       2.848
+      ]
+     },
+     "agarre": {
+      "ojo": [
+       -0.403,
+       7.896,
+       5.012
+      ],
+      "nucleo": [
+       -0.203,
+       6.621,
+       2.898
+      ],
+      "boca": [
+       -0.319,
+       7.491,
+       4.057
+      ],
+      "mano_i": [
+       0.803,
+       3.035,
+       6.796
+      ],
+      "mano_d": [
+       -3.382,
+       4.024,
+       3.601
+      ],
+      "baston_punta": [
+       -3.309,
+       0.192,
+       3.636
+      ],
+      "baston_cabeza": [
+       -3.445,
+       11.465,
+       2.876
+      ]
+     },
+     "apretar_1": {
+      "ojo": [
+       0.012,
+       10.652,
+       3.079
+      ],
+      "nucleo": [
+       0.0,
+       8.304,
+       2.132
+      ],
+      "boca": [
+       0.0,
+       9.665,
+       2.242
+      ],
+      "mano_i": [
+       1.382,
+       9.383,
+       4.05
+      ],
+      "mano_d": [
+       -3.397,
+       3.761,
+       3.32
+      ],
+      "baston_punta": [
+       -3.336,
+       -0.02,
+       3.325
+      ],
+      "baston_cabeza": [
+       -3.444,
+       11.27,
+       2.873
+      ]
+     },
+     "apretar_2": {
+      "ojo": [
+       0.012,
+       10.652,
+       3.079
+      ],
+      "nucleo": [
+       0.0,
+       8.304,
+       2.132
+      ],
+      "boca": [
+       0.0,
+       9.665,
+       2.242
+      ],
+      "mano_i": [
+       1.382,
+       9.383,
+       4.05
+      ],
+      "mano_d": [
+       -3.397,
+       3.761,
+       3.32
+      ],
+      "baston_punta": [
+       -3.336,
+       -0.02,
+       3.325
+      ],
+      "baston_cabeza": [
+       -3.444,
+       11.27,
+       2.873
+      ]
+     },
+     "soltar": {
+      "ojo": [
+       0.587,
+       10.025,
+       4.07
+      ],
+      "nucleo": [
+       0.333,
+       7.649,
+       2.468
+      ],
+      "boca": [
+       0.506,
+       9.198,
+       3.484
+      ],
+      "mano_i": [
+       2.966,
+       4.247,
+       5.454
+      ],
+      "mano_d": [
+       -3.481,
+       3.805,
+       3.359
+      ],
+      "baston_punta": [
+       -3.423,
+       0.016,
+       3.37
+      ],
+      "baston_cabeza": [
+       -3.449,
+       11.305,
+       2.874
+      ]
+     }
+    }
+   }
+  },
+  "requiem_inicio": {
+   "duracion": 2.4,
+   "bucle": false,
+   "eventos": {
+    "aviso": 0.5,
+    "hundir": 1.8,
+    "raices_arena": 2.0
+   },
+   "medidas": {
+    "pies_max_m": 0.381,
+    "punta_baston_min_z": -1.565,
+    "puno_min_z": 0.294,
+    "puno_min_t": 1.8,
+    "garra_d_min_z": 99.0,
+    "puntos": {
+     "aviso": {
+      "ojo": [
+       -0.0,
+       12.394,
+       -0.57
+      ],
+      "nucleo": [
+       0.0,
+       9.25,
+       1.521
+      ],
+      "boca": [
+       0.0,
+       11.329,
+       0.468
+      ],
+      "mano_i": [
+       7.631,
+       6.412,
+       1.57
+      ],
+      "mano_d": [
+       -4.031,
+       5.447,
+       3.907
+      ],
+      "baston_punta": [
+       -3.233,
+       1.664,
+       3.776
+      ],
+      "baston_cabeza": [
+       -5.266,
+       12.775,
+       3.463
+      ]
+     },
+     "hundir": {
+      "ojo": [
+       0.0,
+       6.501,
+       4.798
+      ],
+      "nucleo": [
+       0.0,
+       5.368,
+       2.413
+      ],
+      "boca": [
+       0.0,
+       6.134,
+       3.794
+      ],
+      "mano_i": [
+       2.154,
+       0.294,
+       4.033
+      ],
+      "mano_d": [
+       -2.137,
+       2.279,
+       4.796
+      ],
+      "baston_punta": [
+       -2.087,
+       -1.565,
+       4.891
+      ],
+      "baston_cabeza": [
+       -2.39,
+       9.69,
+       3.93
+      ]
+     },
+     "raices_arena": {
+      "ojo": [
+       0.0,
+       6.501,
+       4.798
+      ],
+      "nucleo": [
+       0.0,
+       5.368,
+       2.413
+      ],
+      "boca": [
+       0.0,
+       6.134,
+       3.794
+      ],
+      "mano_i": [
+       2.154,
+       0.294,
+       4.033
+      ],
+      "mano_d": [
+       -2.137,
+       2.279,
+       4.796
+      ],
+      "baston_punta": [
+       -2.087,
+       -1.565,
+       4.891
+      ],
+      "baston_cabeza": [
+       -2.39,
+       9.69,
+       3.93
+      ]
+     }
+    }
+   }
+  },
+  "requiem_carga": {
+   "duracion": 2.0,
+   "bucle": true,
+   "eventos": {
+    "latido_1": 0.5,
+    "latido_2": 1.5
+   },
+   "medidas": {
+    "pies_max_m": 0.0,
+    "punta_baston_min_z": -1.609,
+    "puno_min_z": 0.294,
+    "puno_min_t": 0.0,
+    "garra_d_min_z": 99.0,
+    "puntos": {
+     "latido_1": {
+      "ojo": [
+       0.0,
+       6.621,
+       4.798
+      ],
+      "nucleo": [
+       0.0,
+       5.488,
+       2.413
+      ],
+      "boca": [
+       0.0,
+       6.254,
+       3.794
+      ],
+      "mano_i": [
+       2.155,
+       0.406,
+       4.01
+      ],
+      "mano_d": [
+       -2.143,
+       2.224,
+       4.756
+      ],
+      "baston_punta": [
+       -2.095,
+       -1.609,
+       4.846
+      ],
+      "baston_cabeza": [
+       -2.39,
+       9.65,
+       3.932
+      ]
+     },
+     "latido_2": {
+      "ojo": [
+       0.0,
+       6.621,
+       4.798
+      ],
+      "nucleo": [
+       0.0,
+       5.488,
+       2.413
+      ],
+      "boca": [
+       0.0,
+       6.254,
+       3.794
+      ],
+      "mano_i": [
+       2.155,
+       0.406,
+       4.01
+      ],
+      "mano_d": [
+       -2.143,
+       2.224,
+       4.756
+      ],
+      "baston_punta": [
+       -2.095,
+       -1.609,
+       4.846
+      ],
+      "baston_cabeza": [
+       -2.39,
+       9.65,
+       3.932
+      ]
+     }
+    }
+   }
+  },
+  "requiem_golpe": {
+   "duracion": 3.0,
+   "bucle": false,
+   "eventos": {
+    "troncos": 0.6,
+    "impacto": 0.85,
+    "agotado": 2.0
+   },
+   "medidas": {
+    "pies_max_m": 0.381,
+    "punta_baston_min_z": -1.565,
+    "puno_min_z": 0.107,
+    "puno_min_t": 0.367,
+    "garra_d_min_z": 99.0,
+    "puntos": {
+     "troncos": {
+      "ojo": [
+       -0.0,
+       9.866,
+       3.504
+      ],
+      "nucleo": [
+       0.0,
+       6.94,
+       2.301
+      ],
+      "boca": [
+       0.0,
+       8.671,
+       3.011
+      ],
+      "mano_i": [
+       4.045,
+       1.636,
+       2.009
+      ],
+      "mano_d": [
+       -3.038,
+       4.226,
+       4.594
+      ],
+      "baston_punta": [
+       -2.512,
+       0.377,
+       4.652
+      ],
+      "baston_cabeza": [
+       -3.987,
+       11.539,
+       3.692
+      ]
+     },
+     "impacto": {
+      "ojo": [
+       -0.0,
+       12.394,
+       -0.57
+      ],
+      "nucleo": [
+       0.0,
+       9.25,
+       1.521
+      ],
+      "boca": [
+       0.0,
+       11.223,
+       0.479
+      ],
+      "mano_i": [
+       8.193,
+       7.179,
+       0.436
+      ],
+      "mano_d": [
+       -4.367,
+       6.941,
+       4.224
+      ],
+      "baston_punta": [
+       -3.208,
+       3.129,
+       4.211
+      ],
+      "baston_cabeza": [
+       -6.182,
+       13.998,
+       3.369
+      ]
+     },
+     "agotado": {
+      "ojo": [
+       -0.0,
+       8.68,
+       2.816
+      ],
+      "nucleo": [
+       0.0,
+       6.727,
+       1.802
+      ],
+      "boca": [
+       0.0,
+       7.975,
+       1.975
+      ],
+      "mano_i": [
+       2.892,
+       1.26,
+       2.669
+      ],
+      "mano_d": [
+       -2.655,
+       1.669,
+       2.945
+      ],
+      "baston_punta": [
+       1.345,
+       2.42,
+       3.624
+      ],
+      "baston_cabeza": [
+       -9.72,
+       1.315,
+       1.615
+      ]
+     }
+    }
+   }
+  },
+  "vulnerable": {
+   "duracion": 2.0,
+   "bucle": true,
+   "eventos": {},
+   "medidas": {
+    "pies_max_m": 0.0,
+    "punta_baston_min_z": 2.388,
+    "puno_min_z": 1.244,
+    "puno_min_t": 0.0,
+    "garra_d_min_z": 99.0,
+    "puntos": {}
+   }
+  },
+  "vulnerable_fin": {
+   "duracion": 1.6,
+   "bucle": false,
+   "eventos": {
+    "en_pie": 1.2
+   },
+   "medidas": {
+    "pies_max_m": 0.381,
+    "punta_baston_min_z": -0.243,
+    "puno_min_z": 1.182,
+    "puno_min_t": 0.433,
+    "garra_d_min_z": 99.0,
+    "puntos": {
+     "en_pie": {
+      "ojo": [
+       -0.0,
+       9.891,
+       3.877
+      ],
+      "nucleo": [
+       0.0,
+       7.505,
+       2.162
+      ],
+      "boca": [
+       0.0,
+       8.968,
+       3.225
+      ],
+      "mano_i": [
+       3.894,
+       2.637,
+       2.789
+      ],
+      "mano_d": [
+       -3.384,
+       3.942,
+       3.53
+      ],
+      "baston_punta": [
+       -3.314,
+       0.126,
+       3.558
+      ],
+      "baston_cabeza": [
+       -3.445,
+       11.405,
+       2.877
+      ]
+     }
+    }
+   }
+  }
+ },
+ "polos": {
+  "pierna_i": {
+   "polo": -77.5,
+   "error_grados": 0.056,
+   "punta_a_control_m": 0.0
+  },
+  "antebrazo_i": {
+   "polo": 105.5,
+   "error_grados": 0.105,
+   "punta_a_control_m": 0.0
+  },
+  "pierna_d": {
+   "polo": -102.5,
+   "error_grados": 0.056,
+   "punta_a_control_m": 0.0
+  },
+  "antebrazo_d": {
+   "polo": 74.0,
+   "error_grados": 0.105,
+   "punta_a_control_m": 0.0
+  }
+ },
+ "mano_d_reposo_z": 4.046,
+ "zancada_m": 2.0,
+ "ciclo_andar_s": 2.4,
+ "velocidad_andar_m_s": 1.6667,
+ "giro_grados": 45.0,
+ "vertices": {
+  "alto": 23816,
+  "medio": 13136,
+  "bajo": 8383
+ }
+}

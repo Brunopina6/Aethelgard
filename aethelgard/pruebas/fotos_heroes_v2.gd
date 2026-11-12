@@ -162,10 +162,14 @@ func _combate(h: String) -> void:
 	await _foto("%s_combate_herida" % h.to_lower())
 	await _esperar(1.2)
 	# victoria
+	# 13/11: la victoria en 6 instantes (0,25 · 0,5 · 0,75 · 1,0 · 1,3 · 2,0 s), para ver el arma en todo el gesto
 	a.victoria()
 	b.victoria()
-	await _esperar(1.3)
-	await _foto("%s_combate_victoria" % h.to_lower())
+	var t_prev := 0.0
+	for t in [0.25, 0.5, 0.75, 1.0, 1.3, 2.0]:
+		await _esperar(t - t_prev)
+		t_prev = t
+		await _foto("%s_combate_victoria_%03d" % [h.to_lower(), int(t * 100)])
 	a.reposo()
 	b.reposo()
 	a.mirar_frente(0.0)
@@ -233,7 +237,7 @@ func _caras(h: String) -> void:
 	await _esperar(0.5)
 	cam.fov = 30.0
 	cam.look_at_from_position(cab + Vector3(0.25, 0.32, 1.3), cab + Vector3(0, 0.18, 0))
-	for e in ["normal", "cerrados", "sonrisa", "dolor", "grito", "sorpresa", "entrecerrados"]:
+	for e in ["normal", "cerrados", "sonrisa", "dolor", "grito", "sorpresa", "entrecerrados", "decidido"]:
 		b.v2.set_process(false)          # sin parpadeo durante la foto
 		b.v2.poner_expresion(e)
 		await _foto("%s_cara_%s" % [h.to_lower(), e])

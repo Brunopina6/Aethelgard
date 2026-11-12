@@ -73,6 +73,9 @@ const Climax := preload("res://combate_climax.gd")
 # Solo en sus combates de prueba (GRUPOS[14], [15], [16]) o con el interruptor «encuentro_desierto_v12» (APAGADO) en el
 # Mar de Cristal. Los ganchos de aquí llevan «V12, encuentro del desierto».
 const Vidracran := preload("res://combate_vidracran.gd")
+# V12 (12/11): Humbaba, el Corazón del Bosque Muerto (combate_humbaba.gd: fases, ataques, estados y efectos). APAGADO: solo con
+# el interruptor «humbaba_v12» (el santuario del Gran Bosque) o en su combate de prueba (GRUPOS[17]).
+const Humbaba := preload("res://combate_humbaba.gd")
 # Menú de combate minimalista (menu_combate.gd). Ocupa el 40 % derecho de la pantalla, por eso los
 # héroes van más a la izquierda y los enemigos se juntan a la izquierda: x = x * ENEMIGOS_X.x + ENEMIGOS_X.y
 const ENEMIGOS_X := Vector2(0.75, -190.0)
@@ -315,6 +318,14 @@ const MODELOS := {
 		"tipo": "3d", "esc": 0.6, "script": "res://enemigos/vidracran/vidracran_3d.gd", "gestos": "res://gestos_3d.gd",
 		"rutas": ["res://enemigos/vidracran/vidracran.glb"], "vp": Vector2i(1175, 600), "alto_vista": 1.6,
 		"centro_y": 0.5, "barra_y": 30.0, "centro_3d": 0.4, "caida": 1.7, "respaldo": "slime"},
+	# V12 (12/11): Humbaba, el Corazón del Bosque Muerto (animaciones; enemigos/humbaba/, fuente/crear_humbaba.py). APAGADO:
+	# solo con el interruptor «humbaba_v12» o en su combate de prueba (GRUPOS[17]). El guion lo escala a 0,4 (13,3 m → 5,3):
+	# en la pantalla del combate mide unas 2,8 veces a Kael (no cabe más con el ojo y los pies a la vista); a escala real,
+	# en el Gran Bosque. Su centro (números y efectos) es el núcleo del pecho. Ataca desde su sitio (combate_humbaba.gd).
+	"humbaba": {
+		"tipo": "3d", "esc": 0.6, "script": "res://enemigos/humbaba/humbaba_3d.gd", "gestos": "res://gestos_3d.gd",
+		"rutas": ["res://enemigos/humbaba/humbaba.glb"], "vp": Vector2i(1500, 1500), "alto_vista": 6.4, "centro_y": 3.05,
+		"barra_y": 60.0, "centro_3d": 3.45, "respaldo": "guardian_bosque2d"},
 }
 
 # Enemigos disponibles y grupos que pueden aparecer en un encuentro (se elige uno al azar).
@@ -351,6 +362,9 @@ const ENEMIGOS := {
 	# V12, encuentro del desierto (12/11): Vidracrán, el escorpión de vidrio (nombre sin aprobar). Personalidad «vidracran»
 	# (combate_vidracran.gd): pinzas, se entierra (el aviso) y pica con el aguijón; caparazón y ventana. NO está en los
 	# encuentros normales: solo en GRUPOS[14]-[16] y con el interruptor.
+	# V12 (12/11): Humbaba (combate_humbaba.gd; APAGADO). Jefe nuevo del Gran Bosque Verde; no está en los encuentros.
+	"humbaba": {"nombre": "Humbaba", "modelo": "humbaba", "hp": 1400, "atk": 24, "vel": 9.0, "exp": 260, "oro": 300,
+		"personalidad": "humbaba", "titulo": true},
 	"vidracran": {"nombre": "Vidracrán", "modelo": "vidracran", "hp": 300, "atk": 18, "vel": 19.0, "exp": 55, "oro": 32,
 		"personalidad": "vidracran"},
 }
@@ -377,6 +391,7 @@ const GRUPOS := [
 	[["vidracran", Vector2(250, 125)]],                                     # 14: uno
 	[["vidracran", Vector2(140, 105)], ["vidracran", Vector2(390, 130)]],   # 15: dos
 	[["vidracran", Vector2(160, 125)], ["grimfang", Vector2(420, 120)]],    # 16: con Grimfang
+	[["humbaba", Vector2(-260, -230)]],                                     # 17: Humbaba (V12, APAGADO; combate_humbaba.gd)
 ]
 const GRUPOS_AL_AZAR := 5           # solo los primeros salen en encuentros aleatorios (con el grupo de tres)
 # Encuentros al azar según cuántos héroes hay ahora en el grupo (grupo.gd, activos). Kael solo no tiene cura ni a
@@ -430,6 +445,7 @@ const ANIM := {
 	"bramavidrio": {"distancia": 170.0},          # V12: Bramavidrio, ataca desde su agujero (combate_bramavidrio.gd)
 	"bramavidrio2d": {"distancia": 170.0},        # V12: su foto de respaldo
 	"vidracran": {"distancia": 150.0},            # V12, encuentro del desierto
+	"humbaba": {"distancia": 170.0},              # V12: Humbaba, ataca desde su sitio (combate_humbaba.gd)
 }
 
 var heroes: Array = [
@@ -1004,6 +1020,8 @@ func _info_objetivo(f: Dictionary, ok: bool) -> String:
 		t.append_array(Brama.info(f))
 	elif Vidracran.es(f):                               # V12, encuentro del desierto: caparazón, bajo la arena o expuesto
 		t.append_array(Vidracran.info(f))
+	elif Humbaba.es(f):                                 # V12: Humbaba, su fase y cómo se le hace daño
+		t.append_array(Humbaba.info(f))
 	elif f.get("cargando", false):
 		var plan: Dictionary = PATRONES.get(f.get("personalidad", ""), {})
 		if plan.get("encoge", false):
@@ -1811,6 +1829,8 @@ func _siguiente_turno() -> void:
 			f["rig"].modulate = Color(1, 1, 1)
 		_quitar_guardia(f["nombre"])             # la guardia de Garon, también (sin guardia, nada)
 		_tic_estados_heroe(f)                    # Segundo Aliento y Cinta de Lumi (sin ellos, nada)
+		if Humbaba.tic_heroe(self, f):            # V12, Humbaba: la corrupción y las raíces (sin ellas, nada)
+			return
 		if f.has("conjuro"):                     # V12, magia negra: el conjuro preparado se suelta (sin menú)
 			_resolver_conjuro(f)
 			return
@@ -1866,6 +1886,10 @@ func _turno_enemigo(f: Dictionary) -> void:
 		mult *= MN.mult_ataque(f)
 	if p == "bramavidrio" and brama != null:         # V12, Bramavidrio (combate_bramavidrio.gd): no huye nunca
 		await brama.turno(vivos, mult)
+		_fin_turno_enemigo(f)
+		return
+	if p == "humbaba":                               # V12: Humbaba (combate_humbaba.gd): no huye nunca
+		await Humbaba.turno(self, f, vivos, mult)
 		_fin_turno_enemigo(f)
 		return
 	if p == "vidracran":                             # V12, encuentro del desierto: Vidracrán (combate_vidracran.gd)
@@ -2657,6 +2681,8 @@ func _mostrar_menu() -> void:
 	estado = "menu"
 	_limpiar_objetivo()
 	registro.text = Vidracran.aviso_turno(enemigos)   # V12, encuentro del desierto: "" si nadie está bajo la arena
+	if registro.text == "":                       # V12: Humbaba carga el Réquiem ("" si no)
+		registro.text = Humbaba.aviso_turno(enemigos)
 	if _es_garon(actor):                          # Garon: su menú propio (Esgrima y Embuir)
 		_menu_garon()
 		return
@@ -3031,6 +3057,7 @@ func _tecnica_garon(n: String, obj: Dictionary) -> void:
 			Sonido.golpe(true)                       # el tajo de Juicio (sonido.gd)
 			var dd: int = Coloso.dano_recibido(d, "", quien, obj)   # el Coloso (V9): piel o ventana; los demás, «d»
 			dd = Vidracran.dano_recibido(dd, "", quien, obj)         # (V12, encuentro del desierto: caparazón o ventana)
+			dd = Humbaba.dano_recibido(dd, "", quien, obj)            # (V12: Humbaba, corteza, núcleo o vulnerable)
 			_quitar_pv(obj, dd)
 			Sonido.recibe(obj)                       # y su voz: herido o caída (sonido.gd)
 			_destello(_centro(obj), menu.COLOR_HEROE.get("Garon", Color.WHITE).lightened(0.4), 1.8)
@@ -3048,6 +3075,7 @@ func _tecnica_garon(n: String, obj: Dictionary) -> void:
 					continue
 				var d := Coloso.dano_recibido(_dano_fisico(quien, t["mult"]), "", quien, e)   # (el Coloso, V9)
 				d = Vidracran.dano_recibido(d, "", quien, e)       # (V12, encuentro del desierto)
+				d = Humbaba.dano_recibido(d, "", quien, e)          # (V12: Humbaba)
 				_quitar_pv(e, d)
 				Sonido.recibe(e)                     # su voz (sonido.gd: una por familia y dos a la vez como mucho)
 				_golpe_visual(e, d, _efecto_embuir(quien, e))
@@ -3805,6 +3833,7 @@ func _golpe_negra(quien: Dictionary, fam: String, d: Dictionary, obj: Dictionary
 		dano = Bosque.dano_recibido(dano, "Negra", quien, obj, false)   # sus ganchos (enfoque, coraza rúnica), no su fuego
 		dano = Coloso.dano_recibido(dano, "Negra", quien, obj)
 		dano = Vidracran.dano_recibido(dano, "Negra", quien, obj)   # (V12, encuentro del desierto)
+		dano = Humbaba.dano_recibido(dano, "Negra", quien, obj)      # (V12: Humbaba)
 	if clase != "":
 		_numero_flotante(obj, Afinidades.TEXTO[clase], Afinidades.COLOR[clase], 30, Vector2(-10, -58))
 	if dano > 0:
@@ -4449,6 +4478,8 @@ func _aplicar_cura(objetivos: Array) -> void:
 	var d: Dictionary = NIVELES_MAGIA[magia_sel][nivel_sel - 1]
 	_gastar_pm(quien, d["coste"])
 	quien["curo"] = true                          # los enemigos listos irán a por quien cura
+	for o in objetivos:                            # V12, Humbaba: curar limpia la corrupción (sin ella, nada)
+		Humbaba.al_curar(o)
 	_actualizar()
 	registro.text = "%s lanza %s" % [quien["nombre"], d["nombre"]]
 	var cantidad := int(d["dano"] * quien.get("magia_mult", 1.0)) + int(quien.get("magia_extra", 0))
@@ -5388,6 +5419,7 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 		dano = Bosque.dano_recibido(dano, magia, origen, objetivo, _lya_sabe())
 		dano = Coloso.dano_recibido(dano, magia, origen, objetivo)   # V9: el Coloso (piel, ventana, coraza rúnica)
 		dano = Vidracran.dano_recibido(dano, magia, origen, objetivo)   # V12, encuentro del desierto: caparazón o ventana
+		dano = Humbaba.dano_recibido(dano, magia, origen, objetivo)     # V12: Humbaba (corteza, fuego, núcleo, vulnerable)
 		if objetivo.has("mn"):                        # V12, magia negra: «Defensa ↓» y «Resistencia mágica ↓»
 			dano = _con_estados_negra(dano, magia, objetivo)
 	var congela: bool = magia == "" and origen["hero"] and _lleva_frostfang(origen) and randf() < PROB_CONGELAR
@@ -5426,7 +5458,7 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 			var rep: int = Extra.replica(objetivo, objetivo.get("defendiendo", false))   # C2, Guardiana de Ámbar
 			if rep > 0:
 				_numero_flotante(objetivo, "Réplica", Color("FFC46A"), 28, Vector2(-30, -40))
-				var dr: int = Vidracran.dano_recibido(Coloso.dano_recibido(rep, "", objetivo, origen), "", objetivo, origen)
+				var dr: int = Humbaba.dano_recibido(Vidracran.dano_recibido(Coloso.dano_recibido(rep, "", objetivo, origen), "", objetivo, origen), "", objetivo, origen)
 				_golpe_visual(origen, _quitar_pv(origen, dr), "")   # (V12, encuentro del desierto: la réplica choca con el caparazón)
 	if magia != "" and _p3d(origen) != null:
 		await _anim_magia_3d(origen, objetivo, magia, impacto)
@@ -5434,6 +5466,8 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 		await _anim_magia(origen, objetivo, magia, impacto)
 	elif brama != null and Brama.es(origen):                                   # V12, Bramavidrio: desde su agujero
 		await brama.animar_golpe(objetivo, impacto)
+	elif Humbaba.es(origen):                                                   # V12: Humbaba, desde su sitio
+		await Humbaba.animar_golpe(self, origen, objetivo, impacto)
 	elif Vidracran.es(origen):                                                 # V12, encuentro del desierto: pinzas o aguijón
 		await Vidracran.animar_golpe(self, origen, objetivo, impacto)
 	elif _p3d(origen) != null and _p3d(origen).has_method("avisar"):           # Zarzalín (T-097)
@@ -6369,6 +6403,7 @@ func _magia_grupal(o: Dictionary, objs: Array, magia: String, nivel: int, dano: 
 			d = Bosque.dano_recibido(d, magia, o, obj, _lya_sabe())
 			d = Coloso.dano_recibido(d, magia, o, obj)   # V9: el Coloso (coraza rúnica)
 			d = Vidracran.dano_recibido(d, magia, o, obj)   # (V12, encuentro del desierto)
+			d = Humbaba.dano_recibido(d, magia, o, obj)     # (V12: Humbaba)
 			if obj.has("mn"):                        # V12, magia negra: «Resistencia mágica ↓»
 				d = _con_estados_negra(d, magia, obj)
 		golpe_magico = true
@@ -6787,12 +6822,14 @@ func _numero_flotante(f: Dictionary, texto: String, color: Color, tam := TAM_NUM
 # ================================================================= fin y textos
 
 func _comprobar_fin() -> bool:
+	Humbaba.al_caer(self)                         # V12: si cae Humbaba, sus condenados se deshacen con él (sin él, nada)
 	var ganan := enemigos.all(func(e): return e["hp"] <= 0)
 	var pierden := heroes.all(func(h): return h["hp"] <= 0)
 	if ganan or pierden:
 		estado = "fin"
 		_ocultar_menu()
 		Vidracran.al_acabar(enemigos)                 # V12, encuentro del desierto: su marca y sus puntos, fuera
+		Humbaba.al_acabar(self)                       # V12: sus raíces, marcas y estados, fuera
 		Sonido.efecto("victoria" if ganan else "derrota")   # sonido.gd
 		if ganan:                                      # el gesto de uno de los que siguen en pie (tanda 5)
 			voz_pedida.emit("", "victoria")
@@ -6983,6 +7020,8 @@ func _actualizar() -> void:
 				Vidracran.repasar(e)                    # (cae él o el marcado: su marca, fuera)
 				if vivo:
 					estados.append_array(Vidracran.estados(e))
+			if Humbaba.es(e) and vivo:                  # V12: Humbaba, «Fase n», «Corteza», «¡Núcleo al alcance!», «⚠ Réquiem»
+				estados.append_array(Humbaba.estados(e))
 			if e.has("mn"):                             # V12, magia negra: «Lento 2», «Def ↓ 3», «Prisión 1»…
 				estados.append_array(MN.textos_estado(e))
 				if not vivo:                            # (huido o caído sin pasar por _quitar_pv: su jaula y su sello, fuera)
