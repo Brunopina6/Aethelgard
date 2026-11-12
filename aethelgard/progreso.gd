@@ -62,7 +62,7 @@ const CLAVES := ["grupo", "inventario", "cofres_abiertos", "prologo_visto", "lug
 	"mazmorras", "combates_ganados", "decisiones", "pos_isla", "pos_isla_ok",
 	"hitos", "pos_3d", "pos_3d_ok", "pos_3d_lugar", "grupo_activo",
 	"investigaciones", "gremio", "encuentros_azar", "taberna", "buscador",
-	"grupo_miembros"]   # grupo_miembros: la reserva (grupo.gd, V12; solo si hay alguien en ella). investigaciones: investigacion.gd (fase 2); gremio: gremio.gd, encuentros_azar: los élites , taberna: ciudades/taberna_juegos.gd y buscador: buscador.gd (V11). Las
+	"grupo_miembros", "firmamento"]   # firmamento: Orbes Cristalinos y nodos (firmamento/orbes.gd, V12; solo si se usó). grupo_miembros: la reserva (grupo.gd, V12; solo si hay alguien en ella). investigaciones: investigacion.gd (fase 2); gremio: gremio.gd, encuentros_azar: los élites , taberna: ciudades/taberna_juegos.gd y buscador: buscador.gd (V11). Las
 	# partidas antiguas no las traen
 const MAPA := "res://mapa.tscn"
 

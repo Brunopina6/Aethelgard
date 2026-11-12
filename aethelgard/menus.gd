@@ -185,6 +185,16 @@ func _pintar_grupo() -> void:
 			Sonido.efecto("ui_tic")
 			_pintar_de_nuevo())
 		fila_heroes.add_child(f)
+	var Orbes = load("res://firmamento/orbes.gd")   # V12: Firmamento de los Ecos (interruptor «orbes_v12», APAGADO)
+	if Orbes.activo() and heroe in Orbes.heroes():
+		if not Grupo.hay_formacion():
+			var hueco_o := Control.new()
+			hueco_o.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			fila_heroes.add_child(hueco_o)
+		var fo := _boton("Firmamento · %d orbes" % Orbes.saldo(), 22, Vector2(260, 40), "firmamento")
+		fo.add_theme_color_override("font_color", COLOR_TITULO)
+		fo.pressed.connect(_abrir_firmamento)
+		fila_heroes.add_child(fo)
 
 	var h: Dictionary = Grupo.datos()[heroe]
 	var e: Dictionary = Grupo.estadisticas(heroe)
@@ -280,6 +290,18 @@ func _pintar_grupo() -> void:
 		der.add_child(f)
 		if id != "" and Inv.resumen(id) != "":
 			der.add_child(_texto("      " + Inv.resumen(id), 16, COLOR_BIEN))
+
+
+# V12: abre el Firmamento de los Ecos del héroe de la ficha, encima del menú; al cerrarlo, la ficha se repinta (las
+# bonificaciones nuevas ya salen en sus estadísticas). Mientras está abierto, este menú no atiende al teclado.
+func _abrir_firmamento() -> void:
+	var fi = load("res://firmamento/firmamento.gd").new()
+	fi.heroe = heroe
+	set_process_unhandled_input(false)
+	fi.cerrado.connect(func():
+		set_process_unhandled_input(true)
+		_pintar_de_nuevo())
+	add_child(fi)
 
 
 # ---------------------------------------------------------------- V12: Formación (activos y reserva)
@@ -766,6 +788,24 @@ func _pintar_ajustes() -> void:
 		fhv.add_child(bhv)
 	cuerpo.add_child(fhv)
 	cuerpo.add_child(_texto("Se nota en el próximo combate o al entrar en una región.", 16, COLOR_SUAVE))
+	# V12: Firmamento de los Ecos (firmamento/orbes.gd, [firmamento] activo). Solo en Auditoría o en el editor, para
+	# compararlo en el móvil; en las versiones normales no sale (y el interruptor no lee Ajustes).
+	var Orb = load("res://firmamento/orbes.gd")
+	if Orb.herramienta_dev():
+		var oa: bool = Orb.activo()
+		cuerpo.add_child(_texto("Firmamento de los Ecos (prueba)", 26, COLOR_TITULO))
+		var fob := HBoxContainer.new()
+		fob.add_theme_constant_override("separation", 8)
+		for op in [[false, "Apagado"], [true, "Encendido"]]:
+			var so: bool = op[0]
+			var bo := _boton(("● " if so == oa else "○ ") + op[1], 18, Vector2(260, 34), "orbes:%s" % ("si" if so else "no"))
+			bo.pressed.connect(func():
+				Orb.elegir_en_ajustes(so)
+				Sonido.efecto("ui_tic")
+				_pintar_de_nuevo())
+			fob.add_child(bo)
+		cuerpo.add_child(fob)
+		cuerpo.add_child(_texto("Solo Auditoría: tablero de Orbes Cristalinos en la ficha del Grupo.", 16, COLOR_SUAVE))
 
 
 # Calidad de las regiones 3D (encargo del 09/11; prototipos/calidad_auto.gd, sección [calidad] de user://ajustes.cfg):

@@ -297,6 +297,14 @@ static func estadisticas(heroe: String) -> Dictionary:
 	if ResourceLoader.exists("res://equipo_extra.gd"):   # Hoja sin Nombre (C2): +1 de ataque por recuerdo visto
 		var X = load("res://equipo_extra.gd")
 		ataque += X.ataque_recuerdo(X.efectos_de(heroe), Engine.get_meta("lore_visto", {}))
+	# V12, Firmamento de los Ecos (firmamento/orbes.gd; interruptor «orbes_v12», APAGADO): los nodos desbloqueados se
+	# suman aquí, al vuelo, a los atributos finales (nunca a los guardados). Apagado o sin nodos, bonos() da {}.
+	if ResourceLoader.exists("res://firmamento/orbes.gd"):
+		var bo: Dictionary = load("res://firmamento/orbes.gd").bonos(heroe)
+		for k in bo.get("atributos", {}):
+			a[k] = a.get(k, 0) + int(bo["atributos"][k])
+		ataque += int(bo.get("ataque", 0))
+		magia_extra += int(bo.get("magia_extra", 0))
 	var nivel: int = h["nivel"]
 	var e := {"nivel": nivel, "atributos": a,
 		"pv_max": 40 + a["vitalidad"] * 8 + (nivel - 1) * 6,

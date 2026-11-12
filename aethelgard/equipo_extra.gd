@@ -364,6 +364,17 @@ static func efectos_de(heroe: String) -> Dictionary:
 	for k in tec:
 		if EFECTOS.has(k) and EFECTOS[k]["tipo"] == "num":
 			r[k] = minf(float(EFECTOS[k]["max"]), float(r.get(k, 0.0)) + float(tec[k]))
+	# V12, Firmamento de los Ecos (firmamento/orbes.gd; interruptor «orbes_v12», APAGADO): las pasivas de los nodos
+	# desbloqueados, con el mismo tope que el equipo. Apagado o sin nodos, no suma nada.
+	if ResourceLoader.exists("res://firmamento/orbes.gd"):
+		var orb: Dictionary = load("res://firmamento/orbes.gd").bonos(heroe).get("efectos", {})
+		for k in orb:
+			if not EFECTOS.has(k):
+				continue
+			if EFECTOS[k]["tipo"] == "si":
+				r[k] = bool(r.get(k, false)) or bool(orb[k])
+			else:
+				r[k] = minf(float(EFECTOS[k]["max"]), float(r.get(k, 0.0)) + float(orb[k]))
 	return r
 
 
