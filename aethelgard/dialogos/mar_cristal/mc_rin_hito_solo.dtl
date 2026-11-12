@@ -1,0 +1,10 @@
+join kael (vivo_pv) left
+update kael [extra_data="sorpresa"]
+kael: Bajo la laja de arriba hay un hueco. Y una bolsa de cuero encerado.
+update kael [extra_data="duda"]
+kael: Un paño con signos cosidos. Azul, cobijo; rojo, camino… ¿Y el vidrio?
+update kael [extra_data="decidido"]
+kael: Claro: con tormenta el trapo no se ve, pero el vidrio suena.
+update kael [extra_data="ligero"]
+kael: Me llevo dos pociones y le dejo un nudo bien prieto. Me sobran nudos.
+leave kael

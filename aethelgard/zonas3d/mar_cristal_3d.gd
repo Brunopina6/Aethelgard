@@ -20,6 +20,7 @@ const NPC_DESIERTO := preload("res://personajes/desierto/npc_desierto_3d.gd")   
 # V12 (12/11), PROTOTIPO APAGADO: la misión de Naira y su observatorio (solo con el interruptor «naira_v12», grupo.gd).
 const NairaMision := preload("res://zonas3d/mar_cristal/naira_mision.gd")
 const Observatorio := preload("res://zonas3d/mar_cristal/observatorio.gd")
+const Rincones := preload("res://zonas3d/mar_cristal/rincones.gd")   # V12 (12/11), rincón: el hito del cobijo
 
 const INDICE := 4                          # lugar del mapa (mapa.gd: Mar de Arena de Calid; modo3d.MAR_CRISTAL)
 const NOMBRE := "mar_cristal"              # progreso.gd: mazmorras[...] y encuentros
@@ -60,6 +61,7 @@ var _dist_puesta := 17.0
 var dialogo_actual := ""
 var brillo_sin_sombras := 1.15              # vista3d.gd: 1,3 igualaba el PC, pero en el Redmi se veía lavado (v581)
 var naira                                   # naira_mision.gd, solo con el interruptor «naira_v12»; si no, null
+var rincones                                # V12 (12/11), rincón opcional: el hito del cobijo (rincones.gd)
 
 
 func _ready() -> void:
@@ -77,6 +79,8 @@ func _ready() -> void:
 	hud = Hud.new(self, capa_ui)
 	hud.construir()
 	gusano = Gusano.new(self)
+	rincones = Rincones.new()                  # V12 (12/11), rincón: el hito del cobijo
+	rincones.construir(self)
 	Mision.registrar_dialogic()
 	if NairaMision.activa():                   # V12, PROTOTIPO APAGADO: la misión de Naira (naira_mision.gd)
 		naira = NairaMision.new()
@@ -342,6 +346,7 @@ func _process(delta: float) -> void:
 	hud.actualizar(delta, p, clima.buscador_estorbado())
 	gusano.actualizar(delta, p)
 	mision.vigilar(self, p)
+	rincones.actualizar(delta, p, clima)            # V12 (12/11), rincón: el vidrio del hito suena y destella
 	if naira != null:
 		naira.vigilar(p, delta)
 	_comprobar_cerca()
@@ -396,6 +401,7 @@ func _piezas_al_alcance() -> Array:
 		["esqueleto", Vector3(T.ESQUELETO.x, 0, T.ESQUELETO.y), 2.4, "Examinar"],
 		["espejismo", Vector3(T.ESPEJISMO.x, 0, T.ESPEJISMO.y), 3.2, "Mirar el espejismo"]]
 	r.append_array(mision.piezas())
+	r.append_array(rincones.piezas())               # V12 (12/11), rincón: «Mirar el hito»
 	if naira != null:
 		r.append_array(naira.piezas())
 	return r
@@ -429,6 +435,8 @@ func _accion() -> void:
 	_bloqueo = 0.4
 	if naira != null and naira.accion(cerca):  # V12: la misión de Naira (y Oren e Ismena tras «La caravana perdida»)
 		return
+	if rincones.accion(self, cerca):           # V12 (12/11), rincón: el hito del cobijo
+		return
 	mision.accion(self, cerca)
 
 
@@ -457,6 +465,8 @@ func _al_terminar_dialogo() -> void:
 	_bloqueo = 1.0                                              # el último SEGUIR cae donde el botón de acción (Redmi, v581)
 	if naira != null and fue.begins_with("nr_"):
 		naira.dialogo_terminado(fue)
+	elif rincones != null and fue.begins_with("mc_rin_"):   # V12 (12/11), rincón: el premio del hito, una vez
+		rincones.dialogo_terminado(self, fue)
 	elif mision != null and fue != "":
 		mision.dialogo_terminado(self, fue)
 

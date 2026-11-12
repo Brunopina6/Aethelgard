@@ -245,6 +245,9 @@ static func ganado(id: String) -> bool:
 # interruptor nadie los pone. nr_eclipse_perfecto es opcional (nadie golpeó a Naira mientras preparaba).
 const HITOS_NAIRA := ["nr_rumor", "nr_observatorio", "nr_plomada_1", "nr_plomada_2", "nr_plomada_3", "nr_plomadas",
 	"nr_medicion", "nr_eclipse", "nr_eclipse_perfecto", "nr_catalogo", "nr_union"]
+# V12 (12/11), rincones opcionales del Mar de Cristal (zonas3d/mar_cristal/rincones.gd), fuera de «La caravana perdida»:
+# mc_rin_hito, la bolsa del hito del cobijo (dos Pociones, una sola vez). Sin él (partidas antiguas), está por descubrir.
+const HITOS_MC_RINCONES := ["mc_rin_hito"]
 
 
 static func hito(id: String) -> bool:

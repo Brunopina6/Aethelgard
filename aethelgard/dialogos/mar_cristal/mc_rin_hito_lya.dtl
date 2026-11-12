@@ -1,0 +1,16 @@
+join kael (vivo_pv) left
+join lya (vivo_pv) right
+update kael [extra_data="sorpresa"]
+kael: Bajo la laja de arriba hay un hueco. Y una bolsa de cuero encerado.
+update lya [extra_data="duda"]
+lya: Un paño con signos cosidos: azul es cobijo; rojo, camino de vuelta.
+update lya [extra_data="preocupada"]
+lya: Kael… es por la tormenta. Si el trapo no se ve, el vidrio se oye.
+update kael [extra_data="ligero"]
+kael: También hay dos pociones. ¿Quién deja pociones entre piedras?
+update lya [extra_data="decidida"]
+lya: Las caravanas. Coges lo que te falta y dejas lo que te sobra.
+update kael [extra_data="ligero+risa"]
+kael: Pues yo le dejo al trapo un nudo bien prieto. Me sobran nudos.
+leave lya
+leave kael
