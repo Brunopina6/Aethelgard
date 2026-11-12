@@ -355,3 +355,28 @@ Cada medida son 10 s de `--timestats`, sin fotogramas perdidos en ninguna:
   MB); el trabajo de las cargas apunta al precalentado de recursos apagados.
 
 Capturas y datos: `D:\REBELUM_diagnostico\v12\redmi\sesion_v649`.
+
+# V12 · Octava prueba en el Redmi: v656, las cargas mejoradas (12/11, 12:30-12:45)
+
+**APK (sin publicar):** v656 (`22f2994`, con el trabajo de las cargas de `a23e131`), SHA-256
+`1e036668098ef3c59a34207143ae50020120e8593d5f70e71928eb094b91919a`, mismo certificado.
+
+- **Instalación:** MIUI canceló `adb install -r`. El usuario la instaló desde Descargas y luego se borró de allí.
+- **Partida:** restaurada idéntica al acabar.
+- **Errores:** sin cierres ni errores en logcat.
+- **Temperatura:** de 30,3 °C a 33,5 °C, estado térmico 0.
+
+| Medida | v649 (antes) | v656 (después) |
+|---|---|---|
+| Carga hasta «Carga terminada» (reloj del juego) | 18,7-20,4 s | **10,5-10,6 s** (el segundo arranque, 12,5 s) |
+| Desde abrir la app hasta poder tocar (reloj) | 27,8 s | **17-19 s** |
+| Memoria (PSS) en la pantalla de inicio | 0,97 GB | **0,76-0,78 GB** |
+| Memoria (PSS) en el combate de Bramavidrio | 1,06-1,10 GB (v646) | **0,83 GB** |
+| Región visible tras «Continuar» | 4,7 s | 5,2 s (Bramavidrio se prepara ahí, sin aviso aparte) |
+| Del aviso de Bramavidrio al combate | ≤ 2,5 s, en negro | **~1,5 s, con «Preparando el combate…»** y un rombo que gira |
+| Aparición de Bramavidrio (fotogramas por ventana de 5 s) | v615: 35 y 61, congelaciones | **162 y 165, ~32 FPS sin tirones** |
+| Combate | 59-60 FPS | 59-61 FPS |
+
+- **Caché de sombreadores en Android:** funciona. `files/shader_cache` ocupa 21 MB en la carpeta de la app. No se
+  borró, así que no se midió un primer arranque con la caché vacía.
+- **Medidas y capturas:** `D:\REBELUM_diagnostico\v12\redmi\sesion_v656`, con la transición en `entrada_v656\`.
