@@ -34,10 +34,24 @@ const EFECTOS := {
 	"cubrir": {"tipo": "num", "max": 0.50, "gancho": "C2"},              # recibe el golpe de un aliado con poca vida
 	"aliento_inicio": {"tipo": "num", "max": 3.0, "gancho": "C2"},       # Aliento al más herido al empezar (con M2)
 	"apoyo_turnos": {"tipo": "num", "max": 2.0, "gancho": "C2"},         # el Aliento que lanza dura más (con M2)
+	# V12, accesorios (A1, 12/11; docs/v12/ACCESORIOS_V12.md). Enganchados en combate.gd (y dos en combate_humbaba.gd).
+	"res_magica": {"tipo": "num", "max": 0.40, "gancho": "A1"},          # - daño de los ataques mágicos que recibe
+	"res_quemadura": {"tipo": "num", "max": 0.75, "gancho": "A1"},       # - daño continuo (corrupción; quemaduras)
+	"guardia_def": {"tipo": "num", "max": 0.40, "gancho": "A1"},         # - daño mientras cubre a un aliado (Guardia)
+	"atb_defender": {"tipo": "num", "max": 50.0, "gancho": "A1"},        # barra con la que empieza tras Defender
+	"velo": {"tipo": "si", "gancho": "A1"},                              # esquiva el primer golpe físico del combate
+	"furia_baja": {"tipo": "num", "max": 0.40, "gancho": "A1"},          # + daño físico con un tercio de PV o menos
+	"remate": {"tipo": "num", "max": 0.40, "gancho": "A1"},              # + daño físico a enemigos por debajo del 30 %
+	"pot_agua": {"tipo": "num", "max": 0.30, "gancho": "A1"},            # + daño de la familia Agua
+	"pot_rayo": {"tipo": "num", "max": 0.30, "gancho": "A1"},            # + daño de la familia Rayo
+	"pot_cura": {"tipo": "num", "max": 0.30, "gancho": "A1"},            # + PV de las Curas que lanza
+	"cura_recibida": {"tipo": "num", "max": 0.40, "gancho": "A1"},       # + PV de las Curas y pociones que recibe
 }
 # Incrementos ya enganchados en el juego (se añaden al enganchar: "C1", luego "M3", "C2" y "M4"). Lo que no está
 # disponible no se vende ni se da. C1, desde el 09/11: la ranura Accesorio y los seis accesorios de C1.
-const HECHOS: Array = ["C1", "M3", "M4", "C2"]   # M3, M4 y C2 enganchados el 09/11 (combate.gd)
+# A1 (V12, 12/11): los ganchos de la primera tanda de accesorios nuevos. Esos accesorios, además, solo están
+# disponibles con el interruptor «accesorios_v12» (APAGADO; ver v12_activo()).
+const HECHOS: Array = ["C1", "M3", "M4", "C2", "A1"]   # M3, M4 y C2 enganchados el 09/11 (combate.gd)
 
 # Botín de las bestias (T-097, decisión del coordinador del 09/11): materiales que solo se venden (sin recetas). Al
 # ganar, cada enemigo de esa clave que no haya huido deja uno (combate.gd _repartir_exp); se guardan en los objetos del
@@ -134,6 +148,65 @@ const ACCESORIOS := {
 		"efecto": "Si cae, se levanta una vez.",
 		"texto": "Una brasa que no se apaga, en un frasco tapado con cera.",
 		"donde": "Cofre del Abismo de Ceniza; mientras no se llegue, el Valle de los Ecos"},
+	# ---- V12, primera tanda de accesorios nuevos (12/11; docs/v12/ACCESORIOS_V12.md). APAGADOS: solo con el interruptor
+	# «accesorios_v12» se venden (en cualquier tienda, como prueba) y cuentan como disponibles; su «donde» es una PROPUESTA
+	# pendiente del usuario. A diferencia de los de arriba, pueden ir en las ranuras Anillo y Amuleto («ranura»), sumar
+	# atributos («bonus», como inventario.gd PROTECCIONES) y ser de un solo héroe («solo»). «rareza» y «categoria» los
+	# leen los menús (color e icono, icono_equipo.gd); «precio», la tienda de prueba. Ningún precio en Orbes Cristalinos.
+	"anillo_cuarzo": {"nombre": "Anillo de cuarzo", "tanda": "v12", "ranura": "anillo", "categoria": "anillo",
+		"rareza": "comun", "precio": 150, "bonus": {"defensa": 2, "velocidad": 1}, "efectos": {},
+		"texto": "Cuarzo tallado a mano. Barato, honrado y más duro de lo que parece.",
+		"donde": "Propuesta: tienda de la tallista del Collado; mientras no exista, la de Oakhaven"},
+	"anillo_alba": {"nombre": "Anillo del Alba", "tanda": "v12", "ranura": "anillo", "categoria": "anillo",
+		"rareza": "raro", "precio": 380, "bonus": {"espiritu": 2}, "efectos": {"res_magica": 0.20},
+		"efecto": "-20 % de daño mágico.",
+		"texto": "Oro pálido con una piedra que clarea al amanecer. La magia ajena llega más tibia.",
+		"donde": "Propuesta: cofre del Templo Sumergido de Atlantis"},
+	"colgante_eco": {"nombre": "Colgante del Eco", "tanda": "v12", "ranura": "amuleto", "categoria": "colgante",
+		"rareza": "poco_comun", "precio": 300, "efectos": {"pot_agua": 0.10, "pot_rayo": 0.10},
+		"efecto": "+10 % a Agua y a Rayo.",
+		"texto": "Una caracola de piedra. Si se acerca al oído, repite el último trueno.",
+		"donde": "Propuesta: cofre del Valle de los Ecos"},
+	"talisman_ceniza": {"nombre": "Talismán de Ceniza", "tanda": "v12", "ranura": "amuleto", "categoria": "talisman",
+		"rareza": "poco_comun", "precio": 240, "bonus": {"vitalidad": 1}, "efectos": {"res_quemadura": 0.5},
+		"efecto": "Corrupción y quema: mitad.",
+		"texto": "Ceniza prensada en un disco de hierro. Lo que ya ardió no vuelve a arder.",
+		"donde": "Propuesta: Abismo de Ceniza, en las ruinas"},
+	"colgante_savia": {"nombre": "Colgante de savia", "tanda": "v12", "ranura": "amuleto", "categoria": "colgante",
+		"rareza": "poco_comun", "precio": 280, "efectos": {"cura_recibida": 0.15},
+		"efecto": "+15 % a las curas que recibe.",
+		"texto": "Una gota de savia clara en vidrio. Doña Encina dice que el cuerpo la reconoce.",
+		"donde": "Propuesta: Doña Encina (Oakhaven), tras purificar al Guardián del Bosque"},
+	"broche_guardian": {"nombre": "Broche del Guardián", "tanda": "v12", "categoria": "broche",
+		"rareza": "raro", "precio": 420, "efectos": {"guardia_def": 0.20},
+		"efecto": "Cubriendo, -20 % de daño.",
+		"texto": "Un escudo diminuto de la Guardia de la Muralla. Pesa poco y obliga mucho.",
+		"donde": "Propuesta: encargo del gremio de Oakhaven con Garon en el grupo"},
+	"brazalete_centinela": {"nombre": "Brazalete del centinela", "tanda": "v12", "categoria": "brazalete",
+		"rareza": "poco_comun", "precio": 320, "efectos": {"atb_defender": 25.0},
+		"efecto": "Tras Defender, +25 de barra.",
+		"texto": "Ámbar de los centinelas del camino, engastado en cuero. Quien espera atento, actúa antes.",
+		"donde": "Propuesta: tallista del Collado (accesorios de ámbar)"},
+	"velo_bruma": {"nombre": "Velo de bruma", "tanda": "v12", "categoria": "magico",
+		"rareza": "poco_comun", "precio": 300, "efectos": {"velo": true},
+		"efecto": "Esquiva el primer golpe físico.",
+		"texto": "Un velo gris que nunca se seca. El primer golpe lo atraviesa sin tocar a nadie.",
+		"donde": "Propuesta: tienda de Sunken City"},
+	"brazal_ultimo_muro": {"nombre": "Brazal del último muro", "tanda": "v12", "categoria": "brazalete",
+		"rareza": "raro", "precio": 450, "efectos": {"furia_baja": 0.20},
+		"efecto": "+20 % de daño con poca vida.",
+		"texto": "Hierro abollado por dentro. Aprieta cuando quien lo lleva ya no puede retroceder.",
+		"donde": "Propuesta: botín raro de Gorthor, o premio del gremio"},
+	"fiador_empunadura": {"nombre": "Fiador de empuñadura", "tanda": "v12", "categoria": "personal", "solo": "Kael",
+		"rareza": "raro", "precio": 400, "efectos": {"remate": 0.20},
+		"efecto": "+20 % a enemigos casi vencidos.",
+		"texto": "Un cordón azul trenzado para la empuñadura. Kael lo aprieta antes de rematar.",
+		"donde": "Propuesta: receta de la Forja de Kael"},
+	"rosario_loto": {"nombre": "Rosario del Loto", "tanda": "v12", "categoria": "personal", "solo": "Lya",
+		"rareza": "raro", "precio": 400, "efectos": {"pot_cura": 0.15},
+		"efecto": "+15 % a las Curas que lanza.",
+		"texto": "Cuentas de nácar con una flor de loto de plata, a juego con su cetro.",
+		"donde": "Propuesta: receta de la Alquimia de Lya"},
 }
 
 # Armas especiales: cambian ataque por un efecto. Reutilizan las mallas de las armas de hoy; «tinte» y «color_brillo»
@@ -200,7 +273,7 @@ static func es_extra(id: String) -> bool:
 static func objeto(id: String) -> Dictionary:
 	if ACCESORIOS.has(id):
 		var a: Dictionary = ACCESORIOS[id].duplicate(true)
-		a["ranura"] = RANURA
+		a["ranura"] = a.get("ranura", RANURA)       # (V12: los nuevos pueden ir en Anillo o Amuleto)
 		a["para"] = "todos"
 		return a
 	if ARMAS.has(id):
@@ -232,6 +305,8 @@ static func disponible(id: String, hechos: Array = HECHOS) -> bool:
 	var o := objeto(id)
 	if o.is_empty():
 		return false
+	if o.get("tanda", "") == TANDA_V12 and not v12_activo():   # V12: la tanda nueva, solo con su interruptor
+		return false
 	for k in o.get("efectos", {}):
 		if not EFECTOS.has(k) or not EFECTOS[k]["gancho"] in hechos:
 			return false
@@ -249,6 +324,10 @@ static func en_tienda(lugar: int, hechos: Array = HECHOS) -> Dictionary:
 	for id in lista:
 		if disponible(id, hechos):
 			r[id] = lista[id]
+	if v12_activo():                                # V12: tienda de PRUEBA, en cualquier lugar, con su interruptor
+		for id in ACCESORIOS:
+			if ACCESORIOS[id].get("tanda", "") == TANDA_V12 and disponible(id, hechos):
+				r[id] = int(ACCESORIOS[id]["precio"])
 	return r
 
 
@@ -373,3 +452,111 @@ static func conseguir(id: String) -> String:
 		return ""
 	lista.append(id)
 	return "Has conseguido %s." % objeto(id)["nombre"]
+
+
+# ================================================================= V12, accesorios nuevos (A1, 12/11)
+# docs/v12/ACCESORIOS_V12.md. Todo lo de aquí abajo es neutro sin uno de estos accesorios puesto: devuelve lo que
+# recibe y no tira ningún dado (la huella del combate no cambia). Los ganchos, en combate.gd (marcados «V12,
+# accesorios») y, la corrupción y el Aliento de Humbaba, en combate_humbaba.gd.
+
+const TANDA_V12 := "v12"
+# Interruptor de la tanda (APAGADO): Engine.set_meta("accesorios_v12", true) o el argumento «-- accesorios_v12».
+const INTERRUPTOR_V12 := "accesorios_v12"
+const V12_POR_DEFECTO := false
+
+const RAREZAS := {
+	"comun": {"nombre": "Común", "color": Color("D9D3C3")},
+	"poco_comun": {"nombre": "Poco común", "color": Color("7FD69E")},
+	"raro": {"nombre": "Raro", "color": Color("78AEFF")},
+	"excepcional": {"nombre": "Excepcional", "color": Color("FFB45A")},
+}
+const UMBRAL_FURIA := 1.0 / 3.0                 # Brazal del último muro: con un tercio de sus PV o menos
+const UMBRAL_REMATE := 0.30                     # Fiador de empuñadura: enemigos por debajo del 30 % de sus PV
+const POTENCIA := {"Agua": "pot_agua", "Rayo": "pot_rayo", "Cura": "pot_cura"}   # familia de magia → efecto
+
+
+static func v12_activo() -> bool:
+	if Engine.has_meta(INTERRUPTOR_V12):
+		return bool(Engine.get_meta(INTERRUPTOR_V12))
+	return INTERRUPTOR_V12 in OS.get_cmdline_user_args() or V12_POR_DEFECTO
+
+
+static func es_v12(id: String) -> bool:
+	return ACCESORIOS.has(id) and ACCESORIOS[id].get("tanda", "") == TANDA_V12
+
+
+# {"nombre", "color"} de la rareza de un objeto, o {} si no tiene (todo lo de antes de la V12: se ve como siempre).
+static func rareza(id: String) -> Dictionary:
+	return RAREZAS.get(str(objeto(id).get("rareza", "")), {})
+
+
+# Daño que llega a un héroe (combate.gd _quitar_pv, antes de la coraza). Anillo del Alba: menos daño mágico
+# («magico»: lo marca quien resuelve un ataque mágico enemigo). Broche del Guardián: menos daño mientras cubre a un
+# aliado con su Guardia. Sin ellos, «d» tal cual; con daño, nunca menos de 1.
+static func dano_al_heroe(f: Dictionary, d: int, heroes: Array, magico: bool) -> int:
+	var ef: Dictionary = f.get("efectos", {})
+	if d <= 0 or ef.is_empty():
+		return d
+	var mult := 1.0
+	if magico:
+		mult *= 1.0 - float(ef.get("res_magica", 0.0))
+	if float(ef.get("guardia_def", 0.0)) > 0.0 and protegiendo(f, heroes):
+		mult *= 1.0 - float(ef["guardia_def"])
+	if mult >= 1.0:
+		return d
+	return maxi(1, int(round(d * mult)))
+
+
+# ¿Cubre «f» ahora a un aliado en pie con su Guardia? (combate.gd: el aliado lleva «guardia_de» = su nombre)
+static func protegiendo(f: Dictionary, heroes: Array) -> bool:
+	for h in heroes:
+		if not is_same(h, f) and int(h.get("hp", 0)) > 0 and str(h.get("guardia_de", "")) == str(f.get("nombre", "")):
+			return true
+	return false
+
+
+# Daño continuo que recibe (la corrupción de Humbaba; las quemaduras, cuando algún enemigo queme): Talismán de Ceniza.
+static func dano_continuo(f: Dictionary, d: int) -> int:
+	var r := float(f.get("efectos", {}).get("res_quemadura", 0.0))
+	if r <= 0.0 or d <= 0:
+		return d
+	return maxi(1, int(round(d * (1.0 - r))))
+
+
+# Golpe físico de un héroe (combate.gd _animar_golpe, antes del crítico). Brazal del último muro: más daño con poca
+# vida. Fiador de empuñadura: más daño a un enemigo casi vencido. Sin ellos, «dano» tal cual.
+static func dano_fisico_heroe(o: Dictionary, obj: Dictionary, dano: int) -> int:
+	var ef: Dictionary = o.get("efectos", {})
+	if ef.is_empty() or dano <= 0:
+		return dano
+	var extra := 0.0
+	if float(ef.get("furia_baja", 0.0)) > 0.0 and int(o["hp"]) > 0 and o["hp"] <= o["hp_max"] * UMBRAL_FURIA:
+		extra += float(ef["furia_baja"])
+	if float(ef.get("remate", 0.0)) > 0.0 and int(obj.get("hp", 0)) > 0 and obj["hp"] < obj["hp_max"] * UMBRAL_REMATE:
+		extra += float(ef["remate"])
+	return dano if extra <= 0.0 else int(round(dano * (1.0 + extra)))
+
+
+# Daño (o PV, con «Cura») de una magia de la familia «familia» que lanza «quien»: Colgante del Eco y Rosario del Loto.
+static func potencia_magia(quien: Dictionary, familia: String, valor: int) -> int:
+	var p := float(quien.get("efectos", {}).get(POTENCIA.get(familia, ""), 0.0))
+	return valor if p <= 0.0 else int(round(valor * (1.0 + p)))
+
+
+# PV de una cura (magia Cura, Poción, Bálsamo) que recibe «f»: Colgante de savia.
+static func cura_recibida(f: Dictionary, c: int) -> int:
+	var p := float(f.get("efectos", {}).get("cura_recibida", 0.0))
+	return c if p <= 0.0 or c <= 0 else int(round(c * (1.0 + p)))
+
+
+# Barra con la que empieza a cargar tras Defender (combate.gd _defender): Brazalete del centinela. Nunca 100.
+static func atb_al_defender(ef: Dictionary, atb_max := 100.0) -> float:
+	return clampf(float(ef.get("atb_defender", 0.0)), 0.0, atb_max - 0.1)
+
+
+# Velo de bruma: el primer golpe físico que va a por él en el combate no le alcanza (una vez; sin dado).
+static func velo(f: Dictionary) -> bool:
+	if not f.get("efectos", {}).get("velo", false) or f.get("velo_usado", false):
+		return false
+	f["velo_usado"] = true
+	return true

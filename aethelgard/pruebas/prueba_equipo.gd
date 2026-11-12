@@ -71,10 +71,10 @@ func _borrar() -> void:
 
 # ---------------------------------------------------------------- 1. datos
 func _datos() -> void:
-	_ok(X.ACCESORIOS.size() == 13 and X.ARMAS.size() == 6,   # +2 de la fase 3 (Brote y Corteza), +1 del Coloso (V9) y la Aguja (V12)
-		 "1: hay %d accesorios y %d armas" % [X.ACCESORIOS.size(), X.ARMAS.size()])
+	_ok(_base().size() == 13 and X.ARMAS.size() == 6,   # +2 de la fase 3 (Brote y Corteza), +1 del Coloso (V9) y la Aguja (V12)
+		 "1: hay %d accesorios y %d armas" % [_base().size(), X.ARMAS.size()])
 	var nombres := {}
-	for id in X.ACCESORIOS.keys() + X.ARMAS.keys():
+	for id in _base() + X.ARMAS.keys():
 		var o: Dictionary = X.objeto(id)
 		_ok(not I.ARMAS.has(id) and not I.PROTECCIONES.has(id), "1: el id %s ya existe en inventario.gd" % id)
 		_ok(not nombres.has(o["nombre"]), "1: nombre repetido: %s" % o["nombre"])
@@ -127,7 +127,7 @@ func _objeto_y_solo() -> void:
 		["Kael", "guardiana_ambar", true], ["Garon", "fauces_gorthor", true], ["Kael", "fauces_gorthor", false],
 		["Kael", "gemelas_muralla", false], ["Lya", "baculo_peregrino", true], ["Kael", "baculo_peregrino", false],
 		["Lya", "rama_milenaria", true], ["Garon", "rama_milenaria", false]]
-	for id in X.ACCESORIOS:
+	for id in _base():
 		for h in G.EN_EL_GRUPO:
 			casos.append([h, id, true])
 	casos.append(["Kael", "no_existe", false])
@@ -285,3 +285,9 @@ func _generador() -> void:
 	X.esquiva({"esquiva": 0.12})
 	_ok(randi() == segundo, "7: la esquiva con pluma no tira exactamente un dado")
 	_hecho("7: sin pluma no se toca el generador global; con ella, una tirada")
+
+
+# Los accesorios de antes de la V12: la tanda nueva (equipo_extra.gd «tanda»: "v12") tiene otras reglas (ranuras Anillo
+# y Amuleto, atributos y «solo») y se prueba en prueba_accesorios_v12.gd.
+func _base() -> Array:
+	return X.ACCESORIOS.keys().filter(func(id): return not X.ACCESORIOS[id].has("tanda"))

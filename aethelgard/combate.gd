@@ -2066,6 +2066,7 @@ func _turno_guardian(f: Dictionary, vivos: Array, mult: float) -> void:
 			modelo.ataque()                           # sacude sus ramas
 		_voz(f, "ataque")
 		var d := maxi(1, int(f["atk"] * 0.55 * mult))
+		dano_magico_entrante = true                  # V12, accesorios: las esporas son magia (Anillo del Alba)
 		for h in vivos:
 			if h["hp"] <= 0:
 				continue
@@ -2075,6 +2076,7 @@ func _turno_guardian(f: Dictionary, vivos: Array, mult: float) -> void:
 			_particulas(_centro(h) + Vector2(0, 40), Color(0.75, 0.9, 0.5, 0.8), Color(0.4, 0.6, 0.2, 0.0), 14, 0.9,
 				Vector2(20, 60), 60.0, Vector2(0, -1), 40.0, Vector2(0, 20), 0.12)
 			_golpe_visual(h, _quitar_pv(h, maxi(1, dh)), "")
+		dano_magico_entrante = false
 		_actualizar()
 		await get_tree().create_timer(0.9).timeout
 		return
@@ -2274,6 +2276,7 @@ const PATRONES := {
 # dos respuestas: defenderse o cargar contra él. Los jefes (Guardián, Coloso, Gorthor) siguen con lo suyo.
 const UMBRAL_INTERRUPCION := 0.25
 var golpe_magico := false                         # lo pone quien resuelve un golpe de magia, para _vigilar_carga
+var dano_magico_entrante := false                 # V12, accesorios: un ataque MÁGICO enemigo se resuelve (Anillo del Alba)
 
 
 func _vigilar_carga(f: Dictionary, d: int) -> void:
@@ -4483,6 +4486,7 @@ func _aplicar_cura(objetivos: Array) -> void:
 	_actualizar()
 	registro.text = "%s lanza %s" % [quien["nombre"], d["nombre"]]
 	var cantidad := int(d["dano"] * quien.get("magia_mult", 1.0)) + int(quien.get("magia_extra", 0))
+	cantidad = Extra.potencia_magia(quien, "Cura", cantidad)   # V12, accesorios: Rosario del Loto (sin él, igual)
 	await _lanzar_cura(quien, objetivos, cantidad, nivel_sel)
 	_terminar_turno()
 
@@ -4500,7 +4504,7 @@ func _lanzar_cura(o: Dictionary, objs: Array, cantidad: int, nivel: int) -> void
 	if nivel == 3:
 		_fogonazo(Color(1.0, 0.95, 0.6), 0.25, 0.6)
 	for obj in objs:
-		var c: int = mini(cantidad + randi_range(-3, 3), obj["hp_max"] - obj["hp"])
+		var c: int = mini(Extra.cura_recibida(obj, cantidad + randi_range(-3, 3)), obj["hp_max"] - obj["hp"])   # (V12: savia)
 		obj["hp"] += c
 		_efecto_cura(obj)
 		_numero_flotante(obj, "+%d" % c, C_CURA)
@@ -4531,7 +4535,11 @@ func _gastar_pm(quien: Dictionary, coste: int) -> void:
 
 
 func _dano_magia(quien: Dictionary, d: Dictionary) -> int:
-	return Formulas.dano_magia(quien, d)
+	var fam := ""                                     # V12, accesorios: Colgante del Eco (Agua y Rayo; sin él, igual)
+	for k in NIVELES_MAGIA:
+		if NIVELES_MAGIA[k].has(d):
+			fam = k
+	return Extra.potencia_magia(quien, fam, Formulas.dano_magia(quien, d))
 
 
 # ¿Completó Lya «La savia que recuerda»? (su magia hace más al Guardián del Bosque; se mira una vez por combate)
@@ -4653,7 +4661,7 @@ func _usar_objeto(nombre: String, quien: Dictionary) -> void:
 		for h in heroes:
 			if h["hp"] <= 0:
 				continue
-			var cb: int = mini(int(o_b["cura"]), h["hp_max"] - h["hp"])
+			var cb: int = mini(Extra.cura_recibida(h, int(o_b["cura"])), h["hp_max"] - h["hp"])   # (V12: savia)
 			h["hp"] += cb
 			_efecto_cura(h)
 			_numero_flotante(h, "+%d PV" % cb, C_CURA)
@@ -4682,7 +4690,7 @@ func _usar_objeto(nombre: String, quien: Dictionary) -> void:
 	estado = "accion"
 	var o: Dictionary = OBJETOS_COMBATE[nombre]
 	var campo := "hp" if o["que"] == "PV" else "mp"
-	var cura: int = min(o["cura"], quien[campo + "_max"] - quien[campo])
+	var cura: int = min(Extra.cura_recibida(quien, o["cura"]) if campo == "hp" else o["cura"], quien[campo + "_max"] - quien[campo])   # (V12: savia)
 	quien[campo] += cura
 	Sonido.efecto("pocion", {"tono": 1.0 if campo == "hp" else 1.12})   # el frasco (sonido.gd)
 	if campo == "hp" and cura > 0:                     # su alivio, si la poción le cura PV (sonido.gd, tanda 5)
@@ -4793,6 +4801,9 @@ func _defender() -> void:
 	_numero_flotante(quien, "Defensa", Color(0.7, 0.85, 1.0))
 	await get_tree().create_timer(0.4).timeout
 	_terminar_turno()
+	var atb_def: float = Extra.atb_al_defender(quien.get("efectos", {}), ATB_MAX)   # V12, accesorios: Brazalete del
+	if atb_def > 0.0 and quien["hp"] > 0:            # centinela (_terminar_turno acaba de dejarla a 0; sin él, nada)
+		quien["atb"] = atb_def
 
 
 # Huir: en los combates normales siempre funciona (los jefes no lo permiten). No da experiencia.
@@ -4858,6 +4869,8 @@ func _terminar_turno(carga := true) -> void:
 # Con M3, a un héroe con coraza de Escarcha el golpe le llega primero a la coraza (artes.gd absorber): se ve, suena
 # y, si se rompe, se rompe con su seña. Devuelve lo que llega a los PV (sin coraza, «d», como siempre).
 func _quitar_pv(f: Dictionary, d: int) -> int:
+	if f.get("hero", false) and d > 0:                  # V12, accesorios: Anillo del Alba y Broche del Guardián (sin ellos, d)
+		d = Extra.dano_al_heroe(f, d, heroes, dano_magico_entrante)
 	if f.get("hero", false) and int(f.get("barrera", 0)) > 0 and d > 0:
 		var r: Dictionary = Artes.absorber(f, d)
 		_coraza_golpeada(f, r)
@@ -5409,6 +5422,8 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 		# crítico pasaba de 70-80 a 112-128 (medido el 11/11) y tumbaba de un golpe a un Slime de élite (88 PV). La
 		# tirada se hace igual, para no mover el azar del resto del combate.
 		critico = false
+	if magia == "" and origen.get("hero", false):     # V12, accesorios: Brazal del último muro y Fiador (sin ellos, igual)
+		dano = Extra.dano_fisico_heroe(origen, objetivo, dano)
 	if critico:
 		dano = int(dano * MULT_CRITICO)
 	if magia == "" and objetivo["hero"]:              # la defensa del héroe resta daño a los golpes
@@ -5424,7 +5439,8 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 			dano = _con_estados_negra(dano, magia, objetivo)
 	var congela: bool = magia == "" and origen["hero"] and _lleva_frostfang(origen) and randf() < PROB_CONGELAR
 	# Pluma de arpía: un héroe esquiva un golpe físico (solo tira el dado con la pluma puesta: sin ella, nada cambia)
-	var esquiva: bool = magia == "" and objetivo["hero"] and Extra.esquiva(objetivo.get("efectos", {}))
+	# (V12, accesorios: el Velo de bruma esquiva el primer golpe físico, sin dado; si no lo lleva, como siempre)
+	var esquiva: bool = magia == "" and objetivo["hero"] and (Extra.velo(objetivo) or Extra.esquiva(objetivo.get("efectos", {})))
 	ultimo_esquivado = esquiva
 	var embuido: bool = magia == "" and origen.get("embuir", "") != ""    # Garon con Embuir: +20 % y su elemento
 	if embuido:

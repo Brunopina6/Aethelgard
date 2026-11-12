@@ -59,6 +59,19 @@ const FUERA := {
 	"amuleto_claro": "se fabrica en el taller conjunto (V9; talleres.gd, receta amuleto_claro)",
 	"fragmento_armadura": "al vencer al Coloso de la Falla, en la grieta de la Garganta 3D (V9, jefe 2; combate_coloso.gd, dar_premio)",
 	"aguja_resonancia": "premio de Ismena al acabar «La caravana perdida», en el Mar de Cristal (V12; zonas3d/mar_cristal/mision.gd)",
+	# V12, accesorios nuevos (12/11): APAGADOS; solo la tienda de prueba con el interruptor «accesorios_v12». Dónde se
+	# consiguen, pendiente del usuario (su «donde» es una propuesta; docs/v12/ACCESORIOS_V12.md).
+	"anillo_cuarzo": "V12, tienda de prueba (interruptor accesorios_v12); sitio pendiente del usuario",
+	"anillo_alba": "V12, tienda de prueba (interruptor accesorios_v12); sitio pendiente del usuario",
+	"colgante_eco": "V12, tienda de prueba (interruptor accesorios_v12); sitio pendiente del usuario",
+	"talisman_ceniza": "V12, tienda de prueba (interruptor accesorios_v12); sitio pendiente del usuario",
+	"colgante_savia": "V12, tienda de prueba (interruptor accesorios_v12); sitio pendiente del usuario",
+	"broche_guardian": "V12, tienda de prueba (interruptor accesorios_v12); sitio pendiente del usuario",
+	"brazalete_centinela": "V12, tienda de prueba (interruptor accesorios_v12); sitio pendiente del usuario",
+	"velo_bruma": "V12, tienda de prueba (interruptor accesorios_v12); sitio pendiente del usuario",
+	"brazal_ultimo_muro": "V12, tienda de prueba (interruptor accesorios_v12); sitio pendiente del usuario",
+	"fiador_empunadura": "V12, tienda de prueba (interruptor accesorios_v12); sitio pendiente del usuario",
+	"rosario_loto": "V12, tienda de prueba (interruptor accesorios_v12); sitio pendiente del usuario",
 }
 
 

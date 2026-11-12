@@ -160,6 +160,7 @@ static func tic_heroe(c, h: Dictionary) -> bool:
 	if int(h.get("hb_corrupcion", 0)) > 0:
 		h["hb_corrupcion"] = int(h["hb_corrupcion"]) - 1
 		var d := maxi(1, int(h["hp_max"] * CORRUPCION_PCT))
+		d = load("res://equipo_extra.gd").dano_continuo(h, d)   # V12, accesorios: Talismán de Ceniza (sin él, igual)
 		d = mini(d, int(h["hp"]) - 1)
 		if d > 0:
 			c._quitar_pv(h, d)
@@ -368,6 +369,7 @@ static func _aliento(c, f: Dictionary, vivos: Array, mult: float) -> void:
 					c.get_tree().create_timer(1.6).timeout.connect(nube[0].queue_free)
 				nube[0] = null
 	var impacto := func():
+		c.dano_magico_entrante = true                     # V12, accesorios: el Aliento es magia (Anillo del Alba)
 		for h in objs:
 			if h["hp"] <= 0:
 				continue
@@ -375,6 +377,7 @@ static func _aliento(c, f: Dictionary, vivos: Array, mult: float) -> void:
 			if not h.get("defendiendo", false) and h["hp"] > 0:
 				h["hb_corrupcion"] = CORRUPCION_TURNOS
 				c._numero_flotante(h, "Corrupción", COLOR_ENFERMO, 26, Vector2(0, -50))
+		c.dano_magico_entrante = false
 		c._actualizar()
 	await _atacar(c, f, "aliento", impacto, al_evento)
 	if nube[0] != null and is_instance_valid(nube[0]):

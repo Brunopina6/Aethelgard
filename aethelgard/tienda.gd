@@ -205,14 +205,23 @@ func _pintar() -> void:
 						func(): _vender(m), false, true)
 		"Equipo":
 			var precios := _precios_equipo()
+			var X = load("res://equipo_extra.gd")
+			var aviso_v12 := false
 			for id in precios:
 				var ob: Dictionary = Inv.objeto(id)
 				if ob.is_empty():
 					continue
 				var tiene: bool = id in Inv.datos()["equipables"]
 				var para := {"todos": "Todos", "espada": "Espadachines", "cetro": "Magos"}
-				_fila(ob["nombre"], Inv.resumen(id), "Ya lo tienes" if tiene else para.get(ob["para"], ""),
-					precios[id], func(): _comprar_equipo(id), tiene)
+				var nota: String = "Ya lo tienes" if tiene else para.get(ob["para"], "")
+				var rz: Dictionary = X.rareza(id)             # V12, accesorios: rareza (color, icono y nota)
+				if X.es_v12(id) and not aviso_v12:            # la tanda nueva, solo con su interruptor: se marca
+					aviso_v12 = true
+					cuerpo.add_child(_texto("Prueba V12: accesorios nuevos (apagados en la partida normal)", 18, COLOR_TITULO))
+				if not rz.is_empty() and not tiene:
+					nota = "%s · %s" % [rz["nombre"], ("Solo " + str(ob["solo"])) if ob.has("solo") else nota]
+				_fila(ob["nombre"], Inv.resumen(id), nota, precios[id], func(): _comprar_equipo(id), tiene, false,
+					load("res://icono_equipo.gd").para(id), rz.get("color", COLOR_TEXTO))
 		"Magias":
 			var romano := ["", "I", "II", "III"]
 			for l in LIBROS + Artes.libros_en_venta():    # las de siempre y, detrás, las artes ya en el juego
@@ -232,12 +241,23 @@ func _pintar() -> void:
 	_devolver_foco(clave)
 
 
-func _fila(nombre: String, desc: String, nota: String, precio: int, al_comprar: Callable, agotado := false, vender := false) -> void:
+# «icono» y «color_nombre» (V12, accesorios): la rareza; sin ellos, la fila de siempre.
+func _fila(nombre: String, desc: String, nota: String, precio: int, al_comprar: Callable, agotado := false, vender := false,
+		icono: Control = null, color_nombre := COLOR_TEXTO) -> void:
 	var f := HBoxContainer.new()
 	f.add_theme_constant_override("separation", 14)
-	var n := _texto(nombre, 21, COLOR_TEXTO)
+	var n := _texto(nombre, 21, color_nombre)
 	n.custom_minimum_size = Vector2(330, 0)
-	f.add_child(n)
+	if icono != null:                                # el icono y el nombre ocupan juntos la misma columna
+		var caja := HBoxContainer.new()
+		caja.add_theme_constant_override("separation", 8)
+		caja.custom_minimum_size = Vector2(330, 0)
+		n.custom_minimum_size = Vector2.ZERO
+		caja.add_child(icono)
+		caja.add_child(n)
+		f.add_child(caja)
+	else:
+		f.add_child(n)
 	var d := _texto(desc, 18, COLOR_BIEN)
 	d.custom_minimum_size = Vector2(300, 0)
 	f.add_child(d)

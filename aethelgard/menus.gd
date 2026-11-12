@@ -268,6 +268,11 @@ func _pintar_grupo() -> void:
 		var id: String = lleva.get(r, "")
 		var nombre := _texto(Inv.objeto(id).get("nombre", "—") if id != "" else "—", 20, COLOR_TEXTO)   # un id desconocido: «—»
 		nombre.custom_minimum_size = Vector2(220, 0)
+		var icono: Control = load("res://icono_equipo.gd").para(id) if id != "" else null   # V12, accesorios: rareza
+		if icono != null:                             # (icono y color; sin rareza, como siempre)
+			nombre.add_theme_color_override("font_color", load("res://equipo_extra.gd").rareza(id)["color"])
+			nombre.custom_minimum_size = Vector2(220 - icono.custom_minimum_size.x - 8, 0)
+			f.add_child(icono)
 		f.add_child(nombre)
 		var adelante := _boton("▶", 18, Vector2(36, 34), "ranura:%s:1" % r)
 		adelante.pressed.connect(func(): _cambiar(ranura, 1))
@@ -467,6 +472,11 @@ func _pintar_objetos() -> void:
 			f.add_theme_constant_override("separation", 14)
 			var n := _texto(o["nombre"], 20, COLOR_TEXTO)
 			n.custom_minimum_size = Vector2(260, 0)
+			var icono: Control = load("res://icono_equipo.gd").para(id)   # V12, accesorios: rareza (icono y color)
+			if icono != null:
+				n.add_theme_color_override("font_color", load("res://equipo_extra.gd").rareza(id)["color"])
+				n.custom_minimum_size = Vector2(260 - icono.custom_minimum_size.x - 14, 0)
+				f.add_child(icono)
 			f.add_child(n)
 			var t := _texto(Inv.NOMBRES_RANURA[r], 18, COLOR_SUAVE)
 			t.custom_minimum_size = Vector2(100, 0)
