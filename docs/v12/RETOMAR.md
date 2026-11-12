@@ -358,7 +358,7 @@ negra).
 | Inventario del mundo, NPC chibi y Oakhaven vivo | `D:\Aethelgard_v12_mundo` · `claude/v12-mundo` | `docs/v12/INVENTARIO_MUNDO.md`, `personajes/npc_v12/`, Oakhaven 3D | `docs/memory/agents/mundo_v12_npc.md` |
 | Animación de combate, cámaras y efectos | `D:\Aethelgard_v12_combate2` · `claude/v12-combate2` | clips de los héroes v2, módulo de animación de combate, cámaras, `vfx/` | `docs/memory/agents/animaciones_v12_combate2.md` |
 
-- **Bramavidrio v5** (cabeza, boca y mandíbula, movimientos; la v4 intacta y la v2 por defecto): `D:Aethelgard_v12_bramavidrio5` · `claude/v12-bramavidrio5` (desde `83d7774`), informe `docs/memory/agents/animaciones_v12_bramavidrio5.md`.
+- **Bramavidrio v5** (cabeza, boca y mandíbula, movimientos; la v4 intacta y la v2 por defecto): `D:\Aethelgard_v12_bramavidrio5` · `claude/v12-bramavidrio5` (desde `83d7774`), informe `docs/memory/agents/animaciones_v12_bramavidrio5.md`.
 - **Programas del PC:** el usuario pide usar todo lo instalado; inventario en la sección final de `REGLAS_COMUNES.md`.
 - **En cola** (cuando acabe alguno): geometría nueva de los
   protagonistas con Blender.
