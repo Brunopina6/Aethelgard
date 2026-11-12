@@ -33,7 +33,17 @@ const REGIONES := {
 			{"id": "sello_caravana", "objeto": "Sello de la caravana", "pos": Vector2(55.5, 57.0), "raro": true,
 				"hito": "mc_caravana"},
 			{"id": "llave_vidrio", "objeto": "Llave de vidrio", "pos": Vector2(49.0, 21.0), "raro": true,
-				"hito": "mc_ruinas"}]},
+				"hito": "mc_ruinas"},
+			# V12 (12/11), PROTOTIPO APAGADO: las tres plomadas de bronce de Naira («La única noche que cabe en un día»,
+			# zonas3d/mar_cristal/naira_mision.gd). «naira»: solo existen con el interruptor naira_v12 (grupo.gd); sin
+			# él, esta región tiene exactamente los hallazgos de siempre. Una junto al observatorio, otra en la boca del
+			# cañón del oeste y la tercera en la arena que tiembla (la de Bramavidrio).
+			{"id": "nr_plomada_1", "objeto": "Plomada de bronce", "pos": Vector2(76.2, 11.0), "raro": true,
+				"hito": "nr_observatorio", "naira": true},
+			{"id": "nr_plomada_2", "objeto": "Plomada de bronce", "pos": Vector2(19.5, 33.5), "raro": true,
+				"hito": "nr_observatorio", "naira": true},
+			{"id": "nr_plomada_3", "objeto": "Plomada de bronce", "pos": Vector2(71.0, 43.0), "raro": true,
+				"hito": "nr_observatorio", "naira": true}]},
 }
 # La Aguja de Resonancia (equipo_extra.gd, premio de «La caravana perdida»): si Kael la tiene, oye un poco más lejos.
 const AGUJA := "aguja_resonancia"
@@ -115,6 +125,8 @@ static func hallazgos(region: String, semilla: int) -> Array:
 		total += int(c[1])
 	var lista: Array = []
 	for u in r.get("unicos", []):
+		if u.get("naira", false) and not load("res://grupo.gd").naira_v12():
+			continue                               # V12: lo de la misión de Naira, solo con su interruptor
 		lista.append({"id": u["id"], "pos": u["pos"], "objeto": u["objeto"], "raro": u.get("raro", true), "falsa": false,
 			"hito": u.get("hito", "")})
 	for i in int(r["comunes"]) + int(r["falsas"]):

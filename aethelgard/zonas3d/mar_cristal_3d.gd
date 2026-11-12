@@ -17,6 +17,9 @@ const Gusano := preload("res://zonas3d/mar_cristal/gusano.gd")
 const Buscador := preload("res://buscador.gd")
 const Progreso := preload("res://progreso.gd")
 const NPC_DESIERTO := preload("res://personajes/desierto/npc_desierto_3d.gd")   # V12 (12/11): Ismena y Oren nuevos, APAGADO por defecto
+# V12 (12/11), PROTOTIPO APAGADO: la misión de Naira y su observatorio (solo con el interruptor «naira_v12», grupo.gd).
+const NairaMision := preload("res://zonas3d/mar_cristal/naira_mision.gd")
+const Observatorio := preload("res://zonas3d/mar_cristal/observatorio.gd")
 
 const INDICE := 4                          # lugar del mapa (mapa.gd: Mar de Arena de Calid; modo3d.MAR_CRISTAL)
 const NOMBRE := "mar_cristal"              # progreso.gd: mazmorras[...] y encuentros
@@ -56,12 +59,15 @@ var _dist_jugador := 17.0
 var _dist_puesta := 17.0
 var dialogo_actual := ""
 var brillo_sin_sombras := 1.15              # vista3d.gd: 1,3 igualaba el PC, pero en el Redmi se veía lavado (v581)
+var naira                                   # naira_mision.gd, solo con el interruptor «naira_v12»; si no, null
 
 
 func _ready() -> void:
 	var cal = load("res://prototipos/calidad_proto.gd")
 	perfil = cal.datos()
 	nombre_perfil = cal.actual()
+	NairaMision.reparar_formacion()            # V12: tras el combate del eclipse, el grupo de antes (sin misión, nada)
+	T.llanos_extra = [Observatorio.LLANO] if NairaMision.activa() else []   # V12: la explanada del observatorio
 	super()
 	info.visible = false
 	_crear_interfaz()
@@ -72,6 +78,9 @@ func _ready() -> void:
 	hud.construir()
 	gusano = Gusano.new(self)
 	Mision.registrar_dialogic()
+	if NairaMision.activa():                   # V12, PROTOTIPO APAGADO: la misión de Naira (naira_mision.gd)
+		naira = NairaMision.new()
+		naira.construir(self, perfil)
 	_crear_cartografa()
 	_marca_salida()
 	poner_oren(Progreso.hito("mc_superviviente"))
@@ -86,6 +95,8 @@ func _ready() -> void:
 	_ultima = kael.global_position
 	_crear_grupo()
 	_manchas_sombra()
+	if naira != null:
+		naira.al_entrar()
 	salida["armada"] = _dist_plana(kael.global_position, T.SALIDA) > ARMAR_SALIDA
 	var dg = get_node_or_null("/root/Dialogic")
 	if dg != null:
@@ -183,7 +194,7 @@ func _crear_escenario() -> void:
 
 
 func _prohibido(p: Vector3) -> bool:
-	return T.prohibido(p.x, p.z)
+	return T.prohibido(p.x, p.z) or (naira != null and naira.prohibido(p))
 
 
 func _dist_plana(a: Vector3, b: Vector3) -> float:
@@ -208,12 +219,22 @@ func _colocar_kael(p: Vector3) -> void:
 	_colocar_camara(1.0)
 
 
+# V12: en el momento del eclipse (misión de Naira) la cámara, además, mira hacia arriba: el cielo sobre la torre.
+func _colocar_camara(peso: float) -> void:
+	super(peso)
+	if naira != null and naira.mirar_arriba > 0.0:
+		cam.rotate_object_local(Vector3.RIGHT, deg_to_rad(naira.mirar_arriba))
+
+
 func _camara_zona(delta: float) -> void:
 	if absf(distancia - _dist_puesta) > 0.0001:
 		_dist_jugador = clampf(_dist_jugador + distancia - _dist_puesta, DIST_MIN, DIST_MAX)
 	var k := 1.0 - exp(-2.2 * delta)
-	inclinacion = lerpf(inclinacion, CAMARA[0], k)
-	distancia = lerpf(distancia, clampf(_dist_jugador, CAMARA[1], CAMARA[2]), k)
+	var meta := Vector2(CAMARA[0], clampf(_dist_jugador, CAMARA[1], CAMARA[2]))
+	if naira != null and naira.camara != null:  # V12: el momento del eclipse, la cámara baja para ver el cielo
+		meta = naira.camara
+	inclinacion = lerpf(inclinacion, meta.x, k)
+	distancia = lerpf(distancia, meta.y, k)
 	_dist_puesta = distancia
 
 
@@ -254,7 +275,8 @@ func _parar_kael() -> void:
 
 func ocupado() -> bool:
 	var dg = get_node_or_null("/root/Dialogic")
-	return (dg != null and dg.current_timeline != null) or (hud != null and hud.ocupado())
+	return (dg != null and dg.current_timeline != null) or (hud != null and hud.ocupado()) \
+		or (naira != null and naira.momento())
 
 
 func _crear_panel_rnd(capa: CanvasLayer) -> void:
@@ -282,6 +304,8 @@ func _process(delta: float) -> void:
 			terreno.sombras.actualizar()
 	if clima != null:
 		clima.actualizar(delta, kael.global_position, ocupado())
+	if naira != null:
+		naira.actualizar(delta, _t)
 	if en_banco():
 		super(delta)
 		return
@@ -290,6 +314,8 @@ func _process(delta: float) -> void:
 		boton_accion.visible = false
 		if hud != null and hud.ocupado():                         # cavando: el buscador sigue su cuenta hasta sacar lo enterrado
 			hud.actualizar(delta, kael.global_position, clima.buscador_estorbado() if clima != null else 0.0)
+		if naira != null and naira.camara != null:
+			_camara_zona(delta)
 		_colocar_camara(1.0 - exp(-suavizado * delta))
 		_oclusion()
 		return
@@ -316,6 +342,8 @@ func _process(delta: float) -> void:
 	hud.actualizar(delta, p, clima.buscador_estorbado())
 	gusano.actualizar(delta, p)
 	mision.vigilar(self, p)
+	if naira != null:
+		naira.vigilar(p, delta)
 	_comprobar_cerca()
 
 
@@ -328,6 +356,8 @@ func _paso() -> void:
 	var k := T.ritmo(kael.global_position.x, kael.global_position.z)
 	if clima.tormenta_fuerte():
 		k *= 1.4                                                 # con tormenta se oye menos y se ve menos: más emboscadas
+	if naira != null:
+		k *= naira.ritmo(kael.global_position)                   # V12: ni en la explanada del observatorio ni en el eclipse
 	if k > 0.0 and randf() < Progreso.prob_encuentro(PROB_ENCUENTRO * k, pasos, PASOS_MIN, NOMBRE):
 		encuentro()
 
@@ -366,6 +396,8 @@ func _piezas_al_alcance() -> Array:
 		["esqueleto", Vector3(T.ESQUELETO.x, 0, T.ESQUELETO.y), 2.4, "Examinar"],
 		["espejismo", Vector3(T.ESPEJISMO.x, 0, T.ESPEJISMO.y), 3.2, "Mirar el espejismo"]]
 	r.append_array(mision.piezas())
+	if naira != null:
+		r.append_array(naira.piezas())
 	return r
 
 
@@ -395,6 +427,8 @@ func _accion() -> void:
 	if _bloqueo > 0.0 or ocupado():
 		return
 	_bloqueo = 0.4
+	if naira != null and naira.accion(cerca):  # V12: la misión de Naira (y Oren e Ismena tras «La caravana perdida»)
+		return
 	mision.accion(self, cerca)
 
 
@@ -411,7 +445,9 @@ func dialogo(nombre: String) -> bool:
 
 
 func _senal_dialogo(arg) -> void:
-	if mision != null:
+	if naira != null and str(arg).begins_with("nr:"):
+		naira.senal(str(arg))
+	elif mision != null:
 		mision.senal(self, str(arg))
 
 
@@ -419,7 +455,9 @@ func _al_terminar_dialogo() -> void:
 	var fue := dialogo_actual
 	dialogo_actual = ""
 	_bloqueo = 1.0                                              # el último SEGUIR cae donde el botón de acción (Redmi, v581)
-	if mision != null and fue != "":
+	if naira != null and fue.begins_with("nr_"):
+		naira.dialogo_terminado(fue)
+	elif mision != null and fue != "":
 		mision.dialogo_terminado(self, fue)
 
 

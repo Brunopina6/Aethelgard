@@ -1,0 +1,24 @@
+join kael (vivo_pv) left
+join lya (vivo_pv) right
+join naira (vivo_pv) center
+update kael [extra_data="ligero"]
+kael: Tres plomadas. Una huele a gusano, pero ahí la tienes.
+update naira [extra_data="naira_apunta+firme"]
+naira: Las tres, y a tiempo. Lo apunto: «Ayuda inesperada. Eficaz».
+update lya [extra_data="duda"]
+lya: ¿Para qué sirven?
+update naira [extra_data="naira_mira"]
+naira: Caen, y mido cuánto tardan. Cerca de la niebla, el aire pesa.
+lya: ¿Pesa?
+update naira [extra_data="naira_seria"]
+naira: No sé qué pesa. Por eso lo mido.
+update naira [extra_data="naira_ironica"]
+naira: Podéis quedaros. Allí, donde no estorbéis.
+update kael [extra_data="sorpresa"]
+kael: Eh… ¿es cosa mía, o se está yendo la luz?
+update naira [extra_data="naira_interesante+inquieta"]
+naira: Primer contacto. No miréis al sol: gafas solo tengo yo.
+[signal arg="nr:medicion"]
+leave naira
+leave lya
+leave kael

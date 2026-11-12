@@ -1,0 +1,19 @@
+join kael (vivo_pv) left
+join lya (vivo_pv) right
+join naira (vivo_pv) center
+update naira [extra_data="naira_seria"]
+naira: No os acompaño a vosotros. Acompaño a ese brazalete.
+update kael [extra_data="ligero"]
+kael: Venimos en el mismo paquete. Brazalete incluido.
+update naira [extra_data="naira_ironica"]
+naira: Ya me lo temía.
+garon: Cuatro. En combate, tres.
+update kael [extra_data="ligero+risa"]
+kael: Por turnos. Como la cama grande de la posada.
+garon: Duermo en el suelo.
+update naira [extra_data="naira_sonrisa+ligero"]
+naira: Por fin alguien sensato.
+[signal arg="nr:union"]
+leave naira
+leave lya
+leave kael

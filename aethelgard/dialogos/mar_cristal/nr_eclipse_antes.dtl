@@ -1,0 +1,25 @@
+join kael (vivo_pv) left
+join lya (vivo_pv) right
+join naira (vivo_pv) center
+update naira [extra_data="naira_mira"]
+naira: Totalidad. Cuatro minutos. Si alguien habla, que sea después.
+update lya [extra_data="duda"]
+lya: Se ven las estrellas… a mediodía.
+naira: Un eclipse es la única noche que cabe en un día.
+garon: Algo baja por la duna. Hachas. Grimfangs.
+update kael [extra_data="sorpresa"]
+kael: ¿Ahora? ¿No podían esperar cuatro minutos?
+garon: Cazan de noche. Para ellos, ya es de noche.
+garon: La puerta es mía. Vosotros, con ella.
+update naira [extra_data="naira_interesante+inquieta"]
+naira: Necesito prepararlo. Un rato. Que nadie me toque.
+update lya [extra_data="duda"]
+lya: ¿Nadie?
+update naira [extra_data="naira_ironica"]
+naira: Ellos, sobre todo. Vosotros, poco.
+update kael [extra_data="decidido"]
+kael: Hecho. Tú mira al cielo; nosotros miramos lo demás.
+[signal arg="nr:combate"]
+leave naira
+leave lya
+leave kael

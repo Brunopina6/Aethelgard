@@ -31,6 +31,10 @@ const ROCAS := [[6.0, 24.0, 5.5, 7.0], [10.0, 36.0, 4.0, 6.0], [5.0, 44.0, 4.5, 
 	[5.0, 70.0, 5.5, 7.5], [12.0, 80.0, 3.5, 5.0], [16.0, 41.0, 2.4, 4.0], [18.0, 54.0, 2.2, 3.5], [70.0, 98.0, 3.0, 3.0],
 	[84.0, 86.0, 4.0, 4.5], [26.0, 30.0, 2.0, 2.4]]
 const SALIENTE := [12.6, 48.0, 3.8, 3.4]         # la roca del cobijo: techo a 3,4 m, se pasa por debajo
+# V12 (12/11), PROTOTIPO APAGADO: la explanada del Viejo Observatorio de Calid (misión de Naira, naira_mision.gd). Solo
+# la pone la región cuando la misión está activa (interruptor «naira_v12»); vacía, altura() es exactamente la de siempre.
+# [centro, radio] como los llanos de altura().
+static var llanos_extra: Array = []
 
 
 # La altura de la arena en (x, z): dunas suaves que crecen hacia el este y el norte, aplanadas en el camino, el
@@ -44,6 +48,8 @@ static func altura(x: float, z: float) -> float:
 	var llano := maxf(maxf(_cerca(Vector2(x, z), CAMPAMENTO, 9.0), _cerca(Vector2(x, z), CARAVANA, 6.5)),
 		maxf(_cerca(Vector2(x, z), RUINAS, 11.0), _cerca(Vector2(x, z), COBIJO, 5.0)))
 	llano = maxf(llano, _cerca_camino(Vector2(x, z)))
+	for e in llanos_extra:                                      # (vacío salvo con la misión de Naira)
+		llano = maxf(llano, _cerca(Vector2(x, z), e[0], e[1]))
 	h = lerpf(h, 0.0, llano)
 	var o := _cerca(Vector2(x, z), OASIS, RADIO_OASIS)        # la hondonada del oasis
 	if o > 0.0:

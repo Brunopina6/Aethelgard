@@ -240,6 +240,13 @@ static func ganado(id: String) -> bool:
 # ================================================================= hitos de la historia
 
 # Hitos de la historia (biblia v3: «hitos.<id>»). Se guardan en la partida; los que faltan valen false.
+# V12 (12/11), PROTOTIPO APAGADO (interruptor «naira_v12», grupo.gd): los de la misión de incorporación de Naira, «La
+# única noche que cabe en un día» (docs/v12/NAIRA.md §4; zonas3d/mar_cristal/naira_mision.gd), en orden. Sin el
+# interruptor nadie los pone. nr_eclipse_perfecto es opcional (nadie golpeó a Naira mientras preparaba).
+const HITOS_NAIRA := ["nr_rumor", "nr_observatorio", "nr_plomada_1", "nr_plomada_2", "nr_plomada_3", "nr_plomadas",
+	"nr_medicion", "nr_eclipse", "nr_eclipse_perfecto", "nr_catalogo", "nr_union"]
+
+
 static func hito(id: String) -> bool:
 	return Engine.get_meta("hitos", {}).get(id, false)
 

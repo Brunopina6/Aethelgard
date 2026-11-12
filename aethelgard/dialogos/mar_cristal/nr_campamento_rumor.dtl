@@ -1,0 +1,17 @@
+join kael (vivo_pv) left
+join lya (vivo_pv) right
+oren: La de la torre del norte… La saludé y me tiró una piedra.
+ismena: Le gritaste «¡eh, tú!» desde abajo. Yo también te la tiro.
+oren: Y me dijo: «Me estás tapando el cielo». ¡A mediodía!
+update kael [extra_data="sorpresa"]
+kael: ¿Una torre? Por ahí solo hay dunas y arena que tiembla.
+ismena: Medio enterrada, al nordeste. Pasado el arenal del gusano.
+ismena: Dice que hoy habrá noche a mediodía. Yo no pregunto.
+update lya [extra_data="decidida"]
+lya: Habla de un eclipse. La luna tapará el sol un rato.
+garon: Con la noche salen los que cazan de noche.
+update kael [extra_data="ligero"]
+kael: Pues vamos a ver una noche de día. Y a esquivar piedras.
+[signal arg="nr:rumor"]
+leave lya
+leave kael

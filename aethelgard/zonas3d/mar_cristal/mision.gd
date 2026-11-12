@@ -251,6 +251,9 @@ func hallazgo(region: Node, r: Dictionary) -> void:
 			if not hecho("mc_llave"):
 				P().poner_hito("mc_llave")
 				region._mostrar_aviso(TEXTOS["llave"], 3.0)
+		_:                                          # V12: las plomadas de Naira (naira_mision.gd, prototipo apagado)
+			if region.get("naira") != null:
+				region.naira.hallazgo(region, r)
 
 
 # ================================================================= la tormenta de la misión

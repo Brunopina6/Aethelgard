@@ -1,0 +1,7 @@
+join naira (vivo_pv) center
+update naira [extra_data="naira_seria+firme"]
+naira: Seguimos en la umbra. Me han roto la cuenta, no el cielo.
+update naira [extra_data="naira_interesante+inquieta"]
+naira: Otra vez. Y esta vez, que no me toquen.
+[signal arg="nr:combate"]
+leave naira

@@ -1,0 +1,35 @@
+{
+"@path": "res://addons/dialogic/Resources/character.gd",
+"@subpath": NodePath(""),
+&"_translation_id": "",
+&"color": Color(0.3725, 0.7059, 0.6118, 1),
+&"custom_info": {},
+&"default_portrait": "normal",
+&"description": "Naira, la Astrónoma del Eclipse (V12, PROPUESTA, NO CANON: docs/v12/NAIRA.md). Última aprendiz del Viejo Observatorio de Calid; copia a mano el cielo. Precisión fría aplicada a cosas calientes. Retrato PROVISIONAL (personajes/naira/naira_retrato_provisional.png, sacado de su modelo provisional); sin poses propias todavía: sus gestos van como «pose+movimiento» (naira_seria+firme…), así el movimiento se ve ya y la pose saldrá sola cuando tenga ilustración. Solo sale con el interruptor naira_v12.",
+&"display_name": "Naira",
+&"mirror": false,
+&"nicknames": [],
+&"offset": Vector2(0, 0),
+&"portraits": {
+"normal": {
+"export_overrides": {
+"image": "\"res://personajes/naira/naira_retrato_provisional.png\""
+},
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 0.98,
+"scene": ""
+},
+"vivo_pv": {
+"export_overrides": {
+"image": "\"res://personajes/naira/naira_retrato_provisional.png\"",
+"poses": "{}"
+},
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 0.98,
+"scene": "res://dialogos/retrato_vivo.tscn"
+}
+},
+&"scale": 0.72
+}

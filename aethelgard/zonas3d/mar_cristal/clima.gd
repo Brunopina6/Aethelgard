@@ -42,6 +42,16 @@ var _niebla_base := COLOR_CALMA
 var _densidad_base := NIEBLA_CALMA
 var _viento: Node
 var _sonido_tormenta := false
+# V12 (12/11), PROTOTIPO APAGADO: el eclipse de la misión de Naira (naira_mision.gd). 0 = la luz de siempre (sin
+# misión no se toca nunca), 1 = totalidad: sol casi apagado, cielo y ambiente de noche azul. Se mezcla ENCIMA de la luz
+# del perfil y de la tormenta leídas al construir, así que al volver a 0 la región queda exactamente como estaba
+# (también el perfil sin sombras, LUZ_SIN_SOMBRAS). Mientras dura no empiezan tormentas sistémicas.
+var eclipse := 0.0
+const ECLIPSE_AMBIENTE := Color(0.30, 0.36, 0.62)
+const ECLIPSE_FONDO := Color(0.04, 0.06, 0.15)
+const ECLIPSE_NIEBLA := Color(0.14, 0.16, 0.30)
+const ECLIPSE_SOL := 0.16
+var _sol_color_base := Color(1.0, 0.89, 0.72)
 signal amaino(era_narrativa: bool)
 
 
@@ -55,6 +65,8 @@ func construir() -> void:
 	_env = we.environment if we != null else null
 	_sol = region.get_node_or_null("Sol")
 	_sol_base = _sol.light_energy if _sol != null else 1.0
+	if _sol != null:
+		_sol_color_base = _sol.light_color
 	if _env != null:
 		_ambiente_base = _env.ambient_light_color
 		_fondo_base = _env.background_color
@@ -168,7 +180,7 @@ func actualizar(delta: float, pos_kael: Vector3, ocupado: bool) -> void:
 
 # Las sistémicas solo después de la misión (antes, la de la misión es la primera que se ve).
 func _puede_sistemica() -> bool:
-	return load("res://progreso.gd").hito("mc_fin")
+	return load("res://progreso.gd").hito("mc_fin") and eclipse <= 0.0
 
 
 func _aplicar(pos_kael: Vector3) -> void:
@@ -179,6 +191,16 @@ func _aplicar(pos_kael: Vector3) -> void:
 		_env.background_color = _fondo_base.lerp(Color(0.80, 0.58, 0.38), fuerza)
 	if _sol != null:
 		_sol.light_energy = _sol_base * lerpf(1.0, 0.45, fuerza)
+	if eclipse > 0.0:                                  # (solo con la misión de Naira; con 0, ni se entra)
+		if _env != null:
+			_env.ambient_light_color = _env.ambient_light_color.lerp(ECLIPSE_AMBIENTE, eclipse)
+			_env.background_color = _env.background_color.lerp(ECLIPSE_FONDO, eclipse)
+			_env.fog_light_color = _env.fog_light_color.lerp(ECLIPSE_NIEBLA, eclipse)
+		if _sol != null:
+			_sol.light_energy *= lerpf(1.0, ECLIPSE_SOL, eclipse)
+			_sol.light_color = _sol_color_base.lerp(Color(0.62, 0.70, 1.0), eclipse)
+	elif _sol != null and _sol.light_color != _sol_color_base:
+		_sol.light_color = _sol_color_base
 	if arena != null:
 		arena.position = pos_kael + Vector3(-6.0, 0.6, 0.0)
 		arena.initial_velocity_min = lerpf(2.0, 7.0, fuerza)

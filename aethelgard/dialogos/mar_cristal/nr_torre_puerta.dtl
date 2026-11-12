@@ -1,0 +1,36 @@
+join kael (vivo_pv) left
+join lya (vivo_pv) right
+join naira (vivo_pv) center
+update naira [extra_data="naira_seria+firme"]
+naira: Alto. Estáis pisando mi medición.
+update kael [extra_data="sorpresa"]
+kael: ¿Tu qué?
+update naira [extra_data="naira_seria"]
+naira: Una plomada de bronce. Bajo tu bota izquierda.
+update kael [extra_data="ligero"]
+kael: ¿Y la derecha?
+update naira [extra_data="naira_ironica+duda"]
+naira: La derecha solo pisa arena. Enhorabuena.
+update lya [extra_data="preocupada"]
+lya: Perdona. Podemos ayudarte a colocarla.
+update naira [extra_data="naira_mira"]
+naira: Esa es la única que me ha dejado el viento. Faltan tres.
+naira: Y el eclipse es hoy. Iros: tardo menos sola.
+garon: No.
+update naira [extra_data="naira_incomoda+duda"]
+naira: ¿«No»? ¿Ese es todo vuestro argumento?
+garon: Tenemos un palo que pita.
+update kael [extra_data="ligero"]
+kael: Un buscador. Encuentra metal enterrado. Y a veces, lo que buscas.
+update naira [extra_data="naira_interesante+inquieta"]
+naira: …Interesante. Bronce. Del tamaño de un puño.
+naira: Una, junto a la torre. Otra, en la boca del cañón del oeste.
+naira: La tercera, en la arena que tiembla. Allí no voy yo.
+update kael [extra_data="decidido"]
+kael: Allí vamos nosotros. Soy Kael. Ella es Lya; el grande, Garon.
+update naira [extra_data="naira_seria"]
+naira: Naira. No hace falta que lo recordéis. Daos prisa.
+[signal arg="nr:observatorio"]
+leave naira
+leave lya
+leave kael

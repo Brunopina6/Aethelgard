@@ -1,0 +1,22 @@
+join kael (vivo_pv) left
+join lya (vivo_pv) right
+join naira (vivo_pv) center
+update naira [extra_data="naira_mira"]
+naira: Cuarenta y una estrellas sin nombre. Cada una era un pueblo.
+update lya [extra_data="preocupada"]
+lya: ¿Y sus nombres?
+update naira [extra_data="naira_seria+firme"]
+naira: Se borraron del papel. Las estrellas no se dejan.
+update kael [extra_data="sorpresa"]
+kael: «Si lees esto y no me conoces, me llamo Naira. Apúntalo.»
+update naira [extra_data="naira_incomoda+duda"]
+naira: Es método. No drama.
+garon: ¿Para qué?
+update naira [extra_data="naira_seria"]
+naira: Por si la niebla me encuentra antes que nadie.
+update kael [extra_data="decidido"]
+kael: Ya te hemos encontrado nosotros.
+[signal arg="nr:catalogo"]
+leave naira
+leave lya
+leave kael

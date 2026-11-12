@@ -1,0 +1,19 @@
+join kael (vivo_pv) left
+join lya (vivo_pv) right
+join naira (vivo_pv) center
+update naira [extra_data="naira_mira"]
+naira: Tu brazalete no se ha apagado. Todo lo demás, sí.
+update kael [extra_data="brazalete"]
+kael: Es su único truco. No se lo digas a nadie.
+update naira [extra_data="naira_apunta+firme"]
+naira: La única anomalía de hoy que no ha querido matarme. Lo apunto.
+update lya [extra_data="preocupada"]
+lya: ¿Estás herida?
+update naira [extra_data="naira_incomoda+duda"]
+naira: No me cuides. Me desconcentra.
+update naira [extra_data="naira_mira"]
+naira: Mirad. Ya vuelve.
+[signal arg="nr:eclipse"]
+leave naira
+leave lya
+leave kael

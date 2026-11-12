@@ -1,0 +1,7 @@
+join naira (vivo_pv) center
+update naira [extra_data="naira_mira"]
+naira: El sol aún no ha empezado a menguar. Pero lo hará.
+naira: El bronce suena distinto que la chatarra. Fiaos del pitido raro.
+update naira [extra_data="naira_seria+firme"]
+naira: Si el suelo tiembla, no discutáis con él. Cavad y salid.
+leave naira
