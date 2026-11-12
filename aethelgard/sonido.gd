@@ -507,6 +507,35 @@ const EFECTOS_MAGIA_NEGRA := {
 		"espera": 0.3},
 }
 
+# V12, encuentro del desierto (12/11): Vidracrán, el escorpión de vidrio (combate_vidracran.gd; demostración APAGADA, solo en sus
+# combates de prueba o con «encuentro_desierto_v12»). Vidrio y arena: capas de los paquetes GDC 2016 y 2017 de Sonniss
+# (licencia #GameAudioGDC) recortadas, con el tono cambiado y sumadas; OGG mono de enemigos/vidracran/sonido/ (mismo
+# formato que EFECTOS_DESIERTO: «dir» y «ext»). Procedencia, SHA-256 y medidas: docs/memory/agents/
+# combate_v12_encuentro_desierto.md. Medido, no escuchado. Los pide combate.gd: las pinzas y el aguijón en el impacto
+# del clip (señal «impacto»: vidracran_pinzas, vidracran_emerger), el aviso en el primer latido del bulbo (señal
+# «aviso»: vidracran_aviso_emerger), lo demás combate_vidracran.gd; su voz, la familia «vidracran» (herido y caída).
+const VIDRACRAN := "res://enemigos/vidracran/sonido/"
+const EFECTOS_VIDRACRAN := {
+	"vidracran_pinzas": {"a": "pinzas", "dir": VIDRACRAN, "ext": ".ogg", "db": -4.0, "tono": 0.04, "p": 2, "max": 1,
+		"espera": 0.2},
+	"vidracran_enterrarse": {"a": "enterrarse", "dir": VIDRACRAN, "ext": ".ogg", "db": 0.0, "tono": 0.03, "p": 2, "max": 1,
+		"espera": 0.5},
+	"vidracran_aviso_emerger": {"a": "aviso", "dir": VIDRACRAN, "ext": ".ogg", "db": -3.0, "p": 3, "max": 1, "espera": 0.5},
+	"vidracran_brota": {"a": "brota", "dir": VIDRACRAN, "ext": ".ogg", "db": -3.0, "tono": 0.04, "p": 2, "max": 1,
+		"espera": 0.3},
+	"vidracran_emerger": {"a": "emerger", "dir": VIDRACRAN, "ext": ".ogg", "db": -2.0, "tono": 0.03, "p": 3, "max": 1,
+		"espera": 0.3},
+	"vidracran_expuesto": {"a": "expuesto", "dir": VIDRACRAN, "ext": ".ogg", "db": -5.0, "p": 3, "max": 1, "espera": 0.5},
+	"vidracran_entrada": {"a": "brota", "dir": VIDRACRAN, "ext": ".ogg", "db": -4.0, "tono": 0.04, "p": 2, "max": 1,
+		"espera": 0.3},
+	"vidracran_derrumbe": {"a": "derrumbe", "dir": VIDRACRAN, "ext": ".ogg", "db": -3.0, "p": 3, "max": 1, "espera": 0.5},
+	# su voz (familia «vidracran»)
+	"vidracran_herido": {"a": "herido_", "n": 2, "dir": VIDRACRAN, "ext": ".ogg", "db": -6.0, "tono": 0.05, "p": 2,
+		"max": 1, "espera": 0.25, "grupo": "voz"},
+	"vidracran_caida": {"a": "caida", "dir": VIDRACRAN, "ext": ".ogg", "db": -4.0, "p": 3, "max": 1, "espera": 0.5,
+		"grupo": "voz"},
+}
+
 # Detalles de la naturaleza por contexto de Musica: cada cuánto (s, al azar entre los dos) y qué puede sonar.
 const DETALLES := {
 	"pradera": {"cada": [9.0, 20.0], "efectos": ["rafaga_hierba", "rafaga_hierba", "pajaro"]},
@@ -534,7 +563,8 @@ const FAMILIAS := {"slime": "limo", "grimfang": "goblin", "gorthor": "gorthor", 
 	"zarzalin": "zarzalin", "cencerrante": "cencerrante", "velaria": "velaria", "custodio_cal": "custodio", "custodio": "custodio",
 	"hilandera_eco": "hilandera", "hilandera": "hilandera", "posadero_hueco": "posadero", "posadero": "posadero",
 	# V9: el Guardián del Bosque Olvidado (su voz: madera que cruje y gime; «guardian_bosque_*» son sus efectos)
-	"guardian_bosque": "corteza", "coloso_falla": "piedra"}   # coloso_falla: la voz de piedra del guardián (V9)
+	"guardian_bosque": "corteza", "coloso_falla": "piedra",   # coloso_falla: la voz de piedra del guardián (V9)
+	"vidracran": "vidracran"}                     # V12, encuentro del desierto: su voz de vidrio (EFECTOS_VIDRACRAN)
 # V9: tratamiento del combate de un jefe (lo empieza y lo cambia un efecto con «trata»: [jefe, etapa]). Mientras dure:
 # - la música (bus Musica) pasa por un paso bajo («corte», Hz) y un ajuste de volumen («musica_db»): el Guardián
 #   empieza con la música apagada, como oída desde dentro del bosque, y en su fase 2 se abre;
@@ -990,12 +1020,14 @@ static func definicion(nombre: String) -> Dictionary:
 		return EFECTOS_BRAMAVIDRIO[nombre]
 	if EFECTOS_MAGIA_NEGRA.has(nombre):                    # V12 (12/11): la magia negra
 		return EFECTOS_MAGIA_NEGRA[nombre]
+	if EFECTOS_VIDRACRAN.has(nombre):                      # V12, encuentro del desierto: Vidracrán
+		return EFECTOS_VIDRACRAN[nombre]
 	return EFECTOS_DESIERTO.get(nombre, {})
 
 
 # V12 (12/11): las voces se buscan en EFECTOS y, las de Bramavidrio (familia «brama»), en EFECTOS_BRAMAVIDRIO.
 static func _hay_voz(nombre: String) -> bool:
-	return EFECTOS.has(nombre) or EFECTOS_BRAMAVIDRIO.has(nombre)
+	return EFECTOS.has(nombre) or EFECTOS_BRAMAVIDRIO.has(nombre) or EFECTOS_VIDRACRAN.has(nombre)   # (V12, encuentro del desierto)
 
 
 # V12: el archivo de un efecto del catálogo (variante i, de 0 a n − 1; −1 si no tiene variantes), con su «dir» y su «ext»

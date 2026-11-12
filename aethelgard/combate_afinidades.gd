@@ -52,6 +52,9 @@ const TABLA := {
 	"bramavidrio": {"debil": ["Hielo"], "resiste": ["Fuego", "Rayo"], "inmune": [],
 		"estados_resiste": ["lento", "atk_baja"], "estados_inmune": ["prision"],
 		"por_que": "Cristal nacido del calor del desierto: el frío lo agrieta; el rayo resbala por el vidrio."},
+	# V12, encuentro del desierto (12/11): Vidracrán (combate_vidracran.gd; demostración apagada). Solo escuelas nuevas.
+	"vidracran": {"debil": ["Hielo"], "resiste": ["Fuego"], "inmune": [], "estados_resiste": [], "estados_inmune": [],
+		"por_que": "Vidrio de arena fundida: el frío lo agrieta; el fuego lo templó."},
 }
 # Lo que se aplica a un enemigo que no está en la tabla (o a uno nuevo): nada especial. Los jefes nuevos, como poco,
 # son inmunes a la Prisión (JEFE_POR_DEFECTO), para que ningún jefe pierda turnos encadenados por descuido.

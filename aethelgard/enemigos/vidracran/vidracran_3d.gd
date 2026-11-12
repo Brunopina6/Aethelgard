@@ -33,6 +33,8 @@ const BRILLO := {"reposo": 1.0, "enterrado": 1.4, "pinzas": 1.3, "emerger_aguijo
 	"entrada": 1.2, "recibir_golpe": 1.8, "enterrarse": 1.2}
 
 @export var escala := 1.0
+# V12, encuentro del desierto (12/11): combate.gd lo crea con .new() y pone ruta_modelo (como a Zarzalín).
+@export var ruta_modelo := RUTA_MODELO
 var anim: AnimationPlayer
 var skel: Skeleton3D
 var pivote: Node3D
@@ -54,7 +56,7 @@ func _ready() -> void:
 	pivote = Node3D.new()
 	pivote.name = "Pivote"
 	add_child(pivote)
-	var m: Node3D = (load(RUTA_MODELO) as PackedScene).instantiate()
+	var m: Node3D = (load(ruta_modelo if ruta_modelo != "" else RUTA_MODELO) as PackedScene).instantiate()
 	m.scale = Vector3.ONE * escala
 	pivote.add_child(m)
 	anim = m.find_child("AnimationPlayer", true, false) as AnimationPlayer
@@ -183,6 +185,21 @@ func tiempo_impacto(ataque: String) -> float:
 
 func puede_ser_objetivo() -> bool:
 	return not enterrado and not _muerta
+
+
+# V12, encuentro del desierto (12/11): cuánto adelanta la pinza en el impacto (combate.gd lo usa para plantarlo
+# delante del objetivo, como a Zarzalín); el aguijón pica donde está, sin avance.
+func alcance(ataque: String) -> float:
+	return 0.25 if ataque == "pinzas" else 0.0
+
+
+# V12, encuentro del desierto: en el combate no hay suelo; con «si», lo que queda bajo y = 0 (el cuerpo enterrado) no
+# se dibuja (vidracran_vidrio/brillo.gdshader, «suelo_y»). Sin llamarla, como en el prototipo.
+func recortar_suelo(si := true) -> void:
+	var y := -0.01 if si else -1000.0
+	for m in [_mat_vidrio, _mat_brillo]:
+		if m != null:
+			m.set_shader_parameter("suelo_y", y)
 
 
 # ---------------------------------------------------------------- lo que pide el combate

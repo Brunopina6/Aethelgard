@@ -69,6 +69,10 @@ static func _enemigos_v12() -> bool:
 # V12: el clímax musical de los grandes jefes (combate_climax.gd: qué jefes y qué canción; aquí, cuándo y cómo suena).
 # Ganchos «V12, clímax»: _quitar_pv lo vigila, _process lo empieza, _musica_fase2 no lo pisa.
 const Climax := preload("res://combate_climax.gd")
+# V12, encuentro del desierto (12/11): Vidracrán, demostración reversible (combate_vidracran.gd: su IA, caparazón, aguijón y ventana).
+# Solo en sus combates de prueba (GRUPOS[14], [15], [16]) o con el interruptor «encuentro_desierto_v12» (APAGADO) en el
+# Mar de Cristal. Los ganchos de aquí llevan «V12, encuentro del desierto».
+const Vidracran := preload("res://combate_vidracran.gd")
 # Menú de combate minimalista (menu_combate.gd). Ocupa el 40 % derecho de la pantalla, por eso los
 # héroes van más a la izquierda y los enemigos se juntan a la izquierda: x = x * ENEMIGOS_X.x + ENEMIGOS_X.y
 const ENEMIGOS_X := Vector2(0.75, -190.0)
@@ -305,6 +309,12 @@ const MODELOS := {
 		"gestos": "res://gestos_3d.gd", "rutas": ["res://enemigos/gorthor/gorthor.glb"],
 		"vp": Vector2i(1420, 1520), "alto_vista": 5.2, "centro_y": 1.6, "barra_y": 183.0, "centro_3d": 1.6,
 		"pos_grupo": Vector2(-60, -247), "caida": 1.4, "respaldo": "gorthor3d"},
+	# V12, encuentro del desierto (12/11): Vidracrán (prototipo de animaciones, enemigos/vidracran/). Encuadre de Zarzalín algo más
+	# cerrado (1,6 m de vista: con la cola alzada llega al pecho de Kael); su centro (números y efectos) en el lomo.
+	"vidracran": {
+		"tipo": "3d", "esc": 0.6, "script": "res://enemigos/vidracran/vidracran_3d.gd", "gestos": "res://gestos_3d.gd",
+		"rutas": ["res://enemigos/vidracran/vidracran.glb"], "vp": Vector2i(1175, 600), "alto_vista": 1.6,
+		"centro_y": 0.5, "barra_y": 30.0, "centro_3d": 0.4, "caida": 1.7, "respaldo": "slime"},
 }
 
 # Enemigos disponibles y grupos que pueden aparecer en un encuentro (se elige uno al azar).
@@ -338,6 +348,11 @@ const ENEMIGOS := {
 	# todos) y, con la mitad de vida, el Aliento del Desierto Eterno (avisado un turno, se corta). No huye.
 	"bramavidrio": {"nombre": "Bramavidrio", "modelo": "bramavidrio", "hp": 1150, "atk": 34, "vel": 11.0, "exp": 85, "oro": 110,
 		"personalidad": "bramavidrio", "titulo": true},
+	# V12, encuentro del desierto (12/11): Vidracrán, el escorpión de vidrio (nombre sin aprobar). Personalidad «vidracran»
+	# (combate_vidracran.gd): pinzas, se entierra (el aviso) y pica con el aguijón; caparazón y ventana. NO está en los
+	# encuentros normales: solo en GRUPOS[14]-[16] y con el interruptor.
+	"vidracran": {"nombre": "Vidracrán", "modelo": "vidracran", "hp": 300, "atk": 18, "vel": 19.0, "exp": 55, "oro": 32,
+		"personalidad": "vidracran"},
 }
 const GRUPOS := [
 	[["grimfang", Vector2(230, 150)], ["grimfang", Vector2(410, 115)]],
@@ -358,6 +373,10 @@ const GRUPOS := [
 	# 13: Bramavidrio (Mar de Cristal, V12). V12, Bramavidrio v2: 100 px de pantalla más a la izquierda que antes (288 →
 	# 108; el agujero en (86, 575)): en reposo su cabeza ya no tapa a Kael ni a Garon (Redmi, v610)
 	[["bramavidrio", Vector2(108, 600)]],
+	# V12, encuentro del desierto (12/11): combates de prueba de Vidracrán (combate_vidracran.gd); no salen al azar
+	[["vidracran", Vector2(250, 125)]],                                     # 14: uno
+	[["vidracran", Vector2(140, 105)], ["vidracran", Vector2(390, 130)]],   # 15: dos
+	[["vidracran", Vector2(160, 125)], ["grimfang", Vector2(420, 120)]],    # 16: con Grimfang
 ]
 const GRUPOS_AL_AZAR := 5           # solo los primeros salen en encuentros aleatorios (con el grupo de tres)
 # Encuentros al azar según cuántos héroes hay ahora en el grupo (grupo.gd, activos). Kael solo no tiene cura ni a
@@ -410,6 +429,7 @@ const ANIM := {
 	"coloso_falla": {"distancia": 170.0},          # V9: su modelo 3D, desde su sitio como el Guardián (_anim_guardian)
 	"bramavidrio": {"distancia": 170.0},          # V12: Bramavidrio, ataca desde su agujero (combate_bramavidrio.gd)
 	"bramavidrio2d": {"distancia": 170.0},        # V12: su foto de respaldo
+	"vidracran": {"distancia": 150.0},            # V12, encuentro del desierto
 }
 
 var heroes: Array = [
@@ -564,6 +584,8 @@ func _ready() -> void:
 			brama.preparar(self, e)
 			add_child(brama)
 			brama.al_entrar(pe)
+		if Vidracran.es(e) and pe != null and pe.has_method("recortar_suelo"):   # V12, encuentro del desierto: lo
+			pe.recortar_suelo(true)                  # enterrado no se dibuja (sale de la arena en su entrada)
 		if pe != null and pe.has_method("entrada"):
 			e["rig"].modulate.a = 0.0
 			create_tween().tween_property(e["rig"], "modulate:a", 1.0, 0.15)
@@ -620,6 +642,12 @@ static func grupo_al_azar(cuantos: int) -> int:
 		var opciones: Array = tabla[cuantos]
 		return opciones[randi() % opciones.size()]
 	return randi() % GRUPOS_AL_AZAR
+
+
+# V12, encuentro del desierto: los enemigos a los que se puede apuntar (vivos y, Vidracrán, no bajo la arena). Sin Vidracrán, los
+# vivos de siempre.
+func _alcanzables() -> Array:
+	return enemigos.filter(func(e): return e["hp"] > 0 and Vidracran.apuntable(e))
 
 
 # Elige un grupo al azar (o el índice de Engine.get_meta("grupo_combate") si se ha fijado).
@@ -974,6 +1002,8 @@ func _info_objetivo(f: Dictionary, ok: bool) -> String:
 		t.append("Élite: doble premio")
 	if Brama.es(f):                                     # V12, Bramavidrio: qué prepara y cómo se responde
 		t.append_array(Brama.info(f))
+	elif Vidracran.es(f):                               # V12, encuentro del desierto: caparazón, bajo la arena o expuesto
+		t.append_array(Vidracran.info(f))
 	elif f.get("cargando", false):
 		var plan: Dictionary = PATRONES.get(f.get("personalidad", ""), {})
 		if plan.get("encoge", false):
@@ -1046,7 +1076,7 @@ func _al_marcar_orden(item: Dictionary) -> void:
 	_quitar_flechas_area()
 	if estado == "objetivo" or not item.get("area_enemigos", false) or item.get("apagado", false):
 		return
-	for e in enemigos.filter(func(x): return x["hp"] > 0):
+	for e in _alcanzables():                    # (V12, encuentro del desierto: bajo la arena, sin flecha)
 		var fl := Control.new()
 		fl.size = flecha.size
 		fl.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1838,6 +1868,10 @@ func _turno_enemigo(f: Dictionary) -> void:
 		await brama.turno(vivos, mult)
 		_fin_turno_enemigo(f)
 		return
+	if p == "vidracran":                             # V12, encuentro del desierto: Vidracrán (combate_vidracran.gd)
+		await Vidracran.turno(self, f, vivos, mult)
+		_fin_turno_enemigo(f)
+		return
 	# huir (en una «zona limpia», con el grupo muy por encima, los enemigos débiles huyen solos)
 	var limpia: bool = load("res://progreso.gd").zona_limpia(Engine.get_meta("zona", "llanura"))
 	if p != "jefe" and p != "bosque" and p != "coloso" and limpia and randf() < 0.7:   # (los jefes no huyen)
@@ -2536,6 +2570,9 @@ func _toque_fuera(ev: InputEvent) -> void:
 # Elegir objetivo tocándolo: cada candidato tiene una zona táctil más grande que su dibujo.
 # Encima del apuntado rebota una flecha y arriba a la izquierda sale su nombre.
 func _pedir_objetivo(candidatos: Array, al_elegir: Callable, volver: Callable, texto: String) -> void:
+	if candidatos.is_empty():                      # V12, encuentro del desierto: nadie a tiro (Vidracrán bajo la arena)
+		_sin_objetivo(volver)
+		return
 	estado = "objetivo"
 	_limpiar_objetivo()
 	objetivos_posibles = candidatos
@@ -2557,6 +2594,13 @@ func _pedir_objetivo(candidatos: Array, al_elegir: Callable, volver: Callable, t
 	fuera.visible = true
 	_mostrar_panel(candidatos, "elegir")
 	_apuntar(candidatos[0])
+
+
+# V12, encuentro del desierto: no hay a quién apuntar (todos bajo la arena): vuelve atrás y lo dice, sin gastar nada.
+func _sin_objetivo(volver: Callable) -> void:
+	menu.sonar("tic")
+	volver.call()
+	registro.text = Vidracran.SIN_OBJETIVO
 
 
 func _apuntar(f: Dictionary) -> void:
@@ -2612,7 +2656,7 @@ func _puede_pagar(coste: int) -> bool:
 func _mostrar_menu() -> void:
 	estado = "menu"
 	_limpiar_objetivo()
-	registro.text = ""
+	registro.text = Vidracran.aviso_turno(enemigos)   # V12, encuentro del desierto: "" si nadie está bajo la arena
 	if _es_garon(actor):                          # Garon: su menú propio (Esgrima y Embuir)
 		_menu_garon()
 		return
@@ -2665,7 +2709,10 @@ func _pruebas_menu() -> void:
 	if "invocar" in OS.get_cmdline_user_args() and actor["nombre"] == "Lya" and not get_meta("invocado", false):
 		set_meta("invocado", true)                 # pruebas: -- invocar (Lya invoca a Érebo en su primer turno)
 		armonia = 1.0
-		var obj: Dictionary = enemigos.filter(func(e): return e["hp"] > 0)[0]
+		if _alcanzables().is_empty():              # (V12, encuentro del desierto: bajo la arena, nada a tiro)
+			_defender.call_deferred()
+			return
+		var obj: Dictionary = _alcanzables()[0]
 		_invocar_sobre.call_deferred(obj)
 		return
 	for a in OS.get_cmdline_user_args():          # pruebas: godot ... -- objeto=Éter (lo usa en sí mismo)
@@ -2696,7 +2743,10 @@ func _pruebas_menu() -> void:
 				return
 	if "auto" in OS.get_cmdline_user_args():      # pruebas: -- auto (si no lanza magia, ataca)
 		accion = "atacar"
-		_aplicar.call_deferred(enemigos.filter(func(e): return e["hp"] > 0)[0])
+		if _alcanzables().is_empty():              # (V12, encuentro del desierto: bajo la arena, se defiende)
+			_defender.call_deferred()
+			return
+		_aplicar.call_deferred(_alcanzables()[0])
 
 
 # ---------------------------------------------------------------- Garon: Esgrima y Embuir
@@ -2749,8 +2799,10 @@ func _menu_garon() -> void:
 			if TECNICAS_GARON.has(n):
 				if TECNICAS_GARON[n]["todos"]:
 					_tecnica_garon.call_deferred(n, {})
+				elif _alcanzables().is_empty():          # (V12, encuentro del desierto)
+					_defender.call_deferred()
 				else:
-					_tecnica_garon.call_deferred(n, enemigos.filter(func(e): return e["hp"] > 0)[0])
+					_tecnica_garon.call_deferred(n, _alcanzables()[0])
 				return
 	_pruebas_menu()
 
@@ -2808,10 +2860,13 @@ func _leer_runas() -> void:
 
 
 func _elegir_tecnica(n: String) -> void:
+	if _alcanzables().is_empty():                  # V12, encuentro del desierto: todos bajo la arena (no gasta PM)
+		_sin_objetivo(_menu_esgrima)
+		return
 	if TECNICAS_GARON[n]["todos"]:
 		_tecnica_garon(n, {})
 	else:
-		_pedir_objetivo(enemigos.filter(func(e): return e["hp"] > 0), func(f): _tecnica_garon(n, f), _menu_esgrima,
+		_pedir_objetivo(_alcanzables(), func(f): _tecnica_garon(n, f), _menu_esgrima,
 			"TOCA UN ENEMIGO")
 
 
@@ -2975,6 +3030,7 @@ func _tecnica_garon(n: String, obj: Dictionary) -> void:
 		var impacto := func():
 			Sonido.golpe(true)                       # el tajo de Juicio (sonido.gd)
 			var dd: int = Coloso.dano_recibido(d, "", quien, obj)   # el Coloso (V9): piel o ventana; los demás, «d»
+			dd = Vidracran.dano_recibido(dd, "", quien, obj)         # (V12, encuentro del desierto: caparazón o ventana)
 			_quitar_pv(obj, dd)
 			Sonido.recibe(obj)                       # y su voz: herido o caída (sonido.gd)
 			_destello(_centro(obj), menu.COLOR_HEROE.get("Garon", Color.WHITE).lightened(0.4), 1.8)
@@ -2984,13 +3040,14 @@ func _tecnica_garon(n: String, obj: Dictionary) -> void:
 		else:
 			await _animar_golpe(quien, obj, d, "")
 	else:
-		var objs := enemigos.filter(func(e): return e["hp"] > 0)
+		var objs := _alcanzables()
 		var impacto := func():
 			Sonido.golpe()                           # una vez por vuelta del Giro (sonido.gd)
 			for e in objs:
 				if e["hp"] <= 0:
 					continue
 				var d := Coloso.dano_recibido(_dano_fisico(quien, t["mult"]), "", quien, e)   # (el Coloso, V9)
+				d = Vidracran.dano_recibido(d, "", quien, e)       # (V12, encuentro del desierto)
 				_quitar_pv(e, d)
 				Sonido.recibe(e)                     # su voz (sonido.gd: una por familia y dos a la vez como mucho)
 				_golpe_visual(e, d, _efecto_embuir(quien, e))
@@ -3222,7 +3279,7 @@ func _umbral_de() -> Dictionary:
 
 
 func _elegir_contrapeso() -> void:
-	_pedir_objetivo(enemigos.filter(func(e): return e["hp"] > 0), _contrapeso, _menu_magia.bind(PESTANA_DUO),
+	_pedir_objetivo(_alcanzables(), _contrapeso, _menu_magia.bind(PESTANA_DUO),
 		"TOCA UN ENEMIGO")
 
 
@@ -3254,7 +3311,7 @@ func _contrapeso(obj: Dictionary) -> void:
 
 
 func _elegir_equinoccio() -> void:
-	_pedir_objetivo(enemigos.filter(func(e): return e["hp"] > 0), _equinoccio, _menu_magia.bind(PESTANA_DUO),
+	_pedir_objetivo(_alcanzables(), _equinoccio, _menu_magia.bind(PESTANA_DUO),
 		"TOCA UN ENEMIGO")
 
 
@@ -3298,7 +3355,7 @@ func _prestar_turno(socio: Dictionary) -> void:
 
 
 func _elegir_quiebra() -> void:
-	_pedir_objetivo(enemigos.filter(func(e): return e["hp"] > 0), _quiebra, _menu_magia.bind(PESTANA_DUO),
+	_pedir_objetivo(_alcanzables(), _quiebra, _menu_magia.bind(PESTANA_DUO),
 		"TOCA UN ENEMIGO")
 
 
@@ -3347,7 +3404,7 @@ func _barrera_runica() -> void:
 
 
 func _elegir_filo_arcano() -> void:
-	_pedir_objetivo(enemigos.filter(func(e): return e["hp"] > 0), _filo_arcano, _menu_magia.bind(PESTANA_DUO),
+	_pedir_objetivo(_alcanzables(), _filo_arcano, _menu_magia.bind(PESTANA_DUO),
 		"TOCA UN ENEMIGO")
 
 
@@ -3422,7 +3479,9 @@ func _elegir_hechizo(magia: String, nivel: int, sola := false) -> void:
 	elif sola:
 		accion = "magia"
 		magia_sel = magia
-		_aplicar(enemigos.filter(func(e): return e["hp"] > 0)[0])
+		if _alcanzables().is_empty():              # (V12, encuentro del desierto)
+			return
+		_aplicar(_alcanzables()[0])
 	else:
 		_menu_objetivo("magia", magia)
 
@@ -3434,6 +3493,7 @@ func _elegir_hechizo(magia: String, nivel: int, sola := false) -> void:
 func _elegir_arte(fam: String, nv: int, sola := false) -> void:
 	var d: Dictionary = Artes.datos(fam, nv)
 	var objs: Array = Artes.objetivos(fam, nv, actor, heroes, enemigos, cola, ATB_MAX)
+	objs = objs.filter(func(o): return o.get("hero", false) or Vidracran.apuntable(o))   # (V12, encuentro del desierto)
 	if objs.is_empty() or not _puede_pagar(d["coste"]):
 		return
 	if d["todos"]:
@@ -3604,7 +3664,7 @@ func _menu_escuela(fam: String, pagina := 0) -> void:
 # Las de uno piden objetivo (el panel dice «Débil», «Resiste» o «Inmune»); las de todos, no. «sola»: pruebas.
 func _elegir_negra(fam: String, nv: int, sola := false) -> void:
 	var d := MN.datos(fam, nv)
-	var vivos := enemigos.filter(func(e): return e["hp"] > 0 and not e.get("huido", false))
+	var vivos := enemigos.filter(func(e): return e["hp"] > 0 and not e.get("huido", false) and Vidracran.apuntable(e))
 	if vivos.is_empty() or not _puede_pagar(int(d["coste"])):
 		return
 	if d["a"] == "enemigos":
@@ -3744,6 +3804,7 @@ func _golpe_negra(quien: Dictionary, fam: String, d: Dictionary, obj: Dictionary
 	if dano > 0:
 		dano = Bosque.dano_recibido(dano, "Negra", quien, obj, false)   # sus ganchos (enfoque, coraza rúnica), no su fuego
 		dano = Coloso.dano_recibido(dano, "Negra", quien, obj)
+		dano = Vidracran.dano_recibido(dano, "Negra", quien, obj)   # (V12, encuentro del desierto)
 	if clase != "":
 		_numero_flotante(obj, Afinidades.TEXTO[clase], Afinidades.COLOR[clase], 30, Vector2(-10, -58))
 	if dano > 0:
@@ -4370,7 +4431,8 @@ func _voz(quien: Dictionary, evento: String) -> void:
 
 func _sonar(nombre: String) -> void:
 	sonido_pedido.emit(nombre)
-	if Sonido.EFECTOS.has(nombre) or Sonido.EFECTOS_DESIERTO.has(nombre) or Sonido.EFECTOS_MAGIA_NEGRA.has(nombre):   # V12: el gusano y la magia negra
+	if Sonido.EFECTOS.has(nombre) or Sonido.EFECTOS_DESIERTO.has(nombre) or Sonido.EFECTOS_MAGIA_NEGRA.has(nombre) \
+			or Sonido.EFECTOS_VIDRACRAN.has(nombre):   # V12: el gusano, la magia negra y (V12, encuentro del desierto) Vidracrán
 		Sonido.efecto(nombre)
 
 
@@ -4452,6 +4514,9 @@ func _lya_sabe() -> bool:
 
 
 func _aplicar_todos() -> void:
+	if _alcanzables().is_empty():                  # V12, encuentro del desierto: todos bajo la arena (no gasta PM)
+		_sin_objetivo(_menu_magia.bind(0))
+		return
 	_ocultar_menu()
 	estado = "accion"
 	var quien = actor
@@ -4459,7 +4524,7 @@ func _aplicar_todos() -> void:
 	_gastar_pm(quien, d["coste"])
 	_actualizar()
 	registro.text = "%s lanza %s" % [quien["nombre"], d["nombre"]]
-	var alcanzados: Array = enemigos.filter(func(e): return e["hp"] > 0)
+	var alcanzados: Array = _alcanzables()
 	_mostrar_panel(alcanzados, "area")                # V11: a quién alcanza, mientras se lanza
 	await _magia_grupal(quien, alcanzados, magia_sel, nivel_sel, _dano_magia(quien, d))
 	_ocultar_panel()
@@ -4469,7 +4534,7 @@ func _aplicar_todos() -> void:
 func _menu_objetivo(a: String, magia: String) -> void:
 	accion = a
 	magia_sel = magia
-	_pedir_objetivo(enemigos.filter(func(e): return e["hp"] > 0), _aplicar,
+	_pedir_objetivo(_alcanzables(), _aplicar,
 		_menu_magia.bind(0) if a == "magia" else _mostrar_menu, "TOCA UN ENEMIGO")
 
 
@@ -5048,7 +5113,7 @@ func _invocar() -> void:
 
 
 func _invocar_objetivo() -> void:
-	_pedir_objetivo(enemigos.filter(func(e): return e["hp"] > 0), _invocar_sobre, _invocar, "TOCA UN ENEMIGO")
+	_pedir_objetivo(_alcanzables(), _invocar_sobre, _invocar, "TOCA UN ENEMIGO")
 
 
 func _invocar_sobre(obj: Dictionary) -> void:
@@ -5322,6 +5387,7 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 	if not objetivo["hero"]:                          # fase 3: el Guardián del Bosque y la Esencia de enfoque
 		dano = Bosque.dano_recibido(dano, magia, origen, objetivo, _lya_sabe())
 		dano = Coloso.dano_recibido(dano, magia, origen, objetivo)   # V9: el Coloso (piel, ventana, coraza rúnica)
+		dano = Vidracran.dano_recibido(dano, magia, origen, objetivo)   # V12, encuentro del desierto: caparazón o ventana
 		if objetivo.has("mn"):                        # V12, magia negra: «Defensa ↓» y «Resistencia mágica ↓»
 			dano = _con_estados_negra(dano, magia, objetivo)
 	var congela: bool = magia == "" and origen["hero"] and _lleva_frostfang(origen) and randf() < PROB_CONGELAR
@@ -5360,13 +5426,16 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 			var rep: int = Extra.replica(objetivo, objetivo.get("defendiendo", false))   # C2, Guardiana de Ámbar
 			if rep > 0:
 				_numero_flotante(objetivo, "Réplica", Color("FFC46A"), 28, Vector2(-30, -40))
-				_golpe_visual(origen, _quitar_pv(origen, Coloso.dano_recibido(rep, "", objetivo, origen)), "")
+				var dr: int = Vidracran.dano_recibido(Coloso.dano_recibido(rep, "", objetivo, origen), "", objetivo, origen)
+				_golpe_visual(origen, _quitar_pv(origen, dr), "")   # (V12, encuentro del desierto: la réplica choca con el caparazón)
 	if magia != "" and _p3d(origen) != null:
 		await _anim_magia_3d(origen, objetivo, magia, impacto)
 	elif magia != "":
 		await _anim_magia(origen, objetivo, magia, impacto)
 	elif brama != null and Brama.es(origen):                                   # V12, Bramavidrio: desde su agujero
 		await brama.animar_golpe(objetivo, impacto)
+	elif Vidracran.es(origen):                                                 # V12, encuentro del desierto: pinzas o aguijón
+		await Vidracran.animar_golpe(self, origen, objetivo, impacto)
 	elif _p3d(origen) != null and _p3d(origen).has_method("avisar"):           # Zarzalín (T-097)
 		await _anim_zarzalin(origen, objetivo, impacto, str(origen.get("ataque_3d", "colmillo_lateral")))
 	elif _p3d(origen) != null and _p3d(origen).has_method("despertar"):        # Guardián del Bosque (fase 3): desde su sitio
@@ -6299,6 +6368,7 @@ func _magia_grupal(o: Dictionary, objs: Array, magia: String, nivel: int, dano: 
 		if not obj.get("hero", false):               # fase 3: el Guardián del Bosque y la Esencia de enfoque
 			d = Bosque.dano_recibido(d, magia, o, obj, _lya_sabe())
 			d = Coloso.dano_recibido(d, magia, o, obj)   # V9: el Coloso (coraza rúnica)
+			d = Vidracran.dano_recibido(d, magia, o, obj)   # (V12, encuentro del desierto)
 			if obj.has("mn"):                        # V12, magia negra: «Resistencia mágica ↓»
 				d = _con_estados_negra(d, magia, obj)
 		golpe_magico = true
@@ -6722,6 +6792,7 @@ func _comprobar_fin() -> bool:
 	if ganan or pierden:
 		estado = "fin"
 		_ocultar_menu()
+		Vidracran.al_acabar(enemigos)                 # V12, encuentro del desierto: su marca y sus puntos, fuera
 		Sonido.efecto("victoria" if ganan else "derrota")   # sonido.gd
 		if ganan:                                      # el gesto de uno de los que siguen en pie (tanda 5)
 			voz_pedida.emit("", "victoria")
@@ -6817,6 +6888,7 @@ func _repartir_exp(ganan: bool) -> void:
 	if ResourceLoader.exists("res://inventario.gd"):
 		load("res://inventario.gd").ganar_oro(oro)
 		var botin: Array = Extra.botin_de(enemigos)    # las bestias dejan su material (Zarzalín: Corteza espinosa)
+		botin.append_array(Vidracran.botin_de(enemigos))   # V12, encuentro del desierto: Esquirla de vidracrán (sin él, nada)
 		for b in botin:
 			load("res://inventario.gd").agregar_objeto(b)
 		if not botin.is_empty():
@@ -6907,6 +6979,10 @@ func _actualizar() -> void:
 				estados.append_array(Coloso.estados(e))
 			if Brama.es(e):                             # V12, Bramavidrio: «⚠ Fractura» o «⚠ Aliento: córtalo n/m»
 				estados.append_array(Brama.estados(e))
+			if Vidracran.es(e):                         # V12, encuentro del desierto: «Caparazón», «Bajo la arena», «¡Expuesto!»
+				Vidracran.repasar(e)                    # (cae él o el marcado: su marca, fuera)
+				if vivo:
+					estados.append_array(Vidracran.estados(e))
 			if e.has("mn"):                             # V12, magia negra: «Lento 2», «Def ↓ 3», «Prisión 1»…
 				estados.append_array(MN.textos_estado(e))
 				if not vivo:                            # (huido o caído sin pasar por _quitar_pv: su jaula y su sello, fuera)

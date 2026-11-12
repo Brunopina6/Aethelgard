@@ -1,0 +1,12 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/material.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "esquirla_vidracran"
+clave_inventario = "Esquirla de vidracrán"
+nombre = "Esquirla de vidracrán"
+venta = 30
+desc = "Una placa del caparazón de un Vidracrán: vidrio ámbar con arena dentro. Los vidrieros la pagan bien."
+de_enemigos = PackedStringArray()

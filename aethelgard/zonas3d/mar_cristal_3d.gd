@@ -21,6 +21,7 @@ const NPC_DESIERTO := preload("res://personajes/desierto/npc_desierto_3d.gd")   
 const NairaMision := preload("res://zonas3d/mar_cristal/naira_mision.gd")
 const Observatorio := preload("res://zonas3d/mar_cristal/observatorio.gd")
 const Rincones := preload("res://zonas3d/mar_cristal/rincones.gd")   # V12 (12/11), rincón: el hito del cobijo
+const VIDRACRAN := preload("res://combate_vidracran.gd")   # V12 (12/11), encuentro del desierto: interruptor APAGADO
 
 const INDICE := 4                          # lugar del mapa (mapa.gd: Mar de Arena de Calid; modo3d.MAR_CRISTAL)
 const NOMBRE := "mar_cristal"              # progreso.gd: mazmorras[...] y encuentros
@@ -364,7 +365,9 @@ func _paso() -> void:
 	if naira != null:
 		k *= naira.ritmo(kael.global_position)                   # V12: ni en la explanada del observatorio ni en el eclipse
 	if k > 0.0 and randf() < Progreso.prob_encuentro(PROB_ENCUENTRO * k, pasos, PASOS_MIN, NOMBRE):
-		encuentro()
+		# V12, encuentro del desierto (12/11): con el interruptor «encuentro_desierto_v12» (APAGADO), a veces Vidracrán
+		# (combate_vidracran.gd); apagado da -1 sin tirar dados y el encuentro es el de siempre.
+		encuentro("", VIDRACRAN.grupo_mar_cristal())
 
 
 func encuentro(fijo := "", grupo_combate := -1, tipo := "normal", texto := "¡Emboscada!") -> void:
@@ -379,6 +382,8 @@ func encuentro(fijo := "", grupo_combate := -1, tipo := "normal", texto := "¡Em
 	if fijo != "":
 		Engine.set_meta("grupo_combate", grupo_combate)
 		Engine.set_meta("combate_fijo", fijo)
+	elif grupo_combate >= 0:                     # V12, encuentro del desierto: un grupo elegido que no es combate fijo
+		Engine.set_meta("grupo_combate", grupo_combate)
 	Sonido.efecto("emboscada")
 	_mostrar_aviso(texto)
 	_parar_kael()
