@@ -1,0 +1,158 @@
+{
+ "modelo": "gorthor",
+ "triangulos": 7123,
+ "huesos": 25,
+ "fps": 30,
+ "texturas": {
+  "alto": "gorthor.webp (1024)",
+  "bajo": "gorthor_bajo.webp (512)"
+ },
+ "color_brillo": [
+  1.0,
+  0.42,
+  0.1
+ ],
+ "clips": {
+  "reposo": {
+   "duracion": 2.6,
+   "bucle": true,
+   "eventos": {}
+  },
+  "caminar": {
+   "duracion": 1.4,
+   "bucle": true,
+   "eventos": {}
+  },
+  "correr": {
+   "duracion": 0.8,
+   "bucle": true,
+   "eventos": {}
+  },
+  "entrada": {
+   "duracion": 2.4,
+   "bucle": false,
+   "eventos": {
+    "pecho": 0.9,
+    "pecho2": 1.15,
+    "rugido": 1.4
+   }
+  },
+  "ataque": {
+   "duracion": 1.4,
+   "bucle": false,
+   "eventos": {
+    "impacto": 0.75
+   }
+  },
+  "carga": {
+   "duracion": 1.0,
+   "bucle": false,
+   "eventos": {
+    "en_alto": 1.0
+   }
+  },
+  "carga_espera": {
+   "duracion": 1.4,
+   "bucle": true,
+   "eventos": {}
+  },
+  "golpe_fuerte": {
+   "duracion": 1.8,
+   "bucle": false,
+   "eventos": {
+    "impacto": 0.95,
+    "carga": 0.5
+   }
+  },
+  "devorar": {
+   "duracion": 1.9,
+   "bucle": false,
+   "eventos": {
+    "abre": 0.6,
+    "impacto": 0.9,
+    "trago": 1.5
+   }
+  },
+  "fase2": {
+   "duracion": 2.2,
+   "bucle": false,
+   "eventos": {
+    "pisoton": 0.5,
+    "rugido": 0.9
+   }
+  },
+  "recibir_golpe": {
+   "duracion": 0.7,
+   "bucle": false,
+   "eventos": {
+    "golpe": 0.0
+   }
+  },
+  "rendirse": {
+   "duracion": 1.5,
+   "bucle": false,
+   "eventos": {
+    "suelta_arma": 0.55,
+    "rodillas": 0.8
+   }
+  },
+  "rendido": {
+   "duracion": 2.4,
+   "bucle": true,
+   "eventos": {
+    "mira": 1.2
+   }
+  },
+  "arrastrarse": {
+   "duracion": 1.2,
+   "bucle": true,
+   "eventos": {}
+  },
+  "victoria": {
+   "duracion": 2.0,
+   "bucle": false,
+   "eventos": {
+    "risa": 0.4
+   }
+  },
+  "derrota": {
+   "duracion": 2.2,
+   "bucle": false,
+   "eventos": {
+    "suelo": 1.3
+   }
+  },
+  "derrota_rendido": {
+   "duracion": 1.6,
+   "bucle": false,
+   "eventos": {
+    "suelo": 0.9
+   }
+  }
+ },
+ "medidas": {
+  "ataque": {
+   "filo_godot": [
+    0.753,
+    0.607,
+    1.481
+   ]
+  },
+  "golpe_fuerte": {
+   "filo_godot": [
+    -0.0,
+    0.068,
+    1.168
+   ]
+  },
+  "devorar": {
+   "boca_godot": [
+    0.0,
+    1.12,
+    1.606
+   ]
+  },
+  "alto_reposo": 2.739
+ },
+ "generador": "enemigos/gorthor/fuente/crear_gorthor.py (Blender 5.2.3)"
+}
