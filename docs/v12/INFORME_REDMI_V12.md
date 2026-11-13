@@ -380,3 +380,38 @@ Capturas y datos: `D:\REBELUM_diagnostico\v12\redmi\sesion_v649`.
 - **Caché de sombreadores en Android:** funciona. `files/shader_cache` ocupa 21 MB en la carpeta de la app. No se
   borró, así que no se midió un primer arranque con la caché vacía.
 - **Medidas y capturas:** `D:\REBELUM_diagnostico\v12\redmi\sesion_v656`, con la transición en `entrada_v656\`.
+
+# V12 · Octava prueba en el Redmi: v688, la expansión (13/11, 11:00-12:00)
+
+**APK:** «REBELUM Auditoría» `com.aethelgard.auditoria`, versionCode **688** (`dfe5867`), SHA-256
+`558299e93a0f2963063bd341f1fb7cec3958ecada8c2fa44a7763fba313e2f7e`. Lleva recursos de licencia pendiente: no se distribuye.
+
+- **Instalación:** MIUI rechazó `adb install -r` (`INSTALL_FAILED_USER_RESTRICTED`, sin aviso en pantalla); la instaló
+  el usuario desde Descargas.
+- **Partida:** respaldo `D:\REBELUM_respaldos\2026-11-13_redmi_auditoria_antes_dfe5867` (706 entradas; mismas huellas en
+  el teléfono y en el PC). Al acabar, partida, `.bak` y ajustes restaurados con las mismas huellas; nada en
+  `/data/local/tmp`.
+- **Método:** como las sesiones anteriores: partidas preparadas por región, entrada por «Continuar», `--timestats` de
+  10 s parado y 6 s andando (mantener pulsado hacia dónde ir), PSS total. Capturas y datos en
+  `D:\REBELUM_diagnostico\v12\redmi\sesion_v688`.
+- **Errores:** sin cierres de la app ni errores del juego en logcat. Batería de 29,5 °C a 34,9 °C; estado térmico 0.
+
+| Lugar (calidad media) | Parado | Andando | PSS | v649 (12/11) |
+|---|---|---|---|---|
+| Pantalla de inicio | 36,9 | — | 0,73 GB | 36,7 · 0,97 GB |
+| **Gran Bosque** | **24,6** | **27,2** | 0,84 GB | 21,3 / 23,1 · 1,00-1,07 GB |
+| Pastos Verdes | 30,5 | 31,2 | 0,83 GB | 30,4 / 30,4 · 1,04-1,08 GB |
+| Garganta 3D | 30,7 | 30,7 | 0,90 GB | 29,8 / 30,3 · 1,04-1,09 GB |
+| Oakhaven 3D | 30,5 | 31,0 | 0,89 GB | 30,3 / 30,4 · 1,11-1,15 GB |
+| Oakhaven con mundo vivo (en la puerta, con vecinos) | 30,8 | — | 0,87 GB | — |
+| Mar de Cristal | 30,6 | 30,8 | 0,77 GB | 30,4 / 30,4 · 0,98-1,00 GB |
+| **Ciclópea 3D** (nueva) | 30,7 | 31,2 | 0,79 GB | — |
+| Combate con Bramavidrio, héroes v2 + animación v12 + línea de turnos | 56,6 (menú) | 56,8 (atacando) | 0,92 GB | 59-61 sin lo nuevo |
+
+- **Memoria:** entre 0,1 y 0,26 GB menos de PSS en todas las regiones (trabajo de cargas y precarga).
+- **Gran Bosque:** mejora (+3-4 FPS) pero en medio sigue sin llegar a 30. Las dos opciones preparadas para ello
+  (`gb_matas_casco`, `gb_hojas_mipmaps`) solo se encienden por código: no se pudieron probar en el teléfono.
+- **Fallo encontrado y arreglado (`021ae11`):** con los héroes v2, en la exploración se quedaban **tumbados** a los
+  pocos segundos de estar quietos: les llegaban las esperas de los originales, hechas para otro esqueleto. Los v2 y v3
+  ya no las activan; `prueba_esperas_v2` lo comprueba (6 fallos sin el arreglo, 0 con él). La v688 aún lo tiene.
+- **Observado:** con el mundo vivo, la vendedora puede quedarse en el paso de la puerta y Kael se para detrás.
