@@ -27,9 +27,28 @@ const RUTA_CAPA := "res://garon_capa.png"   # imagen de la capa (se hace una tel
 const LARGO_ESPADA := 1.1               # metros (Garon mide 1,7)
 const AGARRE_ESPADA := 0.12             # dónde la agarra: 0 = pomo, 1 = punta
 const TAM_ESCUDO := 0.65
-const LARGO_CAPA := 1.05                # de los hombros al borde roto
-const ANCHO_CAPA := 0.74                # ancho arriba, en los hombros (abajo se abre un 30 %)
+const LARGO_CAPA := 1.05                # de los hombros al borde roto (medidas de un cuerpo de 1,7 m de proporciones
+const ANCHO_CAPA := 0.74                # reales; Garon es chibi: _medidas_capa las ajusta a su esqueleto)
 const CURVA_CAPA := 0.2                # cuánto se curva hacia atrás (envuelve la espalda)
+# 13/11/2026 («la capa de Garon está mal puesta»): la capa se mide con SU esqueleto y sigue al pecho.
+#   Antes medía 1,05 × 0,74 m pensados para un cuerpo de 1,7 m de proporciones reales, pero Garon es chibi (hombros a
+#   1,05 m del suelo, cabeza de 0,55 m): la capa atravesaba el suelo 15-22 cm y sobresalía a los lados del cuerpo
+#   (0,81 m de ancho para unos hombros de 0,21 m entre articulaciones). Ahora: largo = CAPA_LARGO_ALTO × la altura del
+#   cuello sobre los pies (acaba a la altura de los tobillos) y ancho = CAPA_ANCHO_HOMBROS × la distancia entre hombros;
+#   la curva y la caída hacia atrás, en la misma proporción que antes (el diseño no cambia, solo la talla).
+#   Y se orientaba con el «adelante» del esqueleto en reposo, no con el del pecho: no seguía a los hombros (47° girada
+#   en la guardia del original, hasta 87° en Juicio) y en el Giro y en el derribo de los v2 quedaba POR DELANTE del
+#   cuerpo. Ahora toma el giro del pecho (Spine2 respecto a su reposo) y lo acerca a la línea de los hombros
+#   (CAPA_HOMBROS), cuelga un poco hacia el suelo al inclinarse (solo hacia atrás, nunca hacia el cuerpo) y nunca baja
+#   del plano de los pies (tumbado, en el derribo de los v2, se quedaba de pie en el aire o se metía 1 m en el suelo).
+#   Medidas antes y después: D:\REBELUM_diagnosticonimaciones6-11-13\capa_garon\ (pruebas/fotos_capa_garon.gd).
+const CAPA_LARGO_ALTO := 0.88          # largo / (altura del cuello sobre los dedos de los pies)
+const CAPA_ANCHO_HOMBROS := 2.2        # ancho arriba / distancia entre las articulaciones de los hombros
+const CAPA_GRAVEDAD := 0.55            # cuánto cuelga hacia el suelo al inclinarse (0 = rígida con el pecho)
+const CAPA_GRAVEDAD_MAX := 60.0        # grados como mucho
+const CAPA_HOMBROS := 0.6              # cuánto sigue a la línea de los hombros (el resto, al pecho): arriba va con los
+                                       # hombros y abajo no sale de lado cuando Garon gira el tronco (su guardia)
+const CAPA_SUELO := 0.03               # metros por encima del suelo que deja como poco el borde de abajo
 const GIRO_ESPADA := Vector3.ZERO
 const GIRO_ESCUDO := Vector3.ZERO
 const GIRO_CAPA := Vector3.ZERO
@@ -92,6 +111,10 @@ var _chispas: Array = []
 var escudo: Node3D
 var capa: Node3D
 var _mats_capa: Array = []
+var _capa_largo := 0.0                 # medidas de la capa en unidades del esqueleto (_medidas_capa)
+var _capa_ancho := 0.0
+var _capa_fondo := 0.0                 # cuánto se va hacia atrás su borde de abajo (curva + caída), en su espacio
+var _capa_curva := 0.0                 # curva del centro arriba (crece un 40 % hacia abajo)
 var _i := {}
 
 
@@ -109,7 +132,8 @@ func _ready() -> void:
 	if skel == null:
 		return
 	for nombre in ["RightHand", "RightHandIndex1", "RightHandPinky1", "RightHandMiddle1", "RightHandThumb1",
-			"LeftHand", "LeftForeArm", "LeftHandIndex1", "LeftHandPinky1", "LeftHandMiddle1", "LeftHandThumb1", "Spine2", "Neck"]:
+			"LeftHand", "LeftForeArm", "LeftHandIndex1", "LeftHandPinky1", "LeftHandMiddle1", "LeftHandThumb1", "Spine2", "Neck",
+		"LeftArm", "RightArm", "LeftToeBase", "RightToeBase", "LeftFoot", "RightFoot"]:
 		_i[nombre] = _hueso(nombre)
 	_crear_espada()
 	_crear_escudo()
@@ -266,6 +290,7 @@ func _crear_escudo() -> void:
 func _crear_capa() -> void:
 	if RUTA_CAPA == "" or not ResourceLoader.exists(RUTA_CAPA) or _i["Spine2"] < 0:
 		return
+	_medidas_capa()
 	capa = Node3D.new()
 	capa.name = "Capa"
 	skel.add_child(capa)
@@ -277,16 +302,42 @@ func _crear_capa() -> void:
 		nodo = _capa_desde_imagen(load(RUTA_CAPA))
 		modelo.add_child(nodo)
 	else:
-		nodo = _cargar(modelo, RUTA_CAPA, LARGO_CAPA * gestos.escala, false, true)
+		nodo = _cargar(modelo, RUTA_CAPA, _capa_largo, false, true)
 	if nodo != null:
 		_ondear(nodo)
 
 
+# Largo y ancho de la capa con las medidas del esqueleto en reposo (unidades del esqueleto). Sin los huesos, las de
+# antes (LARGO_CAPA y ANCHO_CAPA por la escala).
+func _medidas_capa() -> void:
+	var e: float = gestos.escala
+	_capa_largo = LARGO_CAPA * e
+	_capa_ancho = ANCHO_CAPA * e
+	var sk := skel
+	var pie := -1
+	for n in ["LeftToeBase", "RightToeBase", "LeftFoot", "RightFoot"]:
+		if pie < 0 and _i.get(n, -1) >= 0:
+			pie = _i[n]
+	if _i.get("Neck", -1) >= 0 and pie >= 0:
+		var alto: float = (sk.get_bone_global_rest(_i["Neck"]).origin - sk.get_bone_global_rest(pie).origin).dot(gestos.arriba)
+		if alto > 0.1 * e:
+			_capa_largo = minf(_capa_largo, CAPA_LARGO_ALTO * alto)
+	if _i.get("LeftArm", -1) >= 0 and _i.get("RightArm", -1) >= 0:
+		var hombros: float = sk.get_bone_global_rest(_i["LeftArm"]).origin.distance_to(sk.get_bone_global_rest(_i["RightArm"]).origin)
+		if hombros > 0.05 * e:
+			_capa_ancho = minf(_capa_ancho, CAPA_ANCHO_HOMBROS * hombros)
+
+
 # Tela curva hecha con la imagen de la capa: arriba en los hombros (y = 0), cae hacia -Y,
 # se abre hacia abajo y se curva hacia atrás (-Z). Malla de 14 × 18 cuadros para que ondee suave.
+# Las proporciones (abrirse un 30 %, curva y caída hacia atrás) son las de siempre, a la talla de _medidas_capa.
 func _capa_desde_imagen(tex: Texture2D) -> MeshInstance3D:
 	var e: float = gestos.escala
-	var largo := LARGO_CAPA * e
+	var largo := _capa_largo
+	var k_ancho := _capa_ancho / (ANCHO_CAPA * e)      # cuánto más estrecha que la de antes (1 = igual)
+	var k_largo := _capa_largo / (LARGO_CAPA * e)
+	_capa_fondo = CURVA_CAPA * e * k_ancho * 1.4 + 0.16 * e * k_largo
+	_capa_curva = CURVA_CAPA * e * k_ancho
 	var columnas := 14
 	var filas := 18
 	var v := PackedVector3Array()
@@ -295,13 +346,13 @@ func _capa_desde_imagen(tex: Texture2D) -> MeshInstance3D:
 	var idx := PackedInt32Array()
 	for j in filas + 1:
 		var fv := float(j) / filas
-		var ancho := ANCHO_CAPA * e * (1.0 + 0.3 * fv)
-		var curva := CURVA_CAPA * e * (1.0 + 0.4 * fv)
+		var ancho := _capa_ancho * (1.0 + 0.3 * fv)
+		var curva := CURVA_CAPA * e * k_ancho * (1.0 + 0.4 * fv)
 		for i in columnas + 1:
 			var fu := float(i) / columnas
 			var x := (fu - 0.5) * ancho
 			var c := 2.0 * fu - 1.0
-			v.append(Vector3(x, -fv * largo, -curva * (1.0 - c * c) - 0.16 * e * fv))
+			v.append(Vector3(x, -fv * largo, -curva * (1.0 - c * c) - 0.16 * e * k_largo * fv))
 			uv.append(Vector2(1.0 - fu, fv))          # vista desde atrás: la imagen no sale al revés
 			nor.append(Vector3(0, 0, -1))
 	for j in filas:
@@ -458,14 +509,62 @@ func _actualizar_equipo(sk: Skeleton3D) -> void:
 		fuera = (fuera - largo_brazo * fuera.dot(largo_brazo)).normalized()
 		escudo.global_transform = g * Transform3D(Basis(largo_brazo.cross(fuera), largo_brazo, fuera), codo.lerp(muneca, 0.55))
 	if capa != null:
-		var pecho := sk.get_bone_global_pose(_i["Spine2"])
-		var cuello: Vector3 = sk.get_bone_global_pose(_i["Neck"]).origin if _i["Neck"] >= 0 else pecho.origin + gestos.arriba
-		var arriba: Vector3 = (cuello - pecho.origin).normalized()
-		var atras: Vector3 = -gestos.adelante
-		atras = (atras - arriba * atras.dot(arriba)).normalized()
-		var lado: Vector3 = arriba.cross(atras)
-		var pos: Vector3 = cuello - arriba * BAJAR_CAPA * gestos.escala + atras * ATRAS_CAPA * gestos.escala
-		capa.global_transform = g * Transform3D(Basis(lado, arriba, -atras), pos)
+		_colocar_capa(sk)
+
+
+# La capa va con el PECHO (el giro de Spine2 respecto a su reposo aplicado al arriba y al adelante del personaje) y la
+# línea de los HOMBROS, no con el adelante del esqueleto en reposo; al inclinarse cuelga algo hacia el suelo, solo hacia
+# atrás; y nunca por debajo del plano de los pies.
+func _colocar_capa(sk: Skeleton3D) -> void:
+	var g := sk.global_transform
+	var pecho := sk.get_bone_global_pose(_i["Spine2"])
+	var giro: Basis = pecho.basis.orthonormalized() * sk.get_bone_global_rest(_i["Spine2"]).basis.orthonormalized().inverse()
+	var arriba: Vector3 = (giro * gestos.arriba).normalized()
+	var atras: Vector3 = -(giro * gestos.adelante)
+	atras = (atras - arriba * atras.dot(arriba)).normalized()
+	if _i.get("LeftArm", -1) >= 0 and _i.get("RightArm", -1) >= 0:   # cuelga de los HOMBROS: su línea tira del giro
+		var h: Vector3 = sk.get_bone_global_pose(_i["RightArm"]).origin - sk.get_bone_global_pose(_i["LeftArm"]).origin
+		h -= arriba * h.dot(arriba)
+		if h.length() > 0.02 * gestos.escala:
+			var de_hombros: Vector3 = -arriba.cross(h.normalized())    # (el mismo sentido que gestos.adelante en reposo)
+			atras = atras.slerp(de_hombros, CAPA_HOMBROS) if atras.dot(de_hombros) > -0.9 else de_hombros
+	atras = (atras - arriba * atras.dot(arriba)).normalized()
+	var cuello: Vector3 = sk.get_bone_global_pose(_i["Neck"]).origin if _i["Neck"] >= 0 else pecho.origin + arriba * 0.05 * gestos.escala
+	var pos: Vector3 = cuello - arriba * BAJAR_CAPA * gestos.escala + atras * ATRAS_CAPA * gestos.escala
+	var abajo: Vector3 = (g.basis.inverse() * Vector3.DOWN).normalized()     # el suelo, en el esqueleto
+	var ang := atan2(abajo.dot(atras), abajo.dot(-arriba))                  # > 0: el suelo queda detrás de la caída
+	var erguido := clampf((arriba.dot(-abajo) - 0.3) / 0.4, 0.0, 1.0)   # tumbado no cuelga (se metería en el suelo)
+	if ang > 0.0 and erguido > 0.0:
+		var t := minf(ang * CAPA_GRAVEDAD, deg_to_rad(CAPA_GRAVEDAD_MAX)) * erguido
+		var arriba2 := arriba * cos(t) - atras * sin(t)
+		atras = atras * cos(t) + arriba * sin(t)
+		arriba = arriba2
+	var lado: Vector3 = arriba.cross(atras)
+	var tr := g * Transform3D(Basis(lado, arriba, -atras), pos)
+	# Nunca por debajo del suelo (el plano de los pies de Garon, el de este nodo): si el borde de abajo lo cruzaría
+	# (tumbado, rodilla en tierra), la capa gira sobre los hombros hasta quedar a ras.
+	var arriba_suelo: Vector3 = global_transform.basis.y.normalized()
+	var borde: Vector3 = tr.basis * Vector3(0.0, -_capa_largo, -_capa_fondo)
+	var alto_arriba: float = (tr.origin - global_position).dot(arriba_suelo)
+	var alto_borde: float = alto_arriba + borde.dot(arriba_suelo)
+	if alto_borde < CAPA_SUELO and borde.length() > 0.001:
+		var largo_m := borde.length()
+		var vy := clampf(CAPA_SUELO - alto_arriba, -largo_m, 0.0)
+		var plano: Vector3 = borde - arriba_suelo * borde.dot(arriba_suelo)
+		if plano.length() < 0.001:
+			plano = (g.basis * atras) - arriba_suelo * (g.basis * atras).dot(arriba_suelo)
+		var nuevo: Vector3 = plano.normalized() * sqrt(maxf(0.0, largo_m * largo_m - vy * vy)) + arriba_suelo * vy
+		tr.basis = Basis(Quaternion(borde.normalized(), nuevo.normalized())) * tr.basis
+	var bajo := INF                                       # y si la curva de en medio aún lo cruza, sube a ras
+	for f in [0.0, 0.5, 1.0]:
+		var punto: Vector3 = tr * Vector3(0.0, -f * _capa_largo, -_capa_curva * (1.0 + 0.4 * f) - (_capa_fondo - 1.4 * _capa_curva) * f)
+		bajo = minf(bajo, (punto - global_position).dot(arriba_suelo))
+	for x in [-0.65, 0.65]:                               # (y las esquinas del borde roto, que es un 30 % más ancho)
+		var esquina: Vector3 = tr * Vector3(x * _capa_ancho, -_capa_largo, -(_capa_fondo - 1.4 * _capa_curva))
+		bajo = minf(bajo, (esquina - global_position).dot(arriba_suelo))
+	if bajo < CAPA_SUELO:
+		tr.origin += arriba_suelo * minf(CAPA_SUELO - bajo, 0.4)
+	capa.global_transform = tr
 
 
 # ---------------------------------------------------------------- Embuir: magia elemental en las espadas
