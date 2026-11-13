@@ -376,3 +376,15 @@ negra).
   - `c4c64e1`: Bramavidrio v5 elegible (opción 5; por defecto la v2). Pruebas de Bramavidrio 10 · 0 · 1 · 0.
 - **En curso** (reanudados tras el límite de uso): Ciclópea 3D, primer sector (`claude/v12-mundo`); línea de turnos (`claude/v12-combate2`); Gorthor (`claude/v12-enemigos`).
 - **Decisiones del usuario pendientes:** concepto del Firmamento y obtención de orbes; dónde se consiguen los accesorios; si se encienden mundo vivo, animación v12 y enemigos v12; Bramavidrio v5 frente a v4/v2; seguir o no con la geometría propia de los v3; Defender contra el golpe devastador de los «jefe»; la Reliquia del Confino; Naira.
+
+### Noche del 12 al 13/11: encargos del usuario (duerme; sin Redmi)
+
+- **Encargos:** cuatro PDF de diseño (en `D:\REBELUM_diagnostico\v12\expansion\encargos_13_11\`): bestiario de 10
+  enemigos comunes, Garon esgrima (18 técnicas, Compás), Lya magia blanca y Nix maga negra (cuarta heroína, con
+  imagen de concepto del usuario). Además: «la capa de Garon está mal puesta, soluciónalo cuando termines todo» y, al
+  final, «mejora el rendimiento y arregla todos los fallos». Puede usar todos los programas del PC.
+- **Especialistas:** `claude/v12-nix` (modelo y piloto de magia negra, apagado `nix_v12`), `claude/v12-bestiario`
+  (piloto Peón de Linde y luego por familias, `enemigos_v12`); siguen Ciclópea (`claude/v12-mundo`), línea de turnos
+  (`claude/v12-combate2`) y Gorthor (`claude/v12-enemigos`). Garon esgrima y Lya magia blanca: al especialista de
+  combate cuando acabe la línea de turnos.
+- **Pregunta abierta para el usuario:** Nix frente a Naira (Nix va como prototipo propio; no se decide nada).
