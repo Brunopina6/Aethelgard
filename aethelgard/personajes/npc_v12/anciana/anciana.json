@@ -1,0 +1,15 @@
+{
+ "velocidad": 0.718,
+ "velocidad_correr": 0.0,
+ "triangulos": 4936,
+ "vertices": 2632,
+ "huesos": 22,
+ "personas": [
+  "encina",
+  "abuela_palomas"
+ ],
+ "tarea": "echar_grano",
+ "agarra": "L",
+ "nino": false,
+ "alto": 1.44
+}

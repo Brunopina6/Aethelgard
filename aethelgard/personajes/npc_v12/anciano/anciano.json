@@ -1,0 +1,15 @@
+{
+ "velocidad": 0.733,
+ "velocidad_correr": 0.0,
+ "triangulos": 4229,
+ "vertices": 2264,
+ "huesos": 22,
+ "personas": [
+  "albar",
+  "abuelo_fuente"
+ ],
+ "tarea": "estirar",
+ "agarra": "R",
+ "nino": false,
+ "alto": 1.46
+}

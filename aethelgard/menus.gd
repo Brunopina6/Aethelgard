@@ -807,6 +807,32 @@ func _pintar_ajustes() -> void:
 			fob.add_child(bo)
 		cuerpo.add_child(fob)
 		cuerpo.add_child(_texto("Solo Auditoría: tablero de Orbes Cristalinos en la ficha del Grupo.", 16, COLOR_SUAVE))
+	load("res://zonas3d/oakhaven/mundo_vivo.gd").opcion_ajustes(self, cuerpo)   # V12, «Oakhaven: mundo vivo» (mundo_vivo_v12)
+	# Combate (12/11): la animación de combate v12 de los protagonistas v2 (combate_anim_v12.gd, [combate] anim_v12), sus
+	# cámaras ([combate] camaras) y el ATB quieto mientras actúa un héroe ([combate] pausa_atb; 13/11). Por defecto, la de siempre.
+	var AV = load("res://combate_anim_v12.gd")
+	cuerpo.add_child(_texto("Combate", 26, COLOR_TITULO))
+	var fav := HBoxContainer.new()
+	fav.add_theme_constant_override("separation", 8)
+	var fav2 := HBoxContainer.new()
+	fav2.add_theme_constant_override("separation", 8)
+	for op in [["anim_v12", false, "Animación de siempre"], ["anim_v12", true, "Animación v12 (prueba)"],
+			["camaras", true, "Cámaras: sí"], ["camaras", false, "Cámaras: no"],
+			["pausa_atb", true, "ATB quieto al actuar: sí"], ["pausa_atb", false, "ATB quieto al actuar: no"]]:
+		var cl: String = op[0]
+		var si: bool = op[1]
+		var actual: bool = AV.activado() if cl == "anim_v12" else (AV.camaras() if cl == "camaras" else AV.pausa_atb())
+		var ancho := 300 if cl != "camaras" else 180
+		var bav := _boton(("● " if actual == si else "○ ") + op[2], 18, Vector2(ancho, 34),
+			"combate:%s:%s" % [cl, "si" if si else "no"])
+		bav.pressed.connect(func():
+			AV.elegir_en_ajustes(cl, si)
+			Sonido.efecto("ui_tic")
+			_pintar_de_nuevo())
+		(fav2 if cl == "pausa_atb" else fav).add_child(bav)
+	cuerpo.add_child(fav)
+	cuerpo.add_child(fav2)
+	cuerpo.add_child(_texto("Con los protagonistas v2. «ATB quieto»: las barras esperan mientras actúa un héroe. Se nota en el próximo combate.", 16, COLOR_SUAVE))
 
 
 # Calidad de las regiones 3D (encargo del 09/11; prototipos/calidad_auto.gd, sección [calidad] de user://ajustes.cfg):

@@ -24,6 +24,7 @@ const Progreso := preload("res://progreso.gd")
 const Hallazgos := preload("res://hallazgos.gd")
 const Examinables := preload("res://zonas3d/examinables_3d.gd")
 const Barrios := preload("res://zonas3d/oakhaven/barrios.gd")
+const MundoVivo := preload("res://zonas3d/oakhaven/mundo_vivo.gd")   # V12, interruptor «mundo_vivo_v12» (APAGADO)
 const VECINOS := ["aldric", "selene", "pip", "rosa", "albar", "bastian", "encina"]
 # Sitios de la 3D que no son los de la 2D: Aldric, a un lado del arco (no tapa la Puerta del Sur), y Albar, por la mañana,
 # entre las urnas (en la 2D, encima de una).
@@ -121,13 +122,19 @@ func _crear_vecino(id: String) -> void:
 	var n := Node3D.new()
 	n.name = "Vecino_" + id
 	add_child(n)
-	var fig: MeshInstance3D = barrios.figura(id) if barrios != null else null
-	if fig == null:
-		fig = _figura_provisional(d)
-	n.add_child(fig)
-	var t := fig.create_tween().set_loops()                        # respira
-	t.tween_property(fig, "position:y", 0.018, 1.5 + 0.13 * vecinos.size()).set_trans(Tween.TRANS_SINE)
-	t.tween_property(fig, "position:y", 0.0, 1.5 + 0.13 * vecinos.size()).set_trans(Tween.TRANS_SINE)
+	# V12, mundo vivo (interruptor «mundo_vivo_v12», APAGADO): la figura de la familia chibi, con su esqueleto y sus
+	# clips, en vez de la provisional; el mismo sitio, diálogo y rutina. La anima mundo_vivo.gd.
+	var chibi: Node3D = MundoVivo.figura_vecino(id)
+	if chibi != null:
+		n.add_child(chibi)
+	else:
+		var fig: MeshInstance3D = barrios.figura(id) if barrios != null else null
+		if fig == null:
+			fig = _figura_provisional(d)
+		n.add_child(fig)
+		var t := fig.create_tween().set_loops()                        # respira
+		t.tween_property(fig, "position:y", 0.018, 1.5 + 0.13 * vecinos.size()).set_trans(Tween.TRANS_SINE)
+		t.tween_property(fig, "position:y", 0.0, 1.5 + 0.13 * vecinos.size()).set_trans(Tween.TRANS_SINE)
 	var cuerpo := StaticBody3D.new()
 	var col := CollisionShape3D.new()
 	var cil := CylinderShape3D.new()
@@ -137,7 +144,7 @@ func _crear_vecino(id: String) -> void:
 	col.position.y = 0.85
 	cuerpo.add_child(col)
 	n.add_child(cuerpo)
-	vecinos[id] = {"nodo": n, "veces": 0, "paseo": null, "datos": d}
+	vecinos[id] = {"nodo": n, "veces": 0, "paseo": null, "datos": d, "chibi": chibi}
 
 
 # Sin el modelo: una cápsula con su color (como Aldric antes de V12).
@@ -192,16 +199,27 @@ func _a_su_sitio(id: String) -> void:
 	var r := rutina_3d(id, franja)
 	n.position = sitio(r["casilla"])
 	n.rotation.y = 0.0
+	var chibi = v.get("chibi")                                    # V12, mundo vivo: la figura con clips (o null)
+	if chibi != null:
+		chibi.clip("tarea" if r.get("hace", "") == "trabaja" else "reposo")
 	if r.get("hace", "") == "pasea" and r.has("hasta"):
 		var a := n.position
 		var b := sitio(r["hasta"])
 		var dur := a.distance_to(b) / 1.1
 		var t := n.create_tween().set_loops()
 		t.tween_callback(func(): n.rotation.y = atan2(b.x - a.x, b.z - a.z))
-		t.tween_property(n, "position", b, dur).set_trans(Tween.TRANS_SINE)
+		if chibi != null:                                         # anda de verdad (y vuelve a andar tras un diálogo)
+			t.tween_method(func(k: float): n.position = a.lerp(b, k); chibi.andar(1.1), 0.0, 1.0, dur)
+			t.tween_callback(func(): chibi.clip("reposo"))
+		else:
+			t.tween_property(n, "position", b, dur).set_trans(Tween.TRANS_SINE)
 		t.tween_interval(2.0)
 		t.tween_callback(func(): n.rotation.y = atan2(a.x - b.x, a.z - b.z))
-		t.tween_property(n, "position", a, dur).set_trans(Tween.TRANS_SINE)
+		if chibi != null:
+			t.tween_method(func(k: float): n.position = b.lerp(a, k); chibi.andar(1.1), 0.0, 1.0, dur)
+			t.tween_callback(func(): chibi.clip("reposo"))
+		else:
+			t.tween_property(n, "position", a, dur).set_trans(Tween.TRANS_SINE)
 		t.tween_interval(2.0)
 		v["paseo"] = t
 
@@ -439,6 +457,8 @@ func hablar(id: String) -> String:
 	var k: Node3D = region.get("kael")
 	if k != null:
 		n.rotation.y = atan2(k.global_position.x - n.global_position.x, k.global_position.z - n.global_position.z)
+	if v.get("chibi") != null:                                    # V12, mundo vivo: su gesto al hablar
+		v["chibi"].clip("hablar", "reposo")
 	if dg == null or ruta == "" or not ResourceLoader.exists(ruta) or dg.current_timeline != null:
 		var frases: Array = v["datos"].get("frases", [""])
 		avisar("%s: «%s»" % [v["datos"].get("corto", id), frases[int(v["veces"]) % frases.size()]], "", true)

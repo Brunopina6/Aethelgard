@@ -642,7 +642,10 @@ func _d() -> void:
 func _e() -> void:
 	var oro0: int = Inv.oro()
 	await _combate({"Kael": 1, "Lya": 1}, CN.GRUPO_SOLO, 3)
-	_guardian()["atk"] = 120                               # (para que pierdan seguro: aquí se mira el final, no el equilibrio)
+	var fuerte := _guardian()
+	fuerte["atk"] = 120                                    # (que pierdan seguro: aquí se mira el final, no el equilibrio)
+	fuerte["hp_max"] = 4000
+	fuerte["hp"] = 4000
 	var r := await _jugar("auto", false)
 	_ok(r["fin"] and not r["gana"], "E: con nivel 1 no pierde o no acaba (fin %s, gana %s, estado %s, PV %s / %s; %s)" % [r["fin"], r["gana"],
 		c.estado, str(c.heroes.map(func(h): return h["hp"])), str(c.enemigos.map(func(e): return e["hp"])), str(r["acciones"])])

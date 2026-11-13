@@ -25,6 +25,8 @@ const Distrito := preload("res://zonas3d/oakhaven/distrito.gd")   # V10: el dist
 # notas, gremio, tienda, parejas). Sin ellos (Engine «oakhaven_sin_vida»), el tramo de antes, con el Aldric de primitivas.
 const Barrios := preload("res://zonas3d/oakhaven/barrios.gd")
 const Vida3D := preload("res://zonas3d/oakhaven/vida3d.gd")
+# V12, mundo vivo (interruptor «mundo_vivo_v12», APAGADO): vecinos secundarios chibi con rutinas (oakhaven/mundo_vivo.gd).
+const MundoVivo := preload("res://zonas3d/oakhaven/mundo_vivo.gd")
 const Materiales := preload("res://zonas3d/garganta/materiales.gd")
 const Progreso := preload("res://progreso.gd")
 
@@ -51,6 +53,7 @@ var sala                                   # zonas3d/oakhaven/posada3d.gd
 var distrito                               # zonas3d/oakhaven/distrito.gd (null sin él)
 var barrios                                # V12: zonas3d/oakhaven/barrios.gd (null sin él)
 var vida                                   # V12: zonas3d/oakhaven/vida3d.gd (null sin él)
+var vivo                                   # V12: zonas3d/oakhaven/mundo_vivo.gd (null con el interruptor apagado)
 var _veces_posadera := 0
 var grupo: Node3D
 var capa_ui: CanvasLayer
@@ -85,6 +88,8 @@ func _ready() -> void:
 		_crear_aldric()                                        # el tramo de antes (T-103)
 	else:
 		vida = Vida3D.crear(self, barrios, mat)
+		if MundoVivo.activado():
+			vivo = MundoVivo.crear(self)
 	_lugar_oakhaven()
 	var vuelve: bool = Engine.get_meta("pos_3d_ok", false) and Engine.get_meta("pos_3d_lugar", -1) == INDICE \
 		and Engine.get_meta("pos_3d", null) is Vector3
@@ -182,6 +187,8 @@ func _prohibido(p: Vector3) -> bool:
 		return true
 	if barrios != null:                                        # V12: en alto, solo el adarve de la ronda
 		if barrios.prohibido(p):
+			return true
+		if vivo != null and vivo.ocupa(p):                     # V12, mundo vivo: no se atraviesa a nadie
 			return true
 		if Barrios.en_alto(p):
 			return false
@@ -361,6 +368,8 @@ func _piezas_al_alcance() -> Array:
 		r.append(["aldric", ALDRIC, 2.2, "Hablar con Aldric"])
 	else:
 		r.append_array(vida.piezas())                          # V12: vecinos, cofres, piezas, notas, detalles…
+		if vivo != null:
+			r.append_array(vivo.piezas())                      # V12, mundo vivo: los vecinos secundarios
 	return r + (distrito.piezas() if distrito != null else [])
 
 
@@ -405,7 +414,9 @@ func _accion() -> void:
 		"posadera":
 			_abrir_servicios()
 		_:
-			if vida != null and vida.atiende(cerca):
+			if vivo != null and vivo.atiende(cerca):
+				vivo.accion(cerca)
+			elif vida != null and vida.atiende(cerca):
 				vida.accion(cerca)                         # V12: lo de la ciudad 2D (vida3d.gd)
 			elif distrito != null:
 				distrito.accion(cerca)                     # los oficios y el pozo del distrito

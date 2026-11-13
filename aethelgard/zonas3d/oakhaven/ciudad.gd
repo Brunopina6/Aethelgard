@@ -117,7 +117,12 @@ func _suelo() -> void:
 	prado.size = Vector2(tam.x + 120.0, tam.y + 110.0)
 	var mp := MeshInstance3D.new()
 	mp.mesh = prado
-	mp.material_override = mat.detalle(Color(0.20, 0.30, 0.15), 0.4, 0.5)
+	# V12 (13/11, propuesta del especialista de rendimiento): el prado se dibuja DESPUÉS de los edificios
+	# (render_priority 2): la imagen es la misma (opaco, con prueba de profundidad), pero no se pinta el suelo que luego
+	# tapan las casas. Una copia del material: el de «detalle» se comparte (caché de materiales.gd).
+	var mprado: StandardMaterial3D = mat.detalle(Color(0.20, 0.30, 0.15), 0.4, 0.5).duplicate()
+	mprado.render_priority = 2
+	mp.material_override = mprado
 	mp.position = Vector3(tam.x * 0.5, -0.03, tam.y * 0.5 + 25.0)
 	mp.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	mp.name = "Prado"

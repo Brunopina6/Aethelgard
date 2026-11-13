@@ -1,0 +1,15 @@
+{
+ "velocidad": 0.811,
+ "velocidad_correr": 0.0,
+ "triangulos": 2304,
+ "vertices": 1267,
+ "huesos": 22,
+ "personas": [
+  "herrero_aprendiz",
+  "ferro"
+ ],
+ "tarea": "martillar",
+ "agarra": "R",
+ "nino": false,
+ "alto": 1.55
+}

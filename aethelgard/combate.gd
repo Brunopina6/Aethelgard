@@ -59,6 +59,7 @@ const Brama := preload("res://combate_bramavidrio.gd")
 # V12: qué versión del modelo de Bramavidrio (1, el gusano de anillos; 2, la Sierpe de la Vela): un solo interruptor
 const BramaVersion := preload("res://enemigos/bramavidrio/bramavidrio_version.gd")
 const HeroesV2 := preload("res://personajes/heroes_v2/heroes_v2.gd")   # V12, fase B: héroes v2 (interruptor heroes_v2, APAGADO)
+const AnimV12 := preload("res://combate_anim_v12.gd")   # V12: animación de combate de los héroes v2 (combate_anim_v12, APAGADO)
 # V12, fase C: los modelos propios de Blender del Guardián de piedra, el Gólem de ámbar y Gorthor (enemigos/<nombre>/).
 # APAGADOS hasta que el usuario los compare con los de siempre: Engine.set_meta("enemigos_v12", true) o «-- enemigos_v12».
 const ENEMIGOS_V12 := {"guardian": "guardian3d", "golem_ambar": "golem_ambar3d", "gorthor": "gorthor_v12"}
@@ -80,6 +81,10 @@ const Humbaba := preload("res://combate_humbaba.gd")
 # Tajo, Barrido, Juicio avisado y Escudo del Anillo). APAGADO: con el interruptor «enemigos_v12» (el de los modelos
 # propios) y en sus combates de prueba (GRUPOS[18] y [19]). Los ganchos de aquí llevan «V12, Centinela».
 const Centinela := preload("res://combate_centinela.gd")
+# V12, enemigos (12/11): el Gólem de ámbar, «el Guardián del Nido» (combate_golem.gd: Puñetazo, Terrón de ámbar a
+# distancia y Pisotón avisado y cortable). APAGADO: con «enemigos_v12» y en sus combates de prueba (GRUPOS[20] y [21]).
+# Los ganchos de aquí llevan «V12, Gólem».
+const Golem := preload("res://combate_golem.gd")
 # Menú de combate minimalista (menu_combate.gd). Ocupa el 40 % derecho de la pantalla, por eso los
 # héroes van más a la izquierda y los enemigos se juntan a la izquierda: x = x * ENEMIGOS_X.x + ENEMIGOS_X.y
 const ENEMIGOS_X := Vector2(0.75, -190.0)
@@ -309,7 +314,8 @@ const MODELOS := {
 		"pos_grupo": Vector2(-191, -186), "caida": 1.6, "respaldo": "guardian"},
 	"golem_ambar3d": {
 		"tipo": "3d", "esc": 0.6, "script": "res://enemigos/golem_ambar/golem_ambar_3d.gd",
-		"gestos": "res://gestos_3d.gd", "rutas": ["res://enemigos/golem_ambar/golem_ambar.glb"],
+		"gestos": "res://gestos_3d.gd", "rutas": ["res://enemigos/golem_ambar/golem_ambar_v2.glb",   # V12, Gólem: v2
+			"res://enemigos/golem_ambar/golem_ambar.glb"],
 		"vp": Vector2i(1000, 910), "alto_vista": 3.3, "centro_y": 1.15, "barra_y": 49.0, "centro_3d": 1.25,
 		"pos_grupo": Vector2(-79, 37), "caida": 1.4, "respaldo": "guardian"},
 	"gorthor_v12": {
@@ -400,6 +406,9 @@ const GRUPOS := [
 	# V12, Centinela: combates de prueba del Guardián de piedra (combate_centinela.gd; con «enemigos_v12»); no salen al azar
 	[["guardian", Vector2(150, 120)]],                                      # 18: solo
 	[["guardian", Vector2(150, 120)], ["slime", Vector2(420, 125)]],        # 19: con un Slime
+	# V12, Gólem: combates de prueba del Gólem de ámbar (combate_golem.gd; con «enemigos_v12»); no salen al azar
+	[["golem_ambar", Vector2(150, 120)]],                                   # 20: solo
+	[["golem_ambar", Vector2(150, 120)], ["slime", Vector2(420, 125)]],     # 21: con un Slime
 ]
 const GRUPOS_AL_AZAR := 5           # solo los primeros salen en encuentros aleatorios (con el grupo de tres)
 # Encuentros al azar según cuántos héroes hay ahora en el grupo (grupo.gd, activos). Kael solo no tiene cura ni a
@@ -612,6 +621,8 @@ func _ready() -> void:
 			pe.recortar_suelo(true)                  # enterrado no se dibuja (sale de la arena en su entrada)
 		if Centinela.es(e):                          # V12, Centinela: los sonidos de los instantes de sus clips
 			Centinela.al_entrar(self, e, pe)
+		if Golem.es(e):                              # V12, Gólem: los sonidos de los instantes de sus clips
+			Golem.al_entrar(self, e, pe)
 		if pe != null and pe.has_method("entrada"):
 			e["rig"].modulate.a = 0.0
 			create_tween().tween_property(e["rig"], "modulate:a", 1.0, 0.15)
@@ -709,6 +720,7 @@ func _elegir_enemigos() -> void:
 		if ENEMIGOS_V12.has(g[0]) and _enemigos_v12():     # V12, fase C: el modelo propio (interruptor enemigos_v12, APAGADO)
 			e["modelo"] = ENEMIGOS_V12[g[0]]
 			Centinela.preparar(e)                     # V12, Centinela: el Guardián, con su personalidad (si no, nada)
+			Golem.preparar(e)                         # V12, Gólem: el Gólem de ámbar, con la suya (si no, nada)
 		var mod: Dictionary = MODELOS[e["modelo"]]
 		if mod.get("tipo", "") == "3d" and _ruta_3d(mod) == "" and mod.has("respaldo"):   # falta el 3D: su dibujo 2D
 			push_warning("Falta el modelo 3D de %s: se usa su respaldo 2D" % e["nombre"])
@@ -1036,6 +1048,8 @@ func _info_objetivo(f: Dictionary, ok: bool) -> String:
 		t.append_array(Humbaba.info(f))
 	elif Centinela.es(f):                               # V12, Centinela: escudo, Juicio o aturdido
 		t.append_array(Centinela.info(f))
+	elif Golem.es(f):                                   # V12, Gólem: Pisotón, aturdido o sin aliento
+		t.append_array(Golem.info(f))
 	elif f.get("cargando", false):
 		var plan: Dictionary = PATRONES.get(f.get("personalidad", ""), {})
 		if plan.get("encoge", false):
@@ -1269,7 +1283,8 @@ func _mover_sombra(f: Dictionary) -> void:
 
 # Pasa una posición de la escena (luchadores) a la pantalla (interfaz).
 func _a_pantalla(p: Vector2) -> Vector2:
-	return escena.position + p * TAM_ESCENA
+	var s: float = TAM_ESCENA if is_equal_approx(escena.scale.x, TAM_ESCENA) else escena.scale.x   # (V12: con la cámara de combate)
+	return escena.position + p * s
 
 
 # ================================================================= personajes articulados
@@ -1817,9 +1832,10 @@ func _process(delta: float) -> void:
 		flecha.position = _pos_flecha(objetivo_apuntado) + Vector2(0, sin(t * 7.0) * 6.0)
 	if estado == "fin":
 		return
+	var atb_quieto: bool = has_meta("c12_accion") and AnimV12.atb_en_pausa(self)   # V12: ATB quieto mientras actúa un héroe
 	for f in heroes + enemigos:
-		if f["hp"] > 0 and f["atb"] < ATB_MAX:
-			if f.has("mn"):                          # V12, magia negra: «Lento» (sin estados, la cuenta de siempre)
+		if f["hp"] > 0 and f["atb"] < ATB_MAX and not atb_quieto:
+			if f.has("mn"):                        # V12, magia negra: «Lento» (sin estados, la cuenta de siempre)
 				f["atb"] = min(ATB_MAX, f["atb"] + f["vel"] * MN.mult_vel(f) * delta)
 			else:
 				f["atb"] = min(ATB_MAX, f["atb"] + f["vel"] * delta)
@@ -1841,6 +1857,8 @@ func _siguiente_turno() -> void:
 		if f.get("defendiendo", false):          # la defensa dura hasta su siguiente turno
 			f["defendiendo"] = false
 			f["rig"].modulate = Color(1, 1, 1)
+			if AnimV12.activo(f):                # V12: deja la postura de defensa
+				AnimV12.fin_defensa(self, f)
 		_quitar_guardia(f["nombre"])             # la guardia de Garon, también (sin guardia, nada)
 		_tic_estados_heroe(f)                    # Segundo Aliento y Cinta de Lumi (sin ellos, nada)
 		if Humbaba.tic_heroe(self, f):            # V12, Humbaba: la corrupción y las raíces (sin ellas, nada)
@@ -1912,6 +1930,10 @@ func _turno_enemigo(f: Dictionary) -> void:
 		return
 	if p == Centinela.PERSONALIDAD:                  # V12, Centinela: el Guardián de piedra (combate_centinela.gd); no huye
 		await Centinela.turno(self, f, vivos, mult)
+		_fin_turno_enemigo(f)
+		return
+	if p == Golem.PERSONALIDAD:                      # V12, Gólem: el Gólem de ámbar (combate_golem.gd); guarda el nido, no huye
+		await Golem.turno(self, f, vivos, mult)
 		_fin_turno_enemigo(f)
 		return
 	# huir (en una «zona limpia», con el grupo muy por encima, los enemigos débiles huyen solos)
@@ -1996,20 +2018,24 @@ func _turno_enemigo(f: Dictionary) -> void:
 		registro.text = "¡%s desata su golpe devastador!" % f["nombre"]
 		var fuerte := int(f["atk"] * 2.2 * mult)
 		f["descarga"] = true                         # Grimfang / Gorthor: golpe fuerte a dos manos
+		# V12, sincronía (12/11): los demás reciben la onda en el instante del impacto (_animar_golpe, «al_impacto»), no al
+		# acabar la animación. Mismas reglas y mismo daño que antes; solo cambia cuándo.
+		f["al_impacto"] = func():
+			for h0 in vivos:
+				if h0 != objetivo and h0["hp"] > 0:
+					var h: Dictionary = _cubre(h0, false)  # el golpe a quien Garon cubre lo recibe Garon (otro impacto más)
+					if h["hp"] <= 0:
+						continue
+					var d2: int = maxi(1, fuerte - int(h.get("def", 0) / 2.0))
+					if h.get("defendiendo", false) and not is_same(h, h0):
+						d2 = maxi(1, int(d2 * 0.5))         # Garon en guardia: a la mitad, como al defender
+					d2 = _quitar_pv(h, d2)                 # (con coraza, lo que llega a los PV)
+					_golpe_visual(h, d2, "")
+			Sonido.golpe(true)                           # la onda del golpe alcanza a los demás (sonido.gd)
+			_temblor(14.0)
 		await _animar_golpe(f, objetivo, fuerte, "")
+		_resto_pendiente(f)
 		f["descarga"] = false
-		for h0 in vivos:
-			if h0 != objetivo and h0["hp"] > 0:
-				var h: Dictionary = _cubre(h0, false)  # el golpe a quien Garon cubre lo recibe Garon (otro impacto más)
-				if h["hp"] <= 0:
-					continue
-				var d2: int = maxi(1, fuerte - int(h.get("def", 0) / 2.0))
-				if h.get("defendiendo", false) and not is_same(h, h0):
-					d2 = maxi(1, int(d2 * 0.5))         # Garon en guardia: a la mitad, como al defender
-				d2 = _quitar_pv(h, d2)                 # (con coraza, lo que llega a los PV)
-				_golpe_visual(h, d2, "")
-		Sonido.golpe(true)                           # la onda del golpe alcanza a los demás (sonido.gd)
-		_temblor(14.0)
 	else:
 		var dano: int = int(f["atk"] * mult) + randi_range(-2, 3)
 		registro.text = "%s ataca a %s" % [f["nombre"], objetivo["nombre"]]
@@ -2304,6 +2330,9 @@ func _vigilar_carga(f: Dictionary, d: int) -> void:
 	if Centinela.es(f):                               # V12, Centinela: corta el Juicio, rompe el escudo, herida fuerte
 		Centinela.vigilar(self, f, d)
 		return
+	if Golem.es(f):                                   # V12, Gólem: corta el Pisotón, herida fuerte
+		Golem.vigilar(self, f, d)
+		return
 	if not f.get("cargando", false) or f["hp"] <= 0 or not PATRONES.has(f.get("personalidad", "")):
 		return
 	var plan: Dictionary = PATRONES[f["personalidad"]]
@@ -2316,6 +2345,14 @@ func _vigilar_carga(f: Dictionary, d: int) -> void:
 	f["carga_recibido"] = int(f.get("carga_recibido", 0)) + d
 	if f["carga_recibido"] >= ceili(f["hp_max"] * UMBRAL_INTERRUPCION):
 		_interrumpir(f, "¡Interrumpido!", "¡%s pierde el equilibrio y no suelta el golpe!" % f["nombre"])
+
+
+# V12, sincronía: si el impacto no llegó a resolverse (el clip se cortó), el golpe a los demás se da igual, una vez.
+func _resto_pendiente(f: Dictionary) -> void:
+	var resto = f.get("al_impacto", null)
+	f.erase("al_impacto")
+	if resto is Callable:
+		resto.call()
 
 
 func _interrumpir(f: Dictionary, cartel: String, texto: String) -> void:
@@ -2361,19 +2398,21 @@ func _turno_patron(f: Dictionary, vivos: Array, mult: float, plan: Dictionary) -
 		if plan["a"] == "todos":
 			registro.text = plan["golpe"] % f["nombre"]
 			var principal: Dictionary = _cubre(_elegir_objetivo("bruto", vivos))
+			f["al_impacto"] = func():                # V12, sincronía: los demás, en el instante del impacto
+				for h0 in vivos:
+					if h0 == principal or h0["hp"] <= 0:
+						continue
+					var h: Dictionary = _cubre(h0, false)
+					if h["hp"] <= 0:
+						continue
+					var d2: int = maxi(1, dano - int(h.get("def", 0) / 2.0))
+					if h.get("defendiendo", false):
+						d2 = maxi(1, int(d2 * 0.5))
+					_golpe_visual(h, _quitar_pv(h, d2), "")
+				Sonido.golpe(true)
+				_temblor(10.0)
 			await _animar_golpe(f, principal, dano + randi_range(-2, 3), "")
-			for h0 in vivos:
-				if h0 == principal or h0["hp"] <= 0:
-					continue
-				var h: Dictionary = _cubre(h0, false)
-				if h["hp"] <= 0:
-					continue
-				var d2: int = maxi(1, dano - int(h.get("def", 0) / 2.0))
-				if h.get("defendiendo", false):
-					d2 = maxi(1, int(d2 * 0.5))
-				_golpe_visual(h, _quitar_pv(h, d2), "")
-			Sonido.golpe(true)
-			_temblor(10.0)
+			_resto_pendiente(f)
 		else:
 			var objetivo = f.get("objetivo_carga", null)
 			if objetivo == null or objetivo["hp"] <= 0:
@@ -3045,6 +3084,8 @@ func _embuir(el: String) -> void:
 	var p = _p3d(quien)
 	if p != null and p.has_method("embuir"):
 		p.embuir(el)
+	if AnimV12.activo(quien):                        # V12: pasa la mano por la hoja
+		AnimV12.embuir(self, quien)
 	_luz(col, 2.0, 4.0, 1.2, _centro(quien))
 	_particulas(_centro(quien) + Vector2(0, 40), Color(col, 1.0), Color(col, 0.0), 34, 1.0, Vector2(40, 120), 70.0,
 		Vector2(0, -1), 40.0, Vector2(0, -60), 0.07)
@@ -3075,6 +3116,8 @@ func _tecnica_garon(n: String, obj: Dictionary) -> void:
 	_actualizar()
 	registro.text = "Garon usa %s" % n
 	_numero_flotante(quien, n, menu.COLOR_HEROE.get("Garon", Color.WHITE), 34)
+	if AnimV12.activo(quien):                        # V12: la animación de combate v12 la anuncia (apagada, nada)
+		quien["c12_tecnica"] = n
 	if not t["todos"]:
 		var d := _dano_fisico(quien, t["mult"])
 		var impacto := func():
@@ -3117,6 +3160,7 @@ func _tecnica_garon(n: String, obj: Dictionary) -> void:
 			for i in t["golpes"]:
 				impacto.call()
 				await get_tree().create_timer(0.5).timeout
+	quien.erase("c12_tecnica")
 	_terminar_turno()
 
 
@@ -4819,6 +4863,8 @@ func _defender() -> void:
 	Sonido.efecto("defensa")                       # sonido.gd
 	registro.text = "%s se pone en guardia" % quien["nombre"]
 	quien["rig"].modulate = COLOR_DEFENSA
+	if AnimV12.activo(quien):                        # V12: la postura de defensa (bloquea los golpes hasta su turno)
+		AnimV12.defender(self, quien)
 	_numero_flotante(quien, "Defensa", Color(0.7, 0.85, 1.0))
 	await get_tree().create_timer(0.4).timeout
 	_terminar_turno()
@@ -5497,6 +5543,14 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 				_numero_flotante(objetivo, "Réplica", Color("FFC46A"), 28, Vector2(-30, -40))
 				var dr: int = Humbaba.dano_recibido(Vidracran.dano_recibido(Coloso.dano_recibido(rep, "", objetivo, origen), "", objetivo, origen), "", objetivo, origen)
 				_golpe_visual(origen, _quitar_pv(origen, dr), "")   # (V12, encuentro del desierto: la réplica choca con el caparazón)
+	if origen.has("al_impacto"):                       # V12, sincronía: el golpe a los demás, en este mismo impacto
+		var principal: Callable = impacto
+		impacto = func():
+			principal.call()
+			var resto = origen.get("al_impacto", null)
+			origen.erase("al_impacto")
+			if resto is Callable:
+				resto.call()
 	if magia != "" and _p3d(origen) != null:
 		await _anim_magia_3d(origen, objetivo, magia, impacto)
 	elif magia != "":
@@ -5509,6 +5563,8 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 		await Vidracran.animar_golpe(self, origen, objetivo, impacto)
 	elif Centinela.es(origen):                                                # V12, Centinela: tajo, barrido o Juicio
 		await Centinela.animar_golpe(self, origen, objetivo, impacto)
+	elif Golem.es(origen):                                                    # V12, Gólem: puñetazo, terrón o Pisotón
+		await Golem.animar_golpe(self, origen, objetivo, impacto)
 	elif _p3d(origen) != null and _p3d(origen).has_method("avisar"):           # Zarzalín (T-097)
 		await _anim_zarzalin(origen, objetivo, impacto, str(origen.get("ataque_3d", "colmillo_lateral")))
 	elif _p3d(origen) != null and _p3d(origen).has_method("despertar"):        # Guardián del Bosque (fase 3): desde su sitio
@@ -5628,6 +5684,9 @@ func _anim_fisico_sprite(o: Dictionary, obj: Dictionary, impacto: Callable) -> v
 
 # Maga 3D: corre hacia el enemigo, le da un golpe con la palma y vuelve corriendo.
 func _anim_fisico_3d(o: Dictionary, obj: Dictionary, impacto: Callable) -> void:
+	if AnimV12.activo(o):                            # V12: Lya v2 sin deslizarse (combate_anim_v12.gd)
+		await AnimV12.ataque_lya(self, o, obj, impacto)
+		return
 	var maga = _p3d(o)
 	var rig: Node2D = o["rig"]
 	var base: Vector2 = o["rig_base"]
@@ -5666,6 +5725,9 @@ func _anim_fisico_3d(o: Dictionary, obj: Dictionary, impacto: Callable) -> void:
 # Kael 3D: corre con el sable al hombro, se agacha, salta con el sable en alto
 # y cae cortando sobre el enemigo; después vuelve corriendo.
 func _anim_salto_3d(o: Dictionary, obj: Dictionary, impacto: Callable) -> void:
+	if AnimV12.activo(o):                            # V12: Kael v2 sin deslizarse (combate_anim_v12.gd)
+		await AnimV12.ataque_kael(self, o, obj, impacto)
+		return
 	var k = _p3d(o)
 	var rig: Node2D = o["rig"]
 	var base: Vector2 = o["rig_base"]
@@ -5705,6 +5767,9 @@ func _anim_salto_3d(o: Dictionary, obj: Dictionary, impacto: Callable) -> void:
 # el objetivo, ataca con "metodo" (que llama al impacto en cada golpe) y vuelve. Los héroes van hacia
 # la izquierda y los enemigos hacia la derecha. El daño se hace en el primer golpe; los demás tiemblan.
 func _anim_ataque_3d(o: Dictionary, obj: Dictionary, impacto: Callable, metodo: String) -> void:
+	if metodo in ["atacar_juicio", "atacar_giro"] and AnimV12.activo(o):   # V12: Garon v2 (combate_anim_v12.gd)
+		await AnimV12.ataque_garon(self, o, obj, impacto, metodo)
+		return
 	var p = _p3d(o)
 	var rig: Node2D = o["rig"]
 	var base: Vector2 = o["rig_base"]
@@ -5851,6 +5916,9 @@ func _impacto_fuerte(impacto: Callable) -> void:
 
 # Personaje 3D: alza las manos (o el sable), la luz nace ahí y sale disparada hacia el enemigo.
 func _anim_magia_3d(o: Dictionary, obj: Dictionary, magia: String, impacto: Callable) -> void:
+	if AnimV12.activo(o):                            # V12: con la preparación visible (combate_anim_v12.gd)
+		await AnimV12.magia(self, o, obj, magia, impacto)
+		return
 	var maga = _p3d(o)
 	var color: Color = _color_magia(magia)
 	o["animando"] = true
@@ -6089,7 +6157,10 @@ func _golpe_visual(objetivo: Dictionary, dano: int, magia: String, critico := fa
 				if objetivo["hp"] > 0 and not objetivo["animando"]:
 					_pose_img(objetivo, "guardia"))
 		if _p3d(objetivo) != null:
-			_p3d(objetivo).herida()
+			if AnimV12.activo(objetivo):               # V12: ligero, fuerte o bloqueo (combate_anim_v12.gd)
+				AnimV12.reaccion(self, objetivo, dano, critico, potencia)
+			else:
+				_p3d(objetivo).herida()
 	if objetivo["animando"]:
 		_restablecer_color(objetivo)
 		return
@@ -6919,8 +6990,12 @@ func _comprobar_fin() -> bool:
 			for h in heroes:
 				if h["hp"] > 0:
 					_cara(h, "sonrisa")
-					if _p3d(h) != null:
+					if _p3d(h) != null and AnimV12.activo(h):   # V12: cada uno a su tiempo
+						AnimV12.victoria(self, h)
+					elif _p3d(h) != null:
 						_p3d(h).victoria()
+			if heroes.any(func(h): return AnimV12.activo(h)):
+				AnimV12.camara_victoria(self, heroes)
 		_bajar_musica()
 		_fin_combate(ganan)
 		return true
@@ -7106,6 +7181,8 @@ func _actualizar() -> void:
 				Centinela.repasar(e)
 				if vivo:
 					estados.append_array(Centinela.estados(e))
+			if Golem.es(e) and vivo:                    # V12, Gólem: «⚠ Pisotón», «Aturdido», «Sin aliento»
+				estados.append_array(Golem.estados(e))
 			if e.has("mn"):                             # V12, magia negra: «Lento 2», «Def ↓ 3», «Prisión 1»…
 				estados.append_array(MN.textos_estado(e))
 				if not vivo:                            # (huido o caído sin pasar por _quitar_pv: su jaula y su sello, fuera)

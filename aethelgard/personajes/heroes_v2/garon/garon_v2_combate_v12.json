@@ -1,0 +1,71 @@
+{
+ "heroe": "Garon",
+ "fps": 30,
+ "clips": {
+  "c12_arranque": {
+   "duracion": 0.2925,
+   "bucle": false,
+   "eventos": {}
+  },
+  "c12_frenada": {
+   "duracion": 0.4725,
+   "bucle": false,
+   "eventos": {
+    "parado": 0.0803
+   }
+  },
+  "c12_recibir_fuerte": {
+   "duracion": 0.95,
+   "bucle": false,
+   "eventos": {
+    "impacto": 0.0
+   }
+  },
+  "c12_bloqueo": {
+   "duracion": 0.5,
+   "bucle": false,
+   "eventos": {
+    "impacto": 0.0
+   }
+  },
+  "c12_defensa": {
+   "duracion": 1.6,
+   "bucle": true,
+   "eventos": {}
+  },
+  "c12_tecnica_carga": {
+   "duracion": 0.8,
+   "bucle": false,
+   "eventos": {
+    "abre": 0.6
+   }
+  },
+  "c12_remate": {
+   "duracion": 0.55,
+   "bucle": false,
+   "eventos": {}
+  },
+  "c12_paso_atras": {
+   "duracion": 0.7,
+   "bucle": false,
+   "eventos": {
+    "despegue": 0.16,
+    "aterrizaje": 0.5
+   }
+  },
+  "c12_embuir": {
+   "duracion": 1.2,
+   "bucle": false,
+   "eventos": {
+    "toque": 0.75
+   }
+  },
+  "c12_carrera": {
+   "duracion": 0.6333,
+   "bucle": true,
+   "eventos": {
+    "metros_por_s_1_7": 2.8421
+   }
+  }
+ }
+}

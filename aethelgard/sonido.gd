@@ -390,6 +390,20 @@ const EFECTOS := {
 	"centinela_escudo": {"a": "centinela/escudo", "db": -2.0, "p": 3, "max": 1, "espera": 0.5},
 	"centinela_rota": {"a": "centinela/rota", "db": -9.0, "p": 3, "max": 1, "espera": 0.3},
 	"centinela_derrumbe": {"a": "centinela/derrumbe", "db": -2.0, "p": 3, "max": 1, "espera": 1.0},
+	# ---- V12, enemigos (12/11): el Gólem de ámbar, «el Guardián del Nido» (combate_golem.gd; APAGADO, interruptor
+	# «enemigos_v12»). Derivados propios de los paquetes GDC 2017-2020 de Sonniss (#GameAudioGDC), WAV mono 48 kHz de
+	# audio/efectos/golem/ (procedencia: docs/audio/efectos_procedencia.csv). «golem_ambar_lanzar» (sale el terrón) y
+	# «golem_ambar_golpe» (el Pisotón) los pide combate.gd _sonidos_bestia por la señal «impacto»; «golem_ambar_entrada», al
+	# empezar su entrada; los «golem_*», combate_golem.gd (el terrón al llegar, el agarre y el derrumbe en su instante del
+	# clip, el aviso y la rotura). Volúmenes por el RMS medido (pico −1 dBFS): medido, no escuchado.
+	"golem_ambar_entrada": {"a": "golem/entrada", "db": -8.0, "p": 2, "max": 1, "espera": 1.0},
+	"golem_ambar_lanzar": {"a": "golem/lanzar", "db": -4.0, "tono": 0.03, "p": 2, "max": 1, "espera": 0.3},
+	"golem_ambar_golpe": {"a": "golem/pisoton", "db": -7.0, "tono": 0.02, "p": 3, "max": 1, "espera": 0.5},
+	"golem_terron": {"a": "golem/terron", "db": -2.0, "tono": 0.04, "p": 3, "max": 1, "espera": 0.3},
+	"golem_agarra": {"a": "golem/agarra", "db": 0.0, "tono": 0.04, "p": 2, "max": 1, "espera": 0.3},
+	"golem_carga": {"a": "golem/carga", "db": -6.0, "p": 3, "max": 1, "espera": 0.5},
+	"golem_rota": {"a": "golem/rota", "db": -2.0, "p": 3, "max": 1, "espera": 0.3},
+	"golem_derrumbe": {"a": "golem/derrumbe", "db": -12.0, "p": 3, "max": 1, "espera": 1.0},
 }
 
 # V12 (11/11): el Mar de Cristal. Sus sonidos son OGG (audio/desierto/), así que van aparte de EFECTOS (cuyas comprobaciones

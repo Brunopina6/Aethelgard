@@ -1,0 +1,16 @@
+{
+ "velocidad": 0.827,
+ "velocidad_correr": 0.0,
+ "triangulos": 5600,
+ "vertices": 3007,
+ "huesos": 22,
+ "personas": [
+  "guardia_puerta",
+  "guardia_ronda",
+  "aldric"
+ ],
+ "tarea": "vigilar",
+ "agarra": "R",
+ "nino": false,
+ "alto": 1.559
+}

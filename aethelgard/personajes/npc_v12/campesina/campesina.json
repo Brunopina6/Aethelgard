@@ -1,0 +1,15 @@
+{
+ "velocidad": 0.757,
+ "velocidad_correr": 0.0,
+ "triangulos": 5954,
+ "vertices": 3225,
+ "huesos": 22,
+ "personas": [
+  "vendedora_fruta",
+  "rosa"
+ ],
+ "tarea": "recoger",
+ "agarra": "L",
+ "nino": false,
+ "alto": 1.5
+}

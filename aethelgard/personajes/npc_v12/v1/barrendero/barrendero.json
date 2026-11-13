@@ -1,0 +1,14 @@
+{
+ "velocidad": 0.765,
+ "velocidad_correr": 0.0,
+ "triangulos": 2992,
+ "vertices": 1639,
+ "huesos": 22,
+ "personas": [
+  "barrendera"
+ ],
+ "tarea": "barrer",
+ "agarra": "R",
+ "nino": false,
+ "alto": 1.5
+}

@@ -1,0 +1,15 @@
+{
+ "velocidad": 0.78,
+ "velocidad_correr": 0.0,
+ "triangulos": 5984,
+ "vertices": 3195,
+ "huesos": 22,
+ "personas": [
+  "alquimista_aprendiz",
+  "mirta"
+ ],
+ "tarea": "remover",
+ "agarra": "R",
+ "nino": false,
+ "alto": 1.52
+}

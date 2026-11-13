@@ -14,6 +14,12 @@
 # rompe la guardia del Slime B encogido: recibe el daño entero, pierde el rebote y pasa su turno siguiente aturdido;
 # la Poción de Lya cura 21 en vez de 32. El resto, línea a línea igual, y los resultados, los mismos. SHA-256 del
 # texto nuevo sin cabecera, empieza por b17aec48041c6d2c (carpeta de la pasada: pruebas/2026-11-11_011242, dos pasadas).
+# V12, sincronía (12/11, claude/v12-enemigos): el golpe devastador de los «jefe» y el Pisotón a todos dañan a los demás
+# héroes en el instante del impacto (combate.gd «al_impacto»), no al acabar la animación. Solo cambia E8 (Gorthor): su
+# golpe devastador del fotograma 1464 quitaba a Lya en el 1527 (el impacto) y a Kael y Garon en el 1551 (tras la
+# vuelta); ahora los tres en el 1527, con el mismo daño (Kael 156→105, Lya 116→64, Garon 204→155). Ninguna otra línea
+# cambia; los resultados, los mismos. SHA-256 del texto nuevo sin cabecera, empieza por 7b810890b179843b (carpeta de
+# la pasada: D:\REBELUM_diagnostico\v12\expansion\enemigos\pruebas\2026-11-12_204821, dos pasadas iguales).
 # No cuentan las líneas que empiezan por «#» ni las vacías.
 # Formato: «== combate · grupo · nivel · zona · tipo · semilla» y una línea por suceso con su fotograma: ▶ turno de un
 # héroe y lo que hace (guion de la prueba), ▷ turno de un enemigo, · cartel, Δ cambios de PV y PM, ■ fin y ◆ decisión.
@@ -456,8 +462,7 @@ partida · combates_ganados {  } · decisiones {  } · Armonía 0.60 · velocida
 01439 · Gorthor el Devorador sufre quemaduras
 01439   Δ Gorthor el Devorador PV 172→167
 01464 · ¡Gorthor el Devorador desata su golpe devastador!
-01527   Δ Lya PV 116→64
-01551   Δ Kael PV 156→105 · Garon PV 204→155
+01527   Δ Kael PV 156→105 · Lya PV 116→64 · Garon PV 204→155
 01562 · (cartel vacío)
 01562 ▶ turno de Garon (PV 155/204 PM 11/22)
 01562   Garon: Giro (a todos)

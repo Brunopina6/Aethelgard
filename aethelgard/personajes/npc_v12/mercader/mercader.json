@@ -1,0 +1,14 @@
+{
+ "velocidad": 0.765,
+ "velocidad_correr": 0.0,
+ "triangulos": 5374,
+ "vertices": 2865,
+ "huesos": 22,
+ "personas": [
+  "mercader_manzanas"
+ ],
+ "tarea": "pregonar",
+ "agarra": "",
+ "nino": false,
+ "alto": 1.5
+}

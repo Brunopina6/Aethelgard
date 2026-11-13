@@ -1,0 +1,15 @@
+{
+ "velocidad": 0.546,
+ "velocidad_correr": 1.347,
+ "triangulos": 5912,
+ "vertices": 3161,
+ "huesos": 22,
+ "personas": [
+  "bastian",
+  "nino_plaza"
+ ],
+ "tarea": "jugar",
+ "agarra": "R",
+ "nino": true,
+ "alto": 1.147
+}

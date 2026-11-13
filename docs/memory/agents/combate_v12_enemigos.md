@@ -162,3 +162,132 @@ Combate con `enemigos_v12` | Sí (procedencia en efectos_procedencia.csv)».
 1. Que el usuario mire los vídeos y decida si enciende `enemigos_v12`; medir en el Redmi un combate de GRUPOS[4].
 2. El Gólem de ámbar con el mismo patrón (herida fuerte, segundo ataque propio, sonido por `evento`).
 3. Coordinador: el arreglo del golpe a todos de los «jefe» (apartado 1), que cambia la huella C0.
+
+---
+
+## 12/11/2026, 22:30 · segundo encargo: el Gólem de ámbar y la sincronía del golpe a todos (misma copia y rama)
+
+Commits: `9b1efd3` (sincronía, APARTE), `c90ac03` (Gólem v2: clips), `64a2427` (sonido del Gólem), `bcd645d` (módulo,
+ganchos y pruebas) y el de este informe. Sin push ni merge.
+
+### 1. Sincronía del golpe a todos (commit aparte `9b1efd3`; comprobado ejecutando)
+**Qué estaba mal (observado en el código):** en el golpe devastador de los «jefe» (`_turno_enemigo`, rama `cargando`:
+Gorthor y el Guardián de siempre) y en el patrón «todos» (el Pisotón del Gólem, `_turno_patron`), el principal perdía
+vida en el impacto del clip y los demás héroes cuando terminaba toda la animación (tras volver corriendo a su sitio),
+con su `Sonido.golpe(true)` y su temblor también tarde.
+**Arreglo:** el turno deja el golpe a los demás en `f["al_impacto"]` (un Callable con el MISMO código de antes: mismo
+daño, misma defensa, misma Guardia de Garon, mismo sonido y temblor) y `_animar_golpe` lo llama dentro del impacto,
+justo después de resolver al principal; `_resto_pendiente(f)` lo da igual (una vez) si el clip se cortó sin impacto.
+Ninguna fórmula cambia; solo el instante.
+**Qué cambia en la huella C0 (`pruebas/referencias/huella_combate.txt`, cabecera explicada):** SOLO E8 (Gorthor, nivel 7,
+la Garganta). Antes: `01527 Δ Lya PV 116→64` y `01551 Δ Kael PV 156→105 · Garon PV 204→155`. Ahora una sola línea:
+`01527 Δ Kael PV 156→105 · Lya PV 116→64 · Garon PV 204→155` (los tres en el fotograma del impacto, 24 fotogramas = 0,8 s
+antes para Kael y Garon, con el mismo daño). El resto, línea a línea igual; los resultados, los mismos (E1-E5, E8 y E9
+victoria, E6 huida, E7 derrota). SHA-256 del texto sin cabecera: antes `b17aec48041c6d2c…`, ahora `7b810890b179843b…`
+(dos pasadas iguales: `D:\REBELUM_diagnostico\v12\expansion\enemigos\pruebas\2026-11-12_204821`). La huella no tiene
+ningún Pisotón del Gólem (por eso no sale ahí): lo cubre la prueba nueva.
+**Prueba nueva `prueba_sincronia_golpes`** (interruptores apagados): Gorthor, el Guardián de siempre y el Gólem, con la
+descarga forzada: los tres héroes pierden vida en el MISMO fotograma y el golpe suena en él. SUPERADA
+(`...\pruebas\2026-11-12_205017`; con el Gólem a nivel 3, porque con el grupo a nivel 12 la Garganta es «zona limpia» y
+el Gólem huye).
+**Hallazgo que NO he cambiado (regla, no sincronía):** en el golpe devastador de los «jefe», un héroe que DEFIENDE y no
+es el principal recibe el daño entero: el código solo deja a la mitad a quien cubre con la Guardia
+(`if h.get("defendiendo") and not is_same(h, h0)`). En el Pisotón del patrón «todos», en cambio, defender sí lo deja a la
+mitad. Medido en `prueba_sincronia_golpes`: Gorthor quita 46 a Garon defendiendo o sin defender. Si se quiere que
+Defender valga contra el golpe devastador, es un cambio de regla (y de huella): lo decide el usuario.
+
+### 2. El Gólem de ámbar, «Guardián del Nido» (módulo `aethelgard/combate_golem.gd`, APAGADO tras `enemigos_v12`)
+Encendido, el Gólem del nido de la Garganta (GRUPOS[6], con Grimfang, combate fijo `garganta_nido`, donde ya salía) usa
+el modelo v2 y la personalidad `golem_nido`; sus combates de prueba son GRUPOS[20] (solo) y [21] (con un Slime), después
+del 19 sin renumerar los del Centinela. Vida, ataque, premios, escalado y afinidades (inmune al Rayo, débil al Hielo,
+resiste el Fuego) sin tocar.
+
+| Acción | Preparación / aviso | Efecto | Contra |
+|---|---|---|---|
+| Puñetazo | corre, alza el puño (clip `ataque`, impacto 0,7) | a uno al azar, ×1,0 con la fuerza bruta de siempre (×0,9-1,3) | Defender |
+| **Terrón de ámbar** (nuevo) | «¡Terrón!»; desde su sitio, arranca un terrón del nido (cruje la resina, chispas de ámbar), se echa atrás | ×1,1 a la retaguardia (la curandera si ha curado; si no, el más débil); el terrón vuela 0,35 s y el daño cae AL LLEGAR | Defender (mitad), Guardia de Garon (se lo lleva él); nunca dos seguidos |
+| Pisotón | turno de aviso: puños arriba, «⚠ ¡Pisotón!», señal de aviso, «⚠ Pisotón» en su estado | a todos ×1,0 en el impacto (onda de polvo) y su turno siguiente «sin aliento» (la ventana) | Defender (mitad); cortarlo con un cuarto de su vida o Quiebra → aturdido |
+
+Golpes grandes (≥ 12 % de su vida) ponen la herida fuerte.
+**Clips (Blender 5.2.3 por guion, `fuente/crear_golem_ambar.py` con `v2`):** `golem_ambar_v2.glb` + `golem_ambar_v2_clips.json`
+al lado del v1 (misma malla de 3 654 triángulos, mismos 22 huesos y los 12 clips de antes idénticos) con `lanzar` 1,5 s
+(agarra 0,3; suelta = «impacto» 0,75) y `recibir_golpe_fuerte` 1,0 s. `golem_ambar_3d.gd` carga el v2 si está.
+**Sonido (8 WAV mono 48 kHz, QOA, `aethelgard/audio/efectos/golem/`):** derivados de Sonniss GDC 2017-2020
+(`preparar_golem.py`, copia y filas en `D:\REBELUM_diagnostico\v12\expansion\enemigos\sonido\`), 8 filas al final de
+`docs/audio/efectos_procedencia.csv`. Medidos, no escuchados.
+
+| Clave | Cuándo | dur. s · RMS dBFS · db |
+|---|---|---|
+| `golem_ambar_entrada` | su entrada | 1,90 · −19,3 · −8 |
+| `golem_agarra` | instante «agarra» del lanzamiento (0,3 s) | 0,50 · −28,2 · 0 |
+| `golem_ambar_lanzar` | al soltar el terrón (señal `impacto`) | 0,60 · −22,4 · −4 |
+| `golem_terron` | cuando el terrón llega (con el daño) | 0,72 · −24,5 · −2 |
+| `golem_carga` | aviso del Pisotón | 1,50 · −21,4 · −6 |
+| `golem_ambar_golpe` | impacto del Pisotón (señal `impacto`) | 1,22 · −18,3 · −7 |
+| `golem_rota` | Pisotón cortado | 0,75 · −25,0 · −2 |
+| `golem_derrumbe` | instante «suelo» de la derrota (1,5 s) | 1,70 · −14,4 · −12 |
+
+**Ganchos en `combate.gd` («V12, Gólem», como los del Centinela):** `const Golem`, `preparar` en el `if` del
+interruptor, `al_entrar`, turno, `vigilar`, `animar_golpe`, `estados`, `info`, `MODELOS["golem_ambar3d"]["rutas"]` con
+el v2 delante, GRUPOS[20] y [21].
+
+**Pruebas:** `prueba_golem_v12` (nueva) **SUPERADA** (`...\pruebas\2026-11-12_210253`, con el Terrón a ×1,2; la batería
+final la repite con ×1,1): interruptor, grupos, sonidos, modelo v2; apagado = el de siempre («bruto», dibujo 2D); A con
+estrategia de jugador (nivel 4, vida ×3 solo ahí): puñetazo y Pisotón con impacto, daño y sonido en el mismo fotograma;
+el Terrón sin moverse, con su sonido al soltar y el daño y su sonido al llegar (entre 6 y 16 fotogramas después); el
+aviso sin daño; tras el Pisotón, sin aliento. B: Terrón 19 / defendido 9 / con Guardia a Garon 16; Pisotón a todos 36 /
+defendiendo 17; cortado por daño y por Quiebra; herida fuerte y ligera. C (2 y 1 héroes), D (el nido con tres), E
+(derrota y huida) terminan. **Q, equilibrio** (GRUPOS[6], 6 semillas, solo ataques automáticos): niveles 4/3/3, antes 6/6
+y 71 PV perdidos de media, nuevo 6/6 y 65; niveles 7/7/7, antes 6/6 y 59, nuevo 6/6 y 91. Por esa subida bajé el Terrón
+de ×1,2 a ×1,1. Ganar con ataques automáticos no prueba la estrategia de un jugador.
+`fotos_golem_v12` (ventana): MANUAL, FALLOS 0. Vídeos en `D:\REBELUM_diagnostico\v12\expansion\enemigos\videos_golem\`
+(puñetazo, Terrón sin defender / defendido / con Guardia, Pisotón cortado / entero / defendido, derrota); hojas
+`capturas\hoja_golem_*.jpg`; poses de Blender `laminas\golem_ambar_v2_poses.png`.
+
+### 3. Gorthor: no lo he hecho
+No daba tiempo a hacerlo bien. Gorthor ya tiene en `combate.gd` fases, Devorar, último aliento, perdón y su premio
+(y la huella C0 lo juega en E8). Un módulo propio tendría que rehacer todo eso sin romperlo. Lo que le falta (herida
+fuerte, un ataque de fase 2 a todos y sonido por `evento`: rugido, trago, rodillas) queda como siguiente paso.
+
+### 4. Medida del Gólem (PC, perfil medio, `medir_escenas.ps1 -Escenas combate3 -Ciclos 3 -Extra grupo=6[,enemigos_v12]`; NO son FPS del Redmi; con otros Godot de otros especialistas en marcha)
+
+| Pasada | Fotograma media / p95 (ms) | Memoria de vídeo (MB) | Dibujos | Carga del combate (ms) |
+|---|---|---|---|---|
+| GRUPOS[6] con el Gólem de siempre (`golem_antes`) | 4,50 / 6,86 | 110,4 | 102 | 2 100 / 602 / 547 |
+| GRUPOS[6] con el Gólem nuevo (`golem`) | 5,26 / 8,65 | 122,7 | 104 | 2 054 / 594 / 806 |
+
+Como con el Centinela, el coste es la ventana 3D (1000×910): +12 MB de memoria de vídeo. A medir en el Redmi.
+
+### 5. Batería completa de la copia (aislada; partida real y carpeta real sin cambios)
+`D:\REBELUM_diagnostico\v12\expansion\enemigos\pruebas\2026-11-12_210854\resumen.md`: **135 SUPERADAS, 3 FALLIDAS, 65 MANUALES
+(con ventana, no se lanzan sin -Manual), 0 NO SEGURAS.** Las 3 fallidas eran mías y ya están arregladas y repetidas:
+- `prueba_enemigos_v12` (de animaciones): «actúa: ataca o carga» no contaba los clips nuevos (el Centinela barrió y alzó
+  el escudo). Ahora cuenta `barrido`, `lanzar` y `guardia`. **SUPERADA** (`...\2026-11-12_214521`).
+- `prueba_centinela_v12` y `prueba_golem_v12`, parte E (derrota): con ataque 120 el Kael de nivel 1 todavía lo tumbaba
+  a tiempo; ahora el enemigo lleva además 4 000 de vida en esa parte. **SUPERADAS** las dos (`...\2026-11-12_213845`).
+- En esa batería: `prueba_combate_huella` (referencia nueva), `prueba_sincronia_golpes`, `prueba_efectos`,
+  `prueba_grupos_combate`, `prueba_ia`, `prueba_equilibrio`, `prueba_huir`, `prueba_incorporacion`, `prueba_centinela`,
+  `prueba_garon` y `prueba_menu_magia`: SUPERADAS (`prueba_menu_nuevo` es manual en la lista).
+- «proyecto: CAMBIADO» en ese resumen: es este informe, que estaba escribiendo durante la pasada.
+- **Q (equilibrio) varía de una pasada a otra** con las mismas semillas (los efectos y el tiempo real cambian las tiradas):
+  en la repetición, Centinela 6/6/6 antes 190 PV perdidos y ahora 59; Gólem 7/7/7 antes 55 y ahora 62; 4/3/3 antes 68
+  y ahora 75. Las victorias, siempre 6/6. Sirve para ver que no es mucho más duro, no como medida fina.
+
+### 6. Para integrar (este segundo encargo)
+NUEVOS: `aethelgard/combate_golem.gd` (+`.uid`), `aethelgard/enemigos/golem_ambar/golem_ambar_v2.glb` (+`.import`),
+`golem_ambar_v2_clips.json`, `aethelgard/audio/efectos/golem/` (8 `.wav` + 8 `.import`), `aethelgard/pruebas/prueba_golem_v12.gd`,
+`fotos_golem_v12.gd`, `prueba_sincronia_golpes.gd` (+ sus `.uid`).
+COMPARTIDOS modificados: `aethelgard/combate.gd` (commit de sincronía `9b1efd3` y ganchos «V12, Gólem»), `aethelgard/sonido.gd`
+(8 claves al final de EFECTOS), `aethelgard/pruebas/lista_pruebas.txt` (3 líneas al final),
+`aethelgard/pruebas/referencias/huella_combate.txt` (referencia nueva), `aethelgard/pruebas/prueba_enemigos_v12.gd`
+(la comprobación de «actúa»), `docs/audio/efectos_procedencia.csv` (8 filas al final).
+Míos modificados: `enemigos/golem_ambar/golem_ambar_3d.gd`, `fuente/crear_golem_ambar.py`, `pruebas/prueba_centinela_v12.gd`.
+Pido en `docs/recursos.md`: «Gólem de ámbar v2 (`enemigos/golem_ambar/golem_ambar_v2.glb`) | Obra propia, Blender 5.2.3
+por `fuente/crear_golem_ambar.py -- <raíz> <láminas> v2` | Propia | Combate con `enemigos_v12` | Sí» y «Sonidos del Gólem
+(`audio/efectos/golem/`) | Derivados de Sonniss GDC 2017-2020 | #GameAudioGDC | Combate con `enemigos_v12` | Sí».
+
+### 7. Siguiente paso propuesto
+1. Que el usuario vea los vídeos del Centinela y del Gólem y decida si se enciende `enemigos_v12`; medir en el Redmi.
+2. Decidir si Defender debe valer contra el golpe devastador de los «jefe» (cambio de regla; apartado 1).
+3. Gorthor con el mismo patrón (herida fuerte, un ataque de fase 2 a todos, sonido por `evento`), respetando sus fases,
+   Devorar, último aliento y perdón.

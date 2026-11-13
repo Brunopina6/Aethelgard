@@ -1,0 +1,14 @@
+{
+ "velocidad": 0.796,
+ "velocidad_correr": 0.0,
+ "triangulos": 5904,
+ "vertices": 3187,
+ "huesos": 22,
+ "personas": [
+  "viajero_camino"
+ ],
+ "tarea": "ajustar",
+ "agarra": "R",
+ "nino": false,
+ "alto": 1.53
+}

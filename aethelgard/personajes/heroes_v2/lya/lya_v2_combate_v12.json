@@ -1,0 +1,55 @@
+{
+ "heroe": "Lya",
+ "fps": 30,
+ "clips": {
+  "c12_arranque": {
+   "duracion": 0.2795,
+   "bucle": false,
+   "eventos": {}
+  },
+  "c12_frenada": {
+   "duracion": 0.4515,
+   "bucle": false,
+   "eventos": {
+    "parado": 0.0768
+   }
+  },
+  "c12_recibir_fuerte": {
+   "duracion": 0.95,
+   "bucle": false,
+   "eventos": {
+    "impacto": 0.0
+   }
+  },
+  "c12_bloqueo": {
+   "duracion": 0.5,
+   "bucle": false,
+   "eventos": {
+    "impacto": 0.0
+   }
+  },
+  "c12_defensa": {
+   "duracion": 1.6,
+   "bucle": true,
+   "eventos": {}
+  },
+  "c12_tecnica_carga": {
+   "duracion": 0.8,
+   "bucle": false,
+   "eventos": {}
+  },
+  "c12_remate": {
+   "duracion": 0.55,
+   "bucle": false,
+   "eventos": {}
+  },
+  "c12_salto_atras": {
+   "duracion": 0.62,
+   "bucle": false,
+   "eventos": {
+    "despegue": 0.19,
+    "aterrizaje": 0.44
+   }
+  }
+ }
+}

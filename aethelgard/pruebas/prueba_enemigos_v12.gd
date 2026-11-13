@@ -134,8 +134,10 @@ func _combate_real() -> void:
 			if str(c.get("estado")) == "fin":
 				break
 		print("    clips vistos: ", clips.keys())
-		var ataco: bool = clips.has("ataque") or clips.has("golpe_fuerte") or clips.has("devorar") or clips.has("barrido")
-		_ok(ataco or clips.has("carga"), "    actúa: ataca o carga (con el azar puede caer antes de golpear)")
+		# (V12, enemigos: con sus módulos, el Centinela también barre y alza el escudo y el Gólem lanza el Terrón)
+		var ataco: bool = clips.has("ataque") or clips.has("golpe_fuerte") or clips.has("devorar")
+		ataco = ataco or clips.has("barrido") or clips.has("lanzar")
+		_ok(ataco or clips.has("carga") or clips.has("guardia"), "    actúa: ataca o carga (con el azar puede caer antes de golpear)")
 		_ok(not ataco or golpes[0] >= 1, "    sus golpes llegan (%d impactos)" % golpes[0])
 		if caso[2] == "gorthor":
 			_ok(clips.has("fase2"), "    la fase 2 pone su clip")

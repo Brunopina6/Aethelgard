@@ -1,0 +1,14 @@
+{
+ "velocidad": 0.78,
+ "velocidad_correr": 0.0,
+ "triangulos": 5096,
+ "vertices": 2687,
+ "huesos": 22,
+ "personas": [
+  "campesino_huerto"
+ ],
+ "tarea": "cavar",
+ "agarra": "R",
+ "nino": false,
+ "alto": 1.52
+}

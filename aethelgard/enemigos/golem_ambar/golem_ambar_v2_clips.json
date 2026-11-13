@@ -1,0 +1,136 @@
+{
+ "modelo": "golem_ambar_v2",
+ "triangulos": 3654,
+ "huesos": 22,
+ "fps": 30,
+ "texturas": {
+  "alto": "golem_ambar.webp (1024)",
+  "bajo": "golem_ambar_bajo.webp (512)"
+ },
+ "color_brillo": [
+  1.0,
+  0.72,
+  0.22
+ ],
+ "clips": {
+  "reposo": {
+   "duracion": 2.4,
+   "bucle": true,
+   "eventos": {}
+  },
+  "caminar": {
+   "duracion": 1.4,
+   "bucle": true,
+   "eventos": {}
+  },
+  "correr": {
+   "duracion": 0.9,
+   "bucle": true,
+   "eventos": {}
+  },
+  "entrada": {
+   "duracion": 2.0,
+   "bucle": false,
+   "eventos": {
+    "despierta": 0.5,
+    "golpe_suelo": 1.5
+   }
+  },
+  "ataque": {
+   "duracion": 1.3,
+   "bucle": false,
+   "eventos": {
+    "impacto": 0.7
+   }
+  },
+  "carga": {
+   "duracion": 0.9,
+   "bucle": false,
+   "eventos": {
+    "arriba": 0.9
+   }
+  },
+  "carga_espera": {
+   "duracion": 1.4,
+   "bucle": true,
+   "eventos": {}
+  },
+  "golpe_fuerte": {
+   "duracion": 1.6,
+   "bucle": false,
+   "eventos": {
+    "impacto": 0.75,
+    "carga": 0.45
+   }
+  },
+  "recibir_golpe": {
+   "duracion": 0.6,
+   "bucle": false,
+   "eventos": {
+    "golpe": 0.0
+   }
+  },
+  "aturdido": {
+   "duracion": 1.6,
+   "bucle": true,
+   "eventos": {}
+  },
+  "victoria": {
+   "duracion": 1.8,
+   "bucle": false,
+   "eventos": {
+    "pecho": 0.5,
+    "pecho2": 0.9,
+    "aterriza": 1.45
+   }
+  },
+  "derrota": {
+   "duracion": 2.2,
+   "bucle": false,
+   "eventos": {
+    "sentado": 0.8,
+    "suelo": 1.5
+   }
+  },
+  "lanzar": {
+   "duracion": 1.5,
+   "bucle": false,
+   "eventos": {
+    "agarra": 0.3,
+    "impacto": 0.75
+   }
+  },
+  "recibir_golpe_fuerte": {
+   "duracion": 1.0,
+   "bucle": false,
+   "eventos": {
+    "golpe": 0.0
+   }
+  }
+ },
+ "medidas": {
+  "ataque": {
+   "puno_godot": [
+    -0.338,
+    0.475,
+    1.576
+   ]
+  },
+  "golpe_fuerte": {
+   "puno_godot": [
+    -1.078,
+    0.279,
+    0.899
+   ]
+  },
+  "lanzar": {
+   "puno_godot": [
+    -0.122,
+    1.244,
+    1.876
+   ]
+  },
+  "alto_reposo": 2.237
+ },
+ "generador": "enemigos/golem_ambar/fuente/crear_golem_ambar.py -- ... v2 (Blender 5.2.3)"
+}

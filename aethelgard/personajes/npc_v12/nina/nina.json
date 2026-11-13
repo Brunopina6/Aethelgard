@@ -1,0 +1,15 @@
+{
+ "velocidad": 0.531,
+ "velocidad_correr": 1.309,
+ "triangulos": 5570,
+ "vertices": 2996,
+ "huesos": 22,
+ "personas": [
+  "nina_plaza",
+  "nina_lazo"
+ ],
+ "tarea": "jugar",
+ "agarra": "",
+ "nino": true,
+ "alto": 1.127
+}

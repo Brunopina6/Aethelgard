@@ -416,10 +416,44 @@ clip("derrota", [(0, REPOSO), (0.25, P(SACUDIDA, luz(0.2))), (0.45, P(SACUDIDA, 
                                    "pie.L@ik": (0.45, -0.52, 0.30), "pie.R@ik": (-0.44, -0.48, 0.26)}, luz(0.0)))],
      eventos={"sentado": 0.8, "suelo": 1.5})
 
+# ================================================================== V2 (12/11, especialista de enemigos y combate)
+# Clips nuevos para su módulo de combate (combate_golem.gd), AÑADIDOS a los de arriba (que no cambian): con «v2» en la
+# línea de órdenes se escribe golem_ambar_v2.glb y golem_ambar_v2_clips.json; sin él, lo de siempre.
+#   lanzar (1,5 s)                el Terrón de ámbar: se lleva la mano derecha al nido de la espalda (agarra 0,3), tensa
+#                                 echado atrás (0,3-0,55) y lanza por encima del hombro (SUELTA = «impacto» 0,75; el
+#                                 terrón lo vuela el combate y el daño cae al llegar); se recupera
+#   recibir_golpe_fuerte (1,0 s)  un golpe grande: se echa atrás con un paso, el nido se zarandea y la luz se apaga
+V2 = "v2" in argv
+if V2:
+    AGARRA = P(REPOSO, R(brazo=(-200, 18, 0), antebrazo=(-95, 0, 0), hombro=(0, 0, -10)),
+               {"pecho": (-8, 0, -20), "cabeza": (-4, 0, 10), "nido": (0, 6, 0)}, luz(1.8))
+    TENSA = P(REPOSO, R(brazo=(-170, 12, 0), antebrazo=(-75, 0, 0), hombro=(0, 0, -14)), L(brazo=(-62, -12, 0)),
+              {"pecho": (-16, 0, -28), "cadera": (0, 0, -10), "columna": (-4, 0, -6), "cabeza": (-8, 0, 20),
+               "raiz@loc": (0, 0.08, 0), "pie.R@ik": (-0.38, 0.14, 0.17)}, luz(2.4))
+    SUELTA = P(REPOSO, R(brazo=(-100, -8, 0), antebrazo=(-12, 0, 0)), L(brazo=(14, -12, 0)),
+               {"pecho": (24, 0, 20), "columna": (6, 0, 6), "cadera": (0, 0, 10), "cabeza": (-20, 0, -8),
+                "raiz@loc": (0, -0.18, -0.06), "pie.L@ik": (0.40, -0.28, 0.17), "pie.R@ik": (-0.38, 0.10, 0.17)},
+               luz(2.0))
+    SIGUE = P(SUELTA, R(brazo=(-62, -10, 0), antebrazo=(-6, 0, 0)), {"pecho": (30, 0, 26), "raiz@loc": (0, -0.2, -0.08)})
+    clip("lanzar", [(0, REPOSO), (0.3, AGARRA), (0.42, P(AGARRA, {"nido": (6, -4, 0)})), (0.55, TENSA, "fren"),
+                    (0.75, SUELTA, "acel"), (0.95, SIGUE, "fren"),
+                    (1.2, P(SIGUE, {"pecho": (14, 0, 12), "raiz@loc": (0, -0.10, -0.04), "pie.L@ik": (0.40, -0.16, 0.24)})),
+                    (1.5, REPOSO)], eventos={"agarra": 0.3, "impacto": 0.75})
+
+    SACUDIDA2 = P(REPOSO, {"pecho": (-22, 6, 12), "cabeza": (-26, 0, 14), "columna": (-6, 0, 0),
+                           "raiz@loc": (0, 0.16, 0.02), "nido": (-24, 12, 0), "pie.R@ik": (-0.38, 0.12, 0.30)},
+                  sim(L(brazo=(24, -28, 0))), luz(0.15))
+    clip("recibir_golpe_fuerte", [(0, REPOSO), (0.12, SACUDIDA2, "fren"),
+                                  (0.3, P(SACUDIDA2, {"pie.R@ik": (-0.38, 0.30, 0.17), "nido": (16, -8, 0)}, luz(1.2)), "acel"),
+                                  (0.6, P(REPOSO, {"pecho": (10, 0, 0), "raiz@loc": (0, 0.13, -0.04),
+                                                   "pie.R@ik": (-0.38, 0.30, 0.17), "nido": (-6, 3, 0)})),
+                                  (0.8, P(REPOSO, {"raiz@loc": (0, 0.06, -0.02), "pie.R@ik": (-0.38, 0.14, 0.26)})),
+                                  (1.0, REPOSO)], eventos={"golpe": 0.0})
+
 
 def medir():
     datos = {}
-    for c_, t, h in (("ataque", 0.7, "mano.R"), ("golpe_fuerte", 0.75, "mano.R")):
+    for c_, t, h in (("ataque", 0.7, "mano.R"), ("golpe_fuerte", 0.75, "mano.R")) + ((("lanzar", 0.75, "mano.R"),) if V2 else ()):
         p = E.punto_hueso(arm, rig, c_, t, h, (0, 0.2, 0))
         datos[c_] = {"puno_godot": [round(p.x, 3), round(p.z, 3), round(-p.y, 3)]}
     p = E.punto_hueso(arm, rig, "reposo", 0.0, "nido", (0, 0.4, 0))
@@ -434,14 +468,15 @@ for pb in arm.pose.bones:
     pb.location = Vector()
     pb.scale = Vector((1, 1, 1))
 
+SUFIJO = "_v2" if V2 else ""          # V2: GLB y JSON nuevos al lado; las texturas (las mismas) no se reescriben
 A.guardar(os.path.join(LAMINAS, NOMBRE + "_atlas.png"),
-          [(os.path.join(SALIDA, NOMBRE + ".webp"), 1024), (os.path.join(SALIDA, NOMBRE + "_bajo.webp"), 512)])
-E.exportar(os.path.join(SALIDA, NOMBRE + ".glb"))
-E.guardar_json(os.path.join(SALIDA, NOMBRE + "_clips.json"), {
-    "modelo": NOMBRE, "triangulos": TRIS, "huesos": len(HUESOS), "fps": E.FPS,
+          [] if V2 else [(os.path.join(SALIDA, NOMBRE + ".webp"), 1024), (os.path.join(SALIDA, NOMBRE + "_bajo.webp"), 512)])
+E.exportar(os.path.join(SALIDA, NOMBRE + SUFIJO + ".glb"))
+E.guardar_json(os.path.join(SALIDA, NOMBRE + SUFIJO + "_clips.json"), {
+    "modelo": NOMBRE + SUFIJO, "triangulos": TRIS, "huesos": len(HUESOS), "fps": E.FPS,
     "texturas": {"alto": NOMBRE + ".webp (1024)", "bajo": NOMBRE + "_bajo.webp (512)"},
     "color_brillo": BRILLO, "clips": CLIPS, "medidas": medidas,
-    "generador": "enemigos/golem_ambar/fuente/crear_golem_ambar.py (Blender 5.2.3)"})
+    "generador": "enemigos/golem_ambar/fuente/crear_golem_ambar.py%s (Blender 5.2.3)" % (" -- ... v2" if V2 else "")})
 print("clips:", {k: v["duracion"] for k, v in CLIPS.items()})
 print("medidas:", medidas)
 
@@ -451,7 +486,7 @@ if CON_LAMINAS:
     E.material_vista(bpy.data.materials[NOMBRE + "_ambar"], img)
     bpy.data.materials[NOMBRE + "_ambar"].node_tree.nodes["Principled BSDF"].inputs["Roughness"].default_value = 0.3
     E.material_vista(bpy.data.materials[NOMBRE + "_brillo"], None, emision=(*BRILLO, 2.2))
-    C.lamina_criatura(esc, arm, ob, RAIZ, os.path.join(LAMINAS, NOMBRE + "_lamina.png"),
+    C.lamina_criatura(esc, arm, ob, RAIZ, os.path.join(LAMINAS, NOMBRE + SUFIJO + "_lamina.png"),
                       "Gólem de ámbar — el Guardián del Nido (V12, fase C)", sep=2.6, giros=(0, -40, -90),
                       alto_cam=1.3, orto=13.0)
     for o in list(esc.objects):
@@ -466,9 +501,14 @@ if CON_LAMINAS:
     inst = [("reposo", 0.0), ("entrada", 0.3), ("ataque", 0.42), ("ataque", 0.7), ("carga_espera", 0.35),
             ("golpe_fuerte", 0.58), ("golpe_fuerte", 0.75), ("golpe_fuerte", 0.95), ("recibir_golpe", 0.1),
             ("aturdido", 0.4), ("caminar", 0.35), ("victoria", 0.5), ("derrota", 0.8), ("derrota", 2.2)]
+    if V2:                            # V2: las poses de los clips nuevos
+        inst = [("lanzar", 0.0), ("lanzar", 0.3), ("lanzar", 0.55), ("lanzar", 0.75), ("lanzar", 0.95), ("lanzar", 1.2),
+                ("recibir_golpe_fuerte", 0.12), ("recibir_golpe_fuerte", 0.3), ("recibir_golpe_fuerte", 0.6),
+                ("recibir_golpe_fuerte", 0.8), ("carga_espera", 0.35), ("golpe_fuerte", 0.75), ("aturdido", 0.4),
+                ("derrota", 1.5)]
     carpeta = os.path.join(LAMINAS, "poses")
     os.makedirs(carpeta, exist_ok=True)
-    rutas = E.poses_render(esc, arm, inst, carpeta, NOMBRE, objetivo=(0, -0.4, 1.2), azimut=-40, elev=12, orto=4.6)
-    E.componer(rutas, os.path.join(LAMINAS, NOMBRE + "_poses.png"), 7)
-    bpy.ops.wm.save_as_mainfile(filepath=os.path.join(LAMINAS, NOMBRE + ".blend"))
+    rutas = E.poses_render(esc, arm, inst, carpeta, NOMBRE + SUFIJO, objetivo=(0, -0.4, 1.2), azimut=-40, elev=12, orto=4.6)
+    E.componer(rutas, os.path.join(LAMINAS, NOMBRE + SUFIJO + "_poses.png"), 7)
+    bpy.ops.wm.save_as_mainfile(filepath=os.path.join(LAMINAS, NOMBRE + SUFIJO + ".blend"))
 print("hecho")
