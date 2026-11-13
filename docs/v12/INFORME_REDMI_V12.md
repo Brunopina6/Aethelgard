@@ -415,3 +415,43 @@ Capturas y datos: `D:\REBELUM_diagnostico\v12\redmi\sesion_v649`.
   pocos segundos de estar quietos: les llegaban las esperas de los originales, hechas para otro esqueleto. Los v2 y v3
   ya no las activan; `prueba_esperas_v2` lo comprueba (6 fallos sin el arreglo, 0 con él). La v688 aún lo tiene.
 - **Observado:** con el mundo vivo, la vendedora puede quedarse en el paso de la puerta y Kael se para detrás.
+
+# V12 · Novena prueba en el Redmi: v694, comparativa del Gran Bosque, protagonistas y vecinos (13/11, 13:25-13:45)
+
+**APK:** «REBELUM Auditoría» v**694** (`1204dd4`), SHA-256 `9ca721bc00dcf8f03f02ba4e74d90bedfb43d231e494adb57fd20619f371e136`,
+instalada por el usuario desde Descargas (MIUI no deja instalar por USB). Solo se usó la Auditoría.
+- **Partida:** respaldo `D:\REBELUM_respaldos\2026-11-13_redmi_auditoria_antes_1204dd4` (711 entradas, mismas huellas);
+  restaurada idéntica al acabar (partida, `.bak` y ajustes), sin temporales en el teléfono.
+- **Capturas y datos:** `D:\REBELUM_diagnostico\v12\redmi\sesion_v694`.
+- **Temperatura de la batería:** de 27,6 °C a 32,5 °C.
+
+## 1. Gran Bosque en calidad media: las cuatro combinaciones
+
+Mismo punto de entrada y mismo recorrido; orden ida y vuelta (ref, matas, mip, ambas, ambas, mip, matas, ref) para
+compensar el calentamiento. `--timestats`: 10 s parado y 6 s andando. Media de las dos pasadas:
+
+| Combinación | Parado | Andando | PSS |
+|---|---|---|---|
+| Referencia (las dos apagadas) | 24,3 FPS (24,3 · 24,3) | 26,2 FPS (26,7 · 25,8) | 0,79-0,84 GB |
+| Solo matas recortadas | 23,8 FPS (23,8 · 23,8) | 25,9 FPS (26,5 · 25,3) | 0,80-0,83 GB |
+| **Solo mipmaps de hojas (sesgo −1)** | **25,0 FPS** (25,0 · 24,9) | **27,6 FPS** (27,7 · 27,5) | 0,82-0,86 GB |
+| Ambas | 24,2 FPS (24,1 · 24,3) | 26,9 FPS (27,0 · 26,8) | 0,81-0,83 GB |
+
+- **Mipmaps:** la única que ayuda en el Mali (+0,7 parado, +1,4 andando, repetible en las dos pasadas); la imagen
+  apenas cambia (`gb_comparar_4.png`). Candidata a encenderse en el perfil medio.
+- **Matas recortadas:** en el PC ahorraban fragmentos, pero en el Redmi van algo peor (−0,5 FPS): el octógono añade
+  vértices y el Mali paga más vértices de lo que gana en píxeles. Descartadas para el móvil.
+- **Ninguna llega a 30:** el límite del Gran Bosque en medio está en otra parte (sombreado del suelo y la luz del sol
+  sobre el follaje, según las medidas del 08-12/11). Queda como trabajo pendiente.
+- Las cuatro se aplicaron de verdad: las capturas muestran los arbustos de la derecha distintos con las matas.
+
+## 2. Protagonistas v2 y v3 en la exploración
+
+Pastos Verdes, 30 s sin tocar nada, una captura cada 5 s (`v2_quieto_hoja.png`, `v3_quieto_hoja.png`): **nadie se
+tumba**, ni con los v2 ni con los v3. Con la v688 se tumbaban a los pocos segundos (`021ae11` lo arregla).
+
+## 3. Vecinos de Oakhaven
+
+La prueba en el teléfono se cortó (el usuario se llevó el Redmi) antes de que Kael cruzara la Puerta del Sur: **queda
+pendiente** comprobarlo a mano. En el PC, `prueba_npc_paso` lo comprueba (nadie empieza ni se para en la puerta, ceden
+el paso a un sitio libre, Kael choca pero nunca queda atrapado, las rutinas siguen).
