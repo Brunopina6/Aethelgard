@@ -2,6 +2,10 @@
 
 Pega esto en una conversación nueva de Claude Code:
 
+> **ACTUALIZADO el 13/11 a las 23:59:** el relevo vigente es la sección «RELEVO 13/11» al final de
+> `docs/v12/RETOMAR.md`, y el encargo en curso está en `D:\REBELUM_entrada_13_11\ENCARGO_COORDINADOR_13_11.md`.
+> Lo que sigue en este archivo es histórico (11/11).
+>
 > Lee D:\Aethelgard\CLAUDE.md y sigue su protocolo de inicio. Después lee
 > D:\Aethelgard_v12\CONTINUAR_V12_NUEVA_SESION.md y D:\Aethelgard_v12\docs\v12\RETOMAR.md, y continúa la V12
 > («El Mar de Cristal») desde su «Falta para que cargue». Trabaja de forma autónoma, sin preguntas técnicas.

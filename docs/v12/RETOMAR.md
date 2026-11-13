@@ -394,3 +394,145 @@ negra).
   final de rendimiento y fallos (`claude/v12-rend3` desde `cefed0a`, en `D:\Aethelgard_v12_rend2`). Al reanudar:
   revisar el estado de esas dos ramas, integrar lo probado y pasar la batería.
 - **13/11, mañana:** APK de Auditoría `androidauditora-20261113-dfe5867` copiada al Redmi (Descargas, SHA-256 `558299e9…2f7e` verificado en el teléfono), sin instalar. Vistas de Nix para Meshy en `D:\REBELUM_diagnostico\v12\expansion\nix\para_meshy\`.
+
+## RELEVO 13/11, 23:59: punto de recuperación verificable (contexto agotado; LEER PRIMERO)
+
+**Nombre:** el juego se llama **REBELUM**. El usuario lo corrigió a las 23:55: «perdón, el nombre es rebelum».
+«Aethelgard» es solo el nombre técnico del repositorio y del proyecto de Godot.
+
+### Estado exacto de Git (comprobado a las 23:59)
+
+- **Rama de trabajo:** `claude/rebelum-v12` en `D:\Aethelgard_v12`.
+  - El último commit de código es `ed59483`, igual que `origin/claude/rebelum-v12` (comprobado con `git fetch`).
+  - Encima solo está el commit LOCAL de este relevo, que es documentación y no se ha subido.
+- **Intactas:** `main` = `d4b2d16` y `desarollo`. No hay merges ni releases.
+- **Sin rastrear y AJENOS** (no tocarlos ni añadirlos a commits): `.agents/`, `.codex/`, `.verificacion-local/`.
+- **Especialistas y workflows activos:** ninguno.
+  - Las ramas `claude/v12-*` están terminadas e integradas, o cerradas como se documenta arriba.
+  - No hay ningún archivo a medio editar.
+- **Etiquetas de recuperación:** `v12-antes-expansion`, `v12-antes-hito-calidad`, `v12-antes-noche-20261111` y
+  `v12-antes-rendimiento-personajes`.
+  - La etiqueta de la noche del 13/11 **no está creada todavía**. Créala en local antes de tocar código:
+    `git tag v12-antes-coordinador-20261113 ed59483`.
+- **Copias de trabajo relacionadas:**
+  - `D:\REBELUM_laboratorio_plugins`: rama LOCAL `claude/laboratorio-plugins` @ `5c4447c`, limpia y sin publicar.
+  - `D:\REBELUM_entrada_13_11\`: la entrada de esta noche (ver abajo).
+  - Las demás copias de `git worktree list` son históricas: no hay que escribir en ellas.
+
+### Hecho y comprobado el 13/11 (subido a GitHub hasta `ed59483`)
+
+- **`021ae11`: los protagonistas v2 y v3 ya no se tumban** al quedarse quietos.
+  - Se desactivaron sus esperas (`prueba_esperas_v2`).
+  - Verificado en el Redmi (v694): 30 s quietos y siguen de pie.
+- **`135c6dd`: opción «Gran Bosque: pruebas de rendimiento»** en Ajustes, solo en la Auditoría y en el editor.
+  - Código: `calidad_proto.gd` `EXTRA_PRUEBAS` y sección `[calidad_pruebas]` de `ajustes.cfg`.
+  - Opciones `gb_matas_casco` y `gb_hojas_mipmaps` (sesgo −1). Las dos van APAGADAS.
+- **`1204dd4`: los NPC de Oakhaven ya no bloquean la Puerta del Sur** (`mundo_vivo.gd`).
+  - Hay zonas de paso, los NPC se apartan a los 0,35 s y Kael pasa tras 0,8 s de empuje (`prueba_npc_paso`).
+  - En el Redmi está PENDIENTE: la prueba quedó cortada.
+- **`941c4ac` y `ed59483`: octava y novena pruebas en el Redmi** (`docs/v12/INFORME_REDMI_V12.md`).
+  - Gran Bosque en calidad media, parado/andando:
+    - referencia: 24,3/26,2;
+    - matas: 23,8/25,9;
+    - mipmaps: 25,0/27,6;
+    - las dos: 24,2/26,9.
+  - Ninguna combinación llega a 30. Las matas se descartan.
+  - Los mipmaps son candidatos, pero siguen apagados hasta que decida el usuario.
+- **Redmi:**
+  - instalada la Auditoría v694 (`1204dd4`, SHA-256 `9ca721bc…e136`);
+  - partida restaurada idéntica desde `D:\REBELUM_respaldos\2026-11-13_redmi_auditoria_antes_1204dd4`;
+  - el usuario se ha llevado el móvil: esta noche está prohibido tocarlo.
+
+### Prototipos y opciones APAGADOS (no encenderlos sin decisión del usuario)
+
+- **Héroes:** `heroes_v2`/`version` (versiones v2 y v3).
+- **Mundo y personajes:**
+  - `mundo_vivo_v12`;
+  - `enemigos_v12` (bestiario y Gorthor);
+  - `nix_v12`;
+  - `orbes_v12`;
+  - `ciclopea3d`.
+- **Combate:** `combate` (`anim_v12`, `turnos`, `esgrima`), además de la magia blanca de Lya.
+- **Gráficos:** `[calidad_pruebas]`.
+- **Sonido:** los de los enemigos v12 y del bestiario, en `recursos.gd`.
+
+### Laboratorio de tecnologías (13/11)
+
+Informe: `D:\REBELUM_laboratorio_plugins\laboratorio\INFORME_LABORATORIO.md`.
+
+- **Pixelpart:** DESCARTADO. Su editor es de pago y la partícula cuesta de 1,7 a 4,2 veces la nativa.
+- **ProtonScatter:** DESCARTADO. Hace 319 llamadas de dibujo frente a 150.
+- **Terrain3D:** DESCARTADO en el móvil. Cuesta de 15 a 50 ciclos A frente a 7,75 del terreno propio.
+- **Jolt:** se mantiene.
+- **Raymarching:** solo para efectos puntuales.
+- **Binarios GDExtension descargados:** el clasificador bloquea ejecutarlos. No hay que saltarlo.
+- **Efecto experimental de Érebo** (`proto_a_pixelpart/`, partículas nativas):
+  - violeta, negro y plata, con una espiral hacia la mano y una onda;
+  - en el PC cuesta +4 llamadas de dibujo y +0,12 ms;
+  - SIN integrar todavía: es la tarea 3 del encargo de esta noche.
+
+### Encargo coordinador del 13/11, 23:50 (el usuario duerme y mañana conecta el Redmi)
+
+- **El texto LITERAL completo está en `D:\REBELUM_entrada_13_11\ENCARGO_COORDINADOR_13_11.md`.** Es la autoridad:
+  léelo entero.
+- **Orden de trabajo:**
+  1. Inspeccionar y proteger.
+  2. Desbloqueos.
+  3. Orbe de Érebo y una magia representativa.
+  4. Menús y permisos de los héroes (solo Lya invoca).
+  5. Nix desde su FBX.
+  6. Capa de Garon con huesos propios.
+  7. Primera experiencia jugable: misiones de Oakhaven, caravana, secreto, cerradura rúnica y gremio (13 frente a
+     15 puntos).
+  8. Oficios y armas especiales.
+  9. Enemigos FBX (piloto `meshy_e01`) y arsenal.
+  10. Historias personales y mundo vivo.
+  11. Gráficos.
+  12. APK de Auditoría SIN instalar y guion de pruebas.
+  13. Matriz por elemento y continuidad.
+- **GitHub:**
+  - a `claude/rebelum-v12` solo se puede subir la integración COMPROBADA del orbe de Érebo, con sus pruebas y su
+    documentación;
+  - el resto se queda en commits LOCALES para que el usuario lo revise;
+  - sin force push ni releases.
+- **Progreso al agotarse el contexto: solo el paso 1, a medias. NO se ha cambiado código.**
+  - Los 7 ZIP están copiados en `D:\REBELUM_entrada_13_11\zips\`. Los originales siguen en
+    `C:\Users\G513\Downloads\aaaa\`, con la carpeta `Enemigos_Especiales_Claude\`.
+  - Leídos: MANIFIESTO, LEEME, `PROMPT_MAESTRO_CLAUDE.md`, `ataques_propuestos.json` e
+    `inspeccion_real_modelos.json`.
+    - Los 4 FBX no tienen armature, actions ni vertex groups.
+    - Triángulos: e01 10541, e02 6240, e03 6287, e04 9371.
+    - ZIP de cada enemigo: Custodio = e01, moth = e02, stylized_fantasy_enemy = e03, cavern_creature = e04.
+  - **Falta del paso 1:**
+    - extraer cada ZIP en su propia carpeta vacía;
+    - comprobar si el FBX `Meshy_AI_Silver_Sentinel` (24 MB) es Nix, comparándolo con las 6 referencias en T-pose
+      de `Nix_Referencias_TPose_6_Vistas.zip`;
+    - leer por páginas los PDF de Nix (3 MB) y de los 4 enemigos (3,9 MB);
+    - crear la etiqueta de recuperación.
+  - **Documentos citados en el encargo pero AUSENTES:** registrarlos como bloqueados y no inventarlos.
+    - `PROMPT_GENERAL_AETHELGARD_CLAUDE.md`;
+    - «Texto pegado(7).txt» y «Texto pegado(8).txt»;
+    - `CATALOGO_GENERAL_PROPUESTO.json`;
+    - el PDF de Kael y el PDF del arsenal.
+- **Siguiente acción concreta:** terminar el paso 1 y pasar después al paso 3.
+  - Llevar el orbe de `proto_a_pixelpart` a la invocación de Érebo como opción de Auditoría APAGADA.
+  - Sincronizarlo con el agarre del orbe mediante un evento de animación.
+  - Limpiarlo al saltar la escena, interrumpirla, morir o cambiar de escena.
+  - Añadir una prueba nueva, pasar la batería completa, hacer capturas activado/desactivado y documentarlo.
+  - Subir solo eso, tras comprobar el diff y el remoto.
+
+### Decisiones que se conservan
+
+- **Bramavidrio:** se integró la v5; las versiones anteriores se conservan.
+- **Nix:**
+  - es la cuarta heroína y va apagada (`nix_v12`);
+  - sigue abierta la pregunta de Nix frente a Naira;
+  - apariencia canónica, en el encargo y en `docs/v12/NIX_V12.md`: capucha sin sombrero de bruja, pelo gris ceniza
+    corto con dos mechones delanteros, y en la espalda un Ojo de Horus dentro de una estrella de seis puntas.
+- **Protagonistas:** v2 y v3 son opcionales; por defecto van los originales.
+- **Mundos 3D:** Pastos, Gran Bosque, Garganta, Oakhaven y Ciclópea (apagada).
+- **Firmamento de los Ecos:** en `docs/v12/FIRMAMENTO_DE_LOS_ECOS.md`.
+- **Redmi:**
+  - solo se usa la Auditoría, respaldando y restaurando su partida;
+  - MIUI bloquea `adb install`: se copia la APK a Descargas y la instala el usuario;
+  - las medidas del PC no son resultados de Android.
