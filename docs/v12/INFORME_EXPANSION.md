@@ -71,3 +71,18 @@ memoria de audio) quedaron arreglados en `e9329fd`. Las partidas reales no cambi
 - **Modelos hechos por guion:** Nix, NPC, bestiario y héroes v3 quedan por debajo del pintado de los héroes de Meshy cuando se ven de cerca.
 - **Sonidos nuevos:** los niveles se midieron, pero no se escucharon.
 - **Tiempos de fotograma del PC:** casi todos salieron con decenas de Godot de otros especialistas abiertos a la vez; sirven las comparaciones de dibujos y memoria, no los milisegundos.
+
+## Pasada final de rendimiento y fallos (13/11, mañana)
+
+- **Arreglado:** un nodo huérfano por repintado en la pestaña Objetos (`menus.gd`); `prueba_audio`, que fallaba por cómo
+  medía; la condición de `prueba_bosque_pastos` (14 avisos); el error «material is null»; el aviso de ratón sin
+  ventana; la memoria de audio (lo apagado ya no se precarga).
+- **Probado y descartado:** cambiar el `generate_lod` obsoleto de Oakhaven, porque el reemplazo borra detalle de los
+  edificios.
+- **Sin regresiones** en lo encendido (8 escenas, mismas cifras que el 12/11). Los tiempos de fotograma de hoy no
+  valen: el PC limitaba la ventana a 40 FPS.
+- **Mejoras propuestas para lo apagado, a decidir con el Redmi:**
+  - compartir o recortar las ventanas 3D de los enemigos (la del Centinela es casi 1 Mpx);
+  - un nivel de detalle lejano para los NPC de Oakhaven;
+  - comprimir los atlas de los enemigos v12.
+- **Batería final:** 155 superadas · 0 fallidas · 72 manuales · 0 no seguras. Partidas reales sin cambios.
