@@ -258,7 +258,8 @@ func _probar() -> void:
 	P.poner_hito("bq_purificado")
 	Engine.set_meta("pos_3d_ok", false)
 	R.cambiar_escena(REGION)
-	if not await _hasta(func(): return _region_lista() and current_scene != r and current_scene.has_method("texto_objetivo"), 60.0):
+	var id_vieja := r.get_instance_id()   # (no capturar «r»: se libera al recargar y la condición daría «Lambda capture… was freed»)
+	if not await _hasta(func(): return _region_lista() and current_scene.get_instance_id() != id_vieja and current_scene.has_method("texto_objetivo"), 60.0):
 		_fallo("8: la región no vuelve a cargarse")
 	else:
 		r = current_scene
