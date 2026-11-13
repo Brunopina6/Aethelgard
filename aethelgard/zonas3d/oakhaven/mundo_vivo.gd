@@ -38,6 +38,12 @@ const LOGICA_LEJOS := 4.0       # Hz de la rutina fuera de la vista o lejos
 const RADIO_HABLAR := 2.0
 const RADIO_OCUPA := 0.42       # Kael no entra en este círculo
 const DIST_PARAR := 0.95        # quien anda se para si Kael está más cerca que esto delante
+# (13/11, Redmi: la vendedora se quedaba en la Puerta del Sur y Kael, detrás, sin poder pasar; los dos se esperaban)
+const PASOS := [Rect2(36.5, 45.0, 8.0, 11.5)]   # la Puerta del Sur y su garganta: aquí nadie empieza ni hace pausas
+const CEDER_TRAS := 0.35        # s con Kael delante: quien anda se aparta a un lado libre y le deja pasar
+const APARTARSE := [0.95, 0.65] # m a un lado (prueba primero el lado contrario a Kael)
+const DEJA_PASAR := 1.7         # m: con Kael más lejos que esto, vuelve a su camino
+const PASO_LIBRE_TRAS := 0.8    # s empujando contra el mismo vecino: Kael pasa (nunca se queda atrapado)
 const RADIO_SALUDO := 4.2
 const PAUSA_SALUDO := 45.0
 const TODAS := ["manana", "tarde", "anochecer"]
@@ -245,6 +251,10 @@ func _colocar_inicio(g: Dictionary) -> void:
 		"ruta", "barrer":
 			var pts: Array = d["puntos"]
 			g["i"] = randi() % pts.size() if d["rutina"] == "ruta" else 0
+			for k in pts.size():                       # nunca empieza en un paso (ahí aparece Kael al entrar)
+				if not en_paso(pts[g["i"]]):
+					break
+				g["i"] = (g["i"] + 1) % pts.size()
 			n.position = _a3(pts[g["i"]])
 			g["i"] = (g["i"] + 1) % pts.size()
 		_:
@@ -382,13 +392,14 @@ func _pensar(g: Dictionary, dt: float, kp: Vector3) -> void:
 				return
 			var pts: Array = d["puntos"]
 			var meta: Vector2 = pts[g["i"]]
-			if _andar_hacia(n, meta, float(d.get("velocidad", n.velocidad_natural())), dt, kp):
-				n.clip(d.get("hace", "reposo"))
-				g["pausa"] = float(d.get("pausa", 3.0)) * randf_range(0.7, 1.3)
+			if _andar_hacia(n, meta, float(d.get("velocidad", n.velocidad_natural())), dt, kp, "", g):
+				if not en_paso(meta):                  # en la puerta no se para: cruza y sigue
+					n.clip(d.get("hace", "reposo"))
+					g["pausa"] = float(d.get("pausa", 3.0)) * randf_range(0.7, 1.3)
 				_siguiente(g, pts.size(), d.get("ida_vuelta", false))
 		"barrer":
 			var pts: Array = d["puntos"]
-			if _andar_hacia(n, pts[g["i"]], 0.22, dt, kp, "tarea"):
+			if _andar_hacia(n, pts[g["i"]], 0.22, dt, kp, "tarea", g):
 				_siguiente(g, pts.size(), true)
 		"corro":
 			_corro(g, dt, kp)
@@ -406,8 +417,25 @@ func _siguiente(g: Dictionary, total: int, ida_vuelta: bool) -> void:
 
 
 # Un paso hacia «meta». true si ya ha llegado. Se para (y espera en reposo) si Kael está delante a menos de DIST_PARAR.
-func _andar_hacia(n: Node3D, meta: Vector2, vel: float, dt: float, kp: Vector3, clip_andar := "") -> bool:
+func _andar_hacia(n: Node3D, meta: Vector2, vel: float, dt: float, kp: Vector3, clip_andar := "", g := {}) -> bool:
 	var p := Vector2(n.position.x, n.position.z)
+	var k2 := Vector2(kp.x, kp.z)
+	# (13/11) apartado para dejar pasar a Kael: espera a un lado hasta que se aleje y luego sigue su camino
+	if g.has("apartado"):
+		if p.distance_to(k2) < DEJA_PASAR:
+			var ap: Vector2 = g["apartado"]
+			if p.distance_to(ap) > 0.05:
+				var dap := (ap - p).normalized()
+				var q := p + dap * minf(p.distance_to(ap), vel * 1.3 * dt)
+				n.position = Vector3(q.x, alto_en(q), q.y)
+				_girar(n, atan2(dap.x, dap.y), dt)
+				n.andar(vel)
+			else:
+				n.clip("reposo")
+				_mirar(n, kp, 0.15)
+			return false
+		g.erase("apartado")
+		g["bloqueado"] = 0.0
 	var falta := meta - p
 	var largo := falta.length()
 	if largo < 0.06:
@@ -415,9 +443,17 @@ func _andar_hacia(n: Node3D, meta: Vector2, vel: float, dt: float, kp: Vector3, 
 	var dir := falta / largo
 	var paso := minf(largo, vel * dt)
 	var sig := p + dir * paso
-	if sig.distance_to(Vector2(kp.x, kp.z)) < DIST_PARAR:
+	if sig.distance_to(k2) < DIST_PARAR:
 		n.clip("reposo")
+		if not g.is_empty():
+			g["bloqueado"] = float(g.get("bloqueado", 0.0)) + dt
+			if g["bloqueado"] >= CEDER_TRAS:
+				var sitio = _sitio_para_apartarse(p, dir, k2)
+				if sitio != null:
+					g["apartado"] = sitio
 		return false
+	if not g.is_empty():
+		g["bloqueado"] = 0.0
 	n.position = Vector3(sig.x, alto_en(sig), sig.y)
 	_girar(n, atan2(dir.x, dir.y), dt)
 	if clip_andar != "":
@@ -507,13 +543,52 @@ func accion(id: String) -> void:
 		return
 
 
-# Kael no atraviesa a nadie (oakhaven_3d.gd, _prohibido).
+# ¿Es una zona de paso (la Puerta del Sur)? Ahí nadie empieza su rutina ni se para.
+static func en_paso(p: Vector2) -> bool:
+	for r in PASOS:
+		if (r as Rect2).has_point(p):
+			return true
+	return false
+
+
+# ¿Se puede pisar «q»? Lo mismo que para Kael (calles, muros, edificios), sin contar a la gente.
+func _libre(q: Vector2) -> bool:
+	if region == null:
+		return true
+	var p3 := Vector3(q.x, alto_en(q), q.y)
+	var b = region.get("barrios")
+	if b != null and b.prohibido(p3):
+		return false
+	var c = region.get("ciudad")
+	return c == null or not c.bloqueado(q.x, q.y, 0.3)
+
+
+# Un sitio a un lado del camino (primero el contrario a Kael) para dejarle pasar; null si no hay ninguno libre.
+func _sitio_para_apartarse(p: Vector2, dir: Vector2, k2: Vector2):
+	var perp := Vector2(-dir.y, dir.x)
+	var lado := 1.0 if perp.dot(p - k2) >= 0.0 else -1.0
+	for s in [lado, -lado]:
+		for dist in APARTARSE:
+			var q: Vector2 = p + perp * s * float(dist)
+			if _libre(q) and q.distance_to(k2) > DIST_PARAR:
+				return q
+	return null
+
+
+# Kael no atraviesa a nadie (oakhaven_3d.gd, _prohibido)… salvo que lleve PASO_LIBRE_TRAS empujando contra el mismo
+# (13/11): así nunca se queda atrapado en un paso estrecho si el otro no tiene sitio para apartarse.
 func ocupa(p: Vector3) -> bool:
+	var ahora := Time.get_ticks_msec()
 	for g in gente:
 		if g["d"]["rutina"] == "vecino" or not g.get("presente", true):
 			continue
 		var q: Vector3 = (g["nodo"] as Node3D).global_position
 		if absf(p.x - q.x) < RADIO_OCUPA and absf(p.z - q.z) < RADIO_OCUPA and absf(p.y - q.y) < 1.5 \
 				and Vector2(p.x - q.x, p.z - q.z).length() < RADIO_OCUPA:
+			if ahora - int(g.get("choca_ult", -100000)) > 300:
+				g["choca_desde"] = ahora
+			g["choca_ult"] = ahora
+			if ahora - int(g["choca_desde"]) > int(PASO_LIBRE_TRAS * 1000.0):
+				continue
 			return true
 	return false
