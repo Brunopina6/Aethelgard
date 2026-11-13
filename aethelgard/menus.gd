@@ -815,6 +815,27 @@ func _pintar_ajustes() -> void:
 			fob.add_child(bo)
 		cuerpo.add_child(fob)
 		cuerpo.add_child(_texto("Solo Auditoría: tablero de Orbes Cristalinos en la ficha del Grupo.", 16, COLOR_SUAVE))
+	# V12 (13/11, pruebas en el Redmi): las mejoras del Gran Bosque que van APAGADAS (prototipos/calidad_proto.gd,
+	# EXTRA_PRUEBAS; [calidad_pruebas] de user://ajustes.cfg). Solo en Auditoría o en el editor.
+	var CP = load("res://prototipos/calidad_proto.gd")
+	if CP.pruebas_permitidas():
+		cuerpo.add_child(_texto("Gran Bosque: pruebas de rendimiento", 26, COLOR_TITULO))
+		for clave in CP.EXTRA_PRUEBAS:
+			var k: String = clave
+			var act: bool = CP.extra_activo(k)
+			var fgb := HBoxContainer.new()
+			fgb.add_theme_constant_override("separation", 8)
+			fgb.add_child(_texto(CP.EXTRA_PRUEBAS[k]["nombre"], 18, COLOR_SUAVE))
+			for op in [[false, "No"], [true, "Sí"]]:
+				var so: bool = op[0]
+				var bg := _boton(("● " if so == act else "○ ") + op[1], 18, Vector2(120, 34), "gb:%s:%s" % [k, "si" if so else "no"])
+				bg.pressed.connect(func():
+					CP.elegir_extra(k, so)
+					Sonido.efecto("ui_tic")
+					_pintar_de_nuevo())
+				fgb.add_child(bg)
+			cuerpo.add_child(fgb)
+		cuerpo.add_child(_texto("Solo Auditoría. Se nota al volver a entrar en el Gran Bosque.", 16, COLOR_SUAVE))
 	load("res://zonas3d/oakhaven/mundo_vivo.gd").opcion_ajustes(self, cuerpo)   # V12, «Oakhaven: mundo vivo» (mundo_vivo_v12)
 	# Combate (12/11): la animación de combate v12 de los protagonistas v2 (combate_anim_v12.gd, [combate] anim_v12), sus
 	# cámaras ([combate] camaras) y el ATB quieto mientras actúa un héroe ([combate] pausa_atb; 13/11). Por defecto, la de siempre.

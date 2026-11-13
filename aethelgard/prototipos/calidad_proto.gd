@@ -110,9 +110,58 @@ static func datos() -> Dictionary:
 		var e: Dictionary = auto.estado()
 		d["fps"] = auto.fps_de(nombre, e, int(d["fps"]))
 		d.merge(auto.recortes(nombre, auto.nivel_de(nombre, e)), true)
+	d.merge(extra_pruebas(), true)
 	if Engine.has_meta("calidad_extra"):
 		d.merge(Engine.get_meta("calidad_extra"), true)
 	return d
+
+
+# Pruebas de rendimiento en el teléfono (13/11, Redmi): las mejoras del Gran Bosque que van APAGADAS por defecto se
+# pueden encender desde Ajustes, SOLO en la APK de Auditoría o en el editor (user://ajustes.cfg, [calidad_pruebas]).
+# En las versiones normales no se leen nunca. Se notan al volver a entrar en la región.
+const EXTRA_PRUEBAS := {
+	"gb_matas_casco": {"nombre": "Matas recortadas (octógono)", "valores": {"gb_matas_casco": true}},
+	"gb_hojas_mipmaps": {"nombre": "Hojas con mipmaps (sesgo −1)",
+		"valores": {"gb_hojas_mipmaps": true, "gb_hojas_mip_sesgo": -1.0}},
+}
+static var _extra_cache = null
+
+
+static func pruebas_permitidas() -> bool:
+	return OS.has_feature("auditoria") or OS.has_feature("editor")
+
+
+static func extra_activo(clave: String) -> bool:
+	if not pruebas_permitidas():
+		return false
+	var c := ConfigFile.new()
+	if c.load("user://ajustes.cfg") != OK:
+		return false
+	return bool(c.get_value("calidad_pruebas", clave, false))
+
+
+static func extra_pruebas() -> Dictionary:
+	if _extra_cache != null:
+		return _extra_cache
+	var r := {}
+	for clave in EXTRA_PRUEBAS:
+		if extra_activo(clave):
+			r.merge(EXTRA_PRUEBAS[clave]["valores"], true)
+	_extra_cache = r
+	return r
+
+
+static func elegir_extra(clave: String, si: bool) -> Error:
+	if not pruebas_permitidas() or not EXTRA_PRUEBAS.has(clave):
+		return ERR_UNAUTHORIZED
+	var c := ConfigFile.new()
+	if FileAccess.file_exists("user://ajustes.cfg"):
+		var err := c.load("user://ajustes.cfg")
+		if err != OK:
+			return err
+	c.set_value("calidad_pruebas", clave, si)
+	_extra_cache = null
+	return c.save("user://ajustes.cfg")
 
 
 static func siguiente() -> String:
