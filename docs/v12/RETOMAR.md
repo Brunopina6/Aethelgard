@@ -388,3 +388,8 @@ negra).
   (`claude/v12-combate2`) y Gorthor (`claude/v12-enemigos`). Garon esgrima y Lya magia blanca: al especialista de
   combate cuando acabe la línea de turnos.
 - **Pregunta abierta para el usuario:** Nix frente a Naira (Nix va como prototipo propio; no se decide nada).
+- **13/11, 03:45 — estado al agotarse el límite de uso:** subido hasta la capa de Garon (`cefed0a`) y el arreglo de
+  `prueba_bosque_pastos` (`35f493d`). Batería 152 · 0 · 70 · 0. **Sin integrar, en curso o cortado:** arte del
+  bestiario v2 (`claude/v12-bestiario`, Peón y Velador; los pilotos v1 en `1c057f7` aún sin integrar) y la pasada
+  final de rendimiento y fallos (`claude/v12-rend3` desde `cefed0a`, en `D:\Aethelgard_v12_rend2`). Al reanudar:
+  revisar el estado de esas dos ramas, integrar lo probado y pasar la batería.
