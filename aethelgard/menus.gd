@@ -820,23 +820,32 @@ func _pintar_ajustes() -> void:
 	fav.add_theme_constant_override("separation", 8)
 	var fav2 := HBoxContainer.new()
 	fav2.add_theme_constant_override("separation", 8)
+	var fav3 := HBoxContainer.new()                     # 13/11: la línea de turnos (combate_turnos_v12.gd; vale con cualquier protagonista)
+	fav3.add_theme_constant_override("separation", 8)
+	var TV = load("res://combate_turnos_v12.gd")
 	for op in [["anim_v12", false, "Animación de siempre"], ["anim_v12", true, "Animación v12 (prueba)"],
 			["camaras", true, "Cámaras: sí"], ["camaras", false, "Cámaras: no"],
-			["pausa_atb", true, "ATB quieto al actuar: sí"], ["pausa_atb", false, "ATB quieto al actuar: no"]]:
+			["pausa_atb", true, "ATB quieto al actuar: sí"], ["pausa_atb", false, "ATB quieto al actuar: no"],
+			["turnos", true, "Línea de turnos: sí"], ["turnos", false, "Línea de turnos: no"]]:
 		var cl: String = op[0]
 		var si: bool = op[1]
-		var actual: bool = AV.activado() if cl == "anim_v12" else (AV.camaras() if cl == "camaras" else AV.pausa_atb())
+		var actual: bool = AV.activado() if cl == "anim_v12" else (AV.camaras() if cl == "camaras" else
+			(AV.pausa_atb() if cl == "pausa_atb" else TV.activado()))
 		var ancho := 300 if cl != "camaras" else 180
 		var bav := _boton(("● " if actual == si else "○ ") + op[2], 18, Vector2(ancho, 34),
 			"combate:%s:%s" % [cl, "si" if si else "no"])
 		bav.pressed.connect(func():
-			AV.elegir_en_ajustes(cl, si)
+			if cl == "turnos":
+				TV.elegir_en_ajustes(si)
+			else:
+				AV.elegir_en_ajustes(cl, si)
 			Sonido.efecto("ui_tic")
 			_pintar_de_nuevo())
-		(fav2 if cl == "pausa_atb" else fav).add_child(bav)
+		(fav if cl in ["anim_v12", "camaras"] else (fav2 if cl == "pausa_atb" else fav3)).add_child(bav)
 	cuerpo.add_child(fav)
 	cuerpo.add_child(fav2)
-	cuerpo.add_child(_texto("Con los protagonistas v2. «ATB quieto»: las barras esperan mientras actúa un héroe. Se nota en el próximo combate.", 16, COLOR_SUAVE))
+	cuerpo.add_child(fav3)
+	cuerpo.add_child(_texto("Animación v12: con los protagonistas v2. «ATB quieto»: las barras esperan mientras actúa un héroe. La línea de turnos vale con cualquiera. Se nota en el próximo combate.", 16, COLOR_SUAVE))
 
 
 # Calidad de las regiones 3D (encargo del 09/11; prototipos/calidad_auto.gd, sección [calidad] de user://ajustes.cfg):

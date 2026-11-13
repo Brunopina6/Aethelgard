@@ -60,6 +60,7 @@ const Brama := preload("res://combate_bramavidrio.gd")
 const BramaVersion := preload("res://enemigos/bramavidrio/bramavidrio_version.gd")
 const HeroesV2 := preload("res://personajes/heroes_v2/heroes_v2.gd")   # V12, fase B: héroes v2 (interruptor heroes_v2, APAGADO)
 const AnimV12 := preload("res://combate_anim_v12.gd")   # V12: animación de combate de los héroes v2 (combate_anim_v12, APAGADO)
+const Turnos := preload("res://combate_turnos_v12.gd")   # V12: línea de turnos visible (interruptor turnos_v12, APAGADO)
 # V12, fase C: los modelos propios de Blender del Guardián de piedra, el Gólem de ámbar y Gorthor (enemigos/<nombre>/).
 # APAGADOS hasta que el usuario los compare con los de siempre: Engine.set_meta("enemigos_v12", true) o «-- enemigos_v12».
 const ENEMIGOS_V12 := {"guardian": "guardian3d", "golem_ambar": "golem_ambar3d", "gorthor": "gorthor_v12"}
@@ -956,6 +957,8 @@ func _crear_interfaz() -> void:
 	panel_obj.visible = false
 	capa.add_child(panel_obj)
 	menu.marcado.connect(_al_marcar_orden)
+	if Turnos.activado():                         # V12: la línea de turnos (solo lee el combate)
+		Turnos.crear(self)
 	_marca("interfaz")
 
 

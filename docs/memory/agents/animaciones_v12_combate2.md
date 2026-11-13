@@ -268,3 +268,92 @@ Commits: `cf43f98` (poses, ATB, chispas, vuelta de Lya), `335a1c8` (`fotos_comba
   `<héroe>_v2_combate_v12.glb`, `aethelgard/pruebas/prueba_combate_anim_v12.gd`.
 - COMPARTIDOS: `aethelgard/combate.gd` (una línea más en `_process`), `aethelgard/menus.gd` (segunda fila «ATB quieto
   al actuar»), `aethelgard/pruebas/lista_pruebas.txt` (la línea de `fotos_combate_anim_v12`).
+
+## 13/11/2026 · tercer encargo: la línea de turnos visible (propuesta A de `docs/v12/COMBATE_TACTICO_V12.md`)
+
+Commits: `0cad115` (módulo, enganche, Ajustes y prueba), el de la prueba con vídeo, el del dibujo por capas y el de este
+informe. **APAGADA por defecto.** Es una ayuda de interfaz: solo lee el combate. No llama a `randf()`, no crea
+partículas y no toca luchadores, cola ni ATB. **Vale con cualquier protagonista** (originales o v2, con o sin la
+animación v12) y con cualquier enemigo.
+
+### Cómo se enciende
+- Ajustes → bloque «Combate» → «Línea de turnos: sí / no» (`user://ajustes.cfg`, `[combate] turnos`).
+- Pruebas: el argumento `turnos_v12` o `Engine.set_meta("turnos_v12", true)`.
+
+### Qué hace (`combate_turnos_v12.gd`, un `Control` en la capa del combate)
+- **Dónde va:** arriba a la derecha (x 939-1268, y 66), debajo del cartel de lo que pasa y lejos de los luchadores, del
+  HUD y del menú. Con el cartel grande de Bramavidrio (Fractura, Aliento: x 700-1260, y 72-172) baja a y = 178. Si
+  además está abierta la lista de objetivos, se queda arriba.
+- **Los próximos 6 turnos:**
+  - primero quien actúa ahora (marco grande y «AHORA»), luego la cola, y después quien llenará antes su barra;
+  - el cálculo es el mismo que hace el combate: ATB que falta / vel, con el «Lento» de la magia negra;
+  - repite a quien vuelva antes que otros.
+- **Retratos:**
+  - un recorte de la propia ventana 3D de cada luchador: la cara en los héroes, la parte alta en los enemigos. Esa
+    ventana ya se dibuja en el combate: no se pinta nada nuevo;
+  - en los de dibujo 2D, como el Slime, un disco con la inicial;
+  - marco del color del héroe, o rojo en los enemigos; gris si ha caído.
+- **Avisos:**
+  - «!» sobre el enemigo que prepara un ataque cargado: lo que ya anuncia su rótulo «⚠ …» (Cargando, Fractura,
+    Aliento, Réquiem…);
+  - debajo, el aviso escrito («⚠ Fractura: defendeos · Bramavidrio», «⚠ Cargando · Grimfang»);
+  - «*» si el enemigo está congelado.
+- **Táctil:** tocar o hacer clic en un retrato muestra su nombre (y el aviso, si lo prepara) durante 1,6 s.
+- **Coste:**
+  - el orden se recalcula 10 veces por segundo y la línea solo se redibuja si cambia algo (el orden, un aviso, una
+    caída, un toque): en las pruebas, 1 redibujo cada 24-43 fotogramas;
+  - se pinta por capas (fondos, retratos, marcos, textos) para que se junte lo que comparte textura;
+  - **medido en el PC** con `medir_escenas`, perfil medio: **+17 dibujos por fotograma** en Bramavidrio (88 → 105) y
+    **+18** en el combate de tres (100 → 118). Pintando retrato a retrato eran +22-25;
+  - los 6 retratos son 6 texturas distintas: cada uno es al menos un dibujo;
+  - el tiempo por fotograma no lo puedo dar: el PC estaba cargado (40-60 Godot de otras copias) y las dos pasadas iban
+    topadas a ~25 ms. Tabla en `D:\REBELUM_diagnostico\v12\expansion\combate2\medidas_turnos\` (`tabla.md` es la
+    primera versión, `tabla_capas.md` la actual).
+
+### Pruebas (aisladas; partida y carpeta real sin cambios; «proyecto: sin cambios»)
+- **`prueba_turnos_v12`** (nueva, auto; al final de `lista_pruebas.txt`). Seis combates de verdad en el mismo proceso:
+  - **apagada**: la línea no existe;
+  - **tres**: combate de tres con los originales;
+  - **tres_v2**: el mismo con los héroes v2 y la animación v12;
+  - **brama**: Bramavidrio, grupo 13;
+  - **centinela**: el Guardián de piedra con Grimfang, grupo 4 con `enemigos_v12`;
+  - **golem**: el Gólem de ámbar con Grimfang, grupo 6 con `enemigos_v12`.
+- Qué comprueba en cada combate: que está dentro de la pantalla y no tapa el cartel; quién actúa (**acierta el 100 %**:
+  4 de 4, 4 de 4, 11 de 11, 5 de 5 y 6 de 6); que marca los avisos en el 99-100 % de los fotogramas que los hay; y que
+  se redibuja poco. **SUPERADA.**
+- **Apagada** (las 25 de combate y `prueba_turnos_v12`): **26 SUPERADAS · 0 FALLIDAS**,
+  `D:\REBELUM_diagnostico\pruebas\2026-11-13_011716\resumen.md`.
+- **Encendida** (las mismas 24 de combate con `turnos_v12`, incluida **`prueba_combate_huella` con su referencia: la huella
+  es la misma**, más `prueba_turnos_v12`): **25 SUPERADAS · 0 FALLIDAS**,
+  `D:\REBELUM_diagnostico\pruebas\2026-11-13_012322\resumen.md`.
+
+### Evidencias: `D:\REBELUM_diagnostico\v12\expansion\combate2\`
+- **Capturas** en `turnos\`:
+  - `1280x720\`: cada caso al empezar y con un aviso (`brama_aviso`, `centinela_aviso`, `golem_aviso`, `tres_aviso`…);
+  - `1280x720_capas\`: las mismas tras dibujar por capas;
+  - `1600x720\` y `2400x1080\`: ventana a esa resolución. La de 2400 × 1080 sale a 1875 × 1055, el máximo que cabe en
+    la pantalla del PC. La de 1600 × 720 sale a 1280 × 720 porque la imagen interna es esa y el juego la escala.
+- **Vídeo** `videos\linea_turnos_bramavidrio_y_centinela.mp4`, 74 s a tiempo real. Muestra Bramavidrio (la línea baja
+  bajo el cartel de la Fractura) y el Centinela (los avisos de su golpe devastador y del Hachazo). Los fotogramas están
+  en `fotogramas\turnos_video\`.
+
+### Archivos
+- NUEVOS: `aethelgard/combate_turnos_v12.gd` (+ `.uid`), `aethelgard/pruebas/prueba_turnos_v12.gd` (+ `.uid`).
+- COMPARTIDOS:
+  - `aethelgard/combate.gd`: la constante `Turnos` y dos líneas al final de `_crear_interfaz`;
+  - `aethelgard/menus.gd`: tercera fila del bloque «Combate» y el texto de ayuda;
+  - `aethelgard/pruebas/lista_pruebas.txt`: la línea de `prueba_turnos_v12`.
+
+### Límites
+- Sin Redmi; el tacto lo he probado con clic, no con el dedo. El coste en la GPU Mali-G57 está sin medir.
+- La previsión no sabe lo que aún no ha pasado: un aturdido que pierde el turno, un enemigo que huye o una Hora Dorada
+  la cambian en cuanto ocurren.
+- Con la animación v12 y el ATB al ritmo de siempre, el orden es el mismo; con «ATB quieto al actuar: no», también,
+  porque la línea solo usa lo que hay ahora.
+- Los recortes de retrato están calculados a ojo por modelo: cara a 1,42 m en los héroes y parte alta en los enemigos.
+  En los jefes muy grandes enseñan solo una parte (de Bramavidrio, la cabeza y la cresta).
+- 6 retratos son al menos 6 dibujos. Si en el Redmi pesa, se puede bajar a 4 (constante `N`).
+
+### Siguiente paso
+- Mirarla en el móvil y decidir si se enciende por defecto.
+- Siguiente propuesta clara de la lista: E (contraataque al defender), que sí cambia reglas.
