@@ -316,6 +316,16 @@ const APAGADOS := {
 	"res://enemigos/golem_ambar/": "enemigos_v12",
 	"res://enemigos/gorthor/": "enemigos_v12",
 	"res://enemigos/v12_comun/": "enemigos_v12",
+	# V12 (13/11): el bestiario (Peón de Linde y Velador de Corteza) y los sonidos propios de los enemigos v12, que solo
+	# suenan con «enemigos_v12»: fuera de la precarga mientras va apagado (prueba_audio_memoria mide lo que se carga)
+	"res://enemigos/peon_linde/": "enemigos_v12",
+	"res://enemigos/velador_corteza/": "enemigos_v12",
+	"res://enemigos/bestiario_comun/": "enemigos_v12",
+	"res://audio/efectos/centinela/": "enemigos_v12",
+	"res://audio/efectos/golem/": "enemigos_v12",
+	"res://audio/efectos/gorthor/": "enemigos_v12",
+	"res://audio/efectos/peon/": "enemigos_v12",
+	"res://audio/efectos/velador/": "enemigos_v12",
 	"res://enemigos/cencerrante/": "",
 	"res://enemigos/vidracran/": "",
 	"res://enemigos/tolvanera/": "",

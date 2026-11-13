@@ -1,0 +1,198 @@
+{
+ "id": "e01",
+ "modelo": "peon_linde",
+ "alto_m": 1.65,
+ "triangulos": 3536,
+ "huesos": 27,
+ "deformantes": 24,
+ "fps": 30,
+ "texturas": {
+  "alto": "peon_linde.webp (1024)",
+  "bajo": "peon_linde_bajo.webp (512)"
+ },
+ "color_brillo": [
+  1.0,
+  0.7,
+  0.32
+ ],
+ "clips": {
+  "reposo": {
+   "duracion": 2.0,
+   "bucle": true,
+   "eventos": {}
+  },
+  "alerta": {
+   "duracion": 0.6,
+   "bucle": false,
+   "eventos": {
+    "alerta": 0.12
+   }
+  },
+  "entrada": {
+   "duracion": 1.0,
+   "bucle": false,
+   "eventos": {
+    "despierta": 0.3,
+    "golpe_suelo": 0.6
+   }
+  },
+  "caminar": {
+   "duracion": 1.0,
+   "bucle": true,
+   "eventos": {}
+  },
+  "correr": {
+   "duracion": 0.7,
+   "bucle": true,
+   "eventos": {}
+  },
+  "lateral_izq": {
+   "duracion": 1.0,
+   "bucle": true,
+   "eventos": {}
+  },
+  "lateral_der": {
+   "duracion": 1.0,
+   "bucle": true,
+   "eventos": {}
+  },
+  "girar_izq": {
+   "duracion": 0.5,
+   "bucle": false,
+   "eventos": {}
+  },
+  "girar_der": {
+   "duracion": 0.5,
+   "bucle": false,
+   "eventos": {}
+  },
+  "recibir_golpe": {
+   "duracion": 0.3333,
+   "bucle": false,
+   "eventos": {
+    "golpe": 0.0
+   }
+  },
+  "recibir_golpe_espalda": {
+   "duracion": 0.3333,
+   "bucle": false,
+   "eventos": {
+    "golpe": 0.0
+   }
+  },
+  "aturdido": {
+   "duracion": 0.8,
+   "bucle": true,
+   "eventos": {}
+  },
+  "derrota": {
+   "duracion": 1.4,
+   "bucle": false,
+   "eventos": {
+    "rodillas": 0.45,
+    "suelo": 1.05
+   }
+  },
+  "desaparecer": {
+   "duracion": 0.6,
+   "bucle": false,
+   "eventos": {
+    "hundido": 0.6
+   }
+  },
+  "ataque": {
+   "duracion": 1.2667,
+   "bucle": false,
+   "eventos": {
+    "aviso": 0.0,
+    "impacto": 0.62
+   }
+  },
+  "lanzar": {
+   "duracion": 1.7,
+   "bucle": false,
+   "eventos": {
+    "aviso": 0.0,
+    "impacto": 0.85,
+    "recoge": 1.25
+   }
+  },
+  "zancada": {
+   "duracion": 1.9,
+   "bucle": false,
+   "eventos": {
+    "aviso": 0.0,
+    "carga": 0.9,
+    "impacto": 1.0,
+    "pisada": 1.0
+   }
+  },
+  "carga": {
+   "duracion": 0.9,
+   "bucle": false,
+   "eventos": {
+    "arriba": 0.9
+   }
+  },
+  "carga_espera": {
+   "duracion": 1.2,
+   "bucle": true,
+   "eventos": {}
+  },
+  "retroceso": {
+   "duracion": 0.6667,
+   "bucle": false,
+   "eventos": {
+    "paso": 0.33
+   }
+  }
+ },
+ "mapa_pdf": {
+  "spawn": "entrada",
+  "idle": "reposo",
+  "alert": "alerta",
+  "walk_fwd": "caminar",
+  "run_fwd": "correr",
+  "strafe_l": "lateral_izq",
+  "strafe_r": "lateral_der",
+  "turn_l": "girar_izq",
+  "turn_r": "girar_der",
+  "hit_front": "recibir_golpe",
+  "hit_back": "recibir_golpe_espalda",
+  "stagger": "aturdido",
+  "death": "derrota",
+  "despawn": "desaparecer",
+  "attack_01": "ataque",
+  "attack_02": "lanzar",
+  "attack_03": "zancada",
+  "retreat_step": "retroceso"
+ },
+ "solo_atb": [
+  "carga",
+  "carga_espera"
+ ],
+ "medidas": {
+  "ataque_arma.R": [
+   -0.167,
+   1.089,
+   1.342
+  ],
+  "ataque_arma.L": [
+   0.077,
+   1.049,
+   1.356
+  ],
+  "lanzar_mano.R": [
+   -0.225,
+   0.832,
+   0.594
+  ],
+  "zancada_arma.R": [
+   -0.777,
+   1.344,
+   1.334
+  ],
+  "alto_reposo": 1.595
+ },
+ "generador": "enemigos/peon_linde/fuente/crear_peon_linde.py (Blender 5.2.3)"
+}

@@ -44,6 +44,17 @@ func _medir() -> void:
 	_buscar("res://audio/", rutas, true)
 	_buscar("res://sonidos/", rutas, true)
 	_buscar("res://", rutas, false)                         # las músicas de la raíz (combate)
+	# V12 (13/11): lo que la precarga deja fuera mientras su interruptor está apagado (recursos.gd APAGADOS: los sonidos
+	# de los enemigos v12, Pastoral Pulse si no se eligió…) no ocupa RAM en la partida normal: se mide aparte, sin contar
+	var apagados: Dictionary = load("res://recursos.gd").APAGADOS
+	var fuera := PackedStringArray()
+	for ruta in rutas.duplicate():
+		for pre in apagados:
+			if ruta.begins_with(pre):
+				fuera.append(ruta)
+				rutas.remove_at(rutas.find(ruta))
+				break
+	print("Fuera de la cuenta (apagados por defecto en la precarga): %d archivos" % fuera.size())
 	var antes := Performance.get_monitor(Performance.MEMORY_STATIC)
 	var filas: Array = []
 	var cargados: Array = []                                  # que no se liberen mientras se mide la memoria

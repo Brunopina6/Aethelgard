@@ -40,6 +40,13 @@ const TABLA := {
 	"golem_ambar": {"debil": ["Hielo"], "resiste": ["Fuego"], "inmune": ["Rayo"],
 		"estados_resiste": [], "estados_inmune": [],
 		"por_que": "El ámbar aísla del rayo y aguanta el calor; el frío lo vuelve quebradizo."},
+	# V12, bestiario (13/11; propuesta coherente con su ficha de docs/v12/BESTIARIO_V12.md, revisable por el usuario)
+	"peon_linde": {"debil": ["Fuego"], "resiste": ["Gravedad"], "inmune": [],
+		"estados_resiste": [], "estados_inmune": [],
+		"por_que": "Barro seco y fibras: el fuego lo cuartea; pegado a la tierra, el peso apenas lo mueve."},
+	"velador_corteza": {"debil": ["Fuego"], "resiste": ["Hielo", "Rayo"], "inmune": [],
+		"estados_resiste": ["lento", "def_baja"], "estados_inmune": ["prision"],
+		"por_que": "Leño vivo: arde; la savia aguanta el frío y la madera no conduce el rayo; con raíces, no se le encierra."},
 	"gorthor": {"debil": ["Hielo"], "resiste": ["Fuego"], "inmune": [],
 		"estados_resiste": ["lento", "atk_baja"], "estados_inmune": ["prision"],
 		"por_que": "Bestia de la Garganta, hecha al calor de la roca: el frío le entumece."},

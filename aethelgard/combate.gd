@@ -91,6 +91,14 @@ const Golem := preload("res://combate_golem.gd")
 # Defender, Agua, Quiebra o un cuarto de su vida), herida fuerte y su sonido. No rehace nada de lo suyo (fases, Devorar,
 # último aliento, perdón, premio). APAGADO: sin el interruptor, Gorthor.es() es falso. Ganchos «V12, Gorthor».
 const Gorthor := preload("res://combate_gorthor.gd")
+# V12, bestiario (13/11): e01 · el Peón de Linde (combate_peon.gd: Piquete cruzado, Estaca de aviso a distancia y Zancada
+# en fila avisada y cortable). APAGADO: con «enemigos_v12» sale en los encuentros de la llanura y en sus combates de
+# prueba (GRUPOS[22], [23] y [24]). Los ganchos de aquí llevan «V12, Peón».
+const Peon := preload("res://combate_peon.gd")
+# V12, bestiario (13/11): e02 · el Velador de Corteza (combate_velador.gd: Guardia de anillos que se abre con dos golpes,
+# Mazazo de poda, Empuje de anillos y Raíz de umbral avisada y cortable). APAGADO: con «enemigos_v12» sale en los
+# encuentros del bosque y en sus combates de prueba (GRUPOS[25], [26] y [27]). Los ganchos llevan «V12, Velador».
+const Velador := preload("res://combate_velador.gd")
 # Menú de combate minimalista (menu_combate.gd). Ocupa el 40 % derecho de la pantalla, por eso los
 # héroes van más a la izquierda y los enemigos se juntan a la izquierda: x = x * ENEMIGOS_X.x + ENEMIGOS_X.y
 const ENEMIGOS_X := Vector2(0.75, -190.0)
@@ -350,6 +358,21 @@ const MODELOS := {
 		"tipo": "3d", "esc": 0.6, "script": "res://enemigos/humbaba/humbaba_3d.gd", "gestos": "res://gestos_3d.gd",
 		"rutas": ["res://enemigos/humbaba/humbaba.glb"], "vp": Vector2i(1500, 1500), "alto_vista": 6.4, "centro_y": 3.05,
 		"barra_y": 60.0, "centro_3d": 3.45, "respaldo": "guardian_bosque2d"},
+	# V12, bestiario (13/11): e01 · el Peón de Linde (enemigos/peon_linde/, fuente/crear_peon_linde.py; combate_peon.gd).
+	# 1,65 m; el encuadre deja sitio a las estacas en la estocada (277 px por metro, como los demás enemigos v12).
+	"peon_linde": {
+		"tipo": "3d", "esc": 0.6, "script": "res://enemigos/peon_linde/peon_linde_3d.gd", "gestos": "res://gestos_3d.gd",
+		"rutas": ["res://enemigos/peon_linde/peon_linde_v2.glb", "res://enemigos/peon_linde/peon_linde.glb"],   # V12, bestiario: v2
+		"vp": Vector2i(850, 680), "alto_vista": 2.45,
+		"centro_y": 0.75, "barra_y": 67.0, "centro_3d": 0.8, "caida": 1.4, "respaldo": "slime"},
+	# V12, bestiario (13/11): e02 · el Velador de Corteza (enemigos/velador_corteza/; combate_velador.gd). 1,95 m con escudo
+	# y maza; mismo encuadre de 277 px por metro.
+	"velador_corteza": {
+		"tipo": "3d", "esc": 0.6, "script": "res://enemigos/velador_corteza/velador_corteza_3d.gd",
+		"gestos": "res://gestos_3d.gd", "rutas": ["res://enemigos/velador_corteza/velador_corteza_v2.glb",   # V12, bestiario: v2
+			"res://enemigos/velador_corteza/velador_corteza.glb"],
+		"vp": Vector2i(670, 820), "alto_vista": 2.95, "centro_y": 0.95, "barra_y": 86.0, "centro_3d": 1.0, "caida": 1.4,
+		"respaldo": "guardian"},
 }
 
 # Enemigos disponibles y grupos que pueden aparecer en un encuentro (se elige uno al azar).
@@ -391,6 +414,14 @@ const ENEMIGOS := {
 		"personalidad": "humbaba", "titulo": true},
 	"vidracran": {"nombre": "Vidracrán", "modelo": "vidracran", "hp": 300, "atk": 18, "vel": 19.0, "exp": 55, "oro": 32,
 		"personalidad": "vidracran"},
+	# V12, bestiario (13/11): e01 · el Peón de Linde, hostigador común de la llanura (combate_peon.gd; APAGADO: solo sale
+	# con «enemigos_v12»). Ágil y frágil, entre el Zarzalín y Grimfang (docs/v12/BESTIARIO_V12.md, conversión al ATB).
+	"peon_linde": {"nombre": "Peón de Linde", "modelo": "peon_linde", "hp": 72, "atk": 11, "vel": 15.0, "exp": 22, "oro": 14,
+		"personalidad": "agresivo"},
+	# V12, bestiario (13/11): e02 · el Velador de Corteza, defensor común del bosque (combate_velador.gd; APAGADO: solo sale
+	# con «enemigos_v12»). Lento y duro; su guardia de anillos deja los golpes a la mitad hasta que le paran dos.
+	"velador_corteza": {"nombre": "Velador de Corteza", "modelo": "velador_corteza", "hp": 115, "atk": 13, "vel": 11.0,
+		"exp": 34, "oro": 22, "personalidad": "agresivo"},
 }
 const GRUPOS := [
 	[["grimfang", Vector2(230, 150)], ["grimfang", Vector2(410, 115)]],
@@ -422,6 +453,14 @@ const GRUPOS := [
 	# V12, Gólem: combates de prueba del Gólem de ámbar (combate_golem.gd; con «enemigos_v12»); no salen al azar
 	[["golem_ambar", Vector2(150, 120)]],                                   # 20: solo
 	[["golem_ambar", Vector2(150, 120)], ["slime", Vector2(420, 125)]],     # 21: con un Slime
+	# V12, Peón: los encuentros del Peón de Linde (combate_peon.gd; con «enemigos_v12», en la llanura) y sus combates de prueba
+	[["peon_linde", Vector2(250, 120)]],                                    # 22: uno (Kael solo)
+	[["peon_linde", Vector2(140, 110)], ["peon_linde", Vector2(380, 125)]],  # 23: dos (con Lya)
+	[["peon_linde", Vector2(30, 90)], ["peon_linde", Vector2(410, 115)], ["peon_linde", Vector2(215, 135)]],   # 24: tres
+	# V12, Velador: los encuentros del Velador de Corteza (combate_velador.gd; con «enemigos_v12», en el bosque)
+	[["velador_corteza", Vector2(230, 120)]],                                                    # 25: uno
+	[["velador_corteza", Vector2(140, 105)], ["slime", Vector2(400, 125)]],                       # 26: con un Slime
+	[["velador_corteza", Vector2(150, 110)], ["grimfang", Vector2(420, 125)], ["slime", Vector2(30, 95)]],   # 27: tres
 ]
 const GRUPOS_AL_AZAR := 5           # solo los primeros salen en encuentros aleatorios (con el grupo de tres)
 # Encuentros al azar según cuántos héroes hay ahora en el grupo (grupo.gd, activos). Kael solo no tiene cura ni a
@@ -468,6 +507,8 @@ const ANIM := {
 	"guardian": {"distancia": 150.0},
 	"guardian3d": {"distancia": 310.0},         # V12, fase C: el mandoble llega 2 m por delante
 	"golem_ambar3d": {"distancia": 220.0},      # V12, fase C: el puño
+	"peon_linde": {"distancia": 200.0},         # V12, Peón: las estacas llegan 1 m por delante en la estocada
+	"velador_corteza": {"distancia": 230.0},    # V12, Velador: la maza de poda
 	"gorthor_v12": {"distancia": 220.0},        # V12, fase C: la cuchilla
 	"guardian_bosque2d": {"distancia": 170.0},     # fase 3: el Guardián del Bosque (respaldo 2D)
 	"guardian_bosque": {"distancia": 170.0},       # fase 3: ataca desde su sitio (_anim_guardian)
@@ -642,6 +683,10 @@ func _ready() -> void:
 			Golem.al_entrar(self, e, pe)
 		if Gorthor.es(e):                            # V12, Gorthor: rugido, trago, rodillas y la Hoguera
 			Gorthor.al_entrar(self, e, pe)
+		if Peon.es(e):                               # V12, Peón: los sonidos y el polvo de los instantes de sus clips
+			Peon.al_entrar(self, e, pe)
+		if Velador.es(e):                            # V12, Velador: su guardia y los instantes de sus clips
+			Velador.al_entrar(self, e, pe)
 		if pe != null and pe.has_method("entrada"):
 			e["rig"].modulate.a = 0.0
 			create_tween().tween_property(e["rig"], "modulate:a", 1.0, 0.15)
@@ -694,6 +739,12 @@ func _con_reclutas(presentes: Array, en_grupo: Array) -> Array:
 
 # Índice de un grupo al azar para un encuentro con «cuantos» héroes (los de tres, como siempre).
 static func grupo_al_azar(cuantos: int) -> int:
+	var peon: int = Peon.grupo_al_azar(cuantos)     # V12, Peón: con «enemigos_v12», a veces su grupo (apagado: -1, sin dados)
+	if peon >= 0:
+		return peon
+	var velador: int = Velador.grupo_al_azar(cuantos)   # V12, Velador: lo mismo en el bosque
+	if velador >= 0:
+		return velador
 	var tabla: Dictionary = AL_AZAR_POR_TAMANO
 	if tabla.has(cuantos):
 		var opciones: Array = tabla[cuantos]
@@ -740,6 +791,8 @@ func _elegir_enemigos() -> void:
 			e["modelo"] = ENEMIGOS_V12[g[0]]
 			Centinela.preparar(e)                     # V12, Centinela: el Guardián, con su personalidad (si no, nada)
 			Golem.preparar(e)                         # V12, Gólem: el Gólem de ámbar, con la suya (si no, nada)
+		Peon.preparar(e)                              # V12, Peón: con «enemigos_v12», su personalidad (si no, nada)
+		Velador.preparar(e)                           # V12, Velador: con «enemigos_v12», su personalidad y su guardia
 		var mod: Dictionary = MODELOS[e["modelo"]]
 		if mod.get("tipo", "") == "3d" and _ruta_3d(mod) == "" and mod.has("respaldo"):   # falta el 3D: su dibujo 2D
 			push_warning("Falta el modelo 3D de %s: se usa su respaldo 2D" % e["nombre"])
@@ -1074,6 +1127,10 @@ func _info_objetivo(f: Dictionary, ok: bool) -> String:
 		t.append_array(Golem.info(f))
 	elif Gorthor.es(f) and not Gorthor.info(f).is_empty():   # V12, Gorthor: la Hoguera o aturdido
 		t.append_array(Gorthor.info(f))
+	elif Peon.es(f):                                    # V12, Peón: Zancada, aturdido o replegado
+		t.append_array(Peon.info(f))
+	elif Velador.es(f):                                 # V12, Velador: guardia, Raíz o aturdido
+		t.append_array(Velador.info(f))
 	elif f.get("cargando", false):
 		var plan: Dictionary = PATRONES.get(f.get("personalidad", ""), {})
 		if plan.get("encoge", false):
@@ -1974,6 +2031,14 @@ func _turno_enemigo(f: Dictionary) -> void:
 		await _huir(f)
 		_fin_turno_enemigo(f)
 		return
+	if p == Peon.PERSONALIDAD:                       # V12, Peón: el Peón de Linde (combate_peon.gd); huye como los comunes
+		await Peon.turno(self, f, vivos, mult)
+		_fin_turno_enemigo(f)
+		return
+	if p == Velador.PERSONALIDAD:                    # V12, Velador: el Velador de Corteza (combate_velador.gd)
+		await Velador.turno(self, f, vivos, mult)
+		_fin_turno_enemigo(f)
+		return
 	if p == "embiste":                               # Zarzalín: aviso, embestida y recuperación (T-097)
 		await _turno_zarzalin(f, vivos, mult)
 		_fin_turno_enemigo(f)
@@ -2368,6 +2433,12 @@ func _vigilar_carga(f: Dictionary, d: int) -> void:
 		return
 	if Gorthor.es(f):                                 # V12, Gorthor: apaga o corta la Hoguera, herida fuerte (y sigue)
 		Gorthor.vigilar(self, f, d)
+	if Peon.es(f):                                    # V12, Peón: corta la Zancada, herida fuerte
+		Peon.vigilar(self, f, d)
+		return
+	if Velador.es(f):                                 # V12, Velador: cuenta los golpes parados, corta la Raíz
+		Velador.vigilar(self, f, d)
+		return
 	if not f.get("cargando", false) or f["hp"] <= 0 or not PATRONES.has(f.get("personalidad", "")):
 		return
 	var plan: Dictionary = PATRONES[f["personalidad"]]
@@ -5627,6 +5698,10 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 		await Golem.animar_golpe(self, origen, objetivo, impacto)
 	elif Gorthor.es(origen) and origen.has("gt_ataque"):                      # V12, Gorthor: la Hoguera, desde su sitio
 		await Gorthor.animar_golpe(self, origen, objetivo, impacto)
+	elif Peon.es(origen):                                                     # V12, Peón: piquete, estaca o Zancada
+		await Peon.animar_golpe(self, origen, objetivo, impacto)
+	elif Velador.es(origen):                                                  # V12, Velador: mazazo, empuje o Raíz
+		await Velador.animar_golpe(self, origen, objetivo, impacto)
 	elif _p3d(origen) != null and _p3d(origen).has_method("avisar"):           # Zarzalín (T-097)
 		await _anim_zarzalin(origen, objetivo, impacto, str(origen.get("ataque_3d", "colmillo_lateral")))
 	elif _p3d(origen) != null and _p3d(origen).has_method("despertar"):        # Guardián del Bosque (fase 3): desde su sitio
@@ -7044,6 +7119,8 @@ func _comprobar_fin() -> bool:
 		Humbaba.al_acabar(self)                       # V12: sus raíces, marcas y estados, fuera
 		Centinela.al_acabar(enemigos)                 # V12, Centinela: la marca del Juicio, fuera
 		Gorthor.al_acabar(enemigos)                   # V12, Gorthor: las brasas de la Hoguera, fuera
+		Peon.al_acabar(enemigos)                      # V12, Peón: la marca de la Zancada, fuera
+		Velador.al_acabar(enemigos)                   # V12, Velador: la marca de la Raíz, fuera
 		Sonido.efecto("victoria" if ganan else "derrota")   # sonido.gd
 		if ganan:                                      # el gesto de uno de los que siguen en pie (tanda 5)
 			voz_pedida.emit("", "victoria")
@@ -7250,6 +7327,14 @@ func _actualizar() -> void:
 				Gorthor.repasar(e)
 				if vivo:
 					estados.append_array(Gorthor.estados(e))
+			if Peon.es(e):                              # V12, Peón: «⚠ Zancada: Lya», «Aturdido», «Busca flanco»
+				Peon.repasar(e)
+				if vivo:
+					estados.append_array(Peon.estados(e))
+			if Velador.es(e):                           # V12, Velador: «Guardia (1/2)», «Guardia abierta», «⚠ Raíz: Kael»
+				Velador.repasar(e)
+				if vivo:
+					estados.append_array(Velador.estados(e))
 			if e.has("mn"):                             # V12, magia negra: «Lento 2», «Def ↓ 3», «Prisión 1»…
 				estados.append_array(MN.textos_estado(e))
 				if not vivo:                            # (huido o caído sin pasar por _quitar_pv: su jaula y su sello, fuera)

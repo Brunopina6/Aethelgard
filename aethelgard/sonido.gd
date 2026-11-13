@@ -415,6 +415,33 @@ const EFECTOS := {
 	"gorthor_hoguera_carga": {"a": "gorthor/hoguera_carga", "db": -3.0, "p": 3, "max": 1, "espera": 0.5},
 	"gorthor_hoguera": {"a": "gorthor/hoguera", "db": -8.0, "tono": 0.02, "p": 3, "max": 1, "espera": 0.5},
 	"gorthor_apagada": {"a": "gorthor/apagada", "db": -2.0, "p": 3, "max": 1, "espera": 0.3},
+	# ---- V12, bestiario (13/11): e01 · el Peón de Linde (combate_peon.gd; APAGADO, interruptor «enemigos_v12»). Derivados
+	# propios de los paquetes GDC 2017 y 2018 de Sonniss (#GameAudioGDC), WAV mono 48 kHz de audio/efectos/peon/
+	# (procedencia: docs/audio/efectos_procedencia.csv). «peon_linde_ataque» (el Piquete), «peon_linde_lanzar» (sale la
+	# estaca) y «peon_linde_zancada» los pide combate.gd _sonidos_bestia por la señal «impacto»; «peon_linde_entrada», al
+	# empezar su entrada; los «peon_*», combate_peon.gd (la estaca al llegar, el aviso, la rotura y el derrumbe en su
+	# instante del clip). Volúmenes por el RMS medido (pico −1 dBFS): medido, no escuchado.
+	"peon_linde_entrada": {"a": "peon/entrada", "db": -4.0, "p": 2, "max": 1, "espera": 1.0},
+	"peon_linde_ataque": {"a": "peon/piquete", "db": -9.0, "tono": 0.04, "p": 2, "max": 1, "espera": 0.3},
+	"peon_linde_lanzar": {"a": "peon/lanzar", "db": -4.0, "tono": 0.04, "p": 2, "max": 1, "espera": 0.3},
+	"peon_estaca": {"a": "peon/estaca", "db": -2.0, "tono": 0.04, "p": 3, "max": 1, "espera": 0.3},
+	"peon_linde_zancada": {"a": "peon/zancada", "db": -7.0, "tono": 0.03, "p": 3, "max": 1, "espera": 0.4},
+	"peon_carga": {"a": "peon/carga", "db": -2.0, "p": 3, "max": 1, "espera": 0.5},
+	"peon_rota": {"a": "peon/rota", "db": -4.0, "p": 3, "max": 1, "espera": 0.3},
+	"peon_derrumbe": {"a": "peon/derrumbe", "db": -10.0, "p": 3, "max": 1, "espera": 0.8},
+	# ---- V12, bestiario (13/11): e02 · el Velador de Corteza (combate_velador.gd; APAGADO, «enemigos_v12»). Derivados de
+	# Sonniss GDC 2017 y 2018 (audio/efectos/velador/, procedencia en docs/audio/efectos_procedencia.csv). Los
+	# «velador_corteza_*» los pide combate.gd por la señal «impacto» (y la entrada); los «velador_*», combate_velador.gd.
+	# Volúmenes por el RMS medido: medido, no escuchado.
+	"velador_corteza_entrada": {"a": "velador/entrada", "db": -4.0, "p": 2, "max": 1, "espera": 1.0},
+	"velador_corteza_ataque": {"a": "velador/mazazo", "db": -5.0, "tono": 0.03, "p": 2, "max": 1, "espera": 0.4},
+	"velador_corteza_empuje": {"a": "velador/empuje", "db": 0.0, "tono": 0.04, "p": 2, "max": 1, "espera": 0.3},
+	"velador_corteza_raiz": {"a": "velador/raiz", "db": -2.0, "tono": 0.03, "p": 3, "max": 1, "espera": 0.4},
+	"velador_bloqueo": {"a": "velador/bloqueo", "db": -2.0, "tono": 0.05, "p": 2, "max": 2, "espera": 0.1},
+	"velador_abre": {"a": "velador/abre", "db": -10.0, "p": 3, "max": 1, "espera": 0.3},
+	"velador_carga": {"a": "velador/carga", "db": -4.0, "p": 3, "max": 1, "espera": 0.5},
+	"velador_rota": {"a": "velador/rota", "db": -7.0, "p": 3, "max": 1, "espera": 0.3},
+	"velador_derrumbe": {"a": "velador/derrumbe", "db": -8.0, "p": 3, "max": 1, "espera": 0.8},
 }
 
 # V12 (11/11): el Mar de Cristal. Sus sonidos son OGG (audio/desierto/), así que van aparte de EFECTOS (cuyas comprobaciones
@@ -603,7 +630,9 @@ const FAMILIAS := {"slime": "limo", "grimfang": "goblin", "gorthor": "gorthor", 
 	"hilandera_eco": "hilandera", "hilandera": "hilandera", "posadero_hueco": "posadero", "posadero": "posadero",
 	# V9: el Guardián del Bosque Olvidado (su voz: madera que cruje y gime; «guardian_bosque_*» son sus efectos)
 	"guardian_bosque": "corteza", "coloso_falla": "piedra",   # coloso_falla: la voz de piedra del guardián (V9)
-	"vidracran": "vidracran"}                     # V12, encuentro del desierto: su voz de vidrio (EFECTOS_VIDRACRAN)
+	"vidracran": "vidracran",                     # V12, encuentro del desierto: su voz de vidrio (EFECTOS_VIDRACRAN)
+	"peon_linde": "piedra",                       # V12, bestiario: el Peón de Linde (máscara de mojón), voz de piedra
+	"velador_corteza": "corteza"}                 # V12, bestiario: el Velador de Corteza, voz de madera (la del Guardián del Bosque)
 # V9: tratamiento del combate de un jefe (lo empieza y lo cambia un efecto con «trata»: [jefe, etapa]). Mientras dure:
 # - la música (bus Musica) pasa por un paso bajo («corte», Hz) y un ajuste de volumen («musica_db»): el Guardián
 #   empieza con la música apagada, como oída desde dentro del bosque, y en su fase 2 se abre;

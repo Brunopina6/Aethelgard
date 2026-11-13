@@ -1,0 +1,198 @@
+{
+ "id": "e02",
+ "modelo": "velador_corteza_v2",
+ "alto_m": 1.731,
+ "triangulos": 5148,
+ "huesos": 27,
+ "deformantes": 24,
+ "fps": 30,
+ "texturas": {
+  "alto": "velador_corteza_v2.webp (1024)",
+  "bajo": "velador_corteza_v2_bajo.webp (512)",
+  "normales": "velador_corteza_v2_normal.webp (1024)"
+ },
+ "proporciones": {
+  "piernas": 0.66,
+  "cabeza": 1.25,
+  "brazos": 0.88
+ },
+ "color_brillo": [
+  0.4,
+  0.95,
+  0.85
+ ],
+ "clips": {
+  "reposo": {
+   "duracion": 2.0,
+   "bucle": true,
+   "eventos": {}
+  },
+  "guardia_espera": {
+   "duracion": 1.2,
+   "bucle": true,
+   "eventos": {}
+  },
+  "alerta": {
+   "duracion": 0.6,
+   "bucle": false,
+   "eventos": {
+    "alerta": 0.15
+   }
+  },
+  "entrada": {
+   "duracion": 1.0,
+   "bucle": false,
+   "eventos": {
+    "despierta": 0.3,
+    "golpe_suelo": 0.7
+   }
+  },
+  "caminar": {
+   "duracion": 1.0,
+   "bucle": true,
+   "eventos": {}
+  },
+  "correr": {
+   "duracion": 0.7,
+   "bucle": true,
+   "eventos": {}
+  },
+  "lateral_izq": {
+   "duracion": 1.0,
+   "bucle": true,
+   "eventos": {}
+  },
+  "lateral_der": {
+   "duracion": 1.0,
+   "bucle": true,
+   "eventos": {}
+  },
+  "girar_izq": {
+   "duracion": 0.5,
+   "bucle": false,
+   "eventos": {}
+  },
+  "girar_der": {
+   "duracion": 0.5,
+   "bucle": false,
+   "eventos": {}
+  },
+  "recibir_golpe": {
+   "duracion": 0.3333,
+   "bucle": false,
+   "eventos": {
+    "golpe": 0.0
+   }
+  },
+  "recibir_golpe_espalda": {
+   "duracion": 0.3333,
+   "bucle": false,
+   "eventos": {
+    "golpe": 0.0
+   }
+  },
+  "aturdido": {
+   "duracion": 0.8,
+   "bucle": true,
+   "eventos": {}
+  },
+  "derrota": {
+   "duracion": 1.4,
+   "bucle": false,
+   "eventos": {
+    "cruje": 0.4,
+    "suelo": 1.05
+   }
+  },
+  "desaparecer": {
+   "duracion": 0.6,
+   "bucle": false,
+   "eventos": {
+    "hundido": 0.6
+   }
+  },
+  "ataque": {
+   "duracion": 1.8,
+   "bucle": false,
+   "eventos": {
+    "aviso": 0.0,
+    "impacto": 0.95
+   }
+  },
+  "empuje": {
+   "duracion": 1.5,
+   "bucle": false,
+   "eventos": {
+    "aviso": 0.0,
+    "impacto": 0.7,
+    "pisada": 0.7
+   }
+  },
+  "raiz": {
+   "duracion": 2.2,
+   "bucle": false,
+   "eventos": {
+    "aviso": 0.0,
+    "clava": 0.5,
+    "carga": 1.1,
+    "impacto": 1.15
+   }
+  },
+  "carga": {
+   "duracion": 1.1,
+   "bucle": false,
+   "eventos": {
+    "clava": 0.5,
+    "arriba": 1.1
+   }
+  },
+  "carga_espera": {
+   "duracion": 1.2,
+   "bucle": true,
+   "eventos": {}
+  }
+ },
+ "mapa_pdf": {
+  "spawn": "entrada",
+  "idle": "reposo",
+  "alert": "alerta",
+  "walk_fwd": "caminar",
+  "run_fwd": "correr",
+  "strafe_l": "lateral_izq",
+  "strafe_r": "lateral_der",
+  "turn_l": "girar_izq",
+  "turn_r": "girar_der",
+  "hit_front": "recibir_golpe",
+  "hit_back": "recibir_golpe_espalda",
+  "stagger": "aturdido",
+  "death": "derrota",
+  "despawn": "desaparecer",
+  "attack_01": "ataque",
+  "attack_02": "empuje",
+  "attack_03": "raiz",
+  "guard_loop": "guardia_espera"
+ },
+ "solo_atb": [
+  "carga",
+  "carga_espera"
+ ],
+ "medidas": {
+  "ataque_arma.R": [
+   -0.23,
+   0.559,
+   1.235
+  ],
+  "empuje_arma.L": [
+   0.51,
+   0.803,
+   0.406
+  ],
+  "raiz_mano.L": [
+   0.478,
+   0.996,
+   0.779
+  ],
+  "alto_reposo": 1.529
+ },
+ "generador": "enemigos/velador_corteza/fuente/crear_velador_corteza.py -- ... v2 (Blender 5.2.3)"
+}
