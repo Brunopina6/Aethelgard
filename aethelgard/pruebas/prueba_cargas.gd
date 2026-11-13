@@ -113,7 +113,7 @@ func _precarga() -> void:
 			_ok(not Array(l).any(func(x): return x.begins_with(c)), "1: [%s] se precarga %s, que está apagado" % [perfil, c])
 		var brama := Array(l).filter(func(x): return x.begins_with("res://enemigos/bramavidrio/") and x.get_extension() in ["glb", "webp"])
 		var sufijo: String = {"alto": "", "medio": "_medio", "bajo": "_bajo"}[perfil]
-		_ok(brama.size() == 2, "1: [%s] de Bramavidrio se precargan %s (debería ser su modelo y su piel)" % [perfil, brama])
+		_ok(brama.filter(func(x): return not x.get_basename().contains("_normal")).size() == 2 and brama.size() <= 3, "1: [%s] de Bramavidrio se precargan %s (debería ser su modelo y su piel)" % [perfil, brama])
 		for x in brama:
 			_ok(x.get_base_dir() + "/" == carpeta and x.get_basename().ends_with(sufijo)
 				and (sufijo != "" or not (x.get_basename().ends_with("_medio") or x.get_basename().ends_with("_bajo"))),

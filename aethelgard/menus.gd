@@ -756,14 +756,18 @@ func _pintar_ajustes() -> void:
 	# usuario las compare antes de decidir (enemigos/bramavidrio/bramavidrio_version.gd, [bramavidrio] version).
 	# 12/11: y la prueba de la versión 3 («el Excavador», boca articulada); la de por defecto sigue siendo la 2.
 	# 12/11: y la prueba de la versión 4 («el Ancestral», el gusano de la lámina del usuario, boca circular).
+	# 12/11, noche: y la prueba de la versión 5 («la v4 resuelta»: mandíbulas, colmillos y movimientos). Con cinco
+	# opciones la fila no cabe en el ancho de Ajustes (1080): van en un HFlowContainer, que las pasa a otra fila.
 	var BV = load("res://enemigos/bramavidrio/bramavidrio_version.gd")
 	var vb: int = BV.en_ajustes()
 	cuerpo.add_child(_texto("Bramavidrio", 26, COLOR_TITULO))
-	var fbv := HBoxContainer.new()
-	fbv.add_theme_constant_override("separation", 8)
-	for op in [[2, "Nuevo (la Sierpe)"], [3, "Prueba v3: el Excavador"], [4, "Prueba v4: el Ancestral"], [1, "Anterior"]]:
+	var fbv := HFlowContainer.new()
+	fbv.add_theme_constant_override("h_separation", 8)
+	fbv.add_theme_constant_override("v_separation", 8)
+	for op in [[2, "Nuevo (la Sierpe)"], [3, "Prueba v3: el Excavador"], [4, "Prueba v4: el Ancestral"],
+			[5, "Prueba v5: la v4 resuelta"], [1, "Anterior"]]:
 		var v: int = op[0]
-		var bbv := _boton(("● " if v == vb else "○ ") + op[1], 18, Vector2(300 if v in [3, 4] else 260, 34), "bramavidrio:%d" % v)
+		var bbv := _boton(("● " if v == vb else "○ ") + op[1], 18, Vector2(300 if v in [3, 4, 5] else 260, 34), "bramavidrio:%d" % v)
 		bbv.pressed.connect(func():
 			BV.elegir_en_ajustes(v)
 			Sonido.efecto("ui_tic")

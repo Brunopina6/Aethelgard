@@ -62,6 +62,16 @@ const DATOS_VERSION := {
 			"labio_01", "labio_02", "labio_03", "labio_04", "labio_05", "labio_06", "labio_07", "labio_08", "labio_09",
 			"labio_10", "labio_11", "labio_12"],
 		"superficies": ["piel", "vidrio", "garganta", "arena", "chorro", "polvo"]},
+	# V12 (12/11, noche): la 5, «la v4 resuelta» (enemigos/bramavidrio/v5/, fuente/crear_bramavidrio5.py): el esfínter de
+	# la v4 sin los doce sectores; cuatro mandíbulas (mand_*) con su fila de colmillos (colm_*). Sus medidas propias
+	# (mandíbulas, colmillos, roces, encuadre en el combate real): prueba_bramavidrio5.gd.
+	5: {"carpeta": "res://enemigos/bramavidrio/v5/", "guion": "bramavidrio5_3d.gd", "json": "bramavidrio5_clips.json",
+		"glb": ["bramavidrio5.glb", "bramavidrio5_medio.glb", "bramavidrio5_bajo.glb"],
+		"tex": ["bramavidrio5_piel.webp", "bramavidrio5_piel_medio.webp", "bramavidrio5_piel_bajo.webp"],
+		"tris": [18000, 8000, 3500], "sin": ["mandibula", "mandibula_izq", "mandibula_der"],
+		"extra": ["esfinter", "garganta_ancla", "succion", "losa_1", "losa_2", "losa_3", "losa_4", "losa_5", "losa_6",
+			"mand_arriba", "mand_izq", "mand_abajo", "mand_der", "colm_arriba", "colm_izq", "colm_abajo", "colm_der"],
+		"superficies": ["piel", "vidrio", "garganta", "arena", "chorro", "polvo"]},
 }
 var VER := 1
 var CARPETA := ""
@@ -114,7 +124,7 @@ func _esperar(n: int) -> void:
 
 
 func _correr() -> void:
-	var lista := [1, 2, 3, 4]
+	var lista := [1, 2, 3, 4, 5]
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("version="):
 			lista = [int(a.get_slice("=", 1))]
@@ -155,6 +165,9 @@ func _comprobar_interruptor() -> void:
 		Engine.set_meta("bramavidrio_version", 4)
 		_ok(V.version() == 4 and V.modelo().ends_with("bramavidrio4.glb") and V.guion().ends_with("bramavidrio4_3d.gd"),
 			"con la meta a 4: %s" % V.guion())
+		Engine.set_meta("bramavidrio_version", 5)
+		_ok(V.version() == 5 and V.modelo().ends_with("bramavidrio5.glb") and V.guion().ends_with("bramavidrio5_3d.gd"),
+			"con la meta a 5: %s" % V.guion())
 		Engine.set_meta("bramavidrio_version", 9)
 		_ok(V.version() == V.VERSION_DEFECTO, "una versión que no existe usa la de por defecto (%d)" % V.version())
 		_ok(V.elegir("res://enemigos/bramavidrio/bramavidrio_3d.gd") == V.guion() and V.elegir("res://zarzalin_3d.gd") == "res://zarzalin_3d.gd",
@@ -168,6 +181,7 @@ func _comprobar_interruptor() -> void:
 		Engine.remove_meta("bramavidrio_version")
 		_ok(V.elegir_en_ajustes(3) == OK and V.en_ajustes() == 3 and V.version() == 3, "Ajustes a «Prueba v3»: versión %d" % V.version())
 		_ok(V.elegir_en_ajustes(4) == OK and V.en_ajustes() == 4 and V.version() == 4, "Ajustes a «Prueba v4»: versión %d" % V.version())
+		_ok(V.elegir_en_ajustes(5) == OK and V.en_ajustes() == 5 and V.version() == 5, "Ajustes a «Prueba v5»: versión %d" % V.version())
 		_ok(V.elegir_en_ajustes(2) == OK and V.version() == 2, "Ajustes a «Nuevo»: versión %d" % V.version())
 		if cfg_antes == "":
 			DirAccess.remove_absolute(ProjectSettings.globalize_path("user://ajustes.cfg"))
@@ -666,8 +680,9 @@ func _comprobar_boca4(g: Node3D) -> void:
 			min_apertura[c] = minf(min_apertura[c], g.apertura())
 			if c == "reposo":
 				peor_reposo = maxf(peor_reposo, g.abertura_boca())
-			for k in g.N_SECTORES:
-				peor_holgura = maxf(peor_holgura, g.holgura_colmillo(k))
+			if g.has_method("holgura_colmillo"):             # v4 (la v5 no tiene sectores: prueba_bramavidrio5)
+				for k in g.N_SECTORES:
+					peor_holgura = maxf(peor_holgura, g.holgura_colmillo(k))
 			if c == "ataque" and absf(t - 1.0) < 0.001:
 				_ok(g.abertura_boca() < 0.05, "embestida: en el mordisco (1,0 s) la boca está cerrada (entrada %.3f m)" % g.abertura_boca())
 			if c == "ataque_aliento" and t >= 1.85 - 0.001 and t <= 2.6 + 0.001:
@@ -703,7 +718,8 @@ func _comprobar_boca4(g: Node3D) -> void:
 	_ok(invertida.is_empty(), "ningún clip cierra de más (el esfínter nunca baja de 0,015: %s)" % str(invertida))
 	_ok(max_abierta["rugido"] > 40.0 and max_abierta["ataque_aliento"] > 40.0,
 		"la boca se abre con fuerza al rugir (%.1f°) y en el Aliento (%.1f°)" % [max_abierta["rugido"], max_abierta["ataque_aliento"]])
-	_ok(peor_holgura < 0.005, "los colmillos de los 12 sectores siguen al labio en todos los clips (holgura máx. %.4f m)" % peor_holgura)
+	if g.has_method("holgura_colmillo"):
+		_ok(peor_holgura < 0.005, "los colmillos de los 12 sectores siguen al labio en todos los clips (holgura máx. %.4f m)" % peor_holgura)
 	_ok(fotos_descarga >= 20 and fuera_collar == 0, "Aliento: el origen del chorro cae dentro de la boca (collar) en los %d fotogramas de la descarga (fuera: %d)" % [fotos_descarga, fuera_collar])
 	_ok(fuera_entrada == 0, "Aliento: y dentro de la entrada de la garganta (fuera: %d; peor distancia al centro / radio %.2f)" % [fuera_entrada, peor_ratio])
 	_ok(chorro_desde_garganta == fotos_descarga, "Aliento: el chorro 3D nace en el anclaje y sale hacia la boca (%d de %d)" % [chorro_desde_garganta, fotos_descarga])
