@@ -447,6 +447,8 @@ func _pintar_objetos() -> void:
 		talleres.add_child(b)
 	if talleres.get_child_count() > 0:
 		cuerpo.add_child(talleres)
+	else:
+		talleres.free()                            # (rend3, 13/11: sin talleres quedaba huérfana, una por repintado)
 	var usos: Dictionary = load("res://combate.gd").OBJETOS_COMBATE
 	for o in Inv.datos()["objetos"]:
 		var f := HBoxContainer.new()

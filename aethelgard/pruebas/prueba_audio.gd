@@ -41,6 +41,21 @@ func _tecla(codigo: Key, pulsada: bool) -> void:
 	Input.parse_input_event(e)
 
 
+# Como _pulsar, pero devuelve lo que dura el peor fotograma (ms) mientras se procesa la tecla.
+func _pulsar_midiendo(codigo: Key, esperar := 4) -> float:
+	var peor := 0.0
+	var ant := Time.get_ticks_usec()
+	_tecla(codigo, true)
+	for i in 2 + esperar:
+		if i == 2:
+			_tecla(codigo, false)
+		await process_frame
+		var ahora := Time.get_ticks_usec()
+		peor = maxf(peor, (ahora - ant) / 1000.0)
+		ant = ahora
+	return peor
+
+
 func _pulsar(codigo: Key, esperar := 4) -> void:
 	_tecla(codigo, true)
 	await _esperar(2)
@@ -178,12 +193,12 @@ func _pestana_ajustes() -> void:
 		var u := Time.get_ticks_usec()
 		var w = Son._wav(Son._muestra(b), Son.HZ)
 		print("  muestra de %s: %.1f ms, %.2f s de sonido" % [b, (Time.get_ticks_usec() - u) / 1000.0, w.get_length()])
-	var t0 := Time.get_ticks_usec()
-	await _pulsar(KEY_ENTER)
-	var ms := (Time.get_ticks_usec() - t0) / 1000.0
-	print("  primera pulsación en ◀ de Música (crear su muestra y repintar), con 6 fotogramas: %.1f ms" % ms)
+	# rend3 (13/11): se mide el PEOR fotograma de la pulsación, no la suma de los 6 fotogramas de espera. Antes, con el
+	# PC cargado, la suma pasaba de 100 ms sin que hubiera ningún parón (2026-11-09: 118 ms; con el PC libre, 51-97 ms).
+	var ms := await _pulsar_midiendo(KEY_ENTER)
+	print("  primera pulsación en ◀ de Música (crear su muestra y repintar): peor fotograma %.1f ms" % ms)
 	if ms > 100.0:
-		_fallo("4: la primera pulsación en Música tarda %.0f ms en el PC (un parón visible en el móvil)" % ms)
+		_fallo("4: la primera pulsación en Música da un fotograma de %.0f ms en el PC (un parón visible en el móvil)" % ms)
 	if Son.volumen("Musica") != 90:
 		_fallo("4: una pulsación de Intro en ◀ deja Música en %d (esperaba 90)" % Son.volumen("Musica"))
 	if absf(_db("Musica") - linear_to_db(0.9)) > 0.01:

@@ -20,13 +20,14 @@ extends SceneTree
 
 const REGIONES := {"granbosque": "res://zonas3d/gran_bosque_3d.tscn", "pastos": "res://zonas3d/pastos_verdes_3d.tscn",
 	"oakhaven": "res://zonas3d/oakhaven_3d.tscn", "garganta": "res://zonas3d/garganta_3d.tscn",
-	"marcristal": "res://zonas3d/mar_cristal_3d.tscn"}
+	"marcristal": "res://zonas3d/mar_cristal_3d.tscn", "ciclopea": "res://zonas3d/ciclopea_3d.tscn"}
 # Las demás regiones (rend2, segunda pasada): la llegada (donde deja a Kael la región) y sitios absolutos (los de
 # medir_escenas.gd) o relativos a la llegada («+»).
 const SITIOS_OTRAS := {
 	"oakhaven": {"llegada": null, "+norte_12m": Vector3(0, 0, -12), "+este_12m": Vector3(12, 0, 0)},
 	"garganta": {"llegada": null, "ruta_a": Vector3(-12, 0, 22), "ruta_b": Vector3(-12, 0, 10)},
 	"marcristal": {"llegada": null, "campamento": Vector3(45, 0, 96), "campamento_b": Vector3(39, 0, 95)},
+	"ciclopea": {"llegada": null, "+norte_12m": Vector3(0, 0, -12), "+norte_24m": Vector3(0, 0, -24)},
 }
 const SITIOS_GB := {
 	"entrada": Vector2(40.0, 52.0),
@@ -125,6 +126,9 @@ func _initialize() -> void:
 			igualdad = true
 		elif a == "parpadeo":
 			parpadeo = true
+		elif a.begins_with("meta="):                       # rend3: interruptores por Engine (mundo_vivo_v12, ciclopea3d…)
+			for m in a.substr(5).split(","):
+				Engine.set_meta(m, true)
 	if salida == "":
 		salida = OS.get_user_data_dir()
 	DirAccess.make_dir_recursive_absolute(salida)
