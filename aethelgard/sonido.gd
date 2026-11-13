@@ -404,6 +404,17 @@ const EFECTOS := {
 	"golem_carga": {"a": "golem/carga", "db": -6.0, "p": 3, "max": 1, "espera": 0.5},
 	"golem_rota": {"a": "golem/rota", "db": -2.0, "p": 3, "max": 1, "espera": 0.3},
 	"golem_derrumbe": {"a": "golem/derrumbe", "db": -12.0, "p": 3, "max": 1, "espera": 1.0},
+	# ---- V12, enemigos (12/11): Gorthor el Devorador con el interruptor «enemigos_v12» (combate_gorthor.gd; APAGADO).
+	# Derivados propios de los paquetes GDC 2016-2020 de Sonniss (#GameAudioGDC), WAV mono 48 kHz de audio/efectos/gorthor/
+	# (procedencia: docs/audio/efectos_procedencia.csv). Los pide combate_gorthor.gd en el instante de cada clip (señal
+	# «evento»): el rugido (entrada, Furia del Abismo y Hoguera), el trago (Devorar) y las rodillas (último aliento); la
+	# Hoguera, al clavar la cuchilla (aviso) y al estallar (impacto); «apagada», cuando se la cortan. Medido, no escuchado.
+	"gorthor_rugido": {"a": "gorthor/rugido", "db": -5.0, "tono": 0.03, "p": 3, "max": 1, "espera": 0.8},
+	"gorthor_trago": {"a": "gorthor/trago", "db": -10.0, "tono": 0.04, "p": 2, "max": 1, "espera": 0.5},
+	"gorthor_rodillas": {"a": "gorthor/rodillas", "db": -2.0, "p": 3, "max": 1, "espera": 0.5},
+	"gorthor_hoguera_carga": {"a": "gorthor/hoguera_carga", "db": -3.0, "p": 3, "max": 1, "espera": 0.5},
+	"gorthor_hoguera": {"a": "gorthor/hoguera", "db": -8.0, "tono": 0.02, "p": 3, "max": 1, "espera": 0.5},
+	"gorthor_apagada": {"a": "gorthor/apagada", "db": -2.0, "p": 3, "max": 1, "espera": 0.3},
 }
 
 # V12 (11/11): el Mar de Cristal. Sus sonidos son OGG (audio/desierto/), así que van aparte de EFECTOS (cuyas comprobaciones

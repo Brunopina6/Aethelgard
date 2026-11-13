@@ -715,6 +715,7 @@ func _pintar_ajustes() -> void:
 			fm3.add_child(bm)
 		cuerpo.add_child(fm3)
 		cuerpo.add_child(_texto("Se nota la próxima vez que se entra en el Mar de Arena.", 16, COLOR_SUAVE))
+		load("res://zonas3d/ciclopea_3d.gd").opcion_ajustes(self, cuerpo)   # V12 (13/11): Cumbres de Ciclópea 3D, en pruebas
 	# La pantalla de inicio (11/11): desde el 11/11 por la noche, el usuario eligió la nueva como la de siempre; la original
 	# sigue entera y se puede volver a ella aquí, en cualquier versión (portada/eleccion.gd, [portada]).
 	var por = load("res://portada/eleccion.gd")

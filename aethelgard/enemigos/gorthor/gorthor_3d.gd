@@ -10,8 +10,14 @@ extends "res://enemigos/v12_comun/enemigo_v12_3d.gd"
 # (IMPACTO 0,95; desde la carga 0,5), devorar 1,9 (abre 0,6, IMPACTO 0,9, traga 1,5), fase2 2,2 (ruge 0,9),
 # recibir_golpe 0,7, rendirse 1,5 (rodillas 0,8), rendido 2,4, arrastrarse 1,2, victoria 2,0, derrota 2,2 y
 # derrota_rendido 1,6. Los instantes son los de gorthor_clips.json (la prueba lo mira).
+#
+# V2 (12/11, especialista de enemigos y combate; combate_gorthor.gd): gorthor_v2.glb lleva la misma malla y los mismos
+# clips, y cinco nuevos del mismo guion con «v2» (gorthor_v2_clips.json): hoguera_carga 1,2 s (clava 0,8) +
+# hoguera_espera 1,6 (bucle), hoguera 1,4 (IMPACTO 0,6, rugido 0,65), recibir_golpe_fuerte 1,1 y aturdido 1,6 (bucle).
+# Si el v2 no está, carga el de siempre. Ganchos nuevos: preparar_hoguera(), hoguera(cb), golpe_pesado.
 
 const RUTA_MODELO := "res://enemigos/gorthor/gorthor.glb"
+const RUTA_MODELO_V2 := "res://enemigos/gorthor/gorthor_v2.glb"
 const ALTURA := 2.74                       # a lo alto de la cabeza, sin los cuernos (Érebo lo lee)
 const CENTRO := Vector3(0.0, 1.55, 0.0)
 const COLOR_BRILLO := Color(1.0, 0.42, 0.10)
@@ -28,11 +34,18 @@ const EVENTOS := {
 	"victoria": {"risa": 0.4},
 	"derrota": {"suelo": 1.3},
 	"derrota_rendido": {"suelo": 0.9},
+	# V2
+	"hoguera_carga": {"clava": 0.8},
+	"hoguera": {"impacto": 0.6, "rugido": 0.65},
+	"recibir_golpe_fuerte": {"golpe": 0.0},
 }
+
+var golpe_pesado := false
+var _hoguera := false
 
 
 func _configurar() -> void:
-	ruta_glb = RUTA_MODELO
+	ruta_glb = RUTA_MODELO_V2 if ResourceLoader.exists(RUTA_MODELO_V2) else RUTA_MODELO
 	texturas = {"alto": "res://enemigos/gorthor/gorthor.webp", "bajo": "res://enemigos/gorthor/gorthor_bajo.webp"}
 	color_brillo = COLOR_BRILLO
 	energia_brillo = 1.3
@@ -46,3 +59,66 @@ func boca() -> Vector3:
 
 func punto_magia() -> Vector3:
 	return boca()
+
+
+func _ready() -> void:
+	super._ready()
+	if anim != null and anim.has_animation("hoguera_espera"):
+		anim.get_animation("hoguera_espera").loop_mode = Animation.LOOP_LINEAR
+
+
+func es_v2() -> bool:
+	return tiene("hoguera")
+
+
+# El aviso de la Hoguera: clava la cuchilla al rojo y se queda apoyado en ella (bucle) hasta hoguera() o aturdido().
+func preparar_hoguera() -> void:
+	if _muerta or _rendido or anim == null or _atacando:
+		return
+	_hoguera = true
+	if not _reproducir("hoguera_carga", 0.2):
+		_hoguera = false
+		cargar()
+		return
+	await _esperar_clip("hoguera_carga")
+	if _hoguera and not _muerta and _clip == "hoguera_carga":
+		_reproducir("hoguera_espera", 0.1)
+
+
+# La Hoguera: arranca la cuchilla (IMPACTO: «al_estallar», una vez). Sin el clip, el golpe fuerte de siempre.
+func hoguera(al_estallar := Callable()) -> void:
+	_hoguera = false
+	if not tiene("hoguera"):
+		await golpe_fuerte(al_estallar)
+		return
+	await atacar("hoguera", al_estallar)
+
+
+func aturdido() -> void:
+	_hoguera = false
+	super.aturdido()
+
+
+func reposo() -> void:
+	_hoguera = false
+	super.reposo()
+
+
+func recibir_golpe() -> void:
+	var fuerte := golpe_pesado and tiene("recibir_golpe_fuerte")
+	golpe_pesado = false
+	if _muerta or anim == null or _atacando or _entrando or _rendido or _en_fase:
+		return
+	var clip := "recibir_golpe_fuerte" if fuerte else "recibir_golpe"
+	_reproducir(clip, MEZCLA_GOLPE)
+	await _esperar_clip(clip)
+	if _muerta or _clip != clip:
+		return
+	if _hoguera and tiene("hoguera_espera"):
+		_reproducir("hoguera_espera", 0.2)
+	elif _cargando:
+		_reproducir("carga_espera", 0.2)
+	elif _aturdido and tiene("aturdido"):
+		_reproducir("aturdido", 0.2)
+	else:
+		reposo()

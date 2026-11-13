@@ -321,3 +321,138 @@ compartido cambia en esta pasada. Tras copiar, `--import` (atlas y GLB nuevos) y
   Con la cámara del juego dentro de la ciudad, el prado apenas queda bajo los edificios. El 10-15 % que midió rendimiento
   sería en otras vistas (desde fuera de la muralla) que estas capturas no tienen. En el Mali, que ya descarta lo
   tapado por su cuenta, se espera aún menos. Se deja aplicado: no cambia la imagen ni cuesta nada.
+---
+
+## 13/11/2026 · tercera pasada: Cumbres de Ciclópea 3D, primer sector (misma copia y rama)
+
+Encargo: el primer sector de las Cumbres según el plan del §8 del inventario, apagado tras `ciclopea3d` (`EN_PRUEBAS`), con la
+2D intacta: laderas a la altura del camino (sin trinchera), entrada y salida, colisiones, guardado y carga, hallazgos y
+cofres de la 2D en su sitio (comprobando el Tomo de Escarcha), vegetación y luz de cumbre fría con identidad propia,
+presupuesto Android de las otras regiones (pocos recortados, orden de dibujo), pruebas, capturas en los tres perfiles y
+medida con `medir_escenas` (con «ciclopea»). La sesión se cortó por el límite de uso y se reanudó sin perder nada
+(todo estaba en la copia; se confirmó en `4ae30a4`).
+
+### 15. Qué hay (todo [E] en el PC, aislado)
+
+- **Escena** `zonas3d/ciclopea_3d.tscn/.gd` (el contrato de las regiones, copiado del Gran Bosque sin tocarlo):
+  Kael, cámara, grupo, encuentros por pasos con la zona «nieve», combate y vuelta al mismo sitio, cofres, detalle,
+  hallazgos, altar, brazalete, comentarios del grupo, Incienso, guardado (al entrar, tras cofre, hallazgo, combate y al
+  pausar), salida señalada al sur y partidas 2D ↔ 3D.
+- **Trazado** `zonas3d/ciclopea/trazado.gd`: el de la 2D (`disposicion_2d.gd`, volcado de `zona.gd` con
+  `pruebas/herramientas/volcar_ciclopea_2d.gd`: 80 × 56 casillas, 298 objetos, 3 cofres, 1 puente) a 1,25 m por casilla.
+  El camino sube **7,5 m** del sur al altar (mitad lineal, mitad suave: ≤ 14 %). **Sin trinchera:** el suelo tiene la
+  altura del camino de su misma latitud en 2,6 casillas a cada lado y solo más allá suben las lomas de nieve; la prueba
+  mide como mucho **+0,23 m** a 2,1 casillas del camino en todo su recorrido. Paredes de roca en el borde que crecen hacia
+  el norte, lagos y arroyo helados hundidos (no se pisan), el paso de la entrada abierto.
+- **Escenario** `zonas3d/ciclopea/escenario.gd`, identidad propia de cumbre fría: nieve azulada con su relieve y la
+  nieve pisada del camino, roca donde la pendiente no sujeta la nieve, cumbres nevadas al fondo (una malla), pinos
+  nevados de varios pisos y abetos achaparrados en las laderas (los 195 de la 2D en su casilla y 70/110/170 más según el
+  perfil, fuera del paso), rocas con su capa de nieve (las 84 de la 2D y peñascos al pie de las paredes), hielo
+  azul-verdoso, el puente de madera con barandas nevadas sobre el arroyo, las ruinas (columnas, muros), **la estatua
+  sin brazo izquierdo** que mira al pico con su brazo caído al pie, el campamento con su tienda, leña y el brasero de la
+  2D (luz real en alto, halo pintado en bajo y medio), el altar con el orbe azul y menhires, y la nevada que sigue a
+  Kael. Luz: sol bajo blanco frío, ambiente azulado, bruma fría, sin la verde del Gran Bosque ni la cálida de Pastos.
+  Fauna: dos aves que planean alto (sin conejos en la nieve).
+- **Rendimiento** (lo aprendido en las otras regiones): ningún recortado ni transparencia en lo grande (pinos y rocas
+  son geometría opaca con color por vértice, un material para todos); pinos y rocas en MultiMesh por trozos de 25 m con
+  su distancia por perfil (46/56/90 m); lo pequeño junto en lotes (y la estatua en una malla por material: de 32 a 6
+  llamadas con sombra); **el suelo y el hielo con `render_priority = 2`** (después de lo que los tapa); bajo y medio,
+  el suelo con una lectura de textura (sin triplanar); sombras solo de pinos, rocas y piezas en medio y alto; la nevada
+  con partículas opacas (50/80/130).
+- **Hallazgos y cofres de la 2D en su sitio:** los tres cofres con sus ids (`3_1644_2905` ruinas, `3_1466_2229`
+  campamento, `3_4168_1815` claro) y el premio de la 2D (`hash(id)`); los cofres de hallazgo donde los pone la 2D
+  (`zona.gd`, `_sitio_hallazgo`, volcado en `HALLAZGOS`): **Pluma de Arpía** (24,3, 47,0, junto a las ruinas) y **Tomo de
+  Escarcha** en **(25,7, 42,0)**: la 2D, para «mirada», usa el rincón de las ruinas + (−1,4, 1,0) + (1,4, −5,0), es
+  decir **4 casillas al norte de las ruinas, adonde mira la estatua** (y luego la casilla libre más cercana). El
+  detalle `ciclopea_estatua` (Guardiana de Ámbar al examinarlo) en (27,1, 46,9), donde lo pone la 2D.
+- **Interruptor:** `modo3d.gd`: `CICLOPEA = 3` en `REGIONES`, `EN_PRUEBAS[3] = "ciclopea3d"` y en `EQUIVALENTES_ZONA`.
+  Sin el argumento ni la elección en Ajustes, el mapa lleva a la 2D de siempre (`zona.tscn` con el lugar 3, intacta), y
+  **una partida guardada en la 3D con la región apagada abre la 2D en la misma casilla** (cambio en
+  `escena_equivalente`: la vuelta a la 2D vale también para las regiones en pruebas con 2D; hoy solo Ciclópea, el Mar de
+  Cristal no está en esas tablas). Ajustes: «Cumbres de Ciclópea: 2D (la de siempre) / 3D (en pruebas)», una línea en
+  `menus.gd` en el bloque de las regiones en pruebas.
+- **Música:** `musica.gd` no conoce la escena (no es mío): se pide el ambiente de la 2D de este lugar, «viento», como
+  hace el Gran Bosque. Para el coordinador: una línea en `musica.gd` (`"res://zonas3d/ciclopea_3d.tscn": return "viento"`).
+
+### 16. Pruebas
+
+- **`prueba_ciclopea3d`** (con `3d ciclopea3d`): **superada**. Disposición = `zona.gd`; el Tomo donde la 2D; el
+  interruptor (sin el argumento, apagada; sin la exploración 3D, apagada; en pruebas, no por defecto); partida de la 2D →
+  3D en la misma casilla; el camino principal entero sin prohibidos ni escalones (≤ 0,3 m por 0,2 casillas) y sube 7,5 m;
+  sin trinchera; Kael anda de verdad (destino, como un jugador) de la entrada a la primera curva; pinos y rocas chocan;
+  cofres y cofres de hallazgo en su sitio y alcanzables; abrir un cofre lo apunta (y una segunda vez no da nada); la
+  estatua: «Examinar», su texto y el detalle visto; guardar y cargar al mismo sitio (0,00 m); 3D ↔ 2D; un encuentro
+  apunta zona «nieve», vuelta y sitio; la salida del sur lleva al mapa.
+- **`prueba_ciclopea3d_apagada`** (con `3d` sin el argumento): **superada**. El mapa lleva a la 2D, una partida de la 2D
+  se queda en la 2D y una de la 3D abre la 2D en su casilla.
+- `prueba_restaurar_escenas` y `prueba_hallazgos` (la Ciclópea 2D con sus hallazgos): superadas.
+- **Batería completa:** **138 · 0 · 64 · 0** sobre `4d9ac67` (`D:\REBELUM_diagnostico\pruebas\2026-11-13_012252`): `partida.save` real, carpeta real de datos y proyecto sin cambios (169 avisos de «otros Godot», de otros especialistas).
+
+### 17. Capturas y medida (PC; no es el Redmi)
+
+- Capturas en `D:\REBELUM_diagnostico\v12\expansion\mundo\ciclopea\fotos_final\` (`<perfil>_1280x720_k01…k11.png`,
+  `perfiles.png`, `medio_rincones.png`; `log_<perfil>.txt` con llamadas, primitivas y GPU). Un aviso de método: con los
+  tres perfiles en una sola pasada la ventana dejó de dibujar (medio y alto con las mismas cifras): cada perfil se sacó
+  aparte.
+- **Llamadas de dibujo y primitivas por vista** (cámara del juego):
+
+| Vista | Bajo | Medio | Alto |
+|---|---|---|---|
+| Entrada | 48 · 110 k | 90 · 182 k | 137 · 275 k |
+| Subida | 40 · 110 k | 70 · 183 k | 102 · 273 k |
+| Puente | 41 · 112 k | 67 · 187 k | 91 · 270 k |
+| Ruinas y estatua | 58 · 109 k | 106 · 181 k | 134 · 267 k |
+| Campamento | 39 · 108 k | 72 · 181 k | 92 · 266 k |
+| Claro | 44 · 114 k | 78 · 190 k | 93 · 274 k |
+| Altar | 35 · 110 k | 56 · 178 k | 65 · 261 k |
+
+  Comparado con lo que piden las regiones (bajo y medio del orden del bajo de Pastos: 100-150 llamadas y 200-300 k
+  triángulos por vista) y con Oakhaven en esta misma copia (medio, plaza: 98 llamadas y 286 k), las Cumbres quedan por
+  debajo en todas las vistas. GPU del PC por vista: 0,8-1,1 ms (bajo), 1,0-1,7 ms (medio), 1,8-2,0 ms (alto).
+- **`medir_escenas`** (`-Escenas ciclopea,granbosque,pastos -Perfiles bajo,medio,alto -Ciclos 3`, misma pasada para
+  comparar):
+| Escena | Perfil | Dibujos | Primitivas | 1.ª carga / repetida (ms) | Memoria estática / vídeo (MB) |
+|---|---|---|---|---|---|
+| ciclopea | bajo | 32 | 108 k | 2 648 / 639 | 123 / 63 |
+| ciclopea | medio | 67 | 180 k | 4 161 / 821 | 123 / 64 |
+| ciclopea | alto | 112 | 274 k | 2 758 / 777 | 123 / 82 |
+| granbosque | bajo | 100 | 194 k | 2 935 / 805 | 129 / 70 |
+| granbosque | medio | 176 | 300 k | 5 861 / 1 370 | 130 / 71 |
+| granbosque | alto | 266 | 566 k | 3 471 / 1 072 | 131 / 105 |
+| pastos | medio | 116 | 328 k | 3 636 / 1 086 | 139 / 86 |
+| pastos | alto | 171 | 455 k | 3 497 / 1 007 | 141 / 106 |
+
+  (Carpeta `D:\REBELUM_diagnostico\v12\expansion\mundo\ciclopea\medidas\`, `resumen.md` y `procesos.txt`.) En el sitio
+  de la herramienta (Kael en la entrada, andando un cuadrado), las Cumbres piden **menos de la mitad de llamadas que el
+  Gran Bosque** y menos primitivas que Pastos y el Gran Bosque en los tres perfiles, entran antes (repetida 0,6-0,8 s) y
+  usan menos memoria de vídeo. **Los tiempos por fotograma de esta pasada no valen:** salen clavados en 25 ms (la
+  ventana quedó limitada a 40 Hz, y en Pastos bajo ni dibujó: 0 llamadas) y había otros Godot y ffmpeg a la vez
+  (`procesos.txt`). Los 5 tirones del alto son todos del ciclo 2 de «activo», sin nodos nuevos en esos fotogramas y sin
+  repetirse en los ciclos 1 y 3: no parecen de la escena, pero hay que mirarlos en el Redmi.
+
+### 18. Lo que queda
+
+- **Redmi:** nada medido en el teléfono. Con Ajustes → «Cumbres de Ciclópea: 3D (en pruebas)», medir bajo y medio en la
+  entrada, el puente, las ruinas y el altar; mirar el blanco de la nieve en el bajo (`brillo_sin_sombras` 1,12, a ojo)
+  y la nevada.
+- La ventisca (`mar_cristal/clima.gd`) y la estatua como pieza de Blender (ahora de primitivas, en una malla por
+  material) quedan para una segunda pasada. Glacius Niflheim sigue sin combate (narrativa).
+- La actividad de la región (refugios de montaña, §7 del inventario) no está hecha.
+- `musica.gd`: la línea del contexto (§15).
+
+### 19. Commits y archivos de la tercera pasada
+
+- `4ae30a4` el primer sector, sus pruebas y la medida con «ciclopea».
+- `4d9ac67` la estatua en una malla por material, el inventario y el informe; (último) el resultado de la batería.
+
+**Nuevos:** `aethelgard/zonas3d/ciclopea_3d.gd` + `.uid`, `aethelgard/zonas3d/ciclopea_3d.tscn`,
+`aethelgard/zonas3d/ciclopea/` (`disposicion_2d.gd`, `trazado.gd`, `escenario.gd` y sus `.uid`),
+`aethelgard/pruebas/prueba_ciclopea3d.gd`, `prueba_ciclopea3d_apagada.gd`, `fotos_ciclopea3d.gd` (+ `.uid`).
+**Cambiados (míos):** `aethelgard/pruebas/herramientas/volcar_ciclopea_2d.gd` (escribe ya `disposicion_2d.gd`),
+`docs/v12/INVENTARIO_MUNDO.md`, este informe.
+**Compartidos:** `aethelgard/modo3d.gd` (CICLOPEA en REGIONES, EN_PRUEBAS y EQUIVALENTES_ZONA; la vuelta a la 2D para
+las regiones en pruebas con 2D: 8 líneas), `aethelgard/menus.gd` (una línea), `aethelgard/pruebas/medir_escenas.gd`
+(«ciclopea» en sus escenas) y `medir_escenas.ps1` (en la lista por defecto; con BOM), `aethelgard/pruebas/lista_pruebas.txt`
+(tres líneas al final). `project.godot` sin cambios. Tras copiar: `--import` y revisar `git diff project.godot`.
+**Cómo se enciende:** Ajustes → «Cumbres de Ciclópea: 3D (en pruebas)» (`[regiones] ciclopea3d = true`) o
+`-- 3d ciclopea3d`. Por defecto, APAGADO (el mapa lleva a la 2D de siempre).

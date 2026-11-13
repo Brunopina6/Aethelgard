@@ -549,10 +549,55 @@ clip("derrota_rendido", [(0, RODILLAS), (0.25, P(RODILLAS, {"pecho": (20, 0, 0),
                          (0.9, DE_LADO, "acel"), (1.1, P(DE_LADO, {"raiz@loc": (0.35, 0.10, -0.52)})), (1.6, DE_LADO)],
      eventos={"suelo": 0.9})
 
+# ================================================================== V2 (12/11, especialista de enemigos y combate)
+# Clips nuevos para combate_gorthor.gd, AÑADIDOS a los de arriba (que no cambian): con «v2» en la línea de órdenes se
+# escribe gorthor_v2.glb y gorthor_v2_clips.json; sin él, lo de siempre.
+#   hoguera_carga (1,2 s) + hoguera_espera (1,6, bucle)  la Hoguera del Devorador (fase 2): alza la cuchilla al rojo y la
+#                                clava delante (clava 0,8); se queda apoyado en ella, las vetas laten y gruñe
+#   hoguera (1,4 s)              arranca la cuchilla del suelo con un giro (IMPACTO 0,6: las brasas estallan bajo el
+#                                grupo) y ruge (0,65)
+#   recibir_golpe_fuerte (1,1 s) un golpe grande: se echa atrás con un paso y la boca abierta
+#   aturdido (1,6 s, bucle)      la Hoguera apagada o cortada: se tambalea con la cuchilla colgando
+V2 = "v2" in argv
+if V2:
+    CLAVADA = P(FONDO, {"arma@pos": (0.0, -0.78, 1.10), "arma@dir": hacia((0, -0.22, -0.97)), "pecho": (30, 0, 0),
+                        "columna": (8, 0, 0), "raiz@loc": (0, -0.22, -0.24), "cuello": (-26, 0, 0), "cabeza": (-16, 0, 0)},
+                ESC_OFF, boca(22), luz(3.4))
+    clip("hoguera_carga", [(0, REPOSO), (0.45, P(ALTO, boca(30), luz(2.6))), (0.62, P(ALTO2, luz(3.0))),
+                           (0.8, P(CLAVADA, luz(3.6)), "acel"), (1.0, P(CLAVADA, {"pecho": (34, 0, 0)}, boca(34))),
+                           (1.2, CLAVADA)], eventos={"clava": 0.8})
+    clip("hoguera_espera", [(0, CLAVADA), (0.4, P(CLAVADA, {"pecho": (33, 0, 2), "raiz@loc": (0, -0.22, -0.255)},
+                                                  boca(40), luz(4.4))),
+                            (0.8, P(CLAVADA, luz(3.2))),
+                            (1.2, P(CLAVADA, {"pecho": (33, 0, -2), "raiz@loc": (0, -0.22, -0.255)}, boca(40), luz(4.4))),
+                            (1.6, CLAVADA)], bucle=True)
+    TIRA = P(CLAVADA, {"pecho": (12, 0, -14), "raiz@loc": (0, -0.12, -0.18), "cuello": (-10, 0, 0)}, boca(14), luz(4.0))
+    ARRANCA = P(ALTO2, {"arma@pos": (-0.25, -0.35, 2.30), "arma@dir": hacia((0.35, -0.25, 0.9)), "pecho": (-16, 0, 18),
+                        "cuello": (-30, 0, 0), "cabeza": (-24, 0, 0), "raiz@loc": (0, -0.05, 0.0)}, ESC_ON, boca(62),
+                luz(4.8))
+    clip("hoguera", [(0, CLAVADA), (0.35, TIRA, "fren"), (0.599, P(ARRANCA, ESC_OFF), "acel"), (0.6, ARRANCA, "corte"),
+                     (0.9, P(ARRANCA, {"cabeza": (-20, 0, 6)}, ESC_ON, boca(58), luz(3.6))),
+                     (1.1, P(REPOSO, {"escombros@esc": (0.6, 0.6, 0.6), "escombros@loc": (0, 0, -0.2)}, boca(20))),
+                     (1.4, REPOSO)], eventos={"impacto": 0.6, "rugido": 0.65})
+    DOLOR2 = P(REPOSO, {"pecho": (-12, 0, 14), "cuello": (-28, 0, 10), "cabeza": (-26, 0, 16), "raiz@loc": (0, 0.20, 0.02),
+                        "pie.R@ik": (-0.42, 0.12, 0.30)}, L(brazo=(24, -40, 0)), boca(44), luz(0.3))
+    clip("recibir_golpe_fuerte", [(0, REPOSO), (0.12, DOLOR2, "fren"),
+                                  (0.3, P(DOLOR2, {"pie.R@ik": (-0.42, 0.32, 0.18)}, luz(1.0)), "acel"),
+                                  (0.6, P(REPOSO, {"pecho": (18, 0, 0), "raiz@loc": (0, 0.14, -0.05),
+                                                   "pie.R@ik": (-0.42, 0.32, 0.18)}, boca(16))),
+                                  (0.85, P(REPOSO, {"raiz@loc": (0, 0.06, -0.02), "pie.R@ik": (-0.42, 0.14, 0.26)})),
+                                  (1.1, REPOSO)], eventos={"golpe": 0.0})
+    COLGADA = {"arma@pos": (-0.85, -0.25, 0.95), "arma@dir": hacia((-0.05, -0.3, -0.95)), "arma@roll": 90}
+    MAREO_A = P(REPOSO, COLGADA, {"pecho": (22, 0, 10), "cuello": (6, 0, 8), "cabeza": (14, 0, 16),
+                                  "raiz@loc": (0.05, 0.04, -0.07)}, L(brazo=(6, -12, 0)), boca(18), luz(0.6))
+    MAREO_B = P(REPOSO, COLGADA, {"pecho": (20, 0, -10), "cuello": (6, 0, -8), "cabeza": (12, 0, -14),
+                                  "raiz@loc": (-0.05, 0.04, -0.08)}, L(brazo=(-4, -4, 0)), boca(10), luz(1.0))
+    clip("aturdido", [(0, MAREO_A), (0.8, MAREO_B), (1.6, MAREO_A)], bucle=True)
+
 
 def medir():
     datos = {}
-    for c_, t in (("ataque", 0.75), ("golpe_fuerte", 0.95)):
+    for c_, t in (("ataque", 0.75), ("golpe_fuerte", 0.95)) + ((("hoguera", 0.6),) if V2 else ()):
         p = E.punto_hueso(arm, rig, c_, t, "arma", (0, 0.80, 0.44))
         datos[c_] = {"filo_godot": [round(p.x, 3), round(p.z, 3), round(-p.y, 3)]}
     p = E.punto_hueso(arm, rig, "devorar", 0.9, "mandibula", (0, 0.5, 0))
@@ -569,14 +614,15 @@ for pb in arm.pose.bones:
     pb.location = Vector()
     pb.scale = Vector((1, 1, 1))
 
+SUFIJO = "_v2" if V2 else ""          # V2: GLB y JSON nuevos al lado; las texturas (las mismas) no se reescriben
 A.guardar(os.path.join(LAMINAS, NOMBRE + "_atlas.png"),
-          [(os.path.join(SALIDA, NOMBRE + ".webp"), 1024), (os.path.join(SALIDA, NOMBRE + "_bajo.webp"), 512)])
-E.exportar(os.path.join(SALIDA, NOMBRE + ".glb"))
-E.guardar_json(os.path.join(SALIDA, NOMBRE + "_clips.json"), {
-    "modelo": NOMBRE, "triangulos": TRIS, "huesos": len(HUESOS), "fps": E.FPS,
+          [] if V2 else [(os.path.join(SALIDA, NOMBRE + ".webp"), 1024), (os.path.join(SALIDA, NOMBRE + "_bajo.webp"), 512)])
+E.exportar(os.path.join(SALIDA, NOMBRE + SUFIJO + ".glb"))
+E.guardar_json(os.path.join(SALIDA, NOMBRE + SUFIJO + "_clips.json"), {
+    "modelo": NOMBRE + SUFIJO, "triangulos": TRIS, "huesos": len(HUESOS), "fps": E.FPS,
     "texturas": {"alto": NOMBRE + ".webp (1024)", "bajo": NOMBRE + "_bajo.webp (512)"},
     "color_brillo": BRILLO, "clips": CLIPS, "medidas": medidas,
-    "generador": "enemigos/gorthor/fuente/crear_gorthor.py (Blender 5.2.3)"})
+    "generador": "enemigos/gorthor/fuente/crear_gorthor.py%s (Blender 5.2.3)" % (" -- ... v2" if V2 else "")})
 print("clips:", {k: v["duracion"] for k, v in CLIPS.items()})
 print("medidas:", medidas)
 
@@ -584,7 +630,7 @@ if CON_LAMINAS:
     img = bpy.data.images.load(os.path.join(SALIDA, NOMBRE + ".webp"))
     E.material_vista(bpy.data.materials[NOMBRE + "_atlas"], img)
     E.material_vista(bpy.data.materials[NOMBRE + "_brillo"], None, emision=(*BRILLO, 2.4))
-    C.lamina_criatura(esc, arm, ob, RAIZ, os.path.join(LAMINAS, NOMBRE + "_lamina.png"),
+    C.lamina_criatura(esc, arm, ob, RAIZ, os.path.join(LAMINAS, NOMBRE + SUFIJO + "_lamina.png"),
                       "Gorthor el Devorador (V12, fase C)", sep=2.8, giros=(0, -40, -90), alto_cam=1.6, orto=14.0)
     for o in list(esc.objects):
         if o.type == 'CAMERA':
@@ -599,14 +645,19 @@ if CON_LAMINAS:
             ("golpe_fuerte", 0.68), ("golpe_fuerte", 0.95), ("devorar", 0.6), ("devorar", 0.9), ("fase2", 1.3),
             ("recibir_golpe", 0.12), ("rendirse", 1.5), ("arrastrarse", 0.3), ("victoria", 0.8), ("derrota", 2.2),
             ("derrota_rendido", 1.6)]
+    if V2:                            # V2: las poses de los clips nuevos
+        inst = [("hoguera_carga", 0.45), ("hoguera_carga", 0.8), ("hoguera_espera", 0.4), ("hoguera", 0.35),
+                ("hoguera", 0.6), ("hoguera", 0.9), ("recibir_golpe_fuerte", 0.12), ("recibir_golpe_fuerte", 0.3),
+                ("aturdido", 0.0), ("aturdido", 0.8), ("fase2", 1.3), ("devorar", 0.9), ("rendirse", 0.8),
+                ("golpe_fuerte", 0.95), ("reposo", 0.0), ("derrota", 1.3)]
     carpeta = os.path.join(LAMINAS, "poses")
     os.makedirs(carpeta, exist_ok=True)
-    rutas = E.poses_render(esc, arm, inst, carpeta, NOMBRE, objetivo=(0, -0.5, 1.5), azimut=-40, elev=12, orto=5.6)
-    E.componer(rutas, os.path.join(LAMINAS, NOMBRE + "_poses.png"), 8)
+    rutas = E.poses_render(esc, arm, inst, carpeta, NOMBRE + SUFIJO, objetivo=(0, -0.5, 1.5), azimut=-40, elev=12, orto=5.6)
+    E.componer(rutas, os.path.join(LAMINAS, NOMBRE + SUFIJO + "_poses.png"), 8)
     # la boca de cerca: cerrada en reposo, abierta al rugir, en el mordisco y cerrada al morder
     esc.render.resolution_x, esc.render.resolution_y = 700, 700
     rutas = E.poses_render(esc, arm, [("reposo", 0.0), ("entrada", 1.9), ("devorar", 0.6), ("devorar", 0.9)],
-                           carpeta, NOMBRE + "_boca", objetivo=(0, -0.7, 2.4), azimut=-30, elev=6, orto=1.6)
-    E.componer(rutas, os.path.join(LAMINAS, NOMBRE + "_boca.png"), 4)
-    bpy.ops.wm.save_as_mainfile(filepath=os.path.join(LAMINAS, NOMBRE + ".blend"))
+                           carpeta, NOMBRE + SUFIJO + "_boca", objetivo=(0, -0.7, 2.4), azimut=-30, elev=6, orto=1.6)
+    E.componer(rutas, os.path.join(LAMINAS, NOMBRE + SUFIJO + "_boca.png"), 4)
+    bpy.ops.wm.save_as_mainfile(filepath=os.path.join(LAMINAS, NOMBRE + SUFIJO + ".blend"))
 print("hecho")

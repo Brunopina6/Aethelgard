@@ -86,6 +86,10 @@ const Centinela := preload("res://combate_centinela.gd")
 # distancia y Pisotón avisado y cortable). APAGADO: con «enemigos_v12» y en sus combates de prueba (GRUPOS[20] y [21]).
 # Los ganchos de aquí llevan «V12, Gólem».
 const Golem := preload("res://combate_golem.gd")
+# V12, enemigos (12/11): Gorthor con «enemigos_v12» (combate_gorthor.gd): la Hoguera del Devorador en la fase 2 (avisada;
+# Defender, Agua, Quiebra o un cuarto de su vida), herida fuerte y su sonido. No rehace nada de lo suyo (fases, Devorar,
+# último aliento, perdón, premio). APAGADO: sin el interruptor, Gorthor.es() es falso. Ganchos «V12, Gorthor».
+const Gorthor := preload("res://combate_gorthor.gd")
 # Menú de combate minimalista (menu_combate.gd). Ocupa el 40 % derecho de la pantalla, por eso los
 # héroes van más a la izquierda y los enemigos se juntan a la izquierda: x = x * ENEMIGOS_X.x + ENEMIGOS_X.y
 const ENEMIGOS_X := Vector2(0.75, -190.0)
@@ -321,7 +325,8 @@ const MODELOS := {
 		"pos_grupo": Vector2(-79, 37), "caida": 1.4, "respaldo": "guardian"},
 	"gorthor_v12": {
 		"tipo": "3d", "esc": 0.6, "script": "res://enemigos/gorthor/gorthor_3d.gd",
-		"gestos": "res://gestos_3d.gd", "rutas": ["res://enemigos/gorthor/gorthor.glb"],
+		"gestos": "res://gestos_3d.gd", "rutas": ["res://enemigos/gorthor/gorthor_v2.glb",   # V12, Gorthor: v2
+			"res://enemigos/gorthor/gorthor.glb"],
 		"vp": Vector2i(1420, 1520), "alto_vista": 5.2, "centro_y": 1.6, "barra_y": 183.0, "centro_3d": 1.6,
 		"pos_grupo": Vector2(-60, -247), "caida": 1.4, "respaldo": "gorthor3d"},
 	# V12, encuentro del desierto (12/11): Vidracrán (prototipo de animaciones, enemigos/vidracran/). Encuadre de Zarzalín algo más
@@ -624,6 +629,8 @@ func _ready() -> void:
 			Centinela.al_entrar(self, e, pe)
 		if Golem.es(e):                              # V12, Gólem: los sonidos de los instantes de sus clips
 			Golem.al_entrar(self, e, pe)
+		if Gorthor.es(e):                            # V12, Gorthor: rugido, trago, rodillas y la Hoguera
+			Gorthor.al_entrar(self, e, pe)
 		if pe != null and pe.has_method("entrada"):
 			e["rig"].modulate.a = 0.0
 			create_tween().tween_property(e["rig"], "modulate:a", 1.0, 0.15)
@@ -1053,6 +1060,8 @@ func _info_objetivo(f: Dictionary, ok: bool) -> String:
 		t.append_array(Centinela.info(f))
 	elif Golem.es(f):                                   # V12, Gólem: Pisotón, aturdido o sin aliento
 		t.append_array(Golem.info(f))
+	elif Gorthor.es(f) and not Gorthor.info(f).is_empty():   # V12, Gorthor: la Hoguera o aturdido
+		t.append_array(Gorthor.info(f))
 	elif f.get("cargando", false):
 		var plan: Dictionary = PATRONES.get(f.get("personalidad", ""), {})
 		if plan.get("encoge", false):
@@ -1982,6 +1991,11 @@ func _turno_enemigo(f: Dictionary) -> void:
 			_restablecer_color(herido)
 			_fin_turno_enemigo(f)
 			return
+	if Gorthor.es(f):                                # V12, Gorthor: aturdido, la Hoguera o su aviso (si no, lo de siempre)
+		var suyo: bool = await Gorthor.turno(self, f, vivos, mult)
+		if suyo:
+			_fin_turno_enemigo(f)
+			return
 	# segunda fase de Gorthor: Devorar (muerde al más débil y se cura con parte del daño)
 	if f.get("fase2", false) and not f.get("cargando", false) and randf() < 0.35:
 		var presa := _cubre(_elegir_objetivo("cobarde", vivos))
@@ -2336,6 +2350,8 @@ func _vigilar_carga(f: Dictionary, d: int) -> void:
 	if Golem.es(f):                                   # V12, Gólem: corta el Pisotón, herida fuerte
 		Golem.vigilar(self, f, d)
 		return
+	if Gorthor.es(f):                                 # V12, Gorthor: apaga o corta la Hoguera, herida fuerte (y sigue)
+		Gorthor.vigilar(self, f, d)
 	if not f.get("cargando", false) or f["hp"] <= 0 or not PATRONES.has(f.get("personalidad", "")):
 		return
 	var plan: Dictionary = PATRONES[f["personalidad"]]
@@ -5568,6 +5584,8 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 		await Centinela.animar_golpe(self, origen, objetivo, impacto)
 	elif Golem.es(origen):                                                    # V12, Gólem: puñetazo, terrón o Pisotón
 		await Golem.animar_golpe(self, origen, objetivo, impacto)
+	elif Gorthor.es(origen) and origen.has("gt_ataque"):                      # V12, Gorthor: la Hoguera, desde su sitio
+		await Gorthor.animar_golpe(self, origen, objetivo, impacto)
 	elif _p3d(origen) != null and _p3d(origen).has_method("avisar"):           # Zarzalín (T-097)
 		await _anim_zarzalin(origen, objetivo, impacto, str(origen.get("ataque_3d", "colmillo_lateral")))
 	elif _p3d(origen) != null and _p3d(origen).has_method("despertar"):        # Guardián del Bosque (fase 3): desde su sitio
@@ -5844,7 +5862,7 @@ func _sonidos_bestia(e: Dictionary, p) -> void:
 		p.aviso.connect(func(a: String): _sonar("%s_aviso_%s" % [clave, a.get_slice("_", 0)]))
 	if p.has_signal("pezuna"):
 		p.pezuna.connect(func(_n: int): _sonar(clave + "_pezuna"))
-	if p.has_signal("impacto"):
+	if p.has_signal("impacto") and not Gorthor.es(e):   # (V12, Gorthor: «gorthor_ataque» es su voz; no la repite)
 		p.impacto.connect(func(a: String): _sonar("%s_%s" % [clave, a.get_slice("_", 0)]))
 
 
@@ -6984,6 +7002,7 @@ func _comprobar_fin() -> bool:
 		Vidracran.al_acabar(enemigos)                 # V12, encuentro del desierto: su marca y sus puntos, fuera
 		Humbaba.al_acabar(self)                       # V12: sus raíces, marcas y estados, fuera
 		Centinela.al_acabar(enemigos)                 # V12, Centinela: la marca del Juicio, fuera
+		Gorthor.al_acabar(enemigos)                   # V12, Gorthor: las brasas de la Hoguera, fuera
 		Sonido.efecto("victoria" if ganan else "derrota")   # sonido.gd
 		if ganan:                                      # el gesto de uno de los que siguen en pie (tanda 5)
 			voz_pedida.emit("", "victoria")
@@ -7186,6 +7205,10 @@ func _actualizar() -> void:
 					estados.append_array(Centinela.estados(e))
 			if Golem.es(e) and vivo:                    # V12, Gólem: «⚠ Pisotón», «Aturdido», «Sin aliento»
 				estados.append_array(Golem.estados(e))
+			if Gorthor.es(e):                           # V12, Gorthor: «⚠ Hoguera», «Aturdido» (y sus brasas, fuera si cae)
+				Gorthor.repasar(e)
+				if vivo:
+					estados.append_array(Gorthor.estados(e))
 			if e.has("mn"):                             # V12, magia negra: «Lento 2», «Def ↓ 3», «Prisión 1»…
 				estados.append_array(MN.textos_estado(e))
 				if not vivo:                            # (huido o caído sin pasar por _quitar_pv: su jaula y su sello, fuera)

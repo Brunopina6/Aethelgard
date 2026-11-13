@@ -4,7 +4,7 @@ extends SceneTree
 # posible, sin otros Godot, Blender ni compilaciones a la vez (medir_escenas.ps1 los apunta en cada pasada).
 #   Godot --path aethelgard --script res://pruebas/medir_escenas.gd --fixed-fps 30 -- <carpeta> escena=<id>
 #         [perfil=medio] [ciclos=3] [etiqueta=x] 3d sin_prologo [auto]
-# <id>: titulo, pastos, garganta, oakhaven, granbosque, marcristal (regiones y portada), combate_brama (combate fijo de
+# <id>: titulo, pastos, garganta, oakhaven, granbosque, marcristal, ciclopea (regiones y portada), combate_brama (combate fijo de
 # Bramavidrio lanzado desde el Mar de Cristal, como el gusano) y combate3 (un combate normal de Pastos Verdes con Kael,
 # Lya y Garon; con «auto» los héroes atacan solos).
 # Con --fixed-fps cada fotograma avanza 1/30 s de juego (el mismo recorrido en todas las pasadas) y sin tope de FPS ni
@@ -24,7 +24,8 @@ extends SceneTree
 const REGIONES := {"pastos": "res://zonas3d/pastos_verdes_3d.tscn", "garganta": "res://zonas3d/garganta_3d.tscn",
 	"oakhaven": "res://zonas3d/oakhaven_3d.tscn", "granbosque": "res://zonas3d/gran_bosque_3d.tscn",
 	"marcristal": "res://zonas3d/mar_cristal_3d.tscn", "combate_brama": "res://zonas3d/mar_cristal_3d.tscn",
-	"combate3": "res://zonas3d/pastos_verdes_3d.tscn", "titulo": "res://carga.tscn"}
+	"combate3": "res://zonas3d/pastos_verdes_3d.tscn", "titulo": "res://carga.tscn",
+	"ciclopea": "res://zonas3d/ciclopea_3d.tscn"}   # V12 (13/11): las Cumbres de Ciclópea 3D (en pruebas; la escena se carga directa)
 const COMBATE := "res://combate.tscn"
 const CUADRADO := [Vector3(6, 0, 0), Vector3(6, 0, 6), Vector3(0, 0, 6), Vector3(0, 0, 0)]
 # Recorrido fijo donde el cuadrado desde la llegada pisa una salida (la Garganta empieza junto a la del mapa): puntos

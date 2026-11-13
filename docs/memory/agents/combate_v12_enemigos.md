@@ -291,3 +291,127 @@ por `fuente/crear_golem_ambar.py -- <raíz> <láminas> v2` | Propia | Combate co
 2. Decidir si Defender debe valer contra el golpe devastador de los «jefe» (cambio de regla; apartado 1).
 3. Gorthor con el mismo patrón (herida fuerte, un ataque de fase 2 a todos, sonido por `evento`), respetando sus fases,
    Devorar, último aliento y perdón.
+
+---
+
+## 13/11/2026, 01:30 · tercer encargo: Gorthor el Devorador (misma copia y rama; reanudado tras el corte por el límite de uso)
+
+Commits: `e44517e` (Gorthor v2: clips), `c0ac4b1` (sonido), `24d4f8b` (ganchos, módulo y pruebas), `8d7b325` (vídeo del
+combate A en la prueba) y el de este informe. Sin push ni merge. Al reanudar revisé la copia: el modelo y el sonido ya
+estaban confirmados; el módulo, los ganchos y la prueba estaban sin confirmar y `prueba_gorthor_v12` había salido
+SUPERADA en la última pasada (`...\pruebas\2026-11-12_221432`). Ninguna tarea en segundo plano se quedó a medias.
+
+### 1. Qué se hizo (sin rehacer a Gorthor)
+Gorthor sigue luchando con lo que ya tenía en `combate.gd` (personalidad «jefe», golpe devastador avisado, fases al
+50 %, Devorar, último aliento con la decisión de Kael, perdón y premio). `combate_gorthor.gd` (nuevo) solo AÑADE, con
+ganchos mínimos «V12, Gorthor», y solo con `enemigos_v12` (APAGADO; apagado, `Gorthor.es()` es falso y no se tira
+ningún dado más: la huella sigue igual).
+
+| Nuevo | Aviso | Efecto | Contra |
+|---|---|---|---|
+| **Hoguera del Devorador** (solo en la fase 2, nunca a la vez que el golpe devastador; como mucho una cada 3 turnos suyos, 30 %) | un turno entero: clava la cuchilla al rojo delante (`hoguera_carga` → `hoguera_espera`), «⚠ ¡Hoguera!», la señal de aviso de siempre, un círculo de brasas bajo cada héroe y «⚠ Hoguera (el Agua la apaga)» en su estado | su turno siguiente arranca la cuchilla (`hoguera`, impacto 0,6) y las brasas estallan bajo todo el grupo: ×1,2 a cada uno, todos en el impacto | Defender (mitad); la Guardia de Garon (cubre a uno); **apagarla con Agua** (Agua, Torrente o Maremoto: `magia_sel == "Agua"`; el Fuego no); cortarla con Quiebra o un cuarto de su vida. Apagada o cortada: aturdido, pierde el turno |
+| Herida fuerte | — | un golpe ≥ 12 % de su vida pone `recibir_golpe_fuerte` | — |
+| Sonido en sus momentos | — | rugido (entrada, Furia del Abismo y Hoguera), trago (Devorar), rodillas (último aliento), la Hoguera al clavar y al estallar, «apagada» al cortarla | — |
+
+**No se ha cambiado la regla de Defender en el golpe devastador** (queda para el usuario, como pedía el encargo).
+**Arreglo pequeño, solo con el interruptor:** con el modelo v12, `_sonidos_bestia` pedía `gorthor_ataque` (su voz de
+ataque) también en el impacto, así que la voz sonaba dos veces por tajo. Con `enemigos_v12`, Gorthor ya no conecta esa
+señal (`and not Gorthor.es(e)`): su golpe suena con `Sonido.golpe` y su voz al lanzarse, como siempre.
+
+**Ganchos en `combate.gd`:** `const Gorthor`; `al_entrar` en `_ready`; en `_turno_enemigo`, justo antes de Devorar,
+`Gorthor.turno()` (devuelve si el turno fue suyo: aturdido, la Hoguera o su aviso; si no, sigue lo de siempre);
+`Gorthor.vigilar()` en `_vigilar_carga` (sin `return`: lo de siempre continúa); `animar_golpe` solo si lleva
+`gt_ataque`; `estados`/`repasar` y `info`; `al_acabar` en `_comprobar_fin`; la exclusión de la señal en
+`_sonidos_bestia`; `MODELOS["gorthor_v12"]["rutas"]` con el v2 delante.
+
+**Clips (Blender 5.2.3 por guion, `fuente/crear_gorthor.py` con `v2`):** `gorthor_v2.glb` + `gorthor_v2_clips.json` al lado
+del v1 (misma malla de 7 123 triángulos, mismos huesos y los 17 clips de antes idénticos) con `hoguera_carga` 1,2 s (clava
+0,8), `hoguera_espera` 1,6 (bucle), `hoguera` 1,4 (impacto 0,6, rugido 0,65), `recibir_golpe_fuerte` 1,1 y `aturdido`
+1,6 (bucle). `gorthor_3d.gd` carga el v2 si está y añade `preparar_hoguera()`, `hoguera()` y `golpe_pesado`.
+
+**Sonido (6 WAV mono 48 kHz, QOA, `aethelgard/audio/efectos/gorthor/`):** derivados de Sonniss GDC 2016-2020
+(`preparar_gorthor.py` y sus filas en `D:\REBELUM_diagnostico\v12\expansion\enemigos\sonido\`), 6 filas al final de
+`docs/audio/efectos_procedencia.csv`. Medidos, no escuchados. El «trago» sale de un sorbo con el tono bajado (×0,55) y
+un gruñido: es el que más conviene escuchar.
+
+| Clave | Cuándo | dur. s · RMS dBFS · db |
+|---|---|---|
+| `gorthor_rugido` | instante «rugido» (entrada, fase2, hoguera) | 1,55 · −21,1 · −5 |
+| `gorthor_trago` | instante «trago» de Devorar (1,5 s) | 0,55 · −17,3 · −10 |
+| `gorthor_rodillas` | instante «rodillas» de rendirse (0,8 s) | 0,65 · −23,8 · −2 |
+| `gorthor_hoguera_carga` | instante «clava» del aviso (0,8 s) | 1,45 · −23,9 · −3 |
+| `gorthor_hoguera` | impacto de la Hoguera | 1,15 · −17,2 · −8 |
+| `gorthor_apagada` | Hoguera apagada o cortada | 1,00 · −24,5 · −2 |
+
+### 2. Pruebas
+- `prueba_gorthor_v12` (nueva): **SUPERADA** (`...\pruebas\2026-11-12_221432`). U: interruptor, 6 sonidos con procedencia,
+  modelo v2. S: apagado, el `gorthor3d` de siempre; encendido, `gorthor_v12` con «jefe», fases y último aliento. A (nivel 9,
+  vida ×1,5 solo ahí, estrategia de jugador y «Acabar» tras abrirse el menú, como un jugador): gana; aviso sin daño con
+  brasas, señal y sonido; Hoguera con un impacto, el daño a todos y su sonido en ese fotograma y el golpe una vez; el
+  rugido suena (≥ 2), el trago con cada Devorar, las rodillas una vez; las Fauces de Gorthor llegan una vez. B: Hoguera
+  sin defender (Kael 22, Lya 25, Garon 20), defendiendo (11, 12, 10), con la Guardia de Garon sobre Lya (Lya 0, Garon 42);
+  apagada con Agua y no con Fuego; cortada por Quiebra y por un cuarto de su vida; aturdido pierde el turno; sin fase 2
+  no la prepara nunca (30 tiradas); herida fuerte y ligera. C: dos héroes (nivel 8) y Kael solo (nivel 9), automáticos:
+  terminan (pierden: es un jefe). E: derrota sin premio.
+- **Q, equilibrio** frente al Gorthor de siempre (GRUPOS[5], 6 semillas, solo ataques automáticos, perdonar). Victorias
+  siempre 6/6 (una vez 5/6 el de siempre); PV perdidos de media en tres pasadas:
+
+  | Niveles | De siempre | Nuevo |
+  |---|---|---|
+  | 7/7/7 | 265, 311, 300 | 254, 267, 222 |
+  | 9/9/9 | 329, 327, 347 | 354, 346, 335 |
+
+  Ganar con ataques automáticos no prueba la estrategia de un jugador; las cifras bailan de una pasada a otra.
+- `fotos_gorthor_v12` (ventana): MANUAL, FALLOS 0 (`...\pruebas\2026-11-13_011129` y, el combate A, `...\2026-11-13_011236`).
+  Una pasada anterior (`2026-11-13_010833`) salió con la ventana congelada a partir de un momento (los JPG iguales); se
+  repitió y salió bien. Los vídeos son de la buena.
+- Batería: apartado 4.
+
+### 3. Evidencias y medida
+- Vídeos en `D:\REBELUM_diagnostico\v12\expansion\enemigos\videos_gorthor\`: `B_hoguera_apagada.mp4`, `B_hoguera_cortada.mp4`
+  (Quiebra y daño), `B_hoguera_sin.mp4`, `B_hoguera_defiende.mp4`, `B_hoguera_guardia.mp4` (con la herida fuerte y ligera al
+  final) y `A_combate.mp4` (el combate entero: entrada con rugido, golpes de siempre, Furia del Abismo, Devorar con
+  trago, la Hoguera apagada con Agua, rodillas y «Acabar»). Hoja: `capturas\hoja_gorthor_hoguera_b.jpg`. Poses de Blender:
+  `laminas\gorthor_v2_poses.png`. En el B sale azulado («Congelado»): el arma de Kael congela, como en el Centinela.
+- Medida (PC, perfil medio, `medir_escenas.ps1 -Escenas combate3 -Ciclos 3 -Extra grupo=5[,enemigos_v12]`; NO son FPS del
+  Redmi). Esta noche el fotograma salió fijo en 25 ms en las dos pasadas (con otros Godot de otros especialistas y la
+  pantalla probablemente apagada): el tiempo de fotograma NO sirve para comparar. Lo que sí: memoria de vídeo 120,9 MB
+  (el Gorthor de siempre, que ya era 3D) frente a 125,1 MB (el v2), dibujos 93 frente a 96, carga del combate
+  2 692 / 1 397 / 1 507 ms frente a 2 755 / 1 478 / 1 678 ms. Una primera pasada se descartó (el combate de siempre no
+  llegó a cargarse; 14 s en total).
+
+### 4. Batería completa (aislada; partida real y carpeta real de datos sin cambios)
+`D:\REBELUM_diagnostico\v12\expansion\enemigos\pruebas\2026-11-13_011940\resumen.md`: **138 SUPERADAS, 1 FALLIDA, 66
+MANUALES, 0 NO SEGURAS.** Entre las superadas: `prueba_combate_huella` (con el interruptor apagado, la misma huella que la
+referencia del commit de sincronía: Gorthor de siempre sin cambios), `prueba_sincronia_golpes`, `prueba_enemigos_v12`,
+`prueba_centinela_v12`, `prueba_golem_v12`, `prueba_efectos`, `prueba_incorporacion`, `prueba_garon`, `prueba_equilibrio`,
+`prueba_ia`, `prueba_huir` y `prueba_grupos_combate`. «proyecto: CAMBIADO» es este informe, escrito durante la pasada.
+La fallida era mía: `prueba_gorthor_v12` pedía que en el combate A (al azar) saliera alguna Hoguera, y esa vez no salió.
+Ahora el A solo comprueba las que salen, y el B mira con 30 tiradas fijas que en la fase 2 la prepara (10 de 30) y sin
+ella nunca. Repetida: **SUPERADA** (`...\pruebas\2026-11-13_015523`; Q: 7/7/7 de siempre 239 y nuevo 272; 9/9/9 de
+siempre 351 y nuevo 325; todas 6/6).
+
+### 5. Límites
+- Sin Redmi: nada medido en Android; la medida del PC de esta noche no sirve para el tiempo de fotograma (fijo en 25 ms).
+- Sonidos medidos, no escuchados (el «trago» es el más dudoso).
+- La regla de Defender ante el golpe devastador de los «jefe» sigue como estaba (decisión del usuario).
+- Los errores del motor `Parameter "material" is null` al liberar los modelos v12 siguen sin investigar.
+
+### 6. Para integrar (tercer encargo)
+NUEVOS: `aethelgard/combate_gorthor.gd` (+`.uid`), `aethelgard/enemigos/gorthor/gorthor_v2.glb` (+`.import`),
+`gorthor_v2_clips.json`, `aethelgard/audio/efectos/gorthor/` (6 `.wav` + 6 `.import`), `aethelgard/pruebas/prueba_gorthor_v12.gd`
+y `fotos_gorthor_v12.gd` (+ sus `.uid`).
+COMPARTIDOS modificados: `aethelgard/combate.gd` (ganchos «V12, Gorthor»), `aethelgard/sonido.gd` (6 claves al final de
+EFECTOS), `aethelgard/pruebas/lista_pruebas.txt` (2 líneas al final), `docs/audio/efectos_procedencia.csv` (6 filas al final).
+Míos modificados: `enemigos/gorthor/gorthor_3d.gd` y `fuente/crear_gorthor.py`.
+Filas para `docs/recursos.md`:
+- «Gorthor v2 (`enemigos/gorthor/gorthor_v2.glb`) | Obra propia, Blender 5.2.3 por `fuente/crear_gorthor.py -- <raíz>
+  <láminas> v2` | Propia | Combate con `enemigos_v12` | Sí»
+- «Sonidos de Gorthor (`audio/efectos/gorthor/`) | Derivados de Sonniss GDC 2016-2020 | #GameAudioGDC | Combate con
+  `enemigos_v12` | Sí (procedencia en efectos_procedencia.csv)»
+
+### 7. Siguiente paso propuesto
+1. Que el usuario vea los vídeos de los tres (`videos\`, `videos_golem\`, `videos_gorthor\`) y escuche los sonidos; decidir
+   si se enciende `enemigos_v12`.
+2. Medir en el Redmi un combate con cada uno (memoria de vídeo de sus ventanas 3D).
+3. Decidir la regla de Defender ante el golpe devastador de los «jefe».

@@ -23,7 +23,7 @@ las escenas `zonas3d/*`, `ciudad_oakhaven.*`, `garganta.*`, `isla.*`, y los info
 | `garganta_del_diablo` (2) | Garganta del Diablo | mazmorra | `garganta.tscn` (elegible) | **sí, por defecto** | **3D terminada** | `zonas3d/garganta_3d.tscn` |
 | `gran_bosque_verde` (1) | Gran Bosque Verde | región | `zona.tscn` (elegible) | **sí, por defecto** | **3D terminada**, con huecos de contenido | `zonas3d/gran_bosque_3d.tscn` |
 | `mar_de_arena_de_calid` (4) | Mar de Arena de Calid → Mar de Cristal | región | `zona.tscn` | solo el **primer sector**, **en pruebas** | **3D incompleta / en desarrollo** | `zonas3d/mar_cristal_3d.tscn` |
-| `cumbres_de_ciclopea` (3) | Cumbres de Ciclópea | región | `zona.tscn` (generada, «nieve») | no | **sigue en 2D** | — |
+| `cumbres_de_ciclopea` (3) | Cumbres de Ciclópea | región | `zona.tscn` (generada, «nieve»), la de siempre | primer sector **en pruebas** (`ciclopea3d`, 13/11) | **3D en pruebas** | `zonas3d/ciclopea_3d.tscn` |
 | `sunken_city` (5) | Sunken City | ciudad | `zona.tscn` (generada, 4 vecinos genéricos) | no | **sigue en 2D** | — |
 | `valle_de_los_ecos` (6) | Valle de los Ecos | región | `zona.tscn` (generada, «yermo») | no | **sigue en 2D** | — |
 | `templo_sumergido_de_atlantis` (7) | Templo Sumergido de Atlantis | mazmorra | `zona.tscn` (isla: solo con el Astraea) | no | **sigue en 2D** | — |
@@ -181,7 +181,11 @@ lo que la región ya cuenta.
 | **Abismo de Ceniza** | **Brasas de los vigías** | encender braseros siguiendo corrientes de calor; puentes de ceniza que se deshacen tras pasar (ruta con tiempo) | atajos antes del jefe final, equipo de fuego |
 | **Arboleda Mítica** | **Libro de firmas de los peregrinos** | firmas o sellos que se encuentran por el mundo (el anillo partido de los pilares, la estela) y se llevan al libro | páginas del Diario y la llave del jardín que no olvida [P] |
 
-## 8. Plan detallado de la siguiente migración: Cumbres de Ciclópea (esbozo, sin escena jugable)
+## 8. Cumbres de Ciclópea 3D
+
+**Actualización (13/11, tercera pasada):** el **primer sector ya es jugable, EN PRUEBAS y apagado** tras `ciclopea3d` (`zonas3d/ciclopea_3d.gd`; `docs/memory/agents/mundo_v12_npc.md` §15-19). El plan de abajo se ha seguido: pasos 1-4 y 6 hechos, el 5 en una primera versión (escenario propio sin la ventisca de `clima.gd`) y el 7 pendiente de narrativa. Lo de abajo es el plan tal como se escribió.
+
+### Plan (13/11, segunda pasada)
 
 **Estado (13/11, segunda pasada):** no hay sector jugable. Con el pulido de la familia de NPC no daba para dejar uno
 jugable, apagado y probado (entrada y salida, choques, guardado) sin prisas, así que se deja el plan concreto y un

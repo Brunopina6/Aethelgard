@@ -3,7 +3,7 @@
 # Antes de cada pasada apunta en <carpeta>\procesos.txt los Godot, Blender y compiladores que estén corriendo (si los
 # hay, la pasada compite por la CPU y la GPU: compárese solo con pasadas en las mismas condiciones).
 param([Parameter(Mandatory)][string]$Salida,
-	[string[]]$Escenas = @("titulo", "pastos", "garganta", "oakhaven", "granbosque", "marcristal", "combate_brama", "combate3"),
+	[string[]]$Escenas = @("titulo", "pastos", "garganta", "oakhaven", "granbosque", "marcristal", "combate_brama", "combate3", "ciclopea"),
 	[string[]]$Perfiles = @("medio"), [int]$Ciclos = 3, [string]$Etiqueta = "", [string[]]$Extra = @())
 $godot = "C:\Users\G513\Desktop\jueo personal\Godot_v4.7.2-stable_win64_console.exe"
 $proyecto = Split-Path $PSScriptRoot

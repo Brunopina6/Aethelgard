@@ -24,10 +24,12 @@ const GARGANTA := 2                           # índice del lugar en el mapa (ma
 const OAKHAVEN := 0                           # índice del lugar en el mapa (ciudades/oakhaven.gd, INDICE; T-103)
 const MAR_CRISTAL := 4                        # el Mar de Arena de Calid (mapa.gd); su primer sector, el Mar de Cristal (V12)
 const GRAN_BOSQUE := 1                        # V12, migración del Gran Bosque Verde (12/11): mapa.gd, LUGARES[1]
+const CICLOPEA := 3                           # V12 (13/11): Cumbres de Ciclópea 3D, primer sector, EN PRUEBAS (ciclopea_3d.gd)
 const REGIONES := {PASTOS_VERDES: "res://zonas3d/pastos_verdes_3d.tscn",
 	GARGANTA: "res://zonas3d/garganta_3d.tscn", OAKHAVEN: "res://zonas3d/oakhaven_3d.tscn",
-	MAR_CRISTAL: "res://zonas3d/mar_cristal_3d.tscn", GRAN_BOSQUE: "res://zonas3d/gran_bosque_3d.tscn"}
-const EN_PRUEBAS := {MAR_CRISTAL: "mardecristal"}  # región → argumento que hace falta para usarla
+	MAR_CRISTAL: "res://zonas3d/mar_cristal_3d.tscn", GRAN_BOSQUE: "res://zonas3d/gran_bosque_3d.tscn",
+	CICLOPEA: "res://zonas3d/ciclopea_3d.tscn"}
+const EN_PRUEBAS := {MAR_CRISTAL: "mardecristal", CICLOPEA: "ciclopea3d"}  # región → argumento que hace falta para usarla
 # Región → [clave de Ajustes (y argumento que fuerza la 3D), argumento que fuerza la 2D]. La clave es la misma que
 # cuando la región estaba en pruebas: la elección de quien ya había elegido algo se conserva.
 # V12, migración de Oakhaven (12/11): Oakhaven 3D completa (vecinos, misiones, cofres, secretos, notas, gremio, tienda,
@@ -41,7 +43,7 @@ const EQUIVALENTES := {"res://garganta.tscn": GARGANTA, "res://ciudad_oakhaven.t
 # V12, Gran Bosque: lugares cuya 2D es la zona generada (zona.tscn, la misma escena para varios lugares): la equivalencia
 # va por el índice del lugar de la partida («lugar»), no por la ruta.
 const ZONA_2D := "res://zona.tscn"
-const EQUIVALENTES_ZONA := [GRAN_BOSQUE]
+const EQUIVALENTES_ZONA := [GRAN_BOSQUE, CICLOPEA]   # V12 (13/11): y las Cumbres de Ciclópea (en pruebas)
 
 
 static func activo() -> bool:
@@ -123,7 +125,9 @@ static func escena_equivalente(escena: String, lugar := -1) -> String:
 			de_2d[ZONA_2D + "#%d" % iz] = iz
 		for e2 in de_2d:
 			var i2: int = de_2d[e2]
-			if POR_DEFECTO_2D_ELEGIBLE.has(i2) and REGIONES.get(i2, "") == escena and activo() and not region_activa(i2):
+			# (V12, 13/11: también las regiones en pruebas que tienen 2D, como Ciclópea: apagada, la partida vuelve a la 2D)
+			if (POR_DEFECTO_2D_ELEGIBLE.has(i2) or EN_PRUEBAS.has(i2)) and REGIONES.get(i2, "") == escena and activo() \
+					and not region_activa(i2):
 				Engine.set_meta("pos_zona_ok", false)
 				# V12, Oakhaven: con el mismo trazado en las dos, la escena 3D sabe qué casilla de la 2D es (posicion_a_2d)
 				var g3 = load(escena.get_basename() + ".gd")

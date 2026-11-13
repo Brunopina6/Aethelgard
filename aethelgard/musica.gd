@@ -119,6 +119,8 @@ static func contexto_de(e: Node) -> String:
 			return "mazmorra"
 		"res://zonas3d/pastos_verdes_3d.tscn", "res://prototipos/sendero_puente.tscn":
 			return "pradera_musica" if musica_pastos_elegida() else "pradera"   # V12: la música nueva, si se eligió
+		"res://zonas3d/ciclopea_3d.tscn":                        # V12: las Cumbres de Ciclópea 3D, el viento de la 2D
+			return "viento"
 		"res://zonas3d/mar_cristal_3d.tscn":                     # V12: el Mar de Cristal (la tormenta la pide clima.gd)
 			return "mar_cristal"
 		"res://zonas3d/gran_bosque_3d.tscn":                     # V12, fase D: el Gran Bosque Verde 3D, el ambiente del bosque de la 2D
