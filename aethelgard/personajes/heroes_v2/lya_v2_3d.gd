@@ -62,6 +62,9 @@ func activar_esperas(si := true) -> bool:
 		nombres["Idle"] = "reposo" if si else "guardia"
 		if not _muerta and marcha_actual() == "":
 			reposo()
+	if es_v2 and si:   # (Redmi, 13/11) las esperas de exploración (animaciones/esperas/*.res) son del esqueleto de los
+		# originales: en el v2 (y el v3, que hereda de aquí) tumbaban al héroe a los pocos segundos de quedarse quieto
+		return false
 	return super.activar_esperas(si)
 
 
