@@ -50,6 +50,34 @@
     "despegue": 0.19,
     "aterrizaje": 0.44
    }
+  },
+  "c12_manantial": {
+   "duracion": 1.8,
+   "bucle": false,
+   "eventos": {
+    "lanzamiento": 0.9
+   }
+  },
+  "c12_custodia": {
+   "duracion": 1.8,
+   "bucle": false,
+   "eventos": {
+    "lanzamiento": 0.9
+   }
+  },
+  "c12_restitucion": {
+   "duracion": 3.2,
+   "bucle": false,
+   "eventos": {
+    "lanzamiento": 1.6
+   }
+  },
+  "c12_aurel": {
+   "duracion": 3.6,
+   "bucle": false,
+   "eventos": {
+    "lanzamiento": 1.8
+   }
   }
  }
 }

@@ -578,7 +578,7 @@ func _construir(items: Array, alto: float, pestanas: Array = [], pestana := 0) -
 		nodo.size = Vector2(X_DERECHA - X_TEXTO + MARGEN_TOQUE * 2.0, alto)
 		nodo.mouse_filter = Control.MOUSE_FILTER_IGNORE if it.get("aviso", false) else Control.MOUSE_FILTER_STOP
 		nodo.gui_input.connect(_toque_fila.bind(i))
-		nodo.mouse_entered.connect(func(): if _pulsado < 0 and DisplayServer.mouse_get_button_state() == 0: _elegir(i, true))
+		nodo.mouse_entered.connect(func(): if _pulsado < 0 and _botones_raton() == 0: _elegir(i, true))
 		capa_filas.add_child(nodo)
 		var f := {"nodo": nodo, "item": it, "alto": alto}
 		var x_texto := MARGEN_TOQUE
@@ -837,6 +837,15 @@ func girar() -> void:
 		t.tween_callback(_pintar)
 		t.tween_property(l, "scale:x", 1.0, 0.1).set_ease(Tween.EASE_OUT)
 		return
+
+
+# Los botones del ratón pulsados ahora. Sin ventana (pruebas «--headless») no hay ratón: el servidor de pantalla daba
+# «Mouse is not supported by this display server» cada vez que una fila recibía mouse_entered; ahí cuenta como ninguno
+# (lo mismo que devolvía tras el error). Con ventana, en PC y en Android, igual que siempre.
+func _botones_raton() -> int:
+	if DisplayServer.get_name() == "headless":
+		return 0
+	return DisplayServer.mouse_get_button_state()
 
 
 func _toque_fila(ev: InputEvent, i: int) -> void:

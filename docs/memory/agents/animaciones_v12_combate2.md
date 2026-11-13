@@ -357,3 +357,93 @@ animación v12) y con cualquier enemigo.
 ### Siguiente paso
 - Mirarla en el móvil y decidir si se enciende por defecto.
 - Siguiente propuesta clara de la lista: E (contraataque al defender), que sí cambia reglas.
+
+
+## 13/11/2026, noche · cuarto encargo: esgrima de Garon y magia blanca de Lya (pilotos)
+
+Especificación: los PDF del usuario en `D:\REBELUM_diagnostico\v12\expansion\encargos_13_11\` (Garon y Lya, leídos
+enteros). Adaptación y tablas completas: `docs/v12/GARON_ESGRIMA_V12.md` (conversión de turnos y las 18 técnicas) y
+`docs/v12/LYA_MAGIA_BLANCA_V12.md` (las 24 acciones). La magia negra (Nix) no se ha tocado.
+
+### Qué hay (todo APAGADO tras su interruptor)
+- **`esgrima_v12`** (Ajustes › Combate › «Esgrima v12 de Garon: sí»; `[combate] esgrima`; o `-- esgrima_v12`):
+  Compás de Garon (tope 3, empieza en 0, tres rombos junto a su nombre en el HUD) y tres técnicas delante en ESGRIMA
+  (páginas de 3; «Más ›» lleva a Juicio, Giro, Guardia):
+  - Punta Gemela (garon_01, básica): 0 PM, 1,10 A en una tirada repartida en 2 contactos, +1 Compás si acierta.
+  - Guardia en Cruz (garon_02, estado): 3 PM, 0,80 A, el siguiente golpe directo que reciba −20 % (una vez) hasta su
+    turno, +1 Compás.
+  - Cadencia de las Siete Puntas (garon_16, culminante): 32 PM + 3 Compás, 3,80 A en una tirada repartida en 7
+    contactos, CD 4 turnos suyos, no da Compás.
+  - Compás también: +1 por ataque básico que acierta y +1 si Defender para un golpe (una vez por Defender).
+- **`magia_blanca_v12`** (Ajustes › Combate › «Magia blanca v12 de Lya: sí»; `[combate] blanca`; o `-- magia_blanca_v12`):
+  pestaña BLANCA en MAGIA de Lya con Manantial Interior (lya_09, 14 PM, regenera 0,45 M × 3 turnos con el «aliento»
+  de las artes), Custodia del Pulso (lya_15, 20 PM, barrera 1,60 M 3 turnos, no se apila) y Restitución Plena
+  (lya_21, 40 PM, toda la vida y quita la corrupción, CD 3); y **Aurel, Faro Peregrino** (lya_24, 48 PM) en la lista
+  INVOCACIÓN debajo de Érebo: solo Lya, una vez por combate, levanta a los caídos al 25 % y cura 1,20 M a los demás.
+  Aurel es un dibujo 2D (faro de piedra con franjas sobre patas de ave, haz que barre), 1,9 s, sin modelo ni luz.
+- Costes del PDF (su referencia de 100 PM al final = la del juego según `grupo.gd`); sin desbloqueo por nivel en el
+  piloto (con pocos PM salen apagadas con su motivo). Daño con `_dano_fisico` (la del Juicio, sin crítico, como las
+  técnicas de siempre) y las defensas de los jefes; fórmulas sin tocar. Curas sin azar (no se gasta el generador).
+- Turnos: el juego es ATB por turnos; «turno propio» = cuando a ese héroe le toca; CD y estados se cuentan ahí (ver
+  los documentos). Con la animación v12 y «ATB quieto al actuar», las barras esperan como en Juicio o en sus magias.
+- Animación: 7 clips nuevos con la biblioteca de poses de Blender sobre el rig v2 (`fuente/clips_combate_v12.py`):
+  `c12_punta_gemela` 1,2 s, `c12_guardia_cruz` 1,45 s, `c12_cadencia` 3,1 s (Garon); `c12_manantial` 1,8 s,
+  `c12_custodia` 1,8 s, `c12_restitucion` 3,2 s, `c12_aurel` 3,6 s (Lya), con los eventos de contacto o lanzamiento
+  del PDF (50 %; 50/65 %; 50-74 %). Con los héroes v2: carrera sin patinar, clip, contactos en sus eventos, pausa de
+  impacto y vuelta (las piezas de la animación v12). Con los de siempre: el Juicio de siempre con los contactos
+  seguidos, y `lanzar_magia` para Lya.
+
+### Pruebas
+Comprobado ejecutando (aislado, PC, 13/11 de madrugada, commit `da5f072` salvo lo indicado):
+- `prueba_acciones_v12` (78 comprobaciones por caso; casos apagado, original y v2): **SUPERADA**. Cada acción: PM
+  insuficientes (no pide objetivo ni cobra), Compás insuficiente, objetivo (enemigos alcanzables; aliados en pie;
+  Aurel sin objetivo), una sola aplicación y un solo cobro, multigolpe = una tirada (suma de 2 y de 7 contactos igual
+  al total) y Compás +1 como mucho (0 en la Cadencia), tope 3, CD de la Cadencia y de Restitución, Guardia en Cruz
+  −20 % una vez, Defender +1 una vez, Custodia sin apilar y que se apaga a los 3 turnos, Manantial que se renueva,
+  Restitución hasta el máximo y sin corrupción, Aurel una vez, solo Lya, levanta al caído (25 %), cura ≤ 1,20 M e
+  INVOCACIÓN que se abre con Aurel y se cierra después; con los v2, las 9 acciones van por sus clips c12_*.
+- Batería APAGADA (combate + la nueva, 27): **26 superadas, 1 fallida** (`prueba_audio`, ver abajo). Huella del combate
+  9 de 9 igual a la referencia. Resumen: `D:\REBELUM_diagnostico12\expansion\combate2\pruebas_acciones_off6-11-13_022003esumen.md`.
+- Batería ENCENDIDA (las mismas con `esgrima_v12 magia_blanca_v12`, 25): **20 superadas, 5 fallidas**. **Huella 9 de 9
+  igual a la referencia también encendida** (el combate automático no usa las acciones nuevas y nada gasta azar).
+  Resumen: `...\pruebas_acciones_on6-11-13_022714esumen.md`. Las fallidas:
+  - `prueba_artes_combate` («el menú de Lya a nivel 1 como hoy»: ahora tiene la pestaña BLANCA),
+    `prueba_escarcha_guardia` (las filas de Esgrima de hoy) y `prueba_hud_combate` (ESGRIMA apagada sin PM: con Punta
+    Gemela a 0 PM ya no se apaga): comprueban el menú de siempre, que el interruptor cambia a propósito. Esperadas.
+  - `prueba_coloso` («Leer runas» no estaba en la primera página): **arreglado** (contra el Coloso va la primera);
+    repetida encendida con `prueba_acciones_v12`: 2 de 2 superadas (`...\pruebas_acciones_on26-11-13_023532\`).
+  - `prueba_audio` (113 ms apagada y 107 encendida, tope 100): es la carga del PC (otros cuatro Godot de otros
+    especialistas a la vez). Lo he comprobado: con el `menus.gd` de `HEAD` sin mis filas da lo mismo (88 y 77 ms) que
+    con ellas (87 y 78 ms). No es de este cambio; repetirla con el PC libre.
+
+### Evidencias: `D:\REBELUM_diagnostico\v12\expansion\combate2\acciones\`
+- `fotos\`: `v2_*` y `original_*` (menú de esgrima, pestaña BLANCA, lista INVOCACIÓN con Érebo y Aurel, cada acción
+  en su momento, Aurel en tres instantes).
+- `acciones_v2.mp4` y `acciones_original.mp4`: el guion de la prueba entero a tiempo real (15 imágenes/s), con los v2
+  y con los de siempre.
+- Hojas de poses de Blender: `combate2\blender\lya_c12_restitucion.png` y `hojas\acciones_pilotos_clips.png`.
+
+### Archivos
+- NUEVOS: `aethelgard/combate_acciones_v12.gd` (+ `.uid`), `aethelgard/pruebas/prueba_acciones_v12.gd` (+ `.uid`),
+  `docs/v12/GARON_ESGRIMA_V12.md`, `docs/v12/LYA_MAGIA_BLANCA_V12.md`; `pruebas/prueba_turnos_v12.gd.uid` (faltaba).
+- REGENERADOS: `personajes/heroes_v2/garon|lya/*_v2_combate_v12.glb` y `.json` (clips de antes intactos, nuevos añadidos),
+  `fuente/clips_combate_v12.py`.
+- COMPARTIDOS:
+  - `aethelgard/combate.gd`: la constante `Acc12` y enganches cortos (crear, turno de héroe, coste mínimo y menú de
+    ESGRIMA, pestaña BLANCA, orden y lista de INVOCACIÓN, `_animar_golpe`: reducción y Compás). Apagados, cada enganche
+    devuelve lo mismo que recibe.
+  - `aethelgard/menus.gd`: filas cuarta y quinta del bloque «Combate» y el texto de ayuda.
+  - `aethelgard/pruebas/lista_pruebas.txt`: la línea de `prueba_acciones_v12`.
+
+### Límites
+- Nada validado en el Redmi (sin ADB en este encargo); el coste de los efectos es de trazos y sprites 2D, sin medir.
+- Aurel es un dibujo de piloto, no un modelo; el definitivo debería salir de Blender.
+- Sin desbloqueo por nivel ni guardado del Compás (vive solo en el combate, como pide el PDF).
+- La Guardia en Cruz no cuenta los golpes a todos de los jefes (no pasan por `_animar_golpe`: «daño directo»).
+- No hay prueba de «muerte del actor a mitad»; si el objetivo cae, los contactos que faltan no hacen nada.
+- Las poses son por guion: legibles en combate, no animación de autor.
+
+### Siguiente paso
+- Que el usuario pruebe los dos interruptores (con «pm_infinitos» para llegar a la Cadencia y a Aurel desde el
+  principio) y decida si amplía el catálogo; propuesta de orden en los dos documentos.
+- Para el coordinador: decidir desbloqueo por nivel (toca `grupo.gd`) y si Aurel pasa a modelo de Blender.

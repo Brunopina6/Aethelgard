@@ -311,7 +311,8 @@ func _abrir_firmamento() -> void:
 # pasa de botón en botón y Esc / B vuelve a la ficha.
 const RETRATOS := {"Kael": "res://dialogos/retratos/kael_reposo.png", "Lya": "res://dialogos/retratos/lya_reposo.png",
 	"Garon": "res://dialogos/retratos/garon_reposo.png",
-	"Naira": "res://personajes/naira/naira_retrato_provisional.png"}   # el de Naira, PROVISIONAL (de su modelo)
+	"Naira": "res://personajes/naira/naira_retrato_provisional.png",   # el de Naira, PROVISIONAL (de su modelo)
+	"Nix": "res://personajes/nix/nix_retrato.png"}   # V12: el de Nix, PROTOTIPO (render de su modelo)
 
 
 func _pintar_formacion() -> void:
@@ -824,29 +825,42 @@ func _pintar_ajustes() -> void:
 	var fav3 := HBoxContainer.new()                     # 13/11: la línea de turnos (combate_turnos_v12.gd; vale con cualquier protagonista)
 	fav3.add_theme_constant_override("separation", 8)
 	var TV = load("res://combate_turnos_v12.gd")
+	var fav4 := HBoxContainer.new()                     # 13/11 noche: esgrima de Garon y magia blanca de Lya (combate_acciones_v12.gd)
+	fav4.add_theme_constant_override("separation", 8)
+	var fav5 := HBoxContainer.new()
+	fav5.add_theme_constant_override("separation", 8)
+	var AC = load("res://combate_acciones_v12.gd")
 	for op in [["anim_v12", false, "Animación de siempre"], ["anim_v12", true, "Animación v12 (prueba)"],
 			["camaras", true, "Cámaras: sí"], ["camaras", false, "Cámaras: no"],
 			["pausa_atb", true, "ATB quieto al actuar: sí"], ["pausa_atb", false, "ATB quieto al actuar: no"],
-			["turnos", true, "Línea de turnos: sí"], ["turnos", false, "Línea de turnos: no"]]:
+			["turnos", true, "Línea de turnos: sí"], ["turnos", false, "Línea de turnos: no"],
+			["esgrima", true, "Esgrima v12 de Garon: sí"], ["esgrima", false, "Esgrima v12 de Garon: no"],
+			["blanca", true, "Magia blanca v12 de Lya: sí"], ["blanca", false, "Magia blanca v12 de Lya: no"]]:
 		var cl: String = op[0]
 		var si: bool = op[1]
 		var actual: bool = AV.activado() if cl == "anim_v12" else (AV.camaras() if cl == "camaras" else
-			(AV.pausa_atb() if cl == "pausa_atb" else TV.activado()))
+			(AV.pausa_atb() if cl == "pausa_atb" else (TV.activado() if cl == "turnos" else
+			(AC.esgrima_activa() if cl == "esgrima" else AC.blanca_activa()))))
 		var ancho := 300 if cl != "camaras" else 180
 		var bav := _boton(("● " if actual == si else "○ ") + op[2], 18, Vector2(ancho, 34),
 			"combate:%s:%s" % [cl, "si" if si else "no"])
 		bav.pressed.connect(func():
 			if cl == "turnos":
 				TV.elegir_en_ajustes(si)
+			elif cl in ["esgrima", "blanca"]:
+				AC.elegir_en_ajustes(cl, si)
 			else:
 				AV.elegir_en_ajustes(cl, si)
 			Sonido.efecto("ui_tic")
 			_pintar_de_nuevo())
-		(fav if cl in ["anim_v12", "camaras"] else (fav2 if cl == "pausa_atb" else fav3)).add_child(bav)
+		(fav if cl in ["anim_v12", "camaras"] else (fav2 if cl == "pausa_atb" else (fav3 if cl == "turnos" else
+			(fav4 if cl == "esgrima" else fav5)))).add_child(bav)
 	cuerpo.add_child(fav)
 	cuerpo.add_child(fav2)
 	cuerpo.add_child(fav3)
-	cuerpo.add_child(_texto("Animación v12: con los protagonistas v2. «ATB quieto»: las barras esperan mientras actúa un héroe. La línea de turnos vale con cualquiera. Se nota en el próximo combate.", 16, COLOR_SUAVE))
+	cuerpo.add_child(fav4)
+	cuerpo.add_child(fav5)
+	cuerpo.add_child(_texto("Animación v12: con los protagonistas v2. «ATB quieto»: las barras esperan mientras actúa un héroe. La línea de turnos vale con cualquiera. Esgrima y magia blanca v12: acciones nuevas de prueba de Garon (Compás) y de Lya. Se nota en el próximo combate.", 16, COLOR_SUAVE))
 
 
 # Calidad de las regiones 3D (encargo del 09/11; prototipos/calidad_auto.gd, sección [calidad] de user://ajustes.cfg):

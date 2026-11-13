@@ -415,3 +415,51 @@ Filas para `docs/recursos.md`:
    si se enciende `enemigos_v12`.
 2. Medir en el Redmi un combate con cada uno (memoria de vídeo de sus ventanas 3D).
 3. Decidir la regla de Defender ante el golpe devastador de los «jefe».
+
+---
+
+## 13/11/2026, 02:30 · quinto encargo: el error «Parameter "material" is null» y otros avisos repetidos del motor
+
+Commits: `efe4e7d` (materiales compartidos), `55f64f6` (ratón sin ventana en `menu_combate.gd`) y el de este informe.
+
+### 1. La causa de «Parameter "material" is null» (comprobado ejecutando, aislado)
+- **Dónde salía:** al liberar un enemigo v12 (Centinela, Gólem o Gorthor) mientras otro igual seguía vivo. Sin ventana, en
+  `material_get_instance_shader_parameters` (2 por pasada de `prueba_enemigos_v12`, que libera uno y crea otro en el mismo
+  fotograma). Con ventana, el mismo fallo en cuatro sitios de gles3: `material_casts_shadows`, `material_is_animated`,
+  `material_get_instance_shader_parameters` y `material_update_dependency` (4 en `fotos_centinela_v12`, 8 en
+  `fotos_golem_v12` y 4 en `fotos_gorthor_v12`).
+- **Cómo lo aislé** (guiones aparte en el Temp, sin tocar el proyecto):
+  - El GLB instanciado dos veces a pelo: sin error, también con animación y con materiales propios compartidos.
+  - Con el guion del enemigo: error al liberar el primero cuando ya existe el segundo (o en el mismo fotograma).
+  - Quitando `_materiales()`, desaparece. Probando variantes: el material del brillo, uno por enemigo, no lo provoca. El
+    de la piel (la superficie del atlas), uno nuevo por enemigo, sí, incluso un `StandardMaterial3D` sin textura. Ese
+    mismo material compartido entre los dos, no.
+  - Conclusión: el material de la piel, creado por enemigo, se liberaba con el primero mientras el render todavía lo
+    tenía apuntado por la malla compartida del segundo.
+- **Arreglo en su origen** (`enemigos/v12_comun/enemigo_v12_3d.gd`): el material de la piel no cambia de un enemigo a
+  otro, así que se crea una vez por textura (y por resina en el Gólem) y se comparte (`_material_atlas`, caché estática).
+  Mismo aspecto y menos materiales. El del brillo sigue siendo uno por enemigo, porque su energía cambia en cada
+  fotograma. Humbaba y Bramavidrio no salían con este error (0 en sus pruebas): no los he tocado.
+- **Demostración:** después del arreglo, 0 errores de material en `prueba_enemigos_v12`, `prueba_centinela_v12`,
+  `prueba_golem_v12` y `prueba_gorthor_v12`, todas SUPERADAS (`...\pruebas\2026-11-13_020935`), y 0 con ventana en
+  `fotos_centinela_v12`, `fotos_golem_v12` y `fotos_gorthor_v12`, todas MANUAL con FALLOS 0 (`...\pruebas\2026-11-13_022252`).
+  `prueba_combate_huella`: SUPERADA, la huella no cambia.
+
+### 2. Otros errores y avisos repetidos del motor
+En la última batería del coordinador, `D:\REBELUM_diagnostico\pruebas\2026-11-13_014042\*.err.log`. Las cuentas son de
+esa batería; la mía de antes del arreglo da lo mismo.
+
+| Aviso (veces) | Origen | Estado |
+|---|---|---|
+| `Parameter "material" is null` (2; con ventana, 4-8 por prueba) | `enemigo_v12_3d.gd`: un material de piel por enemigo | **ARREGLADO** (`efe4e7d`): 0 |
+| `Mouse is not supported by this display server` (5: `prueba_huir`, `prueba_hud_combate`, `prueba_controles_nuevos`) | `menu_combate.gd:581`: `mouse_entered` de una fila llama a `DisplayServer.mouse_get_button_state()`, que sin ventana no existe | **ARREGLADO** (`55f64f6`): sin ventana cuenta como ningún botón (lo que ya devolvía tras el error); con ventana, igual. 0 en las tres |
+| `Lambda capture at index 0 was freed` (14) | `pruebas/prueba_bosque_pastos.gd:63` (`_hasta`): la condición captura un nodo de la región que se libera al cambiar de escena mientras se espera | Solo de la prueba (no del juego). Es de otra área: propuesta, que la lambda compruebe `is_instance_valid` o capture la ruta y no el nodo. No tocado |
+| `SurfaceTool.generate_lod() is deprecated` (2) | `zonas3d/oakhaven/ciudad.gd:577` (`_con_lod`) | Del juego, área de Oakhaven: cambiarlo a `ImporterMesh.generate_lods()` cambia cómo se generan los LOD y hay que comprobarlo con capturas. No tocado |
+| `N RIDs of type "CanvasItem" were leaked` (2: `prueba_efectos`, `prueba_foco`) | al salir: nodos de dibujo que se quedan sin liberar al cerrar la prueba | Al salir, no en juego. Sin tocar (habría que mirar con `--verbose`) |
+| `N ObjectDB instances were leaked at exit` (58) / `N resources still in use at exit` (50) | casi todas las pruebas, al hacer `quit()` con escenas vivas | Ruido de salida, no del juego. Sin tocar |
+| `Sonido: no se puede crear la fuente 2D «golpe»/«rio_2d»` (2) | `prueba_efectos.gd:1195` pide a propósito fuentes que no son bucles: prueba el caso de error | **Esperado**. Sin tocar |
+| Avisos de partida (`No se pudo guardar…`, `se aparta en …danada`, `Esta sesión no cargó la partida…`; ~12) | las pruebas de guardado, que rompen la partida a propósito | **Esperados**. Sin tocar |
+
+### 3. Archivos (para integrar)
+COMPARTIDOS modificados: `aethelgard/menu_combate.gd` (`_botones_raton()`). Míos: `aethelgard/enemigos/v12_comun/enemigo_v12_3d.gd`.
+Sin archivos nuevos. Propuestas para otras áreas: `prueba_bosque_pastos.gd:63` y `zonas3d/oakhaven/ciudad.gd:577` (tabla).

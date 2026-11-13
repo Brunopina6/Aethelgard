@@ -456,3 +456,89 @@ las regiones en pruebas con 2D: 8 líneas), `aethelgard/menus.gd` (una línea), 
 (tres líneas al final). `project.godot` sin cambios. Tras copiar: `--import` y revisar `git diff project.godot`.
 **Cómo se enciende:** Ajustes → «Cumbres de Ciclópea: 3D (en pruebas)» (`[regiones] ciclopea3d = true`) o
 `-- 3d ciclopea3d`. Por defecto, APAGADO (el mapa lleva a la 2D de siempre).
+## 13/11/2026 · cuarta pasada: Cumbres de Ciclópea 3D, segunda pasada (misma copia y rama)
+
+Encargo: la estatua como pieza propia de Blender (sin brazo izquierdo, mirando al pico, presupuesto Android y LOD; la de
+primitivas, de respaldo), la ventisca (ligera, sin transparencias grandes, que vaya y venga) y la actividad de la región
+(refugios de montaña, §7 del inventario), sin Orbes Cristalinos ni giros de historia. **Todo dentro de `ciclopea3d`
+(APAGADO por defecto).** Nada se ha medido en el Redmi.
+
+### 20. La estatua (pieza propia de Blender)
+
+- `aethelgard/fuente/crear_estatua_ciclopea.py` (Blender 5.2 por guion, `-b --factory-startup`): un caballero sobre su
+  peana con placa del anillo partido; grebas, faldar con pliegues, peto con un relieve de alas, la mano derecha sobre el
+  pomo de la espada clavada delante, la capa por detrás, el yelmo alzado unos 14° **hacia el pico** con la cresta rota y
+  **el hombro izquierdo partido** (muñón de piedra quebrada, sin brazo). Color por vértice (piedra gastada, líquenes,
+  ocre, nieve donde la cara mira arriba, carámbanos en la cornisa), sin texturas. Escribe
+  `zonas3d/ciclopea/modelos/estatua.glb` (**2 788 triángulos, 1 554 vértices, 0,11 MB**; LOD y mallas de sombra de la
+  importación de Godot) y la lámina `D:\REBELUM_diagnostico\v12\expansion\mundo\ciclopea\estatua\estatua_lamina.png`.
+- Un fallo encontrado y arreglado en las capturas: con `export_vertex_color = 'ACTIVE'`, Blender 5.2 sacaba un
+  `COLOR_0` blanco y el color de verdad en `COLOR_1` (Godot solo lee el primero: la estatua salía blanca). Ahora se
+  exporta por nombre (`'NAME'`, «Col», sin los demás): `COLOR_0` lleva la piedra.
+- `escenario.gd`, `_crear_estatua()`: instancia la pieza («Pieza») con el material de detalle de la región (grano y
+  relieve triplanar sobre el color por vértice, `vertex_color_is_srgb`), su choque (0,85 m) y la misma orientación al
+  norte. **Respaldo:** sin el GLB, o con `Engine.set_meta("ciclopea_estatua_primitivas", true)`, sale la de primitivas
+  de la tercera pasada (`_estatua_primitivas`, 3 mallas, intacta). Examinar y el detalle `ciclopea_estatua` no cambian.
+
+### 21. La ventisca
+
+- `zonas3d/ciclopea/ventisca.gd` (propia; `mar_cristal/clima.gd` no se toca: su tormenta es de arena y vive en el
+  Mar de Cristal). **Va y viene:** calma 70-110 s (la primera, 35-60 s, para que se vea en una visita corta) → sube 7 s →
+  ventisca 24-36 s con rachas → amaina 8 s → calma.
+- **Ligera:** no añade nada transparente a pantalla completa. La bruma es la del entorno (se cierra hasta 0,034 y
+  blanquea, sin coste extra), el sol baja al 38 % (sombras flojas) y el ambiente sube un 15 %; la nevada que ya había se
+  vuelve casi horizontal y más rápida; y pasan **ráfagas**: partículas opacas sin luz, finas (3,5 × 42 cm), alargadas en
+  el viento, alrededor de Kael (40 / 70 / 110 según bajo / medio / alto), solo con la ventisca alta.
+- **Al abrigo:** junto a un refugio encendido (5 m) la ventisca se nota un 80 % menos (en la prueba: 0,15 junto al fuego,
+  0,84 a la intemperie).
+
+### 22. Los refugios de montaña (la actividad de la región)
+
+- `zonas3d/ciclopea/refugios.gd`: **tres refugios de piedra** junto al camino principal (al 12 %, 52 % y 90 % de la
+  subida: «el refugio del paso», «de media ladera» y «de la cumbre»), en la casilla libre más cercana a 3,2-5,2 casillas
+  del camino (sin muros, agua, objetos, cofres, rincones ni el altar; la vegetación extra se aparta). Tres paredes, tejado
+  inclinado con nieve, hogar, leña y banco, en una malla por material, con choque. Fuego de conos sin luz y un halo
+  pequeño; luz real solo en los perfiles con faroles.
+- **Cómo se juega:** en la puerta, «Encender el refugio» (leña seca y pedernal): fuego, hito `cc_refugio_N`, **1 Poción**
+  y guardado. **Los tres encendidos: 120 monedas, una vez** (hito `cc_refugios`). Encendido, «Descansar junto al fuego»
+  cura al grupo y guarda. Con el de abajo y el de arriba encendidos se abre **el atajo** («Bajar / Subir por el atajo»,
+  con fundido) entre los dos. Siguen encendidos al cargar. **Sin Orbes Cristalinos** y sin texto de historia: solo
+  avisos de lo que pasa. La «capa de abrigo» que proponía el §7 no se hace (sería tocar el equipo, fuera de mi zona).
+- `ciclopea_3d.gd`: crea refugios y ventisca, el abrigo según la posición de Kael, las piezas al alcance y la acción
+  (`_usar_refugio`, `_atajo`), y el sonido de hoguera en los encendidos.
+
+### 23. Pruebas, capturas y medida (PC; no es el Redmi)
+
+- **Nueva:** `pruebas/prueba_ciclopea3d_v2.gd` (en `lista_pruebas.txt`, al final): estatua de Blender (presupuesto,
+  mira al norte, choca) y respaldo de primitivas; ventisca (bruma, sol, ráfagas opacas), amaina y da la vuelta sola;
+  tres refugios alcanzables y bien puestos; encender (hito, fuego, Poción), atajo de bajada, los tres (120 monedas una
+  vez), descansar cura sin más premio, abrigo, y al cargar siguen encendidos. **FALLOS 0.**
+- `prueba_ciclopea3d` y `prueba_ciclopea3d_apagada`: **superadas** con todo lo nuevo dentro.
+- **Capturas** en `D:\REBELUM_diagnostico\v12\expansion\mundo\ciclopea\pasada2\` (`<perfil>_1280x720_k01…k17.png`,
+  un perfil por pasada; `log_<perfil>.txt`): las de la tercera pasada más `k12_refugio_del_paso`,
+  `k13_refugio_de_la_cumbre`, `k14_ventisca`, `k15_ventisca_al_abrigo`, `k16_estatua_de_frente` y
+  `k17_estatua_mira_al_pico`.
+- **Llamadas · primitivas** (cámara del juego): ruinas con la estatua 59 · 111 k / 107 · 186 k / 136 · 272 k (bajo /
+  medio / alto; antes, con la de primitivas, 58 · 109 k / 106 · 181 k / 134 · 267 k); refugio del paso 51 · 109 k /
+  104 · 183 k / 138 · 270 k; ventisca 41 · 110 k / 74 · 183 k / 109 · 274 k. GPU del PC con la ventisca igual que sin
+  ella (0,76 / 1,02 / 1,99 ms). Todo sigue por debajo de Oakhaven y del Gran Bosque.
+- **A mirar en el Redmi:** la ventisca en el bajo (la bruma y las ráfagas), el halo del fuego y el blanco del bajo
+  (en el bajo, el arroyo helado ya brillaba mucho en la tercera pasada; no es de esta).
+
+### 24. Commits y archivos de la cuarta pasada
+
+- `c79c109` la estatua, la ventisca, los refugios, sus pruebas y capturas, el inventario y este informe; (último) el
+  resultado de la batería.
+- **Batería completa:** 139 superadas · 0 fallidas · 64 manuales · 0 no seguras (antes 138 · 0 · 64 · 0; +1, la nueva);
+  partida real, carpeta de datos y proyecto sin cambios (`D:\REBELUM_diagnostico\pruebas\2026-11-13_021227\resumen.md`).
+
+**Nuevos:** `aethelgard/fuente/crear_estatua_ciclopea.py`, `aethelgard/zonas3d/ciclopea/modelos/estatua.glb` + `.import`,
+`aethelgard/zonas3d/ciclopea/ventisca.gd` + `.uid`, `aethelgard/zonas3d/ciclopea/refugios.gd` + `.uid`,
+`aethelgard/pruebas/prueba_ciclopea3d_v2.gd` + `.uid`.
+**Cambiados (míos):** `aethelgard/zonas3d/ciclopea/escenario.gd`, `aethelgard/zonas3d/ciclopea_3d.gd`,
+`aethelgard/pruebas/fotos_ciclopea3d.gd`, `docs/v12/INVENTARIO_MUNDO.md`, este informe.
+**Compartidos:** `aethelgard/pruebas/lista_pruebas.txt` (una línea nueva al final y la nota de `fotos_ciclopea3d`),
+`docs/recursos.md` (una fila al final). Nada en `modo3d.gd`, `menus.gd`, `combate.gd`, `grupo.gd`, `inventario.gd` ni
+`project.godot`. Tras copiar: `--import` (el GLB nuevo).
+**Cómo se enciende:** como en la tercera pasada (Ajustes → «Cumbres de Ciclópea: 3D (en pruebas)» o `-- 3d ciclopea3d`);
+la estatua, la ventisca y los refugios van dentro. Para ver la estatua vieja: `Engine.set_meta("ciclopea_estatua_primitivas", true)`.

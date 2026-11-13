@@ -34,6 +34,14 @@ const HEROES := {
 	"Naira": {"clase": "Astrónoma", "arma": "cetro", "mult_fisico": 0.3, "mult_magia": 1.0, "magias": [],
 		"atributos": {"fuerza": 5, "magia": 18, "defensa": 3, "velocidad": 19, "vitalidad": 6, "espiritu": 12},
 		"provisional": true},
+	# V12: Nix, cuarta heroína y maga negra (PROTOTIPO: docs/v12/NIX_V12.md; especificación del usuario
+	# Aethelgard_Nix_Maga_Negra.pdf). Solo con el interruptor de desarrollo «nix_v12» (APAGADO): ver disponible(). Su
+	# magia va por magia_negra.gd (piloto de tres hechizos y su Eclipse de sellos). No invoca. PV y defensa algo por
+	# debajo de Kael (≈ 87 % y 83 %: 104 y 5 frente a 120 y 6), la magia más alta del grupo; golpe físico flojo (0,3).
+	# Si sustituye a Naira o conviven lo decide el usuario.
+	"Nix": {"clase": "Maga negra", "arma": "cetro", "mult_fisico": 0.3, "mult_magia": 1.0, "magias": [],
+		"atributos": {"fuerza": 5, "magia": 18, "defensa": 5, "velocidad": 20, "vitalidad": 8, "espiritu": 14},
+		"provisional": true},
 }
 # Los tres de siempre: tienen datos en toda partida (datos() los crea si faltan, como siempre) y son el grupo cuando
 # la partida no dice nada («grupo_activo»). No cambia: las regiones 3D la leen para crear a los acompañantes.
@@ -47,8 +55,8 @@ const EN_EL_GRUPO := ["Kael", "Lya", "Garon"]
 # Compatibilidad: sin «grupo_activo» (la versión estable y las partidas de antes) los activos son los tres de siempre;
 # sin «grupo_miembros» (todas las partidas de antes de la reserva) los miembros son los activos. Con solo los tres de
 # siempre nunca hay reserva («grupo_miembros» ni se escribe): el juego es exactamente el de antes.
-const RECLUTAS := ["Naira"]                      # los que se unen después (detrás de un hito o de un interruptor)
-const ORDEN := ["Kael", "Lya", "Garon", "Naira"] # orden de los menús, del combate y de la fila en la exploración
+const RECLUTAS := ["Naira", "Nix"]               # los que se unen después (detrás de un hito o de un interruptor)
+const ORDEN := ["Kael", "Lya", "Garon", "Naira", "Nix"]   # orden de los menús, del combate y de la fila en la exploración
 const MAX_ACTIVOS := 3                           # preferencia del usuario: tres combatientes y reservas
 # NAIRA.md §4.6 propone «Kael siempre activo» (protagonista, brazalete, escenas fijas). Pendiente del usuario: con
 # false, la Formación deja pasar a Kael a la reserva.
@@ -60,9 +68,19 @@ const PARTE_EXP_RESERVA := 0.5
 const NIVEL_AL_UNIRSE := 1
 # Crecimiento recomendado (NAIRA.md §5.2): 3 puntos por nivel, alternando las dos listas. Solo lo usa el botón
 # «Repartir» de su ficha (menú Grupo); los puntos se siguen pudiendo repartir a mano como siempre.
-const CRECIMIENTO := {"Naira": [["magia", "espiritu", "velocidad"], ["magia", "espiritu", "vitalidad"]]}
+const CRECIMIENTO := {"Naira": [["magia", "espiritu", "velocidad"], ["magia", "espiritu", "vitalidad"]],
+	"Nix": [["magia", "espiritu", "velocidad"], ["magia", "vitalidad", "espiritu"]]}   # V12, Nix (prototipo)
 # Interruptor de desarrollo de Naira (APAGADO): Engine «naira_v12» = true o el argumento «-- naira_v12».
 const NAIRA_POR_DEFECTO := false
+# V12: interruptor de desarrollo de Nix (APAGADO): Engine «nix_v12» = true o el argumento «-- nix_v12». Con él puede
+# unirse (Grupo.unir("Nix")); sin él no existe en ninguna partida ni combate.
+const NIX_POR_DEFECTO := false
+
+
+static func nix_v12() -> bool:
+	if Engine.has_meta("nix_v12"):
+		return bool(Engine.get_meta("nix_v12"))
+	return "nix_v12" in OS.get_cmdline_user_args() or NIX_POR_DEFECTO
 
 
 static func naira_v12() -> bool:
@@ -80,6 +98,8 @@ static func disponible(n: String) -> bool:
 		return false
 	if n == "Naira" and naira_v12():
 		return true
+	if n == "Nix":                                 # V12: Nix no tiene hito todavía: solo su interruptor
+		return nix_v12()
 	return SE_UNE_EN.has(n) and load("res://progreso.gd").hito(SE_UNE_EN[n])
 
 

@@ -23,17 +23,24 @@ extends RefCounted
 #   datos/investigaciones que hay que completar), mejora (lo que podría mejorar más adelante: sin implementar).
 
 const Afinidades := preload("res://combate_afinidades.gd")
+# V12: Nix (cuarta heroína, PROTOTIPO APAGADO tras «nix_v12»): las reglas de su Eclipse (sellos), espera en turnos y
+# probabilidad de sus estados (personajes/nix/nix_combate.gd). Solo actúan sobre sus hechizos (clave «nix»).
+const NixC := preload("res://personajes/nix/nix_combate.gd")
 
 const ESCUELAS := ["negra_fuego", "negra_hielo", "negra_rayo", "negra_sombras", "negra_gravedad", "negra_debilitamiento"]
 const NOMBRE_ESCUELA := {"negra_fuego": "Fuego", "negra_hielo": "Hielo", "negra_rayo": "Rayo",
 	"negra_sombras": "Sombras", "negra_gravedad": "Gravedad", "negra_debilitamiento": "Debilitamiento",
-	"naira_eclipse": "Eclipse"}
+	"naira_eclipse": "Eclipse",
+	"nix_ascuas": "Ascuas de Nácar", "nix_aguja": "Aguja de Invierno", "nix_colapso": "Colapso del Firmamento"}
 const ELEMENTO := {"negra_fuego": "Fuego", "negra_hielo": "Hielo", "negra_rayo": "Rayo", "negra_sombras": "Sombras",
-	"negra_gravedad": "Gravedad", "negra_debilitamiento": "", "naira_eclipse": ""}
+	"negra_gravedad": "Gravedad", "negra_debilitamiento": "", "naira_eclipse": "",
+	"nix_ascuas": "Fuego", "nix_aguja": "Hielo", "nix_colapso": ""}          # V12, Nix: el Arcano no es un elemento del juego
 # Colores propios, distintos de los de siempre (Fuego FF7A3C, Rayo F2E36B) para que no se confundan en pantalla.
 const COLOR := {"negra_fuego": Color("E8572A"), "negra_hielo": Color("7FD8FF"), "negra_rayo": Color("B49CFF"),
 	"negra_sombras": Color("8A63E0"), "negra_gravedad": Color("C8924A"), "negra_debilitamiento": Color("B9C96A"),
-	"naira_eclipse": Color("E8D9A0")}               # oro pálido de corona de eclipse (NAIRA.md §6.1)
+	"naira_eclipse": Color("E8D9A0"),               # oro pálido de corona de eclipse (NAIRA.md §6.1)
+	# V12, Nix (NIX_V12.md): brasas marfil, prisma lavanda frío y el violeta de su cristal
+	"nix_ascuas": Color("F2C99A"), "nix_aguja": Color("BBA8F0"), "nix_colapso": Color("A58ACB")}
 const COLOR_NEGRA := Color("A98BE8")              # la pestaña «Magia negra» y su icono
 const DESC_ESCUELA := {
 	"negra_fuego": "Brasas y soles de ceniza. Queman.",
@@ -43,6 +50,9 @@ const DESC_ESCUELA := {
 	"negra_gravedad": "Peso que frena, junta y aplasta.",
 	"negra_debilitamiento": "Maldiciones breves: menos defensa, menos resistencia.",
 	"naira_eclipse": "Su firma: tapa la luz de todos y los deja en penumbra.",
+	"nix_ascuas": "Rango I · Fuego. Abre una debilidad. Da un sello de Eclipse.",
+	"nix_aguja": "Rango I · Hielo. Puede dejarlo lento. Da un sello de Eclipse.",
+	"nix_colapso": "Rango VI · Arcano. Gasta los tres sellos de Eclipse.",
 }
 # Para agruparlas más adelante con los nombres de la propuesta de Naira (docs/v12/NAIRA.md: Umbra, Gravedad, Maldición
 # y Astros). Solo un dato: hoy no cambia nada. Su magia «tapa y pesa; nunca borra»: ninguna descripción dice borrar.
@@ -60,8 +70,14 @@ const PARA_NAIRA := ["negra_fuego", "negra_hielo", "negra_rayo", "negra_sombras"
 const FIRMAS := ["naira_eclipse"]
 const TODAS := ["naira_eclipse", "negra_fuego", "negra_hielo", "negra_rayo", "negra_sombras", "negra_gravedad",
 	"negra_debilitamiento"]                          # la firma primero: a mano en la primera página de Naira
+# V12: el orden del menú (la lista de escuelas y sus pestañas): las de siempre y, después, las de Nix (PROTOTIPO).
+const ORDEN_MENU := ["naira_eclipse", "negra_fuego", "negra_hielo", "negra_rayo", "negra_sombras", "negra_gravedad",
+	"negra_debilitamiento", "nix_ascuas", "nix_aguja", "nix_colapso"]
 const DE_RECLUTA := {"Naira": ["negra_fuego", "negra_hielo", "negra_rayo", "negra_sombras", "negra_gravedad",
-	"negra_debilitamiento", "naira_eclipse"]}
+	"negra_debilitamiento", "naira_eclipse"],
+	# V12, Nix (PROTOTIPO APAGADO, «nix_v12»): el piloto de su especificación (NIX_V12.md): una básica, una de estado y
+	# una culminante, cada una como «escuela» de un hechizo (su elemento va por escuela, como todas).
+	"Nix": ["nix_ascuas", "nix_aguja", "nix_colapso"]}
 
 const UMBRAL_ROTURA := 0.25                      # parte de sus PV máximos que rompe un conjuro en preparación
 const PREP_MAX := 0.9
@@ -135,6 +151,21 @@ const HECHIZOS := {
 		{"nombre": "Eclipse", "coste": 30, "dano": 90, "a": "enemigos", "prep": 0.7, "forma": "manto_eclipse",
 			"estado": {"tipo": "penumbra", "turnos": 2}, "umbral": 1,
 			"mejora": "Observaciones: +10 % cada tres (NAIRA.md §5.5)."}],
+	# V12, Nix (PROTOTIPO; especificación Aethelgard_Nix_Maga_Negra.pdf, adaptada al ATB en docs/v12/NIX_V12.md).
+	# «dano» = coeficiente de la especificación × 35 (1,15 M → 40, como la Ascua de 5 PM). Claves suyas (nix_combate.gd):
+	# nix (es de Nix), genera_sello, sellos (los que gasta), cd (turnos propios), prob (probabilidad del estado),
+	# reparto_area (con 4 o más blancos, ×3/n). Umbral 1 en el piloto (la especificación propone niveles 1 y 50).
+	"nix_ascuas": [
+		{"nombre": "Ascuas de Nácar", "coste": 5, "dano": 40, "a": "enemigo", "prep": 0.0, "forma": "ascua", "umbral": 1,
+			"nix": "nix_01", "genera_sello": true, "mejora": "Rango II: Corona de Carbón (quema)."}],
+	"nix_aguja": [
+		{"nombre": "Aguja de Invierno", "coste": 5, "dano": 38, "a": "enemigo", "prep": 0.0, "forma": "aguja_glacial",
+			"estado": {"tipo": "lento", "turnos": 1}, "prob": 0.7, "umbral": 1, "nix": "nix_02", "genera_sello": true,
+			"mejora": "Rango III: Sepulcro de Escarcha gasta el Lento para más daño."}],
+	"nix_colapso": [
+		{"nombre": "Colapso del Firmamento", "coste": 48, "dano": 140, "a": "enemigos", "prep": 0.7,
+			"forma": "colapso_astral", "umbral": 1, "nix": "nix_21", "sellos": 3, "cd": 4, "reparto_area": true,
+			"mejora": "El catálogo completo: 24 hechizos en seis rangos."}],
 }
 const DESCRIPCION := {
 	"Ascua": "Una brasa rápida a un enemigo. Quema.",
@@ -162,6 +193,9 @@ const DESCRIPCION := {
 	"Maldición Menguante": "Cada vez que actúe pierde un poco de vida (3 turnos).",
 	"Herida Elemental": "Prepara: lo que resiste deja de resistirlo y lo demás le hace más daño.",
 	"Eclipse": "Prepara mucho: tapa la luz de todos. En penumbra, todo les hace un 20 % más (2 turnos).",
+	"Ascuas de Nácar": "Brasas marfil a un enemigo. Da un sello de Eclipse.",
+	"Aguja de Invierno": "Aguja de hielo: 70 % de dejarlo lento un turno. Da un sello de Eclipse.",
+	"Colapso del Firmamento": "Prepara mucho: un aro roto se cierra sobre todos. Gasta 3 sellos; espera 4 turnos.",
 }
 # Sonido al resolverse (una vez por hechizo, aunque alcance a varios): [la clave que pedirá el especialista de sonido,
 # la que existe hoy en sonido.gd y se usa mientras tanto]. combate.gd usa la primera si existe y si no, la segunda.
@@ -170,6 +204,8 @@ const SONIDO := {
 	"negra_rayo": ["negra_rayo", "golpe_critico"], "negra_sombras": ["negra_sombras", "arte_ocaso"],
 	"negra_gravedad": ["negra_gravedad", "arte_ocaso"], "negra_debilitamiento": ["negra_maldicion", "arte_ocaso"],
 	"naira_eclipse": ["naira_eclipse", "arte_ocaso"],
+	# V12, Nix: por ahora, los sonidos de la magia negra de su elemento (el especialista de sonido puede darle los suyos)
+	"nix_ascuas": ["negra_fuego", "brasa"], "nix_aguja": ["negra_hielo", "congelar"], "nix_colapso": ["negra_colapso", "golpe_critico"],
 }
 const SONIDO_FORMA := {"prision_hielo": ["negra_prision", "arte_escarcha"], "invierno_eterno": ["negra_invierno", "arte_escarcha"],
 	"sol_ceniza": ["negra_sol_ceniza", "brasa"], "juicio_relampago": ["negra_juicio", "golpe_critico"],
@@ -337,7 +373,7 @@ static func nombre_desbloqueo(id: String) -> String:
 # Filas de la pestaña «Magia negra»: una por escuela que puede usar (con cuántos hechizos sabe).
 static func filas_escuelas(sabe: Dictionary) -> Array:
 	var r: Array = []
-	for fam in TODAS:                                 # (la firma de Naira, primero; nadie más la sabe)
+	for fam in ORDEN_MENU:                            # (la firma de Naira, primero; nadie más la sabe)
 		if int(sabe.get(fam, 0)) <= 0:
 			continue
 		r.append({"texto": NOMBRE_ESCUELA[fam], "icono": fam, "escuela": fam,
@@ -357,9 +393,11 @@ static func filas_escuela(fam: String, nv_usable: int, actor: Dictionary, enemig
 			motivo = "No hay a quién."
 		elif not paga:
 			motivo = "Necesitas %d PM: tienes %d." % [int(d["coste"]), int(actor.get("mp", 0))]
+		else:
+			motivo = NixC.motivo(actor, fam, d)        # V12, Nix: sellos de Eclipse y espera ("" con los demás)
 		var coste := "PM ∞" if modo_pruebas else "%d PM" % int(d["coste"])
 		r.append({"texto": d["nombre"], "icono": fam, "familia": fam, "nivel": n,
-			"derecha": ("◷ " if float(d.get("prep", 0.0)) > 0.0 else "") + coste,
+			"derecha": ("◷ " if float(d.get("prep", 0.0)) > 0.0 else "") + NixC.prefijo(d) + coste,
 			"apagado": motivo != "", "falta_pm": not paga,
 			"area_enemigos": d["a"] == "enemigos",
 			"desc": motivo if motivo != "" else texto_desc(d)})
@@ -496,6 +534,8 @@ static func dano_base(d: Dictionary, base: int, f: Dictionary, cuantos_alcanza :
 		return x
 	if d.has("pozo"):
 		return int(base * (1.0 + float(d["pozo"]) * maxi(0, cuantos_alcanza - 1)))
+	if d.get("reparto_area", false) and cuantos_alcanza >= 4:   # V12, Nix: con 4 o más blancos, cada uno ×3/n
+		return maxi(1, int(round(base * 3.0 / cuantos_alcanza)))
 	return base
 
 
@@ -610,6 +650,19 @@ static func dibujar_icono(c: CanvasItem, fam: String, tam: Vector2) -> bool:
 			for i in 8:
 				var a := TAU * i / 8.0
 				c.draw_line(m + Vector2.from_angle(a) * 15.0, m + Vector2.from_angle(a) * 18.5, Color(col, 0.7), 1.5)
+		"nix_ascuas":                             # V12, Nix: tres brasas en triángulo
+			for i in 3:
+				var a := -PI * 0.5 + TAU * i / 3.0
+				c.draw_circle(m + Vector2.from_angle(a) * 8.0, 5.0, col)
+			c.draw_circle(m, 3.0, Color(1, 1, 1, 0.8))
+		"nix_aguja":                              # V12, Nix: un prisma vertical y su brillo
+			c.draw_colored_polygon(PackedVector2Array([m + Vector2(0, -16), m + Vector2(6, 0), m + Vector2(0, 16),
+				m + Vector2(-6, 0)]), col)
+			c.draw_line(m + Vector2(0, -12), m + Vector2(0, 12), Color(1, 1, 1, 0.6), 1.5)
+		"nix_colapso":                            # V12, Nix: un aro roto que se cierra sobre un punto
+			c.draw_arc(m, 14.0, -0.6, TAU - 1.4, 28, col, 3.0, true)
+			c.draw_arc(m, 8.0, 0.8, TAU - 0.2, 20, Color(col, 0.7), 2.0, true)
+			c.draw_circle(m, 3.0, Color(1, 1, 1, 0.9))
 		"negra_debilitamiento":                   # sello con una flecha hacia abajo
 			c.draw_arc(m, 13.0, 0.0, TAU, 28, col, 2.0, true)
 			c.draw_line(m + Vector2(0, -8), m + Vector2(0, 8), col, 2.5)

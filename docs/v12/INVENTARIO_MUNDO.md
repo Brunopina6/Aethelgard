@@ -185,6 +185,8 @@ lo que la región ya cuenta.
 
 **Actualización (13/11, tercera pasada):** el **primer sector ya es jugable, EN PRUEBAS y apagado** tras `ciclopea3d` (`zonas3d/ciclopea_3d.gd`; `docs/memory/agents/mundo_v12_npc.md` §15-19). El plan de abajo se ha seguido: pasos 1-4 y 6 hechos, el 5 en una primera versión (escenario propio sin la ventisca de `clima.gd`) y el 7 pendiente de narrativa. Lo de abajo es el plan tal como se escribió.
 
+**Actualización (13/11, cuarta pasada):** hecho lo que quedaba del paso 5 y la actividad del §7, todo dentro de `ciclopea3d` (apagado; informe §20-24): la **estatua** es ya una pieza propia de Blender (sin brazo izquierdo, mirando al pico; 2 788 triángulos con LOD; la de primitivas se conserva de respaldo); la **ventisca** va y viene (`zonas3d/ciclopea/ventisca.gd`, propia y ligera: la bruma del entorno y ráfagas opacas, sin transparencias a pantalla completa), y los **tres refugios de montaña** (`zonas3d/ciclopea/refugios.gd`) se encienden (una Poción cada uno; los tres, 120 monedas una vez), dan descanso y abrigo de la ventisca y abren un atajo de bajada; sin Orbes Cristalinos ni giros de historia.
+
 ### Plan (13/11, segunda pasada)
 
 **Estado (13/11, segunda pasada):** no hay sector jugable. Con el pulido de la familia de NPC no daba para dejar uno

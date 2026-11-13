@@ -61,6 +61,7 @@ const BramaVersion := preload("res://enemigos/bramavidrio/bramavidrio_version.gd
 const HeroesV2 := preload("res://personajes/heroes_v2/heroes_v2.gd")   # V12, fase B: héroes v2 (interruptor heroes_v2, APAGADO)
 const AnimV12 := preload("res://combate_anim_v12.gd")   # V12: animación de combate de los héroes v2 (combate_anim_v12, APAGADO)
 const Turnos := preload("res://combate_turnos_v12.gd")   # V12: línea de turnos visible (interruptor turnos_v12, APAGADO)
+const Acc12 := preload("res://combate_acciones_v12.gd")   # V12: esgrima de Garon y magia blanca de Lya (APAGADAS)
 # V12, fase C: los modelos propios de Blender del Guardián de piedra, el Gólem de ámbar y Gorthor (enemigos/<nombre>/).
 # APAGADOS hasta que el usuario los compare con los de siempre: Engine.set_meta("enemigos_v12", true) o «-- enemigos_v12».
 const ENEMIGOS_V12 := {"guardian": "guardian3d", "golem_ambar": "golem_ambar3d", "gorthor": "gorthor_v12"}
@@ -224,6 +225,12 @@ const MODELOS := {
 		"tipo": "3d", "esc": 0.61, "script": "res://personajes/naira/naira_3d.gd", "gestos": "res://gestos_3d.gd",
 		"base": "res://maga_3d.gd", "rutas": ["res://personajes/naira/naira_provisional.glb"],
 		"vp": Vector2i(580, 640), "alto_vista": 2.25, "centro_y": 1.05},
+	# V12: Nix, cuarta heroína y maga negra (PROTOTIPO, personajes/nix/nix_3d.gd). Solo sale con el interruptor
+	# «nix_v12» (grupo.gd), APAGADO. El encuadre de Lya, algo más alto por el sombrero; 0,56: la cabeza a la altura de Lya.
+	"nix3d": {
+		"tipo": "3d", "esc": 0.56, "script": "res://personajes/nix/nix_3d.gd", "gestos": "res://gestos_3d.gd",
+		"base": "res://maga_3d.gd", "rutas": ["res://personajes/nix/nix.glb"],
+		"vp": Vector2i(600, 700), "alto_vista": 2.45, "centro_y": 1.12},
 	# Grimfang el goblin (goblin_3d.gd), con el hacha del Hollín. Mira a los héroes por sí solo: no se refleja.
 	"grimfang": {
 		"tipo": "3d", "esc": 0.6, "script": "res://goblin_3d.gd", "gestos": "res://gestos_3d.gd", "base": "res://maga_3d.gd",
@@ -457,6 +464,7 @@ const ANIM := {
 	"gorthor": {"distancia": 170.0},
 	"garon3d": {"distancia": 130.0},
 	"naira3d": {"distancia": 110.0},               # V12: Naira (como Lya)
+	"nix3d": {"distancia": 110.0},                 # V12: Nix (como Lya)
 	"guardian": {"distancia": 150.0},
 	"guardian3d": {"distancia": 310.0},         # V12, fase C: el mandoble llega 2 m por delante
 	"golem_ambar3d": {"distancia": 220.0},      # V12, fase C: el puño
@@ -486,8 +494,11 @@ var heroes: Array = [
 const RECLUTAS_COMBATE := [
 	{"nombre": "Naira", "modelo": "naira3d", "hero": true, "hp": 70, "hp_max": 70, "mp": 40, "mp_max": 40,
 		"atk": 5, "vel": 19.0, "atb": 0.0, "pos": Vector2(548, 95)},
+	# V12: Nix (PROTOTIPO, interruptor «nix_v12»): maga de la fila de atrás, como Naira
+	{"nombre": "Nix", "modelo": "nix3d", "hero": true, "hp": 100, "hp_max": 100, "mp": 46, "mp_max": 46,
+		"atk": 5, "vel": 20.0, "atb": 0.0, "pos": Vector2(548, 95)},
 ]
-const SITIO_DE_RECLUTA := {"Naira": ["Lya", "Garon", "Kael"]}
+const SITIO_DE_RECLUTA := {"Naira": ["Lya", "Garon", "Kael"], "Nix": ["Lya", "Garon", "Kael"]}
 
 var enemigos: Array = []
 
@@ -966,6 +977,7 @@ func _crear_interfaz() -> void:
 	menu.marcado.connect(_al_marcar_orden)
 	if Turnos.activado():                         # V12: la línea de turnos (solo lee el combate)
 		Turnos.crear(self)
+	Acc12.crear(self)                             # V12: el Compás de Garon (esgrima_v12 apagada, nada)
 	_marca("interfaz")
 
 
@@ -1871,8 +1883,12 @@ func _siguiente_turno() -> void:
 			f["rig"].modulate = Color(1, 1, 1)
 			if AnimV12.activo(f):                # V12: deja la postura de defensa
 				AnimV12.fin_defensa(self, f)
+			elif _p3d(f) != null and _p3d(f).has_method("fin_defensa"):   # V12, Nix: su clip de defensa
+				_p3d(f).fin_defensa()
 		_quitar_guardia(f["nombre"])             # la guardia de Garon, también (sin guardia, nada)
+		Acc12.al_turno_heroe(self, f)            # V12: esperas y estados de la esgrima y la magia blanca (sin ellos, nada)
 		_tic_estados_heroe(f)                    # Segundo Aliento y Cinta de Lumi (sin ellos, nada)
+		MN.NixC.al_empezar_turno(f)              # V12, Nix: sus esperas en turnos propios (sin ella, nada)
 		if Humbaba.tic_heroe(self, f):            # V12, Humbaba: la corrupción y las raíces (sin ellas, nada)
 			return
 		if f.has("conjuro"):                     # V12, magia negra: el conjuro preparado se suelta (sin menú)
@@ -2777,7 +2793,8 @@ func _mostrar_menu() -> void:
 			"texto_b": "DEFENDER", "accion_b": _defender},
 		{"texto": "MAGIA", "accion": _menu_magia, "apagado": coste_min == 999 or not _puede_pagar(coste_min),
 			"motivo": "No sabe magias" if coste_min == 999 else "Necesitas %d PM" % coste_min},
-		{"tipo": "invocacion", "texto": "INVOCACIÓN", "accion": _invocar, "apagado": not inv["lista"],
+		{"tipo": "invocacion", "texto": "INVOCACIÓN", "accion": _invocar,   # (V12: con Aurel, abierta; apagada la magia blanca, igual)
+			"apagado": not Acc12.invocacion_abierta(self, actor, inv["lista"]),
 			"motivo": inv["motivo"]},
 		_orden_objeto(),
 		_orden_huir(),
@@ -2887,6 +2904,7 @@ func _menu_garon() -> void:
 		minimo = mini(minimo, t["coste"])
 	if not _coloso_vivo().is_empty():                # contra el Coloso (V9), también «Leer runas»
 		minimo = mini(minimo, Coloso.LECTURA["coste"])
+	minimo = Acc12.minimo_esgrima(actor, minimo)     # V12: con la esgrima v12, Punta Gemela no cuesta PM (apagada, igual)
 	menu.abrir(actor, [
 		{"tipo": "carta", "texto": "ATACAR", "accion": func(): _menu_objetivo("atacar", ""),
 			"texto_b": "DEFENDER", "accion_b": _defender},
@@ -2942,7 +2960,7 @@ func _menu_esgrima() -> void:
 			motivo_l = Artes.motivo_pm(coste_l, actor["mp"])
 		items.append({"texto": Coloso.LECTURA["nombre"], "accion": _leer_runas, "derecha": "%d PM" % coste_l,
 			"apagado": motivo_l != "", "falta_pm": not paga_l, "desc": Coloso.LECTURA["desc"] if motivo_l == "" else motivo_l})
-	menu.submenu(items)
+	menu.submenu(Acc12.con_esgrima(self, items))     # V12: delante, las tres de la esgrima v12 (apagada, las mismas)
 
 
 # Garon lee las inscripciones del Coloso de la Falla (V9; combate_coloso.gd): su piel de piedra se abre durante sus dos
@@ -3224,6 +3242,9 @@ func _menu_magia(nivel := 0) -> void:
 	var solo_negra: bool = hay_negra and familias.is_empty() and por_nivel.all(func(x): return x.is_empty())
 	if nivel == 0:
 		nivel = magia_nivel_menu.get(actor["nombre"], PESTANA_NEGRA if solo_negra else 1)
+	var quiere_blanca: bool = Acc12.pestana_pedida(nivel)   # V12: la pestaña BLANCA de Lya (apagada, nunca)
+	if quiere_blanca:
+		nivel = 1
 	var duos := _duos_de(actor)                   # V11: técnicas combinadas (pestaña DÚO)
 	var quiere_duo: bool = nivel == PESTANA_DUO and not duos.is_empty()
 	var quiere_negra: bool = hay_negra and not quiere_duo and (nivel == PESTANA_NEGRA or solo_negra)
@@ -3254,6 +3275,13 @@ func _menu_magia(nivel := 0) -> void:
 		if pestanas.size() == 1:                      # solo magia negra, sin DÚO: sin pestañas (como hoy con una)
 			pestanas.clear()
 		_encajar_pestanas(pestanas)
+	var blanca: Array = Acc12.filas_blanca(self, actor)   # V12: magia blanca de Lya (apagada, ninguna)
+	if not blanca.is_empty():
+		Acc12.pestana_blanca(self, pestanas, p["valor"])
+		if quiere_blanca and not quiere_duo and not quiere_negra:
+			magia_nivel_menu[actor["nombre"]] = Acc12.PESTANA_BLANCA
+			menu.submenu(blanca, pestanas, pestanas.size() - 1)
+			return
 	var items: Array = []
 	if quiere_duo:
 		menu.submenu(duos, pestanas, activa)
@@ -3760,7 +3788,7 @@ func _menu_escuela(fam: String, pagina := 0) -> void:
 	escuela_menu[actor["nombre"]] = fam
 	var pestanas: Array = []
 	var activa := 0
-	for e in MN.TODAS:                               # (V12: y la firma de Naira, el Eclipse, si la sabe)
+	for e in MN.ORDEN_MENU:                          # (V12: y la firma de Naira, el Eclipse, y las de Nix, si las sabe)
 		if sabe.has(e):
 			if e == fam:
 				activa = pestanas.size()
@@ -3804,6 +3832,7 @@ func _lanzar_negra(fam: String, nv: int, objs: Array) -> void:
 	var quien = actor
 	var d := MN.datos(fam, nv)
 	_gastar_pm(quien, int(d["coste"]))
+	MN.NixC.al_confirmar(quien, fam, d)              # V12, Nix: gasta sus sellos y empieza la espera (sin ella, nada)
 	_actualizar()
 	if float(d.get("prep", 0.0)) > 0.0:             # preparar: se suelta cuando se llene su barra
 		registro.text = "%s prepara %s" % [quien["nombre"], d["nombre"]]
@@ -3872,7 +3901,9 @@ func _resolver_negra(quien: Dictionary, fam: String, nv: int, objs: Array, circu
 	if circulo == null or not is_instance_valid(circulo):
 		circulo = _carga_magia(quien, fam, 1.0 + 0.2 * (nv - 1))
 	var p = _p3d(quien)
-	if p != null and MN.FIRMAS.has(fam) and p.has_method("magia_poderosa"):   # V12: el Eclipse, con su clip grande
+	if p != null and p.has_method("lanzar_negra"):   # V12, Nix: un gesto por hechizo (perfiles P01, P02 y P07)
+		await p.lanzar_negra(fam, d)
+	elif p != null and MN.FIRMAS.has(fam) and p.has_method("magia_poderosa"):   # V12: el Eclipse, con su clip grande
 		await p.magia_poderosa()
 	elif p != null and p.has_method("lanzar_magia"):
 		await p.lanzar_magia()
@@ -3891,6 +3922,8 @@ func _resolver_negra(quien: Dictionary, fam: String, nv: int, objs: Array, circu
 		_golpe_negra(quien, fam, d, golpes[i][0], float(golpes[i][1]), base, golpes.size())
 	await _vfx_negra(forma, _punto_magia(quien), golpes, col, impacto)
 	_quitar_carga(circulo)
+	if MN.NixC.tras_resolver(quien, d):               # V12, Nix: un sello de Eclipse (sin ella, nada)
+		_numero_flotante(quien, MN.NixC.texto_sellos(quien), MN.NixC.COLOR_SELLO, 26, Vector2(-40, -110))
 	_actualizar()
 	await get_tree().create_timer(0.7).timeout
 	if p != null and p.has_method("fin_magia"):
@@ -3924,6 +3957,7 @@ func _golpe_negra(quien: Dictionary, fam: String, d: Dictionary, obj: Dictionary
 	if clase != "":
 		_numero_flotante(obj, Afinidades.TEXTO[clase], Afinidades.COLOR[clase], 30, Vector2(-10, -58))
 	if dano > 0:
+		MN.NixC.marcar_afecto(quien, d)              # V12, Nix: alcanzó a un blanco válido (para su sello)
 		golpe_magico = true
 		var real := _quitar_pv(obj, dano)
 		golpe_magico = false
@@ -3934,7 +3968,10 @@ func _golpe_negra(quien: Dictionary, fam: String, d: Dictionary, obj: Dictionary
 		if int(d.get("quema", 0)) > 0 and obj["hp"] > 0:
 			obj["quemadura"] = maxi(int(obj.get("quemadura", 0)), int(d["quema"]))
 			_encender_llama(obj)
-	if d.has("estado") and obj["hp"] > 0 and clase != "inmune":
+	if d.has("estado") and obj["hp"] > 0 and clase != "inmune" and not MN.NixC.estado_entra(d):   # V12, Nix
+		_numero_flotante(obj, "Falla: %s" % MN.ESTADOS[d["estado"]["tipo"]]["corto"], Afinidades.COLOR["resiste"], 24,
+			Vector2(-30, -84))
+	elif d.has("estado") and obj["hp"] > 0 and clase != "inmune":
 		var tipo: String = d["estado"]["tipo"]
 		var res := MN.aplicar_estado(obj, tipo, int(d["estado"]["turnos"]))
 		var e: Dictionary = MN.ESTADOS[tipo]
@@ -4884,6 +4921,8 @@ func _defender() -> void:
 	quien["rig"].modulate = COLOR_DEFENSA
 	if AnimV12.activo(quien):                        # V12: la postura de defensa (bloquea los golpes hasta su turno)
 		AnimV12.defender(self, quien)
+	elif _p3d(quien) != null and _p3d(quien).has_method("defender"):   # V12, Nix: su clip de defensa
+		_p3d(quien).defender()
 	_numero_flotante(quien, "Defensa", Color(0.7, 0.85, 1.0))
 	await get_tree().create_timer(0.4).timeout
 	_terminar_turno()
@@ -5237,9 +5276,9 @@ func _invocar() -> void:
 	var inv := _estado_invocacion()
 	_limpiar_objetivo()
 	estado = "invocacion"                           # «atrás» vuelve al menú, como en Magia
-	menu.submenu([{"texto": "Érebo", "icono": "Erebo", "derecha": "100 %", "accion": _invocar_objetivo,
+	menu.submenu(Acc12.filas_invocacion(self, actor, [{"texto": "Érebo", "icono": "Erebo", "derecha": "100 %", "accion": _invocar_objetivo,
 		"apagado": not inv["lista"], "motivo": inv["motivo"],
-		"desc": "%s: %s Coste: la Armonía llena; la invoca Lya." % [INVOCACION["nombre"], INVOCACION["desc"]]}])
+		"desc": "%s: %s Coste: la Armonía llena; la invoca Lya." % [INVOCACION["nombre"], INVOCACION["desc"]]}]))   # (V12: y Aurel debajo, solo Lya; apagada, igual)
 
 
 func _invocar_objetivo() -> void:
@@ -5516,6 +5555,7 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 		dano = max(1, dano - int(objetivo.get("def", 0) / 2.0))
 	if objetivo.get("defendiendo", false):
 		dano = max(1, int(dano * 0.5))
+	dano = Acc12.reducir(self, objetivo, dano)        # V12: Guardia en Cruz y el Compás de Defender (sin ellos, igual)
 	if not objetivo["hero"]:                          # fase 3: el Guardián del Bosque y la Esencia de enfoque
 		dano = Bosque.dano_recibido(dano, magia, origen, objetivo, _lya_sabe())
 		dano = Coloso.dano_recibido(dano, magia, origen, objetivo)   # V9: el Coloso (piel, ventana, coraza rúnica)
@@ -5542,6 +5582,7 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 				Sonido.voz(origen, "devorar")              # el mordisco de Gorthor
 		golpe_magico = magia != "" or origen.get("filo_arcano", false) or origen.get("contrapeso", false)   # (V12: Contrapeso)
 		var real: int = _quitar_pv(objetivo, dano)     # lo que llega a los PV (con coraza de Escarcha, menos; M3)
+		Acc12.al_golpe_basico(self, origen, real, magia)   # V12: el ataque de Garon da Compás (esgrima v12 apagada, nada)
 		golpe_magico = false
 		origen["absorbido"] = dano - real              # lo que paró la coraza (el mordisco de Gorthor no se cura con eso)
 		if magia == "":

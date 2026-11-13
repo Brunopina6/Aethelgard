@@ -163,23 +163,40 @@ func _materiales() -> void:
 			if nombre.ends_with("_brillo"):
 				m3.set_surface_override_material(i, _mat_brillo)
 				continue
-			var mat := StandardMaterial3D.new()
-			mat.albedo_texture = tex
-			mat.vertex_color_use_as_albedo = true
-			mat.vertex_color_is_srgb = true
-			mat.roughness = 0.85
-			mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-			if nombre.ends_with("_ambar"):
-				mat.roughness = 0.28
-				mat.metallic_specular = 0.75
-				mat.emission_enabled = true
-				mat.emission_texture = tex
-				mat.emission = Color(1.0, 0.72, 0.38)
-				mat.emission_energy_multiplier = 0.22
-				mat.rim_enabled = true
-				mat.rim = 0.25
-				mat.rim_tint = 0.6
-			m3.set_surface_override_material(i, mat)
+			m3.set_surface_override_material(i, _material_atlas(ruta_tex, tex, nombre.ends_with("_ambar")))
+
+
+# El material de la piel (atlas, o la resina del Gólem): no cambia de un enemigo a otro, así que se COMPARTE entre todos
+# los que usan la misma textura (antes, uno nuevo por enemigo y superficie). Al liberar un enemigo mientras otro igual
+# seguía vivo (el combate y su precarga, o dos en la misma escena), su material se liberaba y el servidor de render
+# avisaba «Parameter "material" is null» (material_get_instance_shader_parameters, material_casts_shadows...: medido el
+# 13/11 con pruebas/prueba_enemigos_v12 y un guion aparte que crea dos y libera uno). Compartido no se libera y gasta
+# menos. El del brillo sigue siendo uno por enemigo: su energía cambia en cada fotograma (_process).
+static var _atlas_compartidos := {}
+
+
+static func _material_atlas(ruta_tex: String, tex: Texture2D, ambar: bool) -> StandardMaterial3D:
+	var clave := "%s|%s" % [ruta_tex, ambar]
+	if _atlas_compartidos.has(clave):
+		return _atlas_compartidos[clave]
+	var mat := StandardMaterial3D.new()
+	mat.albedo_texture = tex
+	mat.vertex_color_use_as_albedo = true
+	mat.vertex_color_is_srgb = true
+	mat.roughness = 0.85
+	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	if ambar:
+		mat.roughness = 0.28
+		mat.metallic_specular = 0.75
+		mat.emission_enabled = true
+		mat.emission_texture = tex
+		mat.emission = Color(1.0, 0.72, 0.38)
+		mat.emission_energy_multiplier = 0.22
+		mat.rim_enabled = true
+		mat.rim = 0.25
+		mat.rim_tint = 0.6
+	_atlas_compartidos[clave] = mat
+	return mat
 
 
 # ---------------------------------------------------------------- reproducción con instantes

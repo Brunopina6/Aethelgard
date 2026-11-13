@@ -66,6 +66,34 @@
    "eventos": {
     "metros_por_s_1_7": 2.8421
    }
+  },
+  "c12_punta_gemela": {
+   "duracion": 1.2,
+   "bucle": false,
+   "eventos": {
+    "contacto": 0.6,
+    "contacto_2": 0.78
+   }
+  },
+  "c12_guardia_cruz": {
+   "duracion": 1.45,
+   "bucle": false,
+   "eventos": {
+    "contacto": 0.725
+   }
+  },
+  "c12_cadencia": {
+   "duracion": 3.1,
+   "bucle": false,
+   "eventos": {
+    "contacto": 1.55,
+    "contacto_2": 1.674,
+    "contacto_3": 1.798,
+    "contacto_4": 1.922,
+    "contacto_5": 2.046,
+    "contacto_6": 2.17,
+    "contacto_7": 2.294
+   }
   }
  }
 }

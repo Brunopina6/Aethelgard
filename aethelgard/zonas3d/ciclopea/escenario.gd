@@ -10,6 +10,7 @@ extends RefCounted
 
 const T := preload("res://zonas3d/ciclopea/trazado.gd")
 const D := preload("res://zonas3d/ciclopea/disposicion_2d.gd")
+const Refugios := preload("res://zonas3d/ciclopea/refugios.gd")   # V12 (13/11): sin abetos encima de los refugios
 
 const TROZO := 25.0
 const ORIGEN_TROZOS := Vector2(-62.5, -50.0)
@@ -17,6 +18,7 @@ const ORIGEN_TROZOS := Vector2(-62.5, -50.0)
 const DISTANCIAS := {"bajo": [46.0, 32.0, 400.0], "medio": [56.0, 40.0, 400.0], "alto": [90.0, 60.0, 400.0]}
 const PINOS_EXTRA := {"bajo": 70, "medio": 110, "alto": 170}     # abetos en las laderas, fuera del paso
 const COPOS := {"bajo": 50, "medio": 80, "alto": 130}
+const ESTATUA_GLB := "res://zonas3d/ciclopea/modelos/estatua.glb"   # V12 (13/11): la pieza de Blender
 
 var r: Node3D
 var perfil: Dictionary
@@ -403,7 +405,7 @@ func _pinos() -> void:
 	while puestos < int(PINOS_EXTRA[nombre_perfil]) and intentos < 4000:
 		intentos += 1
 		var c := Vector2(_rng.randf_range(1.0, D.ANCHO - 1.0), _rng.randf_range(1.0, D.ALTO - 1.0))
-		if T.dist_caminos(c) < 4.5 or T.dist_rincones(c) < 6.0 or T.agua(c) > 0.2:
+		if T.dist_caminos(c) < 4.5 or T.dist_rincones(c) < 6.0 or T.agua(c) > 0.2 or Refugios.cerca_de_refugio(c, 4.2):
 			continue
 		var borde := minf(minf(c.x, c.y), minf(D.ANCHO - c.x, D.ALTO - c.y))
 		if borde < 2.0:
@@ -546,6 +548,24 @@ func _crear_estatua() -> void:
 	estatua.position = p
 	estatua.rotation.y = PI                               # mira a −z: el norte, hacia el pico
 	r.add_child(estatua)
+	# V12 (13/11, segunda pasada): la pieza propia de Blender (fuente/crear_estatua_ciclopea.py; LOD de la importación).
+	# Engine «ciclopea_estatua_primitivas» (o sin el GLB) deja la de primitivas de la primera pasada, que se conserva.
+	if ResourceLoader.exists(ESTATUA_GLB) and not Engine.has_meta("ciclopea_estatua_primitivas"):
+		var m: Node3D = (load(ESTATUA_GLB) as PackedScene).instantiate()
+		m.name = "Pieza"
+		estatua.add_child(m)
+		var mp := mat_detalle(Color.WHITE, 1.3, true, 0.8)        # el color de la piedra, el liquen y la nieve, por vértice
+		mp.vertex_color_is_srgb = true
+		for mi in m.find_children("*", "MeshInstance3D", true, false):
+			(mi as MeshInstance3D).material_override = mp
+			(mi as MeshInstance3D).cast_shadow = _sombra()
+		obstaculo(p.x, p.z, 0.85)
+		return
+	_estatua_primitivas(p)
+
+
+# La estatua de la primera pasada (primitivas en una malla por material): respaldo si falta la pieza de Blender.
+func _estatua_primitivas(p: Vector3) -> void:
 	var piedra := mat_detalle(Color(0.66, 0.66, 0.68), 1.1, false, 1.0)
 	var nieve := mat_detalle(Color(0.95, 0.97, 1.0), 0.6)
 	var partes := [

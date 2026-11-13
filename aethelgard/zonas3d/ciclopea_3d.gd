@@ -25,6 +25,9 @@ const Ex := preload("res://zonas3d/examinables_3d.gd")
 const Hallazgos := preload("res://hallazgos.gd")
 const Progreso := preload("res://progreso.gd")
 const Comentarios := preload("res://dialogos/comentarios.gd")
+# V12 (13/11), segunda pasada: la ventisca que va y viene y los refugios de montaña (la actividad de la región)
+const Ventisca := preload("res://zonas3d/ciclopea/ventisca.gd")
+const Refugios := preload("res://zonas3d/ciclopea/refugios.gd")
 
 const INDICE := 3                          # lugar del mapa (mapa.gd, LUGARES[3]; modo3d.CICLOPEA)
 const ZONA := "nieve"                      # mapa.gd, ZONA_LUGAR[3]: progreso.gd (nivel) y combate.gd (fondo)
@@ -65,6 +68,9 @@ var brillados := {}
 var _llegada_t := LLEGADA_COMENTARIO
 var _comentario := ""
 var _comentario_t := 0.0
+var entorno: Environment
+var ventisca: Node                         # zonas3d/ciclopea/ventisca.gd
+var refugios: Node3D                       # zonas3d/ciclopea/refugios.gd
 var brillo_sin_sombras := 1.12              # vista3d.gd: el bajo sin sombras (la nieve ya es clara; a ojo en el PC)
 
 
@@ -81,6 +87,8 @@ func _ready() -> void:
 	info.visible = false
 	_crear_interfaz()
 	_crear_cofres()
+	refugios = Refugios.crear(self, escenario, nombre_perfil)
+	ventisca = Ventisca.crear(self, entorno, sol, escenario.copos, nombre_perfil)
 	_marca_salida()
 	var vuelve: bool = Engine.get_meta("pos_3d_ok", false) and int(Engine.get_meta("pos_3d_lugar", -1)) == INDICE \
 		and Engine.get_meta("pos_3d", null) is Vector3
@@ -94,6 +102,9 @@ func _ready() -> void:
 	Sonido.pasos_3d(kael, suelo_de_pasos)
 	if escenario.fuego_pos != Vector3.ZERO:
 		Sonido.fuente_3d(self, "fogata_bucle", escenario.fuego_pos + Vector3(0, 0.4, 0))
+	for i in refugios.encendidos.size():
+		if refugios.encendidos[i]:
+			_sonido_refugio(i)
 	_musica()
 	_titulo_zona("Cumbres de Ciclópea")
 	if not en_banco():
@@ -163,6 +174,7 @@ func _crear_ambiente() -> void:
 		env.glow_intensity = 0.25
 		env.glow_bloom = 0.04
 		env.glow_hdr_threshold = 1.05
+	entorno = env
 	var we := WorldEnvironment.new()
 	we.environment = env
 	we.name = "Ambiente"
@@ -317,6 +329,11 @@ func _process(delta: float) -> void:
 	if kael == null or escenario == null:
 		return
 	escenario.animar(_t, kael.global_position)
+	if refugios != null:
+		refugios.animar(_t)
+	if ventisca != null:
+		ventisca.abrigo = refugios.abrigo_en(kael.global_position) if refugios != null else 0.0
+		ventisca.seguir(kael.global_position)
 	if _t < 2.0 or int(_t * 2.0) % 4 == 0:
 		_musica()
 	if en_banco():
@@ -540,6 +557,8 @@ func piezas_al_alcance() -> Array:
 			r.append(["cofre:" + id, cf["pos"], RADIO_COFRE, "Abrir cofre"])
 	r.append(["detalle", _sitio_detalle(), RADIO_DETALLE, "Examinar"])
 	r.append(["altar", _sitio_altar(), RADIO_ALTAR, "Examinar"])
+	if refugios != null:
+		r.append_array(refugios.piezas())
 	return r
 
 
@@ -577,6 +596,8 @@ func _accion() -> void:
 		_examinar_detalle()
 	elif cerca == "altar":
 		_examinar_altar()
+	elif refugios != null and refugios.atiende(cerca):
+		_usar_refugio(cerca)
 	_comprobar_cerca()
 
 
@@ -769,3 +790,43 @@ func _titulo_zona(nombre: String) -> void:
 	t.tween_interval(1.8)
 	t.tween_property(l, "modulate:a", 0.0, 0.9)
 	t.tween_callback(l.queue_free)
+
+
+# ================================================================= los refugios (refugios.gd)
+
+func _usar_refugio(id: String) -> void:
+	var d: Dictionary = refugios.accion(id)
+	Ex.avisos(self, d.get("avisos", []), 0.0)
+	if d.has("encendido"):
+		Sonido.efecto("examinar")
+		Sonido.efecto("tesoro", {"retraso": 0.4})
+		_sonido_refugio(int(d["encendido"]))
+	elif d.get("curar", false):
+		Sonido.efecto("examinar")
+	if d.has("destino"):
+		_atajo(d["destino"])
+		return
+	if d.get("guardar", false):
+		_guardar()
+
+
+func _sonido_refugio(i: int) -> void:
+	Sonido.fuente_3d(self, "fogata_bucle", T.en_mundo(Refugios.sitios()[i][0]) + Vector3(0, 0.6, 0))
+
+
+func _atajo(destino: Vector3) -> void:
+	saliendo = true                                           # (nada de encuentros ni salidas durante el fundido)
+	_parar_kael()
+	var t := create_tween()
+	t.tween_property(fundido, "color:a", 1.0, 0.35)
+	await t.finished
+	_colocar_kael(_sitio_libre(destino))
+	if grupo != null:
+		grupo.colocar(Vector3.BACK)
+	_ultima = kael.global_position
+	salida["armada"] = _dist_plana(kael.global_position, _salida()) > ARMAR_SALIDA
+	var t2 := create_tween()
+	t2.tween_property(fundido, "color:a", 0.0, 0.35)
+	await t2.finished
+	saliendo = false
+	_guardar()

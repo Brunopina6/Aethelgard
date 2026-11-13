@@ -304,14 +304,151 @@ def c_carrera(e):
     return clip("c12_carrera", n / FPS, claves, bucle=True, eventos={"metros_por_s_1_7": round(S / (apoyo * T), 4)})
 
 
+# ------------------------------------------------------------------ 13/11: pilotos de esgrima de Garon y magia blanca de Lya
+# (docs/v12/GARON_ESGRIMA_V12.md y LYA_MAGIA_BLANCA_V12.md). Perfiles del encargo: anticipacion 0-35 %, preparacion
+# 35-50 %, liberacion al 50 %, recuperacion 50-100 %; dos contactos al 50/65 % y siete al 50/54/.../74 %.
+def _estocada(e, lado, alto=-0.12, lejos=0.98):
+    """Mano con espada adelantada en estocada (lado d o i), la hoja recta al frente."""
+    return {"pos": (lejos, alto, 0.12 if lado == "d" else -0.02), "hoja": (1.0, 0.05, -0.04 if lado == "d" else 0.04),
+            "filo": (0, 1, 0), "codo": (-0.2, -1, 0.4), "cierre": 80}
+
+
+def _recogida_lado(e, lado):
+    r = _arma_recogida(e)
+    if lado == "i":
+        r = mezclar(r, {"hoja": (-0.6, -0.7, -0.25)})
+    return r
+
+
+def c_punta_gemela(e):
+    # garon_01 (P01 punta_simple, 1,2 s): estocada corta con cada hoja; contactos al 50 % y al 65 %
+    g = guardia_pose(e)
+    d = 1.2
+    carga = mezclar(cadera_mas(g, (-0.05, -0.1, 0)), {"columna": suma(g["columna"], (-4, 0, -14)), "mirada": 3.0,
+                    "pie_i": {"pos": (0.16, 0, 0.08)}, "mano_d": _recogida_lado(e, "d"), "mano_i": _recogida_lado(e, "i")})
+    prep = mezclar(carga, {"cadera": suma(carga["cadera"], (-0.02, -0.02, 0)), "columna": suma(g["columna"], (-6, 0, -18))})
+    d1 = mezclar(cadera_mas(g, (0.1, -0.12, 0)), {"columna": suma(g["columna"], (14, 0, 10)), "pie_i": {"pos": (0.26, 0, 0.08)},
+                 "mano_d": _estocada(e, "d"), "mano_i": _recogida_lado(e, "i")})
+    d2 = mezclar(cadera_mas(g, (0.12, -0.13, 0)), {"columna": suma(g["columna"], (16, 0, -10)), "pie_i": {"pos": (0.27, 0, 0.08)},
+                 "mano_d": mezclar(_recogida_lado(e, "d"), {"pos": (0.35, -0.5, 0.25)}), "mano_i": _estocada(e, "i", -0.18, 1.0)})
+    return clip("c12_punta_gemela", d, [(0, g), (0.25 * d, carga), (0.4 * d, prep), (0.5 * d, d1), (0.57 * d, d1),
+                                        (0.65 * d, d2), (0.75 * d, d2), (d, g)],
+                eventos={"contacto": 0.5 * d, "contacto_2": 0.65 * d})
+
+
+def c_guardia_cruz(e):
+    # garon_02 (P02 doble_punta, 1,45 s): corte bajo al 50 % y cruza las hojas delante (queda en la guardia en cruz)
+    g = guardia_pose(e)
+    d = 1.45
+    alza = mezclar(cadera_mas(g, (-0.03, -0.06, 0)), {"columna": suma(g["columna"], (-6, 0, -12)),
+                   "mano_d": {"pos": (0.15, 0.55, 0.3), "hoja": (-0.4, 0.85, 0.2), "codo": (0, -0.4, 1)}})
+    corte = mezclar(cadera_mas(g, (0.08, -0.16, 0)), {"columna": suma(g["columna"], (22, 0, 8)), "pie_i": {"pos": (0.22, 0, 0.08)},
+                    "mano_d": {"pos": (0.85, -0.62, 0.1), "hoja": (0.7, -0.7, 0.05), "filo": (0, -1, 0), "codo": (0, -1, 0.6)}})
+    cruz = mezclar(cadera_mas(g, (0.0, -0.1, 0)), {"columna": suma(g["columna"], (2, 0, 0)), "mirada": 3.0,
+                   "mano_d": _arma_defensa(e, "d"), "mano_i": _arma_defensa(e, "i")})
+    return clip("c12_guardia_cruz", d, [(0, g), (0.35 * d, alza), (0.5 * d, corte), (0.62 * d, corte), (0.8 * d, cruz),
+                                        (d, cruz)], eventos={"contacto": 0.5 * d})
+
+
+def c_cadencia(e):
+    # garon_16 (P07 cadencia_larga, 3,1 s): quieto y recogido (anticipacion), siete puntas en tres frases,
+    # contactos al 50/54/58/62/66/70/74 % y vuelta a la guardia con las hojas abiertas.
+    g = guardia_pose(e)
+    d = 3.1
+    quieto = mezclar(cadera_mas(g, (-0.06, -0.14, 0)), {"columna": suma(g["columna"], (-2, 0, -16)), "cabeza": (6, 0, -6),
+                     "mirada": 4.0, "mano_d": _recogida_lado(e, "d"), "mano_i": _recogida_lado(e, "i")})
+    respira = cadera_mas(quieto, (0, -0.015, 0))
+    claves = [(0, g), (0.2 * d, quieto), (0.35 * d, respira), (0.46 * d, quieto)]
+    contactos = [0.50, 0.54, 0.58, 0.62, 0.66, 0.70, 0.74]
+    altos = [-0.05, -0.2, 0.05, -0.15, -0.25, 0.0, -0.1]
+    for i, f in enumerate(contactos):
+        lado = "d" if i % 2 == 0 else "i"
+        otro = "i" if lado == "d" else "d"
+        punta = mezclar(cadera_mas(g, (0.1 + 0.01 * i, -0.13, 0)), {"columna": suma(g["columna"], (14, 0, 10 if lado == "d" else -10)),
+                        "pie_i": {"pos": (0.26, 0, 0.08)}, "mano_" + lado: _estocada(e, lado, altos[i]),
+                        "mano_" + otro: mezclar(_recogida_lado(e, otro), {"pos": (0.3, -0.45, 0.2 if otro == "d" else 0.05)})})
+        claves.append((f * d, punta))
+        if i < 6:
+            claves.append(((f + 0.02) * d, mezclar(punta, {"mano_" + lado: mezclar(_estocada(e, lado, altos[i]), {"pos": (0.6, altos[i], 0.1)})})))
+    final = mezclar(cadera_mas(g, (0.02, -0.06, 0)), {"mano_d": {"pos": (0.4, -0.5, 0.6), "hoja": (0.4, -0.4, 0.8)},
+                    "mano_i": {"pos": (0.4, -0.5, 0.6), "hoja": (0.4, -0.4, 0.8)}})
+    claves += [(0.82 * d, final), (0.92 * d, final), (d, g)]
+    ev = {}
+    for i, f in enumerate(contactos):
+        ev["contacto" if i == 0 else "contacto_%d" % (i + 1)] = round(f * d, 4)
+    return clip("c12_cadencia", d, claves, eventos=ev)
+
+
+def c_manantial(e):
+    # lya_09 Manantial Interior (P03 sello_frontal, 1,8 s): giro lento de muneca junto al pecho y la abre al aliado (50 %)
+    g = guardia_pose(e)
+    d = 1.8
+    pecho = mezclar(cadera_mas(g, (0, -0.02, 0)), {"columna": (2, 0, 0), "cabeza": (8, 0, 0), "mirada": 14.0,
+                    "mano_i": {"pos": (0.4, -0.2, -0.3), "dedos": (0.2, 1.0, 0.2), "palma": (0, 1, 0), "cierre": 20}})
+    gira = mezclar(pecho, {"mano_i": {"pos": (0.42, -0.15, -0.28), "dedos": (0.6, 0.8, -0.2), "palma": (0.3, 0.6, 0.5), "cierre": 10}})
+    abre = mezclar(cadera_mas(g, (0.03, -0.01, 0)), {"columna": (6, 0, 0), "cabeza": (-2, 0, 0),
+                   "mano_i": {"pos": (0.85, -0.15, 0.05), "dedos": (1, 0.1, 0), "palma": (0, 1, 0), "cierre": 5, "pulgar": 0}})
+    return clip("c12_manantial", d, [(0, g), (0.35 * d, pecho), (0.45 * d, gira), (0.5 * d, abre), (0.7 * d, abre), (d, g)],
+                eventos={"lanzamiento": 0.5 * d})
+
+
+def c_custodia(e):
+    # lya_15 Custodia del Pulso (P03, 1,8 s): cierra la mano sobre un sello pequeno delante (50 %) y lo sostiene
+    g = guardia_pose(e)
+    d = 1.8
+    abre = mezclar(cadera_mas(g, (0, -0.01, 0)), {"columna": (-3, 0, 0), "mirada": 6.0,
+                   "mano_i": {"pos": (0.62, -0.05, 0.0), "dedos": (0.3, 1.0, 0.1), "palma": (1, 0, 0), "cierre": 5, "pulgar": 0}})
+    cierra = mezclar(cadera_mas(g, (0.02, -0.04, 0)), {"columna": (6, 0, 0), "cabeza": (4, 0, 0),
+                     "mano_i": {"pos": (0.68, -0.1, 0.0), "dedos": (1, 0.2, 0), "palma": (0, -0.4, -1), "cierre": 85, "pulgar": 60}})
+    return clip("c12_custodia", d, [(0, g), (0.35 * d, abre), (0.45 * d, abre), (0.5 * d, cierra), (0.75 * d, cierra), (d, g)],
+                eventos={"lanzamiento": 0.5 * d})
+
+
+def c_aurel(e):
+    # lya_24 Aurel, Faro Peregrino (P08 culminacion, 3,6 s): planta el cetro en el centro, sujeto con las dos manos, y al
+    # 50 % abre el brazo libre y alza el pecho (la invocacion sale entonces)
+    g = guardia_pose(e)
+    d = 3.6
+    planta = mezclar(cadera_mas(g, (0.02, -0.08, 0)), {"columna": (10, 0, 0), "cabeza": (12, 0, 0), "mirada": 20.0,
+                     "mano_d": {"pos": (0.55, -0.45, 0.05), "hoja": (0.05, 1.0, 0.0), "codo": (-0.3, -1, 0.7)},
+                     "mano_i": {"pos": (0.55, -0.3, -0.12), "dedos": (0.1, 0.2, 1.0), "palma": (1, 0, 0), "cierre": 70}})
+    reza = cadera_mas(planta, (0, -0.02, 0))
+    abre = mezclar(cadera_mas(g, (0, 0.01, 0)), {"columna": (-10, 0, 0), "cabeza": (-14, 0, 0), "mirada": -18.0,
+                   "pie_d": {"punta": 12}, "pie_i": {"punta": 12},
+                   "mano_d": {"pos": (0.55, -0.45, 0.05), "hoja": (0.05, 1.0, 0.0), "codo": (-0.3, -1, 0.7)},
+                   "mano_i": {"pos": (0.25, 0.45, 0.85), "dedos": (0.2, 0.5, 1), "palma": (1, 0.2, 0), "cierre": 5, "pulgar": 0}})
+    return clip("c12_aurel", d, [(0, g), (0.25 * d, planta), (0.45 * d, reza), (0.5 * d, abre), (0.8 * d, abre), (d, g)],
+                eventos={"lanzamiento": 0.5 * d})
+
+
+def c_restitucion(e):
+    # lya_21 Restitucion Plena (P07 ritual_mayor, 3,2 s): alza el cetro por encima de la cabeza, lo sostiene y al 50 %
+    # traza con el una linea descendente hacia el aliado; la mano libre acompana abierta
+    g = guardia_pose(e)
+    d = 3.2
+    alza = mezclar(cadera_mas(g, (0, 0.01, 0)), {"columna": (-8, 0, 0), "cabeza": (-12, 0, 0), "mirada": -16.0,
+                   "pie_d": {"punta": 8}, "pie_i": {"punta": 8},
+                   "mano_d": {"pos": (0.3, 0.5, 0.12), "hoja": (0.1, 1.0, 0.0), "codo": (-0.2, -0.6, 1)},
+                   "mano_i": {"pos": (0.35, 0.05, -0.25), "dedos": (0.2, 1.0, 0.1), "palma": (1, 0, 0), "cierre": 10, "pulgar": 0}})
+    sostiene = cadera_mas(alza, (0, 0.015, 0))
+    traza = mezclar(cadera_mas(g, (0.04, -0.05, 0)), {"columna": (12, 0, 0), "cabeza": (6, 0, 0), "mirada": 8.0,
+                    "pie_i": {"pos": (0.14, 0, 0.08)},
+                    "mano_d": {"pos": (0.8, -0.3, 0.08), "hoja": (0.85, 0.5, 0.0), "codo": (-0.2, -1, 0.5)},
+                    "mano_i": {"pos": (0.7, -0.15, -0.12), "dedos": (1, 0.2, 0), "palma": (0, 1, 0), "cierre": 5, "pulgar": 0}})
+    return clip("c12_restitucion", d, [(0, g), (0.3 * d, alza), (0.45 * d, sostiene), (0.5 * d, traza), (0.75 * d, traza),
+                                       (d, g)], eventos={"lanzamiento": 0.5 * d})
+
+
 def clips_de(heroe):
     e = BC.ESTILOS[heroe]
     lista = [c_arranque(e), c_frenada(e), c_recibir_fuerte(e), c_bloqueo(e), c_defensa(e), c_tecnica_carga(e),
              c_remate(e)]
     if e["arma"] == "dos_espadas":
-        lista += [c_paso_atras(e), c_embuir(e), c_carrera(e)]
+        lista += [c_paso_atras(e), c_embuir(e), c_carrera(e), c_punta_gemela(e), c_guardia_cruz(e), c_cadencia(e)]
     else:
         lista += [c_salto_atras(e)]
     if e["arma"] == "sable":
         lista += [c_magia_carga(e)]
+    if e["arma"] == "cetro":
+        lista += [c_manantial(e), c_custodia(e), c_restitucion(e), c_aurel(e)]
     return lista
