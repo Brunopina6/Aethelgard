@@ -393,3 +393,5 @@ negra).
   bestiario v2 (`claude/v12-bestiario`, Peón y Velador; los pilotos v1 en `1c057f7` aún sin integrar) y la pasada
   final de rendimiento y fallos (`claude/v12-rend3` desde `cefed0a`, en `D:\Aethelgard_v12_rend2`). Al reanudar:
   revisar el estado de esas dos ramas, integrar lo probado y pasar la batería.
+- **13/11, mañana:** APK de Auditoría `androidauditora-20261113-dfe5867` copiada al Redmi (Descargas, SHA-256 `558299e9…2f7e` verificado en el teléfono), sin instalar. Vistas de Nix para Meshy en `D:REBELUM_diagnostico12expansion
+ixpara_meshy`.

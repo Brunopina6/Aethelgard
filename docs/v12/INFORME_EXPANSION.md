@@ -86,3 +86,12 @@ memoria de audio) quedaron arreglados en `e9329fd`. Las partidas reales no cambi
   - un nivel de detalle lejano para los NPC de Oakhaven;
   - comprimir los atlas de los enemigos v12.
 - **Batería final:** 155 superadas · 0 fallidas · 72 manuales · 0 no seguras. Partidas reales sin cambios.
+
+## APK de Auditoría para el Redmi (13/11, mañana)
+
+- `Aethelgard_androidauditora-20261113-dfe5867.apk` (402,7 MB, `com.aethelgard.auditoria`), compilada desde `dfe5867`
+  con el guion de siempre («TODO CORRECTO»; firma de siempre; lleva recursos de licencia pendiente: solo prueba local).
+- SHA-256 `558299e93a0f2963063bd341f1fb7cec3958ecada8c2fa44a7763fba313e2f7e`. Copiada por USB a Descargas del Redmi; el
+  tamaño (422 218 694 bytes) y el SHA-256 comprobados en el teléfono coinciden. Sin instalar (lo hace el usuario).
+- Vistas de la referencia de Nix separadas para Meshy (frente, perfil y espalda, 1024²):
+  `D:\REBELUM_diagnostico\v12\expansion\nix\para_meshy\` (fuera de Git: la referencia no tiene licencia registrada).
