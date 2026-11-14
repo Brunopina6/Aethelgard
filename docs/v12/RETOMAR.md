@@ -722,3 +722,22 @@ Todo está en `docs/v12/EREBO_CINEMATICA_V12.md`. Es EXPERIMENTAL y está APAGAD
 - **PENDIENTE:**
   - Que el usuario vea y oiga los vídeos.
   - Redmi: decodificación de Theora, sincronía del audio, memoria y carga, y comprobar que con el vídeo desaparece la caída a 15 FPS de los primeros planos.
+
+## RELEVO 14/11, noche (21:40): aventura del cantero y taller de Lya (LEER PRIMERO)
+
+Encargo del usuario (fuera de casa, sin Redmi): Érebo cinematográfico CONGELADO en `5e5458d` (apagado; no sustituir
+la invocación original). Prioridades: 1) cerrar «Las tres marcas del cantero»; 2) taller de Lya conectado; 3) pulido
+de Oakhaven y Pastos Verdes; después, el siguiente lote de la matriz (personajes, enemigos o armas con archivos).
+- **Punto de recuperación:** etiqueta `recuperacion/v12/20261114-antes-cantero` → `dee61fc`.
+- **Hecho y comprobado en el PC (commits locales, sin subir):**
+  - `a5a519e`: talleres más claros (lo que falta, pistas, «No se gasta», orden; investigación con «si»).
+  - `0f460ab`: «Las tres marcas del cantero» completa (PROPUESTA; en Auditoría: Ajustes o banco de pruebas).
+    Todo en `docs/v12/CANTERO_V12.md`. Recorrido JUGADO con controles normales (`fotos_cantero_recorrido`, 0 fallos);
+    capturas en `D:\REBELUM_diagnostico\cantero\recorrido_14_11\`. Regresión de Oakhaven, talleres y banco: 20/20.
+- **En curso:** prioridad 3 (revisión de Oakhaven y Pastos Verdes en busca de defectos concretos).
+- **Siguiente lote de la matriz elegido:** Custodio de Porcelana (`meshy_e01`): ataque e01_a2 «Avance del Portón» (ficha
+  en `D:\REBELUM_entrada_13_11\extraido\Aethelgard_Paquete_Claude_4_Enemigos\ataques_propuestos.json`), con su clip en
+  Blender (`enemigos/meshy_e01/fuente/p2_clips.py`) y su lógica en `combate_meshy_e01.gd`. Kael rúnico y el arsenal
+  siguen BLOQUEADOS (faltan sus PDF y el catálogo).
+- **Redmi:** nada nuevo instalado. Al reconectar, lo de siempre (restaurar `ajustes.cfg`, borrar `banco_pruebas.save`,
+  comprobar SHA) y probar también el cantero (legibilidad de las placas, la losa con el dedo).
