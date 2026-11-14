@@ -278,6 +278,15 @@ func _mision() -> void:
 	Oak.aplicar_senal("oak:cantero_marca_3")
 	Oak.abrir_cerradura(LOSA)
 	_ok(E.paso_actual(mis).get("id", "") == "volver", "3: la losa abierta sin las marcas deja el Diario en las marcas")
+	# (revisión del 14/11) el aprendiz primero y la losa SIN abrir el arcón: el Diario no manda al arcón, sino a volver
+	_limpiar()
+	Engine.set_meta(INTERRUPTOR, true)
+	Oak.aplicar_senal("oak:cantero_pedido")
+	_ok(E.paso_actual(mis).get("id", "") == "arcon", "3: tras el encargo, el primer paso no es el arcón")
+	Oak.abrir_cerradura(LOSA)
+	_ok(E.paso_actual(mis).get("id", "") == "volver" and not Oak.cerradura_abierta(),
+		"3: con la losa abierta sin el arcón, el Diario no dice volver (o el arcón se abre solo)")
+	_ok(E.pasos_conocidos(mis).any(func(p): return p["id"] == "volver"), "3: el paso de volver no se enseña")
 	_limpiar()
 
 
@@ -286,9 +295,11 @@ func _taller() -> void:
 	var I = load("res://investigacion.gd")
 	var Ta = load("res://talleres.gd")
 	_ok(I.visible("lya_cantera") and I.estado("lya_cantera") == "disponible", "3b: con el polvo, la investigación no sale o no se puede")
+	_ok(Ta.reservado("Polvo de cantera"), "3b: antes de estudiar, el polvo se puede vender (y la investigación quedaría bloqueada)")
 	_ok(I.empezar("lya_cantera") == "" and I.avanzar("lya_cantera", 1) and I.estado("lya_cantera") == "completada",
 		"3b: la investigación del polvo no se completa")
 	_ok(Inv.cantidad("Polvo de cantera") == 3, "3b: estudiar gasta el polvo")
+	_ok(not Ta.reservado("Polvo de cantera"), "3b: estudiada, el polvo sigue reservado")
 	Inv.agregar_objeto("Hierba lunar", 5)
 	var eter0: int = Inv.cantidad("Éter")
 	var hechas := 0

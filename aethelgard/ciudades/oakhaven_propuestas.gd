@@ -91,7 +91,7 @@ const MISIONES := [
 		"fin": "estado_de:oakhaven/cantero_fin",
 		"pasos": [
 			{"id": "arcon", "texto": "Abre el arcón del Concejo, bajo el pórtico.",
-				"hecho": "estado_de:oakhaven/cerradura_abierta"},
+				"hecho": "cond:cantero_arcon"},   # (o la losa ya abierta: entonces el arcón no hace falta)
 			{"id": "marcas", "texto": "Encuentra las tres marcas del cantero por la ciudad.",
 				"hecho": "estado_de:oakhaven/cantero_marcas"},
 			{"id": "losa", "texto": "Busca la losa del cantero y ábrela con lo que dicen las marcas.",
@@ -132,12 +132,16 @@ static func activado() -> bool:
 # Condiciones propias (encargos.gd las pregunta a este módulo):
 #   «cond:propuestas_v12»    el interruptor
 #   «cond:cantero_empieza»   el interruptor y, además, el encargo del aprendiz o el arcón abierto (lo que llegue antes)
+#   «cond:cantero_arcon»     el paso del arcón, hecho con el arcón abierto o con la losa ya abierta (revisión del 14/11:
+#                            si se abría la losa sin el arcón, el Diario seguía mandando al arcón y no decía «volver»)
 static func cumple(c: String) -> bool:
 	if c == "cond:propuestas_v12":
 		return activado()
 	if c == "cond:cantero_empieza":
 		var P = _p()
 		return activado() and (P.estado(NOMBRE, "cantero_pedido") or P.estado(NOMBRE, "cerradura_abierta"))
+	if c == "cond:cantero_arcon":
+		return _p().estado(NOMBRE, "cerradura_abierta") or _p().estado(NOMBRE, "cerradura_cantero_abierta")
 	push_warning("Propuestas de Oakhaven: condición desconocida «%s»" % c)
 	return false
 

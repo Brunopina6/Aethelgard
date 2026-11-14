@@ -26,18 +26,25 @@ static func puede(id: String, con_borradores := false) -> String:
 	var Inv = load("res://inventario.gd")
 	for clave in r.materiales:
 		if reservado(clave):
-			return "Maese Ferro espera ese %s: llévaselo antes." % clave
+			return "Maese Ferro espera ese %s: llévaselo antes." % clave if clave == "Hierro de la Falla" \
+				else "Hace falta el %s para investigar antes." % clave
 		if Inv.cantidad(clave) < int(r.materiales[clave]):
 			return "Faltan materiales: %s (%d de %d)." % [clave, Inv.cantidad(clave), int(r.materiales[clave])]
 	return ""
 
 
-# 14/11 (revisión del recorrido): un material que espera un encargo no se vende ni se gasta en el taller. Hoy, el
-# Hierro de la Falla mientras «El pedido de Maese Ferro» está pendiente (la veta da uno solo: sin él, Ferro repetía su
-# escena para siempre y la forja del distrito no volvía a abrirse).
+# 14/11 (revisión del recorrido): un material ÚNICO que aún hace falta no se vende ni se gasta en el taller:
+#   - el Hierro de la Falla mientras «El pedido de Maese Ferro» está pendiente (la veta da uno solo: sin él, Ferro
+#     repetía su escena para siempre y la forja del distrito no volvía a abrirse);
+#   - el Polvo de cantera (solo lo da el aprendiz del cantero, una vez) mientras no se ha estudiado «La piedra que
+#     asienta» (venderlo antes la dejaba bloqueada para siempre).
 static func reservado(material: String) -> bool:
 	var P = load("res://progreso.gd")
-	return material == "Hierro de la Falla" and P.hito("enc_herrero_veta") and not P.hito("enc_herrero_fin")
+	if material == "Hierro de la Falla":
+		return P.hito("enc_herrero_veta") and not P.hito("enc_herrero_fin")
+	if material == "Polvo de cantera":
+		return Investigacion.estado("lya_cantera") != "completada"
+	return false
 
 
 static func fabricar(id: String, con_borradores := false) -> bool:

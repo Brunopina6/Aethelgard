@@ -98,6 +98,18 @@ Una partida antigua no los tiene: todo por descubrir.
     la losa.
 - **Regresión de Oakhaven, talleres y banco:** 20 de 20 superadas.
 
+## Revisión adversarial (14/11, 22:40)
+
+Cuatro revisores de solo lectura (cantero, talleres, Custodio y pulido), y un escéptico por hallazgo que intentaba
+refutarlo. El Custodio y el pulido salieron limpios. Se confirmaron dos defectos, ya corregidos:
+- **El Diario mandaba al arcón aunque la losa ya estuviera abierta**, y no enseñaba «volver», si se abría la losa sin
+  pasar por el arcón. Ahora el paso del arcón vale con cualquiera de las dos (`cond:cantero_arcon`), sin abrir el
+  arcón por su cuenta.
+- **El Polvo de cantera se podía vender antes de estudiar** «La piedra que asienta», y la dejaba bloqueada para
+  siempre. Ahora queda reservado hasta que se estudia (`talleres.gd`, `reservado()`, como el Hierro de la Falla).
+
+Contraprueba: sin los dos arreglos, `prueba_oakhaven_propuestas` da 3 fallos.
+
 ## Pendiente
 
 - **Redmi:**
