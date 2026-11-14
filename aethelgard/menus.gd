@@ -836,6 +836,22 @@ func _pintar_ajustes() -> void:
 				fgb.add_child(bg)
 			cuerpo.add_child(fgb)
 		cuerpo.add_child(_texto("Solo Auditoría. Se nota al volver a entrar en el Gran Bosque.", 16, COLOR_SUAVE))
+		# V12 (14/11): el orbe experimental de Érebo (erebo_orbe_v12.gd), APAGADO por defecto. Solo Auditoría o editor.
+		var EO = load("res://erebo_orbe_v12.gd")
+		var eo_act: bool = EO.activo()
+		var feo := HBoxContainer.new()
+		feo.add_theme_constant_override("separation", 8)
+		feo.add_child(_texto("Érebo: orbe experimental", 18, COLOR_SUAVE))
+		for op in [[false, "No"], [true, "Sí"]]:
+			var so: bool = op[0]
+			var be := _boton(("● " if so == eo_act else "○ ") + op[1], 18, Vector2(120, 34), "erebo_orbe:%s" % ("si" if so else "no"))
+			be.pressed.connect(func():
+				EO.elegir(so)
+				Sonido.efecto("ui_tic")
+				_pintar_de_nuevo())
+			feo.add_child(be)
+		cuerpo.add_child(feo)
+		cuerpo.add_child(_texto("Solo Auditoría: espiral violeta, negra y plateada al agarrar el orbe. No cambia el daño.", 16, COLOR_SUAVE))
 	load("res://zonas3d/oakhaven/mundo_vivo.gd").opcion_ajustes(self, cuerpo)   # V12, «Oakhaven: mundo vivo» (mundo_vivo_v12)
 	# Combate (12/11): la animación de combate v12 de los protagonistas v2 (combate_anim_v12.gd, [combate] anim_v12), sus
 	# cámaras ([combate] camaras) y el ATB quieto mientras actúa un héroe ([combate] pausa_atb; 13/11). Por defecto, la de siempre.
