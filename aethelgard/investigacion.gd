@@ -35,10 +35,10 @@ static func faltan(id: String) -> Array:
 			"material":
 				var tiene: int = load("res://inventario.gd").cantidad(str(q["id"]))
 				if tiene < int(q["cantidad"]):
-					r.append("Hace falta %s (%d de %d)." % [q["id"], tiene, int(q["cantidad"])])
+					r.append("Hace falta tener %s (%d de %d). No se gasta." % [q["id"], tiene, int(q["cantidad"])])
 			"hito":
 				if not load("res://progreso.gd").hito(str(q["id"])):
-					r.append("Aún no es el momento.")
+					r.append(str(q.get("pista", "Aún no es el momento.")))
 			"investigacion":
 				if estado(str(q["id"])) != "completada":
 					var otra := _datos(str(q["id"]))
@@ -51,6 +51,17 @@ static func faltan(id: String) -> Array:
 			_:
 				r.append("Requisito desconocido.")
 	return r
+
+
+# 14/11: ¿sale en la pantalla del taller? (su «si»; empezada o completada, siempre). Solo es lo que se ENSEÑA: no cambia
+# lo que se puede hacer.
+static func visible(id: String) -> bool:
+	var v := _datos(id)
+	if v == null:
+		return false
+	if _partida().has(id) or str(v.get("si")) == "" or v.get("si") == null:
+		return true
+	return load("res://encargos.gd").cumple(str(v.si))
 
 
 static func estado(id: String) -> String:

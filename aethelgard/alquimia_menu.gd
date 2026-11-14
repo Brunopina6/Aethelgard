@@ -147,10 +147,13 @@ func _pintar_recetas() -> void:
 	var Inv = load("res://inventario.gd")
 	var todas: Dictionary = Catalogo.todos("recetas")
 	var hay := false
+	var filas: Array = []                         # 14/11: primero lo que se puede preparar; luego, lo que falta
 	for id in todas:
 		var rc: Resource = todas[id]
 		if rc.taller != taller or rc.borrador:
 			continue
+		if rc.investigacion != "" and not Investigacion.visible(rc.investigacion):
+			continue                                 # (14/11: la de una investigación que aún no sale)
 		hay = true
 		var partes: Array = []
 		var falta := false
@@ -173,8 +176,10 @@ func _pintar_recetas() -> void:
 		else:
 			linea2 = "Lista para preparar." if Talleres._de_un_uso(rc) else "Lista para preparar. Tienes %d." % Inv.cantidad(rc.resultado)
 		var desc: String = QUE_HACE.get(rc.resultado, rc.desc if rc.desc != "" else Talleres.texto_resultado(rc.resultado))
-		_fila(rc.nombre if rc.nombre == rc.resultado or Talleres._de_un_uso(rc) else "%s → %s" % [rc.nombre, rc.resultado], "Ingredientes: " + ", ".join(partes) + ("   ·   " + desc if desc != "" else ""),
-			linea2, c2, "FABRICAR", motivo != "", _fabricar.bind(id))
+		filas.append([0 if motivo == "" else (2 if bloqueada else 1), filas.size(),
+			[rc.nombre if rc.nombre == rc.resultado or Talleres._de_un_uso(rc) else "%s → %s" % [rc.nombre, rc.resultado], "Ingredientes: " + ", ".join(partes) + ("   ·   " + desc if desc != "" else ""),
+			linea2, c2, "FABRICAR", motivo != "", _fabricar.bind(id)]])
+	_pintar_en_orden(filas)
 	if not hay:
 		lista.add_child(_texto("Aún no hay recetas en este taller.", 24, SUAVE))
 	_enfocar_primero()
@@ -193,11 +198,19 @@ func _fabricar(id: String) -> void:
 	_pintar()
 
 
+# Las filas [orden, índice, argumentos de _fila] por su orden (y, a igualdad, como venían).
+func _pintar_en_orden(filas: Array) -> void:
+	filas.sort_custom(func(a, b): return a[0] < b[0] or (a[0] == b[0] and a[1] < b[1]))
+	for f in filas:
+		callv("_fila", f[2])
+
+
 func _pintar_investigaciones() -> void:
 	var todas: Dictionary = Catalogo.todos("investigaciones")
+	var filas: Array = []                         # 14/11: lo que se puede empezar, en curso, lo que falta y lo hecho
 	for id in todas:
 		var v: Resource = todas[id]
-		if v.taller != taller or v.borrador:
+		if v.taller != taller or v.borrador or not Investigacion.visible(id):
 			continue
 		var e: String = Investigacion.estado(id)
 		var linea2 := ""
@@ -207,7 +220,7 @@ func _pintar_investigaciones() -> void:
 		match e:
 			"bloqueada":
 				var f: Array = Investigacion.faltan(id)
-				linea2 = f[0] if not f.is_empty() else "Aún no se puede."
+				linea2 = " ".join(f) if not f.is_empty() else "Aún no se puede."     # (todo lo que falta, no solo lo primero)
 				c2 = MAL
 				boton = "INVESTIGAR"
 			"disponible":
@@ -226,7 +239,9 @@ func _pintar_investigaciones() -> void:
 					nombres.append(rc.nombre if rc != null else rid)
 				linea2 = "Completada. Desbloquea: %s." % ", ".join(nombres)
 				c2 = BIEN
-		_fila(v.nombre, v.desc, linea2, c2, boton, apagado, _investigar.bind(id))
+		filas.append([{"disponible": 0, "en_curso": 1, "bloqueada": 2}.get(e, 3), filas.size(),
+			[v.nombre, v.desc, linea2, c2, boton, apagado, _investigar.bind(id)]])
+	_pintar_en_orden(filas)
 	_enfocar_primero()
 
 
