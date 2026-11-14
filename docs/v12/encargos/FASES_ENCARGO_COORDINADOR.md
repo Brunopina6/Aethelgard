@@ -53,6 +53,10 @@ Lanzados el 14/11 hacia las 01:40, como subagentes de la sesión coordinadora:
 |---|---|---|---|---|
 | Custodio de Porcelana `meshy_e01` (piloto: rig, idle, walk, Prensa del Umbral; APAGADO) | `D:\Aethelgard_v12_custodio`, `D:\REBELUM_diagnostico\v12\custodio\` y `D:\REBELUM_entrada_13_11\custodio_trabajo\` | `claude/v12-custodio` | enemigo nuevo, registro en el combate, `docs/v12/CUSTODIO_E01_V12.md` | 9 |
 | Experiencia jugable de Oakhaven (gremio 13 frente a 15, Diario, caravana, cerradura rúnica y, si da tiempo, secundaria y secreto) | `D:\Aethelgard_v12_oakhaven_jugable` | `claude/v12-oakhaven-jugable` | misiones, `diario.gd`, cerradura nueva, `docs/v12/OAKHAVEN_JUGABLE_V12.md` | 7 |
+| Vestuario canónico de Nix (capucha, pelo recogido, capa, faldones, medias, emblema y cetro; brillo) — lanzado hacia las 03:40 desde `80ac41a` | `D:\Aethelgard_v12_nix_vestuario` y `D:\REBELUM_diagnostico\v12\expansion\nix\vestuario\` | `claude/v12-nix-vestuario` | `personajes/nix/fbx/*`, `prueba_nix_fbx`, `docs/v12/NIX_PILOTO_FBX.md` | 5 |
+
+**14/11, 03:35:** arreglado en la principal el `AvanzarDoble` de Garon v2 y v3 (`80ac41a`; no está en la APK
+`e318629`).
 
 La copia principal `D:\Aethelgard_v12` la usa solo el coordinador. Las ramas de los especialistas se integran
 copiando archivos, nunca con fusiones.
