@@ -13,6 +13,9 @@ extends SceneTree
 #   - detrás del cuerpo: el centro del borde de abajo nunca queda por delante del pecho (giros bruscos, reaparecer);
 #   - vértices de la tela dentro del cuerpo (piel en la CPU, como prueba_capa_garon.gd) y suelo;
 #   - restos: nodos y nodos huérfanos tras la derrota y al cambiar de escena.
+#   - (14/11, tarde) media vuelta DESDE PARADO en 0,12 s y a correr (el que sigue en la fila al volver el de delante):
+#     ~50° por fotograma; sus primeros 15 fotogramas se miden todos. Contraprueba: sin los subpasos de capa_garon.gd
+#     la tela cruzaba el muslo (y la hoja derecha) en las tres variantes.
 # Variantes original, v2 y v3; casos: «articulada» (guion completo), «espadon» (articulada con un arma equipable más
 # larga, Espadón de Diamante Azul de 1,45 m frente a las Hojas Infernales de 1,1 m) y «rigida» (la de siempre, se mide
 # solo para comparar). Sin ventana:
@@ -46,6 +49,10 @@ const GUION := [
 	["", 30, "marcha_correr"],
 	["girar_180", 30, "giro_marcha_180"],
 	["parar", 75, "parada_correr"],
+	# (14/11, movimiento real) PARADO → media vuelta en 0,12 s → correr: el que sigue en la fila de grupo_3d.gd cuando
+	# el de delante vuelve atrás. Gira ~46-50° por fotograma (por debajo de SALTO_GIRO) y la tela cruzaba el muslo.
+	["media_vuelta_correr", 30, "media_vuelta_parado"],
+	["parar", 60, ""],
 	["fin_explorar", 20, ""],
 	["combate", 40, "c_reposo"],
 	["c_ida", 17, "c_giro_avanzar"],
@@ -81,14 +88,15 @@ const GUION_ARMA := [
 	["explorar", 40, "reposo_exploracion"],
 	["arrancar_correr", 30, "arranque_correr"],
 	["parar", 60, "parada_correr"],
-	["fin_explorar", 10, ""],
+	["fin_explorar", 10, ""],                      # lento del borde (±2 cm) y dependía de en qué fase acababa
 ]
 const DE_PIE := ["reposo", "reposo_exploracion", "arranque_andar", "marcha_andar", "giro_marcha_90", "parada_andar",
-	"arranque_correr", "marcha_correr", "giro_marcha_180", "parada_correr", "c_reposo", "c_giro_avanzar", "c_retroceder",
+	"arranque_correr", "marcha_correr", "giro_marcha_180", "parada_correr", "media_vuelta_parado", "c_reposo", "c_giro_avanzar", "c_retroceder",
 	"c_frente", "defensa", "fin_defensa", "herida", "victoria", "giro_brusco", "reaparecer", "revivido"]
 const FOTOS := {
 	"reposo": [40], "reposo_exploracion": [38], "marcha_andar": [20], "arranque_correr": [5, 12], "marcha_correr": [20],
 	"giro_marcha_90": [3, 8, 16], "giro_marcha_180": [3, 6, 10, 20], "parada_correr": [6, 14, 70],
+	"media_vuelta_parado": [2, 3, 4, 5, 8, 20],
 	"c_giro_avanzar": [6, 14], "juicio": [20, 32, 36, 45, 60], "c_retroceder": [10], "giro_doble": [10, 19, 28, 37, 46],
 	"defensa": [30], "herida": [8], "victoria": [40], "giro_brusco": [1, 4, 10, 40], "reaparecer": [1, 5, 20],
 	"derrota": [30, 60, 145], "levantarse": [20, 45, 70], "revivido": [28],
@@ -147,6 +155,7 @@ var hoja_fotos: Array = []
 var b_antes := Basis()
 var b_antes_ok := false
 var foto_pendiente := ""              # la imagen de un fotograma se lee en el siguiente (cuando ya está dibujado)
+var sub_antes := 0                    # subpasos_extra de la capa en el fotograma anterior
 
 
 func _initialize() -> void:
@@ -214,6 +223,7 @@ func _siguiente() -> void:
 	anclaje = []
 	anterior = PackedVector3Array()
 	b_antes_ok = false
+	sub_antes = 0
 	cache_cuerpo = []
 	perfiles = {}
 	idx_tela = PackedInt32Array()
@@ -241,6 +251,7 @@ func _process(dt: float) -> bool:
 				elif g.get("capa") != null:            # sin medir: solo el sitio de la capa (giro por fotograma)
 					b_antes = g.get("capa").global_transform.basis.orthonormalized()
 					b_antes_ok = true
+					sub_antes = int(g.get("capa").get("subpasos_extra") if g.get("capa").get("subpasos_extra") != null else 0)
 	if vel_marcha > 0.0:
 		g.marcha(vel_marcha)
 		g.global_position += dir_marcha * vel_marcha * dt
@@ -290,6 +301,10 @@ func _accion(a: String) -> void:
 		"girar_180":
 			dir_marcha = -dir_marcha
 			g.mirar(dir_marcha, 0.12)
+		"media_vuelta_correr":                           # parado: se da la vuelta y arranca a correr a la vez
+			dir_marcha = -_adelante()
+			g.mirar(dir_marcha, 0.12)
+			vel_marcha = 4.2
 		"parar":
 			vel_marcha = 0.0
 			g.parar_marcha()
@@ -416,6 +431,12 @@ func _medir() -> void:
 	var pecho_w := gsk * sk.get_bone_global_pose(gs.idx["pecho"]).origin
 	var capa = g.get("capa")
 	var b_capa: Basis = capa.global_transform.basis.orthonormalized()
+	if capa.get("subpasos_extra") != null:      # pasos de más de la simulación (coste de los giros rápidos)
+		var sp: int = capa.subpasos_extra
+		if sp > sub_antes:
+			d["sub_fot"] = d.get("sub_fot", 0) + 1
+			d["sub_extra"] = d.get("sub_extra", 0) + sp - sub_antes
+		sub_antes = sp
 	if b_antes_ok:                              # giro del sitio de la capa en un fotograma (grados)
 		d["rot_max"] = maxf(d.get("rot_max", 0.0), rad_to_deg((b_antes.inverse() * b_capa).get_rotation_quaternion().get_angle()))
 	b_antes = b_capa
@@ -439,7 +460,8 @@ func _medir() -> void:
 	d["suelo"] = minf(d["suelo"], bajo)
 	if fotos_dir != "" and FOTOS.get(fase, []).has(hecho):
 		_foto()
-	if hecho % 3 != 1:
+	# (la media vuelta desde parado cruza en UN fotograma: sus primeros 15 se miden todos, no 1 de cada 3)
+	if hecho % 3 != 1 and not (fase == "media_vuelta_parado" and hecho <= 15):
 		return
 	d["pesadas"] += 1
 	_medir_pesado(P, d, sk, gs, gsk)
@@ -705,6 +727,8 @@ func _cerrar_caso() -> void:
 			_txt(d["huesos_n"]), "%d/%d" % [d["hoja_libre"]["espada"], d["hoja_libre"]["espada_izq"]],
 			"%d/%d" % [d["hoja_suj"]["espada"], d["hoja_suj"]["espada_izq"]], 100.0 * d["dentro_libre"], 100.0 * d["dentro_suj"], d["suelo"]]
 		linea += "  giro máx/fotograma %.0f°" % d.get("rot_max", 0.0)
+		if d.has("sub_fot"):
+			linea += "  subpasos: %d de más en %d fotogramas" % [d["sub_extra"], d["sub_fot"]]
 		if not d["hoja_partes"].is_empty():
 			linea += "  partes de hoja (lado_décimo desde el pomo×muestras): " + _txt(d["hoja_partes"])
 		print("  ", linea)

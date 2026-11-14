@@ -209,3 +209,46 @@ y cambios de escena. Prueba nueva `pruebas/prueba_capa_garon_estados.gd` (526 co
 2. Después, probar cápsulas de piernas más gruesas o colisión entre fotogramas.
 
 Capturas: `D:\REBELUM_diagnostico\v12\capa_revision_14_11\movimiento\2026-11-14_121849\`.
+
+### 12. Media vuelta desde parado (14/11, tarde): ARREGLADO
+
+- **Prueba nueva** en `prueba_capa_garon_estados.gd`: fase `media_vuelta_parado` (tras la parada corriendo: `mirar(-adelante, 0.12)`
+  y a correr a 4,2 m/s a la vez, como el que sigue en la fila); sus primeros 15 fotogramas se miden todos (no 1 de cada 3).
+  **Contraprueba** con el `capa_garon.gd` de antes: 6 FALLOS, todos de esta fase: `muslo_d` cruza la tela en las tres
+  variantes (y `rodilla_d` en el v2) y la hoja derecha corta 3-4 triángulos de la tela libre.
+- **Arreglo 1, subpasos** (`SUBPASO_GIRO` 20°, `MAX_SUBPASOS` 4): si el sitio de la capa gira más de 20° en un fotograma (sin
+  llegar a `SALTO_GIRO`), el cuerpo de ese fotograma (sitios de las juntas, cápsulas y suelo) se lleva girado de vuelta hacia el
+  del anterior (`interpolate_with`) y la tela avanza en n trozos (`_paso`). Quita el cruce del muslo.
+- **Arreglo 2, centro de los cuadros con las piernas**: tras la media vuelta, al correr, la pierna del v2 entraba por el MEDIO
+  de un cuadro de la tela (juntas a 0,20 m del hueso, cuadros de ~0,23 × 0,26 m) sin acercarse a sus bordes. `_chocar` mira
+  también el centro de los 12 cuadros de la tela libre frente a las 4 cápsulas de las piernas y empuja sus cuatro juntas.
+  Solo de pie: tumbado empeoraba la derrota del v2 (prueba_capa_garon, 6,7 → 10,5 %); con todas las cápsulas o con las hojas,
+  nada mejor; con la mitad de empuje o un radio menor, el cruce seguía.
+- Ajuste de la prueba: la parada del caso «espadon» dura 75 fotogramas como la del guion principal (con 60, la medida de
+  «se asienta» caía en el vaivén lento del borde, ±2 cm, y pasaba o no según la fase: 0,018 antes, 0,023 con el arreglo).
+- Resultados (PC, datos aislados): `prueba_capa_garon_estados`, `prueba_capa_garon`, `prueba_heroes_v2`, `prueba_heroes_v3`,
+  `prueba_garon`: 5 SUPERADAS (`D:\REBELUM_diagnostico\pruebas\2026-11-14_135333\`). Reposo idéntico al de antes (arriba
+  0,011/0,005/0,008 m, mismo borde); tumbado 3,2 / 7,0 / 1,1 % (antes 3,9 / 6,7 / 3,2).
+- Coste (sin tiempos): un subpaso de más = otro paso completo (20 juntas, 2 × restricciones, 2 × 424 pruebas tramo-cápsula,
+  más 52 transformaciones de puntos y un `interpolate_with`). En el guion: media vuelta desde parado 6-7 pasos de más en 4
+  fotogramas; giro de 180° corriendo 7 en 4; de 90° 3 en 3; Juicio 8 en 8; Giro 2 en 2; marcha recta y reposo, 0. Los centros:
+  48 `get_closest_point_to_segment` por pasada, 96 por paso, en todos los fotogramas de pie (frente a las 848 de siempre).
+- Capturas `fotos_capa_garon_movimiento` (_v2, _v3): `D:\REBELUM_diagnostico\pruebas\2026-11-14_135506\`. En `giro_180_028`
+  ya no cruza el muslo en ninguna variante; capturas con cruce: antes 1 / 1 / 1, ahora 0 / 1 / 0. **PENDIENTE**: el v2 tiene
+  `rodilla_d` en `giro_180_040` (otra arrancada girando desde parado, 37°/fotograma de media); en la imagen la pierna se ve
+  por delante de la tela. Verlo en el Redmi y, si se nota, mirar el barrido de la pierna entre fotogramas al arrancar.
+
+**Corrección del coordinador al §12, tras la revisión escéptica (14/11, 14:45). Esto es lo que se integra:**
+- **Subpasos RÍGIDOS.** `interpolate_with` mezclaba un sitio sin escala con `a_mundo`, que lleva la escala del esqueleto (0,927, con reflexión). Los subpasos deformaban el cuerpo un 3-6 %. Ahora se gira alrededor del sitio de ahora con el giro propio entre las dos orientaciones (`vuelta`, un Quaternion sin reflexión) y se desplaza en línea recta.
+- **Centros de los cuadros**, solo durante `TRAS_GIRO` (12 fotogramas) tras un giro que haya necesitado subpasos. Antes actuaban en todos los fotogramas de pie y cambiaban la tela también en reposo y en la parada.
+- **Prueba:** la parada del espadón vuelve a sus **60** fotogramas, sin alargarla para que pase. Pasa igual.
+- **Resultados en el proyecto real, sin otros Godot:**
+  - `prueba_capa_garon_estados`, `prueba_capa_garon`, `prueba_heroes_v2`, `prueba_heroes_v3` y `prueba_garon`: 5 superadas (`2026-11-14_144310`).
+  - **Contraprueba** con el `capa_garon.gd` anterior y la prueba nueva: 6 fallos, todos de `media_vuelta_parado` (`2026-11-14_1444xx`).
+- **Diferencias frente a la versión anterior:**
+  - La velocidad máxima de 14-16 m/s en `c_reposo` sale IGUAL con la capa anterior: viene del orden nuevo de fases de la prueba, no del código.
+  - El reposo del original sí cambia un poco con el código nuevo (de lado, 0,020 → 0,035 m; velocidad, 0,45 → 0,66), dentro de los límites. v2 y v3, iguales.
+- **Capturas con movimiento real** (`2026-11-14_144545`): cruces 2 / 0 / 0 (original, v2, v3).
+  - En el original, `giro_180_028` ya no cruza el muslo: solo roza la espada izquierda, que está dentro de la tolerancia.
+  - Queda `giro_180_040` (rodilla), que en la imagen no se ve porque la tela queda detrás.
+- **Pendiente:** medir en el Redmi el coste real de los subpasos en los giros.

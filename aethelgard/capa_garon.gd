@@ -43,6 +43,11 @@ const SALTO_GIRO := 80.0                            # y si su sitio gira más qu
                                                     # vuelta) y lo cruzaba hasta volver (revisión del 14/11). Lo más rápido
                                                     # de los clips y giros normales: 50° por fotograma a 30 fps (media vuelta
                                                     # en 0,12 s, grupo_3d.gd); 75° a 20 fps.
+const SUBPASO_GIRO := 20.0                          # grados: si su sitio gira más en un fotograma (sin llegar a SALTO_GIRO),
+                                                    # el fotograma se simula en trozos de como mucho esto (media vuelta
+                                                    # desde parado, ~50° por fotograma: 3 trozos; antes la tela cruzaba el
+                                                    # muslo durante un fotograma)
+const MAX_SUBPASOS := 4
 const COLUMNAS := 14
 const FILAS := 18
 const ONDA := 0.03                                  # la onda del shader (antes 0,06: ahora la mueven los huesos)
@@ -104,6 +109,10 @@ var _B := PackedInt32Array()
 var _W := PackedFloat32Array()
 var _suelo_extra := 0.0                            # cuánto se aparta la tela de la línea de sus huesos (unidades)
 var reinicios := 0                                  # veces que se ha recolocado (las pruebas lo miran)
+var subpasos_extra := 0                             # pasos de más por los giros rápidos (SUBPASO_GIRO; las pruebas lo miran)
+var _tras_giro := 0                                 # fotogramas que quedan de choque de centros tras un giro rápido
+const TRAS_GIRO := 12                               # (los centros de los cuadros solo chocan en esa ventana: fuera de ella
+                                                    # la capa se comporta exactamente como antes, en reposo y en la parada)
 var tiempo_ultimo_us := 0                           # lo que tardó el último colocar() (microsegundos, PC)
 
 
@@ -308,7 +317,8 @@ func _preparar_colisores(gs, muestras: Array) -> void:
 		var a: int = gs.idx.get(par[0], -1)
 		var b: int = gs.idx.get(par[1], -1)
 		if a >= 0 and b >= 0:
-			tramos.append([a, b, sk.get_bone_global_rest(a).origin, sk.get_bone_global_rest(b).origin, []])
+			var pierna: bool = par[0] in ["muslo_i", "rodilla_i", "muslo_d", "rodilla_d"]
+			tramos.append([a, b, sk.get_bone_global_rest(a).origin, sk.get_bone_global_rest(b).origin, [], pierna])
 	for m in muestras:
 		var mejor := INF
 		var t_mejor = null
@@ -332,7 +342,7 @@ func _preparar_colisores(gs, muestras: Array) -> void:
 				if k > 0:
 					r = minf(r, _dist_tramo(_ancla0 * _reposo[c][k].lerp(_reposo[c][k - 1], 0.5), t[2], t[3]) - holgura)
 		if r > 0.01 * largo:
-			_colisores.append([t[0], t[1], r])
+			_colisores.append([t[0], t[1], r, t[5]])
 	for lado in ["espada", "espada_izq"]:
 		var n = heroe.get(lado)
 		if n is Node3D and is_instance_valid(n):
@@ -504,8 +514,14 @@ func colocar(_sk: Skeleton3D) -> void:
 			col.append(w)
 		obj.append(col)
 	var b_ahora := a_mundo.basis.orthonormalized()
+	var giro_fot := (_giro_antes.inverse() * b_ahora).get_rotation_quaternion().get_angle()
 	var reiniciar := _p.is_empty() or _ancla_antes == Vector3.INF or _ancla_antes.distance_to(a_mundo.origin) > SALTO \
-		or (_giro_antes.inverse() * b_ahora).get_rotation_quaternion().get_angle() > deg_to_rad(SALTO_GIRO)
+		or giro_fot > deg_to_rad(SALTO_GIRO)
+	# (revisión del 14/11) el sitio de antes y el de ahora, los dos SIN escala: a_mundo lleva la del esqueleto (0,927 y
+	# con reflexión) y mezclarlo con uno sin escala deformaba el cuerpo un 3-6 % en los subpasos. «vuelta» es el giro
+	# propio (sin reflexión) que lleva la orientación de ahora a la de antes.
+	var vuelta := Quaternion((_giro_antes * b_ahora.inverse()).orthonormalized()) if not reiniciar else Quaternion.IDENTITY
+	var origen_antes: Vector3 = _ancla_antes if not reiniciar else a_mundo.origin
 	_ancla_antes = a_mundo.origin
 	_giro_antes = b_ahora
 	if reiniciar:
@@ -521,28 +537,30 @@ func colocar(_sk: Skeleton3D) -> void:
 	# Gravedad relativa al pecho: erguido no tira (la forma de reposo ya cuelga); inclinado o tumbado, hacia el suelo.
 	var abajo_pecho := -(a_mundo.basis.y.normalized())
 	var grav := (Vector3.DOWN - abajo_pecho) * GRAVEDAD
-	var amort := pow(1.0 - AMORTIGUAR, dt * 30.0)
+	var de_pie := abajo_pecho.dot(Vector3.DOWN) > 0.7        # (los centros de los cuadros, solo de pie: ver _chocar)
 	var antes: Array = []
 	for c in CADENAS:
 		antes.append(_p[c].duplicate())
-		_p[c][0] = obj[c][0]
-		_v[c][0] = Vector3.ZERO
-		for k in range(1, JUNTAS.size()):
-			_v[c][k] = (_v[c][k] + grav * dt) * amort
-			_p[c][k] += _v[c][k] * dt
-			_p[c][k] = _p[c][k].lerp(obj[c][k], 1.0 - pow(1.0 - RIGIDEZ[k], dt * 30.0))
 	var cols := _colisores_mundo(g)
 	var suelo_o := heroe.global_position
 	var suelo_n := heroe.global_transform.basis.y.normalized()
-	for _it in ITERACIONES:
-		_restricciones(s)
-		_chocar(cols, s)
-		var alto_min := HOLGURA + _suelo_extra * s
-		for c in CADENAS:                                # nunca por debajo de los pies
-			for k in range(1, JUNTAS.size()):
-				var h: float = (_p[c][k] - suelo_o).dot(suelo_n)
-				if h < alto_min:
-					_p[c][k] += suelo_n * (alto_min - h)
+	# Subpasos en los giros rápidos: si el sitio de la capa gira más de SUBPASO_GIRO en el fotograma (media vuelta desde
+	# parado: ~50°), el cuerpo de ESTE fotograma (sitios, cápsulas y suelo) se lleva girado de vuelta hacia el sitio del
+	# anterior y se avanza en n trozos. Sin esto, el muslo pasaba de un lado al otro de la tela entre dos fotogramas y el
+	# choque la empujaba hacia DELANTE (revisión del 14/11, movimiento real). Cada trozo es un paso completo (_paso).
+	var n := 1
+	if not reiniciar and giro_fot > deg_to_rad(SUBPASO_GIRO):
+		n = mini(ceili(giro_fot / deg_to_rad(SUBPASO_GIRO)), MAX_SUBPASOS)
+		subpasos_extra += n - 1
+	_tras_giro = TRAS_GIRO if n > 1 else maxi(_tras_giro - 1, 0)
+	var centros := de_pie and _tras_giro > 0
+	for i in n:
+		var m := Transform3D()
+		if i < n - 1:                                  # movimiento RÍGIDO: girar alrededor del sitio de ahora y desplazar
+			var falta := 1.0 - float(i + 1) / n        # (cuánto falta para llegar a ahora)
+			var o_f: Vector3 = a_mundo.origin.lerp(origen_antes, falta)
+			m = Transform3D(Basis(Quaternion.IDENTITY.slerp(vuelta, falta)), o_f) * Transform3D(Basis.IDENTITY, -a_mundo.origin)
+		_paso(obj, cols, suelo_o, suelo_n, m, i < n - 1, dt / n, grav, s, centros)
 	for c in CADENAS:
 		for k in range(1, JUNTAS.size()):
 			var v: Vector3 = (_p[c][k] - antes[c][k]) / dt
@@ -559,6 +577,43 @@ func colocar(_sk: Skeleton3D) -> void:
 		for k in JUNTAS.size() - 1:
 			esq.set_bone_pose(_indice(c, k), _hueso_de(loc, c, k))
 	tiempo_ultimo_us = Time.get_ticks_usec() - t0
+
+
+# Un paso de la tela: inercia, gravedad y vuelta a su sitio; después restricciones, choques y suelo. «m» lleva el
+# cuerpo de este fotograma a un instante intermedio del giro (solo en los subpasos; en el último, nada).
+func _paso(obj: Array, cols: Array, suelo_o: Vector3, suelo_n: Vector3, m: Transform3D, mover: bool, dt: float,
+		grav: Vector3, s: float, de_pie: bool) -> void:
+	if mover:
+		var o2: Array = []
+		for c in CADENAS:
+			var col: Array = []
+			for k in JUNTAS.size():
+				col.append(m * obj[c][k])
+			o2.append(col)
+		obj = o2
+		var c2: Array = []
+		for col in cols:
+			c2.append([m * col[0], m * col[1], col[2], col[3], col[4]])
+		cols = c2
+		suelo_o = m * suelo_o
+		suelo_n = m.basis * suelo_n
+	var amort := pow(1.0 - AMORTIGUAR, dt * 30.0)
+	for c in CADENAS:
+		_p[c][0] = obj[c][0]
+		_v[c][0] = Vector3.ZERO
+		for k in range(1, JUNTAS.size()):
+			_v[c][k] = (_v[c][k] + grav * dt) * amort
+			_p[c][k] += _v[c][k] * dt
+			_p[c][k] = _p[c][k].lerp(obj[c][k], 1.0 - pow(1.0 - RIGIDEZ[k], dt * 30.0))
+	var alto_min := HOLGURA + _suelo_extra * s
+	for _it in ITERACIONES:
+		_restricciones(s)
+		_chocar(cols, s, de_pie)
+		for c in CADENAS:                                # nunca por debajo de los pies
+			for k in range(1, JUNTAS.size()):
+				var h: float = (_p[c][k] - suelo_o).dot(suelo_n)
+				if h < alto_min:
+					_p[c][k] += suelo_n * (alto_min - h)
 
 
 # Las cadenas no se separan ni se juntan de más (la tela no se rompe ni se arruga en un punto) y cada tramo mide lo
@@ -590,16 +645,16 @@ func _colisores_mundo(g: Transform3D) -> Array:
 	var s := _escala_mundo()
 	for col in _colisores:
 		if col[0] is int:
-			res.append([g * sk.get_bone_global_pose(col[0]).origin, g * sk.get_bone_global_pose(col[1]).origin, col[2] * s, false])
+			res.append([g * sk.get_bone_global_pose(col[0]).origin, g * sk.get_bone_global_pose(col[1]).origin, col[2] * s, false, col[3]])
 		elif is_instance_valid(col[0]) and col[0].is_inside_tree() and col[0].visible:
 			var t: Transform3D = col[0].global_transform
-			res.append([t * col[1], t * col[2], col[3] * s, true])
+			res.append([t * col[1], t * col[2], col[3] * s, true, false])
 	return res
 
 
 # Empuja fuera de cada cápsula las juntas y los tramos (el punto del tramo más cercano a la cápsula), sin tocar la
 # fila de arriba (la sujeción).
-func _chocar(cols: Array, _s: float) -> void:
+func _chocar(cols: Array, _s: float, de_pie: bool) -> void:
 	for col in cols:
 		var a: Vector3 = col[0]
 		var b: Vector3 = col[1]
@@ -640,6 +695,25 @@ func _chocar(cols: Array, _s: float) -> void:
 					t = clampf((par[0] - _p[c][k]).dot(seg) / seg.length_squared(), 0.0, 1.0)
 				_p[c][k] += fuera * (r - l) * (1.0 - t)
 				_p[c + 1][k] += fuera * (r - l) * t
+		# Y el centro de cada cuadro de la tela libre (dos cadenas × dos juntas, ~0,23 × 0,26 m): la pierna puede entrar
+		# por el medio de un cuadro sin acercarse a ninguno de sus bordes (al correr tras la media vuelta, revisión del
+		# 14/11: juntas a 0,20 m del hueso de la pierna y la tela cortándolo). Se empujan las cuatro juntas. Solo con las
+		# piernas (con las hojas no mejoraba nada) y de pie: tumbado, en la derrota de los v2, la tela se metía más en el
+		# cuerpo (prueba_capa_garon: 6,7 → 10,5 %).
+		if not col[4] or not de_pie:
+			continue
+		for k in range(2, JUNTAS.size()):
+			for c in CADENAS - 1:
+				var centro: Vector3 = (_p[c][k - 1] + _p[c + 1][k - 1] + _p[c][k] + _p[c + 1][k]) * 0.25
+				var d: Vector3 = centro - Geometry3D.get_closest_point_to_segment(centro, a, b)
+				var l := d.length()
+				if l >= r:
+					continue
+				var empuje: Vector3 = (d / l if l > 0.0001 else -global_transform.basis.z.normalized()) * (r - l)
+				_p[c][k - 1] += empuje
+				_p[c + 1][k - 1] += empuje
+				_p[c][k] += empuje
+				_p[c + 1][k] += empuje
 
 
 # ---------------------------------------------------------------- para las pruebas
