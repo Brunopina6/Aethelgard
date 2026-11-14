@@ -383,8 +383,8 @@ const MODELOS := {
 	"meshy_e01": {
 		"tipo": "3d", "esc": 0.6, "script": "res://enemigos/meshy_e01/meshy_e01_3d.gd", "gestos": "res://gestos_3d.gd",
 		"rutas": ["res://enemigos/meshy_e01/meshy_e01.glb"],
-		"vp": Vector2i(700, 840), "alto_vista": 3.0, "centro_y": 1.0, "barra_y": 80.0, "centro_3d": 1.05, "caida": 0.6,
-		"respaldo": "guardian"},
+		"vp": Vector2i(700, 840), "alto_vista": 3.0, "centro_y": 1.0, "barra_y": 80.0, "centro_3d": 1.05, "caida": 1.6,
+		"respaldo": "guardian"},   # (14/11: «caida» 1,6 s: su clip de derrota, de rodillas y en el suelo a 1,3 s)
 }
 
 # Enemigos disponibles y grupos que pueden aparecer en un encuentro (se elige uno al azar).

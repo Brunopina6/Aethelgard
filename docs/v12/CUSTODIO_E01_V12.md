@@ -106,9 +106,11 @@ todas las pasadas). Comprobado ejecutando el 14/11/2026 en el PC.
 
 | Prueba | Resultado | Resumen |
 |---|---|---|
-| `prueba_meshy_e01` (nueva, auto) | SUPERADA (5,2 s) | `D:\REBELUM_diagnostico\pruebas6-11-14_033850esumen.md` |
+| `prueba_meshy_e01` (nueva, auto) | SUPERADA (5,2 s) | `D:\REBELUM_diagnostico\pruebas6-11-14_033850
+esumen.md` |
 | `fotos_meshy_e01` (nueva, ventana) | MANUAL, sin errores, 101 capturas (revisadas) | misma pasada; copia en `D:\REBELUM_diagnostico12\custodio\p6_godot\` |
-| Regresiones: `prueba_combate_huella`, `prueba_grupos_combate`, `prueba_incorporacion`, `prueba_audio_memoria`, `prueba_equilibrio`, `prueba_ia`, `prueba_hud_combate`, `prueba_enemigos_v12`, `prueba_peon_v12`, `prueba_velador_v12` | 10 SUPERADAS | `D:\REBELUM_diagnostico\pruebas6-11-14_032221esumen.md` («proyecto: CAMBIADO» en esa pasada = mis propios archivos editados mientras corría: lista, documentos y el guion de fotos) |
+| Regresiones: `prueba_combate_huella`, `prueba_grupos_combate`, `prueba_incorporacion`, `prueba_audio_memoria`, `prueba_equilibrio`, `prueba_ia`, `prueba_hud_combate`, `prueba_enemigos_v12`, `prueba_peon_v12`, `prueba_velador_v12` | 10 SUPERADAS | `D:\REBELUM_diagnostico\pruebas6-11-14_032221
+esumen.md` («proyecto: CAMBIADO» en esa pasada = mis propios archivos editados mientras corría: lista, documentos y el guion de fotos) |
 
 Lo que comprueba `prueba_meshy_e01` (salida literal de la última pasada):
 - U: apagado por defecto, fuera de la partida y de la precarga; el azar igual apagado y encendido (1 080 tiradas).
@@ -155,9 +157,9 @@ Estados: pendiente · parcial · verificado · bloqueado.
 - **Acceso de prueba (14/11):** en la APK de Auditoría, pantalla de carga → «Banco de pruebas (Auditoría)» →
   «Custodio de Porcelana (meshy_e01)». Usa su interruptor solo durante esa sesión y con una partida aislada.
 
-- **Clips que faltan (9 de 12):** alert, turn_l, turn_r, guard (hoy la guardia usa el reposo y el tinte de defensa),
-  hit_front (sin reacción al golpe), stagger, death (hoy se queda en su pose y se desvanece), attack_02 «Avance del Portón»
-  y attack_03 «Sello de Clausura» con sus ataques (a2, a3) en `combate_meshy_e01.gd`.
+- **Clips que faltan (6 de 12):** alert, turn_l, turn_r, guard (hoy la guardia usa el reposo y el tinte de defensa),
+  stagger y attack_03 «Sello de Clausura» con su ataque (a3). Hechos el 14/11 por la noche: attack_02, hit_front y
+  death (sección 8).
 - **Sonido propio** (golpe pétreo grave, astillas): necesita claves nuevas en `sonido.gd` y derivados con procedencia;
   hoy suena el golpe físico de siempre y el temblor. `_sonidos_bestia` pide `meshy_e01_ataque` y `meshy_e01_entrada`, que
   no existen (no suena nada; no da error).
@@ -171,3 +173,46 @@ Estados: pendiente · parcial · verificado · bloqueado.
 - **Balance:** cifras propuestas (×1,4 / ×0,5, PV 130) sin partidas reales.
 - **Al terminar el especialista de Oakhaven** u otros: los grupos 28 y 29 son los últimos de `GRUPOS`; si otra rama añade
   grupos, hay que reordenar los índices al integrar (la prueba comprueba `GRUPOS.size() == 30`).
+
+
+## 8. 14/11, noche: Avance del Portón (e01_a2), golpe y derrota
+
+Lote de la matriz elegido por el coordinador: completar el elemento más avanzado con archivos disponibles.
+
+- **Clips nuevos** (`fuente/p2_clips.py`, mismo método de funciones del tiempo con IK y horneado a 30 fps):
+  - `e01__attack_porton` 2,7 s. Sigue las poses clave de la ficha: gira los antebrazos, postura de ariete con el peso
+    atrás, arranque a 1,00, carrera en el sitio hasta 1,45 (pasos cortos), frenada en dos apoyos, guardia a 1,90 y
+    reposo a 2,70. Los pies que cambian de sitio se levantan en arco.
+  - `e01__hit` 0,6 s: recibir un golpe de frente.
+  - `e01__death` 1,9 s: trastabilla, cae de rodillas y se vence sobre las manos; en el suelo a 1,30.
+  - **Medidas de lo horneado:**
+    - malla bajo el suelo como mucho 4 mm en el Avance y 11 mm en la derrota (antes de corregirla, 53 y 184 mm);
+    - el Avance y la derrota empiezan en la pose del reposo, y el Avance también acaba en ella.
+  - **Determinismo:** el guion sin cambios reproducía el GLB byte a byte (md5 igual), así que los tres clips anteriores
+    no cambian.
+  - Se trabajó sobre una copia del `.blend`: `D:\REBELUM_diagnostico\custodio_a2\trabajo\`. Las hojas de renders
+    están en `D:\REBELUM_diagnostico\custodio_a2\render\` (`hoja_porton_perfil.png` y `hoja_derrota2.png`).
+- **Godot:**
+  - Alias del juego: `porton`, `recibir_golpe` y `derrota`. La base ya reproduce los dos últimos sola.
+  - La «caida» del modelo pasa de 0,6 a 1,6 s para que se vea caer antes de desvanecerse.
+- **Combate** (`combate_meshy_e01.gd`, con el mismo esquema que la Prensa):
+  - Franja en el suelo desde él hasta el blanco y un poco más allá; se fija a 0,75 s.
+  - Embestida durante la carrera e IMPACTO a 1,30.
+  - En fila: ×1,1 al elegido y ×0,5 al de detrás.
+  - Retroceso del 25 % de la barra ATB (empuje de 0,7 m frente al 15 % de 0,4 m).
+  - Una vez por ejecución y objetivo; la Guardia de Garon cubre.
+  - Recarga compartida: Prensa, 2 guardias, Avance, 2 guardias, Prensa…
+  - **Cifras PROPUESTAS**, sin partidas reales.
+- **Pruebas:**
+  - `prueba_meshy_e01`: 6 clips y alias, la Prensa como antes, y luego el Avance contra Lya defendiendo. Un impacto,
+    franja, golpes una vez, Lya a la mitad y sin Retroceso, Garon −25 %, y la marca borrada.
+  - Regresión: `prueba_enemigos_v12`, `prueba_combate_huella` y `prueba_banco_pruebas` superadas.
+  - Capturas en combate real (`fotos_meshy_e01` con «porton derrota»): `D:\REBELUM_diagnostico\custodio_a2\godot\fotos\`.
+    - f_00011: la franja sobre Lya y Garon;
+    - f_00020: el impacto;
+    - f_00090: la derrota de rodillas.
+- **Pendiente:**
+  - Sello de Clausura (a3) y los clips alert, turn y guard.
+  - En combate se superpone a los héroes delanteros al embestir, como los demás enemigos cuerpo a cuerpo.
+  - Sonido propio.
+  - Redmi.

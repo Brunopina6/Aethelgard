@@ -23,7 +23,17 @@ extends RefCounted
 #     0,4 m); nunca a quien ya está en la cola de turnos.
 #   · cooldown_own_turns = 2 (no cooldown_s: el combate es por turnos): tras la Prensa se salta sus dos turnos propios
 #     siguientes; en ellos se pone en GUARDIA (la defensa de siempre de los enemigos: golpes a la mitad) hasta su turno
-#     siguiente. Es un piloto: los otros dos especiales (a2 Avance del Portón y a3 Sello de Clausura) están pendientes.
+#     siguiente.
+#
+# e01_a2 · Avance del Portón (14/11, noche; mismo método): «embestida recta, corredor de 1 m y avance máximo de 3 m»
+#   · Aviso dentro del clip (anticipación 1,00 s): al empezar, una FRANJA en el suelo desde él hasta el blanco (y algo
+#     más allá, el de detrás); se fija a 0,75 s; la carrera va de 1,00 a 1,45 (el combate lo desplaza: el clip va en el
+#     sitio) y el IMPACTO, a 1,30, al llegar.
+#   · EN FILA, como la Prensa: el elegido ×1,1 del ataque (12-16 de la ficha con su ataque de 13) y el de detrás ×0,5.
+#   · Empuje de 0,7 m → RETROCESO del 25 % de la barra ATB (la regla del 15 % para 0,4 m, a escala), sin defender.
+#   · Recarga compartida: tras cualquiera de los dos especiales, dos turnos de guardia; luego el OTRO especial (Prensa,
+#     guardia, guardia, Avance, guardia, guardia, Prensa…). Sello de Clausura (a3): pendiente.
+#   · Cifras PROPUESTAS (×1,1, 25 %): sin partidas reales todavía.
 #   · Muerte a media Prensa: no golpea (enemigo_v12_3d.gd no llama al impacto si está muerto y aquí se comprueba su vida)
 #     y la marca se borra (vigilar, repasar y al_acabar).
 
@@ -33,6 +43,12 @@ const INTERRUPTOR := "meshy_e01"
 const ACTIVO_POR_DEFECTO := false
 const GRUPOS_PRUEBA := [28, 29]
 const ATAQUE_ID := "e01_a1"
+const ATAQUE_ID_A2 := "e01_a2"
+const MULT_PORTON := 1.1
+const RETROCESO_PORTON := 0.25
+const T_CARRERA := 1.0
+const T_FRENO := 1.45
+const FRANJA_ANCHO := 64.0                        # px (el corredor de 1 m, aplastado como las demás marcas)
 const MULT_PRENSA := 1.4
 const MULT_FILA := 0.5
 const CD_TURNOS := 2
@@ -80,14 +96,17 @@ static func al_entrar(c, e: Dictionary, p) -> void:
 
 # Los instantes del clip (presentación): la marca aparece en el aviso y se fija a 0,65 s.
 static func _al_evento(clip: String, nombre: String, c, e: Dictionary) -> void:
-	if clip != "ataque" and clip != "e01__attack_prensa":
+	if not clip in ["ataque", "e01__attack_prensa", "porton", "e01__attack_porton"]:
 		return
 	var at: Dictionary = e.get("e01_ataque", {})
 	if at.is_empty() or int(e["hp"]) <= 0:
 		return
 	if nombre == "aviso":
 		at["t_aviso"] = Engine.get_process_frames()
-		_marcar(c, e, at)
+		if at.get("ataque", "") == ATAQUE_ID_A2:
+			_marcar_franja(c, e, at)
+		else:
+			_marcar(c, e, at)
 	elif nombre == "fija_direccion":
 		at["t_fija"] = Engine.get_process_frames()
 		_fijar(e)
@@ -102,7 +121,7 @@ static func estados(e: Dictionary) -> PackedStringArray:
 	if e.get("e01_guardia", false):
 		r.append("Guardia")
 	if int(e.get("e01_cd", 0)) > 0:
-		r.append("Prensa en %d" % (int(e["e01_cd"]) + 1))
+		r.append("%s en %d" % ["Avance" if _siguiente(e) == "porton" else "Prensa", int(e["e01_cd"]) + 1])
 	return r
 
 
@@ -110,7 +129,9 @@ static func info(e: Dictionary) -> Array:
 	if e.get("e01_guardia", false):
 		return ["En guardia: golpes a la mitad hasta su próximo turno"]
 	if int(e.get("e01_cd", 0)) > 0:
-		return ["Recupera la Prensa: se cubre en sus próximos %d turnos" % int(e["e01_cd"])]
+		return ["Recupera fuerzas: se cubre en sus próximos %d turnos" % int(e["e01_cd"])]
+	if _siguiente(e) == "porton":
+		return ["⚠ Su próximo turno: Avance del Portón, embestida en fila (defiéndete)"]
 	return ["⚠ Su próximo turno: Prensa del Umbral, en fila (defiéndete)"]
 
 
@@ -124,14 +145,22 @@ static func turno(c, f: Dictionary, vivos: Array, mult: float) -> void:
 	vivos = vivos.filter(func(h): return h["hp"] > 0)
 	if vivos.is_empty():
 		return
-	if _elegir(f) == "prensa":
-		await _prensa(c, f, vivos, mult)
-	else:
-		await _guardia(c, f)
+	match _elegir(f):
+		"prensa":
+			await _prensa(c, f, vivos, mult)
+		"porton":
+			await _porton(c, f, vivos, mult)
+		_:
+			await _guardia(c, f)
 
 
 static func _elegir(f: Dictionary) -> String:
-	return "guardia" if int(f.get("e01_cd", 0)) > 0 else "prensa"
+	return "guardia" if int(f.get("e01_cd", 0)) > 0 else _siguiente(f)
+
+
+# El especial que toca: el otro del último (el primero, la Prensa).
+static func _siguiente(f: Dictionary) -> String:
+	return "porton" if str(f.get("e01_especial", "")) == "prensa" else "prensa"
 
 
 static func _guardia(c, f: Dictionary) -> void:
@@ -182,6 +211,32 @@ static func _prensa(c, f: Dictionary, vivos: Array, mult: float) -> void:
 	f.erase("e01_ataque")
 	f["e01_ultimo"] = at
 	f["e01_cd"] = CD_TURNOS
+	f["e01_especial"] = "prensa"
+
+
+# e01_a2: el mismo esquema que la Prensa (objetivos en fila, Guardia de Garon, una vez por ejecución y objetivo).
+static func _porton(c, f: Dictionary, vivos: Array, mult: float) -> void:
+	var marcado: Dictionary = c._elegir_objetivo("agresivo", vivos)
+	var obj: Dictionary = c._cubre(marcado)
+	var detras := vecino(c, marcado)
+	if not detras.is_empty() and is_same(detras, obj):
+		detras = vecino(c, obj)
+		if not detras.is_empty() and is_same(detras, marcado):
+			detras = {}
+	_instancias += 1
+	var at := {"id": _instancias, "ataque": ATAQUE_ID_A2, "principal": obj, "resto": [] if detras.is_empty() else [detras],
+		"dano_resto": int(f["atk"] * MULT_PORTON * MULT_FILA * mult), "golpeados": {}, "t_impacto": -1,
+		"retroceso": RETROCESO_PORTON}
+	f["e01_ataque"] = at
+	_contar(f, "porton")
+	c.registro.text = "%s baja la cabeza: ¡Avance del Portón contra %s%s!" % [f["nombre"], obj["nombre"],
+		(" y %s" % detras["nombre"]) if not detras.is_empty() else ""]
+	await c._animar_golpe(f, obj, int(f["atk"] * MULT_PORTON * mult) + randi_range(-2, 2), "")
+	_quitar_marca(f)
+	f.erase("e01_ataque")
+	f["e01_ultimo"] = at
+	f["e01_cd"] = CD_TURNOS
+	f["e01_especial"] = "porton"
 
 
 # Daño UNA vez por (ejecución, objetivo). Devuelve si este golpe cuenta.
@@ -220,25 +275,29 @@ static func animar_golpe(c, o: Dictionary, obj: Dictionary, impacto: Callable) -
 			c._golpe_visual(h, c._quitar_pv(h, d2), "")
 			golpeados.append(h)
 		for h in golpeados:
-			if retroceso(c, h):
+			if retroceso(c, h, float(at.get("retroceso", RETROCESO))):
 				_contar(o, "retroceso")
 		_polvo(c, obj)
 	var p = c._p3d(o)
-	if p == null or not p.has_method("prensa"):
+	var a2: bool = at.get("ataque", "") == ATAQUE_ID_A2
+	if p == null or not p.has_method("porton" if a2 else "prensa"):
 		golpe.call()
 		await c.get_tree().create_timer(0.5).timeout
 		return
-	await _ir_y_prensar(c, o, obj, golpe)
+	if a2:
+		await _embestir(c, o, obj, golpe)
+	else:
+		await _ir_y_prensar(c, o, obj, golpe)
 
 
 # El empuje de 0,4 m en el ATB: −15 % de la barra a quien lo recibe sin defender; nunca a quien ya está en la cola.
-static func retroceso(c, h: Dictionary) -> bool:
+static func retroceso(c, h: Dictionary, cuanto := RETROCESO) -> bool:
 	if h["hp"] <= 0 or h.get("defendiendo", false) or float(h.get("atb", 0.0)) >= c.ATB_MAX:
 		return false
 	for x in c.cola:
 		if is_same(x, h):
 			return false
-	h["atb"] = maxf(0.0, float(h["atb"]) - c.ATB_MAX * RETROCESO)
+	h["atb"] = maxf(0.0, float(h["atb"]) - c.ATB_MAX * cuanto)
 	c._numero_flotante(h, "Retroceso", COLOR_POLVO, 26, Vector2(30, -30))
 	return true
 
@@ -265,6 +324,40 @@ static func _ir_y_prensar(c, o: Dictionary, obj: Dictionary, golpe: Callable) ->
 	if o["hp"] > 0:
 		await p.prensa(golpe)
 	if o["hp"] > 0:
+		p.mirar(-ida, 0.3)
+		p.andar()
+		var t3: Tween = c.create_tween()
+		t3.tween_property(rig, "position", base, dur).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		await t3.finished
+		p.mirar_frente(0.3)
+		p.reposo()
+	rig.z_index = 0
+	o["animando"] = false
+
+
+# El Avance: aguanta en su sitio la anticipación (el clip), embiste en la carrera [1,00, 1,45) hasta el blanco (el
+# impacto, a 1,30, lo da el clip), frena allí y vuelve andando. Muerto a medias, se queda donde cae.
+static func _embestir(c, o: Dictionary, obj: Dictionary, golpe: Callable) -> void:
+	var p = c._p3d(o)
+	var rig: Node2D = o["rig"]
+	var base: Vector2 = o["rig_base"]
+	var hueco: float = c.ANIM[o["modelo"]].get("distancia", 120.0) * 0.55 + c.ANIM[obj["modelo"]].get("distancia", 120.0) * 0.4
+	var destino := base + Vector2(c._centro(obj).x - hueco - c._centro(o).x, (c._pos_ataque(obj).y - o["pos"].y) * 0.8)
+	if obj.has("centro_ofs") and o.has("centro_ofs"):
+		destino.y = base.y + (c._suelo_de(obj).y - c._suelo_de(o).y)
+	var ida := Vector3(1, 0, 0.1)
+	o["animando"] = true
+	rig.z_index = 5
+	p.mirar(ida, 0.25)
+	var t1: Tween = c.create_tween()
+	t1.tween_interval(T_CARRERA)
+	t1.tween_property(rig, "position", destino, T_FRENO - T_CARRERA).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	Sonido.voz(o, "ataque")
+	await p.porton(golpe)
+	if t1.is_valid() and t1.is_running():
+		t1.kill()
+	if o["hp"] > 0:
+		var dur := clampf(rig.position.distance_to(base) / 260.0, 0.6, 1.4)
 		p.mirar(-ida, 0.3)
 		p.andar()
 		var t3: Tween = c.create_tween()
@@ -313,6 +406,36 @@ static func _marcar(c, f: Dictionary, at: Dictionary) -> void:
 		alfa[0] = k
 		for r in raiz.get_children():
 			r.queue_redraw(), 0.0, 1.0, 0.25)
+
+
+# La franja del Avance: un corredor en el suelo desde sus pies hasta el blanco y un poco más (el de detrás).
+static func _marcar_franja(c, f: Dictionary, at: Dictionary) -> void:
+	_quitar_marca(f)
+	var raiz := Node2D.new()
+	raiz.name = "MarcaAvance"
+	raiz.z_index = 1
+	c.escena.add_child(raiz)
+	var a: Vector2 = c._suelo_de(f)
+	var b: Vector2 = c._suelo_de(at["principal"])
+	var dir := (b - a).normalized() if a.distance_to(b) > 1.0 else Vector2.RIGHT
+	var fin := b + dir * (110.0 if not at["resto"].is_empty() else 50.0)
+	var lado := Vector2(-dir.y, dir.x * 0.32) * FRANJA_ANCHO * 0.5 + Vector2(0, FRANJA_ANCHO * 0.16)
+	var poli := PackedVector2Array([a - lado, fin - lado, fin + lado, a + lado])
+	var r := Node2D.new()
+	raiz.add_child(r)
+	var fija := [false]
+	var alfa := [0.0]
+	r.draw.connect(func():
+		r.draw_colored_polygon(poli, Color(COLOR_MARCA, (0.32 if fija[0] else 0.18) * alfa[0]))
+		var borde := poli.duplicate()
+		borde.append(poli[0])
+		r.draw_polyline(borde, Color(COLOR_MARCA, (0.95 if fija[0] else 0.7) * alfa[0]), 6.0 if fija[0] else 4.0))
+	f["e01_marca"] = raiz
+	f["e01_marca_fija"] = fija
+	var t: Tween = raiz.create_tween()
+	t.tween_method(func(k: float):
+		alfa[0] = k
+		r.queue_redraw(), 0.0, 1.0, 0.25)
 
 
 static func _fijar(f: Dictionary) -> void:

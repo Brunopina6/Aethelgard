@@ -3,7 +3,7 @@ extends SceneTree
 # Custodio» de combate.gd y recursos.gd, y enemigos/meshy_e01/meshy_e01.glb). Sin ventana, con datos aislados.
 #   U. Interruptor propio apagado por defecto y fuera de la partida; apagado o encendido, el azar de los encuentros no
 #      cambia y nunca da sus grupos (28 y 29); su carpeta fuera de la precarga mientras va apagado.
-#   M. El modelo en Godot: 3 clips propios (nombres, duraciones, bucles), los alias del juego son el MISMO recurso,
+#   M. El modelo en Godot: 6 clips propios (14/11, noche: + Avance del Portón, golpe y derrota) (nombres, duraciones, bucles), los alias del juego son el MISMO recurso,
 #      24 huesos (21 con piel), 10 541 triángulos, ≤ 4 influencias, 1,85 m, mira a +Z; en la Prensa: manos delante y a ras
 #      de suelo en el impacto, pies quietos y cadera que baja ≤ 15 % de la altura; instantes iguales en el JSON y el guion.
 #   S. Apagado, un grupo forzado (28) lo trae sin su personalidad; encendido, con la suya y su modelo.
@@ -127,7 +127,9 @@ func _m() -> void:
 		return
 	var propios: PackedStringArray = p.clips_propios()
 	propios.sort()
-	_ok(propios == PackedStringArray(["e01__attack_prensa", "e01__idle", "e01__walk"]), "M: clips %s" % [propios])
+	_ok(propios == PackedStringArray(["e01__attack_porton", "e01__attack_prensa", "e01__death", "e01__hit", "e01__idle",
+		"e01__walk"]), "M: clips %s" % [propios])
+	_ok(p.tiene("recibir_golpe") and p.tiene("derrota") and p.tiene("porton"), "M: faltan los alias del golpe, la derrota o el Avance")
 	for n in j["clips"]:
 		var a: Animation = p.anim.get_animation(n)
 		_ok(a != null and absf(a.length - float(j["clips"][n]["duracion"])) <= 1.0 / 30.0 + 0.001,
@@ -302,7 +304,8 @@ func _turno(antes_de_empezar := Callable(), durante := Callable()) -> Dictionary
 	await _esperar(5)
 	var cont1: Dictionary = custodio.get("e01_contador", {})
 	r["que"] = "prensa" if int(cont1.get("prensa", 0)) > int(cont0.get("prensa", 0)) else (
-		"guardia" if int(cont1.get("guardia", 0)) > int(cont0.get("guardia", 0)) else "nada")
+		"porton" if int(cont1.get("porton", 0)) > int(cont0.get("porton", 0)) else (
+		"guardia" if int(cont1.get("guardia", 0)) > int(cont0.get("guardia", 0)) else "nada"))
 	r["impactos"] = impactos.slice(imp0)
 	r["danos"] = danos.slice(dan0)
 	return r
@@ -394,21 +397,27 @@ func _a() -> void:
 		_ok(g["que"] == "guardia" and g["danos"].is_empty() and g["impactos"].is_empty(), "A%d: no es un turno de guardia sin daño (%s)" % [k + 2, g["que"]])
 		_ok(custodio.get("defendiendo", false) and custodio.get("e01_guardia", false), "A%d: no queda en guardia" % [k + 2])
 		_ok(int(custodio["e01_cd"]) == 1 - k, "A%d: recarga %d" % [k + 2, int(custodio["e01_cd"])])
-	# otra Prensa contra Lya defendiendo: la mitad y sin Retroceso
+	# 14/11, noche: tras dos guardias, el OTRO especial, el Avance del Portón, contra Lya defendiendo (la mitad y sin
+	# Retroceso; a Garon, el de detrás, el Retroceso del 25 %)
 	lya["defendiendo"] = true
 	lya["atb"] = 50.0
 	garon["atb"] = 50.0
 	var r2 := await _turno()
-	_ok(r2["que"] == "prensa" and not custodio.get("e01_guardia", false), "A5: tras dos guardias no vuelve la Prensa (%s)" % r2["que"])
+	_ok(r2["que"] == "porton" and not custodio.get("e01_guardia", false), "A5: tras dos guardias no llega el Avance (%s)" % r2["que"])
+	_ok(r2["impactos"].size() == 1, "A5: el Avance da %d impactos (uno)" % r2["impactos"].size())
+	_ok(not r2["marca_pos"].is_empty() and r2["marca_pos"][0].size() == 1, "A5: el Avance no marca su franja")
 	var por2 := {}
 	for d in r2["danos"]:
 		por2[d[0]] = por2.get(d[0], []) + [d]
 	_ok(por2.get("Lya", []).size() == 1 and por2.get("Garon", []).size() == 1 and not por2.has("Kael"), "A5: golpes %s" % [por2])
 	if por2.has("Lya"):
 		_ok(int(por2["Lya"][0][2]) * 2 <= dano_lya_1 + 4, "A5: defendiendo, Lya recibe %d (antes %d)" % [por2["Lya"][0][2], dano_lya_1])
-	_ok(absf(lya["atb"] - 50.0) < 0.01 and absf(garon["atb"] - 35.0) < 0.01, "A5: Retroceso con defensa (Lya %.1f, Garon %.1f)" % [lya["atb"], garon["atb"]])
-	_ok(custodio["e01_ultimo"]["id"] != at.get("id", -1), "A5: la segunda Prensa reutiliza el attack_instance_id")
-	hechos.append("A: Prensa (aviso → fija %d f → impacto %d f; marca fija %d f; Lya −%d y Garon −%d una vez en el impacto; Retroceso 15 %%), 2 guardias (recarga 2 → 0), Prensa contra Lya defendiendo (−%d, sin Retroceso)" % [
+	_ok(absf(lya["atb"] - 50.0) < 0.01 and absf(garon["atb"] - 25.0) < 0.01, "A5: Retroceso con defensa (Lya %.1f, Garon %.1f)" % [lya["atb"], garon["atb"]])
+	_ok(custodio["e01_ultimo"]["id"] != at.get("id", -1), "A5: el Avance reutiliza el attack_instance_id")
+	_ok(custodio["e01_ultimo"].get("ataque", "") == PE.ATAQUE_ID_A2 and PE._siguiente(custodio) == "prensa"
+		and int(custodio["e01_cd"]) == PE.CD_TURNOS, "A5: tras el Avance no toca recargar y luego la Prensa")
+	_ok(PE.nodos_vivos(c.enemigos).is_empty(), "A5: la franja sigue tras el impacto")
+	hechos.append("A: Prensa (aviso → fija %d f → impacto %d f; marca fija %d f; Lya −%d y Garon −%d una vez en el impacto; Retroceso 15 %%), 2 guardias (recarga 2 → 0), Avance del Portón contra Lya defendiendo (−%d, sin Retroceso; Garon −25 %% de ATB)" % [
 		d_fija, d_imp, r["marca_pos"].size(), dano_lya_1, int(por.get("Garon", [[0, 0, 0]])[0][2]),
 		int(por2.get("Lya", [[0, 0, 0]])[0][2])])
 	await _cerrar()

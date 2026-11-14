@@ -1,4 +1,5 @@
-# meshy_e01 · pasos 3 y 4: clips e01__idle, e01__walk y e01__attack_prensa (horneados a 30 fps), medidas, renders y GLB.
+# meshy_e01 · pasos 3 y 4: clips e01__idle, e01__walk, e01__attack_prensa y (14/11, noche) e01__attack_porton,
+# e01__hit y e01__death (horneados a 30 fps), medidas, renders y GLB.
 #   blender -b --factory-startup -P p2_clips.py -- <blend con rig (p1)> <carpeta salida GLB> <carpeta render> [sin_render]
 #
 # Autoría: cada clip es una FUNCIÓN del tiempo que coloca la cadera, la columna, el pecho, el cuello, la cabeza, las
@@ -201,12 +202,110 @@ def c_prensa(t):
     return por_claves(PRENSA, t)
 
 
+# ------------------------------------------------------------------ 14/11, noche: Avance del Portón, golpe y derrota
+# e01_a2 «Avance del Portón» (ataques_propuestos.json): 0,00 gira los antebrazos hacia delante · 0,50 postura de ariete,
+# el peso en la pierna de atrás · 1,00 arranque · [1,00, 1,45) carrera (en el sitio: el combate desplaza el nodo; pasos
+# cortos y rápidos con el torso echado) · 1,45 frena en dos apoyos · 1,90 abre la guardia · 2,70 el reposo.
+# Los pies que cambian de sitio se levantan (arco); los que no, quietos.
+PO_GIRA = simetrica(cadera_loc=(0, 0.02, -0.04), pecho=(3, 0, 0), cabeza=(-4, 0, 0),
+                    mano_L=((-0.06, -0.22, 0.26), (-60, 0, -12)), clav_L=(0, 3, 0))
+PO_ARIETE = simetrica(cadera_loc=(0, 0.09, -0.09), cadera_rot=(9, 0, 0), columna=(6, 0, 0), pecho=(9, 0, 0),
+                      cuello=(-4, 0, 0), cabeza=(-14, 0, 0), mano_L=((-0.07, -0.40, 0.42), (-78, 0, -18)),
+                      clav_L=(0, 5, -4), hombrera_L=(0, 6, 0))
+PO_ARRANQUE = simetrica(cadera_loc=(0, -0.06, -0.12), cadera_rot=(17, 0, 0), columna=(10, 0, 0), pecho=(13, 0, 0),
+                        cuello=(-6, 0, 0), cabeza=(-20, 0, 0), mano_L=((-0.06, -0.52, 0.34), (-82, 0, -18)),
+                        clav_L=(0, 7, -5), hombrera_L=(0, 8, 0))
+PO_FRENO = simetrica(cadera_loc=(0, 0.04, -0.15), cadera_rot=(4, 0, 0), columna=(-2, 0, 0), pecho=(-4, 0, 0),
+                     cabeza=(-6, 0, 0), mano_L=((-0.10, -0.44, 0.30), (-75, 0, -16)), clav_L=(0, 4, 0))
+PO_GUARDIA = simetrica(cadera_loc=(0, 0.02, -0.07), cadera_rot=(1, 0, 0), pecho=(-3, 0, 0), cabeza=(-3, 0, 0),
+                       mano_L=((-0.22, -0.24, 0.62), (-115, 0, -28)), clav_L=(0, -6, 0), hombrera_L=(0, -8, 0))
+PORTON = [(0.0, REPOSO_A, suave), (0.25, PO_GIRA, suave), (0.50, PO_ARIETE, suave), (0.85, PO_ARIETE, entra),
+          (1.00, PO_ARRANQUE, suave), (1.40, PO_ARRANQUE, sale), (1.45, PO_FRENO, suave), (1.60, PO_FRENO, suave),
+          (1.90, PO_GUARDIA, suave), (2.30, PO_GUARDIA, suave), (2.70, REPOSO_A, suave)]
+T_PORTON = 2.7
+# pies: (t, y del pie izquierdo, y del derecho), adelante = −Y; entre dos claves distintas el pie se levanta
+PIES_PORTON = [(0.0, 0.0, 0.0), (0.50, -0.10, 0.22), (1.00, -0.18, 0.28), (1.45, -0.26, 0.22), (1.90, -0.26, 0.22),
+               (2.70, 0.0, 0.0)]
+CARRERA = (1.00, 1.45)              # pasos cortos en el sitio
+ZANCADA_CARRERA = 0.16
+
+
+def _pie_porton(y_de, t):
+    """La posición del pie por las claves de PIES_PORTON (y_de: 1 izquierdo, 2 derecho), con su arco al cambiar."""
+    for k in range(len(PIES_PORTON) - 1):
+        t0, t1 = PIES_PORTON[k][0], PIES_PORTON[k + 1][0]
+        if t <= t1 or k == len(PIES_PORTON) - 2:
+            a, b = PIES_PORTON[k][y_de], PIES_PORTON[k + 1][y_de]
+            u = max(0.0, min(1.0, (t - t0) / (t1 - t0)))
+            y = a + (b - a) * suave(u)
+            z = 0.07 * math.sin(math.pi * u) if abs(b - a) > 0.02 else 0.0
+            return y, z
+    return PIES_PORTON[-1][y_de], 0.0
+
+
+def c_porton(t):
+    p = por_claves(PORTON, t)
+    for s, y_de, desf in (("L", 1, 0.0), ("R", 2, 0.5)):
+        y, z = _pie_porton(y_de, t)
+        rx = 0.0
+        if CARRERA[0] < t < CARRERA[1]:
+            u = (t - CARRERA[0]) / (CARRERA[1] - CARRERA[0])
+            env = math.sin(math.pi * u)                    # entra y sale de la carrera sin saltos
+            f = (u * 2.0 + desf) % 1.0                     # dos pasos por pie en la carrera
+            y += env * ZANCADA_CARRERA * math.cos(2 * math.pi * f)
+            z += env * 0.09 * max(0.0, math.sin(2 * math.pi * f))
+            rx = env * 10 * max(0.0, math.sin(2 * math.pi * f))
+        if s == "R" and 0.5 <= t <= 1.0:                   # el talón de atrás se despega antes del arranque
+            rx = max(rx, 22 * suave((t - 0.5) / 0.5))
+            z = max(z, 0.10 * suave((t - 0.5) / 0.5))
+        p["pie." + s] = ((0.0, y, z), (rx, 0.0, 0.0))
+    return p
+
+
+# Recibir un golpe de frente (0,6 s): se echa atrás con la cabeza y los brazos, y vuelve. Pies quietos.
+H_ATRAS = simetrica(cadera_loc=(0, 0.06, -0.05), cadera_rot=(-7, 0, 0), columna=(-6, 0, 0), pecho=(-10, 0, 0),
+                    cuello=(4, 0, 0), cabeza=(12, 0, 0), mano_L=((-0.05, 0.10, 0.12), (12, 0, -10)), clav_L=(0, -4, 0))
+GOLPE = [(0.0, REPOSO_A, sale), (0.12, H_ATRAS, suave), (0.6, REPOSO_A, suave)]
+T_GOLPE = 0.6
+
+
+def c_hit(t):
+    return por_claves(GOLPE, t)
+
+
+# Derrota (1,9 s): trastabilla, cae de rodillas, se vence hacia delante y queda apoyado en las manos (sin rebotes).
+# Los pies quietos (la IK dobla las rodillas); la cadera baja como mucho lo que dejan las piernas.
+D_ATRAS = simetrica(cadera_loc=(0, 0.07, -0.06), cadera_rot=(-6, 0, 0), columna=(-5, 0, 0), pecho=(-9, 0, 0),
+                    cabeza=(10, 0, 0), mano_L=((-0.06, 0.08, 0.10), (10, 0, -10)), clav_L=(0, -3, 0))
+D_RODILLAS = simetrica(cadera_loc=(0, 0.06, -0.38), cadera_rot=(10, 0, 0), columna=(12, 0, 0), pecho=(16, 0, 0),
+                       cuello=(8, 0, 0), cabeza=(22, 0, 0), mano_L=((-0.04, -0.12, -0.40), (-10, 0, -6)),
+                       clav_L=(0, 6, 0), hombrera_L=(0, 4, 0))
+D_CAIDA = simetrica(cadera_loc=(0, -0.16, -0.42), cadera_rot=(42, 0, 0), columna=(18, 0, 0), pecho=(16, 0, 0),
+                    cuello=(6, 0, 0), cabeza=(12, 0, 0), mano_L=((-0.16, -0.62, -0.56), (-30, 0, -10)),
+                    clav_L=(0, 10, -8), hombrera_L=(0, 6, 0))
+D_QUIETO = simetrica(cadera_loc=(0, -0.17, -0.44), cadera_rot=(44, 0, 0), columna=(19, 0, 0), pecho=(17, 0, 0),
+                     cuello=(8, 0, 0), cabeza=(18, 0, 0), mano_L=((-0.17, -0.63, -0.565), (-30, 0, -10)),
+                     clav_L=(0, 10, -8), hombrera_L=(0, 6, 0))
+DERROTA = [(0.0, REPOSO_A, sale), (0.25, D_ATRAS, suave), (0.85, D_RODILLAS, entra), (1.30, D_CAIDA, sale),
+           (1.90, D_QUIETO, suave)]
+T_DERROTA = 1.9
+
+
+def c_death(t):
+    return por_claves(DERROTA, t)
+
+
 CLIPS = [
     {"nombre": "e01__idle", "dur": 2.4, "bucle": True, "f": c_idle, "eventos": {}},
     {"nombre": "e01__walk", "dur": T_ANDAR, "bucle": True, "f": c_walk,
      "eventos": {"pisada_izq": 0.0, "pisada_der": 0.6}},
     {"nombre": "e01__attack_prensa", "dur": 2.4, "bucle": False, "f": c_prensa,
      "eventos": {"aviso": 0.0, "fija_direccion": 0.65, "impacto": 0.90, "fin_activo": 1.10, "recupera": 1.10}},
+    {"nombre": "e01__attack_porton", "dur": T_PORTON, "bucle": False, "f": c_porton,
+     "eventos": {"aviso": 0.0, "fija_direccion": 0.75, "carrera": 1.00, "impacto": 1.30, "fin_activo": 1.45,
+                 "recupera": 1.45}},
+    {"nombre": "e01__hit", "dur": T_GOLPE, "bucle": False, "f": c_hit, "eventos": {}},
+    {"nombre": "e01__death", "dur": T_DERROTA, "bucle": False, "f": c_death, "eventos": {"en_el_suelo": 1.30}},
 ]
 
 
@@ -360,9 +459,11 @@ for c in CLIPS:
         m["cadera_baja_max_m"] = max(m["cadera_baja_max_m"], reposo_cadera_z - cz)
         pies = {s: Vector((sum(cos[i].x for i in vert_pie[s]), sum(cos[i].y for i in vert_pie[s]), sum(cos[i].z for i in vert_pie[s]))) / len(vert_pie[s])
                 for s in ("L", "R")}
-        if f == int(round(0.90 * FPS)):
+        if f == int(round(0.90 * FPS)) and nm == "e01__attack_prensa":
             m["manos_z_en_impacto"] = round(min(cos[i].z for i in vert_mano), 4)
             m["muñecas_y_en_impacto"] = round(sum(cos[i].y for i in vert_mano) / len(vert_mano), 4)
+        if nm == "e01__death" and f == n:
+            m["cadera_z_final_m"] = round(cz, 4)
         if not c["bucle"] or nm == "e01__idle":
             if pie0 is None:
                 pie0 = pies
@@ -405,7 +506,13 @@ if not SIN_RENDER:
     os.makedirs(REND, exist_ok=True)
     C.suelo(0.0)
     TOMAS = {"e01__idle": [0.0, 1.2], "e01__walk": [0.0, 0.3, 0.6, 0.9],
-             "e01__attack_prensa": [0.0, 0.25, 0.65, 0.80, 0.90, 1.10, 1.65, 2.40]}
+             "e01__attack_prensa": [0.0, 0.25, 0.65, 0.80, 0.90, 1.10, 1.65, 2.40],
+             "e01__attack_porton": [0.0, 0.25, 0.50, 1.00, 1.15, 1.30, 1.45, 1.90, 2.70],
+             "e01__hit": [0.0, 0.12, 0.6], "e01__death": [0.25, 0.85, 1.30, 1.90]}
+    SOLO_TOMAS = [x for x in argv if x.startswith("tomas=")]
+    if SOLO_TOMAS:                                  # (para revisar solo los clips nuevos: tomas=a,b)
+        quiero = SOLO_TOMAS[0][6:].split(",")
+        TOMAS = {k: v for k, v in TOMAS.items() if k in quiero}
     for nm, ts in TOMAS.items():
         for t in ts:
             poner(nm, int(round(t * FPS)))
@@ -449,8 +556,10 @@ json.dump({"id": "meshy_e01", "nombre": "Custodio de Porcelana (nombre de diseñ
            "alto_m": ALTO, "triangulos": rig["triangulos"], "vertices": rig["vertices"],
            "huesos": len(EXPORTABLES), "deformantes": rig["deformantes"], "max_influencias": rig["max_influencias"],
            "fps": FPS, "textura": "%d px (color, normal, metálico-rugosidad; WebP dentro del GLB)" % RES_TEX,
-           "mapa_diseno": {"idle": "e01__idle", "walk": "e01__walk", "attack_01": "e01__attack_prensa"},
-           "mapa_juego": {"reposo": "e01__idle", "caminar": "e01__walk", "correr": "e01__walk", "ataque": "e01__attack_prensa"},
+           "mapa_diseno": {"idle": "e01__idle", "walk": "e01__walk", "attack_01": "e01__attack_prensa",
+                           "attack_02": "e01__attack_porton", "hit_front": "e01__hit", "death": "e01__death"},
+           "mapa_juego": {"reposo": "e01__idle", "caminar": "e01__walk", "correr": "e01__walk", "ataque": "e01__attack_prensa",
+                          "porton": "e01__attack_porton", "recibir_golpe": "e01__hit", "derrota": "e01__death"},
            "velocidad_andar_m_s": round(VEL_ANDAR, 3),
            "clips": {c["nombre"]: {"duracion": c["dur"], "bucle": c["bucle"], "eventos": c["eventos"]} for c in CLIPS},
            "medidas": medidas, "generador": "enemigos/meshy_e01/fuente/p1_rig.py + p2_clips.py (Blender %s)" % bpy.app.version_string},

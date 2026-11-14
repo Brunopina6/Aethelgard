@@ -9,6 +9,9 @@ extends "res://enemigos/v12_comun/enemigo_v12_3d.gd"
 #   e01__idle 2,4 s (bucle) · e01__walk 1,2 s (bucle, en el sitio, 0,867 m/s) · e01__attack_prensa 2,4 s: e01_a1
 #   «Prensa del Umbral»: aviso 0,00 · fija la dirección 0,65 · IMPACTO 0,90 (ventana activa [0,90, 1,10)) · recupera
 #   hasta 2,40 y termina en la pose del reposo.
+#   (14/11, noche) e01__attack_porton 2,7 s: e01_a2 «Avance del Portón»: aviso 0,00 · fija 0,75 · carrera [1,00, 1,45)
+#   (en el sitio: el combate desplaza el nodo) · IMPACTO 1,30 · frena 1,45 · guardia 1,90 · reposo 2,70.
+#   e01__hit 0,6 s (recibir un golpe) · e01__death 1,9 s (de rodillas y vencido sobre las manos; en el suelo a 1,30).
 # El combate pide los clips por los nombres del juego (reposo, caminar, correr, ataque): aquí se añaden como ALIAS del
 # mismo recurso Animation (no son clips nuevos ni copias).
 # Materiales: los del GLB (color, normal y metálico-rugosidad de Meshy a 1024 px), sin el atlas ni el brillo de la
@@ -19,10 +22,12 @@ const RUTA_CLIPS := "res://enemigos/meshy_e01/meshy_e01_clips.json"
 const ALTURA := 1.85
 const CENTRO := Vector3(0.0, 1.05, 0.0)
 const ALIAS := {"reposo": "e01__idle", "caminar": "e01__walk", "correr": "e01__walk", "ataque": "e01__attack_prensa",
-	"prensa": "e01__attack_prensa"}
+	"prensa": "e01__attack_prensa", "porton": "e01__attack_porton", "recibir_golpe": "e01__hit", "derrota": "e01__death"}
 const EVENTOS := {
 	"ataque": {"aviso": 0.0, "fija_direccion": 0.65, "impacto": 0.90, "fin_activo": 1.10},
 	"e01__attack_prensa": {"aviso": 0.0, "fija_direccion": 0.65, "impacto": 0.90, "fin_activo": 1.10},
+	"porton": {"aviso": 0.0, "fija_direccion": 0.75, "carrera": 1.0, "impacto": 1.30, "fin_activo": 1.45},
+	"e01__attack_porton": {"aviso": 0.0, "fija_direccion": 0.75, "carrera": 1.0, "impacto": 1.30, "fin_activo": 1.45},
 }
 
 
@@ -59,6 +64,8 @@ func _clip_de(ataque: String) -> String:
 	match ataque:
 		"prensa", "atacar_hacha", "preparar_golpe", "golpe_fuerte":
 			return "ataque"
+		"porton":
+			return "porton"
 	return super._clip_de(ataque)
 
 
@@ -71,8 +78,13 @@ func golpe_fuerte(al_golpear := Callable()) -> void:
 	await prensa(al_golpear)
 
 
-# Sin clip de derrota en el piloto (pendiente: e01__death): se para en la pose en que está (stop con su estado, para que
-# quien espere el clip acabe: un ataque a medias termina sin golpe) y el combate lo desvanece («caida» de MODELOS).
+# e01_a2 · Avance del Portón: el clip con su impacto (al_golpear UNA vez, en 1,30 s); el combate lo desplaza en la carrera.
+func porton(al_golpear := Callable()) -> void:
+	await atacar("porton", al_golpear)
+
+
+# Con e01__death (14/11, noche), la derrota de la base (el clip, y el combate lo desvanece tras su «caida»). Sin él
+# (un GLB antiguo): se para en la pose en que está y el combate lo desvanece.
 func derrota() -> void:
 	if tiene("derrota"):
 		await super.derrota()

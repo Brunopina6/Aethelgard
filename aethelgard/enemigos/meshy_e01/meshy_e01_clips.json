@@ -14,13 +14,19 @@
  "mapa_diseno": {
   "idle": "e01__idle",
   "walk": "e01__walk",
-  "attack_01": "e01__attack_prensa"
+  "attack_01": "e01__attack_prensa",
+  "attack_02": "e01__attack_porton",
+  "hit_front": "e01__hit",
+  "death": "e01__death"
  },
  "mapa_juego": {
   "reposo": "e01__idle",
   "caminar": "e01__walk",
   "correr": "e01__walk",
-  "ataque": "e01__attack_prensa"
+  "ataque": "e01__attack_prensa",
+  "porton": "e01__attack_porton",
+  "recibir_golpe": "e01__hit",
+  "derrota": "e01__death"
  },
  "velocidad_andar_m_s": 0.867,
  "clips": {
@@ -47,6 +53,30 @@
     "fin_activo": 1.1,
     "recupera": 1.1
    }
+  },
+  "e01__attack_porton": {
+   "duracion": 2.7,
+   "bucle": false,
+   "eventos": {
+    "aviso": 0.0,
+    "fija_direccion": 0.75,
+    "carrera": 1.0,
+    "impacto": 1.3,
+    "fin_activo": 1.45,
+    "recupera": 1.45
+   }
+  },
+  "e01__hit": {
+   "duracion": 0.6,
+   "bucle": false,
+   "eventos": {}
+  },
+  "e01__death": {
+   "duracion": 1.9,
+   "bucle": false,
+   "eventos": {
+    "en_el_suelo": 1.3
+   }
   }
  },
  "medidas": {
@@ -56,8 +86,6 @@
    "cadera_baja_max_m": 0.038,
    "pie_desliz_max_m": 0.0001,
    "pie_z_apoyo_max_m": 0.0,
-   "manos_z_en_impacto": 0.5379,
-   "muñecas_y_en_impacto": -0.1312,
    "cadera_baja_pct_altura": 2.1,
    "salto_bucle_grados": 0.0
   },
@@ -67,8 +95,6 @@
    "cadera_baja_max_m": 0.07,
    "pie_desliz_max_m": 0.0,
    "pie_z_apoyo_max_m": 0.0007,
-   "manos_z_en_impacto": 0.5495,
-   "muñecas_y_en_impacto": -0.0899,
    "vel_pie_apoyo_m_s": [
     0.866,
     0.867
@@ -87,6 +113,37 @@
    "muñecas_y_en_impacto": -0.5885,
    "cadera_baja_pct_altura": 14.2,
    "fin_vs_reposo_grados": 0.0,
+   "inicio_vs_reposo_grados": 0.0
+  },
+  "e01__attack_porton": {
+   "min_z_malla": -0.0039,
+   "min_z_manos": 0.5495,
+   "cadera_baja_max_m": 0.15,
+   "pie_desliz_max_m": 0.3904,
+   "pie_z_apoyo_max_m": 0.0,
+   "cadera_baja_pct_altura": 8.1,
+   "fin_vs_reposo_grados": 0.0,
+   "inicio_vs_reposo_grados": 0.0
+  },
+  "e01__hit": {
+   "min_z_malla": -0.0,
+   "min_z_manos": 0.5495,
+   "cadera_baja_max_m": 0.0499,
+   "pie_desliz_max_m": 0.0001,
+   "pie_z_apoyo_max_m": 0.0,
+   "cadera_baja_pct_altura": 2.7,
+   "fin_vs_reposo_grados": 0.0,
+   "inicio_vs_reposo_grados": 0.0
+  },
+  "e01__death": {
+   "min_z_malla": -0.0112,
+   "min_z_manos": 0.0125,
+   "cadera_baja_max_m": 0.44,
+   "pie_desliz_max_m": 0.0018,
+   "pie_z_apoyo_max_m": 0.0,
+   "cadera_z_final_m": 0.4174,
+   "cadera_baja_pct_altura": 23.8,
+   "fin_vs_reposo_grados": 342.187,
    "inicio_vs_reposo_grados": 0.0
   }
  },

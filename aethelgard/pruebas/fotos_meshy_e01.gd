@@ -151,6 +151,8 @@ func _combate() -> void:
 		e["vel"] = 0.0
 		e["atb"] = 0.0
 	c.heroes[1]["hp"] = int(c.heroes[1]["hp_max"] * 0.6)          # Lya, la elegida; Garon, el de detrás
+	if "porton" in OS.get_cmdline_user_args():                  # 14/11, noche: el Avance del Portón (el otro especial)
+		cus["e01_especial"] = "prensa"
 	await _esperar(60)
 	grabando = true
 	cus["vel"] = 10.0
@@ -171,6 +173,10 @@ func _combate() -> void:
 			break
 	indice.append("fin del turno: f_%05d.jpg" % n_foto)
 	await _esperar(20)
+	if "derrota" in OS.get_cmdline_user_args():                 # 14/11, noche: su clip de derrota y el desvanecido
+		indice.append("derrota: f_%05d.jpg" % n_foto)
+		c._golpe_visual(cus, c._quitar_pv(cus, int(cus["hp"])), "")
+		await _esperar(130)
 	grabando = false
 	c.queue_free()
 	Engine.remove_meta(PE.INTERRUPTOR)
