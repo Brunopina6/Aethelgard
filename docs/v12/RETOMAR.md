@@ -681,3 +681,24 @@ Informe: `D:\REBELUM_laboratorio_plugins\laboratorio\INFORME_LABORATORIO.md`.
   2. Restaurar `files/ajustes.cfg` desde `D:\REBELUM_respaldos\2026-11-14_redmi_auditoria_antes_v694_a_nueva`.
   3. Comprobar por SHA-256 que los 538 archivos coinciden con `sha_tel_todo.txt`.
   - La partida de siempre (`partida_exp.save`) no la tocó el banco: compruébalo también.
+
+### 14/11, tarde: mejoras de personajes y rendimiento (en el PC; pendientes de ver en el Redmi)
+Hechas por tres agentes en worktrees aislados, cada uno revisado por otro agente escéptico. Integradas aquí por el coordinador con `cherry-pick` y verificadas en el proyecto real.
+- **Rendimiento de Érebo** (`84a39fe`): ninguna imagen cambia; comparadas con antes, la diferencia máxima es de 1/255.
+  - El combate tapado deja de dibujarse durante la invocación: de 78 a 54 llamadas de dibujo y de 105.000 a 47.000 primitivas por fotograma.
+  - El cuerpo sin disolución pasa de 17,0 a 12,4 ciclos de Mali-G57 y deja de tener ZS tardío.
+  - El orbe ya no calcula el Voronoi de las grietas mientras estas no se ven.
+  - Las partículas son octógonos en lugar de cuadrados: un 17 % menos de fragmentos.
+  - Precalentado de los 11 programas: antes se compilaban en mitad de los primeros planos y probablemente causaban la caída a unos 15 FPS. Ahora se compilan durante el fundido de entrada.
+  - **Efecto secundario aceptado:** la invocación empieza 2 fotogramas más tarde y cambian las tiradas de azar posteriores. Por eso la referencia de `prueba_combate_huella` es nueva (`4d5fe36`); los resultados de sus nueve combates no cambian.
+  - El tope de 30 FPS en el perfil bajo es INTENCIONADO (encargo del 09/11).
+- **Nix** (`89269b7`, sigue APAGADA):
+  - Emisión suave solo en el iris: a la distancia de juego, dos puntos violetas.
+  - Fuera las placas púrpura de los puños y los rectángulos de la espalda, que eran artefactos del guion de vestuario.
+  - Lo anterior queda en `anterior_14_11b/`.
+  - **Pendiente:** ver en el Redmi si el punto violeta parpadea en movimiento y decidir si brilla de noche.
+  - Ya no asoma forro púrpura de la capa; recuperarlo sería una decisión de diseño del usuario.
+- **Capa de Garon** (`61a62a8`): la media vuelta desde parado ya no cruza el muslo.
+  - El trabajo es del agente, corregido por el coordinador tras la revisión: subpasos rígidos y centros de cuadro solo tras un giro rápido.
+  - Contraprueba: 6 fallos con la capa anterior.
+- **`prueba_velador_v12`:** falló una vez en la batería y pasó sola sin cambios. Es estadística (media de PV perdidos), así que queda anotada como inestable.
