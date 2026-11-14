@@ -25,6 +25,9 @@ const Hallazgos := preload("res://hallazgos.gd")
 const Examinables := preload("res://zonas3d/examinables_3d.gd")
 const Barrios := preload("res://zonas3d/oakhaven/barrios.gd")
 const MundoVivo := preload("res://zonas3d/oakhaven/mundo_vivo.gd")   # V12, interruptor «mundo_vivo_v12» (APAGADO)
+const Propuestas := preload("res://ciudades/oakhaven_propuestas.gd")  # V12, PROPUESTA apagada (el cantero)
+const Cantero3D := preload("res://zonas3d/oakhaven/cantero3d.gd")
+const NpcChibi := preload("res://personajes/npc_v12/npc_chibi.gd")
 const VECINOS := ["aldric", "selene", "pip", "rosa", "albar", "bastian", "encina"]
 # Sitios de la 3D que no son los de la 2D: Aldric, a un lado del arco (no tapa la Puerta del Sur), y Albar, por la mañana,
 # entre las urnas (en la 2D, encima de una).
@@ -83,11 +86,14 @@ func _montar() -> void:
 	franja_t = float(Engine.get_meta("oak_franja_t", 0.0))
 	for id in VECINOS:
 		_crear_vecino(id)
+	for d in Propuestas.npcs():                 # V12, PROPUESTA del cantero (apagada: ninguno)
+		_crear_vecino(d["id"])
 	_poner_cofres()
 	_poner_arcon()
 	_poner_notas()
 	_poner_paginas()
 	_poner_proyectos()
+	_poner_cantero()
 	actualizar()
 	poner_franja(franja, false)
 	var dg = get_node_or_null("/root/Dialogic")
@@ -126,6 +132,13 @@ func _crear_vecino(id: String) -> void:
 	# V12, mundo vivo (interruptor «mundo_vivo_v12», APAGADO): la figura de la familia chibi, con su esqueleto y sus
 	# clips, en vez de la provisional; el mismo sitio, diálogo y rutina. La anima mundo_vivo.gd.
 	var chibi: Node3D = MundoVivo.figura_vecino(id)
+	var propio := false
+	if chibi == null and d.has("chibi") and NpcChibi.existe(d["chibi"][0]):   # (el aprendiz del cantero: siempre la suya)
+		chibi = NpcChibi.crear(d["chibi"][0], d["chibi"][1])
+		if not chibi.listo:
+			chibi.free()
+			chibi = null
+		propio = chibi != null
 	if chibi != null:
 		n.add_child(chibi)
 	else:
@@ -145,7 +158,7 @@ func _crear_vecino(id: String) -> void:
 	col.position.y = 0.85
 	cuerpo.add_child(col)
 	n.add_child(cuerpo)
-	vecinos[id] = {"nodo": n, "veces": 0, "paseo": null, "datos": d, "chibi": chibi}
+	vecinos[id] = {"nodo": n, "veces": 0, "paseo": null, "datos": d, "chibi": chibi, "propio": propio}
 
 
 # Sin el modelo: una cápsula con su color (como Aldric antes de V12).
@@ -182,7 +195,7 @@ func rutina_3d(id: String, f: String) -> Dictionary:
 	var r: Dictionary = Vida.rutina(id, f).duplicate()
 	if r.is_empty():
 		var d := Oak.npc(id)
-		return {"casilla": d.get("casilla", Vector2(40, 30)), "hace": "quieto"}
+		return {"casilla": d.get("casilla", Vector2(40, 30)), "hace": d.get("hace", "quieto")}
 	var otro: Dictionary = RUTINA_3D.get(id, {})
 	if otro.has(f):
 		r["casilla"] = otro[f]
@@ -346,8 +359,56 @@ func _poner_arcon() -> void:
 		aro2.rotation = Vector3.ZERO
 		aro2.position = Vector3(0, 0.09, 0)
 		aro2.scale = Vector3.ONE * 1.8
-		n.add_child(aro2)
+		piedra.add_child(aro2)
+		aro2.position = Vector3(0, 0.05, 0)
+		piedra.name = "Piedra"
+		var hueco := MeshInstance3D.new()                       # lo que deja al apartarse: un hueco oscuro
+		hueco.name = "Hueco"
+		var hq := QuadMesh.new()
+		hq.size = Vector2(0.9, 0.9)
+		hq.orientation = PlaneMesh.FACE_Y
+		hueco.mesh = hq
+		hueco.position.y = 0.012
+		var mh := StandardMaterial3D.new()
+		mh.albedo_color = Color(0.05, 0.045, 0.04)
+		mh.roughness = 1.0
+		hueco.material_override = mh
+		n.add_child(hueco)
 		arcon["losa"] = n
+		arcon["losa_piedra"] = piedra
+		if Oak.cerradura_abierta("oak_losa_cantero"):
+			_losa_apartada(false)
+
+
+# La losa del cantero, abierta: la piedra se aparta a un lado y deja ver el hueco («animar»: con un tween).
+func _losa_apartada(animar: bool) -> void:
+	var piedra: Node3D = arcon.get("losa_piedra")
+	if piedra == null or not is_instance_valid(piedra):
+		return
+	var fin := Vector3(0.78, 0.0, 0.22)
+	if not animar:
+		piedra.position = fin
+		piedra.rotation.y = 0.35
+		return
+	_sonido("puerta_abre")
+	var t := piedra.create_tween().set_parallel()
+	t.tween_property(piedra, "position", fin, 0.9).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	t.tween_property(piedra, "rotation:y", 0.35, 0.9).set_trans(Tween.TRANS_SINE)
+
+
+# V12, PROPUESTA del cantero (apagada: nada): las tres marcas con su placa y el sillar delante del aprendiz.
+var marcas_cantero := {}                    # id de pieza → Node3D
+func _poner_cantero() -> void:
+	var mp: Material = mat.sillar() if mat != null and mat.has_method("sillar") else null
+	for p in Propuestas.piezas():
+		var n := Cantero3D.poner_marca(self, p["id"], func(x: float, z: float): return Barrios.altura(x, z), mp)
+		if n != null:
+			marcas_cantero[p["id"]] = n
+	if vecinos.has("cantero"):
+		var s := Cantero3D.sillar(mp)
+		var c: Vector2 = Oak.npc("cantero")["casilla"]
+		s.position = sitio(c + Vector2(0.15, 0.62))
+		add_child(s)
 
 
 func abrir_cerradura(id: String = Oak.CERRADURA["id"]) -> void:
@@ -362,7 +423,9 @@ func abrir_cerradura(id: String = Oak.CERRADURA["id"]) -> void:
 	m.resuelta.connect(func():
 		if id == Oak.CERRADURA["id"] and not arcon.is_empty() and is_instance_valid(arcon["tapa"]):
 			var t := (arcon["tapa"] as Node3D).create_tween()
-			t.tween_property(arcon["tapa"], "rotation:x", -1.9, 0.45).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT))
+			t.tween_property(arcon["tapa"], "rotation:x", -1.9, 0.45).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		elif id == "oak_losa_cantero":
+			_losa_apartada(true))
 	m.cerrado.connect(func():
 		abierto = null
 		guardar())
@@ -765,6 +828,10 @@ func avisar(texto: String, efecto := "", ya := false, segundos := 2.8) -> void:
 
 
 func _process(delta: float) -> void:
+	if region != null and region.get("vivo") == null:            # (con el mundo vivo, los anima él: mundo_vivo.gd)
+		for id in vecinos:
+			if vecinos[id].get("propio", false):
+				vecinos[id]["chibi"].avanzar(delta)
 	for k in _t_voz.keys():
 		_t_voz[k] -= delta
 	var dg = get_node_or_null("/root/Dialogic")
@@ -801,6 +868,11 @@ func _brazalete(p: Vector3) -> void:
 			cosas.append([d["id"], sitio(SITIO_3D.get(d["id"], Oak.SITIOS_DETALLE.get(d["id"], Oak.PLAZA)))])
 	if not Progreso.estado(Oak.NOMBRE, "grieta"):
 		cosas.append(["grieta", sitio(_secreto("oak_secreto_velas")["casilla"])])
+	if Propuestas.cumple("cond:cantero_empieza"):              # V12, PROPUESTA: las marcas del cantero que faltan
+		for pz in Propuestas.piezas():
+			var sen := str(pz["senal"]).trim_prefix("oak:")
+			if sen.begins_with("cantero_marca_") and not Progreso.estado(Oak.NOMBRE, sen):
+				cosas.append([pz["id"], sitio(pz["casilla"])])
 	for c in cosas:
 		var q: Vector3 = c[1]
 		var dist := Vector2(p.x - q.x, p.z - q.z).length()

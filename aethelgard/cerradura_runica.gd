@@ -105,7 +105,8 @@ func _ready() -> void:
 	rueda.draw.connect(_dibujar_rueda)
 	rueda.gui_input.connect(_tocar_rueda)
 	add_child(rueda)
-	var grabado := _etiqueta("Grabado en la tapa:\n«%s»" % str(config.get("inscripcion", "")), 24, SUAVE)
+	var grabado := _etiqueta("%s:\n«%s»" % [str(config.get("grabado_en", "Grabado en la tapa")),   # (la losa: «en la losa»)
+		str(config.get("inscripcion", ""))], 24, SUAVE)
 	grabado.position = Vector2(680, 100)
 	grabado.size = Vector2(540, 120)
 	grabado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -191,7 +192,8 @@ func _abrir() -> void:
 	if al_resolver.is_valid():
 		premio = str(al_resolver.call())
 	Sonido.efecto("tesoro")
-	mensaje.text = "¡Clac! Los anillos encajan y la tapa se abre." + ("" if premio == "" else " " + premio)
+	var abre := str(config.get("abre", "la tapa se abre"))       # («abre», opcional: la losa del cantero se aparta)
+	mensaje.text = "¡Clac! Los anillos encajan y %s." % abre + ("" if premio == "" else " " + premio)
 	salir.text = "Cerrar"
 	for fila in botones:
 		for b in fila:

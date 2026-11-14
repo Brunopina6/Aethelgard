@@ -31,7 +31,9 @@ sys.dont_write_bytecode = True          # sin __pycache__ en la carpeta de otra 
 sys.path.insert(0, os.path.join(RAIZ, "personajes", "desierto", "fuentes_blender"))
 import desierto_comun as C
 
-SALIDA = os.path.join(RAIZ, "personajes", "npc_v12")
+# 4.º argumento opcional: otra carpeta de salida (para sacar el atlas de una persona nueva sin rehacer los GLB del
+# proyecto; luego se copia solo ese .png).
+SALIDA = argv[3] if len(argv) > 3 and argv[3] else os.path.join(RAIZ, "personajes", "npc_v12")
 # V2 (pulido, 13/11): sombreado suave, manos y botas redondeadas, pelo por mechones con volumen, telas con pliegues y
 # ribetes, y caras más expresivas en una loseta mayor (384 px en vez de 256 dentro del mismo atlas de 512). La v1 queda
 # en personajes/npc_v12/v1/ (con .gdignore) y su guion en v1/crear_npc_chibi_v1.py.
@@ -1076,7 +1078,13 @@ oficio("herrero", figura=Figura(sb=1.04, sx=1.18, st=1.22, sh=0.98, ojo=(0.17, 0
                                         acento=(0.75, 0.55, 0.25), pantalon=(0.30, 0.27, 0.25), cuero=(0.40, 0.25, 0.14)),
                  "ferro": P_("morena", (0.24, 0.17, 0.12), "ambar", ojos="seria", boca="plana", tela=(0.80, 0.74, 0.62),
                              ropa=(0.5, 0.3, 0.2), ropa2=(0.40, 0.33, 0.26), acento=(0.85, 0.65, 0.3),
-                             pantalon=(0.28, 0.24, 0.22), cuero=(0.46, 0.30, 0.18))})
+                             pantalon=(0.28, 0.24, 0.22), cuero=(0.46, 0.30, 0.18)),
+                 # 14/11 (PROPUESTA del cantero, ciudades/oakhaven_propuestas.gd): el aprendiz del cantero, con polvo de
+                 # piedra en la ropa (grises y azul pizarra). Mismo cuerpo que el herrero: martillo y delantal.
+                 "cantero_aprendiz": P_("clara", (0.36, 0.26, 0.17), "gris", ojos="normal", boca="media_sonrisa",
+                                        tela=(0.78, 0.77, 0.74), ropa=(0.36, 0.42, 0.50), ropa2=(0.52, 0.51, 0.49),
+                                        acento=(0.70, 0.66, 0.56), pantalon=(0.34, 0.33, 0.34),
+                                        cuero=(0.42, 0.36, 0.30))})
 
 
 # --- mercader: barriga, chaleco y delantal corto, gorro blando, bolsa de monedas ---------------------------------------

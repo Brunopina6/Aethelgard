@@ -1,0 +1,5 @@
+cantero: Cuidado con las lascas. Mi maestro, el cantero del Concejo, labró esta fuente y el pórtico.
+cantero: Se marchó hace dos inviernos. Me dejó su última pieza bajo una losa, y la clave en el arcón del Concejo.
+cantero: Nadie sabe abrir ese arcón. Él decía que la ciudad siempre mira al agua, a la campana y al Árbol.
+cantero: Si lo abres, lo que haya dentro es tuyo. Yo solo quiero saber qué me dejó.
+[signal arg="oak:cantero_pedido"]

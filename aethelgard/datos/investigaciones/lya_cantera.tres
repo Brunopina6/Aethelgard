@@ -1,0 +1,15 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/investigacion.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "lya_cantera"
+taller = "alquimia"
+nombre = "La piedra que asienta"
+desc = "Con el polvo de la cantera vieja, Lya prueba a asentar el Éter: la mezcla deja de agitarse y ya no se evapora."
+requisitos = [{"tipo": "material", "id": "Polvo de cantera", "cantidad": 1}]
+pasos = 1
+desbloquea = PackedStringArray("eter_cantera")
+borrador = false
+si = "estado_de:oakhaven/cantero_fin"

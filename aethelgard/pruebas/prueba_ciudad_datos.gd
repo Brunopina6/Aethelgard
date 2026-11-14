@@ -43,6 +43,9 @@ var D
 var R
 var util
 var Prop                                  # datos de la propuesta (compilados desde su carpeta)
+# 14/11: los vecinos de la ciudad y el de la PROPUESTA del cantero (ciudades/oakhaven_propuestas.gd), para revisar también
+# sus diálogos, textos y casilla (la prueba de la propuesta comprueba que, apagada, no sale).
+var NPCS_TODOS: Array = Oak.NPCS + preload("res://ciudades/oakhaven_propuestas.gd").NPCS
 var fallos: Array = []
 var frames := 0
 var paso := 0
@@ -189,7 +192,7 @@ func _revisar_datos() -> void:
 
 	# identificadores
 	var vistos := {}
-	for lista in [["npc", Oak.NPCS], ["mision", Oak.MISIONES], ["cofre", Oak.COFRES], ["secreto", Oak.SECRETOS],
+	for lista in [["npc", NPCS_TODOS], ["mision", Oak.MISIONES], ["cofre", Oak.COFRES], ["secreto", Oak.SECRETOS],
 			["pieza", Oak.PIEZAS], ["nota", Oak.NOTAS], ["lugar", Oak.LUGARES]]:
 		for d in lista[1]:
 			var id: String = d["id"]
@@ -239,7 +242,7 @@ func _revisar_datos() -> void:
 
 	# condiciones
 	var conds: Array = []
-	for n in Oak.NPCS:
+	for n in NPCS_TODOS:
 		for d in n["dialogos"]:
 			conds.append([d.get("si", ""), "%s/%s" % [n["id"], d["dialogo"]]])
 	for m in Oak.MISIONES:
@@ -260,7 +263,7 @@ func _revisar_datos() -> void:
 
 	# casillas: dentro, pisables y separadas
 	var puntos: Array = []                         # [nombre, casilla] de lo que se examina
-	for n in Oak.NPCS:
+	for n in NPCS_TODOS:
 		puntos.append(["vecino " + n["id"], n["casilla"]])
 	for c in Oak.COFRES:
 		puntos.append(["cofre " + c["id"], c["casilla"]])
@@ -312,7 +315,7 @@ func _revisar_datos() -> void:
 			_fallo("1: la misión %s da %d (máximo %d)" % [m["id"], v, MAX_VALOR_MISION])
 
 	# frases de respaldo (sin Dialogic) que salen de sus diálogos
-	for n in Oak.NPCS:
+	for n in NPCS_TODOS:
 		var todo := ""
 		for d in n["dialogos"]:
 			for f in _frases_dtl(_leer(Oak.ruta_dialogo(d["dialogo"]))):
@@ -360,7 +363,7 @@ func _revisar_datos() -> void:
 # Lo que ve el jugador en los datos: [dónde, texto, es un aviso de zona.gd].
 func _textos_de_datos() -> Array:
 	var r: Array = []
-	for n in Oak.NPCS:
+	for n in NPCS_TODOS:
 		r.append(["nombre de " + n["id"], n["nombre"], false])
 		for f in n["frases"]:
 			r.append(["frase de " + n["id"], f, false])
@@ -724,7 +727,7 @@ func _grupo_posada(id: String) -> Array:
 
 
 func _vecino_de(id: String) -> String:
-	for n in Oak.NPCS:
+	for n in NPCS_TODOS:
 		for d in n["dialogos"]:
 			if d["dialogo"] == id:
 				return n["personaje"]
@@ -924,7 +927,7 @@ func _terminar() -> bool:
 
 # La condición «si» con la que un vecino ofrece un diálogo (V10: para los héroes que exige con «grupo:»).
 func _si_de(id: String) -> Variant:
-	for n in Oak.NPCS:
+	for n in NPCS_TODOS:
 		for d in n["dialogos"]:
 			if d["dialogo"] == id:
 				return d.get("si", [])

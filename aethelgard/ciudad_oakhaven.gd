@@ -543,7 +543,7 @@ func _junto_a_calle(c: Vector2i) -> bool:
 # Casillas de lo que se usa (vecinos, cofres, piezas, notas, detalles, el pie del Árbol y la entrada).
 func _preparar_puntos() -> void:
 	puntos_clave.clear()
-	for lista in [Oak.NPCS, Oak.COFRES, Oak.piezas_activas(), Oak.NOTAS]:
+	for lista in [Oak.npcs_activos(), Oak.COFRES, Oak.piezas_activas(), Oak.NOTAS]:
 		for d in lista:
 			if d.has("casilla"):
 				puntos_clave.append(d["casilla"])
@@ -1238,7 +1238,7 @@ func _rutinas(delta: float) -> void:
 		else:
 			paseos[id].play()
 	for n in npcs:
-		var sb = n[0].get_meta("sombra", null)
+		var sb = n[0].get_meta("sombra") if n[0].has_meta("sombra") else null   # (sin rutina, no la tiene)
 		if sb != null and is_instance_valid(sb):
 			sb.position = n[0].position + Vector2(0, 2)
 	if parado or saliendo:
@@ -1325,7 +1325,7 @@ func _arbol_translucido(delta: float) -> void:
 func _npcs() -> Array:
 	if vecinos.is_empty():
 		var con_munecos := arte != null and _tiene_funcion(arte, "muneco_de")
-		for d in Oak.NPCS:
+		for d in Oak.npcs_activos():   # (V12: con la propuesta encendida, también el aprendiz del cantero)
 			var v: Dictionary = d
 			if con_munecos:
 				var ruta: String = arte.muneco_de(d["id"], d["imagen"])

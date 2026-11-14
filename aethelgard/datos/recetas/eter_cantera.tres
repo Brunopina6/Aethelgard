@@ -1,0 +1,15 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/receta.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "eter_cantera"
+taller = "alquimia"
+nombre = "Éter asentado"
+materiales = {"Hierba lunar": 1, "Polvo de cantera": 1}
+resultado = "Éter"
+cantidad = 1
+investigacion = "lya_cantera"
+desc = "Da 1 Éter (en combate, recupera 25 PM). Gasta el Polvo de cantera, que no se compra: hay el que hay."
+borrador = false

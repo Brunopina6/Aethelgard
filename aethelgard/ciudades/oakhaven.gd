@@ -45,6 +45,7 @@ const PERSONAJES := {
 	"ferro": "res://dialogos/personajes/oakhaven/ferro.dch",      # V10 (docs/v10/DISENO_V10.md), propuesta
 	"hilda": "res://dialogos/personajes/oakhaven/hilda.dch",
 	"mirta": "res://dialogos/personajes/oakhaven/mirta.dch",
+	"cantero": "res://dialogos/personajes/oakhaven/cantero.dch",   # V12, PROPUESTA apagada (ciudades/oakhaven_propuestas.gd)
 }
 
 # ================================================================= trazado
@@ -465,7 +466,8 @@ const SENALES := ["oak:pip_pagar", "oak:favores_aceptados", "oak:favor_barril", 
 	"oak:faroles_hechos", "oak:lavanda_pedida", "oak:lavanda_cogida", "oak:lavanda_entregada", "oak:encina_gracias",
 	"oak:torre", "oak:grieta", "oak:vista_raices", "oak:sopa", "oak:rumor", "oak:dormir", "oak:encina_bosque", "oak:pip_perro", "oak:pip_perro_fin",
 	"oak:servicio_forja", "oak:servicio_armaduras", "oak:servicio_botica", "oak:herrero_pedido", "oak:hierro_entregar",
-	"oak:hierro_kael", "oak:formula_pedido", "oak:formula_pip", "oak:pagina_1", "oak:pagina_2", "oak:pagina_3", "oak:formula_fin"]
+	"oak:hierro_kael", "oak:formula_pedido", "oak:formula_pip", "oak:pagina_1", "oak:pagina_2", "oak:pagina_3", "oak:formula_fin",
+	"oak:cantero_pedido", "oak:cantero_fin"]   # (las dos últimas: la PROPUESTA del cantero, apagada; las aplica su módulo)
 # Condiciones con nombre (las demás: hito:, estado:, decision:k=v, grupo:, oro:n, modo:3d/2d y ganado:<combate fijo>,
 # uno de «combates_ganados», como garganta_gorthor; «!» las niega).
 const CONDICIONES := {
@@ -474,13 +476,20 @@ const CONDICIONES := {
 	"favores_listos": "el barril, las flores y el cucharón",
 }
 const TIPOS_CONDICION := ["hito", "estado", "decision", "grupo", "oro", "modo", "cond", "ganado"]
-const PLURAL := {"Poción": "Pociones", "Éter": "Éter", "Incienso de Ceniza": "Inciensos de Ceniza"}
+const PLURAL := {"Poción": "Pociones", "Éter": "Éter", "Incienso de Ceniza": "Inciensos de Ceniza",
+	"Polvo de cantera": "puñados de Polvo de cantera"}
 
 
 # ================================================================= consultas
 
 static func npc(id: String) -> Dictionary:
-	return _buscar(NPCS, id)
+	return _buscar(npcs_activos(), id)
+
+
+# Los vecinos de la ciudad: NPCS y, con el interruptor «oakhaven_propuestas_v12» (APAGADO), el de la propuesta (el
+# aprendiz del cantero, ciudades/oakhaven_propuestas.gd). La ciudad 2D y la 3D ponen estos.
+static func npcs_activos() -> Array:
+	return NPCS + load("res://ciudades/oakhaven_propuestas.gd").npcs()
 
 
 static func mision(id: String) -> Dictionary:
@@ -522,7 +531,7 @@ static func ruta_dialogo(id: String) -> String:
 # Todos los diálogos nuevos de la ciudad (sin los cuatro de siempre).
 static func dialogos_nuevos() -> Array:
 	var r: Array = []
-	for n in NPCS:
+	for n in NPCS + load("res://ciudades/oakhaven_propuestas.gd").NPCS:   # (los de la propuesta, aunque esté apagada)
 		for d in n["dialogos"]:
 			if not d["dialogo"] in DIALOGOS_CANON and not d["dialogo"] in r:
 				r.append(d["dialogo"])
@@ -903,7 +912,7 @@ static func abrir_cerradura(id: String = CERRADURA["id"]) -> String:
 	if id == CERRADURA["id"]:
 		return "Dentro del arcón: %s.%s" % [_dar(cfg["premio"]),
 			load("res://ciudades/oakhaven_propuestas.gd").al_abrir_arcon()]
-	return "Bajo la losa: %s." % _dar(cfg["premio"])
+	return "Bajo la losa: %s.%s" % [_dar(cfg["premio"]), load("res://ciudades/oakhaven_propuestas.gd").al_abrir_losa()]
 
 
 # Apunta una nota en el Diario (progreso.gd, ver_nota: en «lore_visto»). Devuelve true si es nueva. No completa ningún

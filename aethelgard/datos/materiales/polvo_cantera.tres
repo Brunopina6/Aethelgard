@@ -1,0 +1,12 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/material.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "polvo_cantera"
+clave_inventario = "Polvo de cantera"
+nombre = "Polvo de cantera"
+venta = 4
+desc = "Piedra de la cantera vieja de Oakhaven, molida muy fina. Asienta las mezclas que se agitan. Te lo dio el aprendiz del cantero: no se vende en ninguna tienda."
+de_enemigos = PackedStringArray()

@@ -7,8 +7,13 @@ extends SceneTree
 #   2. Encendida, los datos: cuatro piezas en sitios pisables y a 2,5 casillas o más de todo lo que se examina; textos
 #      sin nada reservado (D-033, D-073); la losa siempre tiene solución y su combinación es la que se deduce de las
 #      marcas (ordenadas por sus muescas: Rayo, Agua, Luna), que no sale escrita en ningún texto.
-#   3. Encendida, la misión entera: el arcón da la nota y empieza; cada marca, una vez, al Diario (pista) y con las tres
-#      el paso siguiente; la losa da su premio UNA vez y la misión acaba; guardar y cargar; partida antigua.
+#   3. Encendida, la misión entera (14/11, con el aprendiz del cantero): el aprendiz la encarga (paso «arcón») o la empieza
+#      el arcón; el diálogo que toca en cada momento; cada marca, una vez, al Diario (pista) y con las tres el paso
+#      siguiente; la losa da su premio UNA vez (y el cincel y la carta); volver con el aprendiz da el Polvo de cantera UNA
+#      vez y la misión acaba; guardar y cargar antes de empezar, a mitad, con la cerradura vista y al final; partida
+#      antigua. El camino al revés (el arcón antes que el aprendiz) y la losa antes que las marcas.
+#   3b. El taller de Lya: la investigación del polvo no sale hasta tenerlo; se estudia, la receta da Éter y el polvo se
+#      acaba (no hay fabricación infinita).
 #   4. En la ciudad 2D (encendida): «Examinar la marca» apunta la marca; «Girar los anillos» en la losa abre su cerradura
 #      (la de la losa, no la del arcón) y resolverla la abre.
 # Con «3d» (lista: prueba_oakhaven_propuestas_3d):
@@ -90,12 +95,18 @@ func _apagada() -> void:
 	Engine.set_meta(INTERRUPTOR, false)
 	_ok(Oak.piezas_activas() == Oak.PIEZAS and Oak.pieza(LOSA).is_empty() and Oak.config_cerradura(LOSA).is_empty(),
 		"1: apagada, hay piezas o cerradura nuevas")
+	_ok(Oak.npcs_activos() == Oak.NPCS and Oak.npc("cantero").is_empty() and Oak.dialogo_de("cantero") == "",
+		"1: apagada, sale el aprendiz del cantero")
+	_ok(Oak.aplicar_senal("oak:cantero_pedido") == "" and not P.estado(Oak.NOMBRE, "cantero_pedido"),
+		"1: apagada, el encargo del aprendiz empieza algo")
+	_ok(not load("res://investigacion.gd").visible("lya_cantera"), "1: apagada, el taller enseña la investigación del polvo")
 	_ok(Oak.aplicar_senal("oak:cantero_marca_1") == "" and not P.estado(Oak.NOMBRE, "cantero_marca_1"),
 		"1: apagada, una marca se apunta")
 	var t: String = Oak.abrir_cerradura()
 	_ok(t.begins_with("Dentro del arcón") and not t.contains("cantero"), "1: apagada, el arcón da la nota («%s»)" % t)
 	_ok(E.estado(E.de("prop_cantero")) == "oculto", "1: apagada, la misión sale en el Diario")
 	_ok(Oak.abrir_cerradura(LOSA) == "", "1: apagada, la losa se abre")
+	_ok(Oak.aplicar_senal("oak:cantero_fin") == "" and Inv.cantidad("Polvo de cantera") == 0, "1: apagada, el final da algo")
 	_limpiar()
 
 
@@ -127,6 +138,21 @@ func _datos() -> void:
 		for k in ["texto", "texto_sin"]:
 			for x in PROHIBIDO:
 				_ok(not _plano(str(p[k])).contains(x), "2: «%s» en %s de %s" % [x, k, p["id"]])
+	for n in Prop.NPCS:                                           # el aprendiz: sitio pisable, apartado y fuera del paso
+		var c: Vector2 = n["casilla"]
+		var pisable := false
+		for l in Oak.LUGARES:
+			pisable = pisable or ((l["rect"] as Rect2).has_point(c) and l["pisable"])
+		_ok(pisable, "2: el vecino %s no está en un sitio pisable" % n["id"])
+		for q in puntos:
+			_ok(c.distance_to(q[1]) >= 2.5, "2: el vecino %s a %.1f de %s" % [n["id"], c.distance_to(q[1]), q[0]])
+		for d in n["dialogos"]:
+			_ok(Oak.error_condicion(d.get("si", "")) == "", "2: condición mal en %s/%s" % [n["id"], d["dialogo"]])
+			_ok(ResourceLoader.exists(Oak.ruta_dialogo(d["dialogo"])), "2: falta el diálogo %s" % d["dialogo"])
+			var dtl := FileAccess.get_file_as_string(Oak.ruta_dialogo(d["dialogo"]))
+			for x in PROHIBIDO:
+				_ok(not _plano(dtl).contains(x), "2: «%s» en %s" % [x, d["dialogo"]])
+			_ok(not dtl.contains("Rayo, Agua") and not dtl.contains("Rayo y Agua"), "2: %s da la combinación" % d["dialogo"])
 	var textos: String = Prop.NOTA + " " + Prop.CERRADURA["inscripcion"]
 	for m in Prop.MISIONES:
 		textos += " " + m["resumen"] + " " + m["pago"]
@@ -160,14 +186,41 @@ func _datos() -> void:
 
 
 # 3. La misión entera.
+func _guardar_y_cargar(donde: String) -> void:
+	var d: Dictionary = P.volcar("res://mapa.tscn")
+	_ok(P.escribir(d, ARCHIVO), "3: no se pudo escribir la partida (%s)" % donde)
+	_limpiar()
+	Engine.set_meta(INTERRUPTOR, true)
+	var leida = P.leer(ARCHIVO)
+	_ok(leida is Dictionary, "3: no se pudo leer la partida (%s)" % donde)
+	if leida is Dictionary:
+		P.restaurar(leida)
+
+
+func _toca(dialogo: String, donde: String) -> void:
+	var r: String = Oak.dialogo_de("cantero", 0)
+	_ok(r.get_file().get_basename() == dialogo, "3: %s, el aprendiz dice «%s» y no «%s»" % [donde, r.get_file(), dialogo])
+
+
 func _mision() -> void:
 	_limpiar()
 	Engine.set_meta(INTERRUPTOR, true)
 	var mis: Dictionary = E.de("prop_cantero")
-	_ok(E.estado(mis) == "oculto", "3: la misión sale antes de abrir el arcón")
-	var t: String = Oak.abrir_cerradura()
+	_ok(E.estado(mis) == "oculto", "3: la misión sale antes de hablar con el aprendiz o abrir el arcón")
+	_toca("prop_cantero_pedido", "al principio")
+	_guardar_y_cargar("antes de empezar")
+	_ok(E.estado(mis) == "oculto", "3: tras cargar sin empezar, la misión sale")
+	_ok(Oak.aplicar_senal("oak:cantero_fin") == "" and Inv.cantidad("Polvo de cantera") == 0, "3: el final, antes de tiempo, da algo")
+	var t: String = Oak.aplicar_senal("oak:cantero_pedido")
+	_ok(t == "Misión: Las tres marcas del cantero.", "3: el aprendiz no empieza la misión («%s»)" % t)
+	_ok(Oak.aplicar_senal("oak:cantero_pedido") == "", "3: el encargo se repite")
+	_ok(E.estado(mis) == "activo" and E.paso_actual(mis).get("id", "") == "arcon", "3: el encargo no lleva al arcón")
+	_ok(E.pistas_conocidas(mis).size() == 1 and E.pistas_conocidas(mis)[0].contains("agua"), "3: el Diario no apunta lo del aprendiz")
+	_ok(E.pasos_conocidos(mis).size() == 1, "3: el Diario adelanta pasos")
+	_toca("prop_cantero_pendiente", "con el encargo")
+	t = Oak.abrir_cerradura()
 	_ok(t.contains(Prop.NOTA), "3: el arcón no da la nota del cantero («%s»)" % t)
-	_ok(E.estado(mis) == "activo" and E.paso_actual(mis).get("id", "") == "marcas", "3: la nota no empieza la misión")
+	_ok(E.estado(mis) == "activo" and E.paso_actual(mis).get("id", "") == "marcas", "3: la nota no lleva a las marcas")
 	var pistas0: int = E.pistas_conocidas(mis).size()
 	for i in MARCAS.size():
 		var p: Dictionary = Oak.pieza(MARCAS[i])
@@ -175,28 +228,77 @@ func _mision() -> void:
 		_ok(aviso.contains("(%d de 3)" % (i + 1)), "3: la marca %s no se apunta («%s»)" % [MARCAS[i], aviso])
 		_ok(Oak.aplicar_senal(p["senal"]) == "", "3: la marca %s se apunta dos veces" % MARCAS[i])
 		_ok(E.pistas_conocidas(mis).size() == pistas0 + i + 1, "3: el Diario no apunta la marca %s" % MARCAS[i])
+		if i == 0:
+			_guardar_y_cargar("a mitad, con una marca")
+			_ok(P.estado(Oak.NOMBRE, "cantero_marca_1") and not P.estado(Oak.NOMBRE, "cantero_marca_2")
+				and E.paso_actual(mis).get("id", "") == "marcas", "3: tras cargar a mitad, se pierden o sobran marcas")
 	_ok(E.paso_actual(mis).get("id", "") == "losa", "3: con las tres marcas no se pasa a la losa")
+	# dentro del puzle: la cerradura vista y la partida guardada con ella sin abrir
+	Oak.ver_cerradura(LOSA)
+	_guardar_y_cargar("dentro del puzle")
+	_ok(not Oak.cerradura_abierta(LOSA) and P.estado(Oak.NOMBRE, "cerradura_cantero_vista"),
+		"3: tras cargar con la losa a medias, la losa está abierta o se olvida que se vio")
 	var oro0: int = Inv.oro()
 	var incienso0: int = Inv.cantidad("Incienso de Ceniza")
-	Oak.ver_cerradura(LOSA)
 	t = Oak.abrir_cerradura(LOSA)
-	_ok(t.begins_with("Bajo la losa") and Inv.oro() == oro0 + 80 and Inv.cantidad("Incienso de Ceniza") == incienso0 + 1,
-		"3: la losa no da su premio («%s»)" % t)
+	_ok(t.begins_with("Bajo la losa") and t.contains("cincel") and Inv.oro() == oro0 + 80
+		and Inv.cantidad("Incienso de Ceniza") == incienso0 + 1, "3: la losa no da su premio («%s»)" % t)
 	_ok(Oak.abrir_cerradura(LOSA) == "" and Inv.oro() == oro0 + 80, "3: la losa da el premio dos veces")
-	_ok(E.estado(mis) == "hecho" and Oak.cerradura_abierta() and Oak.cerradura_abierta(LOSA), "3: la misión no acaba")
-	# guardar y cargar, y partida antigua
-	var d: Dictionary = P.volcar("res://mapa.tscn")
-	_ok(P.escribir(d, ARCHIVO), "3: no se pudo escribir la partida")
-	_limpiar()
-	var leida = P.leer(ARCHIVO)
-	if leida is Dictionary:
-		P.restaurar(leida)
-	_ok(E.estado(mis) == "hecho" and Oak.abrir_cerradura(LOSA) == "", "3: tras cargar, la losa no sigue abierta")
-	var vieja: Dictionary = (leida as Dictionary).duplicate(true) if leida is Dictionary else {}
+	_ok(E.estado(mis) == "activo" and E.paso_actual(mis).get("id", "") == "volver", "3: abierta la losa, no toca volver con el aprendiz")
+	_toca("prop_cantero_fin", "con la losa abierta")
+	_guardar_y_cargar("con la losa abierta, sin volver")
+	_ok(Oak.cerradura_abierta(LOSA) and Inv.oro() == oro0 + 80 and E.paso_actual(mis).get("id", "") == "volver",
+		"3: tras cargar con la losa abierta, cambia algo")
+	t = Oak.aplicar_senal("oak:cantero_fin")
+	_ok(t.contains("Polvo de cantera") and Inv.cantidad("Polvo de cantera") == 3, "3: el aprendiz no da el polvo («%s»)" % t)
+	_ok(Oak.aplicar_senal("oak:cantero_fin") == "" and Inv.cantidad("Polvo de cantera") == 3, "3: el aprendiz da el polvo dos veces")
+	_ok(E.estado(mis) == "hecho", "3: la misión no acaba")
+	_toca("prop_cantero_despues", "después")
+	_guardar_y_cargar("después")
+	_ok(E.estado(mis) == "hecho" and Oak.abrir_cerradura(LOSA) == "" and Oak.aplicar_senal("oak:cantero_fin") == ""
+		and Inv.cantidad("Polvo de cantera") == 3, "3: tras cargar al final, algo se repite o se pierde")
+	_toca("prop_cantero_despues", "después de cargar")
+	_taller()
+	# partida antigua (sin «mazmorras»): todo por descubrir
+	var vieja: Dictionary = P.volcar("res://mapa.tscn").duplicate(true)
 	vieja.erase("mazmorras")
+	_limpiar()
+	Engine.set_meta(INTERRUPTOR, true)
 	P.restaurar(vieja)
 	_ok(E.estado(mis) == "oculto" and not Oak.cerradura_abierta(LOSA), "3: una partida antigua no empieza de cero")
+	_toca("prop_cantero_pedido", "en una partida antigua")
+	# al revés: el arcón antes que el aprendiz, y la losa antes que las marcas
 	_limpiar()
+	Engine.set_meta(INTERRUPTOR, true)
+	Oak.abrir_cerradura()
+	_ok(E.estado(mis) == "activo" and E.paso_actual(mis).get("id", "") == "marcas", "3: el arcón, primero, no empieza la misión")
+	_toca("prop_cantero_nota", "con el arcón abierto antes")
+	t = Oak.aplicar_senal("oak:cantero_pedido")
+	_ok(t.begins_with("Diario") and P.estado(Oak.NOMBRE, "cantero_pedido"), "3: con el arcón abierto, el aprendiz anuncia otra misión («%s»)" % t)
+	Oak.aplicar_senal("oak:cantero_marca_3")
+	Oak.abrir_cerradura(LOSA)
+	_ok(E.paso_actual(mis).get("id", "") == "volver", "3: la losa abierta sin las marcas deja el Diario en las marcas")
+	_limpiar()
+
+
+# 3b. El taller de Lya con el polvo (la receta da Éter; el polvo se acaba).
+func _taller() -> void:
+	var I = load("res://investigacion.gd")
+	var Ta = load("res://talleres.gd")
+	_ok(I.visible("lya_cantera") and I.estado("lya_cantera") == "disponible", "3b: con el polvo, la investigación no sale o no se puede")
+	_ok(I.empezar("lya_cantera") == "" and I.avanzar("lya_cantera", 1) and I.estado("lya_cantera") == "completada",
+		"3b: la investigación del polvo no se completa")
+	_ok(Inv.cantidad("Polvo de cantera") == 3, "3b: estudiar gasta el polvo")
+	Inv.agregar_objeto("Hierba lunar", 5)
+	var eter0: int = Inv.cantidad("Éter")
+	var hechas := 0
+	for i in 5:
+		if Ta.fabricar("eter_cantera"):
+			hechas += 1
+	_ok(hechas == 3 and Inv.cantidad("Éter") == eter0 + 3 and Inv.cantidad("Polvo de cantera") == 0
+		and Inv.cantidad("Hierba lunar") == 2, "3b: la receta no da Éter o no se acaba el polvo (%d hechas)" % hechas)
+	_ok(Ta.puede("eter_cantera").contains("Polvo de cantera"), "3b: sin polvo, el motivo no lo dice («%s»)" % Ta.puede("eter_cantera"))
+	_ok(I.visible("lya_cantera"), "3b: completada, la investigación deja de salir")
 
 
 func _dar_con(z, id: String) -> Array:
@@ -223,6 +325,7 @@ func _ciudad() -> void:
 		_ok(false, "4: no se cargó la ciudad 2D")
 		return
 	_ok(_dar_con(z, LOSA).size() == 3 and _dar_con(z, "oak_marca_raiz").size() == 3, "4: la ciudad no pone las piezas nuevas")
+	_ok(z.npcs.any(func(n): return n[1].get("id", "") == "cantero"), "4: la ciudad 2D no pone al aprendiz")
 	_ok(z.boton_examinar.text == "Examinar la marca", "4: junto a la fuente no se ofrece la marca («%s»)" % z.boton_examinar.text)
 	z._accion()
 	await _esperar(2)
@@ -265,12 +368,23 @@ func _en_3d() -> void:
 		return
 	var ids: Array = v.vida.piezas().map(func(x): return x[0])
 	_ok(not ("pieza:" + LOSA) in ids and not v.vida.arcon.has("losa"), "5: apagada, la 3D pone la losa")
+	_ok(not v.vida.vecinos.has("cantero") and v.vida.marcas_cantero.is_empty(), "5: apagada, la 3D pone al aprendiz o las marcas")
 	Engine.set_meta(INTERRUPTOR, true)
 	change_scene_to_file("res://zonas3d/oakhaven_3d.tscn")
 	await _esperar(25)
 	v = current_scene
 	var vida = v.vida
 	_ok(vida.arcon.has("losa"), "5: encendida, no está la losa en el suelo")
+	_ok(vida.vecinos.has("cantero") and vida.vecinos["cantero"]["chibi"] != null, "5: encendida, no está el aprendiz (con su figura)")
+	_ok(vida.marcas_cantero.size() == 3, "5: encendida, no se ven las tres marcas (%d)" % vida.marcas_cantero.size())
+	_ok(vida.piezas().any(func(x): return x[0] == "cantero" and x[3] == "Hablar con el aprendiz"), "5: no se ofrece hablar con el aprendiz")
+	var ruta: String = vida.hablar("cantero")
+	_ok(ruta.ends_with("prop_cantero_pedido.dtl"), "5: el aprendiz no empieza por su encargo («%s»)" % ruta)
+	await _esperar(2)
+	var dg = root.get_node_or_null("Dialogic")
+	if dg != null and dg.current_timeline != null:
+		dg.end_timeline()
+	await _esperar(3)
 	for pz in vida.piezas():
 		var id := String(pz[0]).trim_prefix("pieza:")
 		if not Oak.pieza(id).is_empty() and Prop.PIEZAS.any(func(p): return p["id"] == id):
@@ -298,3 +412,6 @@ func _en_3d() -> void:
 		if pz[0] == "pieza:" + LOSA:
 			ofrece = pz[3]
 	_ok(ofrece == "Examinar", "5: abierta, la losa no pasa a «Examinar» («%s»)" % ofrece)
+	await _esperar(40)
+	var piedra: Node3D = vida.arcon.get("losa_piedra")
+	_ok(piedra != null and piedra.position.x > 0.6, "5: abierta, la losa no se aparta")
