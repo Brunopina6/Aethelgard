@@ -475,6 +475,11 @@ Informe: `D:\REBELUM_laboratorio_plugins\laboratorio\INFORME_LABORATORIO.md`.
 
 - **El texto LITERAL completo está en `D:\REBELUM_entrada_13_11\ENCARGO_COORDINADOR_13_11.md`.** Es la autoridad:
   léelo entero.
+  - Desde el 14/11 también está versionado en `docs/v12/encargos/ENCARGO_COORDINADOR_13_11.md`.
+  - **Documento de tareas vivo, con fases y estado de cada una:** `docs/v12/encargos/FASES_ENCARGO_COORDINADOR.md`.
+    Después de compactar, sigue desde la primera fase sin «HECHA».
+  - **Directiva de continuidad del usuario** (guardar tras cada fase, pruebas y commit, sin preguntas):
+    `docs/v12/encargos/DIRECTIVA_CONTINUIDAD_14_11.md`.
 - **Orden de trabajo:**
   1. Inspeccionar y proteger.
   2. Desbloqueos.
