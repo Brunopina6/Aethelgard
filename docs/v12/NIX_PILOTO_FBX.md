@@ -310,3 +310,23 @@ No se pasó la batería completa (solo toca archivos de Nix y sus pruebas). Hab�
   Nix chibi con sombrero; con el FBX conviene revisarlo (archivo del coordinador, no tocado).
 - Registrar en `docs/recursos.md` la Nix del FBX (piloto y vestuario): fila propuesta en el informe de la rama.
 - Retrato de diálogo, cara expresiva y retoque adulto de los clips chibi, como en el §6.
+
+## 10. Arreglo de la cara y del cetro al andar/correr (14/11/2026, tras la revisión visual) — sigue APAGADO
+
+Informe con hojas de antes y después: `D:\REBELUM_diagnostico\v12\nix_arreglo_14_11\INFORME.md`. Sin rediseño:
+mismos triángulos (11.968 + 7.513), esqueleto, clips y texturas de 1024. Lo anterior, en
+`aethelgard/personajes/nix/fbx/anterior_14_11/` (con `.gdignore`).
+- **Cara.** Causas: el «pelo recogido» de `p8_vestuario.py` tomaba la piel pálida por pelo y la comprimía hacia el
+  cráneo (904 vértices de barbilla, boca y mandíbula, hasta 9 mm: boca torcida, barbilla abollada); el recoloreado de
+  p8 pasaba esa piel a «ceniza» (manchas grises); el horneado de p2 con rayos largos ponía borde claro en el cuello
+  alto. Arreglo (`fuente_blender/p10_cara.py`): esa piel vuelve a su sitio de p4, normales de la alta en la piel,
+  rehorneado con rayos cortos y recoloreado con máscaras suavizadas solo en la piel de la cara y el cuello.
+  `nix_cara.gdshader` no interviene (es de la Nix chibi).
+- **Cetro.** `andar` y `correr` (captura de Lya) no tenían pistas de `arma_d`: el socket se quedaba en reposo respecto
+  a la mano y el cetro iba horizontal y giraba. Ahora llevan pistas (`fuente_blender/p10_cetro.py`): la orientación
+  de `reposo` con un balanceo suave del braceo. Los demás clips (guardia, canalizar, combate) no cambian.
+- Rehacer: `p10_posiciones_p4.py` → `p10_cara.py` → `p10_cetro.py` → `p10_exportar.py`, copiar el GLB e importar.
+- Pruebas: `prueba_nix_fbx` (60 · 0), `prueba_nix_v12` y `prueba_magia_negra` SUPERADAS
+  (`D:\REBELUM_diagnostico\pruebas\2026-11-14_120908\resumen.md`).
+- Queda: un punto pequeño bajo la comisura y algo de irregularidad junto a la raíz de los mechones (solo de muy cerca);
+  bajo la barbilla se ve algo más de cuello que en el FBX (geometría reducida).
