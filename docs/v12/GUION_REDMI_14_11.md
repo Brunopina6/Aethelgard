@@ -2,7 +2,20 @@
 
 > Escrito durante la noche del 13 al 14/11. Esta noche NO se ha instalado nada ni se han tocado datos del teléfono.
 
-**APK que hay que usar (la más reciente), compilada el 14/11 a las 05:30, SIN INSTALAR:**
+**APK QUE HAY QUE USAR (14/11, 13:05): v717, validada `687dbe7` (batería 174 · 0 · 88 · 0, sola)**
+- **Archivo:** `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261114-687dbe7-local.apk`. Ya está en Descargas
+  del Redmi, verificada por SHA-256 `a9db4078149bbc7a253e24488c86c2382d925f08d7cc1bab49e4bc4bcba488a7`.
+  - El sufijo «-local» solo se debe a la carpeta sin versionar `personajes/nix/fbx/anterior_14_11/`, que no va dentro.
+  - MIUI rechaza `adb install`: **la instala el usuario** desde Descargas, conservando los datos.
+- **Respaldo previo verificado:** `D:\REBELUM_respaldos\2026-11-14_redmi_auditoria_antes_v694_a_nueva`.
+- **Cómo probar sin comandos:** en la portada, «Banco de pruebas (Auditoría)».
+  - Sus selectores: protagonistas, Érebo, Agua, Nix, capa y misión del cantero.
+  - Sus casos: cinco combates (Érebo, Agua, Garon, Nix y Custodio) y Oakhaven con o sin Nix.
+  - Partida aislada: al volver al banco, todo empieza de nuevo.
+  - Desde la exploración se vuelve con el botón «Volver al banco».
+- La v713 (`8200909`) quedó obsoleta, porque en la portada que sale por defecto no se llegaba al banco, y se retiró de Descargas.
+
+**APK anterior (14/11, 05:30; sustituida), SIN INSTALAR:**
 - **Archivo:** `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261114-6da1c74.apk` (410,7 MB).
 - **SHA-256:** `794114686382954d3604ceb4e48208856555e81d540a99cb1a60427b19c1259c`.
 - **Código:** el validado `c0b199a` (batería 171 · 0 · 78 · 0) más solo documentación.
