@@ -56,10 +56,10 @@ func _mapear_animaciones() -> void:
 	var quieto := "reposo" if _exploracion else "guardia"
 	nombres = {"Guardia": "guardia", "Reposo": quieto, "Idle": quieto, "Walking": "andar", "Running": "correr",
 		"Andar": "andar", "Correr": "correr", "Juicio": "juicio", "Giro": "giro", "Morir": "derribo", "Paseo": "paseo"}
-	for n in ["AvanzarDoble", "RetrocederDoble"]:
-		if lib.has_animation(n):
-			nombres[n] = n
-			lib.get_animation(n).loop_mode = Animation.LOOP_LINEAR
+	# V12 (14/11): AvanzarDoble y RetrocederDoble (garon_espadas.res) están hechos con el esqueleto del Garon ORIGINAL;
+	# puestos en el v2 (y el v3, que hereda de aquí) le descolocaban la cadera (0,55-0,71 m de lado, a ras de suelo;
+	# visto por el especialista de la capa, docs/v12/CAPA_GARON_V12.md). Sin ellos en «nombres», avanzar() y
+	# retroceder() usan su vía prevista: correr con el clip propio del v2. El original los sigue usando.
 	for n in ["reposo", "guardia", "andar", "correr", "paseo", "derrota"]:
 		if lib.has_animation(n):
 			lib.get_animation(n).loop_mode = Animation.LOOP_LINEAR

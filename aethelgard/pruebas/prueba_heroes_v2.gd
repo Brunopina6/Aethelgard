@@ -169,6 +169,13 @@ func _heroe(h: String) -> void:
 	if h == "Garon":
 		_ok("arma_i" in huesos, "hueso arma_i")
 		_ok(n.find_child("cara_v2", true, false) == null, "sin cara (yelmo cerrado)")
+		# V12 (14/11): los pasos de doble espada del original le descolocaban la cadera; el v2 corre con su clip
+		_ok(not n.nombres.has("AvanzarDoble") and not n.nombres.has("RetrocederDoble"), "Garon v2 sin los pasos del esqueleto original")
+		n.avanzar()
+		await _frames(4)
+		_ok(n.anim.current_animation == str(n.nombres.get("Correr", "correr")),
+			"Garon v2 avanzando usa su clip de correr («%s»)" % n.anim.current_animation)
+		n.reposo()
 	else:
 		_ok(n.v2 != null and n.v2.tiene_cara(), "cara expresiva")
 		if n.v2 != null and n.v2.tiene_cara():
