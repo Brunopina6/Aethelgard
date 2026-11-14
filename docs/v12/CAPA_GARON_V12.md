@@ -196,3 +196,16 @@ y cambios de escena. Prueba nueva `pruebas/prueba_capa_garon_estados.gd` (526 co
   barrida entre fotogramas. La prueba lo tolera (≤ 6) para que no empeore.
 - **No es de la capa**: en la derrota de los v2/v3 el clip hunde el cuerpo bajo el suelo (§7.2) y la cadera y los
   muslos cruzan la tela, que no baja del suelo; también la hoja izquierda tumbada. Solo se informa.
+### 11. Movimiento real (14/11, mediodía)
+
+`fotos_capa_garon_movimiento` (`_v2`, `_v3`) recorre Pastos Verdes 3D de verdad: Kael anda con el stick y Garon le sigue en la fila de `grupo_3d.gd`. La cámara sigue el pecho a 3 m y un rayo comprueba que nada tapa a Garon. Revisado a ojo en las tres variantes:
+- la capa va sujeta en los hombros;
+- se queda atrás al arrancar, ondea al correr y se abre en los giros;
+- se asienta al parar;
+- no hay ninguna recolocación durante el trayecto.
+
+**PENDIENTE (reproducible en las tres variantes):** cuando Garon da media vuelta desde parado y arranca a correr, gira 46° por fotograma, por debajo de los 80° de SALTO_GIRO. Durante un fotograma, 1/15 s, la tela pasa por delante del muslo. `prueba_capa_garon_estados` no cubre ese caso, porque allí gira corriendo.
+1. Primero, añadir el caso «parado → media vuelta en 0,12 s → correr» con su contraprueba.
+2. Después, probar cápsulas de piernas más gruesas o colisión entre fotogramas.
+
+Capturas: `D:\REBELUM_diagnostico\v12\capa_revision_14_11\movimiento\2026-11-14_121849\`.
