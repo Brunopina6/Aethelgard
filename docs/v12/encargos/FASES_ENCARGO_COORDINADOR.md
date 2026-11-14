@@ -18,7 +18,7 @@
 |---|---|---|---|
 | 1 | Inspección y protección: etiqueta, ZIP extraídos, PDF leídos, Silver Sentinel identificado | `D:\REBELUM_entrada_13_11\INSPECCION_PASO1.md` | **HECHA** (14/11, `36fee13`) |
 | 2 | Desbloqueos que impidan desarrollar o probar | Batería en verde en el PC | **HECHA**: no hay ninguno. Validado `ed59483`; coordinación y `proteger.sh` activos |
-| 3A | Orbe nativo de Érebo (sección 4): opción de Auditoría APAGADA, sincronizada con el agarre del orbe y con limpieza | Prueba nueva, batería completa, capturas activado/desactivado | pendiente (SIGUIENTE) |
+| 3A | Orbe nativo de Érebo (sección 4): opción de Auditoría APAGADA, sincronizada con el agarre del orbe y con limpieza | Prueba nueva, batería completa, capturas activado/desactivado | **HECHA** (14/11): commit local `5c045b7`; batería 160 · 0; `docs/v12/EREBO_ORBE_V12.md`. **SIN SUBIR**, por la decisión de GitHub (ver «Decisiones»); la rama `claude/v12-orbe-solo` @ `a4db536` (solo el orbe sobre `ed59483`) está lista para subirse |
 | 3B | Solo Lya invoca: quitar la Invocación a Kael y migrar sin perder progreso | Prueba de menús y migración | pendiente |
 | 3C | Mejorar UNA magia representativa | Capturas y prueba | pendiente |
 | 4 | Menús y permisos de los héroes y catálogo de habilidades; recursos Eclipse, Compás e Inscripciones (máximo 3) | Pruebas de combate | pendiente |
@@ -34,10 +34,42 @@
 
 ## Especialistas activos
 
-Ninguno (comprobado el 14/11 con `coordinacion.py` y la lista de sesiones). Cuando se lance uno, apuntar aquí su
-carpeta (`D:\Aethelgard_v12_<area>`), su rama `claude/v12-<area>` y los archivos que toca.
+Lanzados el 14/11 hacia las 01:40, como subagentes de la sesión coordinadora:
+
+| Especialista | Carpeta | Rama (local) | Archivos que toca | Fase |
+|---|---|---|---|---|
+| Nix (piloto desde el FBX) | `D:\Aethelgard_v12_nix_piloto` y `D:\REBELUM_entrada_13_11\nix_trabajo\` | `claude/v12-nix-piloto` (desde `710fdae`) | modelo, rig y escena de Nix; `docs/v12/NIX_PILOTO_FBX.md` | 5 |
+| Capa de Garon | `D:\Aethelgard_v12_capa_garon` y `D:\REBELUM_diagnostico\v12\capa_garon\` | `claude/v12-capa-garon` (desde `710fdae`) | `garon_3d.gd`, `garon_v2_3d.gd`, sus pruebas y `docs/v12/CAPA_GARON_V12.md` | 6 |
+
+La copia principal `D:\Aethelgard_v12` la usa solo el coordinador (fases 3A, 3B, 3C y 4). Las ramas de los
+especialistas se integran copiando archivos, nunca con fusiones.
+
+**Si la sesión se corta:** mira en cada carpeta `git log claude/rebelum-v12..<rama>` y `git status`, y retoma o
+integra lo que esté probado.
 
 ## Decisiones registradas
+
+- **14/11, instrucciones complementarias** (`INSTRUCCIONES_COMPLEMENTARIAS_14_11.md`; prevalecen sobre el prompt de
+  expansión):
+  - **Pelo de Nix:** «gris RECOGIDO». Se suma al canon de la capucha, el mechón superior y los dos delanteros.
+  - **Medias de Nix:** con motivos dorados asimétricos (ramas u hojas en una, geométricos en la otra).
+  - **Garon:** sus armas dobles forman un par con un único bloque de estadísticas y pasivas.
+  - **Paquete:** «90 habilidades» = 24 + 18 + 18 + 6 + 24.
+  - **Orden:** las complementarias ponen Nix y la capa (4) antes que los permisos (5). El coordinador los pone al
+    revés y pide ajustar solo por dependencias reales.
+    - Se sigue el orden del coordinador para 3B (solo Lya invoca), que forma parte de la sección del orbe.
+    - Las fases 4 a 6 se pueden reordenar si hay una dependencia.
+- **14/11, subida a GitHub:** el remoto está en `ed59483` y en local hay 3 commits solo de documentación (`b9d094a`,
+  `36fee13`, `710fdae`) antes del orbe.
+  - Un push normal subiría también esos tres, y la autorización cubre ÚNICAMENTE el orbe.
+  - Subir solo el orbe exigiría reordenar la historia local, que equivale a un rebase prohibido.
+  - **Decisión registrada para el usuario:** subir los 4 commits juntos (los 3 solo tocan documentación), o
+    autorizar que se reordene la historia local. Mientras tanto, el orbe queda en commit local.
+  - **Alternativa preparada sin publicar nada:** la rama local `claude/v12-orbe-solo` @ `a4db536` contiene `ed59483`
+    más solo los 8 archivos del orbe, idénticos a los probados en `5c045b7`.
+    - Se sube con `git push origin claude/v12-orbe-solo:claude/rebelum-v12`, un avance normal sin forzar.
+    - Después, la rama local tendría que rehacer sus commits de documentación encima de esa base, y eso requiere
+      la autorización del usuario.
 
 - **14/11, Nix:** el canon vigente (capucha, pelo gris ceniza con dos mechones, emblema del Ojo de Horus) manda
   sobre el diseño anterior del PDF (sombrero, pelo ciruela).
