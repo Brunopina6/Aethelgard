@@ -514,7 +514,23 @@ Informe: `D:\REBELUM_laboratorio_plugins\laboratorio\INFORME_LABORATORIO.md`.
     - «Texto pegado(7).txt» y «Texto pegado(8).txt»;
     - `CATALOGO_GENERAL_PROPUESTO.json`;
     - el PDF de Kael y el PDF del arsenal.
-- **Siguiente acción concreta:** terminar el paso 1 y pasar después al paso 3.
+- **14/11, paso 1 TERMINADO** (detalle en `D:\REBELUM_entrada_13_11\INSPECCION_PASO1.md`):
+  - etiqueta local `v12-antes-coordinador-20261113` en `ed59483`;
+  - los 7 ZIP extraídos en `D:\REBELUM_entrada_13_11\extraido\`;
+  - resumen de los PDF de Nix y de los 4 enemigos en `RESUMEN_PDFS_NIX_ENEMIGOS.md`.
+  - **El Silver Sentinel es Nix, base lisa** (renders en `D:\REBELUM_diagnostico\v12\expansion\nix\silver_sentinel\`):
+    - es el cuerpo con mono gris, pelo corto plateado con dos mechones delanteros y ojos amatista;
+    - tiene 436.194 triángulos (hay que reducirla a unos 15-25 mil), sin rig, y mide 1,90 m;
+    - es la base para vestirla, no la Nix vestida.
+  - **Contradicción resuelta:** el PDF de Nix describe un diseño anterior (sombrero de bruja, pelo ciruela, sin
+    emblema).
+    - Manda el canon vigente: capucha, pelo gris ceniza con dos mechones y emblema del Ojo de Horus.
+    - Del PDF se conservan las mecánicas (Eclipse 3, 24 magias, no invoca) y los presupuestos: rig de 24-40 huesos,
+      LOD0 de 7-10 mil triángulos, atlas de 1024².
+    - Tabla completa en `INSPECCION_PASO1.md`.
+  - **Coordinación:** desde el 14/11 existen la coordinación de sesiones (`D:\REBELUM_coordinacion`) y el gancho
+    `proteger.sh` (bloquea fusiones de ramas, push forzado, reset duro y escrituras en las partidas reales).
+- **Siguiente acción concreta:** el paso 3, el orbe nativo de Érebo como opción de Auditoría APAGADA.
   - Llevar el orbe de `proto_a_pixelpart` a la invocación de Érebo como opción de Auditoría APAGADA.
   - Sincronizarlo con el agarre del orbe mediante un evento de animación.
   - Limpiarlo al saltar la escena, interrumpirla, morir o cambiar de escena.
