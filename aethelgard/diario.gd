@@ -15,7 +15,7 @@ const FICHAS := [
 	["Barra ATB", "Cuando la barra de un héroe se llena, entra su menú."],
 	["Atacar y Defender", "Desliza ATACAR para girarlo a DEFENDER: recibes la mitad de daño."],
 	["Magia", "El nivel I va a un enemigo; el II y el III, a todos. El Fuego quema."],
-	["Invocación", "Cada acción carga la Armonía. Llena, invoca a Ladrón de Corazones."],
+	["Invocación", "Cada acción carga la Armonía. Llena, Lya invoca a Ladrón de Corazones. Solo ella puede invocar."],
 	["Congelado", "Los golpes con Frostfang congelan: el enemigo pierde Vitalidad dos rondas."],
 	["Huir", "En los combates normales siempre funciona. Ante un jefe, no."],
 	["Objetos", "Poción: PV. Éter: PM. Incienso de Ceniza: un rato sin encuentros."],

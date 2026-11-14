@@ -402,9 +402,10 @@ func _motivos() -> void:
 	await _esperar(4)
 	_ok(m.filas[_fila("MAGIA")]["item"]["apagado"] and _motivo_orden("MAGIA") == "Necesitas 6 PM",
 		"MAGIA sin PM no dice por qué («%s»)" % _motivo_orden("MAGIA"))
-	_ok(_motivo_orden("INVOCACIÓN").begins_with("Armonía al "), "INVOCACIÓN no dice cuánta Armonía falta («%s»)" % _motivo_orden("INVOCACIÓN"))
+	# V12 (14/11, fase 3B): SOLO Lya invoca: el menú de Kael no tiene la orden INVOCACIÓN (antes, apagada con su motivo)
+	_ok(_fila("INVOCACIÓN") == -1, "el menú de Kael tiene INVOCACIÓN (solo Lya invoca)")
 	_ok(_motivo_orden("ATACAR") == "" and _motivo_orden("OBJETO") == "", "una orden encendida tiene motivo")
-	# mando: ↓ desde ATACAR llega a MAGIA (apagada); A no la abre; ↓ sigue a INVOCACIÓN
+	# mando: ↓ desde ATACAR llega a MAGIA (apagada); A no la abre; ↓ sigue a OBJETO (Kael ya no tiene INVOCACIÓN)
 	_ok(m.sel == 0, "el menú no empieza en ATACAR")
 	await _pulsar("abajo")
 	_ok(m.sel == _fila("MAGIA"), "mando: ↓ se salta MAGIA apagada (fila %d)" % m.sel)
@@ -412,7 +413,7 @@ func _motivos() -> void:
 	await _pulsar("aceptar")
 	_ok(c.estado == "menu" and m.sel == _fila("MAGIA"), "mando: A en MAGIA apagada hace algo (estado %s)" % c.estado)
 	await _pulsar("abajo")
-	_ok(m.sel == _fila("INVOCACIÓN"), "mando: ↓ desde MAGIA no llega a INVOCACIÓN (fila %d)" % m.sel)
+	_ok(m.sel == _fila("OBJETO"), "mando: ↓ desde MAGIA no llega a OBJETO (fila %d)" % m.sel)
 	# el dedo: tocar MAGIA la elige (y su motivo ya está a la vista); no la abre
 	var centro: Vector2 = m.filas[_fila("MAGIA")]["nodo"].get_global_rect().get_center()
 	await _tocar(centro)
@@ -479,10 +480,9 @@ func _motivos() -> void:
 func _erebo() -> void:
 	_combate({"Kael": 5}, "llanura", 7)
 	if await _turno_de("Kael"):
-		_ok(_motivo_orden("INVOCACIÓN") == "Nadie puede invocar" and c.menu.armonia_estado.text == "0 %",
-			"Kael solo: «%s» y «%s»" % [_motivo_orden("INVOCACIÓN"), c.menu.armonia_estado.text])
-		_ok(not c.menu.armonia_estado.text.contains("LYA") and not _motivo_orden("INVOCACIÓN").contains("Lya"),
-			"Kael solo: el HUD nombra a Lya antes de conocerla")
+		_ok(_fila("INVOCACIÓN") == -1 and c._estado_invocacion()["motivo"] == "Nadie puede invocar" and c.menu.armonia_estado.text == "0 %",
+			"Kael solo: «%s» y «%s» (fila %d)" % [c._estado_invocacion()["motivo"], c.menu.armonia_estado.text, _fila("INVOCACIÓN")])
+		_ok(not c.menu.armonia_estado.text.contains("LYA"), "Kael solo: el HUD nombra a Lya antes de conocerla")
 	await _cerrar()
 	_combate({"Kael": 10, "Lya": 10}, "desierto", 8)
 	if not await _turno_de("Kael"):
@@ -493,19 +493,20 @@ func _erebo() -> void:
 	c.menu.poner_armonia(0.45)
 	c._mostrar_menu()
 	await _esperar(3)
-	_ok(m.armonia_estado.text == "45 %" and _motivo_orden("INVOCACIÓN") == "Armonía al 45 %",
-		"Armonía al 45 %%: «%s» y «%s»" % [m.armonia_estado.text, _motivo_orden("INVOCACIÓN")])
+	# (V12, fase 3B: el menú es de Kael, que ya no tiene INVOCACIÓN; el HUD y las reglas son las de siempre)
+	_ok(m.armonia_estado.text == "45 %" and c._estado_invocacion()["motivo"] == "Armonía al 45 %" and _fila("INVOCACIÓN") == -1,
+		"Armonía al 45 %%: «%s» y «%s»" % [m.armonia_estado.text, c._estado_invocacion()["motivo"]])
 	c.armonia = 1.0
 	c.menu.poner_armonia(1.0)
 	c._mostrar_menu()
 	await _esperar(3)
-	_ok(m.armonia_estado.text == "INVOCACIÓN LISTA" and not m.filas[_fila("INVOCACIÓN")]["item"]["apagado"] and m.invocacion_lista,
+	_ok(m.armonia_estado.text == "INVOCACIÓN LISTA" and c._estado_invocacion()["lista"] and m.invocacion_lista and _fila("INVOCACIÓN") == -1,
 		"Armonía llena y Lya en pie: «%s»" % m.armonia_estado.text)
 	c._quitar_pv(lya, 99999)
 	c._mostrar_menu()
 	await _esperar(3)
-	_ok(m.armonia_estado.text == "LYA HA CAÍDO" and _motivo_orden("INVOCACIÓN") == "Lya ha caído"
-		and m.filas[_fila("INVOCACIÓN")]["item"]["apagado"], "Lya caída: «%s» y «%s»" % [m.armonia_estado.text, _motivo_orden("INVOCACIÓN")])
+	_ok(m.armonia_estado.text == "LYA HA CAÍDO" and c._estado_invocacion()["motivo"] == "Lya ha caído",
+		"Lya caída: «%s» y «%s»" % [m.armonia_estado.text, c._estado_invocacion()["motivo"]])
 	# las reglas, las de siempre: lista = Armonía llena y Lya en pie
 	for v in [0.0, 0.45, 0.9999, 1.0]:
 		for pv in [0, 50]:

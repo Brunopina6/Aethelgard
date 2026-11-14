@@ -199,6 +199,13 @@ func _interrupcion() -> void:
 
 func _invocaciones() -> void:
 	c.armonia = 1.0
+	# V12 (14/11, fase 3B): SOLO Lya invoca. Con Kael de actor, la acción no abre nada y vuelve al menú.
+	c._invocar()
+	await _esperar(2)
+	_ok(c.estado == "menu", "4: con Kael de actor, INVOCACIÓN abre algo (estado %s)" % c.estado)
+	c.actor = c.heroes.filter(func(h): return h["nombre"] == "Lya")[0]
+	c._mostrar_menu()
+	await _esperar(2)
 	c._invocar()
 	await _esperar(2)
 	var filas: Array = c.menu.filas

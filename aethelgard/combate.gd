@@ -2859,17 +2859,19 @@ func _mostrar_menu() -> void:
 	for h in _hechizos(actor) + MN.hechizos(actor["nombre"]):   # V12: y la magia negra (hoy, nadie la tiene)
 		coste_min = min(coste_min, h[2]["coste"])
 	var inv := _estado_invocacion()                  # Érebo lo invoca Lya, con la Armonía llena
-	menu.abrir(actor, [
+	var ordenes := [
 		{"tipo": "carta", "texto": "ATACAR", "accion": func(): _menu_objetivo("atacar", ""),
 			"texto_b": "DEFENDER", "accion_b": _defender},
 		{"texto": "MAGIA", "accion": _menu_magia, "apagado": coste_min == 999 or not _puede_pagar(coste_min),
 			"motivo": "No sabe magias" if coste_min == 999 else "Necesitas %d PM" % coste_min},
-		{"tipo": "invocacion", "texto": "INVOCACIÓN", "accion": _invocar,   # (V12: con Aurel, abierta; apagada la magia blanca, igual)
+	]
+	if _puede_invocar(actor):                        # V12 (14/11): SOLO Lya invoca; los demás no tienen la orden
+		ordenes.append({"tipo": "invocacion", "texto": "INVOCACIÓN", "accion": _invocar,   # (V12: con Aurel, abierta; apagada la magia blanca, igual)
 			"apagado": not Acc12.invocacion_abierta(self, actor, inv["lista"]),
-			"motivo": inv["motivo"]},
-		_orden_objeto(),
-		_orden_huir(),
-	])
+			"motivo": inv["motivo"]})
+	ordenes.append(_orden_objeto())
+	ordenes.append(_orden_huir())
+	menu.abrir(actor, ordenes)
 	_pruebas_menu()
 
 
@@ -5343,7 +5345,18 @@ func _apuntar_decision(f: Dictionary, que: String) -> void:
 # Tocar la pantalla salta la cinemática (el resultado se aplica igual, una sola vez).
 # V11: INVOCACIÓN abre antes la lista de invocaciones (hoy, solo Érebo) con su emblema, su coste (la Armonía llena), lo
 # que hace, quién la invoca y si se puede ahora; al elegirla se toca al enemigo, como siempre. Las reglas no cambian.
+# V12 (14/11, encargo coordinador): SOLO Lya invoca (Érebo y, con la magia blanca, Aurel). Kael, Nix y los demás no
+# tienen la orden ni pueden ejecutarla por atajos o preparaciones antiguas. Las reglas de la Armonía no cambian.
+const INVOCADORA := "Lya"
+
+func _puede_invocar(quien) -> bool:
+	return quien is Dictionary and quien.get("nombre", "") == INVOCADORA
+
+
 func _invocar() -> void:
+	if not _puede_invocar(actor):                   # (atajo o preparación antigua con otro héroe): vuelve al menú
+		_mostrar_menu()
+		return
 	var inv := _estado_invocacion()
 	_limpiar_objetivo()
 	estado = "invocacion"                           # «atrás» vuelve al menú, como en Magia
@@ -5357,6 +5370,10 @@ func _invocar_objetivo() -> void:
 
 
 func _invocar_sobre(obj: Dictionary) -> void:
+	if not _puede_invocar(actor):                   # V12 (14/11): solo Lya; ni se gasta la Armonía ni sale Érebo
+		push_warning("Invocación pedida por %s: solo %s invoca" % [actor.get("nombre", "?") if actor is Dictionary else "?", INVOCADORA])
+		_mostrar_menu()
+		return
 	_ocultar_menu()
 	estado = "accion"
 	armonia = 0.0
