@@ -37,6 +37,12 @@ const CLAVICULA := [0.5, 0.25]                      # cuánto siguen a las clav�
 const VEL_MAX := 9.0                                # m/s como mucho (nada sale disparado)
 const ITERACIONES := 2                              # pasadas de restricciones y choques por fotograma (1 = más barato)
 const SALTO := 0.6                                  # si el pecho salta más que esto (m) en un fotograma, se recoloca
+const SALTO_GIRO := 80.0                            # y si su sitio gira más que esto (grados) en un fotograma: un giro
+                                                    # instantáneo (mirar(…, 0.0) al reaparecer o en la reserva). Sin esto,
+                                                    # la tela se quedaba donde estaba (delante del cuerpo tras media
+                                                    # vuelta) y lo cruzaba hasta volver (revisión del 14/11). Lo más rápido
+                                                    # de los clips y giros normales: 50° por fotograma a 30 fps (media vuelta
+                                                    # en 0,12 s, grupo_3d.gd); 75° a 20 fps.
 const COLUMNAS := 14
 const FILAS := 18
 const ONDA := 0.03                                  # la onda del shader (antes 0,06: ahora la mueven los huesos)
@@ -91,6 +97,7 @@ var _colisores: Array = []                          # [hueso_a, hueso_b, radio] 
 var _p: Array = []                                  # posición de cada junta (mundo)
 var _v: Array = []                                  # velocidad
 var _ancla_antes := Vector3.INF
+var _giro_antes := Basis()                          # el sitio de la capa en el fotograma anterior (para SALTO_GIRO)
 var _bind: Array = []                               # Transform3D de reposo de cada hueso (para la CPU)
 var _V := PackedVector3Array()
 var _B := PackedInt32Array()
@@ -496,8 +503,11 @@ func colocar(_sk: Skeleton3D) -> void:
 				w = w.lerp(g * (dc * (_ancla0 * _reposo[c][k])), CLAVICULA[k])
 			col.append(w)
 		obj.append(col)
-	var reiniciar := _p.is_empty() or _ancla_antes == Vector3.INF or _ancla_antes.distance_to(a_mundo.origin) > SALTO
+	var b_ahora := a_mundo.basis.orthonormalized()
+	var reiniciar := _p.is_empty() or _ancla_antes == Vector3.INF or _ancla_antes.distance_to(a_mundo.origin) > SALTO \
+		or (_giro_antes.inverse() * b_ahora).get_rotation_quaternion().get_angle() > deg_to_rad(SALTO_GIRO)
 	_ancla_antes = a_mundo.origin
+	_giro_antes = b_ahora
 	if reiniciar:
 		reinicios += 1
 		_p = []

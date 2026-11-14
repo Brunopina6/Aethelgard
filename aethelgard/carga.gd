@@ -467,7 +467,13 @@ func _input(ev: InputEvent) -> void:
 		for b in botones:
 			if not b.has_focus():
 				continue                             # teclado o mando con el foco en un botón de prueba:
-			if ev.is_action_pressed("ui_up") or ev.is_action_pressed("ui_cancel"):
+			if ev.is_action_pressed("ui_right") and b == boton_prueba and boton_banco in botones:
+				boton_banco.grab_focus()                 # V12 (14/11): → desde «Probar la misión» lleva al banco de pruebas
+				get_viewport().set_input_as_handled()
+			elif (ev.is_action_pressed("ui_left") or ev.is_action_pressed("ui_down")) and b == boton_banco 					and boton_prueba in botones:
+				boton_prueba.grab_focus()                # ← o ↓ desde el banco vuelven (↑ sigue soltando el foco)
+				get_viewport().set_input_as_handled()
+			elif ev.is_action_pressed("ui_up") or ev.is_action_pressed("ui_cancel"):
 				b.release_focus()
 				get_viewport().set_input_as_handled()
 			elif ev.is_action_pressed("ui_left") and b == boton_prueba and boton_prologo in botones:

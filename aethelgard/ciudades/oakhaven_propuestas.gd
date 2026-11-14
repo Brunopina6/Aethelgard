@@ -80,7 +80,7 @@ static func activado() -> bool:
 		return bool(Engine.get_meta("oakhaven_propuestas_v12"))
 	if "oakhaven_propuestas_v12" in OS.get_cmdline_user_args():
 		return true
-	if not load("res://prototipos/calidad_proto.gd").pruebas_permitidas():
+	if not (OS.has_feature("auditoria") or OS.has_feature("editor")):   # (sin cargar prototipos/)
 		return ACTIVO_POR_DEFECTO                   # 14/11: el archivo de ajustes solo cuenta en Auditoría o en el editor
 	var c := ConfigFile.new()
 	if c.load("user://ajustes.cfg") != OK:

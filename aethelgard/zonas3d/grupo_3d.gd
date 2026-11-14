@@ -44,8 +44,11 @@ const PENDIENTE_MAX := 40.0      # grados, como Kael
 const RODILLAS := 0.6            # altura de la comprobación de obstáculos, como Kael (SUBE_MAX + 0,1)
 # V12: Naira (PROPUESTA, NO CANON; modelo PROVISIONAL). Solo sale si va activa (grupo.gd: su hito o el interruptor
 # «naira_v12», APAGADO). 1,55 m: entre Lya (1,52) y Kael (1,7).
-const RUTAS := {"Lya": "res://maga_3d.gd", "Garon": "res://garon_3d.gd", "Naira": "res://personajes/naira/naira_3d.gd"}
-const ESCALA := {"Lya": 0.6 / 0.67, "Garon": 1.0, "Naira": 1.55 / 1.7}
+# V12 (14/11): y Nix (PROTOTIPO): solo existe con su interruptor «nix_v12» (grupo.gd; en la APK, solo Auditoría), así
+# que en una partida normal la fila no cambia. Su escala es la de combate (0,56) en la proporción de Garon (0,67 → 1).
+const RUTAS := {"Lya": "res://maga_3d.gd", "Garon": "res://garon_3d.gd", "Naira": "res://personajes/naira/naira_3d.gd",
+	"Nix": "res://personajes/nix/nix_3d.gd"}
+const ESCALA := {"Lya": 0.6 / 0.67, "Garon": 1.0, "Naira": 1.55 / 1.7, "Nix": 0.56 / 0.67}
 const UNIR_HOLGURA := 1.3        # al unirse alguien, metros libres a su alrededor (T-084)
 
 var escena: Node3D               # la región: _prohibido(p) y el mundo físico

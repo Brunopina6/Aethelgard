@@ -178,3 +178,21 @@ Las más claras para comparar (antes → después, mismos nombres):
 - Vídeo en movimiento (`--write-movie`): no hecho; las capturas son fotogramas sueltos.
 - Los problemas de §7 (clips de los v2/v3 y la Guardia), para quien lleve a Garon.
 - Revisión visual de una persona de todas las capturas (211 por pasada de estudio).
+
+## 10. Revisión por estados (14/11, tarde)
+
+Encargo: original, v2 y v3 en reposo y marcha; arranque, parada y giros; ataques con las dos espadas; defensa, derrota
+y cambios de escena. Prueba nueva `pruebas/prueba_capa_garon_estados.gd` (526 comprobaciones; capturas con
+`pruebas/fotos_capa_garon_estados.gd`). Informe completo: `D:\REBELUM_diagnostico\v12\capa_revision_14_11\REVISION.md`.
+
+- **Arreglado (capa_garon.gd, `SALTO_GIRO`)**: tras un giro instantáneo (`mirar(…, 0.0)`: grupo_3d.gd al reaparecer,
+  gran_bosque_3d.gd, piezas de la Garganta) o al volver de oculto girado, la tela se quedaba donde estaba: el primer
+  fotograma quedaba DELANTE del cuerpo (borde 0,19-0,39 m por delante del pecho, huesos de cadera y piernas y las dos
+  hojas cruzando la tela, 25-29 m/s) y lo atravesaba hasta volver. Ahora, si el sitio de la capa gira más de 80° en un
+  fotograma, se recoloca (como ya hacía con un salto de más de 0,6 m). Lo más rápido de los giros normales: 50° por
+  fotograma a 30 fps (media vuelta en 0,12 s), 35° en el Juicio.
+- **Residuo conocido, sin arreglar**: en el Juicio y el Giro una hoja roza el borde de la tela libre en 1-2 muestras
+  (3-6 triángulos de 504; la rígida de siempre, 2-5). Probado sin éxito: cápsulas en los filos de la hoja y la hoja
+  barrida entre fotogramas. La prueba lo tolera (≤ 6) para que no empeore.
+- **No es de la capa**: en la derrota de los v2/v3 el clip hunde el cuerpo bajo el suelo (§7.2) y la cadera y los
+  muslos cruzan la tela, que no baja del suelo; también la hoja izquierda tumbada. Solo se informa.

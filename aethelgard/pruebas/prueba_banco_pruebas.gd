@@ -56,6 +56,7 @@ func _probar() -> void:
 	_d()
 	await _f()
 	_g()
+	await _h()
 	await _e()
 	for r in reales:
 		_ok(_huella(r) == reales[r], "D: la partida de siempre %s cambió" % r)
@@ -230,7 +231,7 @@ func _g() -> void:
 	root.add_child(b)
 	b._elegir_capa(true)
 	b._elegir_nix_fbx(true)
-	b._ajuste("mundo", "propuestas_v12", true)
+	Engine.set_meta("oakhaven_propuestas_v12", true)  # (el selector del cantero del banco: solo de sesión)
 	var c := ConfigFile.new()
 	c.load("user://ajustes.cfg")
 	_ok(c.get_value("garon", "capa", "") == "articulada", "G: la capa no se guardó como en Ajustes")
@@ -242,7 +243,9 @@ func _g() -> void:
 	b.queue_free()
 	if Engine.has_meta("nix_fbx"):
 		Engine.remove_meta("nix_fbx")
-	hechos.append("G: los selectores escriben lo mismo que Ajustes (capa, Nix FBX y la misión del cantero)")
+	BP.preparar_partida()
+	_ok(load("res://ciudades/oakhaven_propuestas.gd").activado(), "G: el cantero se apaga al cambiar de caso")
+	hechos.append("G: los selectores escriben lo mismo que Ajustes (capa y Nix FBX); el cantero, solo en la sesión del banco")
 
 
 # ================================================================= E
@@ -253,7 +256,50 @@ func _e() -> void:
 	BP.salir()
 	_ok(not BP.en_banco() and P.archivo() != BP.ARCHIVO, "E: al salir, la partida sigue yendo al banco")
 	_ok(not FileAccess.file_exists(BP.ARCHIVO), "E: al salir queda el archivo del banco")
-	for k in ["meshy_e01", "banco_caso", "nix_v12", "grupo", "inventario", "partida_lista", "archivo_partida_prueba"]:
+	for k in ["meshy_e01", "banco_caso", "nix_v12", "oakhaven_propuestas_v12", "oak_franja", "grupo", "inventario", "partida_lista", "archivo_partida_prueba"]:
 		_ok(not Engine.has_meta(k), "E: al salir queda «%s» en la sesión" % k)
 	hechos.append("E: salir deja la sesión sin partida, sin interruptores y sin el archivo del banco")
 	await _esperar(1)
+
+
+# ================================================================= H (botón «Volver al banco» y portada alternativa)
+func _h() -> void:
+	BP.preparar_partida()
+	var falsa := Node3D.new()
+	falsa.scene_file_path = "res://zonas3d/oakhaven_3d.tscn"
+	root.add_child(falsa)
+	var antes := current_scene
+	current_scene = falsa
+	root.get_node("Recursos")._poner_boton_banco()
+	var bb: Button = root.get_node("Recursos").boton_banco
+	_ok(bb != null and bb.visible, "H: en una exploración del banco no sale «Volver al banco»")
+	falsa.scene_file_path = BP.ESCENA
+	root.get_node("Recursos")._poner_boton_banco()
+	_ok(bb == null or not bb.visible, "H: en el propio banco sale «Volver al banco»")
+	falsa.scene_file_path = "res://combate.tscn"
+	root.get_node("Recursos")._poner_boton_banco()
+	_ok(bb == null or not bb.visible, "H: en el combate sale «Volver al banco»")
+	falsa.scene_file_path = "res://zonas3d/oakhaven_3d.tscn"
+	Engine.set_meta(BP.META, false)
+	root.get_node("Recursos")._poner_boton_banco()
+	_ok(bb == null or not bb.visible, "H: fuera del banco sale «Volver al banco»")
+	Engine.set_meta(BP.META, true)
+	current_scene = antes
+	falsa.queue_free()
+	var por = load("res://portada/inicio_alternativo.tscn").instantiate()
+	root.add_child(por)
+	for i in 1800:                                   # hasta que termine su carga en segundo plano (si se libera a
+		if por.listo:                                # medias, Dialogic se queda leyendo y da errores de lectura)
+			break
+		await process_frame
+	_ok(por.listo, "H: la portada alternativa no termina de cargar")
+	_ok(por.boton_banco != null, "H: la portada alternativa no tiene el botón del banco")
+	por.queue_free()
+	await _esperar(3)
+	BP.preparar_partida()
+	var G3 = load("res://zonas3d/grupo_3d.gd")
+	_ok(not "Nix" in G3.reclutas_activos(["Lya", "Garon"]), "H: Nix sale en la exploración sin su caso")
+	BP.poner_grupo(BP.EXPLORAR["oakhaven_nix"]["activos"])
+	_ok("Nix" in G3.reclutas_activos(["Garon"]), "H: en «Oakhaven con Nix» la fila de la exploración no la lleva")
+	BP.preparar_partida()
+	hechos.append("H: «Volver al banco» solo en las exploraciones del banco; la portada alternativa tiene su acceso; Nix en la fila solo en su caso")

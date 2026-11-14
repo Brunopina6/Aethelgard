@@ -23,7 +23,8 @@ const ESCENA := "res://banco_pruebas.tscn"
 const CARGA := "res://carga.tscn"
 const NIVEL_COMBATE := 12                         # con todas las magias (grupo.gd, NIVEL_MAGIA 1, 5 y 10)
 # Interruptores que el banco enciende solo para su sesión (Engine): se quitan al salir.
-const METAS_SESION := ["meshy_e01", "banco_caso", "nix_v12"]
+const METAS_SESION := ["meshy_e01", "banco_caso", "nix_v12", "oakhaven_propuestas_v12",
+	"oak_franja", "oak_franja_t", "comentarios_dichos"]   # (y la hora de Oakhaven y los comentarios ya dichos: de la sesión)
 const Estilo := preload("res://estilo.gd")
 
 # La partida de partida del banco: el grupo recién llegado a Oakhaven (la del Redmi del 11/11, cmp_oakhaven).
@@ -81,7 +82,7 @@ var escena_base := ""                             # adonde lleva la partida del 
 
 # ¿Puede existir el banco en esta versión? Solo en la APK de Auditoría o en el editor.
 static func permitido() -> bool:
-	return load("res://prototipos/calidad_proto.gd").pruebas_permitidas()
+	return OS.has_feature("auditoria") or OS.has_feature("editor")   # (sin cargar prototipos/: la versión normal no lo lleva)
 
 
 static func en_banco() -> bool:
@@ -92,9 +93,12 @@ static func en_banco() -> bool:
 static func preparar_partida() -> String:
 	Engine.set_meta(META, true)
 	Engine.set_meta("archivo_partida_prueba", ARCHIVO)
+	var cantero = Engine.get_meta("oakhaven_propuestas_v12") if Engine.has_meta("oakhaven_propuestas_v12") else null   # (sigue)
 	for k in METAS_SESION:                         # cada caso empieza sin los interruptores del anterior
 		if Engine.has_meta(k):
 			Engine.remove_meta(k)
+	if cantero != null:
+		Engine.set_meta("oakhaven_propuestas_v12", cantero)
 	return load("res://progreso.gd").restaurar(BASE.duplicate(true))
 
 
@@ -202,12 +206,12 @@ func _pintar() -> void:
 	_selector("Capa de Garon", "capa", GA.capa_articulada(), [[false, "Original"], [true, "Articulada"]],
 		_elegir_capa)
 	var OP = load("res://ciudades/oakhaven_propuestas.gd")
-	_selector("Misión «Las tres marcas del cantero»", "cantero", OP.activado(), [[false, "Apagada"], [true, "Activa"]],
-		func(v): _ajuste("mundo", "propuestas_v12", v))
+	_selector("Misión del cantero (solo en el banco)", "cantero", OP.activado(), [[false, "Apagada"], [true, "Activa"]],
+		func(v): Engine.set_meta("oakhaven_propuestas_v12", v))   # solo de sesión: al salir del banco se quita
 	cuerpo.add_child(_texto("Combates de prueba (al terminar se vuelve aquí)", 24, Estilo.ORO))
 	for k in COMBATES:
 		_caso(k, COMBATES[k], _combate.bind(k))
-	cuerpo.add_child(_texto("Exploración de prueba (para volver: Menú → Ajustes → «Volver al banco de pruebas»)", 24, Estilo.ORO))
+	cuerpo.add_child(_texto("Exploración de prueba (para volver: el botón «Volver al banco», arriba a la derecha)", 24, Estilo.ORO))
 	for k in EXPLORAR:
 		_caso(k, EXPLORAR[k], _explorar.bind(k))
 
@@ -244,7 +248,7 @@ func _caso(clave: String, d: Dictionary, accion: Callable) -> void:
 
 
 func _combate(clave: String) -> void:
-	if saliendo:
+	if saliendo or Recursos.cambiando:             # (durante el fundido de entrada, el cambio se ignoraría)
 		return
 	saliendo = true
 	var d: Dictionary = COMBATES[clave]
@@ -262,7 +266,7 @@ func _combate(clave: String) -> void:
 
 
 func _explorar(clave: String) -> void:
-	if saliendo:
+	if saliendo or Recursos.cambiando:
 		return
 	saliendo = true
 	poner_grupo(EXPLORAR[clave]["activos"])
@@ -271,7 +275,7 @@ func _explorar(clave: String) -> void:
 
 
 func _salir() -> void:
-	if saliendo:
+	if saliendo or Recursos.cambiando:
 		return
 	saliendo = true
 	salir()

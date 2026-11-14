@@ -149,6 +149,12 @@ Estados: pendiente · parcial · verificado · bloqueado.
 
 ## 7. Pendientes
 
+- **Afinidades: NEUTRAS PROVISIONALES (decisión del usuario, 14/11).** El paquete no trae su especificación. La fila
+  `meshy_e01` de `combate_afinidades.gd` no tiene debilidades, resistencias ni inmunidades, y así se queda hasta que
+  llegue la especificación. No se inventan.
+- **Acceso de prueba (14/11):** en la APK de Auditoría, pantalla de carga → «Banco de pruebas (Auditoría)» →
+  «Custodio de Porcelana (meshy_e01)». Usa su interruptor solo durante esa sesión y con una partida aislada.
+
 - **Clips que faltan (9 de 12):** alert, turn_l, turn_r, guard (hoy la guardia usa el reposo y el tinte de defensa),
   hit_front (sin reacción al golpe), stagger, death (hoy se queda en su pose y se desvanece), attack_02 «Avance del Portón»
   y attack_03 «Sello de Clausura» con sus ataques (a2, a3) en `combate_meshy_e01.gd`.

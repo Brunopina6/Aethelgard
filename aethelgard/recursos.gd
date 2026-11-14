@@ -92,6 +92,7 @@ var lbl_aviso: Label
 
 var _aviso_pendiente := ""
 var lbl_prueba: Label
+var boton_banco: Button                          # V12 (14/11): «Volver al banco» del banco de pruebas de Auditoría
 
 
 # Prepara la interfaz de los diálogos de Dialogic durante la pantalla de carga (carga.gd), oculta. Sin esto, en el PC
@@ -135,12 +136,39 @@ func marcar_partida_prueba() -> void:
 	capa.add_child(lbl_prueba)
 
 
+# V12 (14/11): dentro del banco de pruebas de Auditoría (banco_pruebas.gd), en una exploración, un botón para volver a
+# él (las regiones 3D no tienen menú del grupo). No sale en el banco ni en el combate, ni fuera del banco.
+func _poner_boton_banco() -> void:
+	var esc := get_tree().current_scene
+	var ruta: String = esc.scene_file_path if esc != null else ""
+	var BP = load("res://banco_pruebas.gd")
+	var ver: bool = capa != null and BP.en_banco() and ruta != BP.ESCENA and ruta != ESCENA_COMBATE and ruta != ""
+	if not ver:
+		if boton_banco != null:
+			boton_banco.visible = false
+		return
+	if boton_banco == null:
+		boton_banco = Button.new()
+		boton_banco.text = "Volver al banco"
+		boton_banco.position = Vector2(1050, 34)
+		boton_banco.custom_minimum_size = Vector2(210, 48)
+		boton_banco.add_theme_font_size_override("font_size", 19)
+		boton_banco.focus_mode = Control.FOCUS_NONE     # (no roba el foco del mando a la escena)
+		boton_banco.pressed.connect(func():
+			if not cambiando:
+				cambiar_escena(load("res://banco_pruebas.gd").ESCENA))
+		capa.add_child(boton_banco)
+	boton_banco.visible = true
+
+
 # V12 (14/11): al salir del banco de pruebas de Auditoría (banco_pruebas.gd), la etiqueta se quita: lo siguiente es la
 # partida de siempre.
 func desmarcar_partida_prueba() -> void:
 	if lbl_prueba != null:
 		lbl_prueba.queue_free()
 		lbl_prueba = null
+	if boton_banco != null:
+		boton_banco.visible = false
 
 
 func avisar(texto: String, segundos := 5.0) -> void:
@@ -457,6 +485,7 @@ func cambiar_escena(ruta: String) -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	_poner_fps()
+	_poner_boton_banco()
 	get_tree().root.gui_disable_input = false       # la escena nueva ya está montada y dibujada
 	var t := create_tween()
 	t.tween_property(negro, "color:a", 0.0, 0.3)

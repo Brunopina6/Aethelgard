@@ -240,6 +240,11 @@ func _crear_portada() -> void:
 		boton_prologo.pressed.connect(func(): _empezar(true, true))
 		boton_prueba = _boton_prueba("Probar la misión desde el principio", Vector2(860, 652), Vector2(400, 56))
 		boton_prueba.pressed.connect(func(): _empezar(true))
+	# V12 (14/11): el banco de pruebas de Auditoría (banco_pruebas.gd), arriba a la derecha y solo en Auditoría o en el
+	# editor. Su partida es aparte: la de siempre no se toca.
+	if load("res://banco_pruebas.gd").permitido():
+		boton_banco = _boton_prueba("Banco de pruebas (Auditoría)", Vector2(900, 16), Vector2(360, 56))
+		boton_banco.pressed.connect(_abrir_banco)
 
 	sonidos = M.sonidos_ui()
 	reproductor = AudioStreamPlayer.new()
@@ -547,7 +552,7 @@ func _abrir_menu() -> void:
 		b.modulate.a = 0.0
 		tw.parallel().tween_property(b, "modulate:a", 1.0, 0.35).set_delay(0.12 + 0.07 * i)
 	tw.parallel().tween_property(selector, "modulate:a", 1.0, 0.4).set_delay(0.2)
-	for b in [boton_prologo, boton_prueba]:
+	for b in [boton_prologo, boton_prueba, boton_banco]:
 		if b != null:
 			b.visible = true
 			tw.parallel().tween_property(b, "modulate:a", 1.0, 0.4).set_delay(0.4)
@@ -568,13 +573,13 @@ func _volver_a_toca() -> void:
 	tw.parallel().tween_property(selector, "modulate:a", 0.0, 0.2)
 	tw.parallel().tween_property(fondo_menu, "modulate:a", 0.0, 0.3)
 	tw.parallel().tween_property(frase_alt, "modulate:a", 1.0, 0.4)
-	for b in [boton_prologo, boton_prueba]:
+	for b in [boton_prologo, boton_prueba, boton_banco]:
 		if b != null:
 			tw.parallel().tween_property(b, "modulate:a", 0.0, 0.2)
 	tw.tween_callback(func():
 		if estado == "toca":
 			menu.visible = false
-			for b in [boton_prologo, boton_prueba]:
+			for b in [boton_prologo, boton_prueba, boton_banco]:
 				if b != null:
 					b.visible = false
 			if pruebas_titulo != null:
@@ -600,6 +605,12 @@ func _enlazar_foco() -> void:
 		boton_prologo.focus_neighbor_left = NodePath(".")
 		boton_prueba.focus_neighbor_left = boton_prueba.get_path_to(boton_prologo)
 		boton_prueba.focus_neighbor_right = NodePath(".")
+	if boton_banco != null and boton_prueba != null:  # V12 (14/11): → desde «Probar la misión» lleva al banco, y ↓ / ← vuelven
+		boton_prueba.focus_neighbor_right = boton_prueba.get_path_to(boton_banco)
+		boton_banco.focus_neighbor_bottom = boton_banco.get_path_to(boton_prueba)
+		boton_banco.focus_neighbor_left = boton_banco.get_path_to(boton_prueba)
+		boton_banco.focus_neighbor_top = NodePath(".")
+		boton_banco.focus_neighbor_right = NodePath(".")
 
 
 func _enfocar(b: Control) -> void:
@@ -851,3 +862,12 @@ func _input(ev: InputEvent) -> void:
 			if ev.is_action_pressed("ui_cancel"):
 				get_viewport().set_input_as_handled()
 				_cerrar_ventana()
+
+
+# V12 (14/11): entra en el banco de pruebas de Auditoría, sin cargar la partida de siempre (el banco usa la suya).
+func _abrir_banco() -> void:
+	if saliendo or estado != "menu":
+		return
+	saliendo = true
+	Sonido.efecto("ui_tic")
+	Recursos.cambiar_escena("res://banco_pruebas.tscn")
