@@ -25,9 +25,19 @@ static func puede(id: String, con_borradores := false) -> String:
 			return "Necesitas %s." % str(load("res://inventario.gd")._objeto_base(pieza).get("nombre", pieza))
 	var Inv = load("res://inventario.gd")
 	for clave in r.materiales:
+		if reservado(clave):
+			return "Maese Ferro espera ese %s: llévaselo antes." % clave
 		if Inv.cantidad(clave) < int(r.materiales[clave]):
 			return "Faltan materiales: %s (%d de %d)." % [clave, Inv.cantidad(clave), int(r.materiales[clave])]
 	return ""
+
+
+# 14/11 (revisión del recorrido): un material que espera un encargo no se vende ni se gasta en el taller. Hoy, el
+# Hierro de la Falla mientras «El pedido de Maese Ferro» está pendiente (la veta da uno solo: sin él, Ferro repetía su
+# escena para siempre y la forja del distrito no volvía a abrirse).
+static func reservado(material: String) -> bool:
+	var P = load("res://progreso.gd")
+	return material == "Hierro de la Falla" and P.hito("enc_herrero_veta") and not P.hito("enc_herrero_fin")
 
 
 static func fabricar(id: String, con_borradores := false) -> bool:

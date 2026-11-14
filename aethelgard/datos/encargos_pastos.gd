@@ -32,7 +32,7 @@ const MISIONES := [
 		"empieza": "hito:enc_perro_pedido", "fin": "hito:enc_perro_devuelto",
 		"pasos": [
 			{"id": "huellas", "texto": "Busca huellas de Canela en Pastos Verdes.", "hecho": "hito:enc_perro_huellas"},
-			{"id": "encontrar", "texto": "Sigue el rastro hasta las ruinas (Garon puede apartar las ramas).",
+			{"id": "encontrar", "texto": "Sigue el rastro hasta las ruinas. Las ramas se apartan cuando sepáis qué le pasa al bosque, y con Garon.",
 				"hecho": "hito:enc_perro_encontrado"},
 			{"id": "volver", "texto": "Devuélvesela a Pip, en Oakhaven.", "hecho": "hito:enc_perro_devuelto"}],
 		"recompensa": {"oro": 40, "objetos": {"Poción": 2}}, "pago": "Pip y Canela, juntos otra vez."},

@@ -477,7 +477,7 @@ const CONDICIONES := {
 }
 const TIPOS_CONDICION := ["hito", "estado", "decision", "grupo", "oro", "modo", "cond", "ganado"]
 const PLURAL := {"Poción": "Pociones", "Éter": "Éter", "Incienso de Ceniza": "Inciensos de Ceniza",
-	"Polvo de cantera": "puñados de Polvo de cantera"}
+	"Polvo de cantera": "puñados de Polvo de cantera", "Bálsamo de Mirta": "Bálsamos de Mirta"}
 
 
 # ================================================================= consultas
@@ -763,7 +763,7 @@ static func aplicar_senal(arg: Variant) -> String:
 					n += 1
 			if n == 3:
 				P.poner_hito("enc_formula_paginas")
-				return "Página %d de 3. Ya están todas: volved con Mirta." % n
+				return "Página %d de 3. Ya están todas: volved con Mirta, con Lya en el grupo." % n
 			return "Página %d de 3 del cuaderno de Mirta." % n
 		"oak:formula_fin":                            # V10, encargo B: Lya rehace la fórmula; premio una vez
 			if not P.hito("enc_formula_paginas") or P.hito("enc_formula_fin"):

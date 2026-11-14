@@ -166,8 +166,13 @@ func _encargo_a() -> void:
 		Inv.agregar_objeto("Hierro de la Falla", 1)
 		if E.paso_actual(e).get("id", "") != "decidir":
 			_fallo("4: tras la veta, el paso no es decidir")
+		# 14/11: mientras Ferro lo espera, el hierro no se vende ni se gasta en el taller (si no, su escena se repetía)
+		if not load("res://talleres.gd").reservado("Hierro de la Falla"):
+			_fallo("4: con el encargo pendiente, el hierro se puede vender o gastar")
 		var oro: int = Inv.oro()
 		Oak.aplicar_senal("oak:hierro_entregar" if decision == "entregado" else "oak:hierro_kael")
+		if load("res://talleres.gd").reservado("Hierro de la Falla"):
+			_fallo("4: decidido el encargo, el hierro sigue reservado")
 		if E.estado(e) != "hecho" or str(Engine.get_meta("decisiones", {}).get("hierro_ferro", "")) != decision:
 			_fallo("4: la decisión «%s» no termina el encargo" % decision)
 		if decision == "entregado":

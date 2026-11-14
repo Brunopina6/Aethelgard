@@ -52,6 +52,10 @@ var guardian: Node3D
 var _t := 0.0
 var _bebido := false                        # el manantial, una vez por visita
 var _ciervo_visto := false
+# 14/11: las dos, para toda la visita (sesión, Engine; sin clave nueva de partida): volver de un combate recarga la
+# escena y antes el ciervo volvía a salir y el manantial a curar. Las quita pastos_verdes_3d.gd al salir de la región.
+const VISITA := ["bq_visita_bebido", "bq_visita_ciervo"]
+var _destellos_pista: Array = []            # lirios, surcos e inscripción: solo brillan cuando ya sirven (bq_arbol)
 var _claro_armado := false                  # el Guardián despierta al llegar, no al volver aquí tras el combate
 var _aviso_claro := false
 var _final_pendiente := ""                  # diálogo del desenlace al volver del combate
@@ -212,8 +216,10 @@ func comprobar(pos: Vector3, delta: float) -> void:
 		P().poner_hito("bq_final_visto")
 		_dialogo(id)
 		return
-	if P().hito("bq_senda") and not _ciervo_visto and r._dist_plana(pos, SITIO_RUINAS) < 7.0:
+	if P().hito("bq_senda") and not _ciervo_visto and not Engine.get_meta(VISITA[1], false) \
+			and r._dist_plana(pos, SITIO_RUINAS) < 7.0:
 		_ciervo_visto = true
+		Engine.set_meta(VISITA[1], true)
 		_ciervo(SITIO_RUINAS + Vector3(2.5, 0, -2.0))
 	var d: float = r._dist_plana(pos, SITIO_CLARO)
 	if d > RADIO_CLARO + 1.0:
@@ -253,8 +259,8 @@ func accion(id: String) -> void:
 			else:
 				_dialogo(h)
 		"ramas":
-			if not Pr.hito("bq_pista_rastro"):
-				r._mostrar_aviso(T.TEXTOS["ramas_bloqueadas"], 3.0)
+			if not Pr.hito("bq_pista_rastro"):              # (14/11: qué falta, sin decir dónde está la pista)
+				r._mostrar_aviso(T.TEXTOS["ramas_bloqueadas"] + " Antes conviene entender qué le pasa al bosque.", 3.5)
 			elif not load("res://grupo.gd").activos().has("Garon"):
 				r._mostrar_aviso(T.TEXTOS["ramas_bloqueadas"] + " Pesan demasiado para apartarlas sin Garon.", 3.5)
 			else:
@@ -369,10 +375,11 @@ func _recoger(id: String) -> void:
 
 
 func _beber() -> void:
-	if _bebido:
+	if _bebido or Engine.get_meta(VISITA[0], false):
 		r._mostrar_aviso(T.TEXTOS["manantial_ya"], 2.4)
 		return
 	_bebido = true
+	Engine.set_meta(VISITA[0], true)
 	load("res://grupo.gd").curar_todos()
 	Sonido.efecto("pocion")
 	var texto: String = T.TEXTOS["manantial"]
@@ -487,7 +494,7 @@ func _crear_lirios(p: Vector3) -> Node3D:
 		flor.height = 0.12
 		r._pieza(n, flor, _mat(Color(0.82, 0.82, 0.84), true), q + Vector3(0, 0.27, 0))   # sin color: ceniza
 	if not P().hito("bq_pista_planta"):
-		r._destello(n, Vector3(0, 0.6, 0), 0.35)
+		_destellos_pista.append(r._destello(n, Vector3(0, 0.6, 0), 0.35))
 	return n
 
 
@@ -502,7 +509,7 @@ func _crear_surcos(p: Vector3) -> Node3D:
 		raiz.height = 0.9
 		r._pieza(n, raiz, _mat(Color(0.36, 0.27, 0.18)), Vector3(-k * 0.55, 0.05, sin(k * 1.3) * 0.2), Vector3(0, 10.0 * k, 90))
 	if not P().hito("bq_pista_rastro"):
-		r._destello(n, Vector3(0, 0.4, 0), 0.35)
+		_destellos_pista.append(r._destello(n, Vector3(0, 0.4, 0), 0.35))
 	return n
 
 
@@ -541,7 +548,7 @@ func _crear_inscripcion(p: Vector3) -> Node3D:
 		var a := TAU * k / 3.0 + 0.5
 		r._pieza(n, col, _mat(Color(0.66, 0.64, 0.58)), Vector3(cos(a) * 1.6, col.height / 2.0, sin(a) * 1.6))
 	if not P().hito("bq_pista_inscripcion"):
-		r._destello(n, Vector3(0, 1.1, 0.2), 0.35)
+		_destellos_pista.append(r._destello(n, Vector3(0, 1.1, 0.2), 0.35))
 	return n
 
 
@@ -711,6 +718,10 @@ func _ciervo(p: Vector3) -> void:
 
 func _animar(_delta: float) -> void:
 	animar_orbe()
+	var sirven: bool = P().hito("bq_arbol")
+	for d in _destellos_pista:
+		if is_instance_valid(d):
+			d.visible = sirven
 	_animar_canela(_delta)
 	for m in runas:                                  # las runas laten
 		if is_instance_valid(m):

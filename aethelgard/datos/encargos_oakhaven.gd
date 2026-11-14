@@ -29,7 +29,8 @@ const MISIONES := [
 			{"id": "pip", "texto": "Pregunta por la ciudad: alguien tuvo que ver algo. Pip lo ve todo.",
 				"hecho": "hito:enc_formula_pip"},
 			{"id": "paginas", "texto": "Encuentra las tres páginas que se llevó el viento.", "hecho": "hito:enc_formula_paginas"},
-			{"id": "volver", "texto": "Vuelve con Mirta: Lya puede ayudarla a rehacer la fórmula.", "hecho": "hito:enc_formula_fin"}],
+			{"id": "volver", "texto": "Vuelve con Mirta, con Lya en el grupo: ella puede rehacer la fórmula.",
+				"hecho": "hito:enc_formula_fin"}],
 		# V12 (fase 7): cada página, con lo que dice, en cuanto se recoge (los textos de ciudades/oakhaven.gd, PIEZAS).
 		"pistas": [
 			{"texto": "Página de Mirta: «…dos de hierba lunar, nunca tres…».", "si": "estado_de:oakhaven/pagina_1"},

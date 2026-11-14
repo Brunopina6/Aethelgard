@@ -627,13 +627,16 @@ func _atender(id: String) -> void:
 		_senales.clear()
 		if not dg.signal_event.is_connected(_al_senal):
 			dg.signal_event.connect(_al_senal)
-		_veces[id] = int(_veces.get(id, 0)) + 1
+		_veces[o["pnj"]] = int(_veces.get(o["pnj"], 0)) + 1   # (14/11: por vecino, como lo lee _ruta_dialogo)
 		region.set("dialogo_actual", ruta)
 		dg.start(ruta)
 		await dg.timeline_ended
 		if is_instance_valid(dg) and dg.signal_event.is_connected(_al_senal):
 			dg.signal_event.disconnect(_al_senal)
 		abrir = ("oak:servicio_" + id) in _senales
+		var vida = region.get("vida")                       # (14/11: lo que dio el diálogo, guardado como en vida3d)
+		if vida != null and _senales.any(func(x): return not str(x).begins_with("oak:servicio_")):
+			vida.guardar()
 	if abrir and is_inside_tree():
 		_abrir_servicio(id)
 	_atendiendo = ""
@@ -653,7 +656,12 @@ func _al_senal(arg) -> void:
 	if s.begins_with("oak:servicio_"):
 		return
 	var texto: String = Oak.aplicar_senal(s)
-	if texto != "":
+	if texto == "":
+		return
+	var vida = region.get("vida")                           # (14/11: en cola hasta que acabe el diálogo, como vida3d)
+	if vida != null and vida.has_method("avisar"):
+		vida.avisar(texto, "tesoro")
+	else:
 		_aviso(texto, 2.6)
 
 

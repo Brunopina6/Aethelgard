@@ -1370,6 +1370,9 @@ func _salir() -> void:
 		return
 	saliendo = true
 	Engine.set_meta("pos_3d_ok", false)  # la próxima vez se entra por el principio del camino
+	for k in load("res://zonas3d/bosque_pastos.gd").VISITA:   # (14/11: el manantial y el ciervo, otra vez en la próxima visita)
+		if Engine.has_meta(k):
+			Engine.remove_meta(k)
 	var t := create_tween()
 	t.tween_property(fundido, "color:a", 1.0, 0.5)
 	await t.finished

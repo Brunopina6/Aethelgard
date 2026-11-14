@@ -200,7 +200,7 @@ func _pintar() -> void:
 			var Extra = load("res://equipo_extra.gd")    # el botín de las bestias (T-097): se vende
 			var mats: Dictionary = Extra.materiales()     # datos/materiales/ (fase 2)
 			for m in mats:
-				if Inv.cantidad(m) > 0:
+				if Inv.cantidad(m) > 0 and not load("res://talleres.gd").reservado(m):   # (14/11: lo que espera un encargo)
 					_fila(m, mats[m]["desc"], "Tienes %d" % Inv.cantidad(m), mats[m]["venta"],
 						func(): _vender(m), false, true)
 		"Equipo":
