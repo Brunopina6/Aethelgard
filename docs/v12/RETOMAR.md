@@ -648,3 +648,36 @@ Informe: `D:\REBELUM_laboratorio_plugins\laboratorio\INFORME_LABORATORIO.md`.
 2. Pasar la batería completa SOLA, sin otros Godot ni Blender abiertos.
 3. Compilar la APK nueva y sustituir la v713 en Descargas (la instala el usuario).
 4. Seguir el guion del Redmi, con la v2 y la v3 de pie y los vecinos de Kael primero.
+
+### Redmi, 14/11 13:10-13:40: resultados REALES con la v717 (`687dbe7`)
+- **Instalación:** la hizo el usuario desde Descargas, porque MIUI bloquea `adb install` y el sistema de permisos no deja pulsar su confirmación desde el PC.
+  - Datos de Auditoría idénticos al respaldo tras instalar (538 archivos, comprobado por SHA-256).
+- **Arranque en frío:** 13,0 s hasta la portada (967 archivos, 0 fallos). La portada alternativa muestra «Banco de pruebas».
+- **v2 de pie 30 s:** sí. 30,4 FPS de media, 0 perdidos de 987, PSS 953 MB (517 MB de gráficos), 30,6 °C.
+- **v3 de pie 30 s:** sí. 30,2 FPS, 0 perdidos de 971, PSS 848 MB, 30,8 °C.
+- **Kael entre los vecinos:**
+  - Cruza la Puerta del Sur y la calle junto al guardia y al mago sin bloquearse, con 30,4 FPS y 0 perdidos.
+  - En la plaza, lo que lo frenó fue la fuente, que es un obstáculo fijo, no los vecinos.
+  - Era de noche, con pocos vecinos: **la hora de más gente queda sin probar.**
+- **Solo Lya invoca:** confirmado. Kael no tiene INVOCACIÓN.
+- **Custodio (`meshy_e01`):**
+  - Aparece con su modelo y hace la Prensa del Umbral con las marcas de aviso bajo Lya y Garon.
+  - 56,7 FPS, 0 perdidos de 1922.
+  - Al acabar se vuelve al banco.
+  - Detalle sin investigar: su PV máximo pasó de 161 a 145 tras quedar «Congelado».
+- **Capa articulada en combate** (original): ondea detrás al atacar.
+- **Érebo, misma ventana de unos 20 s y sin capturas:** original 44,0 FPS y experimental 44,2 FPS, los dos con 0 perdidos.
+  - En los primeros planos el contador baja a unos 15 FPS, se use o no el orbe.
+  - La invocación entera funciona y no deja restos.
+  - **El instante del orbe no se captó** (solo una captura por segundo).
+- **Agua original:** 60,7 FPS en 10 s. La Mejorada **no se llegó a probar**: el usuario desconectó el teléfono.
+- **Defectos del banco vistos y ya corregidos** (`c4369bb`):
+  - los enemigos huían a nivel 12;
+  - «Volver al banco» tapaba CAL y RND;
+  - la etiqueta pisaba el contador de FPS.
+- **Sin probar en el Redmi:** Agua mejorada, Nix (combate y exploración), cerradura y misión del cantero, ciclos exploración → combate → exploración.
+- **AL RECONECTAR (obligatorio):** la app quedó dentro del banco.
+  1. Borrar `files/banco_pruebas.save`.
+  2. Restaurar `files/ajustes.cfg` desde `D:\REBELUM_respaldos\2026-11-14_redmi_auditoria_antes_v694_a_nueva`.
+  3. Comprobar por SHA-256 que los 538 archivos coinciden con `sha_tel_todo.txt`.
+  - La partida de siempre (`partida_exp.save`) no la tocó el banco: compruébalo también.
