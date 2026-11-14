@@ -2,7 +2,26 @@
 
 > Escrito durante la noche del 13 al 14/11. Esta noche NO se ha instalado nada ni se han tocado datos del teléfono.
 
-**APK QUE HAY QUE USAR (14/11, 13:05): v717, validada `687dbe7` (batería 174 · 0 · 88 · 0, sola)**
+**APK MÁS RECIENTE (14/11, 16:15): v725, validada `eee2e36` (batería 174 · 0 · 90 · 0, sola), AÚN EN EL PC**
+- **Archivo:** `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261114-eee2e36-local.apk`.
+  SHA-256: `3c9bd521c0ed15dc6cc1964958121259add34cbcef9f116160d5f05238731c8e`.
+- **Respecto a la v717 trae:**
+  - en el banco nadie huye, y el botón y la etiqueta ya no tapan nada;
+  - la capa con la media vuelta corregida;
+  - el rendimiento de la invocación de Érebo;
+  - el iris y la capa corta de Nix.
+- **Al reconectar el Redmi:**
+  1. Restaurar `ajustes.cfg` y borrar `banco_pruebas.save` (ver RETOMAR, «Redmi, 14/11»).
+  2. Copiar la v725 a Descargas. La instala el usuario.
+  3. Repetir lo que quedó sin probar:
+     - Agua mejorada;
+     - Nix en combate y en exploración, con el iris en movimiento;
+     - Érebo de cerca (si la caída a unos 15 FPS desaparece);
+     - cerradura y misión del cantero;
+     - ciclos exploración → combate → exploración;
+     - Kael a la hora de más gente.
+
+**APK anterior (14/11, 13:05): v717, validada `687dbe7` (batería 174 · 0 · 88 · 0, sola)**
 - **Archivo:** `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261114-687dbe7-local.apk`. Ya está en Descargas
   del Redmi, verificada por SHA-256 `a9db4078149bbc7a253e24488c86c2382d925f08d7cc1bab49e4bc4bcba488a7`.
   - El sufijo «-local» solo se debe a la carpeta sin versionar `personajes/nix/fbx/anterior_14_11/`, que no va dentro.
