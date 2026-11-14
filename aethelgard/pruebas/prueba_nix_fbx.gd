@@ -8,6 +8,8 @@ extends SceneTree
 #      peso, total por debajo de 20.000 triángulos), ninguna malla ni nodo de sobra, el cetro PROPIO en su socket y la
 #      altura normalizada; concentrarse pasa por «canalizar» y llega al bucle con los mechones levantados y los faldones
 #      ABIERTOS; al volver a la guardia bajan y se cierran; morir y revivir.
+#   3. (14/11, tarde) con él, el cuerpo lleva la emisión del iris (nix_fbx_cuerpo.gdshader, con sus texturas) y la
+#      ropa no; sin él, ningún material la lleva.
 # No toca la partida (no guarda) ni deja encendido el interruptor.
 
 const NixFBX := preload("res://personajes/nix/fbx/nix_fbx.gd")
@@ -47,6 +49,13 @@ func _comprobar_vieja() -> void:
 	_ok(vieja.find_child("cara_nix", true, false) != null and vieja.find_child("cuerpo_nix_lod1", true, false) != null,
 		"sin interruptor: la Nix de siempre (cara_nix y LOD)")
 	_ok(vieja.vara == null, "sin interruptor: no se crea cetro")
+	var con_iris := 0
+	for m in vieja.find_children("*", "MeshInstance3D", true, false):
+		for s in m.get_surface_override_material_count():
+			var sm := m.get_surface_override_material(s) as ShaderMaterial
+			if sm != null and sm.shader != null and sm.shader.resource_path == NixFBX.SHADER_CUERPO:
+				con_iris += 1
+	_ok(con_iris == 0, "sin interruptor: ningún material con la emisión del iris (%d)" % con_iris)
 	vieja.queue_free()
 
 
@@ -98,6 +107,11 @@ func _comprobar_modelo() -> void:
 		var im: Image = tex.get_image() if tex else null
 		_ok(im != null and im.is_compressed() and im.has_mipmaps(), "color comprimido en VRAM y con mipmaps (formato %s)" % (str(im.get_format()) if im else "-"))
 		_ok(mi.get_surface_override_material(0) is ShaderMaterial, "material de los héroes v2 (heroe_v2.gdshader)")
+		# 14/11 (tarde): el cuerpo, con la emisión suave del iris; conserva sus texturas y ajustes de los v2
+		var sm := mi.get_surface_override_material(0) as ShaderMaterial
+		_ok(sm != null and sm.shader != null and sm.shader.resource_path == NixFBX.SHADER_CUERPO
+			and sm.get_shader_parameter("albedo_tex") == tex and sm.get_shader_parameter("tiene_normal") == true,
+			"cuerpo: material de los v2 con la emisión del iris (%s) y sus texturas" % (sm.shader.resource_path if sm and sm.shader else "-"))
 	_comprobar_ropa(mi)
 	_ok(nix.vara != null, "cetro creado en el socket")
 	_ok(nix.vara != null and nix.vara.find_child("cetro_nix", true, false) != null, "es su cetro propio (cetro_nix.glb)")
@@ -144,6 +158,9 @@ func _comprobar_ropa(cuerpo: MeshInstance3D) -> void:
 	_ok(im != null and tex.get_width() == 1024 and im.is_compressed() and im.has_mipmaps(),
 		"ropa: atlas de 1024 comprimido en VRAM (%s)" % (str(im.get_format()) if im else "sin textura"))
 	_ok(ropa.get_surface_override_material(0) is ShaderMaterial, "ropa con el material de los héroes v2")
+	var smr := ropa.get_surface_override_material(0) as ShaderMaterial
+	_ok(smr != null and smr.shader != null and smr.shader.resource_path == "res://personajes/heroes_v2/heroe_v2.gdshader",
+		"ropa: sin la emisión del iris (heroe_v2.gdshader)")
 	# sin restos: solo las dos mallas bajo el esqueleto y ninguna cámara ni luz del archivo de Blender
 	var mallas := []
 	for c in sk.get_children():

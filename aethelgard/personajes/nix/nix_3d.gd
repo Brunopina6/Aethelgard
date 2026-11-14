@@ -76,6 +76,7 @@ func _ready() -> void:
 	add_child(v2)
 	v2.preparar(self, "Nix")
 	if _fbx:
+		NixFBX.poner_iris(self)             # 14/11: emisión suave solo en el iris (nix_fbx_cuerpo.gdshader)
 		if vara != null:
 			_largo_cristal = _vara_punta    # la magia sale de la punta del cetro
 	else:

@@ -295,7 +295,7 @@ No se pasó la batería completa (solo toca archivos de Nix y sus pruebas). Hab�
 | 4. Emblema de la espalda | **verificado** en render y en Godot (`24_emblema_cerca.png`) |
 | 5. Cetro propio por socket | **verificado** en Godot (prueba: es `cetro_nix` y sigue a `arma_d`; la magia sale de la amatista) |
 | 6. Brillo excesivo | **corregido** en la textura (mono negro, pelo ceniza, tela mate); visto en combate real en el PC; Redmi pendiente |
-| Emisión de iris y ornamentos (básica, fuerte, suprema) | **pendiente** (no hecho: el material de los v2 usa EMISSION para el reflejo del metal) |
+| Emisión de iris y ornamentos (básica, fuerte, suprema) | iris: **hecho** (suave, fija; §11). Ornamentos y las tres intensidades: **pendiente** |
 | Android (Redmi) | **pendiente**: ni instalado ni medido |
 
 ### 9.7 Pendientes
@@ -330,3 +330,37 @@ mismos triángulos (11.968 + 7.513), esqueleto, clips y texturas de 1024. Lo ant
   (`D:\REBELUM_diagnostico\pruebas\2026-11-14_120908\resumen.md`).
 - Queda: un punto pequeño bajo la comisura y algo de irregularidad junto a la raíz de los mechones (solo de muy cerca);
   bajo la barbilla se ve algo más de cuello que en el FBX (geometría reducida).
+
+## 11. Iris con emisión suave y capa corta sin placas (14/11/2026, tarde) — sigue APAGADO
+
+Rama `claude/wf-nix-iris-puños` (desde `claude/rebelum-v12` @ `d7fc8d6`). Evidencias en
+`D:\REBELUM_diagnostico\v12\nix_iris_capa_14_11\` (`hojas\HOJA_CONTACTO.png` y una hoja por tema). Sin rediseño:
+mismos triángulos (11.968 + 7.513 = 19.481), mismos 54 huesos, mismos 23 clips, mismas texturas (los `.webp` no
+cambian). Lo anterior, en `aethelgard/personajes/nix/fbx/anterior_14_11b/` (con `.gdignore`).
+
+- **Iris** (`nix_fbx_cuerpo.gdshader`, lo pone `nix_fbx.gd poner_iris()` desde `nix_3d.gd` solo con `nix_fbx`): el
+  material de los v2 copiado tal cual más una emisión SOLO en el iris. La máscara va sobre la propia textura (sin
+  textura nueva): dentro de los dos rectángulos del atlas donde están los iris (`fuente_blender/p11_iris.py`) y solo en
+  los texeles violetas (color normalizado: azul y rojo por encima del verde); la esclerótica, la piel, las pestañas y la
+  pupila quedan fuera. De cerca (retrato) la emisión es apenas ×0,35 del color del iris; a la distancia del juego
+  (≥ 6 texeles por píxel, igual con la cámara ortográfica del combate y la de la exploración) ×0,9 y, como allí el
+  mipmap mezclaba el iris con la piel, se usa el texel exacto del iris: en combate y en exploración los ojos son dos
+  puntos violetas en vez de color piel, sin halo con resplandor de umbral 0,85 (`hojas\iris_distancia_sin_con.png`).
+  Probado y descartado: subir la emisión sin el texel exacto (×1,5-2,5: puntos blancos, «faro»).
+- **Capa corta** (`fuente_blender/p11_capa.py` sobre la copia de `p8_final.blend`, después `p10_exportar.py`): los
+  «puños» y los rectángulos de la espalda eran **artefactos** del vuelo de `p8_vestuario.py` (`extra_capa`), no canon
+  (la referencia vestida tiene el borde dorado continuo y el forro solo asoma por debajo): 45 de las 106 caras del vuelo
+  miraban hacia dentro (Godot las descarta) y su forro, desplazado según su propia normal, quedaba 4 mm por fuera de
+  cara a la cámara; y el puño se abría 2,6 cm hacia fuera del brazo. Ahora el vuelo mira hacia fuera, el forro va 4 mm
+  por dentro mirando hacia dentro, el borde de abajo conserva su medida con la dirección suavizada y el puño sigue el
+  brazo (1,8 cm a lo largo, 6 mm hacia él) con su ribete dorado (`hojas\capa_godot_antes_despues.png`,
+  `capa_blender_guardia_ids.png`, `capa_poses_antes_despues.png`).
+- Cifras deterministas: llamadas de dibujo y triángulos iguales; memoria de texturas igual (ninguna nueva); malioc
+  (Mali-G57, traducción aproximada de `pruebas/herramientas/malioc/`): fragmento del cuerpo 16,88 → 18,62 ciclos con el
+  sol y 11,62 → 13,38 sin él (+1,75 de aritmética; textura 1,50 → 1,75, la lectura extra solo dentro de los
+  rectángulos del iris). La ropa no cambia de material. GLB 3.194.328 → 3.195.836 bytes (`69027f55…398a9d`).
+- Pruebas: `prueba_nix_fbx` (63 · 0, con 3 comprobaciones nuevas del iris), `prueba_nix_v12` y `prueba_magia_negra`
+  SUPERADAS (`D:\REBELUM_diagnostico\pruebas\2026-11-14_141122\resumen.md`). Capturas: `pruebas/fotos_nix_iris.gd`
+  (con y sin emisión en la misma pasada) y `fotos_nix_revision.gd` (estudio, combate, Pastos y Oakhaven).
+- Queda: en exploración la capucha y el flequillo tapan a menudo los ojos (desde arriba solo se ve uno); sin forro
+  púrpura visible en la capa salvo desde abajo (antes asomaba por los defectos); tiempos en el Redmi.

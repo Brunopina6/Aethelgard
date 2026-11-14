@@ -25,6 +25,8 @@ const POR_DEFECTO := false
 const CETRO := "res://personajes/nix/fbx/cetro_nix.glb"
 const CETRO_PUNTA := 0.50
 const CETRO_PROVISIONAL := "cetro_loto"
+# 14/11 (tarde): el cuerpo lleva el material de los v2 con una emisión SUAVE solo en el iris (nix_fbx_cuerpo.gdshader).
+const SHADER_CUERPO := "res://personajes/nix/fbx/nix_fbx_cuerpo.gdshader"
 
 
 static func activo() -> bool:
@@ -33,3 +35,16 @@ static func activo() -> bool:
 	# V12 (14/11): y, SOLO en Auditoría o en el editor, la opción de Ajustes ([calidad_pruebas] nix_fbx)
 	return "nix_fbx" in OS.get_cmdline_user_args() or POR_DEFECTO \
 		or load("res://prototipos/calidad_proto.gd").extra_activo("nix_fbx")
+
+
+# Ojos amatista legibles a la distancia del juego: cambia el shader del material que puso el ayudante de los v2 en
+# «cuerpo_nix» por el suyo (los mismos parámetros + la emisión del iris). La ropa no cambia. Devuelve si lo puso.
+static func poner_iris(nodo: Node) -> bool:
+	var mi := nodo.find_child("cuerpo_nix", true, false) as MeshInstance3D
+	if mi == null or not ResourceLoader.exists(SHADER_CUERPO):
+		return false
+	var sm := mi.get_surface_override_material(0) as ShaderMaterial
+	if sm == null:
+		return false
+	sm.shader = load(SHADER_CUERPO)
+	return true
