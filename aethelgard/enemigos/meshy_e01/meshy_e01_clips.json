@@ -1,0 +1,94 @@
+{
+ "id": "meshy_e01",
+ "nombre": "Custodio de Porcelana (nombre de diseño)",
+ "modelo": "meshy_e01",
+ "fuente": "Meshy_AI_Original_fantasy_game_enemy_Custodio_de_20261108_texture_fbx.zip (sha256 780f3720…)",
+ "alto_m": 1.85,
+ "triangulos": 10541,
+ "vertices": 5277,
+ "huesos": 24,
+ "deformantes": 21,
+ "max_influencias": 2,
+ "fps": 30,
+ "textura": "1024 px (color, normal, metálico-rugosidad; WebP dentro del GLB)",
+ "mapa_diseno": {
+  "idle": "e01__idle",
+  "walk": "e01__walk",
+  "attack_01": "e01__attack_prensa"
+ },
+ "mapa_juego": {
+  "reposo": "e01__idle",
+  "caminar": "e01__walk",
+  "correr": "e01__walk",
+  "ataque": "e01__attack_prensa"
+ },
+ "velocidad_andar_m_s": 0.867,
+ "clips": {
+  "e01__idle": {
+   "duracion": 2.4,
+   "bucle": true,
+   "eventos": {}
+  },
+  "e01__walk": {
+   "duracion": 1.2,
+   "bucle": true,
+   "eventos": {
+    "pisada_izq": 0.0,
+    "pisada_der": 0.6
+   }
+  },
+  "e01__attack_prensa": {
+   "duracion": 2.4,
+   "bucle": false,
+   "eventos": {
+    "aviso": 0.0,
+    "fija_direccion": 0.65,
+    "impacto": 0.9,
+    "fin_activo": 1.1,
+    "recupera": 1.1
+   }
+  }
+ },
+ "medidas": {
+  "e01__idle": {
+   "min_z_malla": -0.0,
+   "min_z_manos": 0.5358,
+   "cadera_baja_max_m": 0.038,
+   "pie_desliz_max_m": 0.0001,
+   "pie_z_apoyo_max_m": 0.0,
+   "manos_z_en_impacto": 0.5379,
+   "muñecas_y_en_impacto": -0.1312,
+   "cadera_baja_pct_altura": 2.1,
+   "salto_bucle_grados": 0.0
+  },
+  "e01__walk": {
+   "min_z_malla": -0.0048,
+   "min_z_manos": 0.5495,
+   "cadera_baja_max_m": 0.07,
+   "pie_desliz_max_m": 0.0,
+   "pie_z_apoyo_max_m": 0.0007,
+   "manos_z_en_impacto": 0.5495,
+   "muñecas_y_en_impacto": -0.0899,
+   "vel_pie_apoyo_m_s": [
+    0.866,
+    0.867
+   ],
+   "vel_teorica_m_s": 0.867,
+   "cadera_baja_pct_altura": 3.8,
+   "salto_bucle_grados": 0.0
+  },
+  "e01__attack_prensa": {
+   "min_z_malla": -0.0044,
+   "min_z_manos": -0.0044,
+   "cadera_baja_max_m": 0.262,
+   "pie_desliz_max_m": 0.0005,
+   "pie_z_apoyo_max_m": 0.0,
+   "manos_z_en_impacto": 0.01,
+   "muñecas_y_en_impacto": -0.5885,
+   "cadera_baja_pct_altura": 14.2,
+   "fin_vs_reposo_grados": 0.0,
+   "inicio_vs_reposo_grados": 0.0
+  }
+ },
+ "generador": "enemigos/meshy_e01/fuente/p1_rig.py + p2_clips.py (Blender 5.2.3 LTS)"
+}

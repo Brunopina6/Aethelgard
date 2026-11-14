@@ -100,6 +100,10 @@ const Peon := preload("res://combate_peon.gd")
 # Mazazo de poda, Empuje de anillos y Raíz de umbral avisada y cortable). APAGADO: con «enemigos_v12» sale en los
 # encuentros del bosque y en sus combates de prueba (GRUPOS[25], [26] y [27]). Los ganchos llevan «V12, Velador».
 const Velador := preload("res://combate_velador.gd")
+# V12, fase 9 (14/11, PILOTO): meshy_e01 · el Custodio de Porcelana, del FBX de Meshy (combate_meshy_e01.gd: Prensa del
+# Umbral en fila con aviso dentro del clip, recarga de 2 turnos propios en guardia). APAGADO: solo con su interruptor
+# «meshy_e01» y en sus combates de prueba (GRUPOS[28] y [29]); nunca al azar. Los ganchos llevan «V12, Custodio».
+const Custodio := preload("res://combate_meshy_e01.gd")
 # Menú de combate minimalista (menu_combate.gd). Ocupa el 40 % derecho de la pantalla, por eso los
 # héroes van más a la izquierda y los enemigos se juntan a la izquierda: x = x * ENEMIGOS_X.x + ENEMIGOS_X.y
 const ENEMIGOS_X := Vector2(0.75, -190.0)
@@ -374,6 +378,13 @@ const MODELOS := {
 			"res://enemigos/velador_corteza/velador_corteza.glb"],
 		"vp": Vector2i(670, 820), "alto_vista": 2.95, "centro_y": 0.95, "barra_y": 86.0, "centro_3d": 1.0, "caida": 1.4,
 		"respaldo": "guardian"},
+	# V12, Custodio (14/11): meshy_e01 · el Custodio de Porcelana (enemigos/meshy_e01/, FBX de Meshy con rig y clips de
+	# fuente/p1_rig.py y p2_clips.py; combate_meshy_e01.gd). 1,85 m; el encuadre deja sitio a los puños en alto de la Prensa.
+	"meshy_e01": {
+		"tipo": "3d", "esc": 0.6, "script": "res://enemigos/meshy_e01/meshy_e01_3d.gd", "gestos": "res://gestos_3d.gd",
+		"rutas": ["res://enemigos/meshy_e01/meshy_e01.glb"],
+		"vp": Vector2i(700, 840), "alto_vista": 3.0, "centro_y": 1.0, "barra_y": 80.0, "centro_3d": 1.05, "caida": 0.6,
+		"respaldo": "guardian"},
 }
 
 # Enemigos disponibles y grupos que pueden aparecer en un encuentro (se elige uno al azar).
@@ -423,6 +434,10 @@ const ENEMIGOS := {
 	# con «enemigos_v12»). Lento y duro; su guardia de anillos deja los golpes a la mitad hasta que le paran dos.
 	"velador_corteza": {"nombre": "Velador de Corteza", "modelo": "velador_corteza", "hp": 115, "atk": 13, "vel": 11.0,
 		"exp": 34, "oro": 22, "personalidad": "agresivo"},
+	# V12, Custodio (14/11, piloto): meshy_e01 · el Custodio de Porcelana, defensor pesado (combate_meshy_e01.gd; APAGADO:
+	# solo con «meshy_e01» y en GRUPOS[28]/[29]). PV dentro de los 110-150 de su ficha; más lento que el Velador.
+	"meshy_e01": {"nombre": "Custodio de Porcelana", "modelo": "meshy_e01", "hp": 130, "atk": 13, "vel": 10.0,
+		"exp": 36, "oro": 24, "personalidad": "agresivo"},
 }
 const GRUPOS := [
 	[["grimfang", Vector2(230, 150)], ["grimfang", Vector2(410, 115)]],
@@ -462,6 +477,9 @@ const GRUPOS := [
 	[["velador_corteza", Vector2(230, 120)]],                                                    # 25: uno
 	[["velador_corteza", Vector2(140, 105)], ["slime", Vector2(400, 125)]],                       # 26: con un Slime
 	[["velador_corteza", Vector2(150, 110)], ["grimfang", Vector2(420, 125)], ["slime", Vector2(30, 95)]],   # 27: tres
+	# V12, Custodio: combates de prueba del Custodio de Porcelana (combate_meshy_e01.gd; con «meshy_e01»); no salen al azar
+	[["meshy_e01", Vector2(230, 120)]],                                     # 28: solo
+	[["meshy_e01", Vector2(150, 110)], ["slime", Vector2(420, 125)]],       # 29: con un Slime
 ]
 const GRUPOS_AL_AZAR := 5           # solo los primeros salen en encuentros aleatorios (con el grupo de tres)
 # Encuentros al azar según cuántos héroes hay ahora en el grupo (grupo.gd, activos). Kael solo no tiene cura ni a
@@ -510,6 +528,7 @@ const ANIM := {
 	"golem_ambar3d": {"distancia": 220.0},      # V12, fase C: el puño
 	"peon_linde": {"distancia": 200.0},         # V12, Peón: las estacas llegan 1 m por delante en la estocada
 	"velador_corteza": {"distancia": 230.0},    # V12, Velador: la maza de poda
+	"meshy_e01": {"distancia": 210.0},          # V12, Custodio: los puños caen 0,6 m por delante
 	"gorthor_v12": {"distancia": 220.0},        # V12, fase C: la cuchilla
 	"guardian_bosque2d": {"distancia": 170.0},     # fase 3: el Guardián del Bosque (respaldo 2D)
 	"guardian_bosque": {"distancia": 170.0},       # fase 3: ataca desde su sitio (_anim_guardian)
@@ -688,6 +707,8 @@ func _ready() -> void:
 			Peon.al_entrar(self, e, pe)
 		if Velador.es(e):                            # V12, Velador: su guardia y los instantes de sus clips
 			Velador.al_entrar(self, e, pe)
+		if Custodio.es(e):                           # V12, Custodio: los instantes de la Prensa (marca de aviso)
+			Custodio.al_entrar(self, e, pe)
 		if pe != null and pe.has_method("entrada"):
 			e["rig"].modulate.a = 0.0
 			create_tween().tween_property(e["rig"], "modulate:a", 1.0, 0.15)
@@ -794,6 +815,7 @@ func _elegir_enemigos() -> void:
 			Golem.preparar(e)                         # V12, Gólem: el Gólem de ámbar, con la suya (si no, nada)
 		Peon.preparar(e)                              # V12, Peón: con «enemigos_v12», su personalidad (si no, nada)
 		Velador.preparar(e)                           # V12, Velador: con «enemigos_v12», su personalidad y su guardia
+		Custodio.preparar(e)                          # V12, Custodio: con «meshy_e01», su personalidad (si no, nada)
 		var mod: Dictionary = MODELOS[e["modelo"]]
 		if mod.get("tipo", "") == "3d" and _ruta_3d(mod) == "" and mod.has("respaldo"):   # falta el 3D: su dibujo 2D
 			push_warning("Falta el modelo 3D de %s: se usa su respaldo 2D" % e["nombre"])
@@ -1132,6 +1154,8 @@ func _info_objetivo(f: Dictionary, ok: bool) -> String:
 		t.append_array(Peon.info(f))
 	elif Velador.es(f):                                 # V12, Velador: guardia, Raíz o aturdido
 		t.append_array(Velador.info(f))
+	elif Custodio.es(f):                                # V12, Custodio: Prensa o guardia de recarga
+		t.append_array(Custodio.info(f))
 	elif f.get("cargando", false):
 		var plan: Dictionary = PATRONES.get(f.get("personalidad", ""), {})
 		if plan.get("encoge", false):
@@ -2022,6 +2046,10 @@ func _turno_enemigo(f: Dictionary) -> void:
 		await Golem.turno(self, f, vivos, mult)
 		_fin_turno_enemigo(f)
 		return
+	if p == Custodio.PERSONALIDAD:                   # V12, Custodio: el Custodio de Porcelana (combate_meshy_e01.gd); no huye
+		await Custodio.turno(self, f, vivos, mult)
+		_fin_turno_enemigo(f)
+		return
 	# huir (en una «zona limpia», con el grupo muy por encima, los enemigos débiles huyen solos)
 	var limpia: bool = load("res://progreso.gd").zona_limpia(Engine.get_meta("zona", "llanura"))
 	if p != "jefe" and p != "bosque" and p != "coloso" and limpia and randf() < 0.7:   # (los jefes no huyen)
@@ -2439,6 +2467,9 @@ func _vigilar_carga(f: Dictionary, d: int) -> void:
 		return
 	if Velador.es(f):                                 # V12, Velador: cuenta los golpes parados, corta la Raíz
 		Velador.vigilar(self, f, d)
+		return
+	if Custodio.es(f):                                # V12, Custodio: si cae, la marca de la Prensa, fuera
+		Custodio.vigilar(self, f, d)
 		return
 	if not f.get("cargando", false) or f["hp"] <= 0 or not PATRONES.has(f.get("personalidad", "")):
 		return
@@ -5720,6 +5751,8 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 		await Peon.animar_golpe(self, origen, objetivo, impacto)
 	elif Velador.es(origen):                                                  # V12, Velador: mazazo, empuje o Raíz
 		await Velador.animar_golpe(self, origen, objetivo, impacto)
+	elif Custodio.es(origen):                                                 # V12, Custodio: la Prensa del Umbral
+		await Custodio.animar_golpe(self, origen, objetivo, impacto)
 	elif _p3d(origen) != null and _p3d(origen).has_method("avisar"):           # Zarzalín (T-097)
 		await _anim_zarzalin(origen, objetivo, impacto, str(origen.get("ataque_3d", "colmillo_lateral")))
 	elif _p3d(origen) != null and _p3d(origen).has_method("despertar"):        # Guardián del Bosque (fase 3): desde su sitio
@@ -7145,6 +7178,7 @@ func _comprobar_fin() -> bool:
 		Gorthor.al_acabar(enemigos)                   # V12, Gorthor: las brasas de la Hoguera, fuera
 		Peon.al_acabar(enemigos)                      # V12, Peón: la marca de la Zancada, fuera
 		Velador.al_acabar(enemigos)                   # V12, Velador: la marca de la Raíz, fuera
+		Custodio.al_acabar(enemigos)                  # V12, Custodio: la marca de la Prensa, fuera
 		Sonido.efecto("victoria" if ganan else "derrota")   # sonido.gd
 		if ganan:                                      # el gesto de uno de los que siguen en pie (tanda 5)
 			voz_pedida.emit("", "victoria")
@@ -7359,6 +7393,10 @@ func _actualizar() -> void:
 				Velador.repasar(e)
 				if vivo:
 					estados.append_array(Velador.estados(e))
+			if Custodio.es(e):                          # V12, Custodio: «Guardia», «Prensa en 2» (y su marca, fuera si cae)
+				Custodio.repasar(e)
+				if vivo:
+					estados.append_array(Custodio.estados(e))
 			if e.has("mn"):                             # V12, magia negra: «Lento 2», «Def ↓ 3», «Prisión 1»…
 				estados.append_array(MN.textos_estado(e))
 				if not vivo:                            # (huido o caído sin pasar por _quitar_pv: su jaula y su sello, fuera)

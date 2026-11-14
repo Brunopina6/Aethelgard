@@ -321,6 +321,8 @@ const APAGADOS := {
 	"res://enemigos/peon_linde/": "enemigos_v12",
 	"res://enemigos/velador_corteza/": "enemigos_v12",
 	"res://enemigos/bestiario_comun/": "enemigos_v12",
+	# V12, Custodio (14/11, piloto): meshy_e01, el Custodio de Porcelana (combate_meshy_e01.gd), solo con su interruptor
+	"res://enemigos/meshy_e01/": "meshy_e01",
 	"res://audio/efectos/centinela/": "enemigos_v12",
 	"res://audio/efectos/golem/": "enemigos_v12",
 	"res://audio/efectos/gorthor/": "enemigos_v12",

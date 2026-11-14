@@ -1027,3 +1027,23 @@ Informe completo: `docs/v12/NIX_PILOTO_FBX.md`. En corto:
 - Hallado sin tocar: `AvanzarDoble` rompe el cuerpo de los v2/v3 (cadera a −0,04 m y 0,55 m de lado); la derrota de los
   v2/v3 hunde el cuerpo 0,29-0,56 m.
 - Pendiente: verla y medirla en el Redmi; opción de Ajustes en `menus.gd`.
+
+## 2026-11-14 03:45 · V12, fase 9 (PILOTO): meshy_e01 Custodio de Porcelana desde el FBX de Meshy
+
+Rama local `claude/v12-custodio` (worktree `D:\Aethelgard_v12_custodio`, desde `claude/rebelum-v12` @ b451518). Detalle,
+cifras, matriz y pendientes: `docs/v12/CUSTODIO_E01_V12.md`.
+
+- **Hecho y comprobado ejecutando (PC, aislado, 14/11):** inspección del FBX (copia; SHA-256 del ZIP igual al del
+  paquete); escala 1,85 m; rig bípedo de 24 huesos (21 deformantes) con pesos propios rígidos por placas (≤ 2 influencias);
+  clips `e01__idle`, `e01__walk`, `e01__attack_prensa` horneados a 30 fps con IK de autoría (pies quietos, cadera 14,2 %,
+  manos a 1 cm del suelo en el impacto 0,90); GLB reimportado en Godot; integración APAGADA (interruptor propio
+  `meshy_e01`, solo GRUPOS[28]/[29], nunca al azar) con la Prensa del Umbral en el combate real (aviso en el clip, marca
+  fija a 0,65, en fila, una vez por ejecución y objetivo, Retroceso, recarga de 2 turnos propios en guardia, limpieza al
+  morir o cerrar).
+- **Pruebas:** `prueba_meshy_e01` SUPERADA; `fotos_meshy_e01` MANUAL sin errores (revisada); 10 regresiones SUPERADAS
+  (huella del combate incluida). Resúmenes en `D:\REBELUM_diagnostico\pruebas\2026-11-14_032221\` y `..._033850\`.
+- **Evidencias:** `D:\REBELUM_diagnostico\v12\custodio\` (p1_inspeccion, p2_rig, p3_clips, p6_godot).
+- **Límites:** 3 de 12 clips (sin muerte, golpe recibido ni guardia propios); 1 de 3 especiales; sin sonido propio; sin
+  medir rendimiento (otros Godot abiertos) ni Android.
+- **Archivos compartidos tocados:** `combate.gd` (ganchos «V12, Custodio»), `recursos.gd` (APAGADOS), `pruebas/lista_pruebas.txt`
+  (2 líneas), `docs/recursos.md` (1 fila), `docs/versiones/licencias_pendientes.txt` (1 línea `meshy_e01`).

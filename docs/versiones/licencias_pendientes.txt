@@ -87,5 +87,6 @@ vfx/vortice_fuego.png | Efecto de fuego (GLB aportado) | Origen sin registrar
 vfx/vortice_fuego.res | Efecto de fuego (GLB aportado) | Origen sin registrar
 zarzalin_completo | Zarzalín, enemigo del bestiario 01: modelo y texturas de Meshy (D-075; enemigos/zarzalin/) | Plan de Meshy sin confirmar
 cencerrante_completo | Cencerrante, segunda bestia del bestiario 01: modelo y texturas de Meshy (D-075; enemigos/cencerrante/) | Plan de Meshy sin confirmar
+meshy_e01 | Custodio de Porcelana (V12, fase 9, piloto APAGADO): malla y texturas del FBX de Meshy del usuario (Meshy_AI_Original_fantasy_game_enemy_Custodio_de_20261108); rig, pesos y clips propios (enemigos/meshy_e01/) | Plan de Meshy sin confirmar
 oakhaven_arte/munecos | Muñecos 2D de Oakhaven (posadera, Bastián, Doña Encina y Albar; derivados de los NPC de siempre) | El origen de sus originales (personajes/npc/) está sin registrar
 personajes/nix/ | Nix (prototipo V12, 13/11): geometría, texturas y cara propias de Blender; el esqueleto y los clips de andar y correr derivan del rig de Lya (Meshy) | Plan de Meshy sin confirmar (como los héroes v2 y v3)
