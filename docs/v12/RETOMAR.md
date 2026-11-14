@@ -554,12 +554,33 @@ Informe: `D:\REBELUM_laboratorio_plugins\laboratorio\INFORME_LABORATORIO.md`.
   - **Activos** (especialistas, en sus worktrees):
     - Custodio `meshy_e01` en `D:\Aethelgard_v12_custodio`;
     - Oakhaven jugable en `D:\Aethelgard_v12_oakhaven_jugable`.
+- **14/11, 05:30 — cierre de la noche:**
+  - **Integrado todo** lo de los especialistas:
+    - Custodio `meshy_e01`;
+    - Oakhaven jugable (gremio con Oro a 13, Diario con pistas, caravana y cerradura rúnica del arcón);
+    - vestuario canónico de Nix;
+    - Garon v2 y v3 andando;
+    - 4 correcciones de una revisión adversarial del código.
+  - **Validado:** `validado/v12/20261114-052612` en `c0b199a`, batería **171 · 0 · 78 · 0**.
+  - **APK NUEVA sin instalar:** `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261114-6da1c74.apk`, SHA-256
+    `794114686382954d3604ceb4e48208856555e81d540a99cb1a60427b19c1259c`. Sustituye a la `e318629`.
+  - **No hay especialistas activos.** Las ramas `claude/v12-*` de esta noche se conservan.
+  - **GitHub:** nada subido. La decisión pendiente está en `FASES_ENCARGO_COORDINADOR.md`, apartado «Decisiones».
 - **Siguiente acción concreta:**
-  - revisar e integrar las ramas `claude/v12-custodio` y `claude/v12-oakhaven-jugable` cuando terminen (copiando
-    archivos), pasar la batería y validar;
-  - después, el vestuario canónico de Nix (capucha, capa, faldones, medias, emblema, cetro) y la corrección de
-    `AvanzarDoble` en Garon v2 y v3;
-  - por la mañana, el guion del Redmi.
+  1. Por la mañana, el guion del Redmi (`docs/v12/GUION_REDMI_14_11.md`) con la APK `6da1c74`, respaldando y
+     restaurando la partida.
+  2. Pedir al usuario sus decisiones:
+     - la subida a GitHub;
+     - la Nix adulta frente a la *chibi*;
+     - el gremio con Oro a 13;
+     - aprobar «Las tres marcas del cantero»;
+     - las afinidades del Custodio;
+     - el catálogo y los PDF que faltan para la fase 4 y los 32 conjuntos.
+  3. Después, siguiendo `FASES_ENCARGO_COORDINADOR.md`:
+     - la emisión de iris y ornamentos de Nix y su encuadre `nix3d`;
+     - los 9 clips y los especiales a2 y a3 del Custodio;
+     - e02-e04;
+     - la alquimia (fase 8).
 
 ### Decisiones que se conservan
 

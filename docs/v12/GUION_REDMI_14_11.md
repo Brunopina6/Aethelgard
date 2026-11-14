@@ -2,7 +2,21 @@
 
 > Escrito durante la noche del 13 al 14/11. Esta noche NO se ha instalado nada ni se han tocado datos del teléfono.
 
-**APK compilada el 14/11 a las 03:30, SIN INSTALAR:**
+**APK que hay que usar (la más reciente), compilada el 14/11 a las 05:30, SIN INSTALAR:**
+- **Archivo:** `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261114-6da1c74.apk` (410,7 MB).
+- **SHA-256:** `794114686382954d3604ceb4e48208856555e81d540a99cb1a60427b19c1259c`.
+- **Código:** el validado `c0b199a` (batería 171 · 0 · 78 · 0) más solo documentación.
+- **Novedades respecto a la anterior:**
+  - **Experimental:** el vestuario de Nix (con «Nix (cuarta heroína)» y «Nix: modelo FBX» en Sí) y el Custodio
+    `meshy_e01`. El Custodio solo sale en los grupos 28 y 29 y en el teléfono no se puede forzar: queda para el PC.
+  - **ACTIVO por defecto:**
+    - el gremio con Oro a 13;
+    - el Diario con objetivos y pistas;
+    - la caravana en el Diario;
+    - el arcón del Concejo con su cerradura rúnica, en Oakhaven, casilla (50,5; 22);
+    - Garon v2 y v3 avanzan y retroceden andando.
+
+**APK anterior, compilada el 14/11 a las 03:30, sin instalar (sustituida por la de arriba):**
 - **Archivo:** `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261114-e318629.apk` (406,0 MB).
 - **Código:** commit `e318629`, que es el validado `84ff2c1` más solo documentación.
 - **SHA-256:** `de0475726d731fd30cf65007c3065efb6b48b8f5a0f4f03dadc3d40e7a67d50a`.
@@ -42,6 +56,10 @@
 | 7 | **Capa de Garon** (fase 6, si se integra) | Exploración y combate con Garon (original, v2 y v3): andar, girar, parar, atacar y defender | Bien sujeta a los hombros, sin atravesar; se mueve |
 | 8 | **Nix** (fase 5, si se integra) | Solo si el piloto llega a la APK, tras su interruptor | Escala y aspecto. Es un piloto, no la versión final |
 | 9 | **Gran Bosque** | Mipmaps y matas siguen APAGADOS por defecto; repetir las cuatro combinaciones si da tiempo | La referencia v694: 24,3 / 26,2 fps |
+
+| 10 | **Cerradura rúnica** (arcón del Concejo) | Oakhaven, casilla (50,5; 22): girar los anillos con el dedo, leer la inscripción, salir a medias con Atrás y volver | Se abre una sola vez, el premio no se repite al cargar y salir nunca bloquea |
+| 11 | **Diario y gremio** | Diario con misiones de Oakhaven y la caravana; gremio hasta Oro | Muestra objetivos y pistas vistas, nada futuro; Oro se alcanza con 13 |
+| 12 | **Garon v2/v3 en combate** | Protagonistas v2 o v3; atacar con Garon | Se acerca y se aleja andando (al alejarse, hacia atrás) sin deformarse |
 
 ## 3. Separar resultados
 
