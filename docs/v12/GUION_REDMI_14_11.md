@@ -2,7 +2,22 @@
 
 > Escrito durante la noche del 13 al 14/11. Esta noche NO se ha instalado nada ni se han tocado datos del teléfono.
 
-**APK MÁS RECIENTE (14/11, 16:15): v725, validada `eee2e36` (batería 174 · 0 · 90 · 0, sola), AÚN EN EL PC**
+**APK MÁS RECIENTE (14/11, 19:40): validada `5e5458d` (batería 175 · 0 · 91 · 0), AÚN EN EL PC**
+- **Archivo:** `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261114-5e5458d-local.apk` (419,0 MB).
+  SHA-256: `95489910bee7dfe0529ea14b29880308952f8a51966c8709737d735f88f3eb6d`.
+- **Respecto a la v725:** la invocación cinematográfica de Érebo en vídeo (`docs/v12/EREBO_CINEMATICA_V12.md`), APAGADA por defecto.
+- **Qué probar** (en Ajustes → «Érebo: invocación cinematográfica»; con Lya y la Armonía llena, usando el banco de pruebas):
+  1. Con «Abreviada» y con «Completa»:
+     - ¿se ve fluido, sin tirones, cortes ni bandas?
+     - ¿el sonido va sincronizado (agarre a 9,85 s y estallido a 17,0 s en la completa)?
+     - ¿cuánto tarda en empezar?
+     - ¿se cierra la app por memoria?
+  2. Tocar para saltar, incluso nada más empezar.
+  3. El daño debe aplicarse una sola vez y el combate seguir con normalidad.
+  4. Medir los FPS y el tiempo de fotograma con `dumpsys SurfaceFlinger --timestats`, y compararlos con los primeros planos de la invocación 3D (bajaban a unos 15 FPS).
+  5. Volver a dejar la opción en «No».
+
+**APK anterior (14/11, 16:15): v725, validada `eee2e36` (batería 174 · 0 · 90 · 0, sola), AÚN EN EL PC**
 - **Archivo:** `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261114-eee2e36-local.apk`.
   SHA-256: `3c9bd521c0ed15dc6cc1964958121259add34cbcef9f116160d5f05238731c8e`.
 - **Respecto a la v717 trae:**
