@@ -535,12 +535,31 @@ Informe: `D:\REBELUM_laboratorio_plugins\laboratorio\INFORME_LABORATORIO.md`.
     - Tabla completa en `INSPECCION_PASO1.md`.
   - **Coordinación:** desde el 14/11 existen la coordinación de sesiones (`D:\REBELUM_coordinacion`) y el gancho
     `proteger.sh` (bloquea fusiones de ramas, push forzado, reset duro y escrituras en las partidas reales).
-- **Siguiente acción concreta:** el paso 3, el orbe nativo de Érebo como opción de Auditoría APAGADA.
-  - Llevar el orbe de `proto_a_pixelpart` a la invocación de Érebo como opción de Auditoría APAGADA.
-  - Sincronizarlo con el agarre del orbe mediante un evento de animación.
-  - Limpiarlo al saltar la escena, interrumpirla, morir o cambiar de escena.
-  - Añadir una prueba nueva, pasar la batería completa, hacer capturas activado/desactivado y documentarlo.
-  - Subir solo eso, tras comprobar el diff y el remoto.
+- **14/11, 03:30 — avance de la noche** (detalle y estado de cada fase en
+  `docs/v12/encargos/FASES_ENCARGO_COORDINADOR.md`):
+  - **Hecho y validado en el PC** (`validado/v12/20261114-032918` en `84ff2c1`, batería 164 · 0 · 76 · 0):
+    - 3A, el orbe de Érebo (`5c045b7`);
+    - 3B, solo Lya invoca (`b451518`);
+    - 3C, Agua v12;
+    - 5, el piloto de Nix desde el FBX, SIN ropa;
+    - 6, la capa de Garon articulada.
+    - Todo lo nuevo va APAGADO y se enciende en Ajustes, solo en Auditoría.
+  - **APK de Auditoría SIN instalar:** `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261114-e318629.apk`,
+    SHA-256 `de0475…d50a`. Guion: `docs/v12/GUION_REDMI_14_11.md`.
+  - **GitHub, sin subir.** Decisión del usuario:
+    - subir los commits locales juntos;
+    - o subir solo `claude/v12-orbe-solo` @ `a4db536` (solo el orbe sobre `ed59483`) y rehacer la historia local.
+  - **Bloqueada:** la fase 4 (menús y catálogo de habilidades). Falta `CATALOGO_GENERAL_PROPUESTO.json` y los PDF de
+    Kael y del arsenal. Además, Kael no tiene ataques rúnicos (sus artes son magia de apoyo).
+  - **Activos** (especialistas, en sus worktrees):
+    - Custodio `meshy_e01` en `D:\Aethelgard_v12_custodio`;
+    - Oakhaven jugable en `D:\Aethelgard_v12_oakhaven_jugable`.
+- **Siguiente acción concreta:**
+  - revisar e integrar las ramas `claude/v12-custodio` y `claude/v12-oakhaven-jugable` cuando terminen (copiando
+    archivos), pasar la batería y validar;
+  - después, el vestuario canónico de Nix (capucha, capa, faldones, medias, emblema, cetro) y la corrección de
+    `AvanzarDoble` en Garon v2 y v3;
+  - por la mañana, el guion del Redmi.
 
 ### Decisiones que se conservan
 

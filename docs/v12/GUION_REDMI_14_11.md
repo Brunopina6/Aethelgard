@@ -1,7 +1,17 @@
 # Guion de pruebas en el Redmi (mañana del 14/11) — APK de Auditoría
 
-> Borrador escrito durante la noche del 13 al 14/11. Antes de empezar, completa la cabecera de la APK con lo que diga
-> `docs/v12/RETOMAR.md` (versión, commit y SHA-256). Esta noche NO se instala nada ni se tocan datos del teléfono.
+> Escrito durante la noche del 13 al 14/11. Esta noche NO se ha instalado nada ni se han tocado datos del teléfono.
+
+**APK compilada el 14/11 a las 03:30, SIN INSTALAR:**
+- **Archivo:** `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261114-e318629.apk` (406,0 MB).
+- **Código:** commit `e318629`, que es el validado `84ff2c1` más solo documentación.
+- **SHA-256:** `de0475726d731fd30cf65007c3065efb6b48b8f5a0f4f03dadc3d40e7a67d50a`.
+- **Comprobaciones:** batería del PC 164 · 0 · 76 · 0. Sin partidas, claves ni ajustes del editor. La carpeta real de
+  datos sin cambios.
+- **Contenido:** todo lo nuevo va APAGADO por defecto y se enciende en **Ajustes** (solo en Auditoría): «Érebo: orbe
+  experimental», «Magia Agua v12», «Nix (cuarta heroína)», «Nix: modelo FBX (piloto, sin ropa)» y «Capa de Garon
+  articulada».
+- Lleva modelos de Meshy con su plan sin confirmar (`NO_DISTRIBUIR`): **solo para pruebas personales**.
 
 ## 0. Preparación (siempre)
 
