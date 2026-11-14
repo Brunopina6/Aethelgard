@@ -54,6 +54,15 @@ const GIRO_ESCUDO := Vector3.ZERO
 const GIRO_CAPA := Vector3.ZERO
 const BAJAR_CAPA := 0.02                # cuánto baja la capa respecto al hueso Spine2 (metros)
 const ATRAS_CAPA := 0.14                # cuánto se separa de la espalda
+# 14/11/2026 (fase 6 del encargo del 13/11): la capa ARTICULADA (capa_garon.gd: la misma tela con huesos propios,
+# sujeta a la espalda real de cada variante, movimiento progresivo y sin atravesar cuerpo, brazos ni espadas). Opción
+# APAGADA por defecto (la de siempre, «rígida», queda igual y de respaldo). Se enciende con:
+#   - Engine.set_meta("capa_garon", "articulada")   (antes de crear a Garon; "rigida" la apaga)
+#   - el argumento de usuario «capa_articulada»     (godot ... -- capa_articulada)
+#   - Ajustes: user://ajustes.cfg, [garon] capa = "articulada"
+#   - CAPA_ARTICULADA_POR_DEFECTO = true            (cuando se apruebe tras verla en el Redmi)
+const CAPA_ARTICULADA_POR_DEFECTO := false
+const CapaArticulada := preload("res://capa_garon.gd")
 
 const RENOMBRAR := {
 	"thoughtful": "Paseo",          # parece que anda sin avanzar: no sirve de reposo en combate
@@ -287,10 +296,37 @@ func _crear_escudo() -> void:
 	_cargar(modelo, RUTA_ESCUDO, TAM_ESCUDO * gestos.escala, false)
 
 
+static func capa_articulada() -> bool:
+	if Engine.has_meta("capa_garon"):
+		return str(Engine.get_meta("capa_garon")) == "articulada"
+	var args := OS.get_cmdline_user_args()
+	if "capa_articulada" in args:
+		return true
+	if "capa_rigida" in args:
+		return false
+	var c := ConfigFile.new()
+	if c.load("user://ajustes.cfg") == OK and c.has_section_key("garon", "capa"):
+		return str(c.get_value("garon", "capa", "")) == "articulada"
+	return CAPA_ARTICULADA_POR_DEFECTO
+
+
 func _crear_capa() -> void:
 	if RUTA_CAPA == "" or not ResourceLoader.exists(RUTA_CAPA) or _i["Spine2"] < 0:
 		return
 	_medidas_capa()
+	var imagen := RUTA_CAPA.get_extension().to_lower() in ["png", "jpg", "jpeg", "webp"]
+	if imagen and capa_articulada() and _i["Neck"] >= 0 and gestos.idx.get("pecho", -1) >= 0:
+		var e: float = gestos.escala                 # la misma talla que _capa_desde_imagen
+		var k_largo := _capa_largo / (LARGO_CAPA * e)
+		_capa_curva = CURVA_CAPA * e * _capa_ancho / (ANCHO_CAPA * e)
+		_capa_fondo = _capa_curva * 1.4 + 0.16 * e * k_largo
+		capa = CapaArticulada.new()
+		capa.name = "Capa"
+		skel.add_child(capa)
+		capa.preparar(self, load(RUTA_CAPA), _capa_largo, _capa_ancho, _capa_curva, 0.16 * e * k_largo,
+			BAJAR_CAPA * e)
+		_mats_capa.append([capa.material, CapaArticulada.ONDA * _capa_largo])
+		return
 	capa = Node3D.new()
 	capa.name = "Capa"
 	skel.add_child(capa)
@@ -508,7 +544,9 @@ func _actualizar_equipo(sk: Skeleton3D) -> void:
 		var fuera: Vector3 = sk.get_bone_global_pose(_i["LeftHand"]).basis.orthonormalized().z
 		fuera = (fuera - largo_brazo * fuera.dot(largo_brazo)).normalized()
 		escudo.global_transform = g * Transform3D(Basis(largo_brazo.cross(fuera), largo_brazo, fuera), codo.lerp(muneca, 0.55))
-	if capa != null:
+	if capa is CapaArticulada:
+		capa.colocar(sk)
+	elif capa != null:
 		_colocar_capa(sk)
 
 

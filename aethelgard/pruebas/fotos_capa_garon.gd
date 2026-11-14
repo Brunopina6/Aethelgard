@@ -1,6 +1,7 @@
 extends SceneTree
 # La capa de Garon en todas sus poses (encargo del 13/11/2026: «la capa de Garon está mal puesta»). Con ventana:
 #   godot --path aethelgard --script res://pruebas/fotos_capa_garon.gd -- salida=<carpeta> [versiones=originales,v2,v3]
+#       [capa=rigida|articulada]   (14/11: sin «capa=», la que elija el juego; la rígida es la de siempre)
 #
 # Un estudio fijo (suelo, luz, tres cámaras que ven el MISMO fotograma: de frente a 3/4, de lado y de espaldas desde
 # arriba como en exploración) y el Garon de cada versión con sus métodos de siempre: reposo, andar, correr, Juicio,
@@ -24,11 +25,15 @@ const GUION := [
 	["reposo", 40, "reposo"],
 	["andar", 22, "andar_a"], ["", 9, "andar_b"],
 	["correr", 22, "correr_a"], ["", 6, "correr_b"],
+	["girar", 8, "media_vuelta_a"], ["", 8, "media_vuelta_b"],     # (14/11) media vuelta corriendo en el sitio
+	["volver", 10, "parar"], ["", 20, ""],                          # para y vuelve a mirar como antes
 	["reposo", 30, ""],
 	["juicio", 14, "juicio_salta"], ["", 12, "juicio_arriba"], ["", 8, "juicio_impacto"], ["", 18, "juicio_fin"],
 	["reposo", 40, ""],
 	["giro", 10, "giro_a"], ["", 9, "giro_b"], ["", 9, "giro_c"], ["", 9, "giro_d"], ["", 9, "giro_e"],
 	["reposo", 40, ""],
+	["cubrir", 25, "defensa"], ["", 15, "defensa_b"], ["fin_cubrir", 25, ""],   # (14/11) la Guardia
+	["reposo", 20, ""],
 	["victoria", 30, "victoria"], ["", 30, "victoria_b"],
 	["morir", 25, "derrota_a"], ["", 50, "derrota"],
 ]
@@ -43,6 +48,10 @@ var vistas: Array = []
 var fotos: Array = []                 # [nombre, [Image × 3]]
 var medidas: Array = []
 var estudio: Node3D
+var capa_modo := ""                   # "rigida", "articulada" o "" (la del juego)
+var giro_restante := 0.0
+var rapidez := 0.0                    # m/s hacia donde mira (andar y correr se desplazan: la tela reacciona a la marcha)
+var camaras: Array = []
 
 
 func _initialize() -> void:
@@ -51,6 +60,10 @@ func _initialize() -> void:
 			salida = a.substr(7)
 		elif a.begins_with("versiones="):
 			versiones = a.substr(10).split(",")
+		elif a.begins_with("capa="):
+			capa_modo = a.substr(5)
+	if capa_modo != "":
+		Engine.set_meta("capa_garon", capa_modo)
 	if salida == "":
 		salida = OS.get_user_data_dir().path_join("capa_garon")
 	DirAccess.make_dir_recursive_absolute(salida)
@@ -75,7 +88,7 @@ func _montar_estudio() -> void:
 	estudio.add_child(sol)
 	var suelo := MeshInstance3D.new()
 	suelo.mesh = PlaneMesh.new()
-	suelo.mesh.size = Vector2(8, 8)
+	suelo.mesh.size = Vector2(60, 60)   # (14/11: Garon ahora anda y corre de verdad)
 	var m := StandardMaterial3D.new()
 	m.albedo_color = Color(0.42, 0.45, 0.4)
 	suelo.material_override = m
@@ -91,6 +104,7 @@ func _montar_estudio() -> void:
 		vp.add_child(cam)
 		cam.look_at_from_position(c["pos"], Vector3(0, 0.95, 0))
 		vistas.append(vp)
+		camaras.append(cam)
 
 
 func _siguiente_version() -> void:
@@ -118,6 +132,8 @@ func _siguiente_version() -> void:
 	g = Node3D.new()
 	g.set_script(load(SCRIPTS[v]))
 	root.add_child(g)
+	rapidez = 0.0
+	giro_restante = 0.0
 	paso = 0
 	espera = 20
 	fotos = []
@@ -126,6 +142,18 @@ func _siguiente_version() -> void:
 func _process(_d: float) -> bool:
 	if g == null:
 		return false
+	if giro_restante != 0.0:
+		var p_giro := signf(giro_restante) * minf(absf(giro_restante), PI / 15.0)
+		g.rotate_y(p_giro)
+		giro_restante -= p_giro
+	if rapidez > 0.0:
+		var sk: Skeleton3D = g.get("skel")
+		var adelante: Vector3 = sk.global_transform.basis * g.get("gestos").adelante
+		adelante.y = 0.0
+		g.global_position += adelante.normalized() * rapidez * _d
+	var centro := Vector3(g.global_position.x, 0.0, g.global_position.z)   # las cámaras le siguen
+	for i in camaras.size():
+		camaras[i].look_at_from_position(CAMARAS[i]["pos"] + centro, Vector3(0, 0.95, 0) + centro)
 	if espera > 0:
 		espera -= 1
 		return false
@@ -147,6 +175,8 @@ func _process(_d: float) -> bool:
 
 
 func _accion(a: String) -> void:
+	if a != "":
+		rapidez = 0.0
 	match a:
 		"reposo":
 			if g.has_method("revivir") and g.get("_muerta"):
@@ -154,8 +184,21 @@ func _accion(a: String) -> void:
 			g.reposo()
 		"andar":
 			g.andar()
+			rapidez = float(g.get("vel_andar"))
 		"correr":
 			g.correr()
+			rapidez = float(g.get("vel_correr"))
+		"girar":
+			g.correr()
+			rapidez = float(g.get("vel_correr"))
+			giro_restante = PI
+		"volver":
+			g.reposo()
+			giro_restante = -PI
+		"cubrir":
+			g.cubrir(g.global_transform.basis * Vector3(-1, 0, 0))
+		"fin_cubrir":
+			g.fin_cubrir()
 		"juicio":
 			g.atacar_juicio(func(): pass)
 		"giro":
@@ -209,8 +252,13 @@ func _medir(n: String) -> void:
 	for mi in capa.find_children("*", "MeshInstance3D", true, false):
 		var m: Mesh = mi.mesh
 		var xs: Array = []
-		for v in m.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]:
-			var w: Vector3 = mi.global_transform * v
+		var puntos: Array = []
+		if capa.has_method("puntos_mundo"):         # la articulada: la tela como se ve (con sus huesos)
+			puntos = Array(capa.puntos_mundo())
+		else:
+			for v in m.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]:
+				puntos.append(mi.global_transform * v)
+		for w in puntos:
 			bajo = minf(bajo, w.y)
 			xs.append(w.dot(lado_capa))
 		if not xs.is_empty():

@@ -80,7 +80,9 @@ const NIX_POR_DEFECTO := false
 static func nix_v12() -> bool:
 	if Engine.has_meta("nix_v12"):
 		return bool(Engine.get_meta("nix_v12"))
-	return "nix_v12" in OS.get_cmdline_user_args() or NIX_POR_DEFECTO
+	# V12 (14/11): y, SOLO en la APK de Auditoría o en el editor, la opción de Ajustes ([calidad_pruebas] nix_v12)
+	return "nix_v12" in OS.get_cmdline_user_args() or NIX_POR_DEFECTO \
+		or load("res://prototipos/calidad_proto.gd").extra_activo("nix_v12")
 
 
 static func naira_v12() -> bool:

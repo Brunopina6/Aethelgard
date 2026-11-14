@@ -12,10 +12,16 @@ extends "res://maga_3d.gd"
 #     magia_culminante (P07), y espera con «await» al instante en que sale («lanzamiento» del JSON);
 #   - nix_ayudante.gd pone el material de los héroes v2 (heroe_v2.gdshader) a su atlas, la cara y el parpadeo;
 #   - LOD por distancia (visibility_range) entre «cuerpo_nix», «cuerpo_nix_lod1» y «cuerpo_nix_lod2».
+#
+# 14/11, PILOTO desde el FBX del usuario (personajes/nix/fbx/nix_fbx.gd, interruptor «nix_fbx», APAGADO): con él, carga
+# nix_fbx.glb (la Nix «base lisa» del FBX, sin ropa todavía) y su JSON; el cetro va por socket en «arma_d» (el del
+# inventario o el provisional), sin LOD manuales (los genera el importador) y concentrarse empieza por «canalizar» (los
+# mechones se elevan con retraso). Apagado, todo lo de abajo es exactamente lo de antes.
 
 const RUTA_NIX := "res://personajes/nix/nix.glb"
 const JSON_CLIPS := "res://personajes/nix/nix_clips.json"
 const Ayudante := preload("res://personajes/nix/nix_ayudante.gd")
+const NixFBX := preload("res://personajes/nix/fbx/nix_fbx.gd")
 const CLIPS := {"Idle": "guardia", "Walking": "andar", "Running": "correr", "Casting": "magia_lanzar"}
 const BUCLES := ["reposo", "guardia", "andar", "correr", "derrota", "magia_concentrar", "defensa"]
 # hechizo (escuela de magia_negra.gd) -> clip
@@ -29,6 +35,8 @@ var _clips := {}                         # contrato: nombre -> {duracion, bucle,
 var _largo_cristal := LARGO_CRISTAL
 var _i_arma := -1
 var _exploracion := false
+var _fbx := false                        # piloto del FBX (nix_fbx.gd)
+var _ruta_json := JSON_CLIPS
 
 
 func _init() -> void:
@@ -39,11 +47,18 @@ func _init() -> void:
 	usa_vara = false
 	vel_andar = 1.30                        # sin medir (prueba_anim_pies.gd no la tiene): provisional, piernas cortas
 	vel_correr = 4.0
+	_fbx = NixFBX.activo()
+	if _fbx:
+		ruta_modelo = NixFBX.GLB
+		_ruta_json = NixFBX.JSON_CLIPS
+		usa_vara = true                     # el cetro, por socket (arma_d)
+		vel_andar = 1.55                    # SIN MEDIR: andar de captura de Lya con la cadera ×1,153 (piernas de Nix)
+		vel_correr = 5.4
 
 
 func _ready() -> void:
-	if FileAccess.file_exists(JSON_CLIPS):
-		var d = JSON.parse_string(FileAccess.get_file_as_string(JSON_CLIPS))
+	if FileAccess.file_exists(_ruta_json):
+		var d = JSON.parse_string(FileAccess.get_file_as_string(_ruta_json))
 		if d is Dictionary:
 			_clips = d.get("clips", {})
 			_largo_cristal = float(d.get("largo_cristal", LARGO_CRISTAL))
@@ -56,7 +71,11 @@ func _ready() -> void:
 	v2.name = "HeroeNix"
 	add_child(v2)
 	v2.preparar(self, "Nix")
-	_poner_lod()
+	if _fbx:
+		if vara != null:
+			_largo_cristal = _vara_punta    # la magia sale de la punta del cetro
+	else:
+		_poner_lod()
 	reposo()
 
 
@@ -108,6 +127,39 @@ func punto_magia() -> Vector3:
 	return super.punto_magia()
 
 
+# ---------------------------------------------------------------- cetro del piloto FBX (por socket)
+# Como maga_3d.gd _crear_vara, pero si Nix no lleva arma equipada usa la malla del cetro provisional (solo el aspecto).
+func _crear_vara() -> void:
+	if not _fbx or not ResourceLoader.exists("res://inventario.gd"):
+		super._crear_vara()
+		return
+	var inv = load("res://inventario.gd")
+	var arma: Dictionary = inv.arma_de(heroe)
+	if arma.is_empty() or not ResourceLoader.exists(arma.get("modelo", "")):
+		arma = inv.ARMAS.get(NixFBX.CETRO_PROVISIONAL, {})
+	if arma.is_empty() or not ResourceLoader.exists(arma["modelo"]):
+		return
+	vara = Node3D.new()
+	vara.name = "CetroNix"
+	skel.add_child(vara)
+	var largo: float = gestos.escala * arma["largo"]
+	var mi := MeshInstance3D.new()
+	mi.mesh = load(arma["modelo"])
+	mi.material_override = load("res://material_arma.gd").de_arma(arma, 0.4)
+	mi.scale = Vector3.ONE * largo
+	vara.add_child(mi)
+	_vara_punta = arma["punta"] * largo
+	gestos.al_terminar = _actualizar_vara
+
+
+# El cetro sigue al hueso «arma_d» de cada clip (como los héroes v2).
+func _actualizar_vara(sk: Skeleton3D) -> void:
+	if not _fbx or _i_arma < 0:
+		super._actualizar_vara(sk)
+		return
+	vara.global_transform = sk.global_transform * sk.get_bone_global_pose(_i_arma)
+
+
 # ---------------------------------------------------------------- combate (los mismos nombres que maga_3d.gd)
 func reposo() -> void:
 	play("Idle", 0.25)
@@ -152,9 +204,17 @@ func fin_magia() -> void:
 
 
 # Mientras prepara un hechizo (estado «conjuro» de combate.gd): el bastón ante sí y la mano sobre el cristal (bucle).
+# Piloto FBX: antes, «canalizar» (0,9 s: los mechones delanteros suben con retraso y el superior responde) y luego el
+# bucle, que mantiene los mechones arriba ondulando.
 func concentrar() -> void:
 	if not _muerta:
-		reproducir("magia_concentrar", 0.25)
+		if _fbx and anim.has_animation("canalizar") and String(anim.assigned_animation) != "magia_concentrar":
+			var d := reproducir("canalizar", 0.2)
+			get_tree().create_timer(maxf(d - 0.1, 0.05)).timeout.connect(func():
+				if is_instance_valid(self) and not _muerta and anim.assigned_animation == "canalizar":
+					anim.play("magia_concentrar", 0.15), CONNECT_ONE_SHOT)
+		else:
+			reproducir("magia_concentrar", 0.25)
 		v2.poner_expresion("entrecerrados")
 
 

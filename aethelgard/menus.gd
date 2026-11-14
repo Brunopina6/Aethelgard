@@ -852,6 +852,53 @@ func _pintar_ajustes() -> void:
 			feo.add_child(be)
 		cuerpo.add_child(feo)
 		cuerpo.add_child(_texto("Solo Auditoría: espiral violeta, negra y plateada al agarrar el orbe. No cambia el daño.", 16, COLOR_SUAVE))
+		# V12 (14/11), fase 3C: la magia Agua mejorada (vfx/agua_v12.gd), APAGADA por defecto. Solo Auditoría o editor.
+		var AGV = load("res://vfx/agua_v12.gd")
+		var ag_act: bool = AGV.activo()
+		var fag := HBoxContainer.new()
+		fag.add_theme_constant_override("separation", 8)
+		fag.add_child(_texto("Magia Agua v12", 18, COLOR_SUAVE))
+		for op in [[false, "No"], [true, "Sí"]]:
+			var so: bool = op[0]
+			var ba := _boton(("● " if so == ag_act else "○ ") + op[1], 18, Vector2(120, 34), "agua_v12:%s" % ("si" if so else "no"))
+			ba.pressed.connect(func():
+				AGV.elegir(so)
+				Sonido.efecto("ui_tic")
+				_pintar_de_nuevo())
+			fag.add_child(ba)
+		cuerpo.add_child(fag)
+		cuerpo.add_child(_texto("Solo Auditoría: Agua, Torrente y Maremoto con anticipación, orbe, impacto y ola nuevos. No cambia el daño.", 16, COLOR_SUAVE))
+		# V12 (14/11): pilotos de la noche para probar en el Redmi, APAGADOS por defecto (solo Auditoría o editor):
+		# Nix (nix_v12, cuarta heroína), su modelo desde el FBX (nix_fbx, sin ropa todavía) y la capa articulada de
+		# Garon ([garon] capa, capa_garon.gd). Las tres se leen de user://ajustes.cfg; se notan al entrar en una zona o
+		# combate nuevo.
+		for op_p in [["Nix (cuarta heroína)", "calidad_pruebas", "nix_v12", true],
+				["Nix: modelo FBX (piloto, sin ropa)", "calidad_pruebas", "nix_fbx", true],
+				["Capa de Garon articulada", "garon", "capa", "articulada"]]:
+			var sec_p: String = op_p[1]
+			var clave_p: String = op_p[2]
+			var valor_si = op_p[3]
+			var cfg_p := ConfigFile.new()
+			var act_p: bool = cfg_p.load("user://ajustes.cfg") == OK and str(cfg_p.get_value(sec_p, clave_p, "")) == str(valor_si)
+			var f_piloto := HBoxContainer.new()
+			f_piloto.add_theme_constant_override("separation", 8)
+			f_piloto.add_child(_texto(op_p[0], 18, COLOR_SUAVE))
+			for op in [[false, "No"], [true, "Sí"]]:
+				var so: bool = op[0]
+				var bp := _boton(("● " if so == act_p else "○ ") + op[1], 18, Vector2(120, 34), "piloto:%s:%s" % [clave_p, "si" if so else "no"])
+				bp.pressed.connect(func():
+					var c := ConfigFile.new()
+					if FileAccess.file_exists("user://ajustes.cfg"):
+						c.load("user://ajustes.cfg")
+					c.set_value(sec_p, clave_p, valor_si if so else (false if valor_si is bool else "rigida"))
+					c.save("user://ajustes.cfg")
+					if clave_p != "capa":
+						Engine.set_meta(clave_p, so)          # (nix_v12/nix_fbx: la meta manda sobre el archivo)
+					Sonido.efecto("ui_tic")
+					_pintar_de_nuevo())
+				f_piloto.add_child(bp)
+			cuerpo.add_child(f_piloto)
+		cuerpo.add_child(_texto("Solo Auditoría: pilotos de Nix y de la capa de Garon. Se notan en la siguiente zona o combate.", 16, COLOR_SUAVE))
 	load("res://zonas3d/oakhaven/mundo_vivo.gd").opcion_ajustes(self, cuerpo)   # V12, «Oakhaven: mundo vivo» (mundo_vivo_v12)
 	# Combate (12/11): la animación de combate v12 de los protagonistas v2 (combate_anim_v12.gd, [combate] anim_v12), sus
 	# cámaras ([combate] camaras) y el ATB quieto mientras actúa un héroe ([combate] pausa_atb; 13/11). Por defecto, la de siempre.

@@ -1003,3 +1003,27 @@ En `D:\REBELUM_diagnostico\bestiario\2026-11-09\cencerrante\`:
 - **Coordinador (`prueba_integridad` y el ejecutor):** decidir qué hacer con la caída al salir: repetir la prueba una
   vez si el código es -1073741819 y la salida ya dice «FALLOS: 0», o buscar la causa con un Godot con símbolos.
 - **Sonido:** el bronce y la cuerda, con las señales `aviso` e `impacto`.
+
+## 14/11/2026 02:20 — Nix piloto desde el FBX del usuario (rama claude/v12-nix-piloto)
+
+Informe completo: `docs/v12/NIX_PILOTO_FBX.md`. En corto:
+- **Hecho y comprobado (PC):** el FBX Silver Sentinel (Nix base lisa) reducido de 436.194 a 11.968 triángulos con la
+  cara protegida; textura rehorneada (1024 en el GLB, 2048 fuera); esqueleto común de los héroes v2 re-situado,
+  48 huesos (36 deforman, 6 de mechones) y 4 pesos normalizados; mechones despegados del pecho; 23 clips con
+  «canalizar» (mechones con retraso). En Godot tras el interruptor `nix_fbx` (APAGADO): `prueba_nix_fbx` SUPERADA
+  (35/35), `prueba_nix_v12` SUPERADA, combate real con el FBX encendido sin fallos salvo dos comprobaciones propias del
+  modelo antiguo; capturas en `D:\REBELUM_diagnostico\v12\expansion\nix\piloto_fbx\`.
+- **Pendiente:** toda la ropa canónica como piezas separadas, cetro propio, faldones, emisión de iris y ornamentos,
+  reajuste adulto de clips, velocidades de andar/correr medidas, brillo en escenarios reales, Redmi y rendimiento.
+
+## 14/11/2026 02:30 — Capa de Garon (V12, fase 6), rama `claude/v12-capa-garon`
+
+- Informe completo: `docs/v12/CAPA_GARON_V12.md`. Commits ff7aaaf y 2f198bc (locales, sin subir).
+- Capa ARTICULADA nueva (`aethelgard/capa_garon.gd`: misma tela y talla, esqueleto propio de 21 huesos con Skin,
+  sujeta al pecho y a los hombros, ajustada a la espalda de cada variante, movimiento progresivo, choques con cuerpo y
+  las dos espadas). Opción APAGADA (`garon_3d.gd`, `capa_articulada()`); la rígida de siempre queda igual por defecto.
+- Prueba nueva `prueba_capa_garon` (en `lista_pruebas.txt`) y `fotos_capa_garon` ampliada. Pasada aislada: 11 SUPERADAS
+  por defecto, 8 con `capa_articulada`; capturas antes/después en `D:\REBELUM_diagnostico\v12\capa_garon\`.
+- Hallado sin tocar: `AvanzarDoble` rompe el cuerpo de los v2/v3 (cadera a −0,04 m y 0,55 m de lado); la derrota de los
+  v2/v3 hunde el cuerpo 0,29-0,56 m.
+- Pendiente: verla y medirla en el Redmi; opción de Ajustes en `menus.gd`.

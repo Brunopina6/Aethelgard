@@ -59,6 +59,7 @@ const Brama := preload("res://combate_bramavidrio.gd")
 # V12: qué versión del modelo de Bramavidrio (1, el gusano de anillos; 2, la Sierpe de la Vela): un solo interruptor
 const BramaVersion := preload("res://enemigos/bramavidrio/bramavidrio_version.gd")
 const HeroesV2 := preload("res://personajes/heroes_v2/heroes_v2.gd")   # V12, fase B: héroes v2 (interruptor heroes_v2, APAGADO)
+const AguaV12 := preload("res://vfx/agua_v12.gd")    # V12, fase 3C: magia Agua mejorada (vfx/agua_v12.gd, APAGADA por defecto)
 const AnimV12 := preload("res://combate_anim_v12.gd")   # V12: animación de combate de los héroes v2 (combate_anim_v12, APAGADO)
 const Turnos := preload("res://combate_turnos_v12.gd")   # V12: línea de turnos visible (interruptor turnos_v12, APAGADO)
 const Acc12 := preload("res://combate_acciones_v12.gd")   # V12: esgrima de Garon y magia blanca de Lya (APAGADAS)
@@ -6507,6 +6508,7 @@ func _carga_magia(o: Dictionary, magia: String, tam := 1.0) -> Node2D:
 	var chispas := _particulas(raiz.position, Color(color, 0.9), Color(color, 0.0), 30, 1.0, Vector2(40, 110),
 		90.0, Vector2(0, -1), 10.0, Vector2(0, -60), 0.06, true)
 	raiz.set_meta("chispas", chispas)
+	if magia == "Agua" and AguaV12.activo(): AguaV12.carga(self, o, raiz)   # V12, fase 3C: anticipación (apagada: nada)
 	return raiz
 
 
@@ -6574,6 +6576,7 @@ func _proyectil(desde: Vector2, hasta: Vector2, magia: String) -> void:
 	bola.add_child(estela)
 	var luz := _luz(color, 1.4, 3.0)
 	bola.add_child(luz)
+	if magia == "Agua" and AguaV12.activo(): AguaV12.proyectil(self, bola)   # V12, fase 3C: orbe de agua (apagada: nada)
 	# vuela con un pequeño arco
 	var medio := desde.lerp(hasta, 0.5) + Vector2(0, -90)
 	var t := create_tween()
@@ -6804,6 +6807,7 @@ func _maremoto(objs: Array, impacto_en: Callable) -> void:
 	espuma.color_ramp = g
 	ola.add_child(espuma)
 	ola.add_child(_luz(Color(0.4, 0.7, 1.0), 1.6, 6.0))
+	if AguaV12.activo(): AguaV12.ola(self, ola, dur)   # V12, fase 3C: la ola con cuerpo y su rastro (apagada: nada)
 	var t := create_tween()
 	t.tween_property(ola, "position:x", hasta, dur)
 	for obj in objs:                               # el golpe llega cuando la ola pasa por cada enemigo
@@ -6943,6 +6947,9 @@ func _tormenta(objs: Array, impacto_en: Callable) -> void:
 # Agua: ondas en el suelo, un géiser que lo levanta, gotas que giran en espiral,
 # una burbuja que lo envuelve y una lluvia de gotas al caer.
 func _efecto_agua(centro: Vector2, suelo: Vector2, potencia := 1.0) -> void:
+	if AguaV12.activo():                          # V12, fase 3C: el impacto mejorado (mismas tiradas; apagada: lo de siempre)
+		AguaV12.impacto(self, centro, suelo, potencia)
+		return
 	var q := potencia                             # varios enemigos a la vez: menos partículas por cada uno
 	var azul := Color(0.45, 0.75, 1.0)
 	if potencia == 1.0:
