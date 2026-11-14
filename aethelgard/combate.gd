@@ -5547,6 +5547,7 @@ func _teatro_erebo(obj: Dictionary, es_jefe: bool, al_resultado: Callable) -> vo
 
 	# entra: fundido a negro, y del negro sale el escenario (los modelos ya cargados)
 	await create_tween().tween_property(negro, "color:a", 1.0, 0.35).finished
+	var tapado := _tapar_combate(capa_t)              # (el combate de debajo ya no se ve: deja de dibujarse)
 	for i in 4:
 		await get_tree().process_frame
 	create_tween().tween_property(pantalla, "modulate:a", 1.0, 0.4)
@@ -5572,6 +5573,7 @@ func _teatro_erebo(obj: Dictionary, es_jefe: bool, al_resultado: Callable) -> vo
 	await inv.terminada
 	inv_erebo = null
 	await get_tree().create_timer(0.3).timeout
+	_destapar_combate(tapado)                        # antes del fundido de salida, con el negro aún opaco
 	# sale: fundido a negro y de vuelta al combate
 	var t := create_tween()
 	t.tween_property(pantalla, "modulate:a", 0.0, 0.3)
@@ -5580,6 +5582,36 @@ func _teatro_erebo(obj: Dictionary, es_jefe: bool, al_resultado: Callable) -> vo
 	await t.finished
 	Engine.time_scale = 1.0
 	capa_t.queue_free()
+
+
+# Rendimiento (14/11, medido con pruebas/medir_erebo_planos.gd, cifras deterministas): mientras el teatro de Érebo tapa
+# la pantalla entera (el negro opaco de debajo cubre los 1280×720 del lienzo), el combate de debajo no se ve, pero se
+# seguía dibujando cada fotograma: las ventanas 3D de los personajes (en el combate medido, 3 ventanas, 650 160 píxeles
+# y ~57 000 primitivas por fotograma: más que el propio teatro, 451 584 píxeles en el móvil) y el fondo y los luchadores
+# en 2D. Se apagan al quedar tapado y vuelven ANTES del fundido de salida, con el negro aún opaco (sus ventanas se
+# redibujan en los fotogramas siguientes): no cambia nada de lo que se ve. «fuera» (tocar para saltar) sigue igual.
+func _tapar_combate(excepto: Node) -> Array:
+	var r := []
+	for vp in find_children("*", "SubViewport", true, false):
+		var modo: int = vp.render_target_update_mode
+		if not excepto.is_ancestor_of(vp) and modo != SubViewport.UPDATE_DISABLED and modo != SubViewport.UPDATE_ONCE:
+			r.append([vp, vp.render_target_update_mode])
+			vp.render_target_update_mode = SubViewport.UPDATE_DISABLED
+	for n in [escena, fondo_nodo]:
+		if n != null and is_instance_valid(n) and n is CanvasItem and n.visible:
+			r.append([n, null])
+			n.visible = false
+	return r
+
+
+func _destapar_combate(tapado: Array) -> void:
+	for par in tapado:
+		if not is_instance_valid(par[0]):
+			continue
+		if par[1] == null:
+			par[0].visible = true
+		else:
+			par[0].render_target_update_mode = par[1]
 
 
 # Momentos de la cinemática: el título aparece cuando surge Érebo y se va cuando se hunde.

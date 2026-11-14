@@ -59,6 +59,21 @@ void fragment() {
 }
 """
 
+# Rendimiento (14/11): el cuerpo ENTERO (disolver = 0, casi toda la invocación). Con disolver = 0 el de arriba escribe
+# exactamente esto (corte ≥ 0,075: nunca descarta; b = 0: ni borde ni emisión), pero calcula el ruido en cada píxel y su
+# «discard» obliga al Mali a resolver la profundidad tarde. malioc (Mali-G57, pasada base del perfil bajo): 17,0 ciclos
+# por fragmento y ZS tardío con la disolución; 12,4 y ZS temprano con este. Se usa este mientras disolver es 0
+# (_poner_disolver) y el de la disolución solo mientras surge o se hunde.
+const SHADER_CUERPO_ENTERO := """
+shader_type spatial;
+uniform sampler2D textura : source_color, filter_linear_mipmap;
+void fragment() {
+	vec4 c = texture(textura, UV);
+	ALBEDO = c.rgb;
+	ROUGHNESS = 0.8;
+}
+"""
+
 const SHADER_CHARCO := """
 shader_type spatial;
 render_mode unshaded, blend_mix, cull_disabled, depth_draw_never;
@@ -98,17 +113,19 @@ void fragment() {
 	float fres = pow(1.0 - clamp(dot(NORMAL, VIEW), 0.0, 1.0), 1.6);
 	float centro = 1.0 - fres;
 	vec3 c = mix(borde.rgb, nucleo.rgb * (1.4 + pulso), pow(centro, 3.0));
-	vec3 q = normalize(pos) * 6.0;
-	vec3 iq = floor(q);
-	float d1 = 9.0, d2 = 9.0;
-	for (int x = -1; x <= 1; x++) for (int y = -1; y <= 1; y++) for (int z = -1; z <= 1; z++) {
-		vec3 o = vec3(float(x), float(y), float(z));
-		vec3 pt = iq + o + vec3(hash(iq + o), hash(iq + o + 3.1), hash(iq + o + 7.7));
-		float d = length(q - pt);
-		if (d < d1) { d2 = d1; d1 = d; } else if (d < d2) { d2 = d; }
+	if (grietas > 0.0) {      // (sin grietas la mezcla de abajo no cambia nada: no se calculan; rendimiento, 14/11)
+		vec3 q = normalize(pos) * 6.0;
+		vec3 iq = floor(q);
+		float d1 = 9.0, d2 = 9.0;
+		for (int x = -1; x <= 1; x++) for (int y = -1; y <= 1; y++) for (int z = -1; z <= 1; z++) {
+			vec3 o = vec3(float(x), float(y), float(z));
+			vec3 pt = iq + o + vec3(hash(iq + o), hash(iq + o + 3.1), hash(iq + o + 7.7));
+			float d = length(q - pt);
+			if (d < d1) { d2 = d1; d1 = d; } else if (d < d2) { d2 = d; }
+		}
+		float linea = 1.0 - smoothstep(0.0, 0.05 + 0.1 * grietas, d2 - d1);
+		c = mix(c, nucleo.rgb * (2.2 + pulso * 1.5), linea * grietas);
 	}
-	float linea = 1.0 - smoothstep(0.0, 0.05 + 0.1 * grietas, d2 - d1);
-	c = mix(c, nucleo.rgb * (2.2 + pulso * 1.5), linea * grietas);
 	c += vec3(0.5, 0.1, 0.6) * fres * 0.7;
 	ALBEDO = c;
 }
@@ -123,6 +140,9 @@ var _halo: Sprite3D
 var charco: MeshInstance3D
 var _mat_charco: ShaderMaterial
 var _mat_cuerpo: ShaderMaterial
+var _mat_entero: ShaderMaterial    # el cuerpo sin disolver (SHADER_CUERPO_ENTERO)
+var _mat_puesto: ShaderMaterial = null
+var _mallas_cuerpo: Array = []
 var humo: CPUParticles3D
 var volutas: CPUParticles3D
 var destellos: CPUParticles3D
@@ -229,17 +249,136 @@ func _ajustar_suelo() -> void:
 # La malla de Mixamo llega sin color: textura de Meshy + disolución.
 func _poner_material() -> void:
 	_mat_cuerpo = ShaderMaterial.new()
-	_mat_cuerpo.shader = Shader.new()
-	_mat_cuerpo.shader.code = SHADER_CUERPO
+	_mat_cuerpo.shader = sombreador(SHADER_CUERPO)
+	_mat_entero = ShaderMaterial.new()
+	_mat_entero.shader = sombreador(SHADER_CUERPO_ENTERO)
 	if ResourceLoader.exists(TEXTURA):
-		_mat_cuerpo.set_shader_parameter("textura", load(TEXTURA))
-	for mi in find_children("*", "MeshInstance3D", true, false):
-		mi.material_override = _mat_cuerpo
+		var tex = load(TEXTURA)
+		_mat_cuerpo.set_shader_parameter("textura", tex)
+		_mat_entero.set_shader_parameter("textura", tex)
+	_mallas_cuerpo = find_children("*", "MeshInstance3D", true, false)
+	_poner_disolver(0.0)
+
+
+# Rendimiento (14/11): los sombreadores de Érebo se comparten entre invocaciones (uno por código, mientras dure la
+# partida; se guardan en la raíz del árbol para que no se pierdan aunque el script se descargue entre combates, y se
+# liberan con ella al cerrar, antes que el servidor de dibujo): antes cada invocación creaba los suyos y el móvil los
+# volvía a preparar en mitad de la cinemática. Lo mismo con un material de cada tipo de partícula (los de
+# StandardMaterial3D comparten sombreador mientras viva alguno).
+static func _guardados() -> Dictionary:
+	var arbol := Engine.get_main_loop() as SceneTree
+	if arbol == null or arbol.root == null:
+		return {}
+	if not arbol.root.has_meta("erebo_sombreadores"):
+		arbol.root.set_meta("erebo_sombreadores", {})
+	return arbol.root.get_meta("erebo_sombreadores")
+
+
+static func sombreador(codigo: String) -> Shader:
+	var d := _guardados()
+	if not d.has(codigo):
+		var s := Shader.new()
+		s.code = codigo
+		d[codigo] = s
+	return d[codigo]
+
+
+static func _guardar_material(clave: String, m: Material) -> void:
+	var d := _guardados()
+	if not d.has(clave):
+		d[clave] = m
+
+
+# Rendimiento (14/11, pruebas/medir_erebo_planos.gd): en el móvil, la primera vez que se dibuja cada material se compila
+# su sombreador y la imagen se para. Los de Érebo (cuerpo con y sin disolución, charco, orbe, partículas, sprites,
+# esquirlas) y los que se pasen en «extra» (la sombra) se compilaban en mitad de la cinemática: al surgir, al asomar, al
+# sacar el orbe y al estallar, en los primeros planos (cinco programas nuevos en la invocación de siempre). Aquí se
+# dibujan todos UNA vez, al prepararse, en una ventana oculta de 64×64 que comparte el mundo del teatro (mismo entorno y
+# luces: las mismas variantes) y en una capa que la cámara del teatro no ve. No se ve nada; solo cambia cuándo se compila.
+const CAPA_PRECALENTAR := 1 << 19          # capa 20
+
+func precalentar(cam_teatro: Camera3D, extra: Array = []) -> void:
+	if cam_teatro == null or not is_inside_tree() or get_world_3d() == null or skel == null:
+		return
+	var mascara := cam_teatro.cull_mask
+	cam_teatro.cull_mask = mascara & ~CAPA_PRECALENTAR
+	var pv := SubViewport.new()
+	pv.size = Vector2i(64, 64)
+	pv.world_3d = get_world_3d()
+	pv.msaa_3d = get_viewport().msaa_3d
+	pv.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	add_child(pv)
+	var cam := Camera3D.new()
+	cam.cull_mask = CAPA_PRECALENTAR
+	pv.add_child(cam)
+	var centro := global_position + Vector3(0, ALTURA * 0.5, 0)
+	cam.look_at_from_position(centro + Vector3(0, 0.4, 3.2) * maxf(scale.y, 0.01), centro)
+	cam.current = true
+	# copias de lo que nace durante la cinemática (partículas en cuadro y en malla, como las ráfagas y las esquirlas)
+	var copias := []
+	var cristal := PrismMesh.new()
+	cristal.size = Vector3(0.035, 0.07, 0.02) * ALTURA
+	for malla in [null, cristal]:
+		var p := _particulas(2, 0.5, _brillo_tex, 0.1 * ALTURA, malla)
+		add_child(p)
+		p.global_position = centro
+		p.emitting = true                                    # (ya en el árbol: el precálculo usa su posición)
+		copias.append(p)
+	var f := _sprite(_aro_tex, Color(1, 1, 1, 0.5), 0.01)
+	f.global_position = centro
+	copias.append(f)
+	# todo lo de Érebo (y lo de «extra») a la vista de esa cámara, sin sombra y en su capa; se devuelve como estaba
+	var guardado := [[self, visible]]
+	visible = true
+	for n in extra:
+		if n is Node3D and is_instance_valid(n):
+			guardado.append([n, n.visible])
+			n.visible = true
+	var geo := []
+	for raiz in [self] + extra:
+		if is_instance_valid(raiz):
+			for g in raiz.find_children("*", "GeometryInstance3D", true, false):
+				geo.append([g, g.layers, g.visible, g.cast_shadow])
+				g.layers = CAPA_PRECALENTAR
+				g.visible = true
+				g.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_mat_charco.set_shader_parameter("abierto", 1.0)
+	# (process_frame y no frame_post_draw: sin ventana, en las pruebas, el segundo no llega nunca. Al volver de cada
+	# espera ya se ha dibujado el fotograma anterior, el que tenía cada estado.)
+	_poner_disolver(0.5)                                     # 1.º fotograma: el cuerpo con disolución
+	await get_tree().process_frame
+	_poner_disolver(0.0)                                     # 2.º: el cuerpo entero
+	await get_tree().process_frame
+	for g in geo:
+		if is_instance_valid(g[0]):
+			g[0].layers = g[1]
+			g[0].visible = g[2]
+			g[0].cast_shadow = g[3]
+	for par in guardado:
+		if is_instance_valid(par[0]):
+			par[0].visible = par[1]
+	_mat_charco.set_shader_parameter("abierto", 0.0)
+	for c in copias:
+		c.queue_free()
+	pv.queue_free()
+	if is_instance_valid(cam_teatro):
+		cam_teatro.cull_mask = mascara
+
+
+# Cuánto se ha disuelto el cuerpo (0 = entero). Con 0, el material sin disolución (mismo resultado, más barato).
+func _poner_disolver(v: float) -> void:
+	_mat_cuerpo.set_shader_parameter("disolver", v)
+	var m: ShaderMaterial = _mat_entero if v <= 0.0 else _mat_cuerpo
+	if m != _mat_puesto:
+		_mat_puesto = m
+		for mi in _mallas_cuerpo:
+			if is_instance_valid(mi):
+				mi.material_override = m
 
 
 func disolver(desde: float, hasta: float, dur: float) -> void:
 	var t := create_tween()
-	t.tween_method(func(v): _mat_cuerpo.set_shader_parameter("disolver", v), desde, hasta, dur)
+	t.tween_method(_poner_disolver, desde, hasta, dur)
 	await t.finished
 
 
@@ -321,8 +460,7 @@ func _crear_efectos() -> void:
 	plano.size = Vector2(1.6, 1.6) * e * 0.6
 	charco.mesh = plano
 	_mat_charco = ShaderMaterial.new()
-	_mat_charco.shader = Shader.new()
-	_mat_charco.shader.code = SHADER_CHARCO
+	_mat_charco.shader = sombreador(SHADER_CHARCO)
 	_mat_charco.set_shader_parameter("abierto", 0.0)
 	charco.material_override = _mat_charco
 	charco.position = Vector3(0, 0.01, 0)
@@ -374,8 +512,7 @@ func _crear_efectos() -> void:
 	esfera.rings = 16
 	orbe.mesh = esfera
 	_mat_orbe = ShaderMaterial.new()
-	_mat_orbe.shader = Shader.new()
-	_mat_orbe.shader.code = SHADER_ORBE
+	_mat_orbe.shader = sombreador(SHADER_ORBE)
 	_mat_orbe.set_shader_parameter("borde", COLOR_BORDE)
 	_mat_orbe.set_shader_parameter("nucleo", COLOR_NUCLEO)
 	orbe.material_override = _mat_orbe
@@ -421,19 +558,50 @@ func _particulas(cantidad: int, vida: float, tex: Texture2D, tam := 1.0, malla: 
 	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	m.vertex_color_use_as_albedo = true
 	if malla == null:
-		var q := QuadMesh.new()
-		q.size = Vector2.ONE * tam      # el tamaño va en la malla (escalar partículas no es fiable en Compatibility)
 		m.albedo_texture = tex
 		m.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
-		q.material = m
-		p.mesh = q
+		p.mesh = octogono(tam, m)       # el tamaño va en la malla (escalar partículas no es fiable en Compatibility)
+		_guardar_material("particula_cuadro", m)
 	else:
 		p.mesh = malla
 		p.material_override = m
+		_guardar_material("particula_malla", m)
 	# En Compatibility las partículas aún no nacidas se dibujan en el centro: se precalcula una vida.
 	p.preprocess = vida
 	p.emitting = false
 	return p
+
+
+# Rendimiento (14/11, sobredibujado de los primeros planos): las partículas de Érebo usan texturas radiales que son
+# transparentes del todo fuera del círculo inscrito (GradientTexture2D radial de radio 0,5 y último color con alfa 0, sin
+# repetir). En vez del cuadrado, un octógono que rodea ese círculo: deja fuera solo esquinas invisibles, un 17,2 % menos
+# de fragmentos por partícula, y la misma imagen. Mismas coordenadas de textura que el QuadMesh de antes (frente a +Z).
+static func octogono(tam: float, material: Material = null) -> ArrayMesh:
+	var r := tam * 0.5
+	var k := r * tan(PI / 8.0)                               # medio lado del octógono circunscrito
+	var pts := [Vector2(-k, r), Vector2(k, r), Vector2(r, k), Vector2(r, -k), Vector2(k, -r), Vector2(-k, -r),
+		Vector2(-r, -k), Vector2(-r, k)]                         # en el sentido de las agujas del reloj, visto desde +Z
+	var v := PackedVector3Array()
+	var uv := PackedVector2Array()
+	var nrm := PackedVector3Array()
+	for p in pts:
+		v.append(Vector3(p.x, p.y, 0.0))
+		uv.append(Vector2(p.x / maxf(tam, 0.0001) + 0.5, 0.5 - p.y / maxf(tam, 0.0001)))
+		nrm.append(Vector3(0, 0, 1))
+	var idx := PackedInt32Array()
+	for i in range(1, 7):
+		idx.append_array([0, i, i + 1])
+	var arr := []
+	arr.resize(Mesh.ARRAY_MAX)
+	arr[Mesh.ARRAY_VERTEX] = v
+	arr[Mesh.ARRAY_NORMAL] = nrm
+	arr[Mesh.ARRAY_TEX_UV] = uv
+	arr[Mesh.ARRAY_INDEX] = idx
+	var am := ArrayMesh.new()
+	am.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
+	if material != null:
+		am.surface_set_material(0, material)
+	return am
 
 
 func _rampa(colores: Array, offsets: Array, alfa: float) -> Gradient:
@@ -656,7 +824,7 @@ func punta_en(clip: String, t: float) -> Vector3:
 # final, y se queda levitando «levita» metros (D8). Dura «dur» segundos.
 func emerger_quieto(dur := 1.9, levita := 0.05) -> void:
 	_efectos(false)
-	_mat_cuerpo.set_shader_parameter("disolver", 1.0)
+	_poner_disolver(1.0)
 	ajuste.position.y = _y_base - ALTURA * 1.05
 	visible = true
 	anim.play(nombres.get("Idle", "Reposo"), 0.0)
@@ -674,7 +842,7 @@ func emerger_quieto(dur := 1.9, levita := 0.05) -> void:
 	var sube := _tw().set_parallel(true)
 	var s := dur - 0.4
 	sube.tween_property(ajuste, "position:y", _y_base + levita / maxf(scale.y, 0.01), s).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	sube.tween_method(func(v): _mat_cuerpo.set_shader_parameter("disolver", v), 1.0, 0.0, s * 1.05)
+	sube.tween_method(_poner_disolver, 1.0, 0.0, s * 1.05)
 	await _espera(s - 0.6)
 	if cancelado: return
 	gestos.quitar("cansada", 0.6)                           # en los últimos 0,6 s levanta la máscara
@@ -772,7 +940,7 @@ func _tw() -> Tween:
 # Sube desde el charco a la vez que se «des-disuelve» entre humo.
 func emerger(rapido := false) -> void:
 	_efectos(false)
-	_mat_cuerpo.set_shader_parameter("disolver", 1.0)
+	_poner_disolver(1.0)
 	ajuste.position.y = _y_base - ALTURA * 1.05
 	visible = true
 	var t := _tw()
@@ -786,7 +954,7 @@ func emerger(rapido := false) -> void:
 	var dur := 1.2 if rapido else 1.7
 	var sube := _tw().set_parallel(true)
 	sube.tween_property(ajuste, "position:y", _y_base, dur).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	sube.tween_method(func(v): _mat_cuerpo.set_shader_parameter("disolver", v), 1.0, 0.0, dur * 1.1)
+	sube.tween_method(_poner_disolver, 1.0, 0.0, dur * 1.1)
 	await _tramo("Emerger", 1.5, 6.0, 4.5 / dur, 0.0)
 	if cancelado: return
 	_efectos(true)
@@ -933,7 +1101,7 @@ func hundirse(rapido := false) -> void:
 	var dur := 0.7 if rapido else 1.0
 	var baja := _tw().set_parallel(true)
 	baja.tween_property(ajuste, "position:y", _y_base - ALTURA * 1.05, dur).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN).set_delay(0.3)
-	baja.tween_method(func(v): _mat_cuerpo.set_shader_parameter("disolver", v), 0.0, 1.0, dur + 0.2).set_delay(0.15)
+	baja.tween_method(_poner_disolver, 0.0, 1.0, dur + 0.2).set_delay(0.15)
 	_rafaga(global_position + Vector3(0, ALTURA * 0.4, 0), COLOR_HUMO_CLARO, 16, 0.7, 0.14 * ALTURA)
 	await _tramo("Alzar", 1.4, 2.4, 1.0)
 	if cancelado: return
@@ -965,7 +1133,7 @@ func limpiar() -> void:
 	_aplasta = 0.0
 	_efectos(false)
 	_mat_charco.set_shader_parameter("abierto", 0.0)
-	_mat_cuerpo.set_shader_parameter("disolver", 0.0)
+	_poner_disolver(0.0)
 	_mat_orbe.set_shader_parameter("grietas", 0.0)
 	_mat_orbe.set_shader_parameter("temblor", 0.0)
 	ajuste.position.y = _y_base

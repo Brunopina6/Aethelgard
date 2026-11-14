@@ -131,6 +131,7 @@ func _salida(pies: Vector3, lugar: Vector3) -> void:
 
 func _preparar(ctx: Dictionary) -> void:
 	var raiz: Node = ctx.objetivo.get_parent()
+	var nuevo := erebo == null
 	if erebo == null:
 		erebo = load("res://erebo_3d.gd").new()
 		erebo.calidad = "movil" if es_movil() else "alta"
@@ -145,6 +146,11 @@ func _preparar(ctx: Dictionary) -> void:
 	if sombra == null:
 		sombra = load("res://sombra_invocacion.gd").new()
 		raiz.add_child(sombra)
+	# rendimiento (14/11): sus sombreadores y los de la sombra se compilan ya, sin verse (erebo_3d.precalentar), y no en
+	# los primeros planos
+	# («-- sin_precalentar_erebo»: sin él, para medir el antes con la misma cronología)
+	if nuevo and erebo.has_method("precalentar") and not "sin_precalentar_erebo" in OS.get_cmdline_user_args():
+		await erebo.precalentar(camara if camara != null else get_viewport().get_camera_3d(), [sombra])
 
 
 func _reenviar(nombre: String) -> void:
