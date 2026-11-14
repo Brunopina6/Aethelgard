@@ -161,9 +161,37 @@ func _ready() -> void:
 	for lado in ["Right", "Left"]:
 		_largos[lado] = [_largo_rest(lado + "Arm", lado + "ForeArm"), _largo_rest(lado + "ForeArm", lado + "Hand")]
 	_crear_efectos()
+	evento.connect(_orbe_v12_evento)          # V12 (14/11): orbe experimental, APAGADO por defecto
 	gestos.al_terminar = _post_pose
 	reposo()
 	await _ajustar_suelo()
+
+
+# V12 (14/11), EXPERIMENTAL: el efecto nativo del orbe (erebo_orbe_v12.gd), solo si su opción está activa (Auditoría o
+# editor; en pruebas, «erebo_orbe»). Nace en el evento «orbe_fuera» (el instante en que la mano agarra y saca el orbe,
+# en las dos invocaciones) y se quita al estallar, al hundirse, al cancelar (limpiar) o al salir del árbol con Érebo.
+# Solo presentación: no toca daño, dados ni tiempos.
+var _orbe_v12: Node3D = null
+
+func _orbe_v12_evento(nombre: String) -> void:
+	match nombre:
+		"orbe_fuera":
+			_orbe_v12_quitar()
+			var E = load("res://erebo_orbe_v12.gd")
+			if E.activo():
+				_orbe_v12 = E.new()
+				_orbe_v12.calidad = calidad
+				_orbe_v12.reducir_destellos = reducir_destellos
+				_orbe_v12.orbe = orbe
+				add_child(_orbe_v12)
+		"estalla", "vacia", "se_hunde", "desaparece":
+			_orbe_v12_quitar()
+
+
+func _orbe_v12_quitar() -> void:
+	if _orbe_v12 != null and is_instance_valid(_orbe_v12):
+		_orbe_v12.quitar()
+	_orbe_v12 = null
 
 
 func _hueso(fin: String) -> int:
@@ -922,6 +950,7 @@ func hundirse(rapido := false) -> void:
 
 # Deja a Érebo como al principio (también al saltar la cinemática).
 func limpiar() -> void:
+	_orbe_v12_quitar()
 	for t in _tweens:
 		if t != null and t.is_valid():
 			t.kill()
