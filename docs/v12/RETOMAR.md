@@ -702,3 +702,23 @@ Hechas por tres agentes en worktrees aislados, cada uno revisado por otro agente
   - El trabajo es del agente, corregido por el coordinador tras la revisión: subpasos rígidos y centros de cuadro solo tras un giro rápido.
   - Contraprueba: 6 fallos con la capa anterior.
 - **`prueba_velador_v12`:** falló una vez en la batería y pasó sola sin cambios. Es estadística (media de PV perdidos), así que queda anotada como inestable.
+
+### 14/11, noche: invocación cinematográfica de Érebo en vídeo (encargo «segunda producción cinematográfica»)
+Todo está en `docs/v12/EREBO_CINEMATICA_V12.md`. Es EXPERIMENTAL y está APAGADA por defecto: Ajustes →
+«Érebo: invocación cinematográfica», solo en Auditoría. La invocación de siempre no cambia.
+- **Producción:** Blender por script (`animaciones/erebo/fuentes/cinematica_erebo.py`, `montaje_erebo.py` y `sonido/`), con el modelo aprobado de Érebo.
+  - Versión completa de 20 s y abreviada de 6,8 s.
+  - Agarre medido: ningún dedo atraviesa el orbe; quedan a 3,3-4,8 mm.
+  - Sonido original más paquetes de Sonniss, con su licencia leída.
+- **Vídeos:**
+  - Para Godot: `aethelgard/videos/erebo_invocacion_{completa,abreviada}.ogv` (Theora 960×540, 6,4 y 2,3 MB). Solo entran en la APK de Auditoría.
+  - Para revisar: `D:\REBELUM_diagnostico\erebo_cine\final\*.mp4`.
+- **Reglas:**
+  - El daño se aplica una sola vez, con la misma tirada.
+  - El ATB es exactamente el de la invocación de siempre (`ATB_TEATRO`, medido con `pruebas/medir_erebo_teatro.gd`).
+  - Se puede saltar, también durante el fundido.
+  - Si el vídeo falla, sale el teatro de siempre.
+- **Pruebas:** `prueba_erebo_video` sin fallos. Medida en tiempo real en el PC: llega al final del vídeo, fotograma de 33 ms y ninguno de más de 50 ms.
+- **PENDIENTE:**
+  - Que el usuario vea y oiga los vídeos.
+  - Redmi: decodificación de Theora, sincronía del audio, memoria y carga, y comprobar que con el vídeo desaparece la caída a 15 FPS de los primeros planos.

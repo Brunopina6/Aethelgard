@@ -5426,7 +5426,38 @@ func _invocar_sobre(obj: Dictionary) -> void:
 			out["dano"] = obj["hp"]
 		if out["dano"] > 0:
 			_quitar_pv(obj, out["dano"])
-	if ResourceLoader.exists("res://invocacion_erebo.gd") and ResourceLoader.exists("res://erebo_idle.fbx"):
+	# V12 (14/11): la invocación cinematográfica en vídeo (invocacion_erebo_video.gd), opción de Auditoría APAGADA por
+	# defecto. Solo cambia lo que se ve: el dado es el de invocacion_erebo.gd (una tirada, los jefes siempre) y el daño
+	# se aplica aquí, una vez, al acabar o saltar el vídeo. Si el vídeo no se reproduce, el teatro de siempre.
+	# ATB: la misma regla que las animaciones v12 (pausa_atb, activa por defecto): el vídeo da EXACTAMENTE el tiempo de
+	# ATB que habría dado la invocación de siempre con ese resultado (medido: VID.ATB_TEATRO). Corre hasta el menor de
+	# esos tiempos y se para; al acabar, se abona lo que falte según el resultado. Ni más turnos ni menos.
+	var VID = load("res://invocacion_erebo_video.gd") if ResourceLoader.exists("res://invocacion_erebo_video.gd") else null
+	var ruta_vid: String = VID.ruta_para_ahora() if VID != null else ""
+	var visto_video := false
+	if ruta_vid != "":
+		var nueva_sel: bool = ResourceLoader.exists("res://invocacion_erebo_nueva.gd") and load("res://invocacion_erebo_nueva.gd").elegida()
+		var pausa_v: bool = AnimV12.pausa_atb()
+		var tope: float = VID.atb_teatro(nueva_sel, false)
+		if pausa_v:
+			set_meta("c12_accion", int(get_meta("c12_accion", 0)) + 1)
+			set_meta("c12_atb_resto", tope)
+		visto_video = await VID.reproducir(self, ruta_vid, func(): return saltar_invocacion)
+		var corrido: float = tope - maxf(float(get_meta("c12_atb_resto", 0.0)), 0.0)
+		if pausa_v:
+			set_meta("c12_accion", maxi(0, int(get_meta("c12_accion", 0)) - 1))
+			set_meta("c12_atb_resto", 0.0)
+		if visto_video:
+			var exito_v: bool = es_jefe or randf() < INVOCACION["prob_muerte"]
+			for a in OS.get_cmdline_user_args():          # pruebas: -- erebo=exito / erebo=fallo
+				if a.begins_with("erebo="):
+					exito_v = es_jefe or a.substr(6) == "exito"
+			al_resultado.call({"exito": exito_v, "muerte": exito_v and not es_jefe})
+			if pausa_v:
+				_avanzar_atb(VID.atb_teatro(nueva_sel, exito_v) - corrido)
+	if visto_video:
+		pass
+	elif ResourceLoader.exists("res://invocacion_erebo.gd") and ResourceLoader.exists("res://erebo_idle.fbx"):
 		await _teatro_erebo(obj, es_jefe, al_resultado)
 	else:                                          # sin los archivos de Érebo: solo se tira el dado
 		await _espera_invocacion(0.6)
@@ -5684,6 +5715,22 @@ func _textura_fondo() -> Texture2D:
 		if (n is Sprite2D or n is TextureRect) and n.texture != null:
 			return n.texture
 	return null
+
+
+# Avanza el ATB de todos «seg» segundos de golpe, en pasos de 1/30 s y con la misma cuenta que _process (el «Lento»
+# de la magia negra incluido), para que el orden de llegada a la cola sea el mismo. Lo usa la invocación en vídeo.
+func _avanzar_atb(seg: float) -> void:
+	var paso := 1.0 / 30.0
+	var t := 0.0
+	while t < seg - 0.0001:
+		var d := minf(paso, seg - t)
+		for f in heroes + enemigos:
+			if f["hp"] > 0 and f["atb"] < ATB_MAX:
+				var mult: float = MN.mult_vel(f) if f.has("mn") else 1.0
+				f["atb"] = min(ATB_MAX, f["atb"] + f["vel"] * mult * d)
+				if f["atb"] >= ATB_MAX:
+					cola.append(f)
+		t += d
 
 
 func _espera_invocacion(seg: float) -> void:
