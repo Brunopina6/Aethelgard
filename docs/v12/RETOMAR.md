@@ -741,3 +741,28 @@ de Oakhaven y Pastos Verdes; después, el siguiente lote de la matriz (personaje
   siguen BLOQUEADOS (faltan sus PDF y el catálogo).
 - **Redmi:** nada nuevo instalado. Al reconectar, lo de siempre (restaurar `ajustes.cfg`, borrar `banco_pruebas.save`,
   comprobar SHA) y probar también el cantero (legibilidad de las placas, la losa con el dedo).
+
+### 14/11, 23:30: cierre de la noche (prioridades 1-3 y un lote de la matriz)
+- **Validado:** `720d193` (etiqueta `validado/v12/20261114-232613`), batería 175 · 0 · 92 · 0 (`2026-11-14_224714`).
+  - En la batería anterior (`b92af51`), `prueba_gorthor_v12` falló una vez; sola pasa 4 de 4. Queda como
+    INTERMITENTE: sus combates dependen del azar global, que comparten otros nodos.
+- **Commits locales (sin subir):**
+  - `a5a519e`: talleres.
+  - `0f460ab`: cantero.
+  - `9a9be6c`: documentación.
+  - `1beaf1e`: Custodio, Avance del Portón, golpe y derrota.
+  - `b92af51`: pulido, 8 defectos.
+  - `720d193`: arreglos de la revisión adversarial.
+- **Documentos:** `CANTERO_V12.md`, `PULIDO_RECORRIDO_14_11.md` y `CUSTODIO_E01_V12.md` §8.
+- **APK:** `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261114-720d193-local.apk`, en el PC. El guion de
+  pruebas está en `GUION_REDMI_14_11.md`.
+- **Siguiente tarea exacta:** el Sello de Clausura (e01_a3) del Custodio. Ficha en `ataques_propuestos.json`:
+  - un círculo de 1,3 m a un máximo de 5 m, fijado antes de activar;
+  - anticipación de 1,30 s, ventana activa [1,30, 1,50) y 9-13 de daño.
+
+  Mismo método que el Avance: el clip en `p2_clips.py` sobre una copia del `.blend` y la lógica en
+  `combate_meshy_e01.gd`, con su prueba. Después, los clips alert, turn y guard.
+- **Pendiente de decisiones del usuario:**
+  - aprobar el cantero como canon y encenderlo por defecto;
+  - ver y oír los vídeos de Érebo;
+  - las cifras propuestas del Custodio.

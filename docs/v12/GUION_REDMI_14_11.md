@@ -2,7 +2,28 @@
 
 > Escrito durante la noche del 13 al 14/11. Esta noche NO se ha instalado nada ni se han tocado datos del teléfono.
 
-**APK MÁS RECIENTE (14/11, 19:40): validada `5e5458d` (batería 175 · 0 · 91 · 0), AÚN EN EL PC**
+**APK MÁS RECIENTE (14/11, 23:30): validada `720d193` (batería 175 · 0 · 92 · 0), AÚN EN EL PC**
+- **Archivo:** `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261114-720d193-local.apk` (419,1 MB).
+  SHA-256: `2c3e5eb13fafd1303b1f29c604b74474d994690a1979f8ff48f2b69b32d392f9`.
+- **Respecto a la de `5e5458d`:**
+  - la misión «Las tres marcas del cantero» completa: PROPUESTA, en Ajustes o en el banco de pruebas
+    (`CANTERO_V12.md`);
+  - talleres más claros;
+  - el Custodio con el Avance del Portón, el golpe y la derrota (con su interruptor, desde el banco);
+  - 8 arreglos del recorrido de Oakhaven y Pastos Verdes (`PULIDO_RECORRIDO_14_11.md`).
+  - Lleva también la invocación de Érebo en vídeo (sigue apagada).
+- **Qué probar, además de lo de abajo:**
+  1. **El cantero** (banco → «Misión del cantero: Activa» → Oakhaven):
+     - ¿se leen las tres placas a la distancia de juego?
+     - ¿el aprendiz anima bien en el perfil bajo?
+     - abrir y abandonar la losa con el dedo;
+     - el Diario con sus cuatro pasos;
+     - el polvo en la Alquimia (en la botica de Mirta).
+  2. **Custodio** (banco → Custodio): la franja del Avance, la embestida y la derrota de rodillas.
+  3. **Ferro:** la tienda no ofrece vender el Hierro de la Falla mientras él lo espera.
+  4. **Gorthor:** su prueba del PC falló una vez en batería y pasó 4 de 4 sola. Observar si en el teléfono hay algo raro.
+
+**APK anterior (14/11, 19:40): validada `5e5458d` (batería 175 · 0 · 91 · 0), AÚN EN EL PC**
 - **Archivo:** `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261114-5e5458d-local.apk` (419,0 MB).
   SHA-256: `95489910bee7dfe0529ea14b29880308952f8a51966c8709737d735f88f3eb6d`.
 - **Respecto a la v725:** la invocación cinematográfica de Érebo en vídeo (`docs/v12/EREBO_CINEMATICA_V12.md`), APAGADA por defecto.
