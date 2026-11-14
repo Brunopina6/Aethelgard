@@ -125,9 +125,9 @@ func marcar_partida_prueba() -> void:
 		return
 	lbl_prueba = Label.new()
 	lbl_prueba.text = "PARTIDA DE PRUEBA · tu partida de siempre no cambia"
-	lbl_prueba.position = Vector2(340, 4)
+	lbl_prueba.position = Vector2(16, 4)             # (14/11: arriba a la izquierda; en el centro pisaba el contador de FPS)
 	lbl_prueba.size = Vector2(600, 24)
-	lbl_prueba.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl_prueba.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	lbl_prueba.add_theme_font_size_override("font_size", 16)
 	lbl_prueba.add_theme_color_override("font_color", Color(1.0, 0.85, 0.5, 0.85))
 	lbl_prueba.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
@@ -150,7 +150,7 @@ func _poner_boton_banco() -> void:
 	if boton_banco == null:
 		boton_banco = Button.new()
 		boton_banco.text = "Volver al banco"
-		boton_banco.position = Vector2(1050, 34)
+		boton_banco.position = Vector2(16, 96)       # (arriba a la izquierda: a la derecha tapaba CAL y RND)
 		boton_banco.custom_minimum_size = Vector2(210, 48)
 		boton_banco.add_theme_font_size_override("font_size", 19)
 		boton_banco.focus_mode = Control.FOCUS_NONE     # (no roba el foco del mando a la escena)

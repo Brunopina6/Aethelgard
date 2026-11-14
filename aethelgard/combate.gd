@@ -2054,7 +2054,8 @@ func _turno_enemigo(f: Dictionary) -> void:
 		return
 	# huir (en una «zona limpia», con el grupo muy por encima, los enemigos débiles huyen solos)
 	var limpia: bool = load("res://progreso.gd").zona_limpia(Engine.get_meta("zona", "llanura"))
-	if p != "jefe" and p != "bosque" and p != "coloso" and limpia and randf() < 0.7:   # (los jefes no huyen)
+	# (V12, 14/11: en el banco de pruebas de Auditoría el grupo va a nivel 12 a propósito y nadie huye; fuera, igual)
+	if p != "jefe" and p != "bosque" and p != "coloso" and limpia and not Engine.get_meta("banco_pruebas", false) 			and randf() < 0.7:   # (los jefes no huyen)
 		await _huir(f)
 		_fin_turno_enemigo(f)
 		return

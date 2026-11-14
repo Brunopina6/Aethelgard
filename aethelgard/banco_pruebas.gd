@@ -211,7 +211,7 @@ func _pintar() -> void:
 	cuerpo.add_child(_texto("Combates de prueba (al terminar se vuelve aquí)", 24, Estilo.ORO))
 	for k in COMBATES:
 		_caso(k, COMBATES[k], _combate.bind(k))
-	cuerpo.add_child(_texto("Exploración de prueba (para volver: el botón «Volver al banco», arriba a la derecha)", 24, Estilo.ORO))
+	cuerpo.add_child(_texto("Exploración de prueba (para volver: el botón «Volver al banco», arriba a la izquierda)", 24, Estilo.ORO))
 	for k in EXPLORAR:
 		_caso(k, EXPLORAR[k], _explorar.bind(k))
 

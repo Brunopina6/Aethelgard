@@ -161,6 +161,20 @@ func _b() -> void:
 	_ok(G.nivel_magia("Lya", "Agua") == 3, "B: Lya no tiene Maremoto (Agua nivel %d)" % G.nivel_magia("Lya", "Agua"))
 	await _cerrar(c)
 
+	# (14/11, visto en el Redmi) a nivel 12 en la llanura es «zona limpia»: fuera del banco los débiles huyen; dentro, no
+	c = await _combate("garon")
+	_ok(load("res://progreso.gd").zona_limpia("llanura"), "B: la llanura no es zona limpia a nivel %d" % BP.NIVEL_COMBATE)
+	var huidos := 0
+	for vuelta in 6:
+		for e in c.enemigos:
+			if e["hp"] > 0 and not e.get("huido", false):
+				seed(1000 + vuelta)
+				await c._turno_enemigo(e)
+				if e.get("huido", false):
+					huidos += 1
+	_ok(huidos == 0, "B: en el banco han huido %d enemigos" % huidos)
+	await _cerrar(c)
+
 	c = await _combate("custodio")
 	var hay: bool = c.enemigos.any(func(e): return e["clave"] == "meshy_e01" and load("res://combate_meshy_e01.gd").es(e))
 	_ok(hay, "B: el combate del Custodio no lo trae con su personalidad")
