@@ -597,3 +597,54 @@ Informe: `D:\REBELUM_laboratorio_plugins\laboratorio\INFORME_LABORATORIO.md`.
   - solo se usa la Auditoría, respaldando y restaurando su partida;
   - MIUI bloquea `adb install`: se copia la APK a Descargas y la instala el usuario;
   - las medidas del PC no son resultados de Android.
+
+## RELEVO 14/11, mañana: validación de lo de la noche (LEER PRIMERO)
+
+### Git
+- **Rama:** `claude/rebelum-v12`, con commits LOCALES encima del validado `c0b199a`:
+  - `8200909`: banco de pruebas de Auditoría;
+  - `f47964c`: correcciones del banco tras la revisión adversarial y arreglo de la capa tras un giro instantáneo;
+  - `bd858f8`: cara y cetro de Nix.
+- **Remoto:** `origin/claude/rebelum-v12` = `a4db536`.
+  - Es solo el orbe de Érebo sobre `ed59483`, subido el 14/11 como avance normal y AUTORIZADO.
+  - La rama local NO contiene `a4db536`: es una copia del orbe con otro hash, el de `5c045b7`. Para publicar lo demás habrá que integrar el remoto en la local sin perder ninguno de los dos lados. Eso necesita autorización, y el gancho bloquea esa operación.
+- **Puntos de recuperación:**
+  - `respaldo/v12-antes-validacion-20261114` → `19ba694`;
+  - `respaldo/origin-rebelum-v12-antes-orbe` → `ed59483`.
+- **Sin versionar, a propósito:**
+  - `aethelgard/personajes/nix/fbx/anterior_14_11/` (la Nix anterior; también está en `c0b199a`);
+  - y, ajenos, `.agents/`, `.codex/`, `.verificacion-local/`, `docs/continuidad/` y `CLAUDE.proyectos-respaldo-20261114.md`.
+
+### Hecho y comprobado en el PC, en el proyecto real y sin otros Godot a la vez
+- **Banco de pruebas** (solo Auditoría o editor): accesos sin comandos a Érebo, Agua, Nix, la capa, los protagonistas, el Custodio, Oakhaven y la misión del cantero.
+  - Su partida es aislada y rehecha desde BASE: nada es permanente.
+  - Revisión adversarial con 5 defectos, todos corregidos.
+  - `prueba_banco_pruebas` y su variante `_3d` pasan.
+- **Capa de Garon:** arreglo SALTO_GIRO.
+  - `prueba_capa_garon_estados`: 526 ok. La contraprueba sin el arreglo da 16 fallos, todos de giro brusco y reaparecer.
+  - Capturas de combate de las tres variantes: utilizables.
+  - Capturas de regiones: «andar» y «correr» son clips en el sitio, y algunas salen tapadas o lejanas.
+  - **Pendiente:** capturas con MOVIMIENTO REAL (`fotos_capa_garon_movimiento`).
+  - **Pendiente:** el roce de 1 a 5 triángulos de la hoja en Juicio y Giro, que la prueba tolera hasta 6.
+- **Nix:**
+  - Cara y cetro corregidos. La cara mejora pero no queda idéntica al FBX.
+  - Ya va en la fila de la exploración, solo con su interruptor.
+  - `prueba_nix_fbx` 60/60.
+  - **Decisión del usuario:** proporciones realistas frente a los *chibi* (revisión en `D:\REBELUM_diagnostico\v12\nix_revision_14_11\`).
+- **Gremio con Oro a 13:** aprobado. Cubierto por `prueba_gremio` (cobro único) y `prueba_gremio_progresion` (desde cero y persistencia).
+- **Custodio:** afinidades neutras PROVISIONALES, documentadas.
+- **Kael:** siguen faltando `CATALOGO_GENERAL_PROPUESTO.json`, el PDF de Kael y el del arsenal. Conserva su comportamiento actual.
+- **Interferencias:**
+  - El fallo de `prueba_audio` (312 ms) era la CPU compartida: sola da 82 ms.
+  - La batería de las 11:00 se paró porque el árbol cambiaba a mitad de pasada. No vale como validación.
+
+### Redmi (REDMI A7 Pro, Android 16, conectado y autorizado)
+- **Instalada:** la v694 (`1204dd4`), sin tocar.
+- **Respaldo verificado** (538 archivos con el mismo SHA-256): `D:\REBELUM_respaldos\2026-11-14_redmi_auditoria_antes_v694_a_nueva`.
+- MIUI rechaza `adb install`. La v713 (`8200909`) está en Descargas, pero **es obsoleta**: con la portada que sale por defecto no se llega al banco. **No instalarla.**
+
+### Siguiente acción concreta
+1. Terminar las capturas de la capa con movimiento real y revisarlas.
+2. Pasar la batería completa SOLA, sin otros Godot ni Blender abiertos.
+3. Compilar la APK nueva y sustituir la v713 en Descargas (la instala el usuario).
+4. Seguir el guion del Redmi, con la v2 y la v3 de pie y los vecinos de Kael primero.
