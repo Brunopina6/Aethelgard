@@ -874,7 +874,8 @@ func _pintar_ajustes() -> void:
 		# combate nuevo.
 		for op_p in [["Nix (cuarta heroína)", "calidad_pruebas", "nix_v12", true],
 				["Nix: modelo FBX (piloto con vestuario)", "calidad_pruebas", "nix_fbx", true],
-				["Capa de Garon articulada", "garon", "capa", "articulada"]]:
+				["Capa de Garon articulada", "garon", "capa", "articulada"],
+				["Oakhaven: misión del cantero (propuesta)", "mundo", "propuestas_v12", true]]:   # 14/11: autorizada en Auditoría
 			var sec_p: String = op_p[1]
 			var clave_p: String = op_p[2]
 			var valor_si = op_p[3]
@@ -892,13 +893,21 @@ func _pintar_ajustes() -> void:
 						c.load("user://ajustes.cfg")
 					c.set_value(sec_p, clave_p, valor_si if so else (false if valor_si is bool else "rigida"))
 					c.save("user://ajustes.cfg")
-					if clave_p != "capa":
+					if clave_p in ["nix_v12", "nix_fbx"]:
 						Engine.set_meta(clave_p, so)          # (nix_v12/nix_fbx: la meta manda sobre el archivo)
 					Sonido.efecto("ui_tic")
 					_pintar_de_nuevo())
 				f_piloto.add_child(bp)
 			cuerpo.add_child(f_piloto)
-		cuerpo.add_child(_texto("Solo Auditoría: pilotos de Nix y de la capa de Garon. Se notan en la siguiente zona o combate.", 16, COLOR_SUAVE))
+		cuerpo.add_child(_texto("Solo Auditoría: pilotos de Nix, de la capa de Garon y la misión propuesta del cantero. Se notan en la siguiente zona o combate.", 16, COLOR_SUAVE))
+		# V12 (14/11): desde una exploración del banco de pruebas (banco_pruebas.gd), la vuelta a él. Fuera del banco, no sale.
+		var BP = load("res://banco_pruebas.gd")
+		if BP.en_banco():
+			var bbp := _boton("Volver al banco de pruebas", 20, Vector2(360, 44), "volver_banco")
+			bbp.pressed.connect(func():
+				_cerrar()
+				Recursos.cambiar_escena(BP.ESCENA))
+			cuerpo.add_child(bbp)
 	load("res://zonas3d/oakhaven/mundo_vivo.gd").opcion_ajustes(self, cuerpo)   # V12, «Oakhaven: mundo vivo» (mundo_vivo_v12)
 	# Combate (12/11): la animación de combate v12 de los protagonistas v2 (combate_anim_v12.gd, [combate] anim_v12), sus
 	# cámaras ([combate] camaras) y el ATB quieto mientras actúa un héroe ([combate] pausa_atb; 13/11). Por defecto, la de siempre.

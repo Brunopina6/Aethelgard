@@ -51,6 +51,7 @@ var frase: Label
 var toca: Label
 var boton_prueba: Button                 # solo en la versión experimental: la misión desde el principio, en otra ranura
 var boton_prologo: Button                # solo en la versión experimental: una partida nueva con el prólogo, en esa ranura
+var boton_banco: Button                  # V12 (14/11): solo en Auditoría o en el editor, el banco de pruebas (banco_pruebas.gd)
 var sonidos := {}
 var reproductor: AudioStreamPlayer
 
@@ -190,6 +191,18 @@ func _crear_pantalla() -> void:
 		boton_prologo.visible = false
 		boton_prologo.pressed.connect(func(): _empezar(true, true))
 		capa.add_child(boton_prologo)
+	# V12 (14/11): el banco de pruebas de Auditoría (banco_pruebas.gd), arriba a la derecha. Su partida es aparte: la de
+	# siempre no se toca. En las versiones normales no existe.
+	if load("res://banco_pruebas.gd").permitido():
+		boton_banco = Button.new()
+		boton_banco.text = "Banco de pruebas (Auditoría)"
+		boton_banco.position = Vector2(900, 16)
+		boton_banco.custom_minimum_size = Vector2(360, 56)
+		boton_banco.add_theme_font_size_override("font_size", 20)
+		boton_banco.focus_mode = Control.FOCUS_ALL
+		boton_banco.visible = false
+		boton_banco.pressed.connect(_abrir_banco)
+		capa.add_child(boton_banco)
 	_texto_empezar(Entrada.modo)
 	Entrada.modo_cambiado.connect(_texto_empezar)
 
@@ -253,6 +266,8 @@ func _process(delta: float) -> void:
 			boton_prueba.visible = true
 		if boton_prologo != null and not saliendo:
 			boton_prologo.visible = true
+		if boton_banco != null and not saliendo:
+			boton_banco.visible = true
 
 
 # V12 (12/11, cargas): en cada fotograma se recoge lo terminado y se piden más durante PRESUPUESTO_MS como mucho (antes,
@@ -443,7 +458,7 @@ func _texto_empezar(modo: String) -> void:
 func _input(ev: InputEvent) -> void:
 	if not listo or saliendo:
 		return
-	var botones: Array = [boton_prueba, boton_prologo].filter(func(b): return b != null and b.visible)
+	var botones: Array = [boton_prueba, boton_prologo, boton_banco].filter(func(b): return b != null and b.visible)
 	if not botones.is_empty() and (ev is InputEventMouseButton or ev is InputEventScreenTouch):
 		for b in botones:
 			if b.get_global_rect().has_point(ev.position):
@@ -484,7 +499,7 @@ func _empezar(prueba := false, prologo := false) -> void:
 	if saliendo:
 		return
 	saliendo = true
-	for b in [boton_prueba, boton_prologo]:
+	for b in [boton_prueba, boton_prologo, boton_banco]:
 		if b != null:
 			b.visible = false
 	if prueba:
@@ -511,3 +526,16 @@ func _empezar(prueba := false, prologo := false) -> void:
 		return
 	var guardada: String = load("res://progreso.gd").cargar()   # si hay partida, se vuelve donde estabas
 	Recursos.cambiar_escena(guardada if guardada != "" else SIGUIENTE)
+
+
+# V12 (14/11): entra en el banco de pruebas de Auditoría. No carga la partida de siempre: el banco usa la suya.
+func _abrir_banco() -> void:
+	if saliendo:
+		return
+	saliendo = true
+	for b in [boton_prueba, boton_prologo, boton_banco]:
+		if b != null:
+			b.visible = false
+	reproductor.stream = sonidos["confirmar"]
+	reproductor.play()
+	Recursos.cambiar_escena("res://banco_pruebas.tscn")

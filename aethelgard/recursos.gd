@@ -135,6 +135,14 @@ func marcar_partida_prueba() -> void:
 	capa.add_child(lbl_prueba)
 
 
+# V12 (14/11): al salir del banco de pruebas de Auditoría (banco_pruebas.gd), la etiqueta se quita: lo siguiente es la
+# partida de siempre.
+func desmarcar_partida_prueba() -> void:
+	if lbl_prueba != null:
+		lbl_prueba.queue_free()
+		lbl_prueba = null
+
+
 func avisar(texto: String, segundos := 5.0) -> void:
 	print("AVISO AL JUGADOR: ", texto)
 	if capa == null:                                 # aún no está lista (muy al principio): sale en cuanto lo esté

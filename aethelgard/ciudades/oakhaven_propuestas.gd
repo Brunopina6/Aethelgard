@@ -18,7 +18,8 @@ extends RefCounted
 # INTERRUPTOR «oakhaven_propuestas_v12», APAGADO por defecto:
 #   - Engine.set_meta("oakhaven_propuestas_v12", true)   (antes de entrar en Oakhaven)
 #   - el argumento de usuario «oakhaven_propuestas_v12»   (godot ... -- oakhaven_propuestas_v12)
-#   - user://ajustes.cfg, [mundo] propuestas_v12 = true    (para el móvil; sin opción en Ajustes hasta que se apruebe)
+#   - user://ajustes.cfg, [mundo] propuestas_v12 = true    (14/11: SOLO en Auditoría o en el editor, con su opción en
+#     Ajustes y en el banco de pruebas, para recorrerla y revisarla; el usuario lo autorizó así. Fuera, apagada)
 
 const NOMBRE := "oakhaven"
 const NOMBRE_LUGAR := "Oakhaven"
@@ -79,6 +80,8 @@ static func activado() -> bool:
 		return bool(Engine.get_meta("oakhaven_propuestas_v12"))
 	if "oakhaven_propuestas_v12" in OS.get_cmdline_user_args():
 		return true
+	if not load("res://prototipos/calidad_proto.gd").pruebas_permitidas():
+		return ACTIVO_POR_DEFECTO                   # 14/11: el archivo de ajustes solo cuenta en Auditoría o en el editor
 	var c := ConfigFile.new()
 	if c.load("user://ajustes.cfg") != OK:
 		return ACTIVO_POR_DEFECTO

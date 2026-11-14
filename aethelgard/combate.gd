@@ -716,6 +716,8 @@ func _ready() -> void:
 			_sonar(str(e.get("clave", "")) + "_entrada")   # al empezar su clip de entrada (sonido.gd, tanda 4)
 			pe.entrada()
 	_marca("entradas")
+	if Engine.get_meta("banco_pruebas", false):     # V12 (14/11): banco de pruebas de Auditoría (vida de los enemigos y
+		load("res://banco_pruebas.gd").preparar_combate(self)   # Armonía del caso); fuera de él, nada
 	_iniciar_musica()
 	_actualizar()
 	_marca("musica")
