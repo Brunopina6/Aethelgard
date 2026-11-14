@@ -30,6 +30,12 @@
 #   600 | {salida} | ...»>
 # y copiar aquí <carpeta de la pasada>\prueba_combate_huella\huella_combate.txt bajo esta cabecera, explicando el
 # cambio en el commit. Sin esa explicación, una huella distinta es un fallo.
+# V12, rendimiento de Érebo (14/11, 84a39fe): sus materiales se precalientan al abrir el teatro y la invocación
+# empieza 2 fotogramas más tarde («La mano de Érebo sale vacía», 519 → 521). Desde ahí cambian las tiradas de azar
+# de E3 y E8 (daños de ±1, un turno de enemigo más) y, en E8, la Armonía final (0,75 → 1,00); los resultados de los
+# nueve combates son los mismos (victoria ×7, huida, derrota). Antes de cada Érebo, línea a línea igual. Comprobado:
+# con erebo_3d/invocacion_erebo/combate de antes, la referencia anterior pasa; dos pasadas dan esto
+# (pruebas/2026-11-14_153019). SHA-256 del texto nuevo sin cabecera, empieza por 832af37cb1a9f366.
 == E1_kael_solo · grupo 9 · nivel 1 · zona llanura · normal · semilla 20262109
 00000 inicio · Kael PV 120/120 PM 16/16 ATQ 18 VEL 23 DEF 9 · Grimfang PV 110/110 ATQ 15 VEL 13 ATB 24.356
 00131 · (cartel vacío)
@@ -196,66 +202,78 @@ partida · combates_ganados {  } · decisiones {  } · Armonía 1.00 · velocida
 00116 ▶ turno de Lya (PV 80/80 PM 46/46)
 00116   Lya: invoca a Érebo sobre Grimfang B (Armonía llenada por la prueba)
 00117 · Lya invoca a Érebo
-00519 · La mano de Érebo sale vacía
-00550 · (cartel vacío)
-00550 ▶ turno de Kael (PV 120/120 PM 16/16)
-00550   Kael: ataca a Grimfang B
-00551 · Kael ataca a Grimfang B
-00588   Δ Grimfang B PV 110→92
-00633 · (cartel vacío)
-00633 ▶ turno de Garon (PV 168/168 PM 10/10)
-00633   Garon: Juicio → Grimfang B
-00634 · Garon usa Juicio
-00634   Δ Garon PM 10→4
-00684   Δ Grimfang B PV 92→0
-00748 ▷ turno de Grimfang A
-00748 · Grimfang A ataca a Lya
-00788   Δ Lya PV 80→67
-00847 · (cartel vacío)
-00847 ▶ turno de Lya (PV 67/80 PM 46/46)
-00847   Lya: Cura → Lya
-00848 · Lya lanza Cura
-00848   Δ Lya PM 46→40
-00863   Δ Lya PV 67→80
-00920 · (cartel vacío)
-00920 ▶ turno de Kael (PV 120/120 PM 16/16)
-00920   Kael: defiende
-00921 · Kael se pone en guardia
-00944 · (cartel vacío)
-00944 ▶ turno de Garon (PV 168/168 PM 4/10)
-00944   Garon: Éter → Garon
-00945 · Garon usa Éter (+6 PM)
-00945   Δ Garon PM 4→10
-01025 · (cartel vacío)
-01025 ▶ turno de Lya (PV 80/80 PM 40/46)
-01025   Lya: Agua → Grimfang A
-01026 · Lya lanza Agua
-01026   Δ Lya PM 40→34
-01073   Δ Grimfang A PV 110→55
-01120 · (cartel vacío)
-01120 ▶ turno de Kael (PV 120/120 PM 16/16)
-01120   Kael: ataca a Grimfang A
-01121 · Kael ataca a Grimfang A
-01158   Δ Grimfang A PV 55→39
-01203 ▷ turno de Grimfang A
-01203 · Grimfang A alza el hacha: ¡va a por Lya!
-01244 · (cartel vacío)
-01244 ▶ turno de Garon (PV 168/168 PM 10/10)
-01244   Garon: Giro (a todos)
-01245 · Garon usa Giro
-01245   Δ Garon PM 10→0
-01289   Δ Grimfang A PV 39→0
-01346 ■ fin del combate
-01346 · ¡Victoria!
-01377 · +70 EXP   +36 monedas
-01408 · ¡Kael sube al nivel 2!
-01408   Δ Kael PV 120→126 PM 16→18
-01439 · ¡Lya sube al nivel 2!
-01439   Δ Lya PV 80→86 PM 34→48
-01470 · ¡Garon sube al nivel 2!
-01470   Δ Garon PV 168→174 PM 0→12
-fin · victoria · fotograma 1346 (44.9 s de juego)
-final · Kael PV 126/126 PM 18/18 ATQ 18 VEL 23 DEF 9 · Lya PV 86/86 PM 48/48 ATQ 10 VEL 26 DEF 7 · Garon PV 174/174 PM 12/12 ATQ 50 VEL 16 DEF 12 · Grimfang B PV 0/94 ATQ 15 VEL 13 · Grimfang A PV 0/94 ATQ 15 VEL 13
+00521 · La mano de Érebo sale vacía
+00552 · (cartel vacío)
+00552 ▶ turno de Kael (PV 120/120 PM 16/16)
+00552   Kael: ataca a Grimfang B
+00553 · Kael ataca a Grimfang B
+00590   Δ Grimfang B PV 110→91
+00635 · (cartel vacío)
+00635 ▶ turno de Garon (PV 168/168 PM 10/10)
+00635   Garon: Juicio → Grimfang B
+00636 · Garon usa Juicio
+00636   Δ Garon PM 10→4
+00686   Δ Grimfang B PV 91→3
+00749 ▷ turno de Grimfang B
+00749 · Grimfang B alza el hacha: ¡va a por Lya!
+00790 ▷ turno de Grimfang A
+00790 · Grimfang A ataca a Lya
+00830   Δ Lya PV 80→65
+00889 · (cartel vacío)
+00889 ▶ turno de Lya (PV 65/80 PM 46/46)
+00889   Lya: Cura → Lya
+00890 · Lya lanza Cura
+00890   Δ Lya PM 46→40
+00905   Δ Lya PV 65→80
+00962 · (cartel vacío)
+00962 ▶ turno de Kael (PV 120/120 PM 16/16)
+00962   Kael: defiende
+00963 · Kael se pone en guardia
+00986 · (cartel vacío)
+00986 ▶ turno de Garon (PV 168/168 PM 4/10)
+00986   Garon: Éter → Garon
+00987 · Garon usa Éter (+6 PM)
+00987   Δ Garon PM 4→10
+01025 ▷ turno de Grimfang B
+01025 · ¡Grimfang B descarga el hachazo sobre Lya!
+01088   Δ Lya PV 80→46
+01123 · (cartel vacío)
+01123 ▶ turno de Lya (PV 46/80 PM 40/46)
+01123   Lya: Agua → Grimfang B
+01124 · Lya lanza Agua
+01124   Δ Lya PM 40→34
+01171   Δ Grimfang B PV 3→0
+01218 · (cartel vacío)
+01218 ▶ turno de Kael (PV 120/120 PM 16/16)
+01218   Kael: ataca a Grimfang A
+01219 · Kael ataca a Grimfang A
+01256   Δ Grimfang A PV 110→92
+01301 ▷ turno de Grimfang A
+01301 · Grimfang A ataca a Lya
+01341   Δ Lya PV 46→36
+01400 · (cartel vacío)
+01400 ▶ turno de Garon (PV 168/168 PM 10/10)
+01400   Garon: Giro (a todos)
+01401 · Garon usa Giro
+01401   Δ Garon PM 10→0
+01445   Δ Grimfang A PV 92→49
+01464   Δ Grimfang A PV 49→1
+01503 · (cartel vacío)
+01503 ▶ turno de Lya (PV 36/80 PM 34/46)
+01503   Lya: ataca a Grimfang A
+01504 · Lya ataca a Grimfang A
+01533   Δ Grimfang A PV 1→0
+01570 ■ fin del combate
+01570 · ¡Victoria!
+01601 · +70 EXP   +36 monedas
+01632 · ¡Kael sube al nivel 2!
+01632   Δ Kael PV 120→126 PM 16→18
+01663 · ¡Lya sube al nivel 2!
+01663   Δ Lya PV 36→86 PM 34→48
+01694 · ¡Garon sube al nivel 2!
+01694   Δ Garon PV 168→174 PM 0→12
+fin · victoria · fotograma 1570 (52.3 s de juego)
+final · Kael PV 126/126 PM 18/18 ATQ 18 VEL 23 DEF 9 · Lya PV 86/86 PM 48/48 ATQ 10 VEL 26 DEF 7 · Garon PV 174/174 PM 12/12 ATQ 50 VEL 16 DEF 12 · Grimfang B PV 0/110 ATQ 15 VEL 13 · Grimfang A PV 0/94 ATQ 15 VEL 13
 grupo · Kael nivel 2 exp 50 pv 126 pm 18 puntos 3 · Lya nivel 2 exp 50 pv 86 pm 48 puntos 3 · Garon nivel 2 exp 50 pv 174 pm 12 puntos 3
 bolsa · oro 150→186 · Poción 5→5 · Éter 3→2
 partida · combates_ganados {  } · decisiones {  } · Armonía 1.00 · velocidad 1.00
@@ -449,67 +467,88 @@ partida · combates_ganados {  } · decisiones {  } · Armonía 0.60 · velocida
 00697 ▶ turno de Lya (PV 116/116 PM 46/58)
 00697   Lya: invoca a Érebo sobre Gorthor el Devorador (Armonía llenada por la prueba)
 00698 · Lya invoca a Érebo
-01070   Δ Gorthor el Devorador PV 254→203
-01260 · Érebo le roba parte de su vida
-01291 · ¡Gorthor el Devorador se enfurece!
-01339 · (cartel vacío)
-01339 ▶ turno de Kael (PV 156/156 PM 20/28)
-01339   Kael: Tormenta (a todos)
-01340 · Kael lanza Tormenta
-01340   Δ Kael PM 20→3
-01389   Δ Gorthor el Devorador PV 203→172
-01439 ▷ turno de Gorthor el Devorador
-01439 · Gorthor el Devorador sufre quemaduras
-01439   Δ Gorthor el Devorador PV 172→167
-01464 · ¡Gorthor el Devorador desata su golpe devastador!
-01527   Δ Kael PV 156→105 · Lya PV 116→64 · Garon PV 204→155
-01562 · (cartel vacío)
-01562 ▶ turno de Garon (PV 155/204 PM 11/22)
-01562   Garon: Giro (a todos)
-01563 · Garon usa Giro
-01563   Δ Garon PM 11→1
-01607   Δ Gorthor el Devorador PV 167→111
-01626   Δ Gorthor el Devorador PV 111→57
-01665 · (cartel vacío)
-01665 ▶ turno de Lya (PV 64/116 PM 46/58)
-01665   Lya: Bendición (a todos)
-01666 · Lya lanza Bendición
-01666   Δ Lya PM 46→30
-01681   Δ Kael PV 105→156 · Lya PV 64→116 · Garon PV 155→204
-01738 · (cartel vacío)
-01738 ▶ turno de Kael (PV 156/156 PM 3/28)
-01738   Kael: defiende
-01739 · Kael se pone en guardia
-01766 ▷ turno de Gorthor el Devorador
-01766 · Gorthor el Devorador sufre quemaduras
-01766   Δ Gorthor el Devorador PV 57→52
-01791 · Gorthor el Devorador ataca a Lya
-01854   Δ Lya PV 116→79
-01889 · (cartel vacío)
-01889 ▶ turno de Garon (PV 204/204 PM 1/22)
-01889   Garon: ataca a Gorthor el Devorador
-01890 · Garon ataca a Gorthor el Devorador
-01940   Δ Gorthor el Devorador PV 52→1
-02003 ◆ decisión
-02003 · Gorthor el Devorador cae de rodillas. Te mira, sin fuerzas.
-02038 ◆ Kael decide: perdonar
-02039 · Kael baja la espada. Gorthor se arrastra hacia el abismo.
-02086 ■ fin del combate
-02086 · ¡Victoria!
-02086   Δ Gorthor el Devorador PV 1→0
-02117 · +600 EXP   +150 monedas
-02148 · ¡Kael sube al nivel 8!
-02148   Δ Kael PV 156→162 PM 3→30
-02179 · ¡Lya sube al nivel 8!
-02179   Δ Lya PV 79→122 PM 30→60
-02210 · ¡Garon sube al nivel 8!
-02210   Δ Garon PV 204→210 PM 1→24
-02229 · Has conseguido Fauces de Gorthor.
-fin · victoria · fotograma 2086 (69.5 s de juego)
-final · Kael PV 162/162 PM 30/30 ATQ 18 VEL 23 DEF 9 · Lya PV 122/122 PM 60/60 ATQ 10 VEL 26 DEF 7 · Garon PV 210/210 PM 24/24 ATQ 50 VEL 16 DEF 12 · Gorthor el Devorador PV 0/460 ATQ 25 VEL 14
+01072   Δ Gorthor el Devorador PV 254→203
+01262 · Érebo le roba parte de su vida
+01293 · ¡Gorthor el Devorador se enfurece!
+01341 · (cartel vacío)
+01341 ▶ turno de Kael (PV 156/156 PM 20/28)
+01341   Kael: Tormenta (a todos)
+01342 · Kael lanza Tormenta
+01342   Δ Kael PM 20→3
+01391   Δ Gorthor el Devorador PV 203→171
+01441 ▷ turno de Gorthor el Devorador
+01441 · Gorthor el Devorador sufre quemaduras
+01441   Δ Gorthor el Devorador PV 171→166
+01466 · ¡Gorthor el Devorador desata su golpe devastador!
+01529   Δ Kael PV 156→105 · Lya PV 116→64 · Garon PV 204→155
+01564 · (cartel vacío)
+01564 ▶ turno de Garon (PV 155/204 PM 11/22)
+01564   Garon: Giro (a todos)
+01565 · Garon usa Giro
+01565   Δ Garon PM 11→1
+01609   Δ Gorthor el Devorador PV 166→112
+01628   Δ Gorthor el Devorador PV 112→55
+01667 · (cartel vacío)
+01667 ▶ turno de Lya (PV 64/116 PM 46/58)
+01667   Lya: Bendición (a todos)
+01668 · Lya lanza Bendición
+01668   Δ Lya PM 46→30
+01683   Δ Kael PV 105→156 · Lya PV 64→116 · Garon PV 155→204
+01740 · (cartel vacío)
+01740 ▶ turno de Kael (PV 156/156 PM 3/28)
+01740   Kael: defiende
+01741 · Kael se pone en guardia
+01768 ▷ turno de Gorthor el Devorador
+01768 · Gorthor el Devorador sufre quemaduras
+01768   Δ Gorthor el Devorador PV 55→50
+01793 · ¡Gorthor el Devorador devora a Lya!
+01856   Δ Lya PV 116→56
+01880   Δ Gorthor el Devorador PV 50→87
+01891 · (cartel vacío)
+01891 ▶ turno de Garon (PV 204/204 PM 1/22)
+01891   Garon: ataca a Gorthor el Devorador
+01892 · Garon ataca a Gorthor el Devorador
+01942   Δ Gorthor el Devorador PV 87→30
+02005 · (cartel vacío)
+02005 ▶ turno de Lya (PV 56/116 PM 30/58)
+02005   Lya: ataca a Gorthor el Devorador
+02006 · Lya ataca a Gorthor el Devorador
+02035   Δ Gorthor el Devorador PV 30→27
+02073 · (cartel vacío)
+02073 ▶ turno de Kael (PV 156/156 PM 3/28)
+02073   Kael: ataca a Gorthor el Devorador
+02074 · Kael ataca a Gorthor el Devorador
+02111   Δ Gorthor el Devorador PV 27→7
+02156 ▷ turno de Gorthor el Devorador
+02156 · Gorthor el Devorador sufre quemaduras
+02156   Δ Gorthor el Devorador PV 7→2
+02181 · Gorthor el Devorador ataca a Lya
+02244   Δ Lya PV 56→24
+02279 · (cartel vacío)
+02279 ▶ turno de Lya (PV 24/116 PM 30/58)
+02279   Lya: ataca a Gorthor el Devorador
+02280 · Lya ataca a Gorthor el Devorador
+02309   Δ Gorthor el Devorador PV 2→1
+02347 ◆ decisión
+02347 · Gorthor el Devorador cae de rodillas. Te mira, sin fuerzas.
+02382 ◆ Kael decide: perdonar
+02383 · Kael baja la espada. Gorthor se arrastra hacia el abismo.
+02430 ■ fin del combate
+02430 · ¡Victoria!
+02430   Δ Gorthor el Devorador PV 1→0
+02461 · +600 EXP   +150 monedas
+02492 · ¡Kael sube al nivel 8!
+02492   Δ Kael PV 156→162 PM 3→30
+02523 · ¡Lya sube al nivel 8!
+02523   Δ Lya PV 24→122 PM 30→60
+02554 · ¡Garon sube al nivel 8!
+02554   Δ Garon PV 204→210 PM 1→24
+02573 · Has conseguido Fauces de Gorthor.
+fin · victoria · fotograma 2430 (81.0 s de juego)
+final · Kael PV 162/162 PM 30/30 ATQ 18 VEL 23 DEF 9 · Lya PV 122/122 PM 60/60 ATQ 10 VEL 26 DEF 7 · Garon PV 210/210 PM 24/24 ATQ 50 VEL 16 DEF 12 · Gorthor el Devorador PV 0/444 ATQ 25 VEL 14
 grupo · Kael nivel 8 exp 230 pv 162 pm 30 puntos 3 · Lya nivel 8 exp 230 pv 122 pm 60 puntos 3 · Garon nivel 8 exp 230 pv 210 pm 24 puntos 3
 bolsa · oro 150→300 · Poción 5→5 · Éter 3→3
-partida · combates_ganados { "garganta_gorthor": true } · decisiones { "gorthor": "perdonado" } · Armonía 0.75 · velocidad 1.00
+partida · combates_ganados { "garganta_gorthor": true } · decisiones { "gorthor": "perdonado" } · Armonía 1.00 · velocidad 1.00
 
 == E9_nivel10_supremas · grupo 4 · nivel 10 · zona desierto · normal · semilla 20270109
 00000 inicio · Kael PV 174/174 PM 34/34 ATQ 18 VEL 23 DEF 9 · Lya PV 134/134 PM 64/64 ATQ 10 VEL 26 DEF 7 · Guardián de piedra PV 180/180 ATQ 19 VEL 8 ATB 27.929 · Grimfang PV 110/110 ATQ 15 VEL 13 ATB 15.672
