@@ -27,7 +27,7 @@ ventana). Nada se ha probado en el Redmi. Los nombres y los textos son **PROPUES
 | Ojos en la Garganta | Plata | cumplir | ganar en el nido de la Garganta | 110 monedas, Éter, +4 |
 | El encargo del maestro | Oro | entregar | 1 Mineral rúnico | 150 monedas, +5 |
 
-- **Rangos:** Bronce (0 de reputación), Plata (6) y Oro (15). Subir de rango abre contratos nuevos y proyectos.
+- **Rangos:** Bronce (0 de reputación), Plata (6) y Oro (13; era 15 y no se podía alcanzar: ver `docs/v12/OAKHAVEN_JUGABLE_V12.md`). Subir de rango abre contratos nuevos y proyectos.
 - **Derrotar:** solo cuentan los enemigos caídos en combates **ganados** después de aceptar el contrato.
 - **Entregar:** al cobrar se gasta lo entregado.
 - **Cumplir:** usa las condiciones de `encargos.gd`, así que conecta el gremio con los encargos y los combates fijos que

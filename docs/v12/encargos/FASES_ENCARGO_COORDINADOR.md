@@ -24,7 +24,7 @@
 | 4 | Menús y permisos de los héroes y catálogo de habilidades; recursos Eclipse, Compás e Inscripciones (máximo 3) | Pruebas de combate | **BLOQUEADA en parte.** Los 24 ataques rúnicos de Kael, las 18 técnicas, las 18 magias, las 6 invocaciones y las 24 magias negras vienen de `CATALOGO_GENERAL_PROPUESTO.json` y de los PDF de Kael y del arsenal, que **no se han entregado**. Además, Kael no tiene ataques rúnicos: sus «artes» (Alba y Escarcha) son magia de apoyo. Quitarle la Magia hoy lo dejaría con solo Atacar, así que se conserva el comportamiento vigente y se registra para el usuario. Hecho: solo Lya invoca (3B) |
 | 5 | Piloto de Nix desde su FBX: reducir la malla (LOD0 de 7-10 mil triángulos), rig con mechones, vestuario canónico | Blender, reimportación en Godot y capturas | **PARCIAL** (14/11, especialista; integrada APAGADA, opciones «Nix (cuarta heroína)» y «Nix: modelo FBX» en Auditoría). Hecho: 11.968 triángulos; esqueleto de Lya con 48 huesos (36 deforman) y 6 de mechones; 23 clips, incluido `canalizar`; `prueba_nix_fbx` 35/35. **Falta TODA la ropa canónica**. Se ve demasiado clara con luz frontal. Es una figura adulta realista frente a la Nix *chibi* actual (decisión de arte para el usuario). `docs/v12/NIX_PILOTO_FBX.md` |
 | 6 | Capa de Garon como pieza independiente con huesos propios; se conserva la original | Capturas en movimiento | **HECHA en el PC** (14/11, especialista; integrada APAGADA, opción «Capa de Garon articulada» en Auditoría): `capa_garon.gd` con 21 huesos; anclaje con < 1 mm de variación (antes 0,15-0,34 m); se mueve abajo al correr y girar; original, v2 y v3; `prueba_capa_garon`. La capa rígida de siempre sigue por defecto. **Falta el Redmi.** Hallado aparte: en v2 y v3, `AvanzarDoble` descoloca la cadera (clips del esqueleto original) y la derrota los hunde en el suelo. `docs/v12/CAPA_GARON_V12.md` |
-| 7 | Primera experiencia jugable: misiones de Oakhaven, caravana, secundaria nueva, secreto, cerradura rúnica, gremio 13 frente a 15 | Pruebas de misión | pendiente |
+| 7 | Primera experiencia jugable: misiones de Oakhaven, caravana, secundaria nueva, secreto, cerradura rúnica, gremio 13 frente a 15 | Pruebas de misión | **HECHA en el PC** (14/11, especialista; integrada). **Gremio:** el bloqueo existía (13 puntos alcanzables frente a 15); Oro pasa a 13 y las partidas atascadas cargan en Oro. **Diario:** objetivos cumplidos, paso actual y pistas vistas, sin revelar los siguientes; contratos del gremio. **Caravana:** faltaba `datos/encargos_desierto.gd` y el Diario no la recordaba (corregido). **Cerradura rúnica:** el arcón del Concejo, ACTIVO, en 2D y 3D, con premio único. **«Las tres marcas del cantero»** (secundaria con secreto y segunda cerradura): PROPUESTA APAGADA (`oakhaven_propuestas_v12`). Pruebas nuevas ×6, con contrapruebas. `docs/v12/OAKHAVEN_JUGABLE_V12.md`. Falta el Redmi |
 | 8 | Oficios, armas especiales y minijuegos (primero la cerradura) | Pruebas | pendiente |
 | 9 | Enemigos y arsenal: piloto `meshy_e01` Custodio (idle, walk, Prensa del Umbral), después e02-e04 y los comunes; 32 conjuntos | Prueba de ataques y GLB reimportado | pendiente |
 | 10 | Historias personales y mundo vivo | Pruebas | pendiente |
@@ -65,6 +65,19 @@ copiando archivos, nunca con fusiones.
 integra lo que esté probado.
 
 ## Decisiones registradas
+
+- **14/11, para el usuario (fase 7):**
+  - **Gremio:** Oro a 13 obliga a hacer todos los contratos anteriores. Alternativas: un contrato de Plata más, u Oro
+    a 12.
+  - **El arcón del Concejo** (sitio, inscripción y premio) está ACTIVO porque es juego y no historia. Se quita
+    retirando la pieza.
+  - **«Las tres marcas del cantero»**, apagada, necesita aprobación: interruptor `ACTIVO_POR_DEFECTO`, más una
+    línea en `menus.gd`.
+- **14/11, revisión adversarial del código de la noche:** 4 defectos confirmados, ninguno con las opciones apagadas.
+  Corregidos en `af89e5f`:
+  - Garon v2 corría hacia delante mientras retrocedía;
+  - las gotas del Agua se cortaban y el orbe salía teñido;
+  - el Custodio decía «En guardia» dos veces.
 
 - **14/11, instrucciones complementarias** (`INSTRUCCIONES_COMPLEMENTARIAS_14_11.md`; prevalecen sobre el prompt de
   expansión):

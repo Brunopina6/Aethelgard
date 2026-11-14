@@ -316,7 +316,7 @@ const MISIONES := [
 			{"id": "volver", "texto": "Cuéntaselo a Bastián.", "hecho": "hito:oak_faroles"}],
 		"recompensa": {},
 		"pago": "La muralla se ilumina y Bastián llega a ciento doce. El premio es el cofre de la ronda y la vista."},
-	{"id": "oak_secreto_pip", "nombre": "Un secreto por una moneda", "quien": "pip",
+	{"id": "oak_secreto_pip", "nombre": "Un secreto por una moneda", "quien": "pip", "tipo": "secreta",
 		"resumen": "Pip vende un secreto por una moneda. Es verdad.",
 		"empieza": "decision:pip_oak=pagado", "fin": "decision:pip_oak=pagado", "coste": 1,
 		"pasos": [{"id": "pagar", "texto": "Paga una moneda a Pip.", "hecho": "decision:pip_oak=pagado"}],
@@ -328,6 +328,9 @@ const MISIONES := [
 		"pasos": [
 			{"id": "coger", "texto": "Coge un ramito de lavanda en Pastos Verdes.", "hecho": "estado:lavanda_cogida"},
 			{"id": "entregar", "texto": "Llévaselo a Rosa.", "hecho": "hito:oak_lavanda"}],
+		# V12 (fase 7; encargos.gd «pistas»): lo que dijo Rosa, para el Diario.
+		"pistas": [{"texto": "Rosa: «Antes la lavanda crecía hasta en los tejados. Ahora solo en los Pastos.»",
+			"si": "estado:lavanda"}],
 		"recompensa": {"objetos": {"Poción": 2}},
 		"pago": "Doña Encina: «Hacía años que nadie le traía flores»."},
 ]
@@ -419,7 +422,25 @@ const PIEZAS := [
 	# V11, hito E: la mesa de juego del Patio del Cuervo (taberna_parejas.gd; lo abre ciudad_oakhaven.gd)
 	{"id": "oak_mesa_parejas", "nombre": "Mesa de juego", "casilla": Vector2(14.5, 30.5), "accion": "Jugar a las parejas",
 		"si": "", "senal": "", "texto": "", "texto_sin": ""},
+	# V12, fase 7 (PROPUESTA): el arcón del Concejo, bajo el pórtico, con su cerradura rúnica (CERRADURA). Abierto, ya
+	# solo se examina. Lo abre ciudad_oakhaven.gd (2D) o vida3d.gd (3D).
+	{"id": "oak_cerradura_runica", "nombre": "Arcón del Concejo", "casilla": Vector2(50.5, 22), "accion": "Girar los anillos",
+		"si": "!estado:cerradura_abierta", "senal": "", "texto": "",
+		"texto_sin": "El arcón del Concejo, abierto y vacío. Los anillos ya no giran."},
 ]
+
+# V12, fase 7 (PROPUESTA, sin canon): la primera cerradura rúnica (cerradura_runica.gd). Un arcón viejo bajo el pórtico
+# del Concejo; nadie sabe ya la combinación, pero la tapa la lleva grabada en verso. Los anillos llevan los seis símbolos
+# del reino (los de las parejas). La solución sale de la inscripción: Fuego, Cura y Luna. Estado guardado en
+# «mazmorras»["oakhaven"] (ninguna clave nueva): «cerradura_vista» (se ha mirado: el Diario apunta la inscripción) y
+# «cerradura_abierta» (el premio, una sola vez). Premio modesto: un cofre normal da 40-120 monedas, 2 Pociones o 1 Éter;
+# el Mineral rúnico sirve para «El encargo del maestro» del gremio (rango Oro).
+const CERRADURA := {"id": "oak_cerradura_runica", "titulo": "El arcón del Concejo",
+	"inscripcion": "De fuera adentro: lo que arde, lo que sana y lo que vela de noche.",
+	"anillos": [["Runa", "Agua", "Fuego", "Luna", "Rayo", "Cura"], ["Luna", "Cura", "Rayo", "Agua", "Fuego", "Runa"],
+		["Agua", "Rayo", "Luna", "Fuego", "Cura", "Runa"]],
+	"nombres": ["de fuera", "del medio", "de dentro"], "objetivo": ["Fuego", "Cura", "Luna"], "inicio": [0, 0, 0],
+	"premio": {"oro": 60, "objetos": {"Éter": 1, "Mineral rúnico": 1}}}
 
 # ================================================================= notas del Diario (lista aparte: no cuentan para las
 # páginas de los actos). Se guardan en «lore_visto» con su id («nota_…»). 15 palabras o menos.
@@ -475,7 +496,13 @@ static func nota(id: String) -> Dictionary:
 
 
 static func pieza(id: String) -> Dictionary:
-	return _buscar(PIEZAS, id)
+	return _buscar(piezas_activas(), id)
+
+
+# Las piezas de la ciudad: PIEZAS y, con el interruptor «oakhaven_propuestas_v12» (APAGADO), las de la propuesta
+# (ciudades/oakhaven_propuestas.gd). La ciudad 2D y la 3D ponen estas.
+static func piezas_activas() -> Array:
+	return PIEZAS + load("res://ciudades/oakhaven_propuestas.gd").piezas()
 
 
 static func _buscar(lista: Array, id: String) -> Dictionary:
@@ -674,6 +701,8 @@ static func aplicar_senal(arg: Variant) -> String:
 		return ""
 	var P = _p()
 	var k := s.trim_prefix("oak:")
+	if s.begins_with("oak:cantero_"):               # V12, fase 7: la propuesta del cantero (apagada: no hace nada)
+		return load("res://ciudades/oakhaven_propuestas.gd").aplicar(s)
 	match s:
 		"oak:sopa":                                   # un servicio de la posada: se repite (ciudades/oakhaven_posada.gd)
 			return load("res://ciudades/oakhaven_posada.gd").comer()["texto"]
@@ -840,6 +869,41 @@ static func abrir_cofre(id: String) -> Dictionary:
 	if r["nota"] != "":
 		ver_nota(r["nota"])
 	return r
+
+
+# V12, fase 7: la cerradura rúnica del arcón (CERRADURA). ver_cerradura() al abrir la ventana (el Diario apunta la
+# inscripción); abrir_cerradura() al resolverla: el premio UNA vez y su texto ("" si ya estaba abierta).
+# Las cerraduras se buscan por el id de su pieza (la del arcón y, con la propuesta encendida, la losa del cantero); su
+# estado: «<estado>_vista» y «<estado>_abierta» («estado» de la configuración; el arcón, «cerradura»).
+static func config_cerradura(id: String) -> Dictionary:
+	if id == CERRADURA["id"]:
+		return CERRADURA
+	return load("res://ciudades/oakhaven_propuestas.gd").cerradura(id)
+
+
+static func _clave_cerradura(id: String) -> String:
+	return str(config_cerradura(id).get("estado", "cerradura"))
+
+
+static func cerradura_abierta(id: String = CERRADURA["id"]) -> bool:
+	return _p().estado(NOMBRE, _clave_cerradura(id) + "_abierta")
+
+
+static func ver_cerradura(id: String = CERRADURA["id"]) -> void:
+	if not _p().estado(NOMBRE, _clave_cerradura(id) + "_vista"):
+		_p().poner_estado(NOMBRE, _clave_cerradura(id) + "_vista")
+
+
+static func abrir_cerradura(id: String = CERRADURA["id"]) -> String:
+	var cfg := config_cerradura(id)
+	if cfg.is_empty() or cerradura_abierta(id):
+		return ""
+	ver_cerradura(id)
+	_p().poner_estado(NOMBRE, _clave_cerradura(id) + "_abierta")
+	if id == CERRADURA["id"]:
+		return "Dentro del arcón: %s.%s" % [_dar(cfg["premio"]),
+			load("res://ciudades/oakhaven_propuestas.gd").al_abrir_arcon()]
+	return "Bajo la losa: %s." % _dar(cfg["premio"])
 
 
 # Apunta una nota en el Diario (progreso.gd, ver_nota: en «lore_visto»). Devuelve true si es nueva. No completa ningún

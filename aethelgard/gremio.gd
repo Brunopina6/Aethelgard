@@ -10,7 +10,10 @@ extends RefCounted
 # Se guarda en Engine «gremio» (progreso.gd CLAVES): {"rep": n, "aceptados": {id: progreso}, "hechos": [id]}.
 # Las partidas antiguas no lo traen: empiezan en Bronce, sin contratos. Los nombres y textos son PROPUESTA (sin canon).
 
-const RANGOS := [{"nombre": "Bronce", "rep": 0}, {"nombre": "Plata", "rep": 6}, {"nombre": "Oro", "rep": 15}]
+# V12 (14/11, fase 7): Oro pedía 15, pero antes de Oro solo hay 13 de reputación (Bronce 2 + 2 + 2, Plata 3 + 4) y la
+# reputación solo sube al cobrar: Oro era inalcanzable. Ajuste mínimo: Oro a 13 (todos los contratos de Bronce y Plata).
+# prueba_gremio_progresion comprueba que cada rango se alcanza con los contratos de los rangos anteriores.
+const RANGOS := [{"nombre": "Bronce", "rep": 0}, {"nombre": "Plata", "rep": 6}, {"nombre": "Oro", "rep": 13}]
 
 const CONTRATOS := [
 	{"id": "gr_limos", "nombre": "Plaga de limos", "rango": 0, "tipo": "derrotar", "que": "slime", "n": 3,
@@ -119,6 +122,24 @@ static func aceptar(id: String) -> bool:
 		return false
 	_d()["aceptados"][id] = 0
 	return true
+
+
+# V12 (fase 7): los contratos aceptados para el Diario (pestaña Encargos), sin tocar la partida si no hay gremio:
+# [{"id", "nombre", "texto", "progreso", "total", "listo"}]. Los disponibles y los bloqueados no salen (se ven en el tablón).
+static func para_diario() -> Array:
+	if not Engine.has_meta("gremio"):
+		return []
+	var r: Array = []
+	for c in CONTRATOS:
+		var e := estado(c["id"])
+		if e in ["aceptado", "listo"]:
+			r.append({"id": c["id"], "nombre": c["nombre"], "texto": c["texto"], "progreso": progreso(c["id"]),
+				"total": total(c["id"]), "listo": e == "listo"})
+	return r
+
+
+static func contratos_hechos() -> int:
+	return Engine.get_meta("gremio").get("hechos", []).size() if Engine.has_meta("gremio") else 0
 
 
 # combate.gd, al ganar: las claves de los enemigos caídos. Solo cuentan para los contratos aceptados.

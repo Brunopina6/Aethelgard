@@ -184,23 +184,54 @@ func _texto(t: String, tam: int, color: Color, cursiva := false) -> Label:
 
 # Encargos de todas las regiones (V9, encargos.gd): los activos con el paso que falta y después los hechos, con lo que
 # se consiguió. Los que aún no han empezado no salen.
+# V12 (fase 7): también recuerda los objetivos ya cumplidos (✔) y las pistas y decisiones conocidas (encargos.gd,
+# pasos_conocidos y pistas_conocidas; nunca los pasos siguientes ni lo que no se ha visto) y, arriba, los contratos del
+# gremio aceptados con su progreso (gremio.gd, para_diario).
+const TIPO_ROTULO := {"principal": "Principal", "personal": "Personal", "secreta": "Secreto", "cadena": "Cadena",
+	"contrato": "Contrato"}
+
+
 func _pintar_encargos() -> void:
 	var E = load("res://encargos.gd")
 	var lista: Array = E.para_diario()
-	if lista.is_empty():
+	var contratos: Array = load("res://gremio.gd").para_diario()
+	if lista.is_empty() and contratos.is_empty():
 		cuerpo.add_child(_texto("Aún no tienes encargos. Habla con la gente: siempre hay alguien que necesita ayuda.", 22, Estilo.GRIS, true))
 		return
+	_pintar_contratos(contratos)
 	for e in lista:
 		var m: Dictionary = e["m"]
 		var hecho: bool = E.estado(e) == "hecho"
-		cuerpo.add_child(_texto("%s%s · %s" % ["✔ " if hecho else "", m["nombre"], e["lugar"]], 28,
-			Estilo.CURA if hecho else Estilo.ORO, true))
-		var t := _texto("      " + (str(m.get("pago", "")) if hecho else str(m.get("resumen", ""))), 20, Estilo.GRIS, true)
-		t.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		t.custom_minimum_size = Vector2(1040, 0)
-		cuerpo.add_child(t)
+		var rotulo: String = TIPO_ROTULO.get(E.tipo(e), "")
+		cuerpo.add_child(_texto("%s%s · %s%s" % ["✔ " if hecho else "", m["nombre"], e["lugar"],
+			"" if rotulo == "" else " · " + rotulo], 28, Estilo.CURA if hecho else Estilo.ORO, true))
+		cuerpo.add_child(_parrafo("      " + (str(m.get("pago", "")) if hecho else str(m.get("resumen", ""))), 20, Estilo.GRIS))
 		if not hecho:
-			var p: Dictionary = E.paso_actual(e)
-			if not p.is_empty():
-				cuerpo.add_child(_texto("      Ahora: " + str(p["texto"]), 22, Estilo.LUZ_CLARA, true))
+			for p in E.pasos_conocidos(e):
+				if p["hecho"]:
+					cuerpo.add_child(_parrafo("      ✔ " + str(p["texto"]), 18, Estilo.GRIS_APAGADO))
+				else:
+					cuerpo.add_child(_parrafo("      Ahora: " + str(p["texto"]), 22, Estilo.LUZ_CLARA))
+		for t in E.pistas_conocidas(e):
+			cuerpo.add_child(_parrafo("      · " + str(t), 19, Estilo.LUZ_CLARA))
 		cuerpo.add_child(Control.new())
+
+
+# Los contratos del gremio aceptados (los demás se ven en el tablón de la plaza).
+func _pintar_contratos(contratos: Array) -> void:
+	if contratos.is_empty():
+		return
+	var Gr = load("res://gremio.gd")
+	cuerpo.add_child(_texto("Contratos del gremio · Rango %s" % Gr.nombre_rango(), 28, Estilo.ORO, true))
+	for c in contratos:
+		var estado: String = "listo: cóbralo en el tablón del gremio" if c["listo"] else "%d de %d" % [c["progreso"], c["total"]]
+		cuerpo.add_child(_parrafo("      %s · %s" % [c["nombre"], estado], 22, Estilo.CURA if c["listo"] else Estilo.LUZ_CLARA))
+		cuerpo.add_child(_parrafo("      " + str(c["texto"]), 18, Estilo.GRIS))
+	cuerpo.add_child(Control.new())
+
+
+func _parrafo(t: String, tam: int, color: Color) -> Label:
+	var l := _texto(t, tam, color, true)
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.custom_minimum_size = Vector2(1040, 0)
+	return l

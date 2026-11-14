@@ -138,6 +138,36 @@ func _abrir_juego() -> void:
 		_poner_oro()
 		_guardar())
 	add_child(m)
+
+
+# V12, fase 7: la cerradura rúnica del arcón del Concejo (cerradura_runica.gd, Oak.CERRADURA). Como el juego: Kael no
+# anda mientras está abierta; salir nunca bloquea; al cerrarla se guarda y, si se abrió, el arcón se pinta abierto.
+var cerradura_abierta: Node = null          # la ventana de la cerradura, o null
+func _abrir_cerradura(e: Array) -> void:
+	if tienda_abierta:
+		return
+	var id: String = e[1]["id"]
+	tienda_abierta = true
+	tiene_destino = false
+	Sonido.efecto("examinar")
+	Oak.ver_cerradura(id)
+	var m = load("res://cerradura_runica.gd").new()
+	m.config = Oak.config_cerradura(id)
+	m.al_resolver = Oak.abrir_cerradura.bind(id)
+	cerradura_abierta = m
+	m.cerrado.connect(func():
+		tienda_abierta = false
+		cerradura_abierta = null
+		if id == Oak.CERRADURA["id"] and Oak.cerradura_abierta() and is_instance_valid(e[0]) \
+				and not (e[0] as Node).has_meta("abierto"):
+			var n := _poner_objeto("cofre_abierto", e[2])
+			n.set_meta("abierto", true)
+			(e[0] as Node).queue_free()
+			e[0] = n
+		_actualizar_piezas()
+		_poner_oro()
+		_guardar())
+	add_child(m)
 var obras: Dictionary = {}                 # V11: id de proyecto → los nodos que puso (no se ponen dos veces)
 
 
@@ -513,7 +543,7 @@ func _junto_a_calle(c: Vector2i) -> bool:
 # Casillas de lo que se usa (vecinos, cofres, piezas, notas, detalles, el pie del Árbol y la entrada).
 func _preparar_puntos() -> void:
 	puntos_clave.clear()
-	for lista in [Oak.NPCS, Oak.COFRES, Oak.PIEZAS, Oak.NOTAS]:
+	for lista in [Oak.NPCS, Oak.COFRES, Oak.piezas_activas(), Oak.NOTAS]:
 		for d in lista:
 			if d.has("casilla"):
 				puntos_clave.append(d["casilla"])
@@ -723,7 +753,7 @@ func _poner_cofres() -> void:
 
 
 func _poner_piezas() -> void:
-	for p in Oak.PIEZAS:
+	for p in Oak.piezas_activas():                 # (V12: con la propuesta encendida, también sus piezas)
 		var c: Vector2 = p["casilla"]
 		var n := _arte(p["id"], _rect_punto(c))
 		if n != null:
@@ -742,6 +772,11 @@ func _pieza_provisional(p: Dictionary) -> Node2D:
 			return _poner_objeto("oak_tablon", c * T)
 		"oak_mesa_parejas":                           # V11: la mesa de juego (el dibujo del atril, a falta de una mesa)
 			return _poner_objeto("oak_atril", c * T)
+		"oak_cerradura_runica":                       # V12, fase 7: el arcón del Concejo (el dibujo del cofre)
+			var n := _poner_objeto("cofre_abierto" if Oak.cerradura_abierta() else "cofre", c * T)
+			if Oak.cerradura_abierta():
+				n.set_meta("abierto", true)
+			return n
 		"oak_torre":
 			return _poner_objeto("oak_puerta", Vector2(c.x, _rect("torre").end.y) * T)
 		"oak_ronda_bajar":
@@ -1382,6 +1417,9 @@ func _usar_pieza(e: Array) -> void:
 		return
 	if p["id"] == "oak_mesa_parejas":                 # V11: la mesa de juego de la taberna
 		_abrir_juego()
+		return
+	if not Oak.config_cerradura(p["id"]).is_empty() and Oak.cumple(p["si"]):   # V12, fase 7: una cerradura rúnica
+		_abrir_cerradura(e)
 		return
 	if not Oak.cumple(p["si"]):
 		_avisar(p["texto_sin"], "examinar", true)

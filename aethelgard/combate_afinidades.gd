@@ -47,6 +47,11 @@ const TABLA := {
 	"velador_corteza": {"debil": ["Fuego"], "resiste": ["Hielo", "Rayo"], "inmune": [],
 		"estados_resiste": ["lento", "def_baja"], "estados_inmune": ["prision"],
 		"por_que": "Leño vivo: arde; la savia aguanta el frío y la madera no conduce el rayo; con raíces, no se le encierra."},
+	# V12 (14/11), meshy_e01 Custodio de Porcelana (piloto, APAGADO): el paquete de los cuatro enemigos NO trae
+	# afinidades; fila NEUTRA hasta que el usuario las decida (no se inventan).
+	"meshy_e01": {"debil": [], "resiste": [], "inmune": [],
+		"estados_resiste": [], "estados_inmune": [],
+		"por_que": "Porcelana animada: sus afinidades están por decidir (el paquete no las trae)."},
 	"gorthor": {"debil": ["Hielo"], "resiste": ["Fuego"], "inmune": [],
 		"estados_resiste": ["lento", "atk_baja"], "estados_inmune": ["prision"],
 		"por_que": "Bestia de la Garganta, hecha al calor de la roca: el frío le entumece."},

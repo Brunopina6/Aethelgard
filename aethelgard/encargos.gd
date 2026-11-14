@@ -9,8 +9,19 @@ extends RefCounted
 #   material:<clave de inventario>=<n>   investigacion:<id> (completada)   hecha:<receta> (oficios, de un solo uso)
 #   estado_de:<lugar>/<clave>   (progreso.gd, estado de un lugar: p. ej. estado_de:oakhaven/encina_bosque)
 # Las demás (estado:, cond:, modo:) las entiende el módulo de la región (su función cumple), si la tiene.
+#
+# V12 (14/11, fase 7: primera experiencia jugable), campos OPCIONALES (sin ellos, todo sigue igual):
+#   tipo     principal, secundaria (por defecto), personal, secreta, cadena o contrato (el Diario lo rotula).
+#            Una «secreta» no sale en el Diario hasta que su «empieza» se cumple (como todas) y nunca enseña pasos
+#            futuros ni pistas que el jugador no haya visto.
+#   pistas   [{"texto", "si"}]: lo que el jugador ya sabe (lo que leyó, oyó o decidió). Sale cuando «si» se cumple;
+#            también tras acabar (así el Diario recuerda las decisiones). Nunca una solución que no se haya visto.
+# El Diario enseña los pasos ya hechos y el que toca (pasos_conocidos): los siguientes no, para no adelantar nada.
+# «La caravana perdida» (Mar de Cristal, datos/encargos_desierto.gd) se añade al registro en V12.
 
-const FUENTES := ["res://ciudades/oakhaven.gd", "res://datos/encargos_pastos.gd", "res://datos/encargos_oakhaven.gd"]
+const FUENTES := ["res://ciudades/oakhaven.gd", "res://datos/encargos_pastos.gd", "res://datos/encargos_oakhaven.gd",
+	"res://datos/encargos_desierto.gd", "res://ciudades/oakhaven_propuestas.gd"]   # (la última: PROPUESTA apagada)
+const TIPOS := ["principal", "secundaria", "personal", "secreta", "cadena", "contrato"]
 
 
 static func _p():
@@ -86,6 +97,32 @@ static func paso_actual(e: Dictionary) -> Dictionary:
 		if not cumple(p.get("hecho", ""), e["fuente"]):
 			return p
 	return {}
+
+
+# V12: los pasos que el jugador ya conoce, en orden: los hechos y el que toca ahora ({"id", "texto", "hecho"}).
+# Los posteriores al actual no se dan (no se adelanta lo que aún no se sabe).
+static func pasos_conocidos(e: Dictionary) -> Array:
+	var r: Array = []
+	var actual := paso_actual(e)
+	for p in e["m"].get("pasos", []):
+		var hecho := cumple(p.get("hecho", ""), e["fuente"])
+		if hecho or p == actual:
+			r.append({"id": p.get("id", ""), "texto": str(p["texto"]), "hecho": hecho})
+	return r
+
+
+# V12: las pistas (y decisiones) que el jugador ya conoce de este encargo, en orden.
+static func pistas_conocidas(e: Dictionary) -> Array:
+	var r: Array = []
+	for p in e["m"].get("pistas", []):
+		if cumple(p.get("si", ""), e["fuente"]):
+			r.append(str(p["texto"]))
+	return r
+
+
+static func tipo(e: Dictionary) -> String:
+	var t := str(e["m"].get("tipo", "secundaria"))
+	return t if t in TIPOS else "secundaria"
 
 
 static func de(id: String) -> Dictionary:

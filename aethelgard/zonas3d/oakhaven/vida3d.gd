@@ -84,6 +84,7 @@ func _montar() -> void:
 	for id in VECINOS:
 		_crear_vecino(id)
 	_poner_cofres()
+	_poner_arcon()
 	_poner_notas()
 	_poner_paginas()
 	_poner_proyectos()
@@ -244,39 +245,9 @@ func _poner_cofres() -> void:
 	var abiertos: Dictionary = Engine.get_meta("cofres_abiertos", {})
 	for c in Oak.COFRES:
 		var id: String = c["id"]
-		var cas: Vector2 = c["casilla"]
-		var alto := _en_ronda(cas)
-		var n := Node3D.new()
-		n.name = "Cofre_" + id
-		n.position = sitio(cas, alto)
-		add_child(n)
-		var base: MeshInstance3D = barrios.plantilla("plantilla_cofre_base") if barrios != null else null
-		var tapa := Node3D.new()
-		tapa.name = "Tapa"
-		tapa.position = Vector3(0, 0.36, -0.24)
-		n.add_child(tapa)
-		if base != null:
-			n.add_child(base)
-			var mt: MeshInstance3D = barrios.plantilla("plantilla_cofre_tapa")
-			if mt != null:
-				tapa.add_child(mt)
-		else:
-			var bm := MeshInstance3D.new()
-			var caja := BoxMesh.new()
-			caja.size = Vector3(0.76, 0.5, 0.48)
-			bm.mesh = caja
-			bm.position.y = 0.25
-			n.add_child(bm)
-		var cuerpo := StaticBody3D.new()
-		var col := CollisionShape3D.new()
-		var forma := BoxShape3D.new()
-		forma.size = Vector3(0.8, 0.6, 0.52)
-		col.shape = forma
-		col.position.y = 0.3
-		cuerpo.add_child(col)
-		n.add_child(cuerpo)
-		if not alto and barrios != null and barrios.ciudad != null:
-			barrios.ciudad.bloqueos.append(Rect2(cas.x - 0.4, cas.y - 0.26, 0.8, 0.52))
+		var hecho := _nodo_cofre(c["casilla"], "Cofre_" + id)
+		var n: Node3D = hecho[0]
+		var tapa: Node3D = hecho[1]
 		var abierto_ya := abiertos.has(id)
 		if abierto_ya:
 			tapa.rotation.x = -1.9
@@ -285,6 +256,117 @@ func _poner_cofres() -> void:
 		if not abierto_ya and tipo in ["cofre escondido", "cofre a la vista"]:
 			brillo = _destello(n, Vector3(0, 0.75, 0), 1.6 if c.has("brilla_desde") else 1.0)
 		cofres[id] = {"nodo": n, "tapa": tapa, "abierto": abierto_ya, "brillo": brillo, "pos": n.position}
+
+
+# Un cofre con su tapa (la plantilla de los barrios o, sin ella, una caja), su choque y su bloqueo: [nodo, tapa].
+func _nodo_cofre(cas: Vector2, nombre: String) -> Array:
+	var alto := _en_ronda(cas)
+	var n := Node3D.new()
+	n.name = nombre
+	n.position = sitio(cas, alto)
+	add_child(n)
+	var base: MeshInstance3D = barrios.plantilla("plantilla_cofre_base") if barrios != null else null
+	var tapa := Node3D.new()
+	tapa.name = "Tapa"
+	tapa.position = Vector3(0, 0.36, -0.24)
+	n.add_child(tapa)
+	if base != null:
+		n.add_child(base)
+		var mt: MeshInstance3D = barrios.plantilla("plantilla_cofre_tapa")
+		if mt != null:
+			tapa.add_child(mt)
+	else:
+		var bm := MeshInstance3D.new()
+		var caja := BoxMesh.new()
+		caja.size = Vector3(0.76, 0.5, 0.48)
+		bm.mesh = caja
+		bm.position.y = 0.25
+		n.add_child(bm)
+	var cuerpo := StaticBody3D.new()
+	var col := CollisionShape3D.new()
+	var forma := BoxShape3D.new()
+	forma.size = Vector3(0.8, 0.6, 0.52)
+	col.shape = forma
+	col.position.y = 0.3
+	cuerpo.add_child(col)
+	n.add_child(cuerpo)
+	if not alto and barrios != null and barrios.ciudad != null:
+		barrios.ciudad.bloqueos.append(Rect2(cas.x - 0.4, cas.y - 0.26, 0.8, 0.52))
+	return [n, tapa]
+
+
+# V12, fase 7: el arcón del Concejo (Oak.CERRADURA): un cofre como los demás con un aro de runas dorado en la tapa. Su
+# botón es el de la pieza oak_cerradura_runica («Girar los anillos»; abierta, «Examinar»).
+var arcon := {}                             # {"nodo", "tapa"} (o vacío si no hay pieza)
+func _poner_arcon() -> void:
+	var p := Oak.pieza(Oak.CERRADURA["id"])
+	if p.is_empty():
+		return
+	var hecho := _nodo_cofre(p["casilla"], "Arcon_cerradura")
+	arcon = {"nodo": hecho[0], "tapa": hecho[1]}
+	var aro := MeshInstance3D.new()
+	aro.name = "Aro_runas"
+	var toro := TorusMesh.new()
+	toro.inner_radius = 0.13
+	toro.outer_radius = 0.19
+	toro.rings = 16
+	toro.ring_segments = 6
+	aro.mesh = toro
+	var m := StandardMaterial3D.new()
+	m.albedo_color = Color("E8C46A")
+	m.metallic = 0.7
+	m.roughness = 0.35
+	m.emission_enabled = true
+	m.emission = Color("E8C46A")
+	m.emission_energy_multiplier = 0.35
+	aro.material_override = m
+	aro.rotation.x = PI / 2.0                               # de cara, en el frente del arcón
+	aro.position = Vector3(0, 0.3, 0.27)
+	(hecho[0] as Node3D).add_child(aro)
+	if Oak.cerradura_abierta():
+		(hecho[1] as Node3D).rotation.x = -1.9
+	# V12 (PROPUESTA apagada, ciudades/oakhaven_propuestas.gd): la losa del cantero, plana en el suelo, con su aro.
+	var losa := Oak.pieza("oak_losa_cantero")
+	if not losa.is_empty():
+		var n := Node3D.new()
+		n.name = "Losa_cantero"
+		n.position = sitio(losa["casilla"])
+		add_child(n)
+		var piedra := MeshInstance3D.new()
+		var caja := BoxMesh.new()
+		caja.size = Vector3(1.1, 0.08, 1.1)
+		piedra.mesh = caja
+		piedra.position.y = 0.04
+		var mp := StandardMaterial3D.new()
+		mp.albedo_color = Color(0.55, 0.53, 0.5)
+		mp.roughness = 0.95
+		piedra.material_override = mp
+		n.add_child(piedra)
+		var aro2 := aro.duplicate() as MeshInstance3D
+		aro2.rotation = Vector3.ZERO
+		aro2.position = Vector3(0, 0.09, 0)
+		aro2.scale = Vector3.ONE * 1.8
+		n.add_child(aro2)
+		arcon["losa"] = n
+
+
+func abrir_cerradura(id: String = Oak.CERRADURA["id"]) -> void:
+	if ocupado() or Oak.config_cerradura(id).is_empty() or Oak.cerradura_abierta(id):
+		return
+	_sonido("examinar")
+	Oak.ver_cerradura(id)
+	var m = load("res://cerradura_runica.gd").new()
+	m.config = Oak.config_cerradura(id)
+	m.al_resolver = Oak.abrir_cerradura.bind(id)
+	abierto = m
+	m.resuelta.connect(func():
+		if id == Oak.CERRADURA["id"] and not arcon.is_empty() and is_instance_valid(arcon["tapa"]):
+			var t := (arcon["tapa"] as Node3D).create_tween()
+			t.tween_property(arcon["tapa"], "rotation:x", -1.9, 0.45).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT))
+	m.cerrado.connect(func():
+		abierto = null
+		guardar())
+	region.add_child(m)
 
 
 func _abrir_cofre(id: String) -> void:
@@ -396,7 +478,7 @@ func piezas() -> Array:
 	for id in cofres:
 		if not cofres[id]["abierto"]:
 			r.append(["cofre:" + id, cofres[id]["pos"], RADIO_COFRE, "Abrir cofre"])
-	for p in Oak.PIEZAS:
+	for p in Oak.piezas_activas():                         # (V12: con la propuesta encendida, también sus piezas)
 		var id: String = p["id"]
 		if id.begins_with("oak_farol_") and Progreso.estado(Oak.NOMBRE, id.trim_prefix("oak_")):
 			continue                                        # (encendido: ya no se usa, como en la 2D)
@@ -539,6 +621,9 @@ func usar_pieza(id: String) -> void:
 		return
 	if id == "oak_mesa_parejas":
 		abrir_parejas()
+		return
+	if not Oak.config_cerradura(id).is_empty() and Oak.cumple(p["si"]):   # V12, fase 7: una cerradura rúnica
+		abrir_cerradura(id)
 		return
 	if not Oak.cumple(p["si"]):
 		if str(p["texto_sin"]) != "":

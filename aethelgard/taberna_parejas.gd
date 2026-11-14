@@ -110,26 +110,34 @@ func _dibujar_carta(i: int) -> void:
 	var col: Color = COLOR[c["simbolo"]]
 	if c["hecha"]:
 		col = col.darkened(0.25)
-	match c["simbolo"]:
+	dibujar_simbolo(n, c["simbolo"], m, col, Color(0.16, 0.13, 0.1))
+
+
+# Un símbolo del reino centrado en «m» («fondo»: el color de detrás, para la luna). «escala» 1 es el de las cartas;
+# V12 (fase 7): también lo usa la cerradura rúnica (cerradura_runica.gd), más pequeño.
+static func dibujar_simbolo(n: CanvasItem, simbolo: String, m: Vector2, col: Color, fondo: Color, escala := 1.0) -> void:
+	var e := escala
+	match simbolo:
 		"Fuego":
-			n.draw_colored_polygon(PackedVector2Array([m + Vector2(0, -44), m + Vector2(26, 10), m + Vector2(0, 40),
-				m + Vector2(-26, 10)]), col)
+			n.draw_colored_polygon(PackedVector2Array([m + Vector2(0, -44) * e, m + Vector2(26, 10) * e,
+				m + Vector2(0, 40) * e, m + Vector2(-26, 10) * e]), col)
 		"Agua":
-			n.draw_circle(m + Vector2(0, 10), 28, col)
-			n.draw_colored_polygon(PackedVector2Array([m + Vector2(0, -42), m + Vector2(22, 0), m + Vector2(-22, 0)]), col)
+			n.draw_circle(m + Vector2(0, 10) * e, 28 * e, col)
+			n.draw_colored_polygon(PackedVector2Array([m + Vector2(0, -42) * e, m + Vector2(22, 0) * e,
+				m + Vector2(-22, 0) * e]), col)
 		"Rayo":
-			n.draw_colored_polygon(PackedVector2Array([m + Vector2(8, -44), m + Vector2(-20, 6), m + Vector2(-2, 6),
-				m + Vector2(-10, 44), m + Vector2(22, -8), m + Vector2(4, -8)]), col)
+			n.draw_colored_polygon(PackedVector2Array([m + Vector2(8, -44) * e, m + Vector2(-20, 6) * e,
+				m + Vector2(-2, 6) * e, m + Vector2(-10, 44) * e, m + Vector2(22, -8) * e, m + Vector2(4, -8) * e]), col)
 		"Cura":
-			n.draw_rect(Rect2(m + Vector2(-10, -36), Vector2(20, 72)), col)
-			n.draw_rect(Rect2(m + Vector2(-36, -10), Vector2(72, 20)), col)
+			n.draw_rect(Rect2(m + Vector2(-10, -36) * e, Vector2(20, 72) * e), col)
+			n.draw_rect(Rect2(m + Vector2(-36, -10) * e, Vector2(72, 20) * e), col)
 		"Runa":
-			n.draw_arc(m, 34, 0, TAU, 32, col, 5.0, true)
-			n.draw_line(m + Vector2(0, -26), m + Vector2(0, 26), col, 5.0)
-			n.draw_line(m + Vector2(-18, -8), m + Vector2(18, 8), col, 5.0)
+			n.draw_arc(m, 34 * e, 0, TAU, 32, col, maxf(5.0 * e, 2.0), true)
+			n.draw_line(m + Vector2(0, -26) * e, m + Vector2(0, 26) * e, col, maxf(5.0 * e, 2.0))
+			n.draw_line(m + Vector2(-18, -8) * e, m + Vector2(18, 8) * e, col, maxf(5.0 * e, 2.0))
 		"Luna":
-			n.draw_circle(m, 34, col)
-			n.draw_circle(m + Vector2(14, -8), 30, Color(0.16, 0.13, 0.1))
+			n.draw_circle(m, 34 * e, col)
+			n.draw_circle(m + Vector2(14, -8) * e, 30 * e, fondo)
 
 
 func _pintar() -> void:
