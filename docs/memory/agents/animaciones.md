@@ -1047,3 +1047,14 @@ cifras, matriz y pendientes: `docs/v12/CUSTODIO_E01_V12.md`.
   medir rendimiento (otros Godot abiertos) ni Android.
 - **Archivos compartidos tocados:** `combate.gd` (ganchos «V12, Custodio»), `recursos.gd` (APAGADOS), `pruebas/lista_pruebas.txt`
   (2 líneas), `docs/recursos.md` (1 fila), `docs/versiones/licencias_pendientes.txt` (1 línea `meshy_e01`).
+
+## 14/11/2026 04:35 — Nix, vestuario canónico (segunda pasada), rama `claude/v12-nix-vestuario`
+
+- Detalle completo en `docs/v12/NIX_PILOTO_FBX.md` §9. Todo tras `nix_fbx` (apagado); apagado, nada cambia.
+- Ropa como malla aparte `ropa_nix` (7.513 triángulos, 1 material, atlas de 1024): capucha con forro y pelo recogido,
+  capa corta, corpiño con el emblema (Ojo de Horus en estrella de seis puntas), mangas, peplo, faldones, tabardo, medias
+  asimétricas, botas y bolsas. 6 huesos nuevos (faldones 2+2, capa, capucha) horneados en los 23 clips; los faldones se
+  abren con oscilación desfasada al canalizar. Cetro propio `cetro_nix.glb` en `arma_d`. Mono negro y pelo ceniza.
+- Hallado y corregido en `nix_3d.gd`: en combate real el piloto cargaba `nix.glb` (combate.gd fija la ruta tras `_init`).
+- Pruebas: `prueba_nix_fbx` 60 · 0, `prueba_nix_v12` superada con y sin `nix_fbx`, fotos revisadas (estudio y combate).
+- Pide al coordinador: fila de `docs/recursos.md` y revisar el encuadre `nix3d` de `combate.gd` con el FBX.

@@ -204,13 +204,20 @@ func _al_empezar() -> void:
 				var contrato: Dictionary = p._clips
 				var ajenos: Array = Array(p.anim.get_animation_list()).filter(func(n): return n != "RESET" and not contrato.has(n))
 				_ok(ajenos.is_empty() and contrato.size() >= 20, "clips que no son de su contrato: %s" % [ajenos])
-				_ok(p.find_child("cara_nix", true, false) != null and p.v2 != null and p.v2.tiene_cara(), "Nix sin su cara")
-				for l in ["cuerpo_nix", "cuerpo_nix_lod1", "cuerpo_nix_lod2"]:
-					var mi = p.find_child(l, true, false)
-					_ok(mi is MeshInstance3D, "falta %s" % l)
-				var l0 = p.find_child("cuerpo_nix", true, false)
-				_ok(l0 != null and l0.visibility_range_begin == 0.0 and l0.visibility_range_end > 0.0, "el LOD0 sin su distancia")
-				_ok(p.skel.find_bone("arma_d") >= 0 and p.vara == null, "el bastón no va en su hueso")
+				if p._fbx:
+					# 14/11, con «-- nix_fbx»: el modelo del FBX con su vestuario (cara en la textura, LOD del
+					# importador, cetro propio por socket); prueba_nix_fbx.gd comprueba el modelo en detalle
+					_ok(p.ruta_modelo == "res://personajes/nix/fbx/nix_fbx.glb", "en combate no carga el GLB del FBX: %s" % p.ruta_modelo)
+					_ok(p.find_child("ropa_nix", true, false) is MeshInstance3D, "Nix FBX sin su ropa")
+					_ok(p.vara != null and p.vara.find_child("cetro_nix", true, false) != null, "Nix FBX sin su cetro en el socket")
+				else:
+					_ok(p.find_child("cara_nix", true, false) != null and p.v2 != null and p.v2.tiene_cara(), "Nix sin su cara")
+					for l in ["cuerpo_nix", "cuerpo_nix_lod1", "cuerpo_nix_lod2"]:
+						var mi = p.find_child(l, true, false)
+						_ok(mi is MeshInstance3D, "falta %s" % l)
+					var l0 = p.find_child("cuerpo_nix", true, false)
+					_ok(l0 != null and l0.visibility_range_begin == 0.0 and l0.visibility_range_end > 0.0, "el LOD0 sin su distancia")
+					_ok(p.skel.find_bone("arma_d") >= 0 and p.vara == null, "el bastón no va en su hueso")
 				var pm: Vector3 = p.punto_magia()
 				_ok(pm.y > p.global_position.y + 0.5, "el punto de la magia no está en el cristal: %s" % pm)
 				datos["p"] = p
@@ -350,7 +357,9 @@ func _turno_a(quien: Dictionary) -> void:
 			_ok(quien.has("conjuro") and quien["mp"] == int(datos["pm"]) - 48 and NX.sellos(quien) == 0,
 				"el Colapso no se prepara, no gasta 48 PM o los sellos")
 			var p = datos.get("p")
-			_ok(p != null and String(p.anim.current_animation) == "magia_concentrar", "Nix no se concentra al preparar")
+			# (con el FBX la concentración empieza por «canalizar» y enlaza el bucle)
+			_ok(p != null and String(p.anim.current_animation) in (["magia_concentrar", "canalizar"] if p._fbx else ["magia_concentrar"]),
+				"Nix no se concentra al preparar")
 			paso = 5
 		5:
 			_ok(not quien.has("conjuro"), "el Colapso sigue preparándose")

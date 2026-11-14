@@ -14,8 +14,8 @@ extends "res://maga_3d.gd"
 #   - LOD por distancia (visibility_range) entre «cuerpo_nix», «cuerpo_nix_lod1» y «cuerpo_nix_lod2».
 #
 # 14/11, PILOTO desde el FBX del usuario (personajes/nix/fbx/nix_fbx.gd, interruptor «nix_fbx», APAGADO): con él, carga
-# nix_fbx.glb (la Nix «base lisa» del FBX, sin ropa todavía) y su JSON; el cetro va por socket en «arma_d» (el del
-# inventario o el provisional), sin LOD manuales (los genera el importador) y concentrarse empieza por «canalizar» (los
+# nix_fbx.glb (la Nix del FBX con su vestuario canónico como malla aparte, «ropa_nix») y su JSON; el cetro va por
+# socket en «arma_d» (el del inventario o, sin arma, su cetro propio cetro_nix.glb), sin LOD manuales (los genera el importador) y concentrarse empieza por «canalizar» (los
 # mechones se elevan con retraso). Apagado, todo lo de abajo es exactamente lo de antes.
 
 const RUTA_NIX := "res://personajes/nix/nix.glb"
@@ -57,6 +57,10 @@ func _init() -> void:
 
 
 func _ready() -> void:
+	# 14/11: combate.gd (modelo_3d) pone ruta_modelo = nix.glb DESPUÉS de _init; con el interruptor, el GLB del FBX manda
+	# (antes, en un combate real se veía la Nix de siempre con el JSON y el cetro del piloto: sin LOD y con dos bastones)
+	if _fbx:
+		ruta_modelo = NixFBX.GLB
 	if FileAccess.file_exists(_ruta_json):
 		var d = JSON.parse_string(FileAccess.get_file_as_string(_ruta_json))
 		if d is Dictionary:
@@ -135,6 +139,17 @@ func _crear_vara() -> void:
 		return
 	var inv = load("res://inventario.gd")
 	var arma: Dictionary = inv.arma_de(heroe)
+	if (arma.is_empty() or not ResourceLoader.exists(arma.get("modelo", ""))) and ResourceLoader.exists(NixFBX.CETRO):
+		# su cetro propio (14/11, p9_cetro.py), en metros del modelo: va tal cual en el socket
+		vara = Node3D.new()
+		vara.name = "CetroNix"
+		skel.add_child(vara)
+		var c: Node3D = load(NixFBX.CETRO).instantiate()
+		c.name = "cetro_nix"
+		vara.add_child(c)
+		_vara_punta = NixFBX.CETRO_PUNTA
+		gestos.al_terminar = _actualizar_vara
+		return
 	if arma.is_empty() or not ResourceLoader.exists(arma.get("modelo", "")):
 		arma = inv.ARMAS.get(NixFBX.CETRO_PROVISIONAL, {})
 	if arma.is_empty() or not ResourceLoader.exists(arma["modelo"]):

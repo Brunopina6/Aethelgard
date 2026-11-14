@@ -1,7 +1,9 @@
 extends SceneTree
 # V12 (14/11): fotos en Godot del piloto de Nix desde el FBX (personajes/nix/fbx/, interruptor «nix_fbx» encendido solo
 # aquí), con ventana: junto a la Nix de siempre (misma luz y escala del juego), de frente, tres cuartos, perfil y
-# espalda en guardia y en reposo, la cara de cerca y la canalización (mechones con retraso) en cuatro instantes.
+# espalda en guardia y en reposo, la cara de cerca y la canalización (mechones con retraso) en cuatro instantes; con el
+# vestuario (14/11), los faldones abiertos al concentrarse (frente, tres cuartos y espalda), el emblema de la espalda y
+# andar y correr.
 # «-- salida=<carpeta>». No toca la partida.
 
 var salida := ""
@@ -109,7 +111,39 @@ func _process(_d: float) -> bool:
 			t_canal = Time.get_ticks_msec()
 		9, 10, 11, 12:
 			_foto("1%d_canalizar_%dms" % [paso - 9, Time.get_ticks_msec() - t_canal])
+			if paso == 12:
+				_mirar(Vector3(0.0, 1.0, 4.6), Vector3(0, 0.9, 0))
 		13:
+			# vestuario (14/11): los faldones abiertos en el bucle de la concentración, de frente, tres cuartos y espalda
+			_foto("20_concentrar_frente")
+			_girar(-40)
+		14:
+			_foto("21_concentrar_tres_cuartos")
+			_girar(180)
+		15:
+			_foto("22_concentrar_espalda")
+			nix.reposo()
+			_girar(150)
+		16:
+			_foto("23_espalda_emblema_guardia")
+			_mirar(Vector3(0.0, 1.3, 2.2), Vector3(0, 1.15, 0))
+			_girar(180)
+		17:
+			_foto("24_emblema_cerca")
+			_mirar(Vector3(0.0, 1.0, 4.6), Vector3(0, 0.9, 0))
+			_girar(-90)
+			nix.play("Walking", 0.1)
+		18:
+			_foto("25_andar_perfil")
+			nix.play("Running", 0.1)
+		19:
+			_foto("26_correr_perfil")
+			_girar(-40)
+		20:
+			_foto("27_correr_tres_cuartos")
+			nix.reposo()
+			_girar(0)
+		21:
 			print("FOTOS: %d en %s" % [fotos.size(), salida])
 			quit(0)
 			return true

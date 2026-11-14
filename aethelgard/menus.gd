@@ -873,7 +873,7 @@ func _pintar_ajustes() -> void:
 		# Garon ([garon] capa, capa_garon.gd). Las tres se leen de user://ajustes.cfg; se notan al entrar en una zona o
 		# combate nuevo.
 		for op_p in [["Nix (cuarta heroína)", "calidad_pruebas", "nix_v12", true],
-				["Nix: modelo FBX (piloto, sin ropa)", "calidad_pruebas", "nix_fbx", true],
+				["Nix: modelo FBX (piloto con vestuario)", "calidad_pruebas", "nix_fbx", true],
 				["Capa de Garon articulada", "garon", "capa", "articulada"]]:
 			var sec_p: String = op_p[1]
 			var clave_p: String = op_p[2]

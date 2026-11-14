@@ -178,3 +178,135 @@ trabajando), memoria, coste del material.
 | Guardado | sin cambios (el interruptor no se guarda; el modelo no toca la partida) |
 | PC | verificado funcional (capturas); rendimiento sin medir |
 | Android (Redmi) | pendiente: no se ha medido ni instalado nada |
+
+## 9. Vestuario canónico (segunda pasada, 14/11/2026 04:30) — sigue APAGADO tras `nix_fbx`
+
+Rama local `claude/v12-nix-vestuario` (desde `claude/rebelum-v12` @ `80ac41a`), sin subir. Canon aplicado: encargo
+§5-6 e `INSTRUCCIONES_COMPLEMENTARIAS_14_11.md`, con las referencias `Nix_TPose_Vestida_Frente/Perfil/Espalda_Emblema`.
+**Rostro e identidad sin tocar** (cara, ojos, flequillo, mechón superior y los dos delanteros son los del FBX).
+
+### 9.1 Qué se hizo (guiones en `personajes/nix/fbx/fuente_blender/`)
+
+- `p8_vestuario.py` (parte de `p4_rig.blend`), `p8_pintura.py` (rasterizar UV e interpolar por texel) y
+  `p8_dibujos.py` (los dibujos, en metros del cuerpo); `p9_cetro.py` (el cetro). Todo por guion, rehacible:
+  `blender -b -P p8_vestuario.py -- <p4_rig.blend> <texturas> <render> <blend salida> <glb salida>` (≈ 1 min con renders)
+  y `blender -b --factory-startup -P p9_cetro.py -- <glb> <render>`. Después: copiar los GLB a `personajes/nix/fbx/` e
+  importar (las texturas nuevas que extrae el importador se ponen en VRAM comprimida en su `.import`).
+- **Ropa como piezas separadas, en UNA malla aparte `ropa_nix` con UN material `nix_ropa`** (atlas de 1024: color y
+  metal/rugosidad, comprimidos en VRAM). El cuerpo sigue entero debajo (no es una carcasa vacía). Dos tipos de pieza:
+  - **ceñidas**: copias de caras del cuerpo desplazadas por la normal (heredan sus pesos: no atraviesan al doblarse) y
+    cortadas con planos para que los bordes visibles sean rectos: corpiño (6,5 mm), mangas (4 mm, hasta la muñeca),
+    medias (3,5 mm), botas (8,5-18 mm, con la boca abierta) y **capa corta** (16-20 mm sobre hombros, espalda alta, lados
+    del pecho y brazo hasta medio bíceps, con vuelo y forro púrpura);
+  - **construidas** (rejillas de dos capas, exterior negra y forro púrpura, con ribete dorado: superficies cerradas):
+    **capucha** amplia (rostro visible, forro púrpura, sin sombrero), **peplo** (faldón corto, abierto delante),
+    **dos faldones largos** abiertos por delante, **tabardo** delantero, **bolsas** del cinturón y colgantes de los
+    faldones. Se empujan fuera del cuerpo y de las piezas ya hechas con un margen de 4 mm (mismo desplazamiento para la
+    capa y su forro: no se cruzan). Pesos copiados del punto más cercano del cuerpo o de sus huesos propios.
+- **Pelo recogido dentro de la capucha:** el pelo de los lados y de detrás se comprime con suavidad hacia un elipsoide
+  del cráneo (556 vértices, 4,6 cm como mucho); el de delante de la cara, el mechón superior y los mechones delanteros no
+  se tocan. Los dos mechones delanteros se adelantan 2 cm en la punta (raíz quieta) para caer por delante de la ropa.
+  Sin melena larga.
+- **Textura del cuerpo** (por texel según el triángulo al que pertenece): el mono gris → negro con un punto de púrpura
+  (398.831 texeles; guantes incluidos; conserva el relieve) y rugosidad de tela (≥ 0,8); el pelo casi blanco → **gris
+  ceniza** (×0,70/0,715/0,755; 418.426 texeles). La piel, los ojos y el flequillo se reconocen y no cambian. Con eso
+  desaparece la **franja clara del pecho** bajo los mechones (era textura de pelo del mono).
+- **Dibujos** (dorado envejecido con metal; amatistas): ribetes de capucha, capa, faldones, peplo y tabardo; enredaderas
+  con hojas; cierres y costuras de princesa del corpiño; cinturones de cuero con hebilla y amatista; **emblema dorado de
+  la espalda: Ojo de Horus dentro de una estrella de SEIS puntas formada por dos triángulos** (no pentagrama, no en el
+  pecho), centrado a 1,23 m bajo la capa; **medias asimétricas como la referencia de frente: la derecha con ramas y
+  hojas, la izquierda geométrica** (línea, estrellas de cuatro puntas, rombos y arcos); detrás, línea y estrellas en las
+  dos; botas negras con puntera dorada, boca dorada, rombo con amatista y correa.
+- **Huesos nuevos: 6** (54 en total, 42 deforman): `faldon_i_1/2`, `faldon_d_1/2` (2 por lado, pivote en la cadera de
+  cada pierna), `capa` (espalda de la capa corta) y `capucha` (punta y nuca). **Sin física por hueso:** su movimiento va
+  **horneado en los 23 clips** (todos tienen pistas de los 6, así ningún clip deja la ropa donde la dejó otro):
+  - faldones: siguen el balanceo de su muslo con retraso (raíz 0,06 s, punta 0,16 s); hacia delante poco (×0,45: el
+    muslo sale por la abertura), hacia atrás más (×0,9: lo empuja); muslo muy arriba → lo de abajo cuelga; cadera baja
+    (de rodillas) → se abren y se quedan atrás para no hundirse en el suelo;
+  - **canalización** (`canalizar` y el bucle `magia_concentrar`): los faldones se **abren** hacia fuera y atrás con
+    **oscilación desfasada** (izquierda y derecha, raíz y punta con fases distintas; el bucle cierra con dos ondas), además
+    de los mechones de antes; la capa se levanta y la capucha hace un leve vaivén.
+- **Cetro propio** `cetro_nix.glb` (612 triángulos, 1 material con textura de 128 y la amatista con emisión suave):
+  asta negra con anillos dorados y empuñadura de cuero, aro dorado con la estrella de seis puntas y la amatista; punta
+  mágica a 0,50 m del puño. `nix_3d.gd` lo pone en el socket `arma_d` cuando Nix no lleva arma equipada (si la lleva, la
+  del inventario como antes); la magia sale de la amatista. El provisional (Loto Lunar) queda solo de respaldo.
+- **Arreglo de integración hallado aquí:** `combate.gd modelo_3d()` pone `ruta_modelo = nix.glb` DESPUÉS de `_init`, así
+  que en un combate real **el piloto nunca cargaba el GLB del FBX** (se veía la Nix de siempre con el JSON y el cetro del
+  piloto: eso eran los «2 fallos esperados» de `prueba_nix_v12 -- nix_fbx` del §7). Ahora `nix_3d.gd _ready` fija el GLB
+  del FBX si el interruptor está encendido (captura antes/después en `godot\combate\`). Apagado, nada cambia.
+
+### 9.2 Cifras
+
+| | Triángulos | Notas |
+|---|---|---|
+| Cuerpo `cuerpo_nix` | 11.968 | sin cambios de malla salvo el pelo recogido y los mechones adelantados |
+| Ropa `ropa_nix` | **7.513** | corpiño 1.450, mangas 454, medias 831, botas 592, capa 990, capucha 1.284, peplo 456, faldones 2 × 620, tabardo y bolsas 216 |
+| **Personaje (LOD0)** | **19.481** | objetivo ≤ 18-20 mil con ropa; con el cetro, 20.093 |
+| Cetro `cetro_nix` | 612 | |
+
+Materiales: **2 de personaje** (`nix_cuerpo`, `nix_ropa`) + **1 de arma** (`cetro_nix`). Texturas: cuerpo 3 × 1024
+(color retocado, normal y rugosidad), ropa 2 × 1024 (color y metal/rugosidad; aprovecha ≈ 49 % del atlas), cetro 3 × 128;
+las de 1024, comprimidas en VRAM con mipmaps (S3TC/ETC2). Pesos: ≤ 4 por vértice, normalizados, 0 sin peso. GLB 3,19 MB
+(antes 2,37). Sin medir el rendimiento (había otros Godot trabajando; el encargo pide medir sin otra carga).
+
+### 9.3 Pruebas (PC, datos aislados con `ejecutar_pruebas.ps1`; partida.save y carpeta real sin cambios en todas)
+
+| Prueba | Resultado | Resumen |
+|---|---|---|
+| `prueba_nix_fbx` (ampliada: 54 huesos, ropa aparte, 2 materiales, ≤ 20.000, pesos, huesos de la ropa con peso, atlas comprimido, sin restos, cetro propio, faldones que se abren al canalizar y se cierran al volver) | **SUPERADA**, 60 comprobaciones, 0 fallos | `D:\REBELUM_diagnostico\pruebas\2026-11-14_042515\resumen.md` |
+| `prueba_nix_v12` (interruptor apagado: la Nix de siempre) | **SUPERADA** | mismo resumen |
+| `prueba_nix_v12 -- nix_fbx` (combate real Kael, Lya y Nix con el vestuario; la prueba ya distingue el modelo del FBX) | **SUPERADA** (antes del arreglo y de adaptar la prueba: 6 fallos, todos de comprobar la Nix de siempre) | `D:\REBELUM_diagnostico\pruebas\2026-11-14_042653\resumen.md` |
+| `fotos_nix_fbx` (ampliada) | MANUAL, 19 capturas revisadas | `D:\REBELUM_diagnostico\pruebas\2026-11-14_042024\resumen.md` |
+| `fotos_nix_fbx_combate` (nueva: combate real en la llanura) | MANUAL, 12 capturas revisadas | `D:\REBELUM_diagnostico\pruebas\2026-11-14_042351\resumen.md` |
+
+No se pasó la batería completa (solo toca archivos de Nix y sus pruebas). Había otros Godot abiertos de otras copias
+(anotados en cada resumen).
+
+### 9.4 Evidencias (`D:\REBELUM_diagnostico\v12\expansion\nix\vestuario\`)
+
+- Blender (`render\v4\`): `hoja_T.png` (frente, perfil, espalda, tres cuartos, cabeza y emblema), `hoja_canalizar.png`,
+  `hoja_poses.png` y `hoja_poses2.png` (andar, correr, derrota, victoria, culminante, saltar, ataque, defensa, golpe,
+  derribo, levantarse, girar, hablar y la cadera de cerca); cada clip en frente/perfil/espalda/tres cuartos
+  (`clip_<clip>_<cs>_<vista>.png`). Etapas: `render\cuerpo\`, `piezas\`, `textura\`, `v1`-`v3`. Cetro: `render\cetro\`.
+- Godot: `godot\estudio\` (las 19 de `fotos_nix_fbx`, `hoja1.png`, `hoja2.png`) y `godot\combate\` (12 del combate real,
+  `hoja.png` y `antes_del_arreglo_ruta_modelo_00.png`).
+- `blend\p8_v4.blend` (todo: cuerpo, ropa, esqueleto, clips), `glb\nix_fbx.glb`, `cetro\cetro_nix.glb`,
+  `texturas\*.png` (1024) y los registros de cada pasada en `trabajo\log_*.txt`.
+
+### 9.5 Revisión visual (lo visto, no medido)
+
+- Axilas, hombros, caderas, rodillas y faldones en los clips de las hojas: **sin atravesar** a la distancia del juego.
+  Mangas, medias, corpiño y botas siguen al cuerpo (mismos pesos). La capa corta se apoya en hombros y brazo; al bajar
+  el brazo, el puño de la capa queda como una hombrera con vuelo.
+- Correr: el faldón de detrás se levanta con la pierna que va atrás (vuelo amplio, algo rígido: dos huesos por lado).
+- Derrota y derribo (de rodillas o en el suelo): los faldones se abren y quedan detrás; con dos huesos no se pliegan, así
+  que en la derrota parte del bajo roza el suelo.
+- **Brillo (prioridad 6), comprobado en un combate real** (llanura, luz y fondo del juego): ya no se ve «lavada» (mono y
+  pelo claros del piloto); el traje se lee negro y púrpura con el dorado, la cara se ve dentro de la capucha y el pelo
+  gris. En el estudio de `fotos_nix_fbx` (luz frontal fuerte) el pelo sigue viéndose muy claro.
+
+### 9.6 Matriz del vestuario
+
+| Pieza (prioridad) | Estado |
+|---|---|
+| 1. Capucha + forro, pelo recogido | **verificado** en render y en Godot (estudio y combate real) |
+| 2. Capa corta y faldones con huesos | **verificado** en render (23 clips) y en Godot; la apertura desfasada en la canalización, comprobada por prueba |
+| 3. Medias asimétricas y calzado | **verificado** en render y en Godot (estudio) |
+| 4. Emblema de la espalda | **verificado** en render y en Godot (`24_emblema_cerca.png`) |
+| 5. Cetro propio por socket | **verificado** en Godot (prueba: es `cetro_nix` y sigue a `arma_d`; la magia sale de la amatista) |
+| 6. Brillo excesivo | **corregido** en la textura (mono negro, pelo ceniza, tela mate); visto en combate real en el PC; Redmi pendiente |
+| Emisión de iris y ornamentos (básica, fuerte, suprema) | **pendiente** (no hecho: el material de los v2 usa EMISSION para el reflejo del metal) |
+| Android (Redmi) | **pendiente**: ni instalado ni medido |
+
+### 9.7 Pendientes
+
+- Emisión separada de iris y ornamentos con las tres intensidades y su limpieza en interrupción, muerte, pausa y fin.
+- Verla en el Redmi y medir (coste de 19,5 mil triángulos y 2 materiales; overdraw de capucha y faldones) sin otra carga.
+- Texturas de 2048 para el perfil de PC: no se rehicieron con el mono negro y el pelo ceniza (solo las de 1024).
+- `RightHandMiddle1` sigue sin pesos; los texeles oscuros de la mandíbula quedan bajo la capucha y el cuello alto negro,
+  sin corregir en su origen.
+- Faldones: con 2 huesos por lado no se pliegan al arrodillarse; las bolsas son cajas sencillas.
+- El encuadre del combate (`combate.gd`, entrada `nix3d`: `esc` 0,56, `alto_vista` 2,45, `centro_y` 1,12) es el de la
+  Nix chibi con sombrero; con el FBX conviene revisarlo (archivo del coordinador, no tocado).
+- Registrar en `docs/recursos.md` la Nix del FBX (piloto y vestuario): fila propuesta en el informe de la rama.
+- Retrato de diálogo, cara expresiva y retoque adulto de los clips chibi, como en el §6.
