@@ -59,13 +59,35 @@ func _mapear_animaciones() -> void:
 	# V12 (14/11): AvanzarDoble y RetrocederDoble (garon_espadas.res) están hechos con el esqueleto del Garon ORIGINAL;
 	# puestos en el v2 (y el v3, que hereda de aquí) le descolocaban la cadera (0,55-0,71 m de lado, a ras de suelo;
 	# visto por el especialista de la capa, docs/v12/CAPA_GARON_V12.md). Sin ellos en «nombres», avanzar() y
-	# retroceder() usan su vía prevista: correr con el clip propio del v2. El original los sigue usando.
+	# retroceder() andan con el clip propio del v2 (ver avanzar/retroceder abajo). El original los sigue usando.
 	for n in ["reposo", "guardia", "andar", "correr", "paseo", "derrota"]:
 		if lib.has_animation(n):
 			lib.get_animation(n).loop_mode = Animation.LOOP_LINEAR
 	for n in ["andar", "correr", "juicio", "giro", "paseo"]:
 		if lib.has_animation(n):
 			_quitar_avance(n)
+
+
+# V12 (14/11, revisión): en combate el v2 se acerca y se aleja ANDANDO con su clip (al alejarse, reproducido al revés:
+# un paso atrás de cara al enemigo), en vez de correr hacia delante mientras retrocede. El original no cambia.
+func avanzar(velocidad := 1.6) -> void:
+	if not es_v2:
+		super.avanzar(velocidad)
+		return
+	_base_movimiento()
+	play("Andar", 0.15)
+	anim.speed_scale = velocidad * 0.75
+	_viento(1.2)
+
+
+func retroceder(velocidad := 1.6) -> void:
+	if not es_v2:
+		super.retroceder(velocidad)
+		return
+	_base_movimiento()
+	play("Andar", 0.15)
+	anim.speed_scale = -velocidad * 0.75
+	_viento(1.2)
 
 
 func activar_esperas(si := true) -> bool:

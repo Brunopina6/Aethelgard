@@ -1166,7 +1166,7 @@ func _info_objetivo(f: Dictionary, ok: bool) -> String:
 			t.append("⚠ Prepara un golpe")
 	if f.get("aturdido", false):
 		t.append("Aturdido")
-	elif f.get("defendiendo", false) and not f.get("hero", false):
+	elif f.get("defendiendo", false) and not f.get("hero", false) and not Custodio.es(f):   # (el Custodio ya lo explica)
 		t.append("En guardia")
 	if int(f.get("quemadura", 0)) > 0:
 		t.append("Quemado")

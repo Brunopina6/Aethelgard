@@ -123,6 +123,10 @@ static func proyectil(cb: Node, bola: Node2D) -> void:
 	var n = _nuevo(cb, "proyectil", Vector2.ZERO, 3.0)
 	n.scale = Vector2.ONE / maxf(bola.scale.x, 0.01)
 	n.datos = {"ultima": Vector2.INF, "vel": Vector2(-1, 0)}
+	# (revisión 14/11) la bola lleva modulate = color de la magia y se hereda: se compensa para que el orbe conserve
+	# sus blancos y su azul propios (un modulate por encima de 1 deshace el tinte del padre)
+	var m: Color = bola.modulate
+	n.modulate = Color(1.0 / maxf(m.r, 0.05), 1.0 / maxf(m.g, 0.05), 1.0 / maxf(m.b, 0.05), 1.0)
 	bola.add_child(n)
 
 
@@ -152,7 +156,7 @@ static func impacto(cb: Node, centro: Vector2, suelo: Vector2, potencia := 1.0) 
 		cb._fogonazo(Color(0.3, 0.6, 1.0), 0.1, 0.25)   # antes 0,22: ahora el golpe lo cuenta el agua
 	cb._luz(Color(0.45, 0.75, 1.0), 2.2, 5.0, 1.0, centro)
 	var alto := clampf(suelo.y - centro.y, 70.0, 420.0)
-	var n = _nuevo(cb, "impacto", centro, 1.5)
+	var n = _nuevo(cb, "impacto", centro, 2.4)          # (revisión 14/11: 1,5 s cortaba las gotas en el aire)
 	n.z_index = 6                                      # delante del enemigo, como el géiser
 	n.datos = {"suelo": suelo, "pot": potencia, "membrana": not en_ola,
 		"r": clampf(alto * 1.05, 110.0, 260.0) * (0.85 if potencia < 1.0 else 1.0)}

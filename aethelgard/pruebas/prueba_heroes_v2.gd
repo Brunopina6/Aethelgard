@@ -173,8 +173,12 @@ func _heroe(h: String) -> void:
 		_ok(not n.nombres.has("AvanzarDoble") and not n.nombres.has("RetrocederDoble"), "Garon v2 sin los pasos del esqueleto original")
 		n.avanzar()
 		await _frames(4)
-		_ok(n.anim.current_animation == str(n.nombres.get("Correr", "correr")),
-			"Garon v2 avanzando usa su clip de correr («%s»)" % n.anim.current_animation)
+		_ok(n.anim.current_animation == str(n.nombres.get("Andar", "andar")) and n.anim.speed_scale > 0.0,
+			"Garon v2 avanzando anda hacia delante con su clip («%s», %.2f)" % [n.anim.current_animation, n.anim.speed_scale])
+		n.retroceder()
+		await _frames(4)
+		_ok(n.anim.current_animation == str(n.nombres.get("Andar", "andar")) and n.anim.speed_scale < 0.0,
+			"Garon v2 retrocediendo anda hacia atrás (clip al revés; «%s», %.2f)" % [n.anim.current_animation, n.anim.speed_scale])
 		n.reposo()
 	else:
 		_ok(n.v2 != null and n.v2.tiene_cara(), "cara expresiva")
