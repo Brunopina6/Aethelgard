@@ -72,6 +72,11 @@ const EXPLORAR := {
 		"nota": "Puerta del Sur y vecinos, el arcón del Concejo (casilla 50,5; 22) y, si está activa, la misión del cantero."},
 	"oakhaven_nix": {"titulo": "Oakhaven con Nix en el grupo", "activos": ["Kael", "Garon", "Nix"],
 		"nota": "Nix andando y girando con el grupo. Para canalizar, el combate de Nix."},
+	# 15/11: la siguiente ubicación 3D (EN PRUEBAS, apagada fuera de aquí y de Ajustes): se entra por el muelle, sin
+	# tener que llegar a Sunken City en el mapa. Al salir al mapa, «Volver al banco de pruebas» en Ajustes.
+	"sunken": {"titulo": "Sunken City 3D (en pruebas)", "activos": ["Kael", "Lya", "Garon"],
+		"escena": "res://zonas3d/sunken_3d.tscn",
+		"nota": "Popa Rota → Cubierta Mayor: Ulla y Brea, «El sello de la capitana», la costilla sin farol y la forja."},
 }
 
 var cuerpo: VBoxContainer
@@ -271,7 +276,7 @@ func _explorar(clave: String) -> void:
 	saliendo = true
 	poner_grupo(EXPLORAR[clave]["activos"])
 	Sonido.efecto("ui_tic")
-	Recursos.cambiar_escena(escena_base)
+	Recursos.cambiar_escena(str(EXPLORAR[clave].get("escena", escena_base)))
 
 
 func _salir() -> void:
