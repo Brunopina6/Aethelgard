@@ -15,6 +15,7 @@ var fallos := 0
 func _initialize() -> void:
 	C = load("res://datos/catalogo.gd")
 	_reales()
+	_recetas_reales_validas()
 	_validos()
 	_invalidos()
 	C.usar_raiz("res://datos/")
@@ -25,6 +26,14 @@ func _initialize() -> void:
 func _fallo(t: String) -> void:
 	fallos += 1
 	print("FALLO: ", t)
+
+
+func _recetas_reales_validas() -> void:   # 15/11: ninguna receta real tiene un resultado o material mal escrito
+	var T = load("res://talleres.gd")
+	for id in C.todos("recetas"):
+		var e: String = T.error_receta(C.uno("recetas", id))
+		if e != "":
+			_fallo("receta real «%s» no válida: %s" % [id, e])
 
 
 func _reales() -> void:

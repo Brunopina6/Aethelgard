@@ -107,12 +107,81 @@ func _recetas() -> void:
 	if Inv.cantidad("Hierba lunar") != 0 or Inv.cantidad("Poción") != pociones + 1:
 		_fallo("2: un intento fallido cambió el inventario")
 	Inv.agregar_objeto("Mineral de hierro", 3)
-	if not T.fabricar("filo_reforzado", true) or not "cota_malla" in Inv.datos()["equipables"]:
-		_fallo("2: un equipable fabricado no llega a los equipables")
+	Inv.datos()["equipables"].erase("cota_malla")    # (la partida nueva ya la trae: antes esto pasaba sin dar nada)
+	if not T.fabricar("filo_reforzado", true) or not "cota_malla" in Inv.datos()["equipables"] 			or Inv.cantidad("Mineral de hierro") != 0:
+		_fallo("2: un equipable fabricado no llega a los equipables o no gasta")
 	if T.puede("runa_defensa", true) == "":
 		_fallo("2: se puede fabricar sin investigar")
 	if T.puede("no_existe", true) == "":
 		_fallo("2: se puede fabricar una receta que no existe")
+	_recetas_invalidas()
+
+
+# 2b (15/11, auditoría externa): una receta mal escrita (resultado, destino, atributo, efecto, cifras o materiales) no
+# se puede fabricar, no gasta nada y no se marca como hecha. Un equipable que ya se tiene tampoco gasta nada.
+func _recetas_invalidas() -> void:
+	var Receta = load("res://datos/tipos/receta.gd")
+	var malas := {
+		"mal_sin_cifra": ["mejora:Kael:fuerza", 1, {"Hierba lunar": 1}],
+		"mal_heroe": ["mejora:Nadie:fuerza:3", 1, {"Hierba lunar": 1}],
+		"mal_atributo": ["mejora:Kael:suerte:3", 1, {"Hierba lunar": 1}],
+		"mal_cifra": ["mejora:Kael:fuerza:tres", 1, {"Hierba lunar": 1}],
+		"mal_cero": ["mejora:Kael:fuerza:0", 1, {"Hierba lunar": 1}],
+		"mal_efecto": ["tecnica:Kael:volar:0.1", 1, {"Hierba lunar": 1}],
+		"mal_efecto_max": ["tecnica:Kael:critico:5", 1, {"Hierba lunar": 1}],
+		"mal_pieza": ["pieza:espada_fantasma:ataque:2", 1, {"Hierba lunar": 1}],
+		"mal_prefijo": ["magia:Kael:Fuego:1", 1, {"Hierba lunar": 1}],
+		"mal_objeto": ["Piedra filosofal", 1, {"Hierba lunar": 1}],
+		"mal_cantidad": ["Poción", 0, {"Hierba lunar": 1}],
+		"mal_equipable_2": ["cota_malla", 2, {"Hierba lunar": 1}],
+		"mal_material": ["Poción", 1, {"Polvo de estrellas": 1}],
+		"mal_material_0": ["Poción", 1, {"Hierba lunar": 0}],
+		"mal_sin_material": ["Poción", 1, {}],
+	}
+	var lista: Dictionary = C.todos("recetas")
+	for id in malas:
+		var r = Receta.new()
+		r.id = id
+		r.taller = "alquimia"
+		r.nombre = id
+		r.resultado = malas[id][0]
+		r.cantidad = malas[id][1]
+		r.materiales = malas[id][2]
+		r.borrador = false
+		lista[id] = r
+		Inv.agregar_objeto("Hierba lunar", 2)
+		var antes: Dictionary = Inv.datos().duplicate(true)
+		var motivo: String = T.puede(id, true)
+		if motivo == "" or not motivo.begins_with("Esta receta no es válida"):
+			_fallo("2b: la receta «%s» (%s) pasa la validación («%s»)" % [id, r.resultado, motivo])
+		if T.fabricar(id, true):
+			_fallo("2b: la receta «%s» (%s) se fabrica" % [id, r.resultado])
+		if Inv.datos() != antes:
+			_fallo("2b: la receta «%s» cambió el inventario o lo hecho" % id)
+		lista.erase(id)
+	# un equipable que ya se tiene: «Ya lo tienes», sin gastar
+	Inv.agregar_objeto("Mineral de hierro", 3)
+	var antes2: Dictionary = Inv.datos().duplicate(true)
+	if not "cota_malla" in Inv.datos()["equipables"] or T.puede("filo_reforzado", true) != "Ya lo tienes." \
+			or T.fabricar("filo_reforzado", true) or Inv.datos() != antes2:
+		_fallo("2b: un equipable repetido se fabrica o gasta («%s»)" % T.puede("filo_reforzado", true))
+	# y una buena sigue funcionando: la mejora se aplica de verdad
+	var buena = Receta.new()
+	buena.id = "buena_mejora"
+	buena.taller = "forja"
+	buena.resultado = "mejora:Kael:fuerza:2"
+	buena.materiales = {"Hierba lunar": 1}
+	buena.borrador = false
+	lista["buena_mejora"] = buena
+	var fuerza0: int = int(Inv.datos()["mejoras"].get("Kael", {}).get("fuerza", 0))
+	Inv.agregar_objeto("Hierba lunar", 1)
+	var hierba: int = Inv.cantidad("Hierba lunar")
+	if not T.fabricar("buena_mejora", true) or int(Inv.datos()["mejoras"].get("Kael", {}).get("fuerza", 0)) != fuerza0 + 2 \
+			or Inv.cantidad("Hierba lunar") != hierba - 1 or not "buena_mejora" in Inv.datos()["hechas"]:
+		_fallo("2b: una mejora válida no se aplica, no gasta o no queda hecha")
+	if T.fabricar("buena_mejora", true):
+		_fallo("2b: una mejora se hace dos veces")
+	lista.erase("buena_mejora")
 
 
 func _guardado() -> void:
