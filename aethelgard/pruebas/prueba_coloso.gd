@@ -15,6 +15,12 @@ extends SceneTree
 # Datos aislados; la partida en memoria (no se escribe nada).
 
 const LIMITE := 5000
+# AZAR (15/11): combate.gd hace randomize() en su _ready (salvo «-- semilla=N»), así que la semilla se pone en cada caso
+# DESPUÉS de root.add_child(c) y se vuelve a tirar el ATB inicial de los enemigos con ella (como prueba_gorthor_v12.gd).
+# Antes había un seed(12) al empezar que el primer _ready deshacía: los tres casos eran al azar. El caso A se empieza
+# diferido: desde _initialize el add_child no ejecuta el _ready al momento (la raíz aún no está en el árbol). Cada caso imprime
+# «SEMILLA» y una «TRAZA» por paso del guion (fotograma del caso, paso y PV de todos).
+const SEMILLA := 12
 const K := preload("res://combate_coloso.gd")
 
 var c: Node
@@ -37,7 +43,6 @@ func _initialize() -> void:
 		quit(1)
 		return
 	Inv = load("res://inventario.gd")
-	seed(12)
 	for k in ["decisiones", "combates_ganados", "hitos", "inventario", "grupo_activo"]:
 		if Engine.has_meta(k):
 			Engine.remove_meta(k)
@@ -46,7 +51,8 @@ func _initialize() -> void:
 		G.datos()[n]["nivel"] = 9
 		G.datos()[n]["pv"] = -1
 	_datos()
-	_empezar("A")
+	_empezar.call_deferred("A")                   # (diferido: en _initialize la raíz aún no está en el árbol y el _ready
+	                                              # del combate llegaría después de la semilla)
 
 
 func _fallo(t: String) -> void:
@@ -73,7 +79,11 @@ func _empezar(f: String) -> void:
 	Engine.set_meta("desde_mapa", false)
 	Engine.set_meta("zona", "garganta")
 	c = load("res://combate.tscn").instantiate()
-	root.add_child(c)
+	root.add_child(c)                                 # (aquí su _ready hace randomize())
+	seed(SEMILLA)                                     # desde aquí, el azar del combate es fijo
+	for e in c.enemigos:
+		e["atb"] = randf() * 30.0                     # el ATB inicial, como en combate.gd, ya con la semilla
+	print("SEMILLA %d · caso %s" % [SEMILLA, f])
 	c.sonido_pedido.connect(func(n): sonidos.append(n))
 
 
@@ -94,6 +104,10 @@ func _heroe(n: String) -> Dictionary:
 func _siguiente(p: int) -> void:
 	paso = p
 	f_paso = frames
+	var pv := []
+	for f in c.heroes + c.enemigos:
+		pv.append("%s %d" % [f["nombre"], int(f["hp"])])
+	print("TRAZA [%s] f%05d paso %d · %s" % [fase, frames, p, ", ".join(pv)])
 
 
 func _terminar(siguiente: String) -> void:

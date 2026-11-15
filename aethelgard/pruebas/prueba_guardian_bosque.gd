@@ -10,6 +10,12 @@ extends SceneTree
 # Datos aislados; la partida en memoria (no se escribe nada).
 
 const LIMITE := 2400
+# AZAR (15/11): combate.gd hace randomize() en su _ready (salvo «-- semilla=N»), así que la semilla se pone en cada caso
+# DESPUÉS de root.add_child(c) y se vuelve a tirar el ATB inicial de los enemigos con ella (como prueba_gorthor_v12.gd).
+# Antes había un seed(11) al empezar que el primer _ready deshacía: los cuatro casos eran al azar. El caso A se empieza
+# diferido: desde _initialize el add_child no ejecuta el _ready al momento (la raíz aún no está en el árbol). Cada caso imprime
+# «SEMILLA» y una «TRAZA» por paso del guion (fotograma del caso, paso y PV de todos).
+const SEMILLA := 11
 const B := preload("res://combate_bosque.gd")
 
 var c: Node
@@ -17,6 +23,7 @@ var fase := ""
 var frames := 0
 var fallos := 0
 var paso := 0
+var paso_traza := -1
 var Inv
 
 
@@ -26,11 +33,11 @@ func _initialize() -> void:
 		quit(1)
 		return
 	Inv = load("res://inventario.gd")
-	seed(11)
 	for k in ["decisiones", "combates_ganados", "hitos", "inventario", "investigaciones"]:
 		if Engine.has_meta(k):
 			Engine.remove_meta(k)
-	_empezar("A")
+	_empezar.call_deferred("A")                   # (diferido: en _initialize la raíz aún no está en el árbol y el _ready
+	                                              # del combate llegaría después de la semilla)
 
 
 func _fallo(t: String) -> void:
@@ -50,7 +57,12 @@ func _empezar(f: String) -> void:
 	Engine.set_meta("combate_fijo", B.COMBATE)
 	Engine.set_meta("desde_mapa", false)
 	c = load("res://combate.tscn").instantiate()
-	root.add_child(c)
+	root.add_child(c)                                 # (aquí su _ready hace randomize())
+	seed(SEMILLA)                                     # desde aquí, el azar del combate es fijo
+	for e in c.enemigos:
+		e["atb"] = randf() * 30.0                     # el ATB inicial, como en combate.gd, ya con la semilla
+	print("SEMILLA %d · caso %s" % [SEMILLA, f])
+	paso_traza = -1
 
 
 func _guardian() -> Dictionary:
@@ -85,6 +97,12 @@ func _process(_d: float) -> bool:
 			_caso_b(g)
 		"C":
 			_caso_c(g)
+	if paso != paso_traza and c != null and is_instance_valid(c):   # una línea por paso del guion
+		paso_traza = paso
+		var pv := []
+		for f in c.heroes + c.enemigos:
+			pv.append("%s %d" % [f["nombre"], int(f["hp"])])
+		print("TRAZA [%s] f%05d paso %d · %s" % [fase, frames, paso, ", ".join(pv)])
 	return false
 
 
