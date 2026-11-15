@@ -58,6 +58,20 @@ const EN_EL_GRUPO := ["Kael", "Lya", "Garon"]
 const RECLUTAS := ["Naira", "Nix"]               # los que se unen después (detrás de un hito o de un interruptor)
 const ORDEN := ["Kael", "Lya", "Garon", "Naira", "Nix"]   # orden de los menús, del combate y de la fila en la exploración
 const MAX_ACTIVOS := 3                           # preferencia del usuario: tres combatientes y reservas
+# V12 (15/11): SOLO en el banco de pruebas de Auditoría (banco_pruebas.gd, caso «Grupo de cuatro»), un permiso de sesión
+# deja cuatro activos para probar el combate con Nix. El usuario no ha decidido si el grupo pasa a cuatro: MAX_ACTIVOS,
+# la incorporación, la Formación, los menús y la exploración siguen con tres (docs/v12/NIX_GRUPO_CUATRO.md).
+const MAX_ACTIVOS_BANCO := 4
+const META_GRUPO4 := "banco_grupo4"
+
+
+# Cuántos activos caben ahora: MAX_ACTIVOS, salvo con el permiso de sesión del banco (su meta Y la del banco, y solo en
+# la APK de Auditoría o en el editor). Ninguna partida guarda esas metas.
+static func max_activos() -> int:
+	if bool(Engine.get_meta(META_GRUPO4, false)) and bool(Engine.get_meta("banco_pruebas", false)) \
+			and (OS.has_feature("auditoria") or OS.has_feature("editor")):
+		return MAX_ACTIVOS_BANCO
+	return MAX_ACTIVOS
 # NAIRA.md §4.6 propone «Kael siempre activo» (protagonista, brazalete, escenas fijas). Pendiente del usuario: con
 # false, la Formación deja pasar a Kael a la reserva.
 const KAEL_SIEMPRE_ACTIVO := true
@@ -140,8 +154,8 @@ static func activos() -> Array:
 		return EN_EL_GRUPO.filter(func(n): return n in todos)   # los de siempre (un recluta hay que unirlo)
 	var a: Array = Engine.get_meta("grupo_activo")
 	var r: Array = ORDEN.filter(func(n): return n in a and n in todos)
-	if r.size() > MAX_ACTIVOS:                     # (una partida tocada a mano): los primeros, Kael delante
-		r = r.slice(0, MAX_ACTIVOS)
+	if r.size() > max_activos():                   # (una partida tocada a mano): los primeros, Kael delante
+		r = r.slice(0, max_activos())             # (V12: cuatro solo con el permiso de sesión del banco)
 	return r if not r.is_empty() else ["Kael"]       # nunca sin nadie
 
 

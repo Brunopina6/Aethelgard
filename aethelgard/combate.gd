@@ -549,6 +549,11 @@ const RECLUTAS_COMBATE := [
 		"atk": 5, "vel": 20.0, "atb": 0.0, "pos": Vector2(548, 95)},
 ]
 const SITIO_DE_RECLUTA := {"Naira": ["Lya", "Garon", "Kael"], "Nix": ["Lya", "Garon", "Kael"]}
+# V12 (15/11): un CUARTO sitio, para cuando los tres de siempre están y un recluta no tiene hueco. Solo pasa con cuatro
+# activos, y eso solo con el permiso de sesión del banco de pruebas (grupo.gd, max_activos). Fuera, nunca se usa.
+# Detrás y a la derecha de Lya (visto en capturas: delante, entre Garon y Lya, tapaba más). PROVISIONAL: una formación
+# de cuatro de verdad pediría recolocar a los cuatro (docs/v12/NIX_GRUPO_CUATRO.md).
+const SITIO_CUARTO := Vector2(640, 190)
 
 var enemigos: Array = []
 
@@ -729,16 +734,23 @@ func _con_reclutas(presentes: Array, en_grupo: Array) -> Array:
 			{"nombre": "Garon", "pos": Vector2(270, 100)}]:
 		sitio[h["nombre"]] = h["pos"]
 	var puesto := {}                                 # sitio libre → recluta que lo ocupa
+	var cuarto: Array = []                           # V12 (banco, grupo de cuatro): el que no tiene hueco, al SITIO_CUARTO
 	for r in RECLUTAS_COMBATE:
 		if not r["nombre"] in en_grupo or _ruta_3d(MODELOS[r["modelo"]]) == "":
 			continue
+		var colocado := false
 		for s in SITIO_DE_RECLUTA.get(r["nombre"], orden):
 			if not s in en_grupo and not puesto.has(s):
 				var nuevo: Dictionary = r.duplicate(true)
 				nuevo["pos"] = sitio[s]
 				puesto[s] = nuevo
+				colocado = true
 				break
-	if puesto.is_empty():
+		if not colocado and cuarto.is_empty():
+			var extra: Dictionary = r.duplicate(true)
+			extra["pos"] = SITIO_CUARTO
+			cuarto.append(extra)
+	if puesto.is_empty() and cuarto.is_empty():
 		return presentes
 	var lista: Array = []
 	for s in orden:
@@ -747,7 +759,7 @@ func _con_reclutas(presentes: Array, en_grupo: Array) -> Array:
 				lista.append(h)
 		if puesto.has(s):
 			lista.append(puesto[s])
-	return lista
+	return lista + cuarto
 
 
 # Índice de un grupo al azar para un encuentro con «cuantos» héroes (los de tres, como siempre).

@@ -24,7 +24,8 @@ const CARGA := "res://carga.tscn"
 const NIVEL_COMBATE := 12                         # con todas las magias (grupo.gd, NIVEL_MAGIA 1, 5 y 10)
 # Interruptores que el banco enciende solo para su sesión (Engine): se quitan al salir.
 const METAS_SESION := ["meshy_e01", "banco_caso", "nix_v12", "oakhaven_propuestas_v12",
-	"oak_franja", "oak_franja_t", "comentarios_dichos"]   # (y la hora de Oakhaven y los comentarios ya dichos: de la sesión)
+	"oak_franja", "oak_franja_t", "comentarios_dichos",   # (y la hora de Oakhaven y los comentarios ya dichos: de la sesión)
+	"banco_grupo4"]                                   # (15/11: el permiso de cuatro activos, grupo.gd max_activos)
 const Estilo := preload("res://estilo.gd")
 
 # La partida de partida del banco: el grupo recién llegado a Oakhaven (la del Redmi del 11/11, cmp_oakhaven).
@@ -70,6 +71,11 @@ const COMBATES := {
 	"custodio_rotacion": {"titulo": "Custodio: ver la rotación (vida ×8)", "grupo": 28, "activos": ["Kael", "Lya", "Garon"],
 		"vida": 8.0, "armonia": false, "custodio": true,
 		"nota": "Solo para VER Prensa, Avance y Sello seguidos. Vida ×8: NO sirve para juzgar el equilibrio."},
+	# 15/11: el combate con CUATRO, solo aquí. El juego sigue con tres en el grupo activo (grupo.gd, MAX_ACTIVOS) y nadie
+	# ha decidido desde cuándo lucha Nix: docs/v12/NIX_GRUPO_CUATRO.md.
+	"grupo4": {"titulo": "Grupo de cuatro: Kael, Lya, Garon y Nix (prueba)", "grupo": 1,
+		"activos": ["Kael", "Lya", "Garon", "Nix"], "vida": 6.0, "armonia": false,
+		"nota": "SOLO en el banco: el juego sigue con tres. Para ver sitios, barras, menús y turnos con cuatro."},
 }
 const EXPLORAR := {
 	"oakhaven": {"titulo": "Oakhaven con Kael, Lya y Garon", "activos": ["Kael", "Lya", "Garon"],
@@ -111,12 +117,17 @@ static func preparar_partida() -> String:
 	return load("res://progreso.gd").restaurar(BASE.duplicate(true))
 
 
-# Fija el grupo de un caso. Nix solo existe con su interruptor: el banco lo enciende para su sesión.
+# Fija el grupo de un caso. Nix solo existe con su interruptor: el banco lo enciende para su sesión. Con más de
+# MAX_ACTIVOS (el caso «Grupo de cuatro»), el permiso de cuatro activos, también solo de la sesión (grupo.gd).
 static func poner_grupo(activos: Array, nivel := 0) -> void:
 	var G = load("res://grupo.gd")
 	if "Nix" in activos:
 		Engine.set_meta("nix_v12", true)
 		G.unir("Nix")
+	if activos.size() > G.MAX_ACTIVOS:
+		Engine.set_meta(G.META_GRUPO4, true)
+	elif Engine.has_meta(G.META_GRUPO4):
+		Engine.remove_meta(G.META_GRUPO4)
 	G._poner(activos, activos)
 	if nivel > 0:
 		for n in G.datos():

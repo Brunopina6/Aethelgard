@@ -1,9 +1,13 @@
 extends SceneTree
 # V12 (14/11/2026): el BANCO DE PRUEBAS de Auditoría (banco_pruebas.gd). Sin ventana, con datos aislados.
 #   A. Al entrar: la partida va a su archivo propio, se rehace desde BASE (Kael, Lya y Garon en Oakhaven) y la pantalla
-#      tiene sus 7 selectores de variantes (V12, Érebo híbrida: «Érebo: invocación») y sus 7 casos (5 combates y 2 exploraciones).
+#      tiene sus 7 selectores de variantes (V12, Érebo híbrida: «Érebo: invocación») y sus 10 casos (7 combates y 3
+#      exploraciones; 15/11: + «Grupo de cuatro»).
 #   B. Combates: cada caso fija su grupo y sus enemigos; Érebo con la Armonía llena (y solo Lya puede invocar); vida de
 #      los enemigos multiplicada; el Custodio aparece con su interruptor de sesión; Nix entra solo en su caso.
+#      15/11: «Grupo de cuatro» pone a Kael, Lya, Garon y Nix en el combate con el permiso de sesión «banco_grupo4»
+#      (grupo.gd, max_activos); sin él, o fuera del banco, los mismos cuatro nombres dejan TRES (MAX_ACTIVOS sigue en 3), y
+#      los demás casos no lo heredan.
 #   C. Nada permanente: lo ganado en un combate (oro, experiencia, objetos, contratos) desaparece al volver al banco.
 #   D. Guardar dentro del banco escribe SOLO en su archivo; los de las partidas de siempre no cambian (ni existen si no
 #      existían).
@@ -92,11 +96,11 @@ func _a() -> void:
 			casos += 1
 		elif ":" in k:
 			selectores[k.get_slice(":", 0)] = true
-	_ok(casos == BP.COMBATES.size() + BP.EXPLORAR.size() and casos == 9, "A: %d casos en pantalla" % casos)
+	_ok(casos == BP.COMBATES.size() + BP.EXPLORAR.size() and casos == 10, "A: %d casos en pantalla" % casos)
 	_ok(selectores.size() == 7, "A: %d selectores (%s)" % [selectores.size(), str(selectores.keys())])
 	b.queue_free()
 	await _esperar(2)
-	hechos.append("A: archivo propio, grupo de partida, 7 selectores y 7 casos")
+	hechos.append("A: archivo propio, grupo de partida, 7 selectores y %d casos" % casos)
 
 
 func _botones(n: Node) -> Array:
@@ -196,10 +200,52 @@ func _b() -> void:
 	var nombres: Array = c.heroes.map(func(h): return h["nombre"])
 	_ok("Nix" in nombres and not "Lya" in nombres, "B: el combate de Nix tiene %s" % str(nombres))
 	await _cerrar(c)
+	# 15/11: el grupo de cuatro, solo con el permiso de sesión del banco
+	_ok(G.MAX_ACTIVOS == 3, "B: MAX_ACTIVOS del juego es %d (3)" % G.MAX_ACTIVOS)
+	c = await _combate("grupo4")
+	nombres = c.heroes.map(func(h): return h["nombre"])
+	_ok(nombres == ["Kael", "Lya", "Garon", "Nix"] and G.activos().size() == 4 and Engine.get_meta(G.META_GRUPO4, false),
+		"B: el grupo de cuatro tiene %s (activos %s)" % [nombres, G.activos()])
+	var sitios := {}
+	for h in c.heroes:
+		sitios[str(c._suelo_de(h).round())] = true
+	_ok(sitios.size() == 4 and c.menu.grupo.size() == 4, "B: cuatro héroes en %d sitios y %d filas del grupo" % [sitios.size(), c.menu.grupo.size()])
+	# la victoria con cuatro: los cuatro reparten la experiencia como siempre (Nix, como Kael; _repartir_exp espera 1 s)
+	var exp0 := {}
+	for n in ["Kael", "Nix"]:
+		exp0[n] = [int(G.datos()[n]["exp"]), int(G.datos()[n]["nivel"])]
+	for e in c.enemigos:
+		e["hp"] = 0
+	_ok(c._comprobar_fin() and c.estado == "fin", "B: con cuatro, la victoria no llega (%s)" % c.estado)
+	await _esperar(90)
+	var exp1 := {}
+	for n in ["Kael", "Nix"]:
+		exp1[n] = [int(G.datos()[n]["exp"]), int(G.datos()[n]["nivel"])]
+	print("EXP con cuatro: antes %s, después %s" % [exp0, exp1])
+	_ok(exp1["Kael"] != exp0["Kael"] and exp1["Nix"] != exp0["Nix"],
+		"B: con cuatro, la experiencia no llega a todos (antes %s, después %s)" % [exp0, exp1])
+	await _cerrar(c)
+	Engine.remove_meta(G.META_GRUPO4)                 # sin el permiso: los mismos cuatro nombres, tres
+	_ok(G.activos() == ["Kael", "Lya", "Garon"] and G.max_activos() == 3, "B: sin el permiso, activos %s" % [G.activos()])
+	Engine.set_meta(G.META_GRUPO4, true)
+	Engine.set_meta(BP.META, false)                   # fuera del banco, aunque quede la meta: tres
+	_ok(G.activos().size() == 3 and G.max_activos() == 3, "B: fuera del banco, activos %s" % [G.activos()])
+	seed(14112026)
+	c = load("res://combate.tscn").instantiate()
+	root.add_child(c)
+	await _esperar(4)
+	nombres = c.heroes.map(func(h): return h["nombre"])
+	_ok(nombres.size() == 3 and not "Nix" in nombres, "B: fuera del banco el combate tiene %s" % [nombres])
+	await _cerrar(c)
+	Engine.set_meta(BP.META, true)
+	c = await _combate("nix")                         # el caso siguiente no hereda el permiso
+	_ok(not Engine.has_meta(G.META_GRUPO4) and c.heroes.size() == 3, "B: el caso de Nix hereda el grupo de cuatro")
+	await _cerrar(c)
 	BP.preparar_partida()
-	_ok(not Engine.has_meta("meshy_e01") and not Engine.has_meta("nix_v12"), "B: los interruptores de un caso pasan al siguiente")
+	_ok(not Engine.has_meta("meshy_e01") and not Engine.has_meta("nix_v12") and not Engine.has_meta(G.META_GRUPO4),
+		"B: los interruptores de un caso pasan al siguiente")
 	_ok(not "Nix" in G.miembros(), "B: Nix sigue en el grupo al volver al banco")
-	hechos.append("B: Érebo lista (×6 la vida, solo Lya invoca, Maremoto), el Custodio con su personalidad, Nix solo en su caso")
+	hechos.append("B: Érebo lista (×6 la vida, solo Lya invoca, Maremoto), el Custodio con su personalidad, Nix solo en su caso; grupo de cuatro solo con el permiso de sesión (sin él o fuera del banco, tres)")
 
 
 # ================================================================= C
@@ -279,10 +325,11 @@ func _e() -> void:
 	BP.preparar_partida()
 	P.guardar(BP.ESCENA)
 	Engine.set_meta("meshy_e01", true)
+	Engine.set_meta(G.META_GRUPO4, true)
 	BP.salir()
 	_ok(not BP.en_banco() and P.archivo() != BP.ARCHIVO, "E: al salir, la partida sigue yendo al banco")
 	_ok(not FileAccess.file_exists(BP.ARCHIVO), "E: al salir queda el archivo del banco")
-	for k in ["meshy_e01", "banco_caso", "nix_v12", "oakhaven_propuestas_v12", "oak_franja", "grupo", "inventario", "partida_lista", "archivo_partida_prueba"]:
+	for k in ["meshy_e01", "banco_caso", "nix_v12", "oakhaven_propuestas_v12", "oak_franja", "grupo", "inventario", "partida_lista", "archivo_partida_prueba", G.META_GRUPO4]:
 		_ok(not Engine.has_meta(k), "E: al salir queda «%s» en la sesión" % k)
 	hechos.append("E: salir deja la sesión sin partida, sin interruptores y sin el archivo del banco")
 	await _esperar(1)
