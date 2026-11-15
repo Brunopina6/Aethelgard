@@ -14,6 +14,15 @@ extends SceneTree
 #   B. Muerte durante el aviso: no golpea, la marca se va y el combate acaba con victoria y sin nodos suyos.
 #   C. Velocidad de animación ×2 a media Prensa: el impacto sigue al reloj del clip (llega antes) y golpea una vez.
 #   D. Cerrar el combate en mitad de la Prensa (cambio de escena): sin errores ni nodos huérfanos.
+# 15/11: Sello de Clausura (e01_a3) y la rotación de los tres especiales:
+#   M. 7 clips (+ e01__attack_sello) y el alias «sello»; instantes iguales en JSON, modelo y combate; en el Sello, pies y
+#      cadera quietos (raíz quieta), manos a la llave del pecho a 0,45 y palmas delante a 1,30.
+#   E. Sello: la marca aparece en el aviso (0,20) y dura hasta el impacto; el centro se fija a 0,80 y no se mueve aunque
+#      el elegido se aparte; a 1,30 un impacto; golpea UNA vez a cada héroe dentro del círculo (1,3 m; calculado aquí
+#      aparte) y a nadie de fuera; daño arcano 9-13 (defendiendo, la mitad); −15 % de velocidad a los golpeados hasta
+#      su próximo turno (entonces la recuperan exacta); la marca, borrada; recarga 3. La Guardia de Garon cubre.
+#   R. La rotación con la recarga de cada uno: Prensa, G, G, Avance, G, G, Sello, G, G, G, Prensa.
+# Azar (15/11): la semilla, DESPUÉS de root.add_child (combate._ready hace randomize()).
 
 const ARCHIVO := "user://prueba_meshy_e01.save"
 const MAX_FOTOGRAMAS := 2400
@@ -70,6 +79,8 @@ func _probar() -> void:
 	await _b()
 	await _c()
 	await _d()
+	await _e()
+	await _r()
 	_limpiar()
 	Engine.remove_meta("archivo_partida_prueba")
 	print("OK: ", "\n    ".join(hechos))
@@ -127,9 +138,15 @@ func _m() -> void:
 		return
 	var propios: PackedStringArray = p.clips_propios()
 	propios.sort()
-	_ok(propios == PackedStringArray(["e01__attack_porton", "e01__attack_prensa", "e01__death", "e01__hit", "e01__idle",
-		"e01__walk"]), "M: clips %s" % [propios])
-	_ok(p.tiene("recibir_golpe") and p.tiene("derrota") and p.tiene("porton"), "M: faltan los alias del golpe, la derrota o el Avance")
+	_ok(propios == PackedStringArray(["e01__attack_porton", "e01__attack_prensa", "e01__attack_sello", "e01__death", "e01__hit",
+		"e01__idle", "e01__walk"]), "M: clips %s" % [propios])
+	_ok(p.tiene("recibir_golpe") and p.tiene("derrota") and p.tiene("porton") and p.tiene("sello"),
+		"M: faltan los alias del golpe, la derrota, el Avance o el Sello")
+	for clip in ["sello", "e01__attack_sello"]:
+		_ok(_mismos(p.EVENTOS[clip], j["clips"]["e01__attack_sello"]["eventos"]), "M: instantes de %s distintos del JSON" % clip)
+	_ok(absf(p.instante("sello", "aviso") - PE.T_SELLO_MARCA) < 0.001 and absf(p.instante("sello", "fija_direccion") - PE.T_SELLO_FIJA) < 0.001
+		and absf(p.instante("sello", "impacto") - PE.T_SELLO_IMPACTO) < 0.001, "M: el Sello no tiene los mismos instantes en el modelo y el combate")
+	_ok(p.anim.get_animation("sello").loop_mode == Animation.LOOP_NONE and absf(p.duracion("sello") - 2.8) < 0.04, "M: el Sello no dura 2,8 s sin bucle")
 	for n in j["clips"]:
 		var a: Animation = p.anim.get_animation(n)
 		_ok(a != null and absf(a.length - float(j["clips"][n]["duracion"])) <= 1.0 / 30.0 + 0.001,
@@ -200,8 +217,35 @@ func _m() -> void:
 	_ok(cad_baja > 0.1 and cad_baja <= 0.15 * 1.85 + 0.001, "M: la cadera baja %.3f m (máx. %.3f)" % [cad_baja, 0.15 * 1.85])
 	_ok(mano.z > 0.3 and mano.y < 0.45, "M: en el impacto la muñeca está en %s (delante y abajo)" % [mano])
 	_ok(mano_alta.y > 1.6, "M: a 0,65 s la muñeca está a %.2f m (puños por encima de los hombros)" % mano_alta.y)
-	hechos.append("M: 3 clips (%s), alias = mismo recurso, %d huesos (%d con pesos), %d triángulos, %d influencias, %.2f m; Prensa: pie quieto (%.4f m), cadera −%.3f m (%.1f %%), muñeca en el impacto %s, a 0,65 s a %.2f m" % [
-		", ".join(propios), p.skel.get_bone_count(), usados.size(), tris, max_inf, aabb.size.y, pie_mov, cad_baja, 100.0 * cad_baja / 1.85,
+	# Sello: raíz quieta (pies y cadera), manos a la llave del pecho a 0,45 y palmas extendidas delante a 1,30
+	var b_mano_r: int = p.skel.find_bone("mano.R")
+	p.anim.play("sello")
+	p.anim.seek(0.0, true)
+	var cad_s0: Vector3 = p.skel.get_bone_global_pose(b_cad).origin
+	var pie_s0: Vector3 = p.skel.get_bone_global_pose(b_pie).origin
+	var mano_s0: Vector3 = p.skel.get_bone_global_pose(b_mano).origin
+	var pie_s := 0.0
+	var cad_s := 0.0
+	for k in 29:
+		p.anim.seek(2.8 * k / 28.0, true)
+		pie_s = maxf(pie_s, p.skel.get_bone_global_pose(b_pie).origin.distance_to(pie_s0))
+		cad_s = maxf(cad_s, p.skel.get_bone_global_pose(b_cad).origin.distance_to(cad_s0))
+	p.anim.seek(0.45, true)
+	var llave_l: Vector3 = p.skel.get_bone_global_pose(b_mano).origin
+	var llave_r: Vector3 = p.skel.get_bone_global_pose(b_mano_r).origin
+	p.anim.seek(1.30, true)
+	var palma_l: Vector3 = p.skel.get_bone_global_pose(b_mano).origin
+	var palma_r: Vector3 = p.skel.get_bone_global_pose(b_mano_r).origin
+	_ok(pie_s < 0.005 and cad_s < 0.005, "M: en el Sello se mueven los pies (%.4f m) o la cadera (%.4f m): raíz quieta" % [pie_s, cad_s])
+	# (la muñeca, no los dedos: las manos son grandes y enmarcan la llave con las muñecas a ≈0,35 m del centro)
+	_ok(absf(llave_l.x) < absf(mano_s0.x) - 0.05 and absf(llave_r.x + llave_l.x) < 0.01 and llave_l.y > mano_s0.y + 0.3
+		and llave_l.z > 0.2, "M: a 0,45 las manos no se acercan a la llave del pecho (%s, %s; en reposo %s)" % [llave_l, llave_r, mano_s0])
+	_ok(palma_l.z > llave_l.z + 0.1 and palma_r.z > llave_r.z + 0.1 and palma_l.y > 1.0,
+		"M: a 1,30 las palmas no se extienden delante (%s, %s)" % [palma_l, palma_r])
+	hechos.append("M: Sello: pies %.4f m, cadera %.4f m; manos a 0,45 en %s / %s; palmas a 1,30 en %s / %s" % [pie_s, cad_s,
+		llave_l, llave_r, palma_l, palma_r])
+	hechos.append("M: %d clips (%s), alias = mismo recurso, %d huesos (%d con pesos), %d triángulos, %d influencias, %.2f m; Prensa: pie quieto (%.4f m), cadera −%.3f m (%.1f %%), muñeca en el impacto %s, a 0,65 s a %.2f m" % [
+		propios.size(), ", ".join(propios), p.skel.get_bone_count(), usados.size(), tris, max_inf, aabb.size.y, pie_mov, cad_baja, 100.0 * cad_baja / 1.85,
 		mano, mano_alta.y])
 	p.queue_free()
 	await _esperar(2)
@@ -230,13 +274,13 @@ func _combate(encendido: bool, grupo := 28) -> void:
 	Engine.set_meta("grupo_combate", grupo)
 	if encendido:
 		Engine.set_meta(PE.INTERRUPTOR, true)
-	seed(14112026)
 	c = load("res://combate.tscn").instantiate()
 	impactos.clear()
 	danos.clear()
 	hp_prev.clear()
 	marca_frames.clear()
-	root.add_child(c)
+	root.add_child(c)                                    # (aquí su _ready hace randomize())
+	seed(14112026)                                       # 15/11: la semilla, después (antes no valía de nada)
 	custodio = {}
 	for e in c.enemigos:
 		if e["clave"] == "meshy_e01":
@@ -303,9 +347,11 @@ func _turno(antes_de_empezar := Callable(), durante := Callable()) -> Dictionary
 			break
 	await _esperar(5)
 	var cont1: Dictionary = custodio.get("e01_contador", {})
-	r["que"] = "prensa" if int(cont1.get("prensa", 0)) > int(cont0.get("prensa", 0)) else (
-		"porton" if int(cont1.get("porton", 0)) > int(cont0.get("porton", 0)) else (
-		"guardia" if int(cont1.get("guardia", 0)) > int(cont0.get("guardia", 0)) else "nada"))
+	r["que"] = "nada"
+	for k in ["prensa", "porton", "sello", "guardia"]:
+		if int(cont1.get(k, 0)) > int(cont0.get(k, 0)):
+			r["que"] = k
+			break
 	r["impactos"] = impactos.slice(imp0)
 	r["danos"] = danos.slice(dan0)
 	return r
@@ -414,8 +460,8 @@ func _a() -> void:
 		_ok(int(por2["Lya"][0][2]) * 2 <= dano_lya_1 + 4, "A5: defendiendo, Lya recibe %d (antes %d)" % [por2["Lya"][0][2], dano_lya_1])
 	_ok(absf(lya["atb"] - 50.0) < 0.01 and absf(garon["atb"] - 25.0) < 0.01, "A5: Retroceso con defensa (Lya %.1f, Garon %.1f)" % [lya["atb"], garon["atb"]])
 	_ok(custodio["e01_ultimo"]["id"] != at.get("id", -1), "A5: el Avance reutiliza el attack_instance_id")
-	_ok(custodio["e01_ultimo"].get("ataque", "") == PE.ATAQUE_ID_A2 and PE._siguiente(custodio) == "prensa"
-		and int(custodio["e01_cd"]) == PE.CD_TURNOS, "A5: tras el Avance no toca recargar y luego la Prensa")
+	_ok(custodio["e01_ultimo"].get("ataque", "") == PE.ATAQUE_ID_A2 and PE._siguiente(custodio) == "sello"
+		and int(custodio["e01_cd"]) == PE.CD_TURNOS, "A5: tras el Avance no toca recargar y luego el Sello")
 	_ok(PE.nodos_vivos(c.enemigos).is_empty(), "A5: la franja sigue tras el impacto")
 	hechos.append("A: Prensa (aviso → fija %d f → impacto %d f; marca fija %d f; Lya −%d y Garon −%d una vez en el impacto; Retroceso 15 %%), 2 guardias (recarga 2 → 0), Avance del Portón contra Lya defendiendo (−%d, sin Retroceso; Garon −25 %% de ATB)" % [
 		d_fija, d_imp, r["marca_pos"].size(), dano_lya_1, int(por.get("Garon", [[0, 0, 0]])[0][2]),
@@ -494,3 +540,188 @@ func _d() -> void:
 	_ok(h <= huerfanos0, "D: al cerrar a media Prensa quedan %d nodos huérfanos (antes %d)" % [h, huerfanos0])
 	_limpiar()
 	hechos.append("D: cerrar el combate a media Prensa no deja nodos huérfanos")
+
+
+# ================================================================= E: Sello de Clausura (15/11)
+
+# La distancia en el suelo en metros, calculada AQUÍ aparte (no con la función del combate): 168 px por metro (su modelo:
+# 840 px × 0,6 / 3,0 m) y la profundidad aplastada ×0,32 en la pantalla.
+func _dist_m(a: Vector2, b: Vector2) -> float:
+	var d := b - a
+	return Vector2(d.x, d.y / 0.32).length() / (840.0 * 0.6 / 3.0)
+
+
+func _geometria() -> String:
+	var t := PackedStringArray()
+	var pie: Vector2 = c._suelo_de(custodio)
+	for h in c.heroes:
+		t.append("%s a %.2f m" % [h["nombre"], _dist_m(pie, c._suelo_de(h))])
+	for i in c.heroes.size():
+		for j in range(i + 1, c.heroes.size()):
+			t.append("%s-%s %.2f m" % [c.heroes[i]["nombre"], c.heroes[j]["nombre"],
+				_dist_m(c._suelo_de(c.heroes[i]), c._suelo_de(c.heroes[j]))])
+	return ", ".join(t)
+
+
+# Un turno con el Sello (lo pone a tocar: tras el Avance y sin recarga) y lo que se ve de su centro cada fotograma.
+func _turno_sello(durante := Callable()) -> Dictionary:
+	custodio["e01_especial"] = "porton"
+	custodio["e01_cd"] = 0
+	custodio["e01_guardia"] = false
+	custodio["defendiendo"] = false
+	var centros: Array = []
+	var r := await _turno(Callable(), func():
+		var at: Dictionary = custodio.get("e01_ataque", {})
+		if not at.is_empty():
+			centros.append([Engine.get_process_frames(), at["centro"], at.get("centro_fijo", false)])
+		if durante.is_valid():
+			durante.call(at))
+	r["centros"] = centros
+	return r
+
+
+# Comprueba un Sello: tiempos, marca, centro fijo, quién está dentro (calculado aquí), un golpe a cada uno, el daño, la
+# lentitud y su fin. «cubre»: {cubierto: quien le cubre}. Devuelve los golpeados.
+func _comprobar_sello(caso: String, r: Dictionary, vel0: Dictionary, cubre := {}) -> Array:
+	var at: Dictionary = custodio.get("e01_ultimo", {})
+	_ok(r["que"] == "sello" and at.get("ataque", "") == PE.ATAQUE_ID_A3, "%s: el turno no es el Sello (%s)" % [caso, r["que"]])
+	_ok(r["impactos"].size() == 1 and r["impactos"][0][0] == "sello", "%s: impactos %s (uno, «sello»)" % [caso, r["impactos"]])
+	var d_fija: int = int(at.get("t_fija", 0)) - int(at.get("t_aviso", 0))
+	var d_imp: int = int(at.get("t_impacto", 0)) - int(at.get("t_aviso", 0))
+	_ok(int(at.get("t_aviso", -1)) > 0 and absi(d_fija - 18) <= 2 and absi(d_imp - 33) <= 2,
+		"%s: fija a %d y golpea a %d fotogramas del aviso (18 y 33: 0,20 → 0,80 → 1,30 a 30 fps)" % [caso, d_fija, d_imp])
+	_ok(r["marca_pos"].size() >= d_imp - 3 and not r["marca_pos"].is_empty() and r["marca_pos"][0].size() == 1,
+		"%s: la marca dura %d fotogramas (≥ %d) con %d discos" % [caso, r["marca_pos"].size(), d_imp - 3,
+		r["marca_pos"][0].size() if not r["marca_pos"].is_empty() else 0])
+	var fijo_ok := true
+	for x in r["centros"]:
+		if int(x[0]) > int(at.get("t_fija", 0)) and (x[1] as Vector2) != (at["centro"] as Vector2):
+			fijo_ok = false
+	_ok(fijo_ok, "%s: el centro se mueve después de fijarse" % caso)
+	# quién estaba dentro en el impacto, calculado aquí (posiciones de ahora: nadie se ha movido desde el impacto)
+	var esperados: Array = []
+	for h in c.heroes:
+		if h["hp"] > 0 and _dist_m(at["centro"], c._suelo_de(h)) <= 1.3:
+			esperados.append(h["nombre"])
+	esperados.sort()
+	var dentro: Array = at.get("dentro", []).duplicate()
+	dentro.sort()
+	_ok(dentro == esperados and not esperados.is_empty(), "%s: dentro %s (calculado aquí %s)" % [caso, dentro, esperados])
+	var blancos := {}
+	for n in esperados:
+		blancos[cubre.get(n, n)] = true
+	var por := {}
+	for d in r["danos"]:
+		por[d[0]] = por.get(d[0], []) + [d]
+	var golpeados: Array = []
+	for h in c.heroes:
+		var n: String = h["nombre"]
+		if blancos.has(n):
+			golpeados.append(h)
+			var g: Array = por.get(n, [])
+			_ok(g.size() == 1, "%s: %s recibe %d golpes (uno)" % [caso, n, g.size()])
+			if g.size() == 1:
+				var lo := 4 if h.get("defendiendo", false) else 9
+				var hi := 6 if h.get("defendiendo", false) else 13
+				_ok(int(g[0][2]) >= lo and int(g[0][2]) <= hi, "%s: %s pierde %d (%d-%d)" % [caso, n, g[0][2], lo, hi])
+				_ok(absi(int(g[0][1]) - int(at["t_impacto"])) <= 1, "%s: el daño a %s no cae en el impacto" % [caso, n])
+			_ok(absf(float(h["vel"]) - vel0[n] * 0.85) < 0.0001 and h.has("e01_lento"), "%s: %s no va a −15 %% (%.3f de %.3f)" % [
+				caso, n, h["vel"], vel0[n]])
+		else:
+			_ok(not por.has(n), "%s: %s, fuera, recibe daño" % [caso, n])
+			_ok(float(h["vel"]) == vel0[n] and not h.has("e01_lento"), "%s: %s, fuera, se frena" % [caso, n])
+	_ok(PE.nodos_vivos(c.enemigos).is_empty(), "%s: la marca sigue tras el impacto" % caso)
+	_ok(int(custodio["e01_cd"]) == PE.SELLO_CD_TURNOS and PE._siguiente(custodio) == "prensa", "%s: recarga %d (3) y luego %s" % [
+		caso, int(custodio["e01_cd"]), PE._siguiente(custodio)])
+	return golpeados
+
+
+func _e() -> void:
+	await _combate(true)
+	if custodio.is_empty():
+		return
+	print("GEOMETRIA ", _geometria(), " · px/m del combate %.1f" % PE.px_por_m(c))
+	var vel0 := {}
+	for h in c.heroes:
+		h["vel"] = 1.0                                       # (que se vea la lentitud sin que les llegue el turno)
+		h["atb"] = 0.0
+		vel0[h["nombre"]] = 1.0
+		hp_prev[h["nombre"]] = h["hp"]
+	# E1: sin defender
+	var r := await _turno_sello()
+	var at: Dictionary = custodio.get("e01_ultimo", {})
+	var g1 := await _comprobar_sello("E1", r, vel0)
+	var e1 := "E1: centro en %s (principal %s, %d aliados cerca), dentro %s, daños %s" % [at.get("centro"),
+		at.get("principal", {}).get("nombre", "-"), int(at.get("aliados_cerca", -1)), at.get("dentro"), at.get("danos")]
+	# su fin: al llegarles el turno (la barra llena), la velocidad de antes, exacta
+	for h in g1:
+		h["atb"] = c.ATB_MAX
+	await _esperar(3)
+	for h in g1:
+		_ok(float(h["vel"]) == vel0[h["nombre"]] and not h.has("e01_lento"), "E1: %s no recupera su velocidad al llegarle el turno (%.4f)" % [
+			h["nombre"], h["vel"]])
+		h["atb"] = 0.0
+	_ok(int(custodio["e01_contador"].get("lentitud_fin", 0)) == g1.size(), "E1: fines de la lentitud %d (de %d)" % [
+		int(custodio["e01_contador"].get("lentitud_fin", 0)), g1.size()])
+	# E2: el elegido se aparta 3 m tras fijarse el centro: el círculo no le sigue y no le golpea
+	var apartado := [{}]
+	var movido := [false]
+	var rig0 := [Vector2.ZERO]
+	r = await _turno_sello(func(a: Dictionary):
+		if not movido[0] and a.get("centro_fijo", false) and not a.get("principal", {}).is_empty():
+			movido[0] = true
+			apartado[0] = a["principal"]
+			rig0[0] = apartado[0]["rig"].position
+			apartado[0]["rig"].position += Vector2(3.0 * 168.0, 0.0))
+	_ok(movido[0], "E2: no hubo elegido que apartar")
+	var principal: Dictionary = apartado[0]
+	var g2 := await _comprobar_sello("E2", r, vel0)
+	if not principal.is_empty():
+		_ok(not g2.any(func(h): return is_same(h, principal)), "E2: el elegido, apartado, recibe el Sello")
+		principal["rig"].position = rig0[0]
+	for h in c.heroes:
+		if h.has("e01_lento"):
+			h["atb"] = c.ATB_MAX
+	await _esperar(3)
+	for h in c.heroes:
+		h["atb"] = 0.0
+	# E3: la Guardia de Garon cubre a Lya y Kael defiende
+	var lya := _heroe("Lya")
+	var kael := _heroe("Kael")
+	lya["guardia_de"] = "Garon"
+	kael["defendiendo"] = true
+	r = await _turno_sello()
+	var at3: Dictionary = custodio.get("e01_ultimo", {})
+	var g3 := await _comprobar_sello("E3", r, vel0, {"Lya": "Garon"})
+	_ok(not r["danos"].any(func(d): return d[0] == "Lya"), "E3: Lya, cubierta por Garon, recibe daño")
+	lya.erase("guardia_de")
+	kael["defendiendo"] = false
+	hechos.append(e1)
+	hechos.append("E2: apartado %s tras fijarse: golpeados %s; E3: Garon cubre a Lya, Kael defiende: dentro %s, daños %s" % [
+		principal.get("nombre", "-"), g2.map(func(h): return h["nombre"]), at3.get("dentro"), at3.get("danos")])
+	print("GEOMETRIA ", _geometria())
+	await _cerrar()
+
+
+# ================================================================= R: la rotación de los tres especiales
+
+func _r() -> void:
+	await _combate(true)
+	if custodio.is_empty():
+		return
+	for h in c.heroes:
+		h["vel"] = 0.0
+		h["atb"] = 0.0
+	var visto: Array = []
+	for k in 11:
+		for h in c.heroes:                                   # (que nadie caiga ni le llegue el turno en la prueba)
+			h["hp"] = h["hp_max"]
+			h["atb"] = 0.0
+			h["defendiendo"] = false
+		var r := await _turno()
+		visto.append(r["que"])
+	var esperado := ["prensa", "guardia", "guardia", "porton", "guardia", "guardia", "sello", "guardia", "guardia", "guardia", "prensa"]
+	_ok(visto == esperado, "R: rotación %s (esperada %s)" % [visto, esperado])
+	_ok(PE.nodos_vivos(c.enemigos).is_empty(), "R: quedan marcas")
+	hechos.append("R: %s" % ", ".join(visto))
+	await _cerrar()

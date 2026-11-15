@@ -8,6 +8,8 @@ extends SceneTree
 #      (uno de cada dos, JPG a media resolución) con indice.txt (aviso, fija, impacto y fin de su turno).
 
 const CLIPS := {"reposo": [0.0], "caminar": [0.0, 0.3], "ataque": [0.25, 0.65, 0.9, 1.65]}
+const CLIPS_SELLO := {"sello": [0.45, 0.95, 1.3]}             # 15/11, con «sello»: también el Sello en el estudio
+# («sello» además juega su Sello de Clausura en el combate real; «porton», el Avance; «derrota», su clip de derrota)
 var fotos := ""
 var C
 var G
@@ -106,9 +108,12 @@ func _estudio() -> void:
 			h.mirar(Vector3(0, 0, 1), 0.0)
 		elif "rotation" in h:
 			h.rotation = Vector3.ZERO
+	var clips: Dictionary = CLIPS.duplicate()
+	if "sello" in OS.get_cmdline_user_args():
+		clips.merge(CLIPS_SELLO)
 	for vista in [["frente", 0.0], ["perfil", 90.0], ["espalda", 180.0]]:
-		for clip in CLIPS:
-			for t in CLIPS[clip]:
+		for clip in clips:
+			for t in clips[clip]:
 				cus.mirar(Vector3(sin(deg_to_rad(vista[1])), 0, cos(deg_to_rad(vista[1]))), 0.0)
 				cus.anim.play(clip)
 				cus.anim.seek(t, true)
@@ -137,9 +142,9 @@ func _combate() -> void:
 	Engine.set_meta("tipo_combate", "normal")
 	Engine.set_meta("grupo_combate", 28)
 	Engine.set_meta(PE.INTERRUPTOR, true)
-	seed(14112026)
 	var c = load("res://combate.tscn").instantiate()
-	root.add_child(c)
+	root.add_child(c)                                           # (aquí su _ready hace randomize())
+	seed(14112026)                                              # 15/11: la semilla, después
 	var cus: Dictionary = {}
 	for e in c.enemigos:
 		if PE.es(e):
@@ -153,6 +158,8 @@ func _combate() -> void:
 	c.heroes[1]["hp"] = int(c.heroes[1]["hp_max"] * 0.6)          # Lya, la elegida; Garon, el de detrás
 	if "porton" in OS.get_cmdline_user_args():                  # 14/11, noche: el Avance del Portón (el otro especial)
 		cus["e01_especial"] = "prensa"
+	if "sello" in OS.get_cmdline_user_args():                   # 15/11: el Sello de Clausura (el tercero)
+		cus["e01_especial"] = "porton"
 	await _esperar(60)
 	grabando = true
 	cus["vel"] = 10.0
