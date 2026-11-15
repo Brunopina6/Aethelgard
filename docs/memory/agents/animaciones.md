@@ -1058,3 +1058,20 @@ cifras, matriz y pendientes: `docs/v12/CUSTODIO_E01_V12.md`.
 - Hallado y corregido en `nix_3d.gd`: en combate real el piloto cargaba `nix.glb` (combate.gd fija la ruta tras `_init`).
 - Pruebas: `prueba_nix_fbx` 60 · 0, `prueba_nix_v12` superada con y sin `nix_fbx`, fotos revisadas (estudio y combate).
 - Pide al coordinador: fila de `docs/recursos.md` y revisar el encuadre `nix3d` de `combate.gd` con el FBX.
+
+## 16/11/2026 — Comparar el grupo (Nix junto a Kael, Lya y Garon), rama `claude/v12-comparar-grupo` (desde `bacf0cd`)
+
+- Encargo del usuario: comparaciones del grupo completo y vídeos breves de movimiento, SIN cambiar proporciones de Nix
+  ni encender nada por defecto. No se ha tocado ningún modelo, escala, ajuste ni MAX_ACTIVOS (3).
+- Guiones nuevos (en `lista_pruebas.txt` como «ventana»): `pruebas/fotos_grupo_comparar.gd` (estudio y Pastos Verdes
+  3D, frente/tres cuartos/perfil/espalda/cámara de exploración/cabezas, alturas medidas por silueta ortográfica, hojas)
+  y `pruebas/grabar_grupo_movimiento.gd` (Movie Maker: uno solo, el grupo del juego siguiendo a Kael, la fila de cuatro
+  en estudio). Interruptores solo de sesión: `heroes_version`, `nix_fbx` (solo al crear a Nix FBX), `nix_v12`.
+- Entrega en `D:\REBELUM_diagnostico\comparar_grupo_16_11\` (`LEEME.txt`, 7 hojas, alturas, 90 capturas, 21 MP4).
+- Alturas sin armas a escala de exploración (m): Kael 1,65/1,68/1,73 (orig./v2/v3), Lya 1,53/1,52/1,58, Garon
+  1,62/1,66/1,65, Nix antigua 1,88 (sombrero), Nix FBX 1,51 (capucha; coronilla 1,40). Proporción: chibi ~2,7-2,9
+  «cabezas», Nix FBX ~4,2, Lya orig./v2 ~4,6.
+- Hallado (sin tocar): la Nix antigua (`nix.glb`, LOD por `visibility_range` 0-9 / 9-18 m, margen 0,5, sin fundido) no
+  se ve con la cámara a ~8,5-9,5 m (zoom mínimo del juego, 9 m): vídeo `solo_nix_antigua_9m_NO_SE_VE_por_LOD.mp4`.
+- Comprobado ejecutando (aislado, PC): todas las ejecuciones con salida 0 y sin errores de script; capturas y hojas de
+  fotogramas revisadas una a una. No se midió rendimiento.

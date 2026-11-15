@@ -20,8 +20,8 @@ extends SceneTree
 #   grupo  Pastos Verdes 3D tal cual: Kael con el stick (como un mando) y el grupo del juego siguiéndole
 #          (zonas3d/grupo_3d.gd), con su cámara a «dist» m: quieto, andar, correr, giro y parada (los demás llegan).
 #   fila   presentación (no es una escena del juego): estudio con suelo a cuadros de 1 m y los valores de luz de la
-#          exploración (el sol, girado para que les dé de frente); Kael, Lya, Garon y Nix FBX en fila (1,8 m entre ellos,
-#          SEPARACION de grupo_3d.gd) andando, corriendo y andando; se paran y se giran; cámara lateral que los sigue.
+#          exploración (el sol, girado para que les dé de frente); Kael, Lya, Garon y Nix FBX en fila (1,4 m entre ellos;
+#          en el juego 1,8) andando, corriendo y andando; se paran y se giran; cámara lateral que los sigue.
 
 const HeroesV2 := preload("res://personajes/heroes_v2/heroes_v2.gd")
 const HeroesV3 := preload("res://personajes/heroes_v3/heroes_v3.gd")
@@ -41,6 +41,10 @@ const CORRER := 4.2                                  # m/s: el stick a fondo
 const RECORRIDO := [[1.0, 0.0, 0.0], [3.0, ANDAR, 0.0], [1.2, CORRER, 0.0], [1.0, CORRER, 90.0], [1.6, ANDAR, 180.0],
 	[1.0, ANDAR, 0.0]]
 const QUIETO_FINAL := 2.0
+# Fila del estudio (solo presentación): 1,4 m entre ellos (en el juego, 1,8: grupo_3d.gd SEPARACION) para que quepan
+# más grandes en la imagen; la cámara de lado, a la misma distancia de todos (sin que la perspectiva cambie su altura).
+const FILA_SEP := 1.4
+const FILA_CAM := Vector3(0.6, 1.2, 5.8)
 
 var modo := "solo"
 var version := "originales"
@@ -328,14 +332,14 @@ func _fila() -> void:
 	var hs: Array = []
 	for i in orden.size():
 		var h := _crear(orden[i], mundo)
-		h.position = Vector3(-6.0 - i * 1.8, 0, 0)      # Kael delante y los demás detrás, como la fila del juego
+		h.position = Vector3(-6.0 - i * FILA_SEP, 0, 0)  # Kael delante y los demás detrás, como la fila del juego
 		hs.append(h)
 	await _frames(10)
 	for h in hs:
 		h.mirar(Vector3.RIGHT, 0.0)
 		_reposo(h, 0.0)
 	cam = Camera3D.new()
-	cam.fov = 36.0
+	cam.fov = 40.0
 	mundo.add_child(cam)
 	cam.current = true
 	var centro := func() -> Vector3:
@@ -357,7 +361,7 @@ func _fila() -> void:
 					h.position.x += float(t[1]) * dt
 					h.marcha(t[1])
 			foco = foco.lerp(centro.call(), 1.0 - exp(-8.0 * dt))
-			cam.look_at_from_position(foco + Vector3(1.8, 1.8, 9.0), foco + Vector3(0, 0.8, 0), Vector3.UP)
+			cam.look_at_from_position(foco + FILA_CAM, foco + Vector3(0, 0.85, 0), Vector3.UP)
 			await process_frame
 	for h in hs:
 		_reposo(h)
@@ -367,6 +371,6 @@ func _fila() -> void:
 		h.mirar(Vector3(0.3, 0, 1), 0.5)                 # se giran hacia la cámara
 	for i in 50:
 		foco = foco.lerp(centro.call(), 1.0 - exp(-8.0 * dt))
-		cam.look_at_from_position(foco + Vector3(1.8, 1.8, 9.0), foco + Vector3(0, 0.8, 0), Vector3.UP)
+		cam.look_at_from_position(foco + FILA_CAM, foco + Vector3(0, 0.85, 0), Vector3.UP)
 		await process_frame
 	_marca("CLIP_FIN")
