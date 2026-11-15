@@ -832,3 +832,20 @@ Punto de recuperación: etiqueta `recuperacion/v12/20261115-antes-noche` → `da
   el siguiente sector de Sunken City (el interior del Casco o el resto de vecinos del diseño) con las notas en el
   Diario (`progreso.gd`, `CIUDADES[5]`), o el resto de pruebas con el patrón de semilla antes de add_child (Centinela y Peón ya hechos)
   (`docs/memory/agents/combate.md`, lista G2).
+
+### 16/11 (mañana): revisión de Érebo para el usuario y comprobaciones técnicas
+- **Archivos para revisar Érebo** (enviados al usuario; NADA aprobado: imagen, ritmo y sonido pendientes de su
+  revisión), en `D:\REBELUM_diagnostico\erebo_cine\revision_16_11\` (SHA-256 en `sha256_mp4.txt`):
+  1. `REBELUM_Erebo_1_completa_del_juego.mp4` (20,00 s) y 2. `..._2_abreviada_del_juego.mp4` (6,80 s): copias H.264 +
+     AAC de los `.ogv` del proyecto (los originales, comprobados intactos por SHA-256).
+  3. `..._3a_en_combate_abreviada.mp4` (18,3 s) y `..._3b_en_combate_completa.mp4` (31,4 s): grabadas en el PC con el
+     Movie Maker de Godot (imagen y sonido del juego), combate → vídeo → combate. Guion: `pruebas/grabar_erebo_transicion.gd`.
+     La invocación se lanza por código: en la grabación el menú enseña INVOCACIÓN en gris porque la Armonía se llena
+     después de pintarlo (artefacto de la grabación, no del juego).
+- **Descartado como fallo del juego:** «entrar desde el mapa falla con --fixed-fps» (hallazgo del agente de Sunken). Era
+  la prueba, que esperaba N fotogramas: con --fixed-fps vuelan y salía antes de acabar la carga en segundo plano.
+  Esperando por reloj, todas las regiones entran (Sunken 0,9 s, Pastos 1,7 s).
+- **No hace falta cambiar** menus.gd ni tienda.gd: leen combate.gd, pero en el juego ya lo carga la pantalla de carga
+  (`carga.gd _preparar_shaders`). La regresión del 15/11 solo pasaba en pruebas que no pasan por ella.
+- **Medida de PC, Nix** (`D:\REBELUM_diagnostico\nix_medida_16_11\`, medir_modelo en frío, sin otros Godot): FBX
+  35-43 ms y +4,0 MB de texturas; la antigua 41-51 ms y +6,7 MB.
