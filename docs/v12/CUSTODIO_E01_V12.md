@@ -340,3 +340,95 @@ Medido con `pruebas/medir_custodio_rotacion.gd` en el combate del banco (partida
 - Redmi: la legibilidad del disco a tamaño de teléfono y su coste (un dibujo 2D por fotograma: un círculo, dos arcos y
   el ojo).
 - La «llave iluminada» de la ficha: sin máscara de UV, no se ha hecho.
+
+
+## 10. 15/11, tarde: «Sello en 3» en el Redmi y el Sello no llegaba (el contador)
+
+Rama local `claude/v12-custodio-contador` (desde `1239e78`). Comprobado ejecutando en el PC el 15/11 con datos aislados.
+
+### 10.1 Lo observado en el Redmi (APK `cbc0536`, caso «Custodio: ver la rotación (vida ×8)»)
+
+Vídeo `D:\REBELUM_diagnostico\redmi_15_11\rebelum_custodio_redmi.mp4` (1600 × 720, 9 036 fotogramas, unos 3 min).
+Se sacó un fotograma de cada 75 con el secuenciador de Blender y se recortaron el cartel de arriba y la etiqueta del
+Custodio (hojas en `D:\REBELUM_diagnostico\custodio_contador\video\`). Lo que se lee, en orden:
+
+| Momento (fotograma ≈ s) | Cartel | Etiqueta sobre él |
+|---|---|---|
+| 1 500 ≈ 30 s | «alza los puños: ¡Prensa del Umbral contra Lya y Garon!» | «Congelado» → «Congelado Avance en 3» |
+| ≈ 2 800 ≈ 56 s | (guardia) | «Congelado Guardia Avance en 2» |
+| ≈ 3 900 ≈ 78 s | «cruza los brazos de porcelana y aguanta» | «Congelado Guardia» (sin contador) |
+| ≈ 5 000 ≈ 100 s | «baja la cabeza: ¡Avance del Portón contra Lya y Ga…!» (la franja) | «Congelado Sello en 3» |
+| ≈ 6 150 ≈ 123 s | «cruza los brazos de porcelana y aguanta» | «Congelado Guardia Sello en 2» |
+| 6 800-9 036 ≈ 136-180 s | el menú MAGIA abierto unos 45 s, sin acciones | «Congelado Guardia Sello en 2» |
+
+- **La rotación iba bien:** Prensa, G, G, Avance, G… El Sello tocaba dos turnos suyos después y el vídeo acaba antes.
+- **Un turno suyo cada 22-24 s** a ese ritmo de juego: mientras un héroe está en su menú nadie actúa, y por cada turno
+  suyo hay unos 3 de héroe.
+- **Congelado todo el rato** (Frostfang congela con cada golpe de Kael): no le quita turnos ni recarga.
+  `_tic_congelacion` solo cuenta las rondas y devuelve los PV máximos.
+- **Lo que confundía era el contador:**
+  - «Sello en 3» no decía en qué unidad (eran turnos suyos, no segundos ni turnos del grupo) y se quedaba fijo
+    20-25 s.
+  - En el turno anterior a cada especial (recarga 0) la etiqueta se quedaba sin contador: de «Avance en 2» se pasaba a
+    nada.
+  - El panel solo decía «En guardia» y no avisaba de que el siguiente era el especial.
+
+### 10.2 Reproducción en el PC (traza por turno)
+
+`pruebas/trazar_custodio_contador.gd` (TRAZA, no prueba). Usa el mismo caso del banco (partida BASE, nivel 12, Kael con
+Frostfang, vida ×8, GRUPOS[28]) con el ATB de verdad y los héroes atacando solos. **No es la estrategia de un jugador.**
+La semilla se pone tras `add_child`.
+- `D:\REBELUM_diagnostico\pruebas\2026-11-15_143000` (sin esperar en los menús), con el contador de ANTES del arreglo.
+  Extracto literal (etiqueta justo antes de cada turno suyo → lo que hizo):
+  - `TURNO SUYO 3 … etiqueta «❄ Congelado  Guardia  Avance en 2» … recarga 1` → guardia → `etiqueta «❄ Congelado  Guardia» · panel «En guardia: golpes a la mitad hasta su próximo turno» · recarga 0 · toca porton`
+  - `TURNO SUYO 4 … etiqueta «❄ Congelado  Guardia»` → **porton**: el Avance llega sin que la etiqueta ni el panel lo
+    anuncien.
+  - `TURNO SUYO 6` → guardia → etiqueta «❄ Congelado  Guardia»; `TURNO SUYO 7` → **sello**: igual.
+  - Rotación de 11 turnos: prensa, guardia, guardia, porton, guardia, guardia, sello, guardia, guardia, guardia, prensa.
+    Congelado al empezar cada turno suyo (congelado 2 → 1 en su turno; Kael lo renueva). Un turno suyo cada ~11 s de
+    juego, tras 3-5 turnos de héroe.
+- `D:\REBELUM_diagnostico\pruebas\2026-11-15_143406` («pensar=4»: 4 s en cada menú, como en el teléfono), ya con el
+  arreglo: un turno suyo cada ~22 s y el Sello a los 164 s, el mismo ritmo que el vídeo.
+
+**Causa:** la rotación es correcta y la congelación no le hace perder turnos. El contador contaba bien sus turnos, pero
+explicaba mal lo que faltaba:
+1. no decía la unidad;
+2. desaparecía justo en el turno anterior al especial;
+3. el panel no avisaba del especial mientras estaba en guardia.
+
+Con un turno suyo cada ~22 s, «Sello en 3» se leía como «atascado».
+
+### 10.3 Lo cambiado (solo el texto; la rotación y las cifras, sin tocar)
+
+`combate_meshy_e01.gd`, `estados()` (la etiqueta) e `info()` (el panel), con `turnos_para_especial()`, `nombre_corto()`
+y `nombre_largo()`:
+- **Faltan N ≥ 2 turnos suyos:** etiqueta «Sello en 3 turnos suyos». Panel «Sello de Clausura en 3 turnos suyos (antes,
+  2 de guardia)».
+- **Es su próximo turno:** etiqueta «⚠ Sello: su próximo turno». Panel «⚠ Su próximo turno: Sello de Clausura, …».
+  También al principio del combate («⚠ Prensa: su próximo turno»).
+- **En guardia:** «Guardia» delante en la etiqueta y «En guardia: golpes a la mitad» delante en el panel, sin quitar el
+  contador.
+- Un turno que no juega (por ejemplo, la Prisión de la magia negra de Nix) no cuenta como guardia: el contador sigue
+  igual. Así ya era antes. Son turnos que juega él.
+
+### 10.4 Pruebas
+
+- `prueba_meshy_e01`, sección K nueva:
+  - K1: los textos de las 24 combinaciones (recarga 0-3 × especial que toca × guardia).
+  - K2: el caso del banco ×8 con el ATB de verdad y Kael congelándolo. Once turnos suyos con la rotación entera (los
+    tres especiales); en CADA turno, la etiqueta y el panel de justo antes dicen cuántos turnos suyos faltaban de verdad
+    para el especial que llegó.
+  - Salida: `K2 TRAZA: 1 prensa «❄ Congelado  ⚠ Prensa: su próximo turno» | 2 guardia «❄ Congelado  Avance en 3 turnos
+    suyos» | 3 guardia «❄ Congelado  Guardia  Avance en 2 turnos suyos» | 4 porton «❄ Congelado  Guardia  ⚠ Avance: su
+    próximo turno» | … | 7 sello «❄ Congelado  Guardia  ⚠ Sello: su próximo turno» | …`
+- **Contraprueba:** con `estados()` e `info()` de antes, la misma prueba sale FALLIDA con 66 fallos
+  (`2026-11-15_143324`), entre ellos «K2: turno 4 (porton): la etiqueta decía «❄ Congelado  Guardia»». Con el arreglo,
+  SUPERADA.
+- El resto de resultados está en el informe del agente de combate (`docs/memory/agents/combate.md`, 15/11).
+
+### 10.5 Pendiente para el Redmi
+
+- Comprobar que «Sello en 3 turnos suyos» y «⚠ Sello: su próximo turno» caben y se leen sobre su cabeza a tamaño de
+  teléfono (en el PC caben; el panel de abajo a la derecha se cortaba ya antes por el borde de la pantalla).
+- Para ver el Sello en el caso ×8: unos 7 turnos suyos (≈ 2,5-3 min a ritmo de menú). Si el menú se queda abierto, él no
+  actúa.

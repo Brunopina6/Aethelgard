@@ -22,6 +22,10 @@ extends SceneTree
 #      aparte) y a nadie de fuera; daño arcano 9-13 (defendiendo, la mitad); −15 % de velocidad a los golpeados hasta
 #      su próximo turno (entonces la recuperan exacta); la marca, borrada; recarga 3. La Guardia de Garon cubre.
 #   R. La rotación con la recarga de cada uno: Prensa, G, G, Avance, G, G, Sello, G, G, G, Prensa.
+# 15/11, tarde (Redmi: «Sello en 3» y el Sello no llegaba): el contador cuenta turnos suyos y lo dice.
+#   K. Los textos de cada recarga, y el caso del banco «custodio_rotacion» con el ATB de verdad y Kael congelándolo con
+#      Frostfang: la rotación entera (los tres especiales) y, en cada turno, el contador que se veía antes (etiqueta y
+#      panel) dice cuántos turnos suyos faltaban de verdad para el especial que llegó.
 # Azar (15/11): la semilla, DESPUÉS de root.add_child (combate._ready hace randomize()).
 
 const ARCHIVO := "user://prueba_meshy_e01.save"
@@ -81,6 +85,7 @@ func _probar() -> void:
 	await _d()
 	await _e()
 	await _r()
+	await _k()
 	_limpiar()
 	Engine.remove_meta("archivo_partida_prueba")
 	print("OK: ", "\n    ".join(hechos))
@@ -725,3 +730,120 @@ func _r() -> void:
 	_ok(PE.nodos_vivos(c.enemigos).is_empty(), "R: quedan marcas")
 	hechos.append("R: %s" % ", ".join(visto))
 	await _cerrar()
+
+
+# ================================================================= K: el contador, con un héroe que congela (15/11)
+
+# El caso del banco «custodio_rotacion» (banco_pruebas.gd: partida BASE, nivel 12, Kael con Frostfang, vida ×8) con el
+# ATB de verdad y los héroes atacando solos (no es la estrategia de un jugador): Kael lo deja Congelado a menudo.
+# K1. Los textos en cada recarga: «X en N turnos suyos» si faltan N ≥ 2; «⚠ X: su próximo turno» si es el siguiente.
+# K2. Once turnos suyos: la rotación entera (los tres especiales) aunque esté congelado, y en CADA turno el contador que
+#     se veía justo antes (etiqueta y panel) dice cuántos turnos suyos faltaban DE VERDAD para el especial que llegó.
+func _k() -> void:
+	# K1: los textos, sin combate
+	for sig in ["", "prensa", "porton"]:
+		for cd in [0, 1, 2, 3]:
+			for guardia in [false, true]:
+				var e := {"e01_especial": sig, "e01_cd": cd, "e01_guardia": guardia}
+				var toca: String = PE._siguiente(e)
+				var est: String = "  ".join(PE.estados(e))
+				var inf: String = " · ".join(PE.info(e))
+				var corto: String = PE.nombre_corto(toca)
+				var esperado := ("%s en %d turnos suyos" % [corto, cd + 1]) if cd > 0 else ("⚠ %s: su próximo turno" % corto)
+				_ok(est.ends_with(esperado) and est.begins_with("Guardia") == guardia,
+					"K1: recarga %d, toca %s, guardia %s: etiqueta «%s» (esperada «…%s»)" % [cd, toca, guardia, est, esperado])
+				var en_panel := ("%s en %d turnos suyos" % [PE.nombre_largo(toca), cd + 1]) if cd > 0 \
+					else ("⚠ Su próximo turno: %s" % PE.nombre_largo(toca))
+				_ok(en_panel in inf and ("En guardia" in inf) == guardia, "K1: panel «%s» (sin «%s»)" % [inf, en_panel])
+	# K2: el combate del banco
+	var BP = load("res://banco_pruebas.gd")
+	BP.preparar_partida()
+	var d: Dictionary = BP.COMBATES["custodio_rotacion"]
+	BP.poner_grupo(d["activos"], BP.NIVEL_COMBATE)
+	Engine.set_meta("banco_caso", "custodio_rotacion")
+	Engine.set_meta(PE.INTERRUPTOR, true)
+	Engine.set_meta("zona", "llanura")
+	Engine.set_meta("tipo_combate", "normal")
+	Engine.set_meta("grupo_combate", int(d["grupo"]))
+	c = load("res://combate.tscn").instantiate()
+	root.add_child(c)
+	seed(15112026)                                         # (tras add_child: su _ready hace randomize())
+	custodio = {}
+	for e in c.enemigos:
+		if PE.es(e):
+			custodio = e
+	_ok(not custodio.is_empty() and custodio["hp_max"] > 1000, "K2: sin el Custodio del caso ×8")
+	var kael := _heroe("Kael")
+	_ok(c._lleva_frostfang(kael), "K2: Kael no lleva Frostfang en el caso del banco")
+	if custodio.is_empty():
+		BP.salir()
+		return
+	var turnos: Array = []                                 # [{que, etiqueta, panel, cd, congelado}]
+	var antes := {}
+	var cont0: Dictionary = {}
+	var en_turno := false
+	var decidido := -1
+	for fr in 30 * 60 * 6:
+		await process_frame
+		if c.estado == "fin" or turnos.size() >= 11:
+			break
+		if not en_turno and not is_same(c.atacante_actual, custodio):
+			# lo de justo antes de su turno (al empezar, su turno cuenta y reescribe la etiqueta)
+			antes = {"etiqueta": custodio["lbl_estado"].text, "panel": " · ".join(PE.info(custodio)),
+				"cd": int(custodio.get("e01_cd", 0)), "congelado": int(custodio.get("congelado", 0))}
+			cont0 = (custodio.get("e01_contador", {}) as Dictionary).duplicate()
+		elif not en_turno:
+			en_turno = true
+		elif c.atacante_actual == null:
+			en_turno = false
+			var cont1: Dictionary = custodio.get("e01_contador", {})
+			var que := "nada"
+			for q in ["prensa", "porton", "sello", "guardia"]:
+				if int(cont1.get(q, 0)) > int(cont0.get(q, 0)):
+					que = q
+			antes["que"] = que
+			turnos.append(antes.duplicate())
+		if c.estado == "menu" and c.actor is Dictionary and c.turnos_heroe != decidido:
+			decidido = c.turnos_heroe
+			for h in c.heroes:                             # (que nadie caiga: lo que se mira es su rotación)
+				h["hp"] = h["hp_max"]
+			var alc: Array = c._alcanzables()
+			if alc.is_empty():
+				c._defender()
+			else:
+				c._menu_objetivo("atacar", "")
+				c._confirmar_objetivo(alc[0])
+	var visto: Array = turnos.map(func(t): return t["que"])
+	var esperado := ["prensa", "guardia", "guardia", "porton", "guardia", "guardia", "sello", "guardia", "guardia", "guardia", "prensa"]
+	_ok(visto == esperado, "K2: rotación con Frostfang %s (esperada %s)" % [visto, esperado])
+	_ok(turnos.filter(func(t): return int(t["congelado"]) > 0).size() >= 5, "K2: pocas veces congelado al empezar su turno (%s)" % [
+		turnos.map(func(t): return t["congelado"])])
+	_ok(int(custodio.get("e01_contador", {}).get("duplicado_evitado", 0)) == 0, "K2: golpes duplicados")
+	# el contador de cada turno frente a lo que pasó de verdad: cuántos turnos suyos faltaban hasta el especial siguiente
+	var lineas: Array = []
+	for i in turnos.size():
+		var j := i
+		while j < turnos.size() and turnos[j]["que"] == "guardia":
+			j += 1
+		if j >= turnos.size():
+			continue
+		var faltan := j - i + 1
+		var corto: String = PE.nombre_corto(turnos[j]["que"])
+		var largo: String = PE.nombre_largo(turnos[j]["que"])
+		var en_etiqueta := ("%s en %d turnos suyos" % [corto, faltan]) if faltan > 1 else ("⚠ %s: su próximo turno" % corto)
+		var en_panel := ("%s en %d turnos suyos" % [largo, faltan]) if faltan > 1 else ("⚠ Su próximo turno: %s" % largo)
+		_ok(en_etiqueta in str(turnos[i]["etiqueta"]), "K2: turno %d (%s): la etiqueta decía «%s» y faltaban %d para %s" % [i + 1,
+			turnos[i]["que"], turnos[i]["etiqueta"], faltan, corto])
+		_ok(en_panel in str(turnos[i]["panel"]), "K2: turno %d: el panel decía «%s» (faltaban %d para %s)" % [i + 1,
+			turnos[i]["panel"], faltan, largo])
+		lineas.append("%d %s «%s»" % [i + 1, turnos[i]["que"], turnos[i]["etiqueta"]])
+	print("K2 TRAZA: ", " | ".join(lineas))
+	hechos.append("K: textos de las %d combinaciones; el banco ×8 con Kael congelándolo (%d de %d turnos empezó congelado): %s, y el contador de cada turno acierta cuántos turnos suyos faltaban" % [
+		3 * 4 * 2, turnos.filter(func(t): return int(t["congelado"]) > 0).size(), turnos.size(), ", ".join(visto)])
+	await _esperar(30)
+	c.queue_free()
+	c = null
+	custodio = {}
+	await _esperar(30)
+	BP.salir()
+	Engine.set_meta("archivo_partida_prueba", ARCHIVO)

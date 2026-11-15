@@ -159,25 +159,48 @@ static func _al_evento(clip: String, nombre: String, c, e: Dictionary) -> void:
 
 # ================================================================= lo que se lee
 
+# 15/11 (Redmi, APK cbc0536): el contador cuenta TURNOS SUYOS (los que juega: en cada guardia, uno menos de recarga), no
+# tiempo, y ahora lo dice. Antes, en el turno previo al especial (recarga 0) la etiqueta se quedaba sin contador y el
+# panel solo decía «En guardia»: se pasaba de «Sello en 2» a nada, sin el aviso de que el siguiente era el Sello.
+# turnos_para_especial: en cuántos turnos suyos llega el especial que toca (1 = su próximo turno).
+static func turnos_para_especial(e: Dictionary) -> int:
+	return maxi(0, int(e.get("e01_cd", 0))) + 1
+
+
+static func nombre_corto(especial: String) -> String:
+	return {"porton": "Avance", "sello": "Sello"}.get(especial, "Prensa")
+
+
+static func nombre_largo(especial: String) -> String:
+	return {"porton": "Avance del Portón", "sello": "Sello de Clausura"}.get(especial, "Prensa del Umbral")
+
+
 static func estados(e: Dictionary) -> PackedStringArray:
 	var r := PackedStringArray()
 	if e.get("e01_guardia", false):
 		r.append("Guardia")
-	if int(e.get("e01_cd", 0)) > 0:
-		r.append("%s en %d" % [{"porton": "Avance", "sello": "Sello"}.get(_siguiente(e), "Prensa"), int(e["e01_cd"]) + 1])
+	var n := turnos_para_especial(e)
+	if n > 1:
+		r.append("%s en %d turnos suyos" % [nombre_corto(_siguiente(e)), n])
+	else:
+		r.append("⚠ %s: su próximo turno" % nombre_corto(_siguiente(e)))
 	return r
 
 
 static func info(e: Dictionary) -> Array:
+	var r: Array = []
 	if e.get("e01_guardia", false):
-		return ["En guardia: golpes a la mitad hasta su próximo turno"]
-	if int(e.get("e01_cd", 0)) > 0:
-		return ["Recupera fuerzas: se cubre en sus próximos %d turnos" % int(e["e01_cd"])]
-	if _siguiente(e) == "porton":
-		return ["⚠ Su próximo turno: Avance del Portón, embestida en fila (defiéndete)"]
-	if _siguiente(e) == "sello":
-		return ["⚠ Su próximo turno: Sello de Clausura, un círculo en el suelo (magia; frena la barra)"]
-	return ["⚠ Su próximo turno: Prensa del Umbral, en fila (defiéndete)"]
+		r.append("En guardia: golpes a la mitad")
+	var n := turnos_para_especial(e)
+	if n > 1:
+		r.append("%s en %d turnos suyos (antes, %d de guardia)" % [nombre_largo(_siguiente(e)), n, n - 1])
+	elif _siguiente(e) == "porton":
+		r.append("⚠ Su próximo turno: Avance del Portón, embestida en fila (defiéndete)")
+	elif _siguiente(e) == "sello":
+		r.append("⚠ Su próximo turno: Sello de Clausura, un círculo en el suelo (magia; frena la barra)")
+	else:
+		r.append("⚠ Su próximo turno: Prensa del Umbral, en fila (defiéndete)")
+	return r
 
 
 # ================================================================= su turno (IA)
