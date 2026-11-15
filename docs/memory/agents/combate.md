@@ -852,3 +852,27 @@ tocado**, ni fórmulas ni equilibrio. Sin push. Commits: `141eeb6` (G1), `38586b
 
 **7. Peticiones**
 - Ninguna en archivos de otros. Si se descongela Érebo: las dos propuestas del apartado 4.
+
+## 2026-11-15, 02:45 · Centinela y Peón con semilla; Custodio: Sello de Clausura (e01_a3) y los tres especiales
+
+Rama `claude/v12-custodio-sello` desde `723a97d`, en el mismo worktree. Sin push. Érebo, sin tocar. `combate.gd`, sin
+tocar. Todo comprobado ejecutando, aislado, el 15/11.
+- `136eb3f` Centinela y Peón: semilla tras add_child, «SEMILLA»/«TRAZA», `semilla_X=N` (suma), `_cerrar` sin 2,5 s reales;
+  Peón D hasta 48. Tres pasadas iguales (`2026-11-15_021748`, `_022153`, `_022555`: 2/2, mismas huellas).
+- `f447312` clip `e01__attack_sello`.
+  - El GLB sin cambios se reprodujo byte a byte antes de cambiar nada.
+  - Tras añadir el clip, los 6 clips anteriores tienen las mismas pistas; la malla no baja del suelo y la raíz no se
+    mueve.
+- `78e9bc5` el Sello en combate y la rotación Prensa, G, G, Avance, G, G, Sello, G, G, G. La marca del Sello va bajo los
+  luchadores, porque encima tapaba los pies (visto en captura).
+- `8745c2b` pruebas.
+  - `prueba_meshy_e01` E y R: 3/3, mismas huellas, en `2026-11-15_023714`, `_023727` y `_023738`.
+  - Contraprueba con el radio a 3,0: 8 fallos.
+  - Regresión 4/4 en `2026-11-15_023503`.
+- `2b6d086` medida del conjunto: `medir_custodio_rotacion`.
+- `30ebeac` docs: §9 de `docs/v12/CUSTODIO_E01_V12.md` y la fila de la matriz.
+- Cifras PROPUESTAS, sin equilibrar. Lo observado está en §9.4.
+- Pendientes:
+  - Redmi.
+  - Sonido propio.
+  - La nota del caso «custodio» en `banco_pruebas.gd`, que no es un archivo de este encargo.
