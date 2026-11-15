@@ -161,3 +161,33 @@ del diseño); nada de que Garon sirviera en la Compañía; nada con forma de bra
   Casco del buque, el Muelle de la Laguna, el Ancla Seca y el resto de Babor/Estribor; las notas en el Diario (necesitan
   `progreso.gd` CIUDADES[5]).
 - Entrada en el banco de pruebas, si se quiere.
+
+## Mediciones de PC (16/11, sin otros Godot; NO certifican Android)
+
+`pruebas/medir_sunken3d.gd`, `D:\REBELUM_diagnostico\sunken\medida_16_11\medida_<perfil>_<frio|cache>.txt`.
+- **Configuración:** NVIDIA RTX 3050 Laptop (OpenGL 3.3, controlador 621.01), AMD Ryzen 7 4800H (14 hilos), ventana
+  1280×720, renderizador gl_compatibility. «Frío»: carpeta de datos nueva (sombreadores sin caché); «caché»: la misma
+  carpeta otra vez. Tres entradas por proceso desde el mapa (Recursos.cambiar_escena, como mapa._entrar).
+- **Cargas hasta el control:**
+
+| Perfil | 1.ª entrada, frío | 1.ª entrada, con caché | Posteriores |
+|---|---|---|---|
+| Bajo | 1487 ms | 1275 ms | 903-923 ms |
+| Medio | 1421 ms | 1306 ms | 898-939 ms |
+| Alto | 1447 ms | 1314 ms | 893-908 ms |
+
+- **Tirones tras entrar** (peor fotograma de los 2 s siguientes): ninguno; 33,4-33,6 ms en bajo y medio (límite de
+  30 FPS) y 16,9-17,0 ms en alto (límite de 60 FPS), también la primera vez en frío.
+- **Fotogramas quietos 4 s** (mediana · p95 · máximo, con el límite del perfil): bajo y medio 33,3 · 33,4 · ≤33,9 ms;
+  alto 16,7 · 16,7 · ≤17,2 ms. Dibujo medido por el motor (sin límite):
+
+| Perfil | Muelle | Quilla | Cubierta |
+|---|---|---|---|
+| Bajo | CPU 0,76-1,33 / GPU 0,38-0,61 ms · 34 llamadas · 24,5 mil prim. | CPU 0,87-0,91 / GPU 0,41-0,49 · 72 · 25,7 mil | CPU 0,83-1,08 / GPU 0,46-0,56 · 64 · 31,5 mil |
+| Medio | CPU 0,71-0,77 / GPU 0,48-0,57 · 41 · 43,2 mil | CPU 0,96-0,98 / GPU 0,51-0,52 · 90-94 · 44,3-44,6 mil | CPU 0,88-0,98 / GPU 0,60-0,66 · 82-86 · 56,5-56,7 mil |
+| Alto | CPU 0,95-1,01 / GPU 1,13-1,14 · 81 · 61,8 mil | CPU 1,14-1,60 / GPU 1,16-1,18 · 134 · 71,0 mil | CPU 1,27-1,32 / GPU 1,32 · 110-114 · 74,2-74,5 mil |
+
+- **Memoria** (estática · vídeo · texturas): en el mapa 101 · 36,7 · 28,4 MB. En Sunken: bajo 117,9-118,7 · 48,0-48,7 ·
+  34,7-35,4; medio 118,3-119,1 · 48,9-49,6 · 35,6-36,3; alto 119,0-119,9 · 70,6-71,4 · 56,8-57,6 MB. De vuelta al
+  mapa vuelve a lo mismo en cada entrada (sin crecimiento entre la 2.ª y la 3.ª).
+- **Android:** pendiente de medir en el Redmi (FPS, perdidos, PSS, temperatura).
