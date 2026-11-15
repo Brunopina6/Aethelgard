@@ -9,23 +9,52 @@ extends SceneTree
 #                durante el fundido de entrada (no debe tomarse por fallo ni sacar el teatro)
 #   ATB        → el vídeo da el MISMO tiempo de ATB que la invocación de siempre (V.ATB_TEATRO), sea cual sea su duración
 #   primera    → «1.ª completa»: la primera vez el vídeo completo; después, el abreviado
+# 15/11 (auditoría sobre da0e336), además:
+#   no carga   → reproducir() con una ruta que no existe devuelve false sin crear nada; con un VideoStream que no
+#                arranca, false en ≈1,5 s, sin restos y con la música en su sitio
+#   no arranca → en el combate, con el vídeo abreviado sustituido (en la caché de recursos, solo en esta prueba) por uno
+#                que no arranca: cae al teatro de siempre sin colgarse, el resultado una vez y sin restos
+#   jefe       → con vídeo, el Guardián de piedra (GRUPOS[18]): siempre «éxito», quita maxi(1, round(PV × 0,2)), una vez
+#   nueva      → «erebo_nueva» con vídeo: el ATB de V.ATB_TEATRO["nueva"]
+#   completa   → el vídeo completo hasta el final
+#   sin pausa  → con «pausa_atb» desactivado, el ATB corre durante todo el vídeo (como en la primera entrega)
+# Con «erebo=fallo» (prueba_erebo_video_fallo): apagado y abreviada con fallo (ni daño ni «corazón»: «sale vacía»; ATB
+# de fallo), la nueva con fallo y un jefe (los jefes siempre, aunque se fuerce el fallo).
+# Azar: la semilla se pone DESPUÉS de root.add_child(c) (combate._ready hace randomize()) y otra justo antes de
+# _invocar_sobre; «semilla_video=N» para reproducir otra.
 # No toca la partida real: archivo de partida de prueba y user:// aislado del ejecutor.
 
 const ARCHIVO := "user://prueba_erebo_video.save"
+const NO_EXISTE := "res://videos/no_existe_prueba_erebo.ogv"
+const NO_ARRANCA := "res://videos/no_arranca_prueba_erebo.ogv"   # (solo en la caché de recursos de esta prueba)
+const NO_ARRANCA_THEORA := "res://videos/no_abre_prueba_erebo.ogv"   # (ídem)
 
 var P
 var G
 var V
+var NU
+var A12
 var c = null
 var fallos: Array = []
 var hechos: Array = []
+var avisos: Array = []
 var reloj := 0.0              # tiempo de juego (el ejecutor puede ir más rápido que el reloj real)
+var forzado := ""
+var semilla := 4242
+var _falsos: Array = []
 
 
 func _initialize() -> void:
 	P = load("res://progreso.gd")
 	G = load("res://grupo.gd")
 	V = load("res://invocacion_erebo_video.gd")
+	NU = load("res://invocacion_erebo_nueva.gd")
+	A12 = load("res://combate_anim_v12.gd")
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("erebo="):
+			forzado = a.substr(6)
+		elif a.begins_with("semilla_video="):
+			semilla = int(a.get_slice("=", 1))
 	Engine.set_meta("archivo_partida_prueba", ARCHIVO)
 	_probar.call_deferred()
 
@@ -54,24 +83,49 @@ func _probar() -> void:
 	_ok(V.permitido(), "la opción solo existe en Auditoría o editor y esta prueba corre en el editor")
 	_ok(V.modo() == "no", "sin ajuste la opción debe estar apagada (está «%s»)" % V.modo())
 	_ok(V.ruta_para_ahora() == "", "apagada no debe elegir vídeo")
-	await _videos()
-	await _invocar("apagado", "", false)
-	V.elegir("abreviada")
-	await _invocar("abreviada", "", true)
-	await _invocar("saltar", "saltar", true)
-	await _invocar("saltar durante el fundido", "saltar_pronto", true)
-	V.elegir("primera")
-	var r1: String = V.ruta_para_ahora()
-	_ok(r1 == V.COMPLETA, "primera: la primera vez debe ser la completa (%s)" % r1)
-	await _invocar("primera (completa, saltada)", "saltar", true)
-	var r2: String = V.ruta_para_ahora()
-	_ok(r2 == V.ABREVIADA, "primera: después debe ser la abreviada (%s)" % r2)
+	_ok(forzado == "exito" or forzado == "fallo", "falta «erebo=exito» o «erebo=fallo» (%s)" % forzado)
+	_ok(not NU.elegida(), "la invocación nueva no debe estar elegida al empezar")
+	print("SEMILLA %d · erebo=%s" % [semilla, forzado])
+	if forzado == "fallo":
+		await _invocar("apagado, fallo", "", false)
+		V.elegir("abreviada")
+		await _invocar("abreviada, fallo", "", true)
+		NU.elegir(true)
+		await _invocar("nueva con vídeo, fallo", "", true)
+		NU.elegir(false)
+		await _invocar("jefe con fallo forzado", "", true, 18)
+	else:
+		await _no_carga()
+		await _videos()
+		await _invocar("apagado", "", false)
+		V.elegir("abreviada")
+		await _invocar("abreviada", "", true)
+		await _invocar("saltar", "saltar", true)
+		await _invocar("saltar durante el fundido", "saltar_pronto", true)
+		await _invocar("jefe", "", true, 18)
+		NU.elegir(true)
+		await _invocar("nueva con vídeo", "", true)
+		NU.elegir(false)
+		Engine.set_meta("pausa_atb_v12", false)
+		await _invocar("sin pausa del ATB", "", true)
+		Engine.remove_meta("pausa_atb_v12")
+		V.elegir("completa")
+		await _invocar("completa hasta el final", "", true)
+		V.elegir("primera")
+		var r1: String = V.ruta_para_ahora()
+		_ok(r1 == V.COMPLETA, "primera: la primera vez debe ser la completa (%s)" % r1)
+		await _invocar("primera (completa, saltada)", "saltar", true)
+		var r2: String = V.ruta_para_ahora()
+		_ok(r2 == V.ABREVIADA, "primera: después debe ser la abreviada (%s)" % r2)
+		await _no_arranca_en_combate()
 	V.elegir("no")
 	for k in P.CLAVES + ["partida_lista", "grupo_combate", "tipo_combate", "zona", "grupo_activo"]:
 		if Engine.has_meta(k):
 			Engine.remove_meta(k)
 	Engine.remove_meta("archivo_partida_prueba")
 	print("OK: ", "; ".join(hechos))
+	for a in avisos:
+		print("AVISO: ", a)
 	for f in fallos:
 		print("FALLO: ", f)
 	print("FALLOS: %d" % fallos.size())
@@ -103,7 +157,107 @@ func _videos() -> void:
 	hechos.append("vídeos")
 
 
-func _combate() -> Dictionary:
+# Un VideoStream que no arranca, puesto en la caché de recursos con la ruta pedida (load() lo devuelve de ahí). Nada de
+# esto toca el juego: vive solo en este proceso.
+#   «sin_reproduccion»: un VideoStream sin reproductor (play() no hace nada; is_playing() es falso): el caso que
+#                       reproducir() espera («no arranca en 1,5 s»).
+#   «theora_sin_archivo»: un Theora cuyo archivo no se abre (ver el HALLAZGO de _no_carga).
+func _video_falso(ruta: String, tipo := "sin_reproduccion") -> Resource:
+	var falso: Resource
+	if tipo == "theora_sin_archivo":
+		falso = VideoStreamTheora.new()
+		falso.file = NO_EXISTE
+	else:
+		falso = VideoStream.new()
+	falso.take_over_path(ruta)
+	_falsos.append(falso)                           # (la caché no lo sujeta: sin otra referencia se borraría)
+	return falso
+
+
+# reproducir() a solas: sin vídeo (false, al momento, sin crear nada) y con un vídeo que no arranca (false en ≈1,5 s).
+func _no_carga() -> void:
+	var i_mus := AudioServer.get_bus_index("Musica")
+	var db0 := AudioServer.get_bus_volume_db(i_mus) if i_mus >= 0 else 0.0
+	var padre := Node.new()
+	root.add_child(padre)
+	var t0 := reloj
+	var ok1: bool = await V.reproducir(padre, NO_EXISTE, func(): return false)
+	_ok(not ok1, "no carga: con una ruta que no existe reproducir() devuelve true")
+	_ok(reloj - t0 < 0.01 and padre.get_child_count() == 0, "no carga: sin vídeo tarda %.2f s o deja %d nodos" % [reloj - t0, padre.get_child_count()])
+	# no arranca: un VideoStream sin reproductor
+	_video_falso(NO_ARRANCA)
+	var r: Dictionary = await _reproducir_a_solas(padre, NO_ARRANCA, -1.0)
+	_ok(r["hecho"], "no arranca: reproducir() se queda colgado (%.1f s)" % r["dura"])
+	_ok(r["ok"] == false, "no arranca: reproducir() no devuelve false (%s)" % str(r["ok"]))
+	_ok(r["dura"] > 1.5 and r["dura"] < 3.0, "no arranca: tarda %.2f s (esperado ≈1,5 s más los fundidos)" % r["dura"])
+	_ok(r["bajo"], "no arranca: la música no se aparta mientras lo intenta")
+	_ok(_capa() == null and padre.get_child_count() == 0, "no arranca: quedan restos (%d nodos)" % padre.get_child_count())
+	_ok(i_mus < 0 or is_equal_approx(AudioServer.get_bus_volume_db(i_mus), db0), "no arranca: la música no vuelve a su volumen")
+	var dura_no_arranca: float = r["dura"]
+	# HALLAZGO (15/11, sin arreglar: Érebo está congelado): un Theora cuyo archivo no se abre da is_playing() = true y
+	# get_stream_length() = 0, así que reproducir() ni corta a los 1,5 s ni por la salvaguarda (largo + 2 s): espera a
+	# que se toque para saltar (en el combate, pantalla negra hasta el toque). Aquí se documenta y se comprueba que el
+	# toque lo saca sin restos; si algún día corta solo, también vale.
+	_video_falso(NO_ARRANCA_THEORA, "theora_sin_archivo")
+	r = await _reproducir_a_solas(padre, NO_ARRANCA_THEORA, 4.0)
+	if r["colgado"]:
+		avisos.append(("HALLAZGO sin arreglar (Érebo congelado): un vídeo Theora que no se abre deja reproducir() esperando " +
+			"(is_playing() %s, posición %.3f, largo %.2f a los 4 s de juego) hasta que se toca para saltar; tocando sale " +
+			"en %.2f s más y devuelve %s") % [r["jugando"], r["posicion"], r["largo"], r["dura"] - 4.0, str(r["ok"])])
+	_ok(r["hecho"], "theora sin archivo: ni tocando para saltar sale de reproducir() (%.1f s)" % r["dura"])
+	_ok(_capa() == null and padre.get_child_count() == 0, "theora sin archivo: quedan restos (%d nodos)" % padre.get_child_count())
+	_ok(i_mus < 0 or is_equal_approx(AudioServer.get_bus_volume_db(i_mus), db0), "theora sin archivo: la música no vuelve a su volumen")
+	padre.queue_free()
+	await _esperar(2)
+	hechos.append("no carga (al momento) y no arranca (%.2f s), sin restos; theora sin archivo: %s" % [dura_no_arranca,
+		"espera al toque (AVISO)" if r["colgado"] else "corta solo"])
+
+
+# Lanza reproducir() a solas y lo vigila (como mucho 10 s de juego). Con «saltar_a» >= 0, a ese tiempo (s de juego) se
+# «toca» para saltar si aún no ha acabado.
+func _reproducir_a_solas(padre: Node, ruta: String, saltar_a: float) -> Dictionary:
+	var i_mus := AudioServer.get_bus_index("Musica")
+	var db0 := AudioServer.get_bus_volume_db(i_mus) if i_mus >= 0 else 0.0
+	var t0 := reloj
+	var r := {"ok": null, "hecho": false, "bajo": false, "colgado": false, "jugando": false, "posicion": 0.0, "largo": 0.0}
+	var saltar_ya := [false]
+	var lanzar := func():
+		r["ok"] = await V.reproducir(padre, ruta, func(): return saltar_ya[0])
+		r["hecho"] = true
+	lanzar.call()
+	for i in 300:
+		if r["hecho"]:
+			break
+		if i_mus >= 0 and AudioServer.get_bus_volume_db(i_mus) < db0 - 1.0:
+			r["bajo"] = true
+		if saltar_a >= 0.0 and not saltar_ya[0] and reloj - t0 >= saltar_a:
+			r["colgado"] = true
+			var vp = null
+			for n in padre.find_children("*", "VideoStreamPlayer", true, false):
+				vp = n
+			if vp != null:
+				r["jugando"] = vp.is_playing()
+				r["posicion"] = vp.stream_position
+				r["largo"] = vp.get_stream_length()
+			saltar_ya[0] = true
+		await _esperar(1)
+	r["dura"] = reloj - t0
+	await _esperar(2)
+	return r
+
+
+# En el combate: el vídeo abreviado sustituido por uno que no arranca → el teatro de siempre, el resultado una vez.
+func _no_arranca_en_combate() -> void:
+	V.elegir("abreviada")
+	var real = ResourceLoader.load(V.ABREVIADA, "", ResourceLoader.CACHE_MODE_IGNORE)
+	var falso := _video_falso(V.ABREVIADA)
+	_ok(load(V.ABREVIADA) == falso and V.ruta_para_ahora() == V.ABREVIADA, "no arranca: la sustitución en la caché no vale")
+	await _invocar("vídeo que no arranca", "no_arranca", true)
+	if real is Resource:
+		real.take_over_path(V.ABREVIADA)            # (el de verdad, otra vez en la caché)
+
+
+func _combate(grupo: int) -> Dictionary:
 	for k in P.CLAVES + ["partida_lista", "grupo_combate", "tipo_combate", "zona"]:
 		if Engine.has_meta(k):
 			Engine.remove_meta(k)
@@ -114,9 +268,12 @@ func _combate() -> Dictionary:
 		G.datos()[n]["pv"] = -1
 	Engine.set_meta("zona", "ceniza")
 	Engine.set_meta("tipo_combate", "normal")
-	Engine.set_meta("grupo_combate", 9)
+	Engine.set_meta("grupo_combate", grupo)
 	c = load("res://combate.tscn").instantiate()
-	root.add_child(c)
+	root.add_child(c)                                 # (aquí su _ready hace randomize())
+	seed(semilla)                                     # desde aquí, el azar del combate es fijo
+	for e in c.enemigos:
+		e["atb"] = randf() * 30.0                     # el ATB inicial, como en combate.gd, ya con la semilla
 	for i in 3000:
 		if c.estado == "menu" and c.menu.activo and c.actor is Dictionary:
 			if c.actor["nombre"] == "Lya":
@@ -147,14 +304,21 @@ func _tocar() -> void:
 	_ok(c.saltar_invocacion, "la entrada para saltar no llega al combate")
 
 
-# modo: "" (hasta el final), "saltar" (toque a los 0,9 s del vídeo) o "saltar_pronto" (toque durante el fundido)
-func _invocar(caso: String, modo: String, video: bool) -> void:
-	var grim: Dictionary = await _combate()
+# modo: "" (hasta el final), "saltar" (toque a los 0,9 s del vídeo), "saltar_pronto" (toque durante el fundido) o
+# "no_arranca" (el vídeo no arranca y se usa el teatro).
+func _invocar(caso: String, modo: String, video: bool, grupo := 9) -> void:
+	var grim: Dictionary = await _combate(grupo)
 	if not (c.actor is Dictionary and c.actor["nombre"] == "Lya"):
 		_ok(false, "%s: no llega el turno de Lya" % caso)
 		c.queue_free()
 		await _esperar(5)
 		return
+	var es_jefe := grupo == 18
+	var exito := es_jefe or forzado == "exito"
+	var nueva_sel: bool = NU.elegida()
+	var pausa: bool = A12.pausa_atb()
+	var ruta: String = V.ruta_para_ahora()
+	var largo: float = {V.COMPLETA: 20.0, V.ABREVIADA: 6.8}.get(ruta, 0.0)   # (medidos en _videos, ±0,25 s)
 	var i_mus := AudioServer.get_bus_index("Musica")
 	var db0 := AudioServer.get_bus_volume_db(i_mus)
 	c.armonia = 1.0
@@ -165,6 +329,8 @@ func _invocar(caso: String, modo: String, video: bool) -> void:
 	var pv0: int = grim["hp"]
 	var quitados := [0]
 	var hp_previo := [pv0]
+	seed(semilla + 1)                                 # el azar de la invocación, fijo
+	var t_ini := reloj
 	c._invocar_sobre(grim)
 	var atb0 := {}
 	for h in c.heroes:
@@ -177,7 +343,8 @@ func _invocar(caso: String, modo: String, video: bool) -> void:
 	var t_capa := -1.0
 	var t_fin_capa := -1.0
 	var f_capa := 0
-	var anuncios := {"corazon": 0, "vacia": 0}
+	var pos_max := 0.0
+	var anuncios := {"corazon": 0, "roba": 0, "vacia": 0}
 	var reg_previo := ""
 	for i in 3000:
 		var capa := _capa()
@@ -186,6 +353,8 @@ func _invocar(caso: String, modo: String, video: bool) -> void:
 				t_capa = reloj
 			vio_capa = true
 			f_capa += 1
+			for n in capa.find_children("*", "VideoStreamPlayer", true, false):
+				pos_max = maxf(pos_max, n.stream_position)
 			if c.estado != "accion":
 				siempre_accion = false
 			if AudioServer.get_bus_volume_db(i_mus) < db0 - 1.0:
@@ -197,7 +366,8 @@ func _invocar(caso: String, modo: String, video: bool) -> void:
 			t_fin_capa = reloj
 		if c.inv_erebo != null and not vio_teatro:
 			vio_teatro = true
-			if not video:
+			if not video or modo == "no_arranca":
+				_ok(_capa() == null, "%s: el teatro sale con la capa del vídeo aún puesta" % caso)
 				await _esperar(30)
 				if c.inv_erebo != null:
 					c.inv_erebo.saltar()
@@ -208,22 +378,35 @@ func _invocar(caso: String, modo: String, video: bool) -> void:
 			reg_previo = c.registro.text
 			if "arranca el corazón" in reg_previo:
 				anuncios["corazon"] += 1
+			if "roba parte de su vida" in reg_previo:
+				anuncios["roba"] += 1
 			if "sale vacía" in reg_previo:
 				anuncios["vacia"] += 1
 		if c.estado == "esperando" or c.estado == "menu" or c.estado == "fin":
 			break
 		await _esperar(1)
 	var t_vuelta := reloj
+	var colgado: bool = not (c.estado == "esperando" or c.estado == "menu" or c.estado == "fin")
 	var atb1 := {}
 	for h in c.heroes:
 		atb1[h["nombre"]] = h["atb"]
 	await _esperar(5)
 	if grim["hp"] != hp_previo[0]:
 		quitados[0] += 1
-	_ok(vio_capa == video, "%s: vídeo %s (esperado %s)" % [caso, vio_capa, video])
+	_ok(not colgado, "%s: el combate no vuelve (estado «%s»)" % [caso, c.estado])
+	if modo == "no_arranca":
+		_ok(vio_capa and vio_teatro, "%s: no intenta el vídeo (%s) o no cae al teatro (%s)" % [caso, vio_capa, vio_teatro])
+		_ok(int(c.get_meta("c12_accion", 0)) == 0, "%s: queda la pausa del ATB puesta (%d)" % [caso, int(c.get_meta("c12_accion", 0))])
+		var extra: float = (atb1.get("Kael", 0.0) - atb0.get("Kael", 0.0)) / 2.0
+		print("%s: capa %.2f s, ATB de Kael %.2f (≈%.2f s de ATB en total, el intento de vídeo incluido)" % [caso,
+			t_fin_capa - t_capa, atb1.get("Kael", 0.0), extra])
+	else:
+		_ok(vio_capa == video, "%s: vídeo %s (esperado %s)" % [caso, vio_capa, video])
 	if not video:
 		_ok(vio_teatro, "%s: apagada debe usarse el teatro de siempre" % caso)
-	else:
+		print("%s: teatro (saltado a los 30 fotogramas); ATB de Kael %.2f (≈%.2f s de ATB en total)" % [caso,
+			atb1.get("Kael", 0.0), (atb1.get("Kael", 0.0) - atb0.get("Kael", 0.0)) / 2.0])
+	elif modo != "no_arranca":
 		_ok(not vio_teatro, "%s: con vídeo no debe crearse el teatro 3D" % caso)
 		_ok(siempre_accion, "%s: el estado sale de «accion» durante el vídeo (podría abrirse otro turno)" % caso)
 		_ok(bajo_musica, "%s: la música no se aparta durante el vídeo" % caso)
@@ -231,20 +414,38 @@ func _invocar(caso: String, modo: String, video: bool) -> void:
 		if modo.begins_with("saltar"):
 			_ok(dura < 3.0, "%s: saltar no corta el vídeo (%.1f s)" % [caso, dura])
 		else:
-			_ok(dura > 6.6 and dura < 12.0, "%s: el vídeo abreviado dura %.1f s en pantalla (esperado ≈7,5 s)" % [caso, dura])
-		# ATB: el mismo tiempo que la invocación de siempre con éxito, más lo que corre normal tras el vídeo
-		var nueva_sel: bool = load("res://invocacion_erebo_nueva.gd").elegida()
-		var presupuesto: float = V.atb_teatro(nueva_sel, true)
+			_ok(largo > 0.0 and dura > largo - 0.2 and dura < largo + 5.0, "%s: el vídeo de %.1f s dura %.1f s en pantalla" % [caso, largo, dura])
+		var presupuesto: float = V.atb_teatro(nueva_sel, exito)
 		var t_post := t_vuelta - t_fin_capa + 1.0 / 30.0
 		for h in c.heroes:
 			if h["hp"] <= 0 or h["nombre"] == "Lya":         # (a quien invoca, su turno le deja el ATB a 0, como siempre)
 				continue
-			var esperado: float = minf(100.0, atb0[h["nombre"]] + 2.0 * (presupuesto + t_post))
-			_ok(absf(atb1[h["nombre"]] - esperado) < 0.6, "%s: ATB de %s %.2f (esperado %.2f = invocación de siempre)" % [caso, h["nombre"], atb1[h["nombre"]], esperado])
-		print("%s: vídeo en pantalla %.2f s; ATB %s (presupuesto %.2f s + %.2f s después)" % [caso, dura, atb1, presupuesto, t_post])
-	_ok(quitados[0] == 1, "%s: los PV del enemigo cambian %d veces (debe ser 1)" % [caso, quitados[0]])
-	_ok(grim["hp"] <= 0 and pv0 > 0, "%s: el resultado (éxito forzado) no se aplica (%d → %d)" % [caso, pv0, grim["hp"]])
-	_ok(anuncios["corazon"] == 1 and anuncios["vacia"] == 0, "%s: el registro anuncia el resultado %s (debe ser un «arranca el corazón»)" % [caso, anuncios])
+			var esperado: float
+			if pausa:
+				# el mismo tiempo que la invocación de siempre con ese resultado, más lo que corre normal tras el vídeo
+				esperado = minf(100.0, atb0[h["nombre"]] + 2.0 * (presupuesto + t_post))
+			else:
+				# sin la pausa, el ATB corre todo el rato, como en la primera entrega (ni más ni menos)
+				esperado = minf(100.0, atb0[h["nombre"]] + 2.0 * (t_vuelta - t_ini))
+			_ok(absf(atb1[h["nombre"]] - esperado) < 0.6, "%s: ATB de %s %.2f (esperado %.2f, %s)" % [caso, h["nombre"],
+				atb1[h["nombre"]], esperado, "invocación de siempre" if pausa else "sin pausa"])
+		print("%s: vídeo en pantalla %.2f s (posición alcanzada %.2f de %.1f s); ATB %s (%s; presupuesto %.2f s + %.2f s después)" % [
+			caso, dura, pos_max, largo, atb1, "con pausa" if pausa else "sin pausa", presupuesto, t_post])
+	# el resultado, una vez
+	if exito:
+		_ok(quitados[0] == 1, "%s: los PV del enemigo cambian %d veces (debe ser 1)" % [caso, quitados[0]])
+	else:
+		_ok(quitados[0] == 0 and grim["hp"] == pv0, "%s: con fallo los PV del enemigo cambian (%d → %d, %d veces)" % [caso, pv0, grim["hp"], quitados[0]])
+	if es_jefe:
+		var esperado_j: int = maxi(1, int(round(pv0 * 0.2)))
+		_ok(pv0 - int(grim["hp"]) == esperado_j and grim["hp"] > 0, "%s: el jefe pierde %d (esperado %d = 20 %% de %d, sin morir)" % [
+			caso, pv0 - int(grim["hp"]), esperado_j, pv0])
+		_ok(anuncios["roba"] == 1 and anuncios["corazon"] == 0 and anuncios["vacia"] == 0, "%s: el registro anuncia %s (debe ser un «roba parte de su vida»)" % [caso, anuncios])
+	elif exito:
+		_ok(grim["hp"] <= 0 and pv0 > 0, "%s: el resultado (éxito forzado) no se aplica (%d → %d)" % [caso, pv0, grim["hp"]])
+		_ok(anuncios["corazon"] == 1 and anuncios["vacia"] == 0 and anuncios["roba"] == 0, "%s: el registro anuncia el resultado %s (debe ser un «arranca el corazón»)" % [caso, anuncios])
+	else:
+		_ok(anuncios["vacia"] == 1 and anuncios["corazon"] == 0 and anuncios["roba"] == 0, "%s: el registro anuncia %s (debe ser un «sale vacía»)" % [caso, anuncios])
 	_ok(is_equal_approx(AudioServer.get_bus_volume_db(i_mus), db0), "%s: la música no vuelve a su volumen (%.1f / %.1f dB)" % [caso, AudioServer.get_bus_volume_db(i_mus), db0])
 	_ok(_capa() == null, "%s: queda la capa del vídeo" % caso)
 	_ok(is_equal_approx(Engine.time_scale, 1.0), "%s: el tiempo no vuelve a 1" % caso)
