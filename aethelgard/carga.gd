@@ -257,6 +257,7 @@ func _process(delta: float) -> void:
 		porcentaje.text = "100 %"
 		create_tween().tween_property(brillo, "modulate:a", 0.8, 0.4)
 		print("Carga terminada en %.1f s (%d archivos, %d fallos)" % [tiempo, hechos, fallos])
+		_medir_y_salir()
 		if "auto" in OS.get_cmdline_user_args():     # pruebas: entra solo
 			_empezar.call_deferred()
 	if listo:
@@ -355,7 +356,8 @@ func _preparar_shaders() -> void:
 
 	# V12 (15/11): la muestra gráfica de la calle (solo Auditoría/editor, la escena del banco): sus programas se compilan
 	# aquí y no al entrar (zonas3d/muestra_calle/muestra_calle.gd, precalentar_en).
-	if load("res://banco_pruebas.gd").permitido() and ResourceLoader.exists("res://zonas3d/muestra_calle/muestra_calle.gd"):
+	_u_shaders = Time.get_ticks_usec()
+	if load("res://banco_pruebas.gd").permitido() and ResourceLoader.exists("res://zonas3d/muestra_calle/muestra_calle.gd") 			and not "sin_precalentar_muestra" in OS.get_cmdline_user_args():   # (medida A/B: sin él)
 		var u0 := Time.get_ticks_usec()
 		var vp_muestra = load("res://zonas3d/muestra_calle/muestra_calle.gd").precalentar_en(vista_3d)
 		if vp_muestra != null:
@@ -401,10 +403,25 @@ func _preparar_shaders() -> void:
 	vista_2d.add_child(viento)
 
 
+var _u_shaders := 0
+
+
+# Medida (15/11, «-- medir_carga»): la memoria al acabar la carga y salir (pruebas del precalentado). Sin el argumento, nada.
+func _medir_y_salir() -> void:
+	if not "medir_carga" in OS.get_cmdline_user_args():
+		return
+	print("[carga] memoria: estática %.1f MB · vídeo %.1f MB · texturas %.1f MB" % [
+		Performance.get_monitor(Performance.MEMORY_STATIC) / 1048576.0,
+		Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED) / 1048576.0,
+		Performance.get_monitor(Performance.RENDER_TEXTURE_MEM_USED) / 1048576.0])
+	get_tree().quit.call_deferred()
+
+
 func _paso_shaders() -> void:
 	frames_shader += 1
 	if frames_shader < FRAMES_SHADERS:
 		return
+	print("[carga] fase de sombreadores: %.0f ms" % ((Time.get_ticks_usec() - _u_shaders) / 1000.0))
 	vista_3d.queue_free()
 	vista_2d.queue_free()
 	fase = "dialogos"

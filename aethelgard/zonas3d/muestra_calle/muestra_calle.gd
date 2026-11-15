@@ -118,6 +118,12 @@ static func precalentar_en(padre: Node) -> SubViewport:
 	vp.size = Vector2i(160, 72)
 	vp.own_world_3d = true
 	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	# (revisión) la MISMA configuración 3D que vista3d._aplicar_perfil da a la ventana de la muestra: con escala < 1 el
+	# mapeo de tonos va en otra pasada y el programa de la escena se especializa distinto; sin esto se compilaría otra
+	# variante y la entrada volvería a compilar la suya.
+	vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_BILINEAR
+	vp.scaling_3d_scale = float(t.perfil.get("escala_3d", 1.0))
+	vp.msaa_3d = Viewport.MSAA_2X if int(t.perfil.get("msaa", 0)) == 2 else Viewport.MSAA_DISABLED
 	padre.add_child(vp)
 	for n in t.get_children():
 		t.remove_child(n)
@@ -235,6 +241,18 @@ func en_banco() -> bool:
 # (15/11, remedio de la entrada) La luz (≈ 60 KB, 10 622 números de las sondas) se lee y se interpreta UNA vez por
 # proceso y se guarda (en el Redmi costaba 6-18 ms en cada entrada). Las sondas son de solo lectura.
 static var _luz_cache := {}
+# (15/11, remedio de la entrada) Los materiales de la calle se crean UNA vez por perfil/modo y se reutilizan en las
+# entradas siguientes (medido en el PC, 11 entradas × 2 tandas: la fase «materiales y mapa de luz» pasa de 15-16 ms a
+# 0,1 ms). Como retienen recursos de render, banco_pruebas.salir() los suelta (soltar_caches): no llegan vivos al
+# apagado del motor (ver el cierre 0xC0000005, abierto).
+static var _mats_entre_entradas := {}
+static var _mats_sombra_entre_entradas := {}
+
+
+static func soltar_caches() -> void:
+	_mats_entre_entradas = {}
+	_mats_sombra_entre_entradas = {}
+	_luz_cache = {}
 
 
 func _leer_luz() -> Dictionary:
@@ -309,7 +327,11 @@ func _crear_escenario() -> void:
 	if modo == "luz" and ResourceLoader.exists(ruta_luz):
 		tex_luz = load(ruta_luz)
 		tex_luz_usada = ruta_luz
-	var cache := {}
+	var k_mats := "%s|%s|%s|%s" % [nombre_perfil, modo, str(Engine.has_meta("muestra_solo_luz")), tex_luz_usada]
+	var cache: Dictionary = _mats_entre_entradas.get(k_mats, {})
+	if not cache.is_empty():
+		materiales_sombra = (_mats_sombra_entre_entradas[k_mats] as Array).duplicate()
+		materiales_usados = cache.keys()
 	for mi in calle.find_children("*", "MeshInstance3D", true, false):
 		var m := mi as MeshInstance3D
 		m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if sol.shadow_enabled \
@@ -323,6 +345,8 @@ func _crear_escenario() -> void:
 				cache[clave] = _material(nombre, tex_luz, vertice)
 				materiales_usados.append(clave)
 			m.set_surface_override_material(s, cache[clave])
+	_mats_entre_entradas[k_mats] = cache
+	_mats_sombra_entre_entradas[k_mats] = materiales_sombra.duplicate()
 	_marca("materiales y mapa de luz")
 	for n in calle.find_children("*", "", true, false):
 		var nodo := n as Node3D
@@ -378,25 +402,21 @@ func _material(nombre: String, tex_luz: Texture2D, vertice := false) -> Material
 	return m
 
 
-# (15/11, remedio de la entrada) Todas las cajas en UN cuerpo (antes, un StaticBody3D por caja: 41 cuerpos que crear y
-# registrar en la física al entrar). Mismas cajas, mismas posiciones: el choque no cambia.
-var _cuerpo_choques: StaticBody3D
-
-
+# Una caja de choque por marca «choque_» del GLB, cada una en su cuerpo. (15/11: se probó juntarlas en un solo cuerpo
+# para acortar la entrada; medido en el PC, 11 entradas × 2 tandas: 0,9-1,0 ms frente a 0,6 ms por caja → sin mejora,
+# se queda como estaba.)
 func _choque(n: Node3D) -> void:
-	if _cuerpo_choques == null:
-		_cuerpo_choques = StaticBody3D.new()
-		_cuerpo_choques.name = "Choques"
-		add_child(_cuerpo_choques)
 	var t := n.global_transform
 	var tam := t.basis.get_scale() * 2.0
+	var cuerpo := StaticBody3D.new()
+	cuerpo.name = String(n.name).replace("choque_", "Choque")
+	cuerpo.transform = Transform3D(t.basis.orthonormalized(), t.origin)
 	var col := CollisionShape3D.new()
-	col.name = String(n.name).replace("choque_", "Choque")
-	col.transform = Transform3D(t.basis.orthonormalized(), t.origin)
 	var caja := BoxShape3D.new()
 	caja.size = Vector3(absf(tam.x), absf(tam.y), absf(tam.z))
 	col.shape = caja
-	_cuerpo_choques.add_child(col)
+	cuerpo.add_child(col)
+	add_child(cuerpo)
 
 
 # El suelo que se pisa: una caja con la cara de arriba a 6 cm (lo alto de las losas: los pies no se hunden).

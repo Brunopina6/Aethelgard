@@ -421,6 +421,7 @@ func _process(delta: float) -> void:
 		listo = true
 		t_listo = tiempo
 		print("Carga terminada en %.1f s (%d archivos, %d fallos) · portada alternativa" % [tiempo, hechos, fallos])
+		_medir_y_salir()                             # (solo con «-- medir_carga»: carga.gd)
 		_carga_lista()
 		if "auto" in OS.get_cmdline_user_args():     # pruebas: entra solo, como en carga.gd
 			_empezar.call_deferred()

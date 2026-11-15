@@ -140,9 +140,8 @@ func _escena_cargada(perfil: String) -> void:
 	_ok(v.tex_luz_usada.ends_with("calle_luz_2048.png"), "3: con el perfil %s, el mapa de luz de 2048 (%s)" % [perfil,
 		v.tex_luz_usada])
 	var choques := 0
-	var cuerpo = v.get_node_or_null("Choques")       # (15/11: un solo cuerpo «Choques» con una caja por choque)
-	for n in (cuerpo.get_children() if cuerpo != null else []):
-		if n is CollisionShape3D:
+	for n in v.get_children():
+		if n is StaticBody3D and String(n.name).begins_with("Choque") and n.name != "SueloChoque":
 			choques += 1
 	_ok(choques >= 30, "3: %d choques" % choques)
 	_ok(not (v.luz.get("sondas", {}) as Dictionary).is_empty(), "3: las sondas de luz están")

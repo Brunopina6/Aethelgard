@@ -178,6 +178,8 @@ static func salir() -> void:
 			"combate_fijo", "tipo_combate", "desde_mapa", "escena_retorno", "zona"]:
 		if Engine.has_meta(k):
 			Engine.remove_meta(k)
+	if ResourceLoader.has_cached("res://zonas3d/muestra_calle/muestra_calle.gd"):   # (15/11) sus cachés, fuera
+		load("res://zonas3d/muestra_calle/muestra_calle.gd").soltar_caches()
 	var d := DirAccess.open("user://")             # (15/11) las medidas de RND y PRUEBA de la sesión (vista3d._ruta_medida)
 	if d != null:
 		for f in d.get_files():

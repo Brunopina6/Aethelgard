@@ -76,6 +76,16 @@ func _hacer() -> void:
 		var sv: Vector2 = v.sonda(k)
 		print("FOTO %s · %s · %s: Kael %s · pantalla %s · sonda sol %.2f cielo %.2f · rayo cámara→Kael %s · color medio del recorte (%.3f, %.3f, %.3f)" % [
 			etiqueta, s[0], perfil, str(k), str(sp.round()), sv.x, sv.y,
-			("choca con " + str(choque["collider"].name)) if not choque.is_empty() else "libre", suma.r / n, suma.g / n, suma.b / n])
+			("choca con " + _nombre_choque(choque)) if not choque.is_empty() else "libre", suma.r / n, suma.g / n, suma.b / n])
 	print("FOTOS HECHAS")
 	quit(0)
+
+
+# (las cajas van todas en el cuerpo «Choques»: el nombre de la caja está en su forma)
+func _nombre_choque(ch: Dictionary) -> String:
+	var cu = ch["collider"]
+	if cu is CollisionObject3D:
+		var dueno = cu.shape_owner_get_owner(cu.shape_find_owner(int(ch["shape"])))
+		if dueno != null:
+			return str(dueno.name)
+	return str(cu.name)
