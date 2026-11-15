@@ -26,14 +26,17 @@ resultado aplicado UNA vez. Nunca debe aparecer directamente con el orbe sin hab
 
 ## 1. Cómo se activa
 
-- **Ajustes → «Érebo: invocación cinematográfica» → «Híbrida»** (solo APK de Auditoría o editor). Es un valor más del
+- **Ajustes → «Érebo: invocación cinematográfica» → «Híbrida» (≈24 s) o «Híbrida abreviada» (≈16 s)** (solo APK de
+  Auditoría o editor; desde el 15/11 tarde, las dos en una segunda línea bajo los botones del vídeo). Es un valor más del
   selector del vídeo (la misma clave `[calidad_pruebas] erebo_cine` de `user://ajustes.cfg`); con él, el vídeo queda
   apagado (`invocacion_erebo_video.gd` no conoce ese valor y devuelve «no»). Elegir «No», «Abreviada»… lo devuelve
   todo a como estaba.
-- **Banco de pruebas → «Érebo: invocación»**: «De siempre», «Vídeo» (abreviada), «Híbrida» y «Híbrida 3D».
+- **Banco de pruebas → «Érebo: invocación»**: «De siempre», «Vídeo» (abreviada), «Híbrida» e «Híbrida abreviada»
+  («Híbrida 3D» queda solo por argumento).
 - **Valores** (`invocacion_erebo_hibrida.gd`, `MODOS`):
   - `hibrida`: ritual con el tramo de la versión COMPLETA del vídeo (12 s);
-  - `hibrida_breve`: ritual con el tramo de la ABREVIADA (5 s);
+  - `hibrida_breve` («Híbrida abreviada»): la MISMA parte en tiempo real (señal, acercamiento, mano, extracción del
+    corazón y orbe) y el ritual con el tramo de la ABREVIADA (5 s). Mismas reglas, mismo ATB;
   - `hibrida_3d`: todo en tiempo real (el ritual es el de la invocación nueva: aplastar el orbe y hundirse).
 - **Pruebas**: `erebo_cine=hibrida|hibrida_breve|hibrida_3d` en la línea de órdenes manda sobre el ajuste.
 - **Integración** (ganchos mínimos, comentados «V12, Érebo híbrida»): `combate.gd` `_invocar_sobre` (6 líneas antes
@@ -183,7 +186,7 @@ piedra (18, jefe), y las resistidas de Grimfang y Zarzalín: `D:\REBELUM_diagnos
 - **Nada está aprobado.** Falta la revisión del usuario (aspecto, ritmo, duración y sonido).
 - **Duración**: con el ritual completo dura ≈24 s (≈11,5 s en tiempo real + 12 s de vídeo), más que la de siempre
   (≈19,7 s); con «Híbrida breve», ≈16,5 s. El ATB es el mismo en todos los casos. Si se queda, decidir cuál es la
-  predeterminada (Ajustes solo ofrece hoy «Híbrida» = completa; «breve» y «3D» están en el banco y por argumento).
+  predeterminada (desde el 15/11 tarde Ajustes y el banco ofrecen las dos; «3D» solo por argumento).
 - **Sonido de la parte en tiempo real**: son los `sonidos/erebo_*.wav` de la invocación de siempre (susurros, sombra,
   pulso, extracción, tensión). El corazón no tiene sonido propio (latido) todavía; lo diseñaría el especialista de sonido.
 - **El empalme con el vídeo** es un corte (destello violeta, 0,25 s de negro del reproductor y el primer plano del orbe).
@@ -200,3 +203,160 @@ piedra (18, jefe), y las resistidas de Grimfang y Zarzalín: `D:\REBELUM_diagnos
   Hay que medir fotogramas en la parte en tiempo real, el salto al vídeo (carga del .ogv) y la memoria.
 - **Relevo**: para integrar, el coordinador puede añadir «hibrida» a `MODOS` de `invocacion_erebo_video.gd` si prefiere
   que el vídeo conozca el valor (hoy no hace falta: lo trata como «no»).
+
+## 9. 15/11 (tarde): cabeza firme, «Híbrida abreviada», cobertura y sonido
+
+**Encargo** (usuario, tras probarla en el Redmi contra un Slime): conservar el diseño (objetivo visible → acercamiento
+→ mano en el cuerpo → extracción del corazón → ritual del orbe → vuelta), mantener la completa (≈24 s) y ofrecer la
+abreviada, sin sustituir la invocación de siempre ni encender nada por defecto. Y: «Érebo mueve la cabeza de forma
+rara… la cabeza tiene que estar de una forma imponente y segura de lo que hace».
+
+### 9.1 Qué era lo de la cabeza y cómo se arregló
+
+Revisado fotograma a fotograma en las grabaciones del 15/11 (`videos\`), las capturas y la cinemática original:
+
+- **En tiempo real** (acercamiento, mano, «en la mano»): Érebo usa el clip de reposo de Mixamo «Thriller Idle»
+  (`erebo_idle.fbx`), un reposo de ZOMBI: la cabeza se mece y cae a los lados. Encima, el clip de agarrar («Picking Up
+  Object») baja la cabeza a mirar el suelo. Medido en el Érebo de la híbrida desde el contacto: la cara **ladeada 19,9°**
+  al enseñar el corazón y giros de la cabeza de hasta **≈494 °/s** (tirones).
+- **En el vídeo** (la cinemática del 14/11, que también usa ese reposo desde los 8,0 s), además de ese balanceo:
+  - 6,8-9,85 s (completa) / 0,8-2,6 s (abreviada): la cabeza se **ladea 9°** «con curiosidad» al descubrir el orbe;
+  - 12,5 y 13,8 s: en las sacudidas, el **cuello da un tirón** (-7°);
+  - 15,4-17,0 s (completa) / 4,2-5,15 s (abreviada): al comprimir, **agacha la cabeza 12°** sobre el puño (en 16,4-17,0 s
+    la capucha tapa la máscara: se ve encogido, no imponente);
+  - 16,4-17,0 s: un temblor de 0,4° a 61 rad/s en la quietud.
+
+**Arreglo en tiempo real** (`vfx/erebo_cabeza_firme.gd`, nuevo; `erebo_3d.gd` NO se toca): un `SkeletonModifier3D`
+propio que la híbrida añade solo a SU Érebo, después de los gestos (`gestos_3d.gd`) y de la IK de los brazos. Con su
+«peso» (0 → 1 al empezar el acercamiento) deja el cuello en su pose de descanso respecto al pecho (erguido) y la cabeza
+NIVELADA (su eje arriba con el del personaje, aunque el pecho se ladee con el clip), con la barbilla 7° alta, mirando al
+pecho del enemigo, luego al corazón (o al trozo), al orbe y, en la resistida, a la mano vacía; giro máximo 45°, ±25°
+arriba/abajo, suavizado y con velocidad limitada (140 °/s). Medido desde el contacto, en todos los casos de la prueba:
+**ladeo 0,00° (máx. 0,00°) y giro máx. 31 °/s** (resistida: 53 °/s). Con `erebo_cabeza=original` se ve como antes (solo
+para comparar). Además, el plano «en la mano» entra por corte (el viaje de la cámara cruzaba la capucha).
+
+**Arreglo del vídeo**: los vídeos originales (`videos/erebo_invocacion_*.ogv`) NO se tocan. El script de la
+cinemática tiene una opción nueva `cabeza=firme` (`animaciones/erebo/fuentes/cinematica_erebo.py`; por defecto hace lo
+mismo que el 14/11): cuello y cabeza erguidos sobre el reposo de zombi (entran en 0,4 s antes del primer plano de la
+máscara), sin el ladeo «curioso» (al agarrar el orbe solo baja la barbilla 8°, sin ladear), comprime con el PECHO y la
+cabeza alta, la espalda se arquea en las sacudidas (a la mitad) sin tirón de cuello, y sin el temblor. Se volvieron a
+renderizar con Blender 5.2.3 (EEVEE, 20 muestras, 1280×720) los fotogramas desde 6,4 s (completa, 408) y desde 0,4 s
+(abreviada, 192); los anteriores son idénticos y se reutilizan. ≈1,4 s por fotograma (9,7 y 4,7 min).
+- Los tramos del ritual de la híbrida (`videos/erebo_ritual.ogv` y `erebo_ritual_breve.ogv`, que son nuestros) se
+  sacaron otra vez de esos renders: **la híbrida ya lleva la cabeza firme también en el vídeo**.
+- Para la invocación cinematográfica de siempre, hay CANDIDATOS listos (mismo formato que los originales) para que el
+  coordinador los ponga si el usuario lo aprueba: `D:\REBELUM_diagnostico\erebo_hibrida\cabeza\candidatos_ogv\`
+  (`erebo_invocacion_completa.ogv`, 6,5 MB; `erebo_invocacion_abreviada.ogv`, 2,3 MB). Fotogramas en
+  `...\cabeza\completa_entera\` y `...\abreviada_entera\`.
+
+### 9.2 «Híbrida abreviada»
+
+Valor `hibrida_breve`, ahora elegible en Ajustes (segunda línea: «Híbrida» e «Híbrida abreviada») y en el banco
+(«Híbrida abreviada» en lugar de «Híbrida 3D», que sigue por argumento). Reutiliza TODA la parte en tiempo real (la
+misma extracción: señal, acercamiento, mano, corazón, orbe) y cambia solo el tramo del ritual (5 s en vez de 12 s).
+Duraciones en tiempo de juego: completa ≈25,7 s y abreviada ≈18,7 s (éxito); resistida ≈12 s en las dos. Mismas reglas,
+mismo dado, mismo ATB (`ATB_TEATRO`) y resultado una vez.
+
+### 9.3 Cobertura (pruebas sin ventana, resultados literales)
+
+Pasada final con el código entregado: `D:\REBELUM_diagnostico\pruebas\2026-11-15_150229\`. **8 SUPERADAS**:
+`prueba_erebo_hibrida`, `prueba_erebo_hibrida_fallo`, `prueba_erebo_video`, `prueba_erebo_video_fallo`,
+`prueba_erebo_saltar`, `prueba_erebo_nueva` (las invocaciones de siempre, intactas), `prueba_banco_pruebas` y
+`prueba_banco_pruebas_3d`. **1 FALLIDA que no es de esta rama**: `prueba_combate_huella`, «E8_gorthor: distinta de la
+referencia» (Lya empieza con 116/116 PV y la referencia dice 115/116). Falla IGUAL con los archivos de la base
+`1239e78` (comprobado volviendo a ellos: `...\2026-11-15_150650\`); la referencia está desfasada respecto a la
+integración. Lo tiene que mirar el coordinador.
+
+`prueba_erebo_hibrida` (erebo=exito), `FALLOS: 0`. Duraciones en tiempo de juego:
+
+| Caso | Dura |
+|---|---|
+| apagada (teatro de siempre), y otra vez de control | 3,5 s (saltado a los 30 fotogramas) |
+| Grimfang, completa · Zarzalín (sin pecho humano), completa · Bramavidrio (grande, núcleo), completa | 25,7 s |
+| Grimfang, abreviada · Slime (pequeño 2D), abreviada · Bramavidrio, abreviada | 18,7 s |
+| JEFE Guardián de piedra (2D), completa / JEFE Gorthor (3D), abreviada | 26,1 s / 19,1 s |
+| Saltar en la señal (completa y abreviada) | 1,0 s |
+| Saltar en el acercamiento (abreviada) / en la extracción (las dos) | 5,6 s / 8,0 s |
+| Saltar al ENTRAR en el vídeo (las dos, a 0,05 s de que avance) | 11,8 s |
+| Saltar en el DESTELLO FINAL del vídeo (completa / abreviada) | 25,7 s / 18,7 s |
+| Saltar a mitad del ritual (completa) | 15,8 s |
+| Todo en tiempo real (`hibrida_3d`) | 15,4 s |
+| Ritual que no se puede cargar (VideoStream sin reproductor / Theora sin archivo) → ritual en tiempo real | 18,9 s |
+
+En cada caso comprueba: fases en orden (o, al saltar, que se saltó en ESA fase y vuelve en < 3 s); la punta de la mano
+en el contacto; el corazón (o el trozo) en la mano; orbe solo con éxito; vídeo del ritual; estado «accion» todo el
+rato; resultado UNA vez (muerte, −20 % exacto del jefe o nada) y el texto de siempre una vez; música apartada y devuelta
+exacta; ATB igual al de la invocación de siempre (±0,6); sin capas; tiempo a 1; luchadores visibles; ventanas 3D del
+combate en su modo; la **cámara del combate** (`escena.position/scale`) igual; los **controles**: cuando el combate
+sigue, el menú vuelve y responde a una orden (Defender); el enemigo de verdad intacto (jefes y resistidas); y la
+**cabeza**: `CABEZA ladeo 0.00° (máx. 0.00° desde el contacto) · giro máx. 31 °/s` en todos los éxitos y jefes.
+**Azar**: `AZAR randi() tras la invocación: apagada 518376512 · híbrida completa 518376512 · híbrida abreviada
+518376512 · apagada (control) 518376512`.
+
+`prueba_erebo_hibrida_fallo` (erebo=fallo), `FALLOS: 0`: apagada con fallo (3,5 s); resistidas de Grimfang (completa y
+abreviada) y Zarzalín (abreviada), 12,0 s, sin orbe ni vídeo, PV intactos, «sale vacía» una vez, `CABEZA ladeo -0.00°
+(máx. 0.00°) · giro máx. 53 °/s`; jefes con el fallo forzado (Guardián completa 26,1 s y Gorthor abreviada 19,1 s: siempre
+el 20 %); resistida saltada en la extracción (las dos, 8,0 s).
+
+### 9.4 Sonido (grabaciones del Movie Maker, que llevan el audio del juego)
+
+Medido con `pruebas/herramientas/analizar_sonido_erebo.py` (ffmpeg `volumedetect` por tramos y, para la sincronía,
+los destellos de la imagen —subida de brillo medio > 25 en un fotograma— frente al golpe de sonido más cercano, en
+ventanas de 10 ms). Informes en `D:\REBELUM_diagnostico\erebo_hibrida\videos_15_11b\registros\*_sonido.txt`.
+
+| Grabación | Antes de invocar | Tiempo real | Ritual (vídeo) | Al volver |
+|---|---|---|---|---|
+| Completa, Grimfang | media −19,8 / pico −6,2 dB | −18,4 / −1,0 | −16,7 / −1,2 | −23,0 / −6,0 |
+| Abreviada, Grimfang | −19,8 / −6,2 | −18,4 / −1,0 | −16,8 / −1,7 | −22,8 / −5,7 |
+| Completa, Bramavidrio | −18,8 / −5,8 | −18,4 / −1,1 | −16,7 / −0,9 | −19,1 / −3,9 |
+| Jefe Gorthor, completa | −19,8 / −6,2 | −18,0 / −1,0 | −16,7 / −0,8 | −19,5 / −6,7 |
+| Resistida, Grimfang | −19,8 / −6,2 | −18,3 / −1,0 (toda) | — | −19,8 / −6,3 |
+| Saltada en la extracción | −19,8 / −6,2 | −19,8 / −1,0 (toda) | — | −23,0 / −4,9 |
+
+- **Sin saturar**: ningún pico pasa de −0,8 dBFS. El ritual queda ≈1,5 dB por encima de la parte en tiempo real (la
+  mezcla del vídeo, −16 LUFS). «Al volver» baja en los éxitos porque el enemigo muere y cambia la música del combate.
+- **Música**: el bus «Musica» baja a −18 dB durante toda la híbrida y vuelve EXACTO a 0,00 dB al terminar y al saltar
+  (registro de cada grabación: `GRAB vuelta … música 0.00 dB (la más baja durante: -18.00 dB)`; y la prueba lo
+  comprueba en cada caso con `is_equal_approx`).
+- **Sincronía**: la primera medida encontró dos destellos SIN golpe (el corazón que sale, +450 ms hasta el siguiente
+  sonido, y el destello antes del vídeo, +490 ms). Arreglado (fractura y resonancia en ese fotograma; también al partir
+  el trozo y al escaparse el corazón). Ahora: corazón que sale **+30 ms**, destello antes del vídeo **+20 ms**, estallido
+  del ritual completo **0 ms** (−3 ms con el jefe). Quedan, del vídeo original: el destello final llega 0,3-0,4 s después
+  de la ráfaga (así se montó: el golpe en el enemigo lo pone el combate) y en el ritual abreviado el estallido suena
+  +183 ms tras su destello. En el jefe, el golpe más fuerte cerca del trozo cae a +350 ms (el pulso de «en la mano»; el
+  del trozo es más suave).
+- **Pendiente**: la salida AUDIBLE en el teléfono (altavoz del Redmi, volumen, que se oiga y que no se corte al pasar
+  al vídeo). Las grabaciones de pantalla del Redmi no llevan audio: hay que escucharlo en el teléfono.
+
+
+### 9.5 Vídeos y capturas (15/11 tarde)
+
+En `D:\REBELUM_diagnostico\erebo_hibrida\videos_15_11b\` (Movie Maker → MP4 H.264 + AAC, combate de verdad con Kael,
+Lya y Garon, desde el menú de Lya hasta 4 s después de volver):
+
+| Archivo | Caso | Resultado |
+|---|---|---|
+| `REBELUM_Erebo_hibrida_completa_Grimfang.mp4` | completa, enemigo normal | PV 110 → 0 |
+| `REBELUM_Erebo_hibrida_abreviada_Grimfang.mp4` | abreviada, el mismo | PV 110 → 0 |
+| `REBELUM_Erebo_hibrida_completa_Bramavidrio_grande_sin_pecho.mp4` | grande, núcleo en la garganta | PV 1150 → 0 |
+| `REBELUM_Erebo_hibrida_jefe_Gorthor_completa.mp4` | JEFE: el trozo, 20 % | PV 460 → 368 |
+| `REBELUM_Erebo_hibrida_resistida_Grimfang_completa.mp4` | resistida: el corazón se escapa | PV 110 → 110 |
+| `REBELUM_Erebo_hibrida_saltada_en_la_extraccion_completa.mp4` | Esc a mitad de la extracción | PV 110 → 0, una vez |
+| `REBELUM_Erebo_hibrida_cabeza_antes_izquierda_despues_derecha.mp4` | cabeza en TIEMPO REAL: antes / después | — |
+| `REBELUM_Erebo_cinematica_cabeza_antes_izquierda_despues_derecha.mp4` | cabeza en la CINEMÁTICA (20 s): antes / después | — |
+| `REBELUM_Erebo_cinematica_completa_cabeza_firme.mp4` / `..._abreviada_...` | la cinemática nueva, con su sonido | — |
+| `REBELUM_Erebo_hibrida_cabeza_ANTES_abreviada_Grimfang.mp4` | la misma abreviada sin la cabeza firme (referencia) | — |
+
+Registros y análisis de sonido de cada grabación en `...\videos_15_11b\registros\`. Capturas de la cabeza en tiempo
+real (cada 0,4 s, del acercamiento al orbe): `D:\REBELUM_diagnostico\erebo_hibrida\cabeza\tiempo_real_antes\` y
+`...\tiempo_real_despues\`; de la cinemática, `...\cabeza\firme\` (7,4 / 12,6 / 16,7 s).
+
+### 9.6 Pendiente
+
+- **Nada está aprobado**: falta que el usuario vea los vídeos nuevos (la cabeza, la abreviada y el sonido).
+- **Redmi**: medir y escuchar con la APK nueva: la abreviada y la completa, una resistida, un jefe y saltar (en la
+  extracción, al entrar en el vídeo y en el destello final); el coste de la cabeza firme es mínimo (un modificador con
+  dos huesos), pero no está medido en el teléfono. La salida AUDIBLE (altavoz) sigue sin comprobar.
+- **La invocación cinematográfica de siempre** sigue con los vídeos del 14/11: los candidatos con la cabeza firme están
+  listos (9.1) para cambiarlos si el usuario lo aprueba.
+- `prueba_combate_huella`: referencia desfasada en la integración (E8), ajena a esta rama.
