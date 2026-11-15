@@ -477,6 +477,25 @@ func _comprobar_cerca() -> void:
 	boton_accion.visible = cerca != "" and _bloqueo <= 0.0
 
 
+# Tocar el suelo (vista3d.gd): aquí las costillas, los tejados y la bandera pasan por encima de lo que se pisa, y el
+# rayo del toque chocaba con ellos (Kael iba hacia donde estaba la costilla, no adonde se tocó). Lo que queda por encima
+# de lo andable (más de 1 m sobre la Cubierta Mayor) no cuenta: el rayo sigue hasta las tablas.
+func _punto_suelo(pantalla: Vector2):
+	var desde := cam.project_ray_origin(pantalla)
+	var hasta := desde + cam.project_ray_normal(pantalla) * 500.0
+	var excluir: Array[RID] = []
+	for i in 8:
+		var q := PhysicsRayQueryParameters3D.create(desde, hasta)
+		q.exclude = excluir
+		var r := get_world_3d().direct_space_state.intersect_ray(q)
+		if r.is_empty():
+			return null
+		if (r["position"] as Vector3).y < T.ALTO_CUBIERTA + 1.0:
+			return r["position"]
+		excluir.append(r["rid"])
+	return null
+
+
 func _unhandled_input(ev: InputEvent) -> void:
 	if ocupado():
 		return

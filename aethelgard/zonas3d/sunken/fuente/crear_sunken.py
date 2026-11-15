@@ -54,8 +54,8 @@ BLANQUEADA = ((0.66, 0.63, 0.57), (0.76, 0.73, 0.66), (0.86, 0.83, 0.76))   # co
 MOJADA = (0.24, 0.28, 0.25)
 VERDIN = (0.31, 0.61, 0.54)
 OXIDO = (0.54, 0.29, 0.16)
-LONA = (0.80, 0.76, 0.66)
-REMIENDO = (0.70, 0.46, 0.20)
+LONA = (0.68, 0.63, 0.55)          # (tercera pasada: al sol de la tarde, la lona clara se quemaba)
+REMIENDO = (0.62, 0.40, 0.18)
 CARMESI = (0.62, 0.15, 0.15)
 ORO_AGUILA = (0.95, 0.78, 0.42)
 TABLA = ((0.30, 0.22, 0.16), (0.38, 0.28, 0.20), (0.46, 0.35, 0.25))       # tablas de cubierta, curtidas y embreadas
@@ -748,14 +748,21 @@ def proa(G):
     bulto(M, cuerpo_c + V(0, 0.95, -0.85) * E_, 0.45 * E_, (0.8, 0.9, 1.0), 1, 0.06, oro, 4.0)
     tubo(M, cuerpo_c + V(0, 0.95, -1.25) * E_, cuerpo_c + V(0, 0.8, -1.75) * E_, 0.14 * E_, 0.02, 6, mezcla(ORO_AGUILA, OXIDO, 0.3))
     ancla("ojo_aguila", tuple(cuerpo_c + V(0.3, 1.05, -1.05) * E_))
-    for lado in (-1, 1):
-        for k in range(nq(6, 4)):
-            a = math.radians(-10 + k * 16)
-            raiz = cuerpo_c + V(lado * 0.6, 0.4, 0.1) * E_
-            punta = raiz + V(lado * math.cos(a) * (2.6 - k * 0.22), 0.4 + math.sin(a) * 1.6, 0.6 + k * 0.28) * E_
-            medio = raiz.lerp(punta, 0.5) + V(0, 0.15, 0.25) * E_
-            cara(M, [raiz, punta, medio], jit(ORO_AGUILA, 0.05), (0, 1, 0))
-            cara(M, [raiz, medio, punta], mezcla(ORO_AGUILA, OXIDO, 0.35), (0, -1, 0))
+    for lado in (-1, 1):                                    # las alas: un abanico MACIZO de plumas, abierto hacia atrás
+        raiz = cuerpo_c + V(lado * 0.6, 0.4, 0.1) * E_
+        n = nq(7, 4)
+        puntas = []
+        for k in range(n):
+            a = math.radians(-12 + k * (80.0 / (n - 1)))
+            largo = 2.7 - k * 0.18
+            puntas.append(raiz + V(lado * math.cos(a) * largo, 0.25 + math.sin(a) * 1.5, 0.5 + k * 0.32) * E_)
+        for k in range(n - 1):
+            muesca = puntas[k].lerp(puntas[k + 1], 0.5).lerp(raiz, 0.16)    # la muesca entre pluma y pluma
+            c = jit(mezcla(ORO_AGUILA, (1.0, 0.93, 0.72), 0.25 if k % 2 else 0.0), 0.04)
+            cara(M, [raiz, puntas[k], muesca], c, (0, 1, 0))
+            cara(M, [raiz, muesca, puntas[k + 1]], c, (0, 1, 0))
+            cara(M, [raiz, muesca, puntas[k]], mezcla(ORO_AGUILA, OXIDO, 0.12), (0, -1, 0))
+            cara(M, [raiz, puntas[k + 1], muesca], mezcla(ORO_AGUILA, OXIDO, 0.12), (0, -1, 0))
     M.choque(35.5, 2.6, 44.5, 7.6, 4.2, y - 0.2)
     ancla("mascaron", tuple(cuerpo_c))
 
@@ -791,7 +798,7 @@ def dique(G):
             q = [rejilla[j][i], rejilla[j][i + 1], rejilla[j + 1][i + 1], rejilla[j + 1][i]]
             remiendo = (i * 7 + j * 3) % 17 == 0
             lado_sombra = abs(i - nx / 2) / (nx / 2)            # los faldones, más oscuros que el lomo
-            c = REMIENDO if remiendo else jit(mezcla((0.70, 0.66, 0.58), (0.42, 0.40, 0.36), 0.10 + 0.45 * lado_sombra ** 1.5), 0.03)
+            c = REMIENDO if remiendo else jit(mezcla((0.50, 0.47, 0.41), (0.30, 0.29, 0.26), 0.10 + 0.45 * lado_sombra ** 1.5), 0.03)
             cara(L, q, c, (0, 1, 0), TELA_M)
     for j in range(0, nz + 1, 3):                           # cabos que la sujetan, de lado a lado
         fila = rejilla[j]
