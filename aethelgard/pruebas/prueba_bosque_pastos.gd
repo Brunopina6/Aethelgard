@@ -58,9 +58,18 @@ func _esperar(n: int) -> void:
 		await process_frame
 
 
-# (16/11) espera por RELOJ: con --fixed-fps los fotogramas vuelan y las cargas en segundo plano (Recursos.cambiar_escena)
-# tardan en tiempo real; contando fotogramas, en una batería cargada fallaba «8: la región no vuelve a cargarse».
 func _hasta(cond: Callable, segundos := 30.0) -> bool:
+	for i in int(segundos * 30.0):
+		if cond.call():
+			return true
+		await process_frame
+	return false
+
+
+# (16/11) espera por RELOJ, solo para las cargas en segundo plano (Recursos.cambiar_escena): con --fixed-fps los
+# fotogramas vuelan y la carga tarda en tiempo real; contando fotogramas, en una batería cargada fallaba «8: la región
+# no vuelve a cargarse». (El resto de la prueba espera en tiempo de JUEGO a propósito: diálogos y combate.)
+func _hasta_reloj(cond: Callable, segundos := 60.0) -> bool:
 	var t0 := Time.get_ticks_msec()
 	while Time.get_ticks_msec() - t0 < int(segundos * 1000.0):
 		if cond.call():
@@ -262,7 +271,7 @@ func _probar() -> void:
 	Engine.set_meta("pos_3d_ok", false)
 	R.cambiar_escena(REGION)
 	var id_vieja := r.get_instance_id()   # (no capturar «r»: se libera al recargar y la condición daría «Lambda capture… was freed»)
-	if not await _hasta(func(): return _region_lista() and current_scene.get_instance_id() != id_vieja and current_scene.has_method("texto_objetivo"), 60.0):
+	if not await _hasta_reloj(func(): return _region_lista() and current_scene.get_instance_id() != id_vieja and current_scene.has_method("texto_objetivo"), 60.0):
 		_fallo("8: la región no vuelve a cargarse")
 	else:
 		r = current_scene
