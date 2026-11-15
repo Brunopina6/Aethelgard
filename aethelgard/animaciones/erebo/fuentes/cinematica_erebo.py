@@ -1253,10 +1253,12 @@ if MEJORA:
     PUNTOS["orbe_agarre"] = evaluar(T["agarre"], lambda: (hueso_mundo(MANO) @ M_ORBE_EN_MANO).translation.copy())
     rim, rim_d = luz("rim_plata", 'AREA', (0.72, 0.8, 1.0), 0.6)
     rim_d.size = 1.4
+    rim_d.shape = 'DISK'                         # (redonda: en el cristal del orbe no se refleja como una ventana)
     rim.location = PUNTOS["pecho_fin"] + Vector((0.55, 1.9, 1.15))
     rim.rotation_euler = (PUNTOS["pecho_fin"] + ARRIBA * 0.25 - rim.location).to_track_quat('-Z', 'Y').to_euler()
     rim2, rim2_d = luz("rim_violeta", 'AREA', (0.62, 0.32, 1.0), 0.6)
     rim2_d.size = 1.0
+    rim2_d.shape = 'DISK'
     rim2.location = PUNTOS["pecho_fin"] + Vector((-1.1, 1.3, 0.6))
     rim2.rotation_euler = (PUNTOS["pecho_fin"] + ARRIBA * 0.1 - rim2.location).to_track_quat('-Z', 'Y').to_euler()
     for d_ in (rim_d, rim2_d):

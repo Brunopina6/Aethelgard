@@ -63,15 +63,20 @@ for i in range(0, n - VEN, VEN):
 
 
 def golpe_cerca(t, ventana=0.5):
-    """El instante (s) de mayor subida de energía a ±ventana de t."""
-    i0 = max(1, int((t - ventana) * 100))
+    """El ATAQUE de sonido más cercano a t (±ventana): la primera ventana de 10 ms cuya energía supera 6 dB la media de
+    los 150 ms anteriores y está por encima de −35 dBFS; de los ataques del tramo, el más cercano a t. (15/11: antes
+    era «la mayor subida», que confundía el golpe con la cola o con lo que sigue a un silencio.)"""
+    i0 = max(16, int((t - ventana) * 100))
     i1 = min(len(ener) - 1, int((t + ventana) * 100))
-    mejor, ti = 0.0, None
+    umbral = (10 ** (-35 / 20) * 32768) ** 2
+    ataques = []
     for i in range(i0, i1):
-        sube = ener[i] - ener[i - 1]
-        if sube > mejor:
-            mejor, ti = sube, i / 100.0
-    return ti
+        previo = sum(ener[i - 15:i]) / 15.0
+        if ener[i] > umbral and ener[i] > 4.0 * previo and ener[i - 1] <= 4.0 * previo:
+            ataques.append(i / 100.0)
+    if not ataques:
+        return None
+    return min(ataques, key=lambda a: abs(a - t))
 
 
 # brillo medio por fotograma

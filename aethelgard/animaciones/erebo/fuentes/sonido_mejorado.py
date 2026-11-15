@@ -67,7 +67,11 @@ def zumbido_carga(dur):
     return np.sin(2 * np.pi * np.cumsum(f) / sr) * sube * (1 + 0.3 * np.sin(2 * np.pi * (3 + 14 * sube) * t))
 
 
-suma(T["destello"] - 0.004, golpe_sordo(), -11.0)
+# antes del destello, la ráfaga se recoge 150 ms (−9 dB) para que el golpe se sienta en la luz y no antes
+i_d = int(round(T["destello"] * sr)); i_a = i_d - int(0.15 * sr)
+x[i_a:i_d] *= np.linspace(1.0, 10 ** (-9 / 20), i_d - i_a)[:, None]
+x[i_d:i_d + int(0.04 * sr)] *= np.linspace(10 ** (-9 / 20), 1.0, int(0.04 * sr))[:, None]
+suma(T["destello"] - 0.004, golpe_sordo(), -6.0)
 suma(T["destello"], brillo_metalico(), -17.0, 0.2)
 suma(T["destello"] + 0.01, brillo_metalico(), -20.0, -0.3)
 suma(T["agarre"], siseo(), -16.0)
