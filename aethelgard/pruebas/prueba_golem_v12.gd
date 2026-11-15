@@ -178,14 +178,20 @@ func _combate(activos: Dictionary, grupo: int, semilla: int, encendido := true) 
 	Engine.set_meta("grupo_combate", grupo)
 	if encendido:
 		Engine.set_meta(GO.INTERRUPTOR, true)
-	seed(semilla)
 	c = load("res://combate.tscn").instantiate()
 	sonidos.clear()
 	impactos.clear()
 	danos.clear()
 	hp_prev.clear()
 	c.sonido_pedido.connect(func(n: String): sonidos.append([n, Engine.get_process_frames()]))
-	root.add_child(c)
+	root.add_child(c)                                     # (aquí su _ready hace randomize())
+	# 15/11: la semilla, DESPUÉS de add_child (antes se ponía antes y combate._ready la deshacía con randomize(): A, C,
+	# D, E y Q eran combates al azar; Q falló una vez el 14/11 por eso), y el ATB inicial de los enemigos otra vez con
+	# ella, como prueba_combate_huella.gd.
+	seed(semilla)
+	for e in c.enemigos:
+		e["atb"] = randf() * 30.0
+	print("SEMILLA %d · %s · grupo %d · %s" % [semilla, str(activos), grupo, "encendido" if encendido else "apagado"])
 	for e in c.enemigos:
 		var p = c._p3d(e)
 		if GO.es(e):
@@ -211,8 +217,10 @@ func _cerrar() -> void:
 		await _esperar(60)
 		c.queue_free()
 		c = null
+	await _esperar(75)                                    # 2,5 s de juego a 30 fotogramas por segundo
+	# (el audio sin ventana avanza con el reloj real: si aún suena algo suyo, se le dan hasta 5 s reales para acabar)
 	var t0 := Time.get_ticks_msec()
-	while Time.get_ticks_msec() - t0 < 2500:
+	while _suena_suyo() and Time.get_ticks_msec() - t0 < 5000:
 		await process_frame
 	_ok(not _suena_suyo(), "al cerrar el combate sigue sonando algo del Gólem")
 	await _esperar(5)
