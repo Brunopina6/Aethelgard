@@ -85,3 +85,34 @@ por SHA-256 (`567c7323…`) en cada paso; nunca cambió.
 Al reiniciar la app, un toque cayó antes de que cargara la portada y otro acertó en «Probar el prólogo (partida
 nueva)»: tres ciclos se midieron en el prólogo y se descartaron. Usó su ranura de prueba (`partida_exp_prueba.save`,
 creada a las 14:23); la partida real no cambió. Desde entonces se espera a «Carga terminada» y se comprueba la pantalla.
+
+## Sesión 15/11, 17:05-17:30 (APK `dc878e9`, v834; la instaló el usuario desde Descargas)
+
+Mismo método de medida que arriba (timestats de la capa del juego, puesto a cero al empezar cada tramo; PSS con
+`dumpsys meminfo`). Volcados en `D:\REBELUM_diagnostico\redmi_15_11\medidas\ts_*.txt`. Arranque: «Carga terminada en
+14,2 s (983 archivos, 0 fallos)». Todo desde el banco (partida aislada) o desde Ajustes de Auditoría.
+
+| Prueba | Qué se vio | Medida |
+|---|---|---|
+| Érebo «Híbrida abreviada» contra Slime A (Lya, Armonía llena) | Escenario, Érebo junto al Slime, ritual y vuelta al combate; el dado salió **fallo** (los tres Slimes a 408/408): caso «resistida» comprobado, el turno sigue con Kael | Tramo de 22 s (menú + invocación + vuelta): 55,4 FPS de media, 1140/1227 fotogramas a 16-17 ms, 74 a 33 ms; **2 tirones de 350 ms** (primera carga de la secuencia en esta ejecución) y 6 sueltos de 50-134 ms; PSS 800 → 848 MB |
+| Érebo «Híbrida» (completa) contra Slime A | Acercamiento, mano en el pecho, **corazón espectral en la mano**, orbe y onda del ritual, vuelta: Slime A **eliminado**, quedan dos | Tramo de 21 s: 52,9 FPS, 1473/1749 a 16-17 ms, 267 a 32-33 ms; peor fotograma **150 ms** (sin los de 350 ms: ya cargada); PSS 839 → 864 MB; 31,4 °C |
+| Saltar la híbrida (dos toques a mitad) | Vuelve al combate en ≈2,5 s; el resultado (fallo) se aplica una vez y el turno pasa a Kael | — |
+| Custodio «ver la rotación (×8)» | Contador legible encima de la vida: «⚠ Prensa: su próximo turno» → «Avance en 3/2 turnos suyos» → «⚠ Avance: su próximo turno» → **«Sello en 3 turnos suyos» → «Sello en 2 turnos suyos»** (el Sello en sí no llegó a lanzarse en 18 turnos) | — |
+| Grupo de cuatro (banco) | Kael, Lya, Garon y Nix en combate; las cuatro filas caben en el panel; Nix visible detrás de Lya. El menú de Lya baja hasta justo encima de la fila de Kael: HUIR queda en y≈480 (cabe, algo justo) | 55,9 FPS en 28 s, 1431/1597 a 16-17 ms; peor 70 ms; PSS 881 MB |
+| Mapamundi 3D (Ajustes «Mapamundi 3D (en pruebas)»; solo durante la prueba) | Oakhaven → Puerta del Sur → **mapamundi** («Puertas de Oakhaven», «Entrar: Oakhaven», GRUPO, VIAJE RÁPIDO); Kael anda por los caminos; se ven el Portal del Vacío y el campamento | Salida de Oakhaven: 1 fotograma de 1 s (carga) en 10 s; andando 18 s: **30,3 FPS**, 597/618 a 33 ms, peor 50 ms; PSS 850 → 875 MB; 29,9 °C |
+| Viaje rápido | Lista «Oakhaven» y «Tierras de Oakhaven · Norte (estás aquí)»; el viaje llega a las Puertas de Oakhaven con aviso; sin tirones | 30,4 FPS, peor 66 ms |
+| Volver a Oakhaven desde el mapamundi | Al pisar el círculo dorado de la puerta, entra en Oakhaven por la Puerta del Sur | (no medido aparte) |
+
+Observado y anotado, sin tocar: la descripción de la invocación en combate dice «Érebo arranca el corazón a un
+enemigo», texto de antes de V12 (no lo cambia esta sesión; queda para la revisión narrativa de qué se revela antes del
+acto III). La vida máxima del Custodio baja de 1288 a 1272 mientras está congelado: es la regla de Frostfang
+(`combate.gd`, `_congelar`), no un fallo.
+
+**Al terminar:** `ajustes.cfg` vuelto al de antes de la sesión (SHA `3ee5aaf2…`; el del final, con el mapamundi 3D
+activo, guardado en `D:\REBELUM_diagnostico\redmi_15_11\ajustes_al_terminar_sesion_15_11.cfg`), `partida_exp_prueba.save`
+borrada; todos los archivos de `files/` con el mismo SHA-256 que en `D:\REBELUM_respaldos\2026-11-15_redmi_antes_sesion_1430`
+(partida `567c7323…` y su `.bak`, `.danada`, respaldo, csv, calidad.log). Descargas sin tocar.
+
+**Sigue pendiente en el Redmi:** la híbrida contra un jefe y contra un enemigo grande (Bramavidrio); la opción de
+«Vídeo» con la cinemática mejorada; escuchar el sonido (volumen multimedia a 0: no se cambia); el campamento y la cueva
+del mapamundi; Oakhaven por la mañana; el Sello de Clausura lanzado; PSS tras reiniciar la app después de usar ALTO.

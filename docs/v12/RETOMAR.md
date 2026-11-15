@@ -907,3 +907,15 @@ Recuperación: `recuperacion/v12/20261115-antes-encargo-tarde` (`1239e78`). Vali
 - **Siguiente encargo (tras cerrar esta fase y con punto de recuperación):** la muestra gráfica experimental de una
   calle de Oakhaven (encargo del usuario del 15/11 por la tarde). No se ha recibido la imagen de referencia de FFIX que
   menciona: se trabaja con lo descrito.
+
+## RELEVO 15/11, 17:30: Redmi con `dc878e9` (v834) y comienzo de la muestra gráfica de Oakhaven (LEER PRIMERO)
+Validado: `dc878e9` (`validado/v12/20261115-170245`, 188 · 0). APK v834 instalada por el usuario.
+- **Redmi** (`REDMI_15_11.md`, sesión 17:05): híbrida abreviada (resistida) y completa (éxito) funcionan, con salto;
+  52-55 FPS en el tramo, 2 tirones de 350 ms solo la primera vez; contador del Custodio legible hasta «Sello en 2»;
+  grupo de cuatro a 56 FPS; mapamundi 3D a 30 FPS con viaje rápido y vuelta a Oakhaven. Teléfono devuelto al estado
+  de antes de la sesión (mismos SHA); Descargas sin tocar.
+- **Pendiente en el teléfono:** lista concreta en `GUION_REDMI_15_11.md` (jefe y Bramavidrio con la híbrida, el
+  «Vídeo» mejorado, sonido con el volumen que suba el usuario, campamento y cueva, Oakhaven de mañana, Sello lanzado).
+- **Siguiente acción:** muestra gráfica experimental de UNA calle de Oakhaven (escena aparte, solo Auditoría, apagada
+  por defecto; no se extiende al resto del juego hasta que el usuario la vea). Plan y avance en
+  `docs/v12/MUESTRA_CALLE_OAKHAVEN.md`.

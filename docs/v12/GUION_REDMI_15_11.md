@@ -3,6 +3,24 @@
 > Escrito la noche del 15 al 15/11, sin el teléfono: esta noche NO se ha instalado nada ni se han tocado datos del
 > Redmi. Todo lo de abajo está comprobado SOLO en el PC; nada certifica Android.
 
+## INSTALADA (15/11, 17:05): `dc878e9`, versionCode 834 — probada de 17:05 a 17:30
+
+- **Archivo:** `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261115-dc878e9-local.apk` (425,5 MB),
+  SHA-256 `71121b7d06ad220cb8b212df0c0b7e9e522a26029c965649d714c3e3948df964`; copia en Descargas del teléfono con el
+  mismo SHA. Batería 188 · 0 (etiqueta `validado/v12/20261115-170245`).
+- **Ya probado en el Redmi** (resultados en `REDMI_15_11.md`, sesión 17:05): híbrida abreviada (resistida) y completa
+  (éxito), saltar a mitad, contador del Custodio hasta «Sello en 2», grupo de cuatro, mapamundi 3D con viaje rápido y
+  vuelta a Oakhaven. Teléfono devuelto al estado de antes (mismos SHA).
+- **Pendiente en el teléfono (lista concreta):**
+  1. Híbrida contra un jefe (Guardián/Custodio) y contra Bramavidrio; mirar que el corazón y el orbe encajan con el tamaño.
+  2. Selector «Érebo: invocación» → «Vídeo»: la cinemática mejorada (cabeza firme) completa y abreviada; que no quede en negro.
+  3. Sonido: subir el volumen multimedia LO HACE EL USUARIO (no se toca el sistema); escuchar la híbrida, el vídeo, la
+     vuelta de la música tras saltar y el mapamundi.
+  4. Mapamundi: llegar andando al campamento y a la cueva provisional; medir la cueva.
+  5. Oakhaven por la mañana (dormir en la posada) con el mundo vivo.
+  6. Custodio: ver el Sello de Clausura lanzado (más turnos en el caso ×8).
+  7. Reiniciar la app tras usar ALTO en Sunken y comprobar que el PSS vuelve a ≈790 MB.
+
 ## APK MÁS RECIENTE (15/11, tarde): validada `cbc0536` (batería 185 · 0 · 98 · 0), AÚN EN EL PC
 
 - **Archivo:** `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261115-cbc0536-local.apk` (425,5 MB, «TODO
