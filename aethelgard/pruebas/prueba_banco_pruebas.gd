@@ -96,7 +96,7 @@ func _a() -> void:
 			casos += 1
 		elif ":" in k:
 			selectores[k.get_slice(":", 0)] = true
-	_ok(casos == BP.COMBATES.size() + BP.EXPLORAR.size() and casos == 10, "A: %d casos en pantalla" % casos)
+	_ok(casos == BP.COMBATES.size() + BP.EXPLORAR.size() and casos == 11, "A: %d casos en pantalla" % casos)   # (15/11: + la muestra de la calle)
 	_ok(selectores.size() == 7, "A: %d selectores (%s)" % [selectores.size(), str(selectores.keys())])
 	b.queue_free()
 	await _esperar(2)

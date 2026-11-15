@@ -87,6 +87,12 @@ const EXPLORAR := {
 	"sunken": {"titulo": "Sunken City 3D (en pruebas)", "activos": ["Kael", "Lya", "Garon"],
 		"escena": "res://zonas3d/sunken_3d.tscn",
 		"nota": "Popa Rota → Cubierta Mayor: Ulla y Brea, «El sello de la capitana», la costilla sin farol y la forja."},
+	# 15/11: MUESTRA GRÁFICA EXPERIMENTAL (zonas3d/muestra_calle/, docs/v12/MUESTRA_CALLE_OAKHAVEN.md): una calle de
+	# Oakhaven con luz horneada, para juzgar el salto de calidad antes de renovar nada. SOLO aquí: ninguna otra escena la
+	# enlaza y Oakhaven 3D no cambia. Solo Kael (sin vecinos ni misiones); «Volver al banco», arriba a la izquierda.
+	"muestra_calle": {"titulo": "Muestra gráfica: una calle de Oakhaven (en pruebas)", "activos": ["Kael"],
+		"escena": "res://zonas3d/muestra_calle/muestra_calle.tscn",
+		"nota": "Kael andando por una calle hecha de nuevo (tarde dorada horneada). CAL cambia el perfil; RND mide."},
 }
 
 var cuerpo: VBoxContainer
