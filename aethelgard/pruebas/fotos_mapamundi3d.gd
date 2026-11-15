@@ -13,6 +13,7 @@ var D = load("res://zonas3d/mapamundi/datos.gd")
 var salida := ""
 var v
 var lineas: PackedStringArray = []
+var perfiles: Array = ["alto", "medio", "bajo"]
 var tam := Vector2i(1600, 720)                    # la pantalla del Redmi (20:9); «res=1280x720» para otra
 
 
@@ -21,7 +22,7 @@ func _initialize() -> void:
 		if a.begins_with("salida="):
 			salida = a.substr(7)
 		if a.begins_with("perfil="):
-			Engine.set_meta("calidad_proto", a.substr(7))
+			perfiles = [a.substr(7)]
 		if a.begins_with("res="):
 			var q: PackedStringArray = a.substr(4).split("x")
 			tam = Vector2i(int(q[0]), int(q[1]))
@@ -83,12 +84,22 @@ func _poner(p: Vector2, mira := Vector2.ZERO) -> void:
 
 
 func _correr() -> void:
+	for pf in perfiles:
+		Engine.set_meta("calidad_proto", pf)
+		lineas.clear()
+		await _serie()
+	print("FOTOS: perfiles %s en %s" % [perfiles, salida])
+	quit(0)
+
+
+func _serie() -> void:
 	Engine.set_meta("archivo_partida_prueba", "user://fotos_mapamundi3d.save")
 	Engine.set_meta("partida_lista", true)
 	Engine.set_meta("prologo_visto", true)
 	Engine.set_meta("mm3d_sin_encuentros", true)
 	Engine.set_meta("grupo_activo", ["Kael", "Lya", "Garon"])
 	Engine.set_meta(D.LLEGADA, "oakhaven")
+	Engine.set_meta("pos_3d_ok", false)
 	await _cargar(MM)
 	await _foto("01_llegada_oakhaven")
 	# la región desde arriba (ortográfica) y en diorama
@@ -141,4 +152,3 @@ func _correr() -> void:
 	f.store_string("\n".join(lineas) + "\n")
 	f.close()
 	print("FOTOS: %d en %s" % [lineas.size(), salida])
-	quit(0)
