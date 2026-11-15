@@ -788,3 +788,23 @@ Punto de recuperación: etiqueta `recuperacion/v12/20261115-antes-noche` → `da
   `D:\REBELUM_diagnostico\v12`). Se conserva su menú de hoy (MAGIA Fuego/Rayo, sin INVOCACIÓN). Dependencia abierta.
 - En marcha (agentes en worktrees propios): sector 3D de Sunken City; pruebas exactas del orbe, vídeo de Érebo y
   Gorthor/Velador con semilla; revisión visual de Nix y de la capa de Garon.
+
+### Punto de control 03:20 (todo integrado en claude/rebelum-v12; commits locales, sin subir)
+- **Agentes (cada uno en su worktree; los tres TERMINADOS, integrados con cherry-pick y revisados):**
+  - Revisión de personajes (`claude/v12-revision-personajes`): la mano del cetro de Nix cerraba mal (RightHandMiddle1
+    sin pesos) → arreglada, GLB anterior en `personajes/nix/fbx/anterior_15_11/`. Capa de Garon (independiente,
+    anclada < 1 mm, móvil), dos espadas con una ranura y protagonistas v2/v3 de pie: bien. `REVISION_PERSONAJES_15_11.md`.
+  - Pruebas de combate (`claude/v12-pruebas-combate-estabilidad`, `claude/v12-custodio-sello`): orbe de Érebo con
+    comparación exacta (Grimfang y jefe 180 → 144) y casos de fallo; vídeo con fallos de carga, jefe, nueva, completa
+    y sin pausa; Gorthor, Velador, Gólem, Centinela y Peón con el azar fijo DE VERDAD (la semilla se ponía antes de que
+    combate._ready hiciera randomize()). **Sello de Clausura (e01_a3)** del Custodio: clip, combate, rotación de los
+    tres especiales y medida de conjunto (CUSTODIO_E01_V12.md §9); cifras PROPUESTAS.
+  - Sunken City 3D (`claude/v12-sunken3d`): sector «Popa Rota → Cubierta Mayor», EN PRUEBAS y apagado
+    (SUNKEN_3D_V12.md). Arte provisional (procedural).
+- **Del coordinador tras integrar:** el Bronce del Águila reservado hasta forjar la Guarda; Sunken en el banco de pruebas;
+  el Custodio del banco con vida ×8; `_vigilar_atasco` (tocar más lejos ya no para a Kael, todas las regiones); Bastián
+  y Rosa por la orilla de su calle (24 de 24 travesías en `fotos_paso_vecinos`).
+- **Hallazgos sin arreglar (Érebo congelado):** el orbe gasta azar global (la tirada siguiente cambia); un vídeo que no
+  abre puede dejar negro hasta tocar; si el vídeo no arranca, el ATB corre ~2 s de más. Propuestas en
+  `docs/memory/agents/combate.md` (15/11).
+- **Intermitente anotado:** `prueba_banco_pruebas` acabó una vez con FALLOS: 0 y cierre anómalo de Godot (0xC0000005).
