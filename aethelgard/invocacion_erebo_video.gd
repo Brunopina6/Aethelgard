@@ -92,7 +92,19 @@ static func ruta_para_ahora() -> String:
 # Reproduce el vídeo a pantalla completa por encima del combate. «saltar» es un Callable que devuelve true cuando el
 # jugador toca para saltar. Devuelve false si no se pudo reproducir (entonces combate.gd usa el teatro de siempre).
 # Nada de lo que hace aquí cambia reglas, daño, turnos ni el ATB.
-static func reproducir(padre: Node, ruta: String, saltar: Callable) -> bool:
+# 16/11 (autorizado por el usuario): recuperación AUTOMÁTICA, sin tocar ni pantalla negra:
+#   - el vídeo cuenta como arrancado solo cuando su posición AVANZA (un Theora que no se abre dice is_playing() con
+#     largo 0 y antes esperaba al toque); si no avanza en ESPERA_ARRANQUE s, se sale (false: el teatro de siempre);
+#   - si deja de avanzar a mitad más de PARADO_MAX s, salida controlada (true: el resultado se aplica, una vez);
+#   - salvaguarda de tiempo también sin largo conocido (SIN_LARGO_MAX).
+# «al_arrancar» (opcional) se llama una vez cuando el vídeo de verdad avanza: combate.gd da ahí el ATB del vídeo, así
+# que un intento fallido no corre ATB de más.
+const ESPERA_ARRANQUE := 1.5
+const PARADO_MAX := 1.0
+const SIN_LARGO_MAX := 25.0
+
+
+static func reproducir(padre: Node, ruta: String, saltar: Callable, al_arrancar := Callable()) -> bool:
 	var stream = load(ruta)
 	if not (stream is VideoStream):
 		push_warning("Érebo (vídeo): no se pudo cargar %s; se usa la invocación de siempre" % ruta)
@@ -143,17 +155,36 @@ static func reproducir(padre: Node, ruta: String, saltar: Callable) -> bool:
 	var largo: float = vp.get_stream_length() if is_instance_valid(vp) else 0.0
 	var t := 0.0
 	var arranco := false
+	var pos_ult := -1.0
+	var quieto := 0.0
+	var parado := false
 	while not saltado_pronto and is_instance_valid(vp) and not saltar.call():
 		await arbol.process_frame
 		if not is_instance_valid(vp):
 			break
-		t += arbol.root.get_process_delta_time() if arbol.root != null else 1.0 / 60.0
-		if vp.is_playing():
-			arranco = true
-		elif arranco or t > 1.5:
-			break                                    # terminó (o nunca arrancó)
-		if largo > 0.0 and t > largo + 2.0:
+		var dt: float = arbol.root.get_process_delta_time() if arbol.root != null else 1.0 / 60.0
+		t += dt
+		var pos: float = vp.stream_position
+		if pos > pos_ult + 0.0005:
+			if pos_ult >= 0.0 and not arranco:
+				arranco = true                       # avanza de verdad
+				if al_arrancar.is_valid():
+					al_arrancar.call()
+			pos_ult = pos
+			quieto = 0.0
+		else:
+			quieto += dt
+		if arranco and not vp.is_playing():
+			break                                    # terminó
+		if not arranco and t > ESPERA_ARRANQUE:
+			break                                    # nunca arrancó: fuera, sin esperar al toque
+		if arranco and quieto > PARADO_MAX and not (largo > 0.0 and pos >= largo - 0.25):
+			parado = true                            # se paró a mitad: salida controlada
+			break
+		if t > (largo + 2.0 if largo > 0.0 else SIN_LARGO_MAX):
 			break                                    # (salvaguarda: nunca se queda colgado)
+	if parado:
+		push_warning("Érebo (vídeo): %s se paró a los %.2f s; se sale y se aplica el resultado" % [ruta, pos_ult])
 	var ok := arranco or saltado_pronto
 	if is_instance_valid(vp):
 		vp.stop()

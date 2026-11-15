@@ -18,6 +18,11 @@ extends SceneTree
 #   nueva      → «erebo_nueva» con vídeo: el ATB de V.ATB_TEATRO["nueva"]
 #   completa   → el vídeo completo hasta el final
 #   sin pausa  → con «pausa_atb» desactivado, el ATB corre durante todo el vídeo (como en la primera entrega)
+# 16/11 (recuperación automática, autorizada): sin tocar nada,
+#   theora que no abre → reproducir() sale solo en ≈1,5 s (antes esperaba al toque); en el combate, el teatro de
+#                siempre, sin pantalla negra y SIN ATB de más por el intento (el ATB del vídeo empieza al avanzar)
+#   se para    → el vídeo deja de avanzar a mitad: salida controlada en ≈1 s, resultado una vez, ATB de la invocación de
+#                siempre, música, estado y capa en su sitio
 # Con «erebo=fallo» (prueba_erebo_video_fallo): apagado y abreviada con fallo (ni daño ni «corazón»: «sale vacía»; ATB
 # de fallo), la nueva con fallo y un jefe (los jefes siempre, aunque se fuerce el fallo).
 # Azar: la semilla se pone DESPUÉS de root.add_child(c) (combate._ready hace randomize()) y otra justo antes de
@@ -42,6 +47,7 @@ var reloj := 0.0              # tiempo de juego (el ejecutor puede ir más rápi
 var forzado := ""
 var semilla := 4242
 var _falsos: Array = []
+var _atb_teatro_base := -1.0          # ATB de Kael al empezar el teatro SIN vídeo (caso «apagado»): la referencia
 
 
 func _initialize() -> void:
@@ -117,7 +123,10 @@ func _probar() -> void:
 		await _invocar("primera (completa, saltada)", "saltar", true)
 		var r2: String = V.ruta_para_ahora()
 		_ok(r2 == V.ABREVIADA, "primera: después debe ser la abreviada (%s)" % r2)
+		V.elegir("abreviada")
+		await _invocar("se para a mitad", "se_para", true)
 		await _no_arranca_en_combate()
+		await _theora_no_abre_en_combate()
 	V.elegir("no")
 	for k in P.CLAVES + ["partida_lista", "grupo_combate", "tipo_combate", "zona", "grupo_activo"]:
 		if Engine.has_meta(k):
@@ -194,12 +203,12 @@ func _no_carga() -> void:
 	_ok(_capa() == null and padre.get_child_count() == 0, "no arranca: quedan restos (%d nodos)" % padre.get_child_count())
 	_ok(i_mus < 0 or is_equal_approx(AudioServer.get_bus_volume_db(i_mus), db0), "no arranca: la música no vuelve a su volumen")
 	var dura_no_arranca: float = r["dura"]
-	# HALLAZGO (15/11, sin arreglar: Érebo está congelado): un Theora cuyo archivo no se abre da is_playing() = true y
-	# get_stream_length() = 0, así que reproducir() ni corta a los 1,5 s ni por la salvaguarda (largo + 2 s): espera a
-	# que se toque para saltar (en el combate, pantalla negra hasta el toque). Aquí se documenta y se comprueba que el
-	# toque lo saca sin restos; si algún día corta solo, también vale.
+	# Un Theora cuyo archivo no se abre da is_playing() = true y get_stream_length() = 0. Hasta el 16/11 reproducir()
+	# esperaba al toque (pantalla negra); ahora debe salir SOLO, en ≈1,5 s y sin restos.
 	_video_falso(NO_ARRANCA_THEORA, "theora_sin_archivo")
 	r = await _reproducir_a_solas(padre, NO_ARRANCA_THEORA, 4.0)
+	_ok(not r["colgado"] and r["ok"] == false and r["dura"] < 3.0,
+		"theora sin archivo: no sale solo (colgado %s, ok %s, %.2f s)" % [r["colgado"], str(r["ok"]), r["dura"]])
 	if r["colgado"]:
 		avisos.append(("HALLAZGO sin arreglar (Érebo congelado): un vídeo Theora que no se abre deja reproducir() esperando " +
 			"(is_playing() %s, posición %.3f, largo %.2f a los 4 s de juego) hasta que se toca para saltar; tocando sale " +
@@ -255,6 +264,16 @@ func _no_arranca_en_combate() -> void:
 	await _invocar("vídeo que no arranca", "no_arranca", true)
 	if real is Resource:
 		real.take_over_path(V.ABREVIADA)            # (el de verdad, otra vez en la caché)
+
+
+# 16/11: en el combate, el abreviado sustituido por un Theora que no se abre: el teatro de siempre SIN tocar.
+func _theora_no_abre_en_combate() -> void:
+	V.elegir("abreviada")
+	var real = ResourceLoader.load(V.ABREVIADA, "", ResourceLoader.CACHE_MODE_IGNORE)
+	_video_falso(V.ABREVIADA, "theora_sin_archivo")
+	await _invocar("theora que no abre", "theora_no_abre", true)
+	if real is Resource:
+		real.take_over_path(V.ABREVIADA)
 
 
 func _combate(grupo: int) -> Dictionary:
@@ -344,6 +363,8 @@ func _invocar(caso: String, modo: String, video: bool, grupo := 9) -> void:
 	var t_fin_capa := -1.0
 	var f_capa := 0
 	var pos_max := 0.0
+	var pausado := false
+	var atb_al_teatro := {}
 	var anuncios := {"corazon": 0, "roba": 0, "vacia": 0}
 	var reg_previo := ""
 	for i in 3000:
@@ -359,6 +380,10 @@ func _invocar(caso: String, modo: String, video: bool, grupo := 9) -> void:
 				siempre_accion = false
 			if AudioServer.get_bus_volume_db(i_mus) < db0 - 1.0:
 				bajo_musica = true
+			if modo == "se_para" and not pausado and reloj - t_capa > 1.4:
+				for n in capa.find_children("*", "VideoStreamPlayer", true, false):
+					n.paused = true                         # (el vídeo deja de avanzar, como un fallo de decodificación)
+					pausado = true
 			if not tocado and ((modo == "saltar" and reloj - t_capa > 0.9) or (modo == "saltar_pronto" and f_capa == 2)):
 				tocado = true
 				await _tocar()
@@ -366,7 +391,9 @@ func _invocar(caso: String, modo: String, video: bool, grupo := 9) -> void:
 			t_fin_capa = reloj
 		if c.inv_erebo != null and not vio_teatro:
 			vio_teatro = true
-			if not video or modo == "no_arranca":
+			for h in c.heroes:
+				atb_al_teatro[h["nombre"]] = h["atb"]
+			if not video or modo in ["no_arranca", "theora_no_abre"]:
 				_ok(_capa() == null, "%s: el teatro sale con la capa del vídeo aún puesta" % caso)
 				await _esperar(30)
 				if c.inv_erebo != null:
@@ -394,8 +421,12 @@ func _invocar(caso: String, modo: String, video: bool, grupo := 9) -> void:
 	if grim["hp"] != hp_previo[0]:
 		quitados[0] += 1
 	_ok(not colgado, "%s: el combate no vuelve (estado «%s»)" % [caso, c.estado])
-	if modo == "no_arranca":
+	if modo in ["no_arranca", "theora_no_abre"]:
 		_ok(vio_capa and vio_teatro, "%s: no intenta el vídeo (%s) o no cae al teatro (%s)" % [caso, vio_capa, vio_teatro])
+		_ok(not tocado, "%s: hizo falta tocar" % caso)
+		if pausa and atb_al_teatro.has("Kael") and _atb_teatro_base >= 0.0:   # (16/11) el intento fallido no corre ATB
+			var extra_t: float = float(atb_al_teatro["Kael"]) - float(atb0.get("Kael", 0.0)) - _atb_teatro_base
+			_ok(absf(extra_t) < 0.25, "%s: el intento de vídeo corre ATB (%.2f de más al empezar el teatro, frente al teatro sin vídeo)" % [caso, extra_t])
 		_ok(int(c.get_meta("c12_accion", 0)) == 0, "%s: queda la pausa del ATB puesta (%d)" % [caso, int(c.get_meta("c12_accion", 0))])
 		var extra: float = (atb1.get("Kael", 0.0) - atb0.get("Kael", 0.0)) / 2.0
 		print("%s: capa %.2f s, ATB de Kael %.2f (≈%.2f s de ATB en total, el intento de vídeo incluido)" % [caso,
@@ -404,15 +435,20 @@ func _invocar(caso: String, modo: String, video: bool, grupo := 9) -> void:
 		_ok(vio_capa == video, "%s: vídeo %s (esperado %s)" % [caso, vio_capa, video])
 	if not video:
 		_ok(vio_teatro, "%s: apagada debe usarse el teatro de siempre" % caso)
+		if atb_al_teatro.has("Kael") and _atb_teatro_base < 0.0:
+			_atb_teatro_base = float(atb_al_teatro["Kael"]) - float(atb0.get("Kael", 0.0))
 		print("%s: teatro (saltado a los 30 fotogramas); ATB de Kael %.2f (≈%.2f s de ATB en total)" % [caso,
 			atb1.get("Kael", 0.0), (atb1.get("Kael", 0.0) - atb0.get("Kael", 0.0)) / 2.0])
-	elif modo != "no_arranca":
+	elif not modo in ["no_arranca", "theora_no_abre"]:
 		_ok(not vio_teatro, "%s: con vídeo no debe crearse el teatro 3D" % caso)
 		_ok(siempre_accion, "%s: el estado sale de «accion» durante el vídeo (podría abrirse otro turno)" % caso)
 		_ok(bajo_musica, "%s: la música no se aparta durante el vídeo" % caso)
 		var dura := t_fin_capa - t_capa
 		if modo.begins_with("saltar"):
 			_ok(dura < 3.0, "%s: saltar no corta el vídeo (%.1f s)" % [caso, dura])
+		elif modo == "se_para":
+			_ok(pausado and not tocado and dura > 1.4 and dura < 4.5,
+				"%s: parado a mitad no sale solo a tiempo (%.1f s en pantalla, parado %s, tocado %s)" % [caso, dura, pausado, tocado])
 		else:
 			_ok(largo > 0.0 and dura > largo - 0.2 and dura < largo + 5.0, "%s: el vídeo de %.1f s dura %.1f s en pantalla" % [caso, largo, dura])
 		var presupuesto: float = V.atb_teatro(nueva_sel, exito)

@@ -5434,11 +5434,16 @@ func _invocar_sobre(obj: Dictionary) -> void:
 		var nueva_sel: bool = ResourceLoader.exists("res://invocacion_erebo_nueva.gd") and load("res://invocacion_erebo_nueva.gd").elegida()
 		var pausa_v: bool = AnimV12.pausa_atb()
 		var tope: float = VID.atb_teatro(nueva_sel, false)
-		if pausa_v:
-			set_meta("c12_accion", int(get_meta("c12_accion", 0)) + 1)
-			set_meta("c12_atb_resto", tope)
-		visto_video = await VID.reproducir(self, ruta_vid, func(): return saltar_invocacion)
-		var corrido: float = tope - maxf(float(get_meta("c12_atb_resto", 0.0)), 0.0)
+		if pausa_v:                                # (16/11) el ATB del vídeo empieza cuando el vídeo avanza de verdad:
+			set_meta("c12_accion", int(get_meta("c12_accion", 0)) + 1)   # un intento que no arranca no corre ATB de más
+			set_meta("c12_atb_resto", 0.0)
+		var arrancado := [false]
+		var al_arrancar := func():
+			arrancado[0] = true
+			if pausa_v:
+				set_meta("c12_atb_resto", tope)
+		visto_video = await VID.reproducir(self, ruta_vid, func(): return saltar_invocacion, al_arrancar)
+		var corrido: float = (tope - maxf(float(get_meta("c12_atb_resto", 0.0)), 0.0)) if arrancado[0] else 0.0
 		if pausa_v:
 			set_meta("c12_accion", maxi(0, int(get_meta("c12_accion", 0)) - 1))
 			set_meta("c12_atb_resto", 0.0)
