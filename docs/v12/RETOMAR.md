@@ -969,3 +969,18 @@ Validado: `dc878e9` (`validado/v12/20261115-170245`, 188 · 0). APK v834 instala
 - Barrio: plan en `BARRIO_OAKHAVEN_PLAN.md` (estudio en `D:\REBELUM_diagnostico\barrio_oakhaven\estudio\`). Fase 0
   (contrato y blockout) → agentes A (exterior/kit), B (interiores), C (rutinas/misión) en ramas `area-barrio-*`.
 - ABIERTOS: cierre 0xC0000005, transparencias en bajo/medio, prueba_audio intermitente.
+
+## RELEVO 16/11, 01:15: barrio en construcción por agentes (LEER PRIMERO)
+- Integrado en `claude/rebelum-v12`: fase 0 del barrio (`7ec2090`..`c3eace5`, contrato, blockout jugable, caso del
+  banco; `prueba_barrio_trazado` + banco + muestra: 4·0) y los diseños `SUNKEN_ARBOLEDA_PLAN.md` y
+  `ACTIVIDADES_FUTURAS.md`. Recuperación: `recuperacion/v12/20261116-antes-fase0-barrio`.
+- Agentes EN MARCHA (copias aisladas, ramas desde `a4cbbe8` / `2d7745d`):
+  - `area-barrio-a`: exterior con el acabado de la muestra (kit_barrio.py, sectores horneados).
+  - `area-barrio-b`: interiores (horno, taller, vivienda) y utensilios.
+  - `area-barrio-c`: rutinas (Maela, Tobías, Brena + Avena), misión «Antes de que se enfríe» (premio Éter ×2), sabe/oído/cree.
+  - `area-sunken-quilla`: Sunken City, la Quilla horneada (+ obreros, + paso de babor y El Ancla Seca si cumple).
+  - Turno de horneado de Blender con `D:\REBELUM_coordinacion\horneado.lock`.
+- Siguiente acción: integrar cada rama por cherry-pick al terminar (archivos compartidos: banco_pruebas.gd,
+  lista_pruebas.txt, prueba_banco_pruebas.gd, crear_npc_chibi.py, recursos.gd, export_presets.cfg), pasar las pruebas
+  específicas y, con todo dentro, la batería completa, la APK de Auditoría y el guion; después, la Arboleda Mítica
+  (plan en `SUNKEN_ARBOLEDA_PLAN.md` §3).
