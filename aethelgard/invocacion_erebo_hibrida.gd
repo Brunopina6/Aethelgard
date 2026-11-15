@@ -539,7 +539,7 @@ func _secuencia(_ctx: Dictionary) -> void:
 	if saltada(): return
 	sombra.ocultar(0.4)
 	evento.emit("invocacion")                                   # el título
-	var medio := (e0 + Vector3(centro_obj.x, 0, centro_obj.z)) * 0.5
+	var medio := e0.lerp(Vector3(centro_obj.x, 0, centro_obj.z), 0.4)    # (Érebo, más al centro del plano)
 	var alto_plano := maxf(1.1 * _k, S * 0.45)
 	plano(medio + lado_a * (2.4 + 1.2 * maxf(_k, S * 0.6)) + u * 0.6 + arriba * alto_plano, medio + arriba * alto_plano * 0.75, 0.0, 46.0)
 	plano(medio + lado_a * (2.1 + 1.1 * maxf(_k, S * 0.6)) + u * 0.5 + arriba * alto_plano, medio + arriba * alto_plano * 0.8, 1.5, 44.0)
@@ -565,8 +565,15 @@ func _secuencia(_ctx: Dictionary) -> void:
 		_fase("fallo")
 		evento.emit("fallo")
 		_lya_gesto("fallo")
-		await esperar(0.5)
+		var mano_v: Vector3 = erebo._punta_mano()                # la mano vacía, de cerca
+		plano(mano_v + _lado * 0.95 * _k + u * 0.55 * _k + arriba * 0.15 * _k, mano_v, 0.35, 34.0)
+		await esperar(0.8)
 		if saltada(): return
+		if camara != null:                                      # corte al plano general: se hunde
+			if _cam_tw != null and _cam_tw.is_valid():
+				_cam_tw.kill()
+			camara.global_transform = _cam_trans
+			camara.fov = _cam_fov
 		await _salida_nueva(_pies)
 		return
 
@@ -679,12 +686,12 @@ func _extraer(objetivo_mano: Vector3, e1: Vector3, u: Vector3, lado_mano: Vector
 		if saltada(): return
 	else:
 		# se resiste: el tirón se para a medio camino y el corazón tiembla, atado al pecho
-		await _tirar(objetivo_mano.lerp(fuera, 0.3), 0.5)
+		await _tirar(objetivo_mano.lerp(fuera, 0.42), 0.55)
 		if saltada(): return
 		_vfx.tension = 1.0
 		sonar(SND % "tension", -4.0, 1.2)
 		sacudir(0.025, 0.4)
-		await _tirar(objetivo_mano.lerp(fuera, 0.36), 0.45)
+		await _tirar(objetivo_mano.lerp(fuera, 0.48), 0.45)
 		if saltada(): return
 		if _jefe:
 			_fase("trozo")

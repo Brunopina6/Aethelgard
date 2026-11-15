@@ -41,7 +41,7 @@ void fragment() {
 	float vetas = smoothstep(0.62, 0.8, ruido(lp * 16.0 - vec3(0.0, TIME * 1.6, 0.0)));
 	vec3 col = mix(c_nucleo * (0.55 + 0.6 * latido), c_borde, borde) + c_plata * pow(fr, 5.0) * 1.3;
 	col += c_plata * vetas * 0.35 + c_nucleo * vetas * 0.3;
-	float a = (0.42 + 0.58 * borde + 0.3 * latido) * energia;
+	float a = (0.6 + 0.4 * borde + 0.3 * latido) * energia;
 	if (disolver > 0.0) {
 		float d = disolver * 1.1;
 		a *= step(d, n);
@@ -117,7 +117,7 @@ func preparar(alto: float, semilla: int) -> void:
 	_mat_frag = _mat.duplicate()
 	_mat_frag.set_shader_parameter("c_nucleo", Vector3(0.75, 0.3, 1.0))   # el trozo, más violeta y plata
 	fragmento = MeshInstance3D.new()
-	fragmento.mesh = malla_corazon(1.0, 0.55)
+	fragmento.mesh = malla_corazon(1.0, 0.55, 0.42)
 	fragmento.material_override = _mat_frag
 	fragmento.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	fragmento.visible = false
@@ -178,8 +178,9 @@ func preparar(alto: float, semilla: int) -> void:
 
 # Contorno clásico del corazón (x = 16 sen³ t, y = 13 cos t − 5 cos 2t − 2 cos 3t − cos 4t), hinchado en Z como un
 # cojín. alto = 1 m; «ancho_z» relativo. Centro aproximado en el origen; la punta abajo.
-static func malla_corazon(alto: float, grueso := 0.42) -> ArrayMesh:
-	var n_ang := 40
+static func malla_corazon(alto: float, grueso := 0.42, parte := 1.0) -> ArrayMesh:
+	# parte < 1: solo un trozo del contorno (el del jefe), abierto por el corte (no se ve: se dibuja sumando luz)
+	var n_ang := 40 if parte >= 1.0 else int(40 * parte) + 1
 	var n_ani := 8
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
@@ -192,7 +193,7 @@ static func malla_corazon(alto: float, grueso := 0.42) -> ArrayMesh:
 			var r := float(i) / n_ani
 			var fila: Array = []
 			for j in n_ang:
-				var t := TAU * j / n_ang
+				var t := TAU * j / n_ang if parte >= 1.0 else TAU * parte * j / (n_ang - 1) + 0.15
 				var x := 16.0 * pow(sin(t), 3.0)
 				var y := 13.0 * cos(t) - 5.0 * cos(2.0 * t) - 2.0 * cos(3.0 * t) - cos(4.0 * t)
 				var p := c + (Vector2(x, y) - c) * r
@@ -203,7 +204,7 @@ static func malla_corazon(alto: float, grueso := 0.42) -> ArrayMesh:
 	for cara in 2:
 		var rj: Array = pts[cara]
 		for i in n_ani:
-			for j in n_ang:
+			for j in (n_ang if parte >= 1.0 else n_ang - 1):
 				var j2 := (j + 1) % n_ang
 				var a: Vector3 = rj[i][j]
 				var b: Vector3 = rj[i + 1][j]
@@ -240,6 +241,7 @@ func nacer(pos: Vector3) -> void:
 	_mat_hilo.set_shader_parameter("energia", 1.0)
 	var t := _nuevo_tw()
 	t.tween_property(self, "esc_c", tam, 0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	t.parallel().tween_property(resplandor, "modulate:a", 0.3, 0.3)   # (que el brillo del pecho no tape al corazón)
 	rafaga(pos, COLOR_PLATA, 10, 0.5 * tam / 0.16)
 
 
@@ -279,7 +281,7 @@ func partir(mano: Callable) -> void:
 	fragmento.visible = true
 	sigue_fragmento = mano
 	var t := _nuevo_tw()
-	t.tween_property(self, "esc_f", tam * 0.78, 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	t.tween_property(self, "esc_f", tam * 1.0, 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	rafaga(donde, COLOR_PLATA, 16, 0.9 * tam / 0.16)
 	volver(0.4)
 
