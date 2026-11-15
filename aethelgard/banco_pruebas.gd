@@ -70,7 +70,7 @@ const COMBATES := {
 		"nota": "Vida de siempre: para juzgar el equilibrio. Cifras PROPUESTAS, sin aprobar."},
 	"custodio_rotacion": {"titulo": "Custodio: ver la rotación (vida ×8)", "grupo": 28, "activos": ["Kael", "Lya", "Garon"],
 		"vida": 8.0, "armonia": false, "custodio": true,
-		"nota": "Solo para VER Prensa, Avance y Sello seguidos. Vida ×8: NO sirve para juzgar el equilibrio."},
+		"nota": "Solo para VER Prensa, Avance y Sello seguidos (el Sello llega a los ~7 turnos suyos: 2-3 min; con un menú abierto no actúa). Vida ×8: NO sirve para juzgar el equilibrio."},
 	# 15/11: el combate con CUATRO, solo aquí. El juego sigue con tres en el grupo activo (grupo.gd, MAX_ACTIVOS) y nadie
 	# ha decidido desde cuándo lucha Nix: docs/v12/NIX_GRUPO_CUATRO.md.
 	"grupo4": {"titulo": "Grupo de cuatro: Kael, Lya, Garon y Nix (prueba)", "grupo": 1,
