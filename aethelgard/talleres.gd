@@ -98,12 +98,16 @@ static func error_receta(r: Resource) -> String:
 #     repetía su escena para siempre y la forja del distrito no volvía a abrirse);
 #   - el Polvo de cantera (solo lo da el aprendiz del cantero, una vez) mientras no se ha estudiado «La piedra que
 #     asienta» (venderlo antes la dejaba bloqueada para siempre).
+#   - 15/11: el Bronce del Águila (Sunken City 3D, PROPUESTA: solo lo da Ulla, una vez) mientras no se ha estudiado «El
+#     bronce del casco» (lo mismo que el polvo).
 static func reservado(material: String) -> bool:
 	var P = load("res://progreso.gd")
 	if material == "Hierro de la Falla":
 		return P.hito("enc_herrero_veta") and not P.hito("enc_herrero_fin")
 	if material == "Polvo de cantera":
 		return Investigacion.estado("lya_cantera") != "completada"
+	if material == "Bronce del Águila":
+		return Investigacion.estado("kael_bronce_aguila") != "completada"
 	return false
 
 

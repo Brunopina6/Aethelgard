@@ -1,0 +1,15 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/investigacion.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "kael_bronce_aguila"
+taller = "forja"
+nombre = "El bronce del casco"
+desc = "Kael estudia la plancha del Águila: un bronce hecho para aguantar el mar y los golpes, que aún no se ha rendido."
+requisitos = [{"tipo": "material", "id": "Bronce del Águila", "cantidad": 1}]
+pasos = 1
+desbloquea = PackedStringArray("kael_guarda_aguila")
+borrador = false
+si = "estado_de:sunken/sello_fin"

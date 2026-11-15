@@ -1,0 +1,15 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/receta.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "kael_guarda_aguila"
+taller = "forja"
+nombre = "Guarda del Águila"
+materiales = {"Bronce del Águila": 1}
+resultado = "mejora:Kael:vitalidad:2"
+cantidad = 1
+investigacion = "kael_bronce_aguila"
+desc = "Kael remacha el bronce del casco en su guarda: +2 de vitalidad para siempre (+16 PV). Una sola vez: no hay más bronce."
+borrador = false

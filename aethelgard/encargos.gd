@@ -20,7 +20,8 @@ extends RefCounted
 # «La caravana perdida» (Mar de Cristal, datos/encargos_desierto.gd) se añade al registro en V12.
 
 const FUENTES := ["res://ciudades/oakhaven.gd", "res://datos/encargos_pastos.gd", "res://datos/encargos_oakhaven.gd",
-	"res://datos/encargos_desierto.gd", "res://ciudades/oakhaven_propuestas.gd"]   # (la última: PROPUESTA apagada)
+	"res://datos/encargos_desierto.gd", "res://ciudades/oakhaven_propuestas.gd",   # (la última: PROPUESTA apagada)
+	"res://datos/encargos_sunken.gd"]   # V12 (15/11): Sunken City 3D, PROPUESTA (en pruebas: sin la región no empieza)
 const TIPOS := ["principal", "secundaria", "personal", "secreta", "cadena", "contrato"]
 
 
