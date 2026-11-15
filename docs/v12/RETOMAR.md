@@ -830,5 +830,5 @@ Punto de recuperación: etiqueta `recuperacion/v12/20261115-antes-noche` → `da
   gaviotas y campana de barco para Sunken (usa sustitutos).
 - **Siguiente acción exacta:** con el Redmi, seguir `GUION_REDMI_16_11.md` desde «Antes de instalar». Sin Redmi:
   el siguiente sector de Sunken City (el interior del Casco o el resto de vecinos del diseño) con las notas en el
-  Diario (`progreso.gd`, `CIUDADES[5]`), o centinela/peón y el resto de pruebas con el mismo patrón de semilla
+  Diario (`progreso.gd`, `CIUDADES[5]`), o el resto de pruebas con el patrón de semilla antes de add_child (Centinela y Peón ya hechos)
   (`docs/memory/agents/combate.md`, lista G2).
