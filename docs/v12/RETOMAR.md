@@ -934,3 +934,13 @@ Validado: `dc878e9` (`validado/v12/20261115-170245`, 188 · 0). APK v834 instala
   visto bueno.
 - Batería: un cierre de Godot con fallo de memoria (0xC0000005) tras `prueba_banco_pruebas` con «FALLOS: 0» es
   intermitente y anterior (ya en `2026-11-15_024023`); sola pasa 3/3.
+
+## RELEVO 15/11, 21:15: la muestra de la calle medida en el Redmi (LEER PRIMERO)
+- APK `3a08f35` (v843, SHA `2c0f77ff…aee4b`) instalada por el usuario. Muestra en perfil bajo: **30 FPS sostenidos**
+  en 7 ciclos (≈ 11 min), memoria estable (PSS 768-826 MB en la calle), sin calentamiento. Detalle en `REDMI_15_11.md`.
+- El usuario aprobó la dirección artística de la muestra y pidió conservar su aspecto. NO extender la renovación sin
+  que lo pida. Observaciones para él: Kael muy azul en la sombra del callejón, su sombra poco visible, el tejado del
+  oeste puede taparle arriba del callejón; el regulador de calidad escribe ajustes desde el banco.
+- Teléfono devuelto al estado previo (SHA iguales; `ajustes.cfg` y `calidad.log` restaurados byte a byte).
+- PENDIENTES que NO se dan por resueltos: cierre intermitente de Godot (0xC0000005) y transparencias en bajo/medio.
+- **Siguiente acción:** esperar la decisión del usuario sobre las observaciones de la muestra y sobre su extensión.

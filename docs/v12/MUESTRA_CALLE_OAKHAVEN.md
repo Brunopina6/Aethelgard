@@ -183,7 +183,10 @@ apenas cambian entre ellos.
   tabla en `malioc/malioc_muestra.txt`: fragmento **4,8 ciclos** (estático, con mapa de luz), 4,5 (piezas y vegetación),
   4,0 (brillo); vértice 13-15 ciclos (variaciones); sin ZS tardío ni cambio de cobertura (sin descartes). Es poco: a
   0,75 × 1600×720 son ≈ 650 000 píxeles por capa.
-- **Redmi (30 FPS sostenidos con el perfil bajo): PENDIENTE.** No se ha medido en el teléfono.
+- **Redmi (15/11, 21:00, APK `3a08f35` v843): MEDIDO.** Perfil bajo, 7 ciclos seguidos (≈ 11 min): **30,37 FPS
+  sostenidos** andando (≈ 94 % a 33 ms, ≈ 1 % a 50 ms, peor suelto 86-118 ms); PSS 768-826 MB sin crecer; sin
+  calentamiento (estado térmico 0). Detalle, la primera vuelta con tirones, el regulador y el aspecto en la pantalla
+  real: `REDMI_15_11.md`, sesión 20:47.
 
 ## 5. Pruebas
 
@@ -273,7 +276,10 @@ reenviar los parámetros de la sombra de Kael, el humo del alto, y los binarios 
 
 ## 8. PENDIENTE
 
-- **Medida en el Redmi** (30 FPS sostenidos, perfil bajo, 1600×720) y revisión en su pantalla: no hecha.
+- Medida en el Redmi: HECHA (30 FPS sostenidos en el bajo; `REDMI_15_11.md`). Quedan para el usuario: Kael muy azul en
+  la sombra del callejón, su sombra poco visible y el tejado del oeste que puede taparle arriba del callejón.
+- El regulador de calidad escribe en `ajustes.cfg` también desde el banco (visto en el Redmi): decidir si el banco lo aísla.
+- El cierre intermitente de Godot (0xC0000005) tras `prueba_banco_pruebas`: sin resolver.
 - Visto bueno del usuario a la dirección (la tarde dorada, la cámara más baja que la de Oakhaven, el estilo).
 - La imagen de referencia no se recibió: lo de §1.a sale de la descripción.
 - La rareza de las transparencias en bajo/medio (§7).

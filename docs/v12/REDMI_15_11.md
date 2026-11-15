@@ -116,3 +116,51 @@ borrada; todos los archivos de `files/` con el mismo SHA-256 que en `D:\REBELUM_
 **Sigue pendiente en el Redmi:** la híbrida contra un jefe y contra un enemigo grande (Bramavidrio); la opción de
 «Vídeo» con la cinemática mejorada; escuchar el sonido (volumen multimedia a 0: no se cambia); el campamento y la cueva
 del mapamundi; Oakhaven por la mañana; el Sello de Clausura lanzado; PSS tras reiniciar la app después de usar ALTO.
+
+## Sesión 15/11, 20:47-21:15: la MUESTRA GRÁFICA de la calle (APK `3a08f35`, v843; la instaló el usuario)
+
+APK de Auditoría compilada desde `3a08f35` (contenido de `e857b93`), 431,9 MB, SHA-256 `2c0f77ff…aee4b`, «TODO CORRECTO»;
+copiada a Descargas con el SHA igual. Estado previo: `D:\REBELUM_respaldos\2026-11-15_redmi_antes_sesion_2100` (copias
+byte a byte con `adb exec-out`: con `adb shell` cambian los saltos de línea y el SHA no cuadra). Arranque «Carga
+terminada en 14,5 s (999 archivos, 0 fallos)». Perfil BAJO. Medidas, capturas y guiones en
+`D:\REBELUM_diagnostico\redmi_15_11\muestra\`.
+
+**Recorrido** (banco → «Muestra gráfica…»; toques repetidos igual en cada ciclo, `recorrido_muestra.txt`): el inicio
+(oeste) → la puerta verde → la boca del callejón → subir los escalones → lo alto del callejón → bajar → la esquina del
+torreón → volver al oeste (≈ 40 s por vuelta). Siete ciclos seguidos de 20:57 a 21:08 (≈ 11 min, uno de 4 vueltas).
+
+| Ciclo | Entrada (9 s, con la carga) | Recorrido | PSS banco antes · al entrar · en la calle · banco después | Batería · estado térmico |
+|---|---|---|---|---|
+| c1 (con 4 capturas; primera vez tras arrancar) | 29,7 FPS; 1 de 300 ms | 29,6 FPS; 1364/1607 a 33 ms, 67 a 50 ms, 26 entre 66 y 300 ms (primera vez) | 776 · 810 · 784 · 794 MB | 28,1 °C · 0 |
+| c2 | 29,9; 1 de 250 ms | **30,36 FPS; 1147/1203 a 33 ms, 9 a 50 ms, ninguno peor** | 784 · 791 · 791 · 800 | 28,2 · 0 |
+| c3 | 30,3; 1 de 134 ms | 30,34; 11 a 50 ms, 1 de 102 y 1 de 118 ms | 790 · 826 · 797 · 793 | 28,0 · 0 |
+| c4 | 30,1; 1 de 200 ms | 30,37; 11 a 50 ms, ninguno peor | 789 · 824 · 811 · 788 | 27,9 · 0 |
+| c5 | 30,3; 1 de 118 ms | 30,37; 19 a 50 ms, ninguno peor | 789 · 789 · 809 · 794 | 27,8 · 0 |
+| c6 (4 vueltas, ≈ 3 min) | 30,3; 1 de 134 ms | **30,37 FPS; 4531/4808 a 33 ms, 48 a 50 ms, 1 de 86 ms** | 786 · 817 · 787 · 786 | 27,5 · 0 |
+| c7 (con 4 capturas) | 29,3; capturas | 30,36; 21 a 50 ms, 1 de 66 ms | 788 · 792 · 768 · 795 | 27,5 · 0 |
+
+- **Fluidez:** 30 FPS sostenidos en el bajo (≈ 94 % de los fotogramas a 33 ms y ≈ 1 % a 50 ms); andando no hay
+  fotogramas peores de 50 ms salvo sueltos (86-118 ms, 3 en 11 min). La primera vuelta tras arrancar la app tiene
+  tirones de 66-300 ms (sombreados y texturas que se preparan la primera vez). Cada entrada tiene UN fotograma de
+  118-300 ms (la carga de la escena).
+- **Memoria:** el banco vuelve siempre a 776-800 MB y la calle está en 768-826 MB; sin crecer en 7 ciclos.
+- **Calor:** batería 28,1 → 27,5 °C y estado térmico de Android 0 (sin limitación) en toda la sesión. Límites: el
+  teléfono estaba con el cable USB puesto, y las zonas térmicas del procesador no se pueden leer sin root.
+- **Regulador de calidad (leído en `calidad.log`):** bajó un escalón (resolución 3D −0,05) en la primera vuelta
+  (20:57, por los tirones de la primera vez); subió otra vez a la resolución completa a las 21:05 (durante c6) y bajó
+  en c7 (21:07, por las capturas). Es decir: c2-c5 y el principio de c6 se midieron con la resolución 3D un 5 % menor;
+  el final de c6 ya a la completa, con el mismo resultado (30 FPS). También escribió `nivel=1` / `nivel_de="bajo"` en
+  `ajustes.cfg` (sección de calidad): el banco aísla la partida pero NO los ajustes de calidad (lo había señalado la
+  revisión y se refutó como «común a todas las escenas 3D del banco»; aquí se ha visto que pasa). PENDIENTE de decidir.
+- **Aspecto en la pantalla real** (capturas `c1_*`, `c7_*`, `redmi_muestra_recorrido.png`): la luz horneada cálida y
+  las sombras se ven como en el PC, sin bandas apreciables del ETC2 a esta distancia; losas, revoque, tejas y
+  vegetación se leen; los faroles de pie dan luz (arreglo de la revisión comprobado en el teléfono). **Para el usuario:**
+  en lo alto del callejón (en sombra) Kael se ve de un **azul intenso** (solo le llega la luz del cielo) que destaca
+  sobre la piedra gris; la **sombra de Kael** apenas se aprecia en la calle; arriba del callejón, el tejado de la casa
+  del oeste puede tapar a Kael (la muestra no aclara los tejados). No se ha cambiado nada (aspecto conservado).
+- **Al terminar:** `ajustes.cfg` (había ganado la sección del regulador) y `calidad.log` (3 líneas nuevas; copia del
+  final en la carpeta de diagnóstico) restaurados byte a byte; los 7 archivos de `files/` con el mismo SHA-256 y la
+  misma lista que antes de la sesión (partida `567c7323…`). Las cachés de sombreados del sistema se quedan (no son
+  datos del usuario). Descargas sin tocar salvo la APK nueva, que se deja.
+- **Siguen PENDIENTES (una pasada limpia no los resuelve):** el cierre intermitente de Godot (0xC0000005) tras
+  `prueba_banco_pruebas` con «FALLOS: 0»; la rareza de las transparencias en bajo/medio (`MUESTRA_CALLE_OAKHAVEN.md` §7).

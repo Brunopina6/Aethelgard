@@ -3,6 +3,22 @@
 > Escrito la noche del 15 al 15/11, sin el teléfono: esta noche NO se ha instalado nada ni se han tocado datos del
 > Redmi. Todo lo de abajo está comprobado SOLO en el PC; nada certifica Android.
 
+## MUESTRA GRÁFICA DE LA CALLE en el Redmi (15/11, noche; encargo del usuario tras ver la muestra)
+
+APK de Auditoría compilada desde `3a08f35` (contenido de `e857b93`, validado 189 · 0). La instala el usuario desde
+Descargas (MIUI bloquea `adb install`). Estado previo del teléfono en `D:\REBELUM_respaldos6-11-15_redmi_antes_sesion_2100`
+(ajustes `3ee5aaf2…`, partida `567c7323…`, copiados byte a byte con `adb exec-out`).
+Con el perfil BAJO, desde el banco → «Muestra gráfica: una calle de Oakhaven (en pruebas)»:
+1. Recorrido completo: el inicio (oeste), la puerta verde, subir el callejón (escalones, sombra) y la esquina del torreón.
+2. Fluidez: `timestats` por tramo (entrada de 9 s y recorrido), media y picos del histograma; objetivo 30 FPS.
+3. Memoria: PSS en el banco, al entrar, en la calle y al volver; repetir el ciclo ≥ 5 veces (¿vuelve a la misma base?).
+4. Calor: temperatura de batería y estado térmico en cada ciclo, en una sesión de ≥ 10 minutos seguidos.
+5. Aspecto en la pantalla real: luz horneada (bandas del ETC2 en los degradados), texturas, faroles de pie encendidos,
+   la sombra de Kael y su luz en el callejón.
+Al terminar: `ajustes.cfg` restaurado byte a byte, borrar `banco_pruebas.save` si existe, SHA de la partida igual.
+Siguen PENDIENTES aunque todo salga bien: el cierre intermitente de Godot (0xC0000005) tras `prueba_banco_pruebas` y la
+rareza de las transparencias en bajo/medio (`MUESTRA_CALLE_OAKHAVEN.md` §7).
+
 ## INSTALADA (15/11, 17:05): `dc878e9`, versionCode 834 — probada de 17:05 a 17:30
 
 - **Archivo:** `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261115-dc878e9-local.apk` (425,5 MB),
