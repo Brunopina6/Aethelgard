@@ -110,6 +110,14 @@ refutarlo. El Custodio y el pulido salieron limpios. Se confirmaron dos defectos
 
 Contraprueba: sin los dos arreglos, `prueba_oakhaven_propuestas` da 3 fallos.
 
+## Auditoría externa (15/11, sobre `da0e336`)
+
+- **La losa primero** (sin el aprendiz ni el arcón) dejaba la misión OCULTA en el Diario aunque tocaba volver con el
+  aprendiz. Ahora `cond:cantero_empieza` acepta la losa abierta y al abrirla se anuncia la misión. No abre el arcón ni
+  da pistas de marcas no examinadas (`d9dc733`). Casos nuevos en `prueba_oakhaven_propuestas`: 3c (losa primero,
+  guardar y cargar, polvo una vez) y 3d (marcas primero: una marca suelta no empieza la misión ni dice «Diario»).
+- El brazalete ya no brilla cerca de las marcas con la losa abierta (`178c9cd`).
+
 ## Pendiente
 
 - **Redmi:**

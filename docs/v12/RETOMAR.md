@@ -808,3 +808,27 @@ Punto de recuperación: etiqueta `recuperacion/v12/20261115-antes-noche` → `da
   abre puede dejar negro hasta tocar; si el vídeo no arranca, el ATB corre ~2 s de más. Propuestas en
   `docs/memory/agents/combate.md` (15/11).
 - **Intermitente anotado:** `prueba_banco_pruebas` acabó una vez con FALLOS: 0 y cierre anómalo de Godot (0xC0000005).
+
+### 04:10: cierre de la noche (LEER PRIMERO)
+- **Validado:** `270c8ed` (etiqueta `validado/v12/20261115-035801`), batería completa **183 · 0 · 94 · 0**
+  (`2026-11-15_032759`). HEAD `c04d07b` solo añade la medida de memoria de PC (no va en la APK).
+  - La primera batería (`2026-11-15_025150`) dio 182 · 1: `prueba_bosque_pastos` (el combate fijo del Guardián no
+    empezaba tras usar la alquimia). Causa: el arreglo C leía `load("res://combate.gd").OBJETOS_COMBATE` desde el
+    taller. Arreglo `270c8ed`: la tabla vive en `datos/objetos_combate.gd` (combate.gd la usa igual).
+- **APK:** `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261115-c04d07b-local.apk`, 420,0 MB, SHA-256
+  `9b42c2a4c97ef07bbfd309328041d084701fa89559bae276200880757132dd35`, «TODO CORRECTO». Guion: `GUION_REDMI_16_11.md`.
+- **Medidas de PC (sin otros Godot; no certifican Android):**
+  - Sunken City 3D (`D:\REBELUM_diagnostico\sunken\medida_sola_15_11\`): 40-75 llamadas de dibujo en bajo (67-75 mil
+    primitivas), 54-103 en medio (130-143 mil), 81-152 en alto (147-165 mil). Los ms por fotograma del PC están
+    limitados por el perfil (31,2 ms en bajo y medio): no sirven.
+  - Memoria tras 5 vueltas mapa → Oakhaven → Sunken → Pastos (`2026-11-15_040111`): estable (156,0 MB estática, 88,3 MB
+    de vídeo, 460 nodos, 0 huérfanos de la 2.ª a la 5.ª).
+- **Pendiente del usuario:** aprobar el cantero y Sunken (narrativa PROPUESTA: Ulla, Brea, «El sello de la capitana»);
+  altura y capucha de Nix; encender por defecto Nix FBX y la capa articulada; las cifras del Custodio; ver y oír los
+  vídeos de Érebo; si se descongela Érebo, las tres propuestas del orbe y el vídeo.
+- **Dependencias ausentes:** catálogo y PDF de Kael («Ataque rúnico»): Kael conserva su menú. Sonidos de mar,
+  gaviotas y campana de barco para Sunken (usa sustitutos).
+- **Siguiente acción exacta:** con el Redmi, seguir `GUION_REDMI_16_11.md` desde «Antes de instalar». Sin Redmi:
+  el siguiente sector de Sunken City (el interior del Casco o el resto de vecinos del diseño) con las notas en el
+  Diario (`progreso.gd`, `CIUDADES[5]`), o centinela/peón y el resto de pruebas con el mismo patrón de semilla
+  (`docs/memory/agents/combate.md`, lista G2).
