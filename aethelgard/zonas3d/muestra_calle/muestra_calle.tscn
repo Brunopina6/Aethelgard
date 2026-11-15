@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://zonas3d/muestra_calle/muestra_calle.gd" id="1"]
+
+[node name="MuestraCalle" type="Node3D"]
+script = ExtResource("1")
