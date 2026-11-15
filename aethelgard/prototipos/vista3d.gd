@@ -638,6 +638,7 @@ var seguro := Vector3.ZERO                  # último sitio andable donde estuvo
 var _t_seguro := 0.0
 var _atasco_t := 0.0
 var _atasco_dist := INF
+var _atasco_destino = null                 # el destino que se vigila (Vector3 o null)
 
 
 # Las escenas dicen qué zonas no se pisan (agua, barranco, fuera del mapa). Aquí, ninguna.
@@ -698,10 +699,12 @@ func _vigilar_atasco(delta: float) -> void:
 	if _t_seguro > 0.25:
 		_t_seguro = 0.0
 		seguro = kael.global_position
-	if destino == null:
-		_atasco_t = 0.0
+	if destino == null or destino != _atasco_destino:   # 15/11: un destino NUEVO empieza a vigilarse de cero (si no,
+		_atasco_t = 0.0                                    # tocar más lejos mientras anda lo paraba «por atasco»)
 		_atasco_dist = INF
-		return
+		_atasco_destino = destino
+		if destino == null:
+			return
 	var falta := Vector2(destino.x - kael.global_position.x, destino.z - kael.global_position.z).length()
 	_atasco_t += delta
 	if _atasco_t >= 1.0:
