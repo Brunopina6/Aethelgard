@@ -22,6 +22,11 @@ extends SceneTree
 #   D. El encuentro de la región con el interruptor (GRUPOS[4], con Grimfang) y tres héroes, automático: termina.
 #   E. Derrota (nivel 1): acaba, sin premio. Huida: sale del combate.
 #   En todos: al acabar no quedan marcas suyas ni sonidos suyos y no crecen los nodos huérfanos.
+# AZAR (15/11): combate.gd hace randomize() en su _ready (salvo «-- semilla=N»), así que la semilla se pone DESPUÉS de
+# root.add_child(c) y se vuelve a tirar el ATB inicial de los enemigos con ella (como prueba_combate_huella.gd). Antes se
+# sembraba antes de add_child y A, C, D, E y Q eran combates al azar (el Q, estadístico, podía fallar por suerte). Cada
+# combate imprime «SEMILLA» y una línea «TRAZA» por turno (quién y los PV); «semilla_A=N» (o _C, _D, _E, _Q) suma N a
+# las semillas de ese caso para reproducir o explorar otras.
 # Con «fotos=<carpeta>» (y ventana) guarda un fotograma de cada dos en el combate A y en el B (JPG a media resolución,
 # con su índice por ataque en indice.txt) para montar los vídeos con ffmpeg, y capturas sueltas.
 
@@ -47,6 +52,7 @@ var grabando := false
 var n_foto := 0
 var indice: Array = []
 var huerfanos0 := -1
+var caso_actual := ""
 
 
 func _initialize() -> void:
@@ -97,6 +103,7 @@ func _probar() -> void:
 			solo = a.substr(5)
 	for p in ["S", "A", "B", "C", "D", "E", "Q"]:
 		if solo == "" or solo.contains(p):
+			caso_actual = p
 			await call("_" + p.to_lower())
 	_limpiar()
 	Engine.remove_meta("archivo_partida_prueba")
@@ -188,14 +195,19 @@ func _combate(activos: Dictionary, grupo: int, semilla: int, encendido := true) 
 	Engine.set_meta("grupo_combate", grupo)
 	if encendido:
 		Engine.set_meta(CN.INTERRUPTOR, true)
-	seed(semilla)
 	c = load("res://combate.tscn").instantiate()
 	sonidos.clear()
 	impactos.clear()
 	danos.clear()
 	hp_prev.clear()
 	c.sonido_pedido.connect(func(n: String): sonidos.append([n, Engine.get_process_frames()]))
-	root.add_child(c)
+	root.add_child(c)                                     # (aquí su _ready hace randomize())
+	semilla += _desfase(caso_actual)
+	seed(semilla)                                         # desde aquí, el azar del combate es fijo
+	for e in c.enemigos:
+		e["atb"] = randf() * 30.0                         # el ATB inicial, como en combate.gd, ya con la semilla
+	print("SEMILLA %d · caso %s · %s · grupo %d · %s · %s" % [semilla, caso_actual, str(activos), grupo,
+		"encendido" if encendido else "apagado", ",".join(c.enemigos.map(func(e): return e["nombre"]))])
 	for e in c.enemigos:
 		var p = c._p3d(e)
 		if CN.es(e):
@@ -204,6 +216,22 @@ func _combate(activos: Dictionary, grupo: int, semilla: int, encendido := true) 
 				p.impacto.connect(func(a): impactos.append([a, Engine.get_process_frames()]))
 	for h in c.heroes:
 		hp_prev[h["nombre"]] = h["hp"]
+
+
+# Una línea por turno: fotograma, quién y los PV de todos (para reproducir una semilla concreta).
+func _traza(que: String) -> void:
+	var pv := []
+	for f in c.heroes + c.enemigos:
+		pv.append("%s %d" % [f["nombre"], int(f["hp"])])
+	print("TRAZA %05d T%d %s · %s" % [Engine.get_process_frames(), c.turnos_heroe, que, ", ".join(pv)])
+
+
+# «semilla_A=N» (o _C, _D, _E, _Q) en la línea de órdenes: N se suma a las semillas de ese caso (0, las de siempre).
+func _desfase(caso: String) -> int:
+	for a in OS.get_cmdline_user_args():
+		if caso != "" and a.begins_with("semilla_%s=" % caso):
+			return int(a.get_slice("=", 1))
+	return 0
 
 
 func _vigilar() -> void:
@@ -222,8 +250,10 @@ func _cerrar() -> void:
 		_ok(CN.nodos_vivos(c.enemigos).is_empty(), "al acabar quedan nodos suyos: %s" % str(CN.nodos_vivos(c.enemigos)))
 		c.queue_free()
 		c = null
+	await _esperar(75)                                    # 2,5 s de juego a 30 fotogramas por segundo
+	# (el audio sin ventana avanza con el reloj real: si aún suena algo suyo, hasta 5 s reales para acabar)
 	var t0 := Time.get_ticks_msec()
-	while Time.get_ticks_msec() - t0 < 2500:
+	while _suena_suyo() and Time.get_ticks_msec() - t0 < 5000:
 		await process_frame
 	_ok(not _suena_suyo(), "al cerrar el combate sigue sonando algo del Centinela")
 	await _esperar(5)
@@ -289,6 +319,7 @@ func _jugar(estrategia: String, comprobar := true) -> Dictionary:
 		if quien != null and not is_same(actual, quien):
 			if CN.es(quien):
 				var que := _que_hizo(quien, ant)
+				_traza("%s: %s" % [quien["nombre"], que])
 				r["acciones"].append(que)
 				if comprobar:
 					_comprobar_turno(quien, que, ant, ultimo, r)
@@ -302,6 +333,7 @@ func _jugar(estrategia: String, comprobar := true) -> Dictionary:
 			previo = _foto_estado()
 		if c.estado == "menu" and c.actor is Dictionary and c.turnos_heroe != decidido:
 			decidido = c.turnos_heroe
+			_traza("turno de %s" % c.actor["nombre"])
 			_decidir(estrategia, r)
 		if c.estado == "fin" and f_fin < 0:
 			f_fin = fr
@@ -313,6 +345,7 @@ func _jugar(estrategia: String, comprobar := true) -> Dictionary:
 	var z := _guardian()
 	r["fin"] = c.estado == "fin"
 	r["gana"] = c.enemigos.all(func(e): return e["hp"] <= 0) and c.heroes.any(func(h): return h["hp"] > 0)
+	_traza("fin %s · gana %s" % [r["fin"], r["gana"]])
 	r["cortados"] = int(_cont(z).get("juicio_cortado", 0))
 	r["rotos"] = int(_cont(z).get("escudo_roto", 0))
 	return r

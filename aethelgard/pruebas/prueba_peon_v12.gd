@@ -24,6 +24,11 @@ extends SceneTree
 #   Q. Equilibrio frente a los encuentros de siempre de su tamaño (Zarzalín; Grimfang y Slime; Slime, Grimfang y Slime),
 #      6 semillas, solo ataques automáticos (caso pesimista: no prueba la estrategia de un jugador).
 # Con «fotos=<carpeta>» (y ventana) guarda fotogramas (JPG, uno de cada dos) del A y del B para los vídeos (indice.txt).
+# AZAR (15/11): combate.gd hace randomize() en su _ready (salvo «-- semilla=N»), así que la semilla se pone DESPUÉS de
+# root.add_child(c) y se vuelve a tirar el ATB inicial de los enemigos con ella (como prueba_combate_huella.gd). Antes se
+# sembraba antes de add_child y A, C, D, E y Q eran combates al azar (el Q, estadístico, podía fallar por suerte). Cada
+# combate imprime «SEMILLA» y una línea «TRAZA» por turno (quién y los PV); «semilla_A=N» (o _C, _D, _E, _Q) suma N a
+# las semillas de ese caso para reproducir o explorar otras.
 
 const ARCHIVO := "user://prueba_peon_v12.save"
 const MAX_FOTOGRAMAS := 16000
@@ -50,6 +55,7 @@ var grabando := false
 var n_foto := 0
 var indice: Array = []
 var huerfanos0 := -1
+var caso_actual := ""
 
 
 func _initialize() -> void:
@@ -102,6 +108,7 @@ func _probar() -> void:
 			solo = a.substr(5)
 	for p in ["S", "A", "B", "C", "D", "E", "Q"]:
 		if solo == "" or solo.contains(p):
+			caso_actual = p
 			await call("_" + p.to_lower())
 	_limpiar()
 	Engine.remove_meta("archivo_partida_prueba")
@@ -254,14 +261,19 @@ func _combate(activos: Dictionary, grupo: int, semilla: int, encendido := true, 
 		Engine.set_meta("grupo_combate", grupo)
 	if encendido:
 		Engine.set_meta(PE.INTERRUPTOR, true)
-	seed(semilla)
 	c = load("res://combate.tscn").instantiate()
 	sonidos.clear()
 	impactos.clear()
 	danos.clear()
 	hp_prev.clear()
 	c.sonido_pedido.connect(func(n: String): sonidos.append([n, Engine.get_process_frames()]))
-	root.add_child(c)
+	root.add_child(c)                                     # (aquí su _ready hace randomize())
+	semilla += _desfase(caso_actual)
+	seed(semilla)                                         # desde aquí, el azar del combate es fijo
+	for e in c.enemigos:
+		e["atb"] = randf() * 30.0                         # el ATB inicial, como en combate.gd, ya con la semilla
+	print("SEMILLA %d · caso %s · %s · grupo %d · %s · %s" % [semilla, caso_actual, str(activos), grupo,
+		"encendido" if encendido else "apagado", ",".join(c.enemigos.map(func(e): return e["nombre"]))])
 	for e in c.enemigos:
 		var p = c._p3d(e)
 		if PE.es(e):
@@ -270,6 +282,22 @@ func _combate(activos: Dictionary, grupo: int, semilla: int, encendido := true, 
 				p.impacto.connect(func(a): impactos.append([a, Engine.get_process_frames(), e["nombre"]]))
 	for h in c.heroes:
 		hp_prev[h["nombre"]] = h["hp"]
+
+
+# Una línea por turno: fotograma, quién y los PV de todos (para reproducir una semilla concreta).
+func _traza(que: String) -> void:
+	var pv := []
+	for f in c.heroes + c.enemigos:
+		pv.append("%s %d" % [f["nombre"], int(f["hp"])])
+	print("TRAZA %05d T%d %s · %s" % [Engine.get_process_frames(), c.turnos_heroe, que, ", ".join(pv)])
+
+
+# «semilla_A=N» (o _C, _D, _E, _Q) en la línea de órdenes: N se suma a las semillas de ese caso (0, las de siempre).
+func _desfase(caso: String) -> int:
+	for a in OS.get_cmdline_user_args():
+		if caso != "" and a.begins_with("semilla_%s=" % caso):
+			return int(a.get_slice("=", 1))
+	return 0
 
 
 func _vigilar() -> void:
@@ -287,8 +315,10 @@ func _cerrar() -> void:
 		await _esperar(60)
 		c.queue_free()
 		c = null
+	await _esperar(75)                                    # 2,5 s de juego a 30 fotogramas por segundo
+	# (el audio sin ventana avanza con el reloj real: si aún suena algo suyo, hasta 5 s reales para acabar)
 	var t0 := Time.get_ticks_msec()
-	while Time.get_ticks_msec() - t0 < 2500:
+	while _suena_suyo() and Time.get_ticks_msec() - t0 < 5000:
 		await process_frame
 	_ok(not _suena_suyo(), "al cerrar el combate sigue sonando algo del Peón")
 	await _esperar(5)
@@ -346,6 +376,7 @@ func _jugar(estrategia: String, comprobar := true) -> Dictionary:
 		if quien != null and not is_same(actual, quien):
 			if PE.es(quien):
 				var que := _que_hizo(quien, ant)
+				_traza("%s: %s" % [quien["nombre"], que])
 				r["acciones"].append(que)
 				var lista: Array = r["por_peon"].get(quien["nombre"], [])
 				lista.append(que)
@@ -370,6 +401,7 @@ func _jugar(estrategia: String, comprobar := true) -> Dictionary:
 			previo = {"base": _foto_estado(null), "conts": conts, "rigs": rigs}
 		if c.estado == "menu" and c.actor is Dictionary and c.turnos_heroe != decidido:
 			decidido = c.turnos_heroe
+			_traza("turno de %s" % c.actor["nombre"])
 			_decidir(estrategia)
 		if c.estado == "fin" and f_fin < 0:
 			f_fin = fr
@@ -380,6 +412,7 @@ func _jugar(estrategia: String, comprobar := true) -> Dictionary:
 			break
 	r["fin"] = c.estado == "fin"
 	r["gana"] = c.enemigos.all(func(e): return e["hp"] <= 0) and c.heroes.any(func(h): return h["hp"] > 0)
+	_traza("fin %s · gana %s" % [r["fin"], r["gana"]])
 	for e in _peones():
 		r["cortados"] += int(_cont(e).get("zancada_cortada", 0))
 	if comprobar:
@@ -732,7 +765,13 @@ func _d() -> void:
 	var vistos := 0
 	var semilla := -1
 	var otros := 0
-	for s in 24:
+	# 15/11: el grupo lo elige combate._ready tras su randomize(): sale al azar (es lo que se prueba). Para que no falle
+	# por mala suerte (0,75^24 ≈ 0,1 %), si en 24 no se han visto los dos tipos se sigue hasta 48.
+	var hechos_d := 0
+	for s in 48:
+		if s >= 24 and vistos >= 1 and otros >= 1:
+			break
+		hechos_d += 1
 		await _combate({"Kael": 4, "Lya": 2, "Garon": 1}, -1, 900 + s, true, "llanura")
 		var n := _peones().size()
 		if n > 0:
@@ -746,8 +785,8 @@ func _d() -> void:
 			otros += 1
 		c.estado = "fin"
 		await _cerrar()
-	_ok(vistos >= 1 and otros >= 1, "D: en 24 encuentros al azar de la llanura, %d con Peones y %d de siempre" % [vistos, otros])
-	hechos.append("D encuentros al azar de la llanura con el interruptor: %d de 24 con Peones (el primero, semilla %d, jugado)" % [vistos, semilla])
+	_ok(vistos >= 1 and otros >= 1, "D: en %d encuentros al azar de la llanura, %d con Peones y %d de siempre" % [hechos_d, vistos, otros])
+	hechos.append("D encuentros al azar de la llanura con el interruptor: %d de %d con Peones (el primero, semilla %d, jugado)" % [vistos, hechos_d, semilla])
 
 
 func _e() -> void:
