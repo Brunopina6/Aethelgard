@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://zonas3d/cueva_provisional_3d.gd" id="1_cueva"]
+
+[node name="CuevaProvisional3D" type="Node3D"]
+script = ExtResource("1_cueva")
