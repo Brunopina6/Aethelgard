@@ -206,6 +206,9 @@ func _pintar() -> void:
 		[["originales", "Originales"], ["v2", "v2"], ["v3", "v3"]], func(v): HV.elegir_version(v))
 	var EO = load("res://erebo_orbe_v12.gd")
 	_selector("Érebo", "erebo", EO.activo(), [[false, "Original"], [true, "Orbe experimental"]], func(v): EO.elegir(v))
+	var EH = load("res://invocacion_erebo_hibrida.gd")   # V12, Érebo híbrida (15/11): la invocación (de siempre, vídeo o híbrida)
+	_selector("Érebo: invocación", "erebo_cine", EH.valor_selector(), [["no", "De siempre"], ["abreviada", "Vídeo"],
+		["hibrida", "Híbrida"], ["hibrida_3d", "Híbrida 3D"]], func(v): EH.elegir_modo(v))
 	var AGV = load("res://vfx/agua_v12.gd")
 	_selector("Magia Agua", "agua", AGV.activo(), [[false, "Original"], [true, "Mejorada (v12)"]], func(v): AGV.elegir(v))
 	var NF = load("res://personajes/nix/fbx/nix_fbx.gd")

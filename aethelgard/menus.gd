@@ -855,20 +855,21 @@ func _pintar_ajustes() -> void:
 		cuerpo.add_child(_texto("Solo Auditoría: espiral violeta, negra y plateada al agarrar el orbe. No cambia el daño.", 16, COLOR_SUAVE))
 		# V12 (14/11): la invocación cinematográfica en vídeo (invocacion_erebo_video.gd), APAGADA por defecto.
 		var EV = load("res://invocacion_erebo_video.gd")
-		var ev_act: String = EV.modo()
+		var EH = load("res://invocacion_erebo_hibrida.gd")   # V12, Érebo híbrida (15/11): su valor, en el mismo selector
+		var ev_act: String = EH.valor_selector()
 		var fev := HBoxContainer.new()
 		fev.add_theme_constant_override("separation", 6)
 		cuerpo.add_child(_texto("Érebo: invocación cinematográfica", 18, COLOR_SUAVE))
-		for op in [["no", "No"], ["abreviada", "Abreviada"], ["completa", "Completa"], ["primera", "1.ª completa"]]:
+		for op in [["no", "No"], ["abreviada", "Abreviada"], ["completa", "Completa"], ["primera", "1.ª completa"], ["hibrida", "Híbrida"]]:
 			var mo: String = op[0]
 			var bv := _boton(("● " if mo == ev_act else "○ ") + op[1], 18, Vector2(140, 34), "erebo_cine:%s" % mo)
 			bv.pressed.connect(func():
-				EV.elegir(mo)
+				EH.elegir_modo(mo)                            # (los del vídeo los guarda el vídeo)
 				Sonido.efecto("ui_tic")
 				_pintar_de_nuevo())
 			fev.add_child(bv)
 		cuerpo.add_child(fev)
-		cuerpo.add_child(_texto("Solo Auditoría: vídeo prerenderizado (≈20 s o ≈7 s). «1.ª completa»: la primera vez entera, luego la abreviada. Tocar la pantalla la salta. No cambia el daño.", 16, COLOR_SUAVE))
+		cuerpo.add_child(_texto("Solo Auditoría: vídeo prerenderizado (≈20 s o ≈7 s). «1.ª completa»: la primera vez entera, luego la abreviada. «Híbrida»: Érebo va hasta el enemigo elegido, le saca un corazón espectral y sigue el ritual del vídeo. Tocar la pantalla la salta. No cambia el daño.", 16, COLOR_SUAVE))
 		# V12 (14/11), fase 3C: la magia Agua mejorada (vfx/agua_v12.gd), APAGADA por defecto. Solo Auditoría o editor.
 		var AGV = load("res://vfx/agua_v12.gd")
 		var ag_act: bool = AGV.activo()
