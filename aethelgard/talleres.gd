@@ -47,12 +47,12 @@ static func puede(id: String, con_borradores := false) -> String:
 #   "pieza:<equipable>:<ataque|atributo>:<entero > 0>"  equipable que existe
 #   "runa:<equipable>:<efecto>:<número > 0 y ≤ máx>"
 #   un equipable (inventario.objeto): cantidad 1
-#   un objeto de combate (combate.gd OBJETOS_COMBATE) o un material (datos/materiales): cantidad > 0
+#   un objeto de combate (datos/objetos_combate.gd) o un material (datos/materiales): cantidad > 0
 static func error_receta(r: Resource) -> String:
 	var Inv = load("res://inventario.gd")
 	var X = load("res://equipo_extra.gd")
 	var mats: Dictionary = X.materiales()
-	var objetos: Dictionary = load("res://combate.gd").OBJETOS_COMBATE
+	var objetos: Dictionary = load("res://datos/objetos_combate.gd").OBJETOS   # (sin cargar combate.gd)
 	if not (r.materiales is Dictionary) or r.materiales.is_empty():
 		return "sin materiales"
 	for clave in r.materiales:

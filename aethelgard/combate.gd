@@ -38,19 +38,8 @@ const PROB_CRITICO := 0.12
 const MULT_CRITICO := 1.6
 const COLOR_DEFENSA := Color(0.75, 0.85, 1.25)
 const CURA_POCION := 50
-# Objetos que se pueden usar en combate (el dibujo es la foto del frasco de Meshy).
-const OBJETOS_COMBATE := {
-	"Poción": {"que": "PV", "cura": 60, "imagen": "res://objetos/pocion.png", "color": Color(1.0, 0.35, 0.3)},
-	"Éter": {"que": "PM", "cura": 25, "imagen": "res://objetos/eter.png", "color": Color(0.35, 1.0, 0.6)},
-	# Alquimia de Lya (fase 3, «El bosque que no recuerda»; combate_bosque.gd). Solo salen en el menú si se tienen.
-	"Esencia de enfoque": {"que": "ENFOQUE", "cura": 0, "imagen": "res://objetos/eter.png", "color": Color(0.7, 0.55, 1.0),
-		"desc": "Su magia hace ×1,3 durante 3 turnos."},
-	"Elixir de savia purificada": {"que": "PURIFICA", "cura": 0, "imagen": "res://objetos/pocion.png",
-		"color": Color(0.55, 1.0, 0.45), "desc": "Purifica al Guardián del Bosque, en su segunda fase."},
-	# V10, «La fórmula desaparecida»: el bálsamo de Mirta cura a todo el grupo (sin elegir a quién).
-	"Bálsamo de Mirta": {"que": "PV_TODOS", "cura": 45, "imagen": "res://objetos/pocion.png", "color": Color(1.0, 0.7, 0.45),
-		"desc": "+45 PV a todo el grupo."},
-}
+# Objetos que se pueden usar en combate: la tabla está en datos/objetos_combate.gd (15/11; mismo contenido).
+const OBJETOS_COMBATE := preload("res://datos/objetos_combate.gd").OBJETOS
 const Bosque := preload("res://combate_bosque.gd")   # el Guardián, la Esencia y el Elixir (fase 3)
 const Coloso := preload("res://combate_coloso.gd")   # el Coloso de la Falla (V9, jefe 2; Garganta 3D)
 # V12: Bramavidrio, el gusano del Mar de Cristal (combate_bramavidrio.gd: su IA, sus tres ataques, avisos y efectos). Es un
