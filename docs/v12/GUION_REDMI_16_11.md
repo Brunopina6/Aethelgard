@@ -3,6 +3,29 @@
 > Escrito la noche del 15 al 16/11, sin el teléfono: esta noche NO se ha instalado nada ni se han tocado datos del
 > Redmi. Todo lo de abajo está comprobado SOLO en el PC; nada certifica Android.
 
+## APK MÁS RECIENTE (16/11, tarde): validada `cbc0536` (batería 185 · 0 · 98 · 0), AÚN EN EL PC
+
+- **Archivo:** `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261115-cbc0536-local.apk` (425,5 MB, «TODO
+  CORRECTO»), versionCode **801**, versionName `androidauditora-20261115-cbc0536-local`.
+  SHA-256: `3fd18e4a6560ef58e0056805f413efe905e9481d46949bdf978ffcc9446d3869`.
+- **Estado del Redmi (16/11, 12:28):** respaldo nuevo verificado (693 archivos) en
+  `D:\REBELUM_respaldos\2026-11-16_redmi_auditoria_antes_consolidada`; `ajustes.cfg` restaurado al del 14/11 (SHA
+  `3ee5aaf2…`), `banco_pruebas.save` y su `.bak` borrados; `partida_exp.save` intacta (SHA `567c7323…`). Instalada aún
+  la v717 (`687dbe7`). Después se perdió la conexión USB: NO se ha instalado nada.
+- **Además de lo de abajo, qué probar con esta APK:**
+  1. **Érebo híbrida** (Ajustes «Érebo: invocación cinematográfica» → «Híbrida», o banco → selector «Érebo:
+     invocación»): el enemigo señalado, el acercamiento, la mano en el pecho, el corazón espectral, el ritual del vídeo
+     y la vuelta. Contra un enemigo normal, uno grande (Bramavidrio), un jefe y una resistida; saltar a mitad. Coste:
+     FPS y PSS, y la decodificación de `erebo_ritual*.ogv`. Nada aprobado: el usuario revisa imagen, ritmo y sonido.
+  2. **Vídeo de Érebo que falla:** no se puede provocar en el teléfono sin tocar archivos; observar que nunca se queda
+     en negro.
+  3. **Custodio:** dos casos en el banco: «equilibrio normal» (vida de siempre) y «ver la rotación (vida ×8)».
+  4. **Nix antigua** a la distancia mínima de cámara: ya no desaparece.
+  5. **Sunken City** (banco): las medidas del PC están en `SUNKEN_3D_V12.md`; en el Redmi, FPS, perdidos, PSS y carga
+     de la primera entrada y de las siguientes.
+
+**APK anterior (16/11, mañana): `c04d07b` (versionCode de entonces), sustituida por la de arriba**
+
 ## La APK
 
 - **Archivo:** `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261115-c04d07b-local.apk` (420,0 MB; «TODO CORRECTO»).

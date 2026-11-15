@@ -849,3 +849,29 @@ Punto de recuperación: etiqueta `recuperacion/v12/20261115-antes-noche` → `da
   (`carga.gd _preparar_shaders`). La regresión del 15/11 solo pasaba en pruebas que no pasan por ella.
 - **Medida de PC, Nix** (`D:\REBELUM_diagnostico\nix_medida_16_11\`, medir_modelo en frío, sin otros Godot): FBX
   35-43 ms y +4,0 MB de texturas; la antigua 41-51 ms y +6,7 MB.
+
+### 16/11, tarde: Érebo reparado e híbrido, Custodio separado, Sunken medido y APK `cbc0536`
+- **Validado:** `cbc0536` (etiqueta `validado/v12/20261115-133330`), batería **185 · 0 · 98 · 0** (`2026-11-15_130355`).
+  Recuperación: `recuperacion/v12/20261116-270c8ed` y `recuperacion/v12/20261116-antes-erebo-hibrido`.
+- **Érebo (descongelado solo para lo autorizado):**
+  - azar: las CPUParticles3D gastan el azar global aunque lleven semilla fija (Godot 4.7); `combate._invocar_sobre`
+    reserva una semilla al empezar y la repone al acabar → mismas tiradas posteriores con el orbe encendido o apagado
+    (prueba exacta). Referencia de `prueba_combate_huella` actualizada (E3 y E8, después de su Érebo);
+  - vídeo: si no avanza en 1,5 s o se para 1 s a mitad, sale solo; el ATB empieza al avanzar (sin ATB de más);
+  - **híbrida** (agente, `docs/v12/EREBO_HIBRIDA_V12.md`): acercamiento y extracción en tiempo real con el modelo del
+    objetivo + tramo del ritual del vídeo (`videos/erebo_ritual*.ogv`, derivados; originales intactos). Apagada; solo
+    Auditoría. Grabaciones en `D:\REBELUM_diagnostico\erebo_hibrida\videos\` (enviadas al usuario). Pendiente de su
+    revisión: duración (≈24 s con el ritual completo, ≈16,5 s breve), el corazón algo tenue, sin sonido propio.
+- **Custodio:** banco con «equilibrio normal» (×1) y «ver la rotación» (×8) separados. Cifras propuestas.
+- **Pruebas:** semilla tras add_child en 11 pruebas más (agente); `prueba_bosque_pastos` espera por reloj solo en su
+  recarga. Residuo conocido: el destello del clímax de Bramavidrio (por tiempo real) puede mover una tirada.
+- **Nix antigua** ya no desaparece a 9 m (márgenes de sus tramos de detalle). **Comparación del grupo** (sin cambiar
+  nada): `D:\REBELUM_diagnostico\comparar_grupo_16_11\` (hojas, alturas y 21 vídeos; enviados en parte).
+- **Sunken City, medidas de PC reales:** `SUNKEN_3D_V12.md` (carga 1,42-1,49 s en frío, 1,28-1,31 s con caché, 0,89-0,94 s
+  después; sin tirones; memoria estable).
+- **APK:** `Aethelgard_androidauditora-20261115-cbc0536-local.apk`, 425,5 MB, versionCode 801, SHA-256
+  `3fd18e4a6560ef58e0056805f413efe905e9481d46949bdf978ffcc9446d3869`. Guion: `GUION_REDMI_16_11.md` (sección de arriba).
+- **Redmi:** respaldo nuevo y ajustes restaurados; se perdió el USB antes de instalar.
+- **Siguiente acción exacta:** reconectar el Redmi y seguir `GUION_REDMI_16_11.md` desde la APK `cbc0536`.
+- **Decisiones del usuario:** Nix en combate (desde cuándo y si el grupo pasa a 4); revisar Érebo híbrida y su
+  duración; altura/capucha de Nix con la comparación; cifras del Custodio.
