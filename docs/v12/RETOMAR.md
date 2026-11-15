@@ -883,3 +883,27 @@ El trabajo de la mañana y la tarde del 15/11 se etiquetó por error como «16/1
 `recuperacion/v12/20261116-270c8ed` y `recuperacion/v12/20261116-antes-erebo-hibrido` NO se borran (norma de no borrar
 etiquetas); sus equivalentes con la fecha correcta son `recuperacion/v12/20261115-270c8ed` y
 `recuperacion/v12/20261115-antes-erebo-hibrido` (mismos commits).
+
+## RELEVO 15/11, tarde (16:00): Redmi, Custodio, Érebo híbrida 2, mapamundi 3D (LEER PRIMERO)
+Recuperación: `recuperacion/v12/20261115-antes-encargo-tarde` (`1239e78`). Validado: `d0f4a65`
+(`validado/v12/20261115-154738`, 186 · 0 · 100 · 0). Integrado encima: el mapamundi 3D (agente).
+- **Redmi** (`REDMI_15_11.md`): Sunken bajo/medio a 30 FPS sostenidos; alto 17-18 FPS (no se fuerza); PSS por
+  ciclos estable salvo tras usar alto (+≈130 MB retenidos, sin crecer); Oakhaven de noche sin atascos; el volumen
+  multimedia del teléfono está a 0 (sonido sin escuchar); cómo se mide, explicado.
+- **Custodio:** la rotación era correcta; el contador se explicaba mal → «Sello en N turnos suyos» y aviso del especial
+  en el turno anterior (`CUSTODIO_E01_V12.md` §10). Banco: caso de rotación ×8 separado y su nota con la duración.
+- **Grupo de cuatro (solo banco):** caso «Grupo de cuatro» con permiso de sesión; fuera del banco, tres
+  (`NIX_GRUPO_CUATRO.md`: lo que haría falta para hacerlo definitivo, sin aplicar). Decisión del usuario pendiente.
+- **Cantero:** jugado con la losa primero (0 fallos); el Diario ya no da por hechos pasos saltados (`saltado_si`).
+- **Érebo híbrida 2** (`EREBO_HIBRIDA_V12.md` §9): cabeza firme (el reposo era un «Thriller Idle» de Mixamo), abreviada
+  elegible en Ajustes y banco, cobertura completa y sonido medido. Candidatos de la cinemática con la cabeza firme en
+  `D:\REBELUM_diagnostico\erebo_hibrida\cabeza\candidatos_ogv\` (sin sustituir los del juego).
+- **En marcha (agente):** cinemática de vídeo MEJORADA (cabeza firme, más efectos, luz, animación y sonido),
+  originales del 14/11 conservados en `videos/originales_14_11/`; la híbrida empalmará con ella.
+- **Mapamundi 3D** (`MAPAMUNDI_3D_V12.md`): «Tierras de Oakhaven», experimental de Auditoría, apagado; viaje rápido
+  Oakhaven ↔ campamento de Pastos Verdes; cueva provisional; secreto «Corro de los Mirlos». Todo PROPUESTA.
+- **Fechas:** corregidas al 15/11 (ver «corrección de fechas»). Un daño de esa corrección en la referencia de la huella
+  ya está deshecho (`b56fc6b`).
+- **Siguiente encargo (tras cerrar esta fase y con punto de recuperación):** la muestra gráfica experimental de una
+  calle de Oakhaven (encargo del usuario del 15/11 por la tarde). No se ha recibido la imagen de referencia de FFIX que
+  menciona: se trabaja con lo descrito.
