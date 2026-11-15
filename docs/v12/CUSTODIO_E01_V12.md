@@ -212,7 +212,131 @@ Lote de la matriz elegido por el coordinador: completar el elemento más avanzad
     - f_00020: el impacto;
     - f_00090: la derrota de rodillas.
 - **Pendiente:**
-  - Sello de Clausura (a3) y los clips alert, turn y guard.
+  - ~~Sello de Clausura (a3)~~ (hecho el 15/11, sección 9) y los clips alert, turn y guard.
   - En combate se superpone a los héroes delanteros al embestir, como los demás enemigos cuerpo a cuerpo.
   - Sonido propio.
   - Redmi.
+
+
+## 9. 15/11: Sello de Clausura (e01_a3) y los tres especiales como conjunto
+
+Rama local `claude/v12-custodio-sello` (desde `claude/rebelum-v12` @ `723a97d`). Comprobado ejecutando en el PC el 15/11
+con datos aislados; la partida real, sin cambios.
+
+### 9.1 Clip `e01__attack_sello` (2,8 s)
+
+- **Ficha literal** (`ataques_propuestos.json`, id `e01_a3`):
+  - anticipación hasta 1,30; activo [1,30, 1,50); recupera desde 1,50; `cooldown_own_turns` 3; daño 9-13 arcano;
+  - «un círculo de radio 1,3 m a máximo 5 m, fijado antes de activar»;
+  - marca de cerradura desde 0,20 y centro fijo a 0,80;
+  - −15 % de velocidad durante 1 turno del afectado; no silencia ni inmoviliza;
+  - raíz quieta: solo torso, cabeza y brazos;
+  - disco de cerradura opaco y pulso marfil.
+- **Poses** (`fuente/p2_clips.py`, el mismo método de §3 y §8):
+  - 0,00 reposo; 0,20 separa las manos del torso;
+  - 0,45 las lleva a la llave del pecho (los dedos la enmarcan);
+  - 0,95 pecho y cabeza se inclinan hacia el sello;
+  - 1,30 extiende las dos palmas delante, a la altura del pecho;
+  - 1,50 sostiene; 2,05 recoge; 2,80 vuelve al reposo.
+  - La cadera queda en la del reposo y los pies, plantados.
+- **Eventos:** `aviso` 0,20 (la marca), `fija_direccion` 0,80, `impacto` 1,30, `fin_activo` y `recupera` 1,50.
+- **Método y medidas:**
+  - Se trabajó sobre una copia del `.blend` en `D:\REBELUM_diagnostico\custodio_a3\trabajo\` (copiado de
+    `custodio_a2\trabajo\e01_rig.blend`, md5 `7A59C4BF…`).
+  - Antes de tocar nada, el guion sin cambios reprodujo el GLB byte a byte (md5 `6FD7A534…`, igual al del repositorio).
+  - Tras añadir el clip, los 6 clips anteriores tienen las mismas pistas, canal a canal, con la misma malla y la misma
+    piel (`D:\REBELUM_diagnostico\custodio_a3\comparar_pistas.txt`).
+  - Medidas del Sello: la malla no baja del suelo (0,0 mm); pies y cadera quietos (0,0000 m en Godot); vuelve al
+    reposo (0,000°); la IK llega en todos los fotogramas, sin avisos.
+  - GLB: 1 210 912 bytes (antes 1 180 960).
+- **Renders** (Blender, lo horneado): `D:\REBELUM_diagnostico\custodio_a3\render\hoja_sello_{perfil,frente,tres_cuartos}.png`
+  (0,00 · 0,20 · 0,45 · 0,80 · 0,95 · 1,30 · 1,50 · 2,05 · 2,80).
+
+### 9.2 Combate (`combate_meshy_e01.gd`, el esquema de `_porton()`; `combate.gd` sin tocar)
+
+- **Centro:** el héroe vivo a ≤ 5 m con más aliados a ≤ 1,3 m (empate: el que elegiría «agresivo»). Si nadie está a
+  5 m, el punto a 5 m hacia el más cercano.
+  - Escala: 168 px por metro, la del propio modelo (840 px × 0,6 / 3,0 m).
+  - La profundidad se aplasta ×0,32, como en las demás marcas.
+- **Marca:** un disco oscuro de cerradura con el ojo de la llave y el borde marfil.
+  - Aparece a 0,20 s, translúcido, sobre el centro. A 0,80 s se fija (opaco y con un pulso marfil). Ya no se mueve.
+  - Va en el suelo, DEBAJO de los luchadores y de sus sombras. En la primera captura iba encima y el disco opaco tapaba
+    los pies de quien estaba dentro.
+- **Impacto (1,30):** golpea UNA vez a cada héroe vivo dentro del círculo en ese momento (`attack_instance_id` +
+  nombre); la Guardia de Garon cubre y se lleva el golpe una vez.
+  - Daño arcano: 9-13 × el multiplicador del turno. No resta la defensa física y no tiene crítico ni esquiva.
+  - Defendiendo, la mitad. Cuenta como magia para el Anillo del Alba (`dano_magico_entrante`).
+  - Se borra la marca y llegan otro pulso marfil, un temblor corto y el golpe de siempre (una vez).
+- **Lentitud:** −15 % de la velocidad del afectado hasta que le llega su próximo turno.
+  - Se guarda lo quitado y se devuelve exacto; no se acumula.
+  - Si ya tenía la barra llena, cuenta la siguiente.
+  - Al acabar el combate, todo vuelve.
+- **Rotación de la recarga compartida:** Prensa, G, G, Avance, G, G, Sello, G, G, G, Prensa…
+- **Constantes:** `SELLO_*` y `T_SELLO_*`, agrupadas y marcadas como **PROPUESTA, sin equilibrar** (daño, radio,
+  alcance, reducción, turnos, recarga, tiempos y colores).
+
+### 9.3 Pruebas
+
+| Prueba | Resultado | Resumen |
+|---|---|---|
+| `prueba_meshy_e01` (ampliada) | SUPERADA 3/3, mismas huellas | `D:\REBELUM_diagnostico\pruebas\2026-11-15_023714`, `_023727`, `_023738` |
+| Contraprueba (radio 3,0, sin confirmar) | FALLIDA con 8 fallos («dentro» con Garon; «Garon, fuera, recibe daño») | `2026-11-15_023634` |
+| Regresión: `prueba_enemigos_v12`, `prueba_combate_huella`, `prueba_banco_pruebas` (y `prueba_meshy_e01`) | 4 SUPERADAS | `2026-11-15_023503` |
+| `fotos_meshy_e01 sello` (ventana) | sin errores; revisadas a ojo | `D:\REBELUM_diagnostico\custodio_a3\godot\` |
+
+Lo que comprueba la ampliación (salida literal de la última pasada):
+- M: 7 clips; alias «sello» = mismo recurso; instantes iguales en JSON, modelo y combate; Sello con pies 0.0000 m y cadera
+  0.0000 m; manos a 0,45 en (±0.353, 1.236, 0.256) y palmas a 1,30 en (±0.412, 1.238, 0.497).
+- E1: centro en Lya (1 aliado cerca), dentro [Kael, Lya] (calculado aparte), Kael −11 y Lya −10 una vez en el impacto;
+  −15 % de velocidad y la recuperan exacta al llegarles el turno.
+- E2: Lya se aparta 3 m tras fijarse el centro: el círculo no la sigue y solo golpea a Kael.
+- E3: Garon cubre a Lya y Kael defiende: Kael −5 y Garon −11; Lya, nada.
+- R: prensa, guardia, guardia, porton, guardia, guardia, sello, guardia, guardia, guardia, prensa.
+
+Capturas en combate real (`indice.txt`):
+- `f_00003` aviso (disco translúcido bajo Lya);
+- `f_00012` y `f_00014` centro fijo (disco opaco con el ojo de la llave; Kael y Lya encima, con los pies a la vista);
+- `f_00020` impacto (−11 y −10, «Lento» en los dos, pulso marfil);
+- `f_00043` fin del turno.
+
+Estudio del GLB importado junto a Kael y Garon: `estudio_sello_{045,095,130}_{frente,perfil,espalda}.png`.
+
+### 9.4 Los tres especiales como conjunto (observado; NO es un equilibrio)
+
+Medido con `pruebas/medir_custodio_rotacion.gd` en el combate del banco (partida BASE, nivel 12, GRUPOS[28]):
+`D:\REBELUM_diagnostico\pruebas\2026-11-15_023941` y `_024008`.
+
+- **Cifras del banco:**
+  - Kael: 186 PV, defensa 9, velocidad 23. Lya: 146 PV, defensa 7, velocidad 26. Garon: 234 PV, defensa 18,
+    velocidad 15. En total, **566 PV**.
+  - Custodio: 161 PV, ataque 15, velocidad 10. Por cada turno suyo, **6,4 turnos de héroe**.
+  - Distancias en el suelo: él a 2,50 / 3,44 / 2,72 m de Kael, Lya y Garon; Kael-Lya 0,96 m; Garon a 2,90 m de Kael.
+- **Un ciclo de su rotación**, con los héroes quietos y curados antes de cada turno suyo:
+  - Prensa 18 (Lya 17, Garon 1);
+  - Avance 14 (Lya 13, Garon 1);
+  - Sello 24 (Kael 12, Lya 12);
+  - **56 en 10 turnos suyos = 9,9 % de los PV del grupo.**
+  - Nunca hay dos marcas a la vez: cada una se borra al acabar su turno y entre especiales hay al menos dos turnos de
+    guardia.
+- **Legibilidad**, tiempo que se ve cada marca antes del golpe a 30 fps: Prensa 26 fotogramas (0,87 s), Avance 38
+  (1,27 s), Sello 32 (1,07 s; su centro fijo, 0,50 s).
+  - Las tres se distinguen por la forma y el color: rectángulo ámbar sobre dos, franja ámbar hacia el blanco, y disco
+    oscuro con ojo de llave y borde marfil.
+- **El combate del banco con los héroes atacando solos:** el grupo gana en 6 turnos de héroe. El Custodio solo llega a
+  hacer una Prensa y el grupo pierde 18 PV (3,2 %). Con estas cifras, en el banco no se llega a ver la rotación entera.
+- **Observaciones (no decisiones):**
+  - El Sello es el especial que más daña por ejecución en esta formación, porque Kael y Lya están a menos de 1,3 m y no
+    resta defensa.
+  - El de detrás en la Prensa y el Avance recibe 1 de daño cuando es Garon (su defensa 18 se come el ×0,5).
+  - A nivel 12 el Custodio es un enemigo corto. Para que se lea la rotación haría falta más vida (`vida` del caso del
+    banco), lo que es decisión del coordinador o del usuario.
+
+### 9.5 Pendientes
+
+- Equilibrio de las tres cifras: sin partidas reales. Las constantes llevan «PROPUESTA».
+- Sonido propio: el Sello suena con el golpe de siempre; hacen falta claves de llave girando y golpe corto.
+- La nota del caso «custodio» de `banco_pruebas.gd` aún dice «Prensa del Umbral»: debería nombrar los tres especiales.
+  No es un archivo de este encargo.
+- Redmi: la legibilidad del disco a tamaño de teléfono y su coste (un dibujo 2D por fotograma: un círculo, dos arcos y
+  el ojo).
+- La «llave iluminada» de la ficha: sin máscara de UV, no se ha hecho.

@@ -19,7 +19,7 @@
 | Garon: Esgrima (18) y Compás | P (existe tras `esgrima`, apagado; el catálogo falta) | — | — | — | P | — | — | — | — |
 | Lya: Magia blanca (18) e invocaciones (6) | P (existe tras su interruptor, apagado; el catálogo falta) | — | — | — | P | — | — | — | — |
 | Nix: Magia negra (24) y Eclipse | P (escuelas existentes, apagadas; la lista completa del PDF está en `RESUMEN_PDFS_NIX_ENEMIGOS.md`) | — | — | — | P | — | — | — | — |
-| `meshy_e01` Custodio de Porcelana | V (paquete) | V (10.541 tri., 1,85 m) | V (24 huesos, placas rígidas) | P (6 de 12 clips; 14/11 noche: Avance, golpe y derrota) | V (APAGADO, grupos 28 y 29) | P (Prensa y Avance del Portón verificados; falta a3; afinidades neutras pendientes de decidir) | — | V (`prueba_meshy_e01`) | — |
+| `meshy_e01` Custodio de Porcelana | V (paquete) | V (10.541 tri., 1,85 m) | V (24 huesos, placas rígidas) | P (7 de 12 clips; 14/11 noche: Avance, golpe y derrota; 15/11: Sello de Clausura) | V (APAGADO, grupos 28 y 29) | P (los 3 especiales verificados: Prensa, Avance y Sello, con su rotación; cifras PROPUESTAS sin equilibrar; afinidades neutras pendientes de decidir) | — | V (`prueba_meshy_e01`, 3/3; `medir_custodio_rotacion`) | — (Redmi pendiente) |
 | `meshy_e02`…`e04` | V (paquete) | — (FBX sin rig) | — | — | — | — | — | — | — |
 | `common_e01`…`e10` | V (bestiario V12) | P (Peón y Velador del bestiario v12) | P | P | P (`enemigos_v12`, apagado) | P | — | P | — |
 | 32 conjuntos equipables | **B** (falta el PDF del arsenal y el catálogo) | — | — | — | — | — | — | — | — |
