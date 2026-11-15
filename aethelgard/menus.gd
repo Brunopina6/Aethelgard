@@ -1028,7 +1028,7 @@ func _pintar_calidad() -> void:
 	elif e["aviso"] == elegida:
 		nota = "En este aparato, %s no llega a sus FPS de forma estable. " % _nombre_calidad(elegida) + nota
 	if auto.aislada():                             # (15/11) desde el banco de pruebas de Auditoría
-		nota = "Banco de pruebas: vale solo hasta salir del banco. " + nota
+		nota = "Banco de pruebas: vale solo para este caso del banco (no cambia tus ajustes). " + nota
 	cuerpo.add_child(_texto(nota, 16, COLOR_SUAVE))
 
 

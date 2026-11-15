@@ -123,6 +123,10 @@ static func preparar_partida() -> String:
 	Engine.set_meta(META, true)
 	Engine.set_meta("archivo_partida_prueba", ARCHIVO)
 	var cantero = Engine.get_meta("oakhaven_propuestas_v12") if Engine.has_meta("oakhaven_propuestas_v12") else null   # (sigue)
+	if Engine.has_meta("banco_proto"):             # (15/11) un banco de medida A/B cortado a medias deja el perfil y el
+		for m in ["calidad_proto", "calidad_extra"]:   # cambio de su caso: se quitan (vuelve el regulador normal)
+			if Engine.has_meta(m):
+				Engine.remove_meta(m)
 	for k in METAS_SESION:                         # cada caso empieza sin los interruptores del anterior
 		if Engine.has_meta(k):
 			Engine.remove_meta(k)
@@ -272,7 +276,7 @@ func _pintar() -> void:
 # «Fija»: el perfil que usaría el regulador, tal cual, sin recortes ni regulador (como CAL). «Regulador normal»: sin meta.
 func _elegir_calidad_fija(fija: bool) -> void:
 	var perfil: String = load("res://prototipos/calidad_proto.gd").actual()
-	for m in METAS_CALIDAD:
+	for m in ["calidad_proto", "calidad_extra"]:   # (no «muestra_precalentar»: es otro interruptor)
 		if Engine.has_meta(m):
 			Engine.remove_meta(m)
 	if fija:

@@ -361,7 +361,9 @@ func _i() -> void:
 	root.add_child(b)
 	await _esperar(2)
 	Auto.guardar({"auto": true, "perfil": "bajo", "perfil_auto": "bajo", "calibrado": true, "nivel": 1, "nivel_de": "bajo"})
+	Engine.set_meta("muestra_precalentar", true)
 	b._elegir_calidad_fija(true)
+	_ok(Engine.get_meta("muestra_precalentar", false) == true, "I: elegir «Calidad 3D» apaga «Muestra: precalentar»")
 	_ok(str(Engine.get_meta("calidad_proto", "")) == "bajo" and is_equal_approx(float(Cal.datos()["escala_3d"]), 0.75),
 		"I: «Fija» no deja el perfil tal cual (meta %s, escala %s)" % [str(Engine.get_meta("calidad_proto", "")), str(Cal.datos()["escala_3d"])])
 	b._elegir_calidad_fija(false)
@@ -369,6 +371,12 @@ func _i() -> void:
 		"I: «Regulador normal» no vuelve al escalón de la sesión (escala %s)" % str(Cal.datos()["escala_3d"]))
 	b.queue_free()
 	await _esperar(1)
+	Engine.set_meta("calidad_proto", "medio")       # un banco de medida A/B cortado a medias: al volver al banco se quita
+	Engine.set_meta("calidad_extra", {"sombras": false})
+	Engine.set_meta("banco_proto", {"perfil_previo": "bajo"})
+	BP.preparar_partida()
+	_ok(not Engine.has_meta("calidad_proto") and not Engine.has_meta("calidad_extra") and not Engine.has_meta("banco_proto"),
+		"I: un banco de medida cortado deja su perfil o su cambio para el caso siguiente")
 	Engine.set_meta("calidad_proto", "medio")
 	Engine.set_meta("calidad_extra", {})
 	Engine.set_meta("banco_proto", {})

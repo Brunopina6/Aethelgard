@@ -139,13 +139,14 @@ func _precalentar_recorrido() -> void:
 	var clave := nombre_perfil + "/" + modo
 	if _precalentado.has(clave) or kael == null or DisplayServer.get_name() == "headless":
 		return
-	_precalentado[clave] = true
 	var u0 := Time.get_ticks_usec()
 	var capa := CanvasLayer.new()
 	capa.layer = 119                                  # bajo el negro de Recursos (120), sobre la escena
 	var tapa := ColorRect.new()
 	tapa.color = Color.BLACK
-	tapa.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tapa.mouse_filter = Control.MOUSE_FILTER_STOP       # (sin toques ni teclas mientras dura: no mueven a Kael)
+	set_process_unhandled_input(false)
+	set_process_input(false)
 	tapa.set_anchors_preset(Control.PRESET_FULL_RECT)
 	capa.add_child(tapa)
 	add_child(capa)
@@ -156,12 +157,19 @@ func _precalentar_recorrido() -> void:
 		_colocar_kael(p)
 		kael.marcha(VELOCIDAD)
 		await get_tree().process_frame
+		if not is_inside_tree() or not is_instance_valid(kael):
+			return                                    # (CAL o salir a mitad: la escena ya no está)
 		await get_tree().process_frame
-		if not is_instance_valid(kael):
+		if not is_inside_tree() or not is_instance_valid(kael):
 			return
 	kael.parar_marcha()
 	_colocar_kael(INICIO)
 	await get_tree().process_frame
+	if not is_inside_tree():
+		return
+	_precalentado[clave] = true                        # (solo si se completó)
+	set_process_unhandled_input(true)
+	set_process_input(true)
 	if pasos != null:
 		pasos.process_mode = Node.PROCESS_MODE_INHERIT
 	print("[tirones] precalentado del recorrido: %.0f ms" % ((Time.get_ticks_usec() - u0) / 1000.0))
