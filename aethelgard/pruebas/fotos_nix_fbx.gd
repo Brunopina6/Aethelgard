@@ -67,6 +67,18 @@ func _foto(nombre: String) -> void:
 	fotos.append(ruta)
 
 
+func _cerca_mano(lado: String, desde: Vector3) -> void:
+	var sk: Skeleton3D = nix.skel
+	var b := -1
+	for i in sk.get_bone_count():
+		if sk.get_bone_name(i).ends_with(lado + "Hand"):
+			b = i
+	if b < 0:
+		return
+	var p: Vector3 = sk.global_transform * sk.get_bone_global_pose(b).origin
+	_mirar(p + desde, p)
+
+
 func _girar(grados: float) -> void:
 	nix.mirar(Vector3(sin(deg_to_rad(grados)), 0, cos(deg_to_rad(grados))), 0.0)
 
@@ -143,7 +155,33 @@ func _process(_d: float) -> bool:
 			_foto("27_correr_tres_cuartos")
 			nix.reposo()
 			_girar(0)
+		# 15/11 (revisión de personajes): las MANOS de cerca (RightHandMiddle1 sin pesos: ¿se ve el dedo corazón de la
+		# mano del cetro?), en guardia, en reposo de exploración y con el cetro en alto (ataque).
 		21:
+			_cerca_mano("Right", Vector3(0.45, 0.10, 0.55))
+		22:
+			_foto("30_mano_derecha_guardia")
+			_cerca_mano("Left", Vector3(-0.45, 0.10, 0.55))
+		23:
+			_foto("31_mano_izquierda_guardia")
+			nix.activar_esperas(true)
+		24, 25:
+			pass                                  # que llegue al reposo de exploración
+		26:
+			_cerca_mano("Right", Vector3(0.45, 0.10, 0.55))
+		27:
+			_foto("32_mano_derecha_reposo")
+			_cerca_mano("Right", Vector3(0.0, 0.05, 0.6))
+		28:
+			_foto("33_mano_derecha_reposo_frente")
+			nix.activar_esperas(false)
+			nix.reproducir("ataque", 0.1)
+		29:
+			_cerca_mano("Right", Vector3(0.5, 0.15, 0.6))
+		30:
+			_foto("34_mano_derecha_ataque")
+			nix.reposo()
+		31:
 			print("FOTOS: %d en %s" % [fotos.size(), salida])
 			quit(0)
 			return true
