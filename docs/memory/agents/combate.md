@@ -954,3 +954,87 @@ depende de eso (las cuatro pasadas, SUPERADAS), pero su traza no es reproducible
 - `combate.gd` (`_climax_destello` / `_particulas`): que las partículas no tiren del azar global (semilla propia o
   `use_fixed_seed` si este Godot lo tiene en CPUParticles2D), o disparar el destello por fotogramas desde que empieza la
   canción. La misma idea vale para el orbe de Érebo (informe de las 02:10).
+
+
+## 2026-11-15, 15:00 · Contador del Custodio («Sello en 3») y grupo de cuatro solo en el banco (rama `claude/v12-custodio-contador`)
+
+Rama `claude/v12-custodio-contador` desde `1239e78`. Commits: `cf122a6` (contador del Custodio) y `01f69de` (grupo de
+cuatro en el banco); este informe va en un tercero. Comprobado ejecutando en el PC con datos aislados; la partida real,
+sin cambios en todas las pasadas.
+
+### Tarea 1 · Custodio: «Sello en 3» y el Sello no llegaba (Redmi, APK cbc0536, caso ×8)
+
+**Causa (comprobada).**
+- La rotación es correcta y la congelación de Frostfang no le quita turnos: `_tic_congelacion` solo cuenta y devuelve
+  los PV máximos.
+- El contador contaba bien sus turnos, pero explicaba mal lo que faltaba:
+  - no decía la unidad;
+  - con recarga 0 (el turno anterior al especial) la etiqueta se quedaba sin contador;
+  - el panel solo decía «En guardia».
+- A ritmo de menú, un turno suyo cada ~22 s: «Sello en 3» se leía como «atascado».
+
+**Pruebas de la causa.**
+- Vídeo del Redmi: fotogramas sacados con el secuenciador de Blender y hojas de recortes en
+  `D:\REBELUM_diagnostico\custodio_contador\video\hoja_00-07.png`.
+  - Se ve Prensa ≈ 30 s, G, G, Avance ≈ 100 s, G ≈ 123 s («Guardia Sello en 2»).
+  - Después, el menú MAGIA abierto ~45 s hasta el final: el vídeo acaba antes del Sello.
+- Traza por turno: `pruebas/trazar_custodio_contador.gd`, en `2026-11-15_143000`, con el contador de antes. Turno 3 →
+  etiqueta «❄ Congelado  Guardia», recarga 0; turno 4 = porton sin aviso; igual en los turnos 6 → 7 (sello).
+- Con «pensar=4» (`143406`): un turno suyo cada ~22 s y el Sello a los 164 s.
+
+**Cambio.** `combate_meshy_e01.gd`, `estados()` e `info()`; solo el texto, la rotación y las cifras siguen igual:
+- «X en N turnos suyos» cuando faltan N ≥ 2;
+- «⚠ X: su próximo turno» cuando toca ya;
+- la guardia va delante sin quitar el contador.
+- Detalle en `docs/v12/CUSTODIO_E01_V12.md` §10.
+
+**Pruebas.**
+- `prueba_meshy_e01` K: 24 combinaciones de textos, más el caso del banco ×8 con el ATB de verdad y Kael congelándolo
+  (11 de 11 turnos empezados congelado). Resultado: rotación entera con los tres especiales y el contador acertado en
+  cada turno. SUPERADA.
+- Contraprueba con los textos de antes: FALLIDA con 66 fallos (`143324`).
+- Los ataques son automáticos: **no prueban la estrategia de un jugador.**
+
+### Tarea 2 · Nix en un grupo de cuatro SOLO en el banco
+
+- **Cambios:**
+  - `grupo.gd`: `max_activos()` devuelve 4 solo con `banco_grupo4`, `banco_pruebas` y Auditoría o editor;
+    `MAX_ACTIVOS` sigue en 3.
+  - `banco_pruebas.gd`: caso `grupo4`; `poner_grupo` pone o quita el permiso; el permiso está en `METAS_SESION`.
+  - `combate.gd`: `SITIO_CUARTO` (640, 190), provisional.
+- **Capturas** (`fotos_banco_grupo4`, con ventana, revisadas): `D:\REBELUM_diagnostico\pruebas\2026-11-15_144423\fotos_banco_grupo4\`.
+  - Hay cuatro sitios y cuatro filas.
+  - Los cuatro abren su menú, eligen objetivo y atacan.
+  - Un turno enemigo y la línea de turnos con Nix.
+  - Sin el permiso, tres.
+- **`prueba_banco_pruebas`:** 10 casos; combate de cuatro con victoria y experiencia (Kael 18 → 22, Nix 0 → 4); sin el
+  permiso o fuera del banco, tres. Contraprueba: 2 fallos (`144328`).
+- **Documento:** `docs/v12/NIX_GRUPO_CUATRO.md`, con lo que pediría la incorporación definitiva (sin aplicar).
+- **Observado:**
+  - En el cuarto sitio, Nix tapa un poco a Lya. Delante, entre Garon y Lya, tapaba más.
+  - Con cuatro filas, un menú de 5 opciones queda justo encima de la cabecera del grupo.
+
+### Verificación (las pruebas afectadas, dos pasadas)
+
+- Pasada 1, `D:\REBELUM_diagnostico\pruebas\2026-11-15_145303`: SUPERADAS 7, FALLIDAS 1.
+- Pasada 2, `D:\REBELUM_diagnostico\pruebas\2026-11-15_145539`: SUPERADAS 7, FALLIDAS 1.
+- Superadas en las dos pasadas: `prueba_meshy_e01`, `prueba_banco_pruebas`, `prueba_banco_pruebas_3d`,
+  `prueba_enemigos_v12`, `prueba_rasgos_grupo`, `prueba_solo_lya_invoca` y `prueba_grupo_reserva` (añadida por el
+  cambio en `grupo.gd`).
+- FALLIDA en las dos: `prueba_combate_huella`, con E8_gorthor y la misma diferencia que con `1239e78` (ver Límites).
+
+### Límites
+
+- No hay Redmi: falta ver que «Sello en 3 turnos suyos» y «⚠ Sello: su próximo turno» se leen a tamaño de teléfono.
+  También el caso de cuatro en el teléfono.
+- `prueba_combate_huella` sale FALLIDA en esta copia **también con el código de `1239e78`** (`145144`): E8_gorthor,
+  línea 2, Lya «PV 115/116» al empezar frente a 116/116 en la referencia.
+  - No lo causan estos cambios: esos combates no usan al Custodio, y el grupo de cuatro no se alcanza con tres activos.
+  - Se vio también el 15/11 a las 11:33 en otra pasada (`113345`), y a las 13:03 pasaba.
+  - Pendiente de que lo mire quien lleve la huella. Parece depender del combate anterior (E7) o de la caché importada.
+
+### Peticiones (archivos de otros)
+
+- Ninguna obligatoria.
+- Si el coordinador lo quiere, la nota del caso «custodio_rotacion» del banco puede decir «unos 7 turnos suyos (2-3 min
+  a ritmo de menú)». No la he cambiado.
