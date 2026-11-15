@@ -288,6 +288,62 @@ func _mision() -> void:
 		"3: con la losa abierta sin el arcón, el Diario no dice volver (o el arcón se abre solo)")
 	_ok(E.pasos_conocidos(mis).any(func(p): return p["id"] == "volver"), "3: el paso de volver no se enseña")
 	_limpiar()
+	_losa_primero()
+	_marcas_primero()
+
+
+# 3c (15/11, auditoría externa). La losa PRIMERO, sin hablar con el aprendiz ni abrir el arcón: la misión sale en el
+# Diario con «volver» (antes se quedaba oculta), el arcón sigue cerrado, no se regalan pistas de marcas no vistas, y el
+# final da el polvo una sola vez, también tras guardar y cargar.
+func _losa_primero() -> void:
+	var mis: Dictionary = E.de("prop_cantero")
+	_limpiar()
+	Engine.set_meta(INTERRUPTOR, true)
+	_ok(E.estado(mis) == "oculto", "3c: la misión sale sin hacer nada")
+	var t: String = Oak.abrir_cerradura(LOSA)
+	_ok(t.contains("Misión: Las tres marcas del cantero"), "3c: al abrir la losa primero no se anuncia la misión («%s»)" % t)
+	_ok(E.estado(mis) == "activo", "3c: con la losa abierta primero, la misión sigue oculta en el Diario")
+	_ok(E.paso_actual(mis).get("id", "") == "volver", "3c: con la losa abierta primero, el paso no es volver")
+	_ok(not Oak.cerradura_abierta(), "3c: abrir la losa abre también el arcón")
+	var pistas: Array = E.pistas_conocidas(mis)
+	_ok(not pistas.any(func(x): return "muesca" in x or "nota" in x.to_lower() or "aprendiz:" in x.to_lower()),
+		"3c: con la losa primero se regalan pistas no examinadas (%s)" % str(pistas))
+	for i in [1, 2, 3]:
+		_ok(not P.estado(Oak.NOMBRE, "cantero_marca_%d" % i), "3c: abrir la losa marca como vista la marca %d" % i)
+	_guardar_y_cargar("con la losa abierta primero")
+	_ok(E.estado(mis) == "activo" and E.paso_actual(mis).get("id", "") == "volver", "3c: tras cargar, el Diario cambia")
+	_toca("prop_cantero_fin", "con la losa abierta primero")
+	var antes: int = Inv.cantidad("Polvo de cantera")
+	t = Oak.aplicar_senal("oak:cantero_fin")
+	_ok(t.contains("Polvo de cantera") and Inv.cantidad("Polvo de cantera") == antes + 3, "3c: el final no da el polvo («%s»)" % t)
+	_ok(Oak.aplicar_senal("oak:cantero_fin") == "" and Inv.cantidad("Polvo de cantera") == antes + 3, "3c: el polvo se da dos veces")
+	_guardar_y_cargar("al final, con la losa primero")
+	_ok(E.estado(mis) == "hecho" and Oak.aplicar_senal("oak:cantero_fin") == "" and Inv.cantidad("Polvo de cantera") == antes + 3,
+		"3c: tras cargar al final, algo se repite o se pierde")
+	_ok(Oak.abrir_cerradura(LOSA) == "", "3c: la losa se vuelve a abrir (premio repetido)")
+	_toca("prop_cantero_despues", "después, con la losa primero")
+	_limpiar()
+
+
+# 3d (15/11). Las marcas PRIMERO: examinar una marca suelta no empieza la misión (es una runa gastada sin contexto);
+# cuando empieza, su pista ya está y las no vistas no.
+func _marcas_primero() -> void:
+	var mis: Dictionary = E.de("prop_cantero")
+	_limpiar()
+	Engine.set_meta(INTERRUPTOR, true)
+	Oak.aplicar_senal("oak:cantero_marca_2")
+	_ok(E.estado(mis) == "oculto", "3d: una marca suelta empieza la misión")
+	_guardar_y_cargar("con una marca vista antes de empezar")
+	Oak.aplicar_senal("oak:cantero_pedido")
+	_ok(E.estado(mis) == "activo" and E.paso_actual(mis).get("id", "") == "arcon", "3d: tras el encargo, el paso no es el arcón")
+	var pistas: Array = E.pistas_conocidas(mis)
+	_ok(pistas.any(func(x): return x.begins_with("Fuente")), "3d: la marca vista antes no sale en las pistas")
+	_ok(not pistas.any(func(x): return x.begins_with("Puerta") or x.begins_with("Raíz")), "3d: salen marcas no vistas")
+	Oak.aplicar_senal("oak:cantero_marca_1")
+	Oak.aplicar_senal("oak:cantero_marca_3")
+	_ok(P.estado(Oak.NOMBRE, "cantero_marcas"), "3d: con las tres marcas no queda apuntado")
+	_ok(E.paso_actual(mis).get("id", "") == "arcon" and not Oak.cerradura_abierta(), "3d: las marcas abren el arcón o se lo saltan")
+	_limpiar()
 
 
 # 3b. El taller de Lya con el polvo (la receta da Éter; el polvo se acaba).

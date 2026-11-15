@@ -131,7 +131,10 @@ static func activado() -> bool:
 
 # Condiciones propias (encargos.gd las pregunta a este módulo):
 #   «cond:propuestas_v12»    el interruptor
-#   «cond:cantero_empieza»   el interruptor y, además, el encargo del aprendiz o el arcón abierto (lo que llegue antes)
+#   «cond:cantero_empieza»   el interruptor y, además, el encargo del aprendiz, el arcón abierto o la losa ya abierta
+#                            (lo que llegue antes; 15/11: con la losa primero, la misión se quedaba oculta en el Diario
+#                            aunque tocaba volver con el aprendiz). Las marcas sueltas NO la empiezan: sin el aprendiz ni
+#                            la nota son solo runas gastadas, y sus pistas salen en cuanto empieza.
 #   «cond:cantero_arcon»     el paso del arcón, hecho con el arcón abierto o con la losa ya abierta (revisión del 14/11:
 #                            si se abría la losa sin el arcón, el Diario seguía mandando al arcón y no decía «volver»)
 static func cumple(c: String) -> bool:
@@ -139,7 +142,8 @@ static func cumple(c: String) -> bool:
 		return activado()
 	if c == "cond:cantero_empieza":
 		var P = _p()
-		return activado() and (P.estado(NOMBRE, "cantero_pedido") or P.estado(NOMBRE, "cerradura_abierta"))
+		return activado() and (P.estado(NOMBRE, "cantero_pedido") or P.estado(NOMBRE, "cerradura_abierta")
+			or P.estado(NOMBRE, "cerradura_cantero_abierta"))
 	if c == "cond:cantero_arcon":
 		return _p().estado(NOMBRE, "cerradura_abierta") or _p().estado(NOMBRE, "cerradura_cantero_abierta")
 	push_warning("Propuestas de Oakhaven: condición desconocida «%s»" % c)
@@ -168,8 +172,10 @@ static func al_abrir_arcon() -> String:
 static func al_abrir_losa() -> String:
 	if not activado():
 		return ""
-	_p().poner_estado(NOMBRE, "cantero_marcas")
-	return BAJO_LOSA
+	var P = _p()
+	var nueva: bool = not (P.estado(NOMBRE, "cantero_pedido") or P.estado(NOMBRE, "cerradura_abierta"))
+	P.poner_estado(NOMBRE, "cantero_marcas")
+	return BAJO_LOSA + (" Misión: %s." % MISIONES[0]["nombre"] if nueva else "")
 
 
 # Las señales «oak:cantero_…»: el encargo del aprendiz, las marcas (cada una una vez; con las tres, «cantero_marcas»)
