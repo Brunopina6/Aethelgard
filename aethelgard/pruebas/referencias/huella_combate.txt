@@ -419,9 +419,9 @@ bolsa · oro 150→150 · Poción 5→5 · Éter 3→3
 partida · combates_ganados {  } · decisiones {  } · Armonía 0.60 · velocidad 1.00
 
 == E8_gorthor · grupo 5 · nivel 7 · zona garganta · jefe · semilla 20269109
-00000 inicio · Kael PV 156/156 PM 28/28 ATQ 18 VEL 23 DEF 9 · Lya PV 115/116 PM 58/58 ATQ 10 VEL 26 DEF 7 · Garon PV 204/204 PM 22/22 ATQ 50 VEL 16 DEF 12 · Gorthor el Devorador PV 460/460 ATQ 22 VEL 10 ATB 20.861
+00000 inicio · Kael PV 156/156 PM 28/28 ATQ 18 VEL 23 DEF 9 · Lya PV 116/116 PM 58/58 ATQ 10 VEL 26 DEF 7 · Garon PV 204/204 PM 22/22 ATQ 50 VEL 16 DEF 12 · Gorthor el Devorador PV 460/460 ATQ 22 VEL 10 ATB 20.861
 00116 · (cartel vacío)
-00116 ▶ turno de Lya (PV 115/116 PM 58/58)
+00116 ▶ turno de Lya (PV 116/116 PM 58/58)
 00116   Lya: Agua → Gorthor el Devorador
 00117 · Lya lanza Agua
 00117   Δ Lya PM 58→52
@@ -442,7 +442,7 @@ partida · combates_ganados {  } · decisiones {  } · Armonía 0.60 · velocida
 00355   Δ Gorthor el Devorador PV 386→381
 00380 · ¡Gorthor el Devorador se prepara para un golpe devastador!
 00427 · (cartel vacío)
-00427 ▶ turno de Lya (PV 115/116 PM 52/58)
+00427 ▶ turno de Lya (PV 116/116 PM 52/58)
 00427   Lya: Cura → Kael
 00428 · Lya lanza Cura
 00428   Δ Lya PM 52→46
@@ -458,7 +458,7 @@ partida · combates_ganados {  } · decisiones {  } · Armonía 0.60 · velocida
 00584   Δ Garon PM 17→11
 00634   Δ Gorthor el Devorador PV 361→254
 00697 · (cartel vacío)
-00697 ▶ turno de Lya (PV 115/116 PM 46/58)
+00697 ▶ turno de Lya (PV 116/116 PM 46/58)
 00697   Lya: invoca a Érebo sobre Gorthor el Devorador (Armonía llenada por la prueba)
 00698 · Lya invoca a Érebo
 01072   Δ Gorthor el Devorador PV 254→203
