@@ -1,0 +1,15 @@
+{
+"@path": "res://addons/dialogic/Resources/character.gd",
+"@subpath": NodePath(""),
+&"_translation_id": "",
+&"color": Color(0.52, 0.66, 0.82, 1),
+&"custom_info": {},
+&"default_portrait": "",
+&"description": "Contramaestre Ulla, archivera del Águila en Sunken City (V12, 15/11, PROPUESTA: ciudades/sunken.gd, docs/diseno/ciudades_y_lugares.md §2.2). Sin retrato.",
+&"display_name": "Contramaestre Ulla",
+&"mirror": false,
+&"nicknames": [],
+&"offset": Vector2(0, 0),
+&"portraits": {},
+&"scale": 0.72
+}

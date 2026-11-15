@@ -33,6 +33,7 @@ directories/dch_directory={
 "albar": "res://dialogos/personajes/oakhaven/albar.dch",
 "aldric": "res://dialogos/personajes/aldric.dch",
 "bastian": "res://dialogos/personajes/oakhaven/bastian.dch",
+"brea": "res://dialogos/personajes/sunken/brea.dch",
 "cantero": "res://dialogos/personajes/oakhaven/cantero.dch",
 "encina": "res://dialogos/personajes/oakhaven/encina.dch",
 "ferro": "res://dialogos/personajes/oakhaven/ferro.dch",
@@ -49,7 +50,8 @@ directories/dch_directory={
 "posadera": "res://dialogos/personajes/oakhaven/posadera.dch",
 "rosa": "res://dialogos/personajes/rosa.dch",
 "selene": "res://dialogos/personajes/selene.dch",
-"tilo": "res://dialogos/personajes/tilo.dch"
+"tilo": "res://dialogos/personajes/tilo.dch",
+"ulla": "res://dialogos/personajes/sunken/ulla.dch"
 }
 directories/dtl_directory={
 "bq_arbol": "res://dialogos/bosque/bq_arbol.dtl",
@@ -170,7 +172,14 @@ directories/dtl_directory={
 "pv_14": "res://dialogos/pv_14.dtl",
 "pv_tilo": "res://dialogos/pv_tilo.dtl",
 "pv_tilo_fin": "res://dialogos/pv_tilo_fin.dtl",
-"rincon_nido": "res://dialogos/pastos/rincon_nido.dtl"
+"rincon_nido": "res://dialogos/pastos/rincon_nido.dtl",
+"sunk_brea": "res://dialogos/sunken/sunk_brea.dtl",
+"sunk_brea_despues": "res://dialogos/sunken/sunk_brea_despues.dtl",
+"sunk_brea_sello": "res://dialogos/sunken/sunk_brea_sello.dtl",
+"sunk_ulla_despues": "res://dialogos/sunken/sunk_ulla_despues.dtl",
+"sunk_ulla_fin": "res://dialogos/sunken/sunk_ulla_fin.dtl",
+"sunk_ulla_pedido": "res://dialogos/sunken/sunk_ulla_pedido.dtl",
+"sunk_ulla_pendiente": "res://dialogos/sunken/sunk_ulla_pendiente.dtl"
 }
 layout/end_behaviour=1
 layout/style_directory={}

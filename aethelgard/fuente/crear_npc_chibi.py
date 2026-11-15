@@ -1129,7 +1129,12 @@ oficio("alquimista", figura=Figura(sb=1.0, sx=0.95, st=0.95, sh=1.0, ojo=(0.17, 
                                            extra=(0.85, 0.75, 0.40), cristal=(0.40, 0.90, 0.70)),
                  "mirta": P_("media", (0.82, 0.80, 0.76), "verde", gafas=True, boca="media_sonrisa", arrugas=True,
                              ropa=(0.30, 0.46, 0.33), ropa2=(0.40, 0.28, 0.20), acento=(0.72, 0.62, 0.40),
-                             extra=(0.60, 0.40, 0.70), cristal=(0.95, 0.55, 0.35))})
+                             extra=(0.60, 0.40, 0.70), cristal=(0.95, 0.55, 0.35)),
+                 # 15/11 (PROPUESTA de Sunken City 3D, ciudades/sunken.gd): la contramaestre Ulla, archivera del Águila.
+                 # Túnica azul de marino, latón en los ribetes y el «matraz» hace de tintero (tinta azul oscura).
+                 "ulla": P_("clara", (0.46, 0.40, 0.36), "gris", gafas=True, ojos="seria", boca="plana",
+                            ropa=(0.20, 0.28, 0.38), ropa2=(0.52, 0.40, 0.26), acento=(0.80, 0.66, 0.36),
+                            extra=(0.62, 0.48, 0.30), cristal=(0.16, 0.20, 0.36))})
 
 
 # --- guardia de Oakhaven: tabardo con el roble, casco de ala, lanza ----------------------------------------------------
@@ -1307,7 +1312,12 @@ oficio("viajero", figura=Figura(sb=1.02, sx=1.0, st=1.0, sh=0.98, ojo=(0.17, 0.4
        tarea="ajustar",
        personas={"viajero_camino": P_("morena", (0.20, 0.14, 0.10), "ambar", ojos="cansada", boca="media_sonrisa",
                                       ropa=(0.36, 0.42, 0.30), ropa2=(0.55, 0.45, 0.32), acento=(0.75, 0.6, 0.35),
-                                      cuero=(0.45, 0.30, 0.18))})
+                                      cuero=(0.45, 0.30, 0.18)),
+                 # 15/11 (PROPUESTA de Sunken City 3D, ciudades/sunken.gd): la capitana Brea, de la Compañía del Águila.
+                 # Capa y capucha carmesí (el color de la bandera del Águila), casaca azul de marino y ribetes de oro.
+                 "brea": P_("morena", (0.70, 0.30, 0.12), "ambar", ojos="alegre", boca="risa", pecas=True,
+                            ropa=(0.62, 0.17, 0.17), ropa2=(0.20, 0.26, 0.42), acento=(0.92, 0.74, 0.36),
+                            cuero=(0.42, 0.28, 0.16))})
 
 
 # --- barrendero: delantal largo, pañuelo, escoba --------------------------------------------------------------------------------

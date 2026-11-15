@@ -5,7 +5,8 @@
  "vertices": 3187,
  "huesos": 22,
  "personas": [
-  "viajero_camino"
+  "viajero_camino",
+  "brea"
  ],
  "tarea": "ajustar",
  "agarra": "R",

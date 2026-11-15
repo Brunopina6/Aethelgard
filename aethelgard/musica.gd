@@ -30,6 +30,9 @@ const CONTEXTOS := {
 	# V12, el Mar de Cristal (sonido_v12_desierto.md §2): el viento en calma y la tormenta de arena (clima.gd los alterna)
 	"mar_cristal": {"musica": "", "ambiente": "res://audio/desierto/viento.ogg", "db": -13.0},
 	"tormenta_arena": {"musica": "", "ambiente": "res://audio/desierto/tormenta.ogg", "db": -9.0},
+	# V12 (15/11): Sunken City 3D, el puerto en la laguna: el viento suave de la costa (no hay olas ni gaviotas en audio/:
+	# pendiente). El agua, la madera y el mercado los pone la escena (Sonido.fuente_3d / fuente_linea).
+	"puerto": {"musica": "", "ambiente": AMB + "viento.wav", "db": -15.0},
 	# V12 (11/11): «REBELUM — When the World Forgets», la canción del usuario (Suno Pro, incluida con su permiso) para la pantalla de inicio
 	# nueva, y RESERVADA para el desenlace del juego (docs/v12/MUSICA_TITULO.md). Está en Git desde el 11/11 (el usuario
 	# tiene Suno Pro y la autorizó; maestras en D:\REBELUM_musica\maestros). «privada»: si el archivo faltara en una
@@ -125,6 +128,8 @@ static func contexto_de(e: Node) -> String:
 			return "mar_cristal"
 		"res://zonas3d/gran_bosque_3d.tscn":                     # V12, fase D: el Gran Bosque Verde 3D, el ambiente del bosque de la 2D
 			return "bosque"
+		"res://zonas3d/sunken_3d.tscn":                          # V12 (15/11): Sunken City 3D, en pruebas
+			return "puerto"
 		"res://ciudad_oakhaven.tscn", "res://zonas3d/oakhaven_3d.tscn":   # Oakhaven hecha a mano (T-089) y la 3D (T-103): el ambiente
 			return "ciudad"                            # de las ciudades, como la Oakhaven generada (sus sonidos: fuente_2d)
 		"res://zona.tscn":

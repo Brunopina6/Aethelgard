@@ -1,0 +1,4 @@
+ulla: Contramaestre Ulla, Archivo del Águila. Aquí cada cosa tiene su cajón, y los contratos se cumplen.
+ulla: El de amarre de este muelle vence hoy. Sin el sello de la capitana Brea, no vale nada.
+ulla: Y la capitana pierde el sello cada semana. ¿Se lo pedís? Está en la Cubierta Mayor.
+[signal arg="sunk:sello_pedido"]

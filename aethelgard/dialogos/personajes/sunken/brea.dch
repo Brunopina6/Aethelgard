@@ -1,0 +1,15 @@
+{
+"@path": "res://addons/dialogic/Resources/character.gd",
+"@subpath": NodePath(""),
+&"_translation_id": "",
+&"color": Color(0.88, 0.42, 0.38, 1),
+&"custom_info": {},
+&"default_portrait": "",
+&"description": "Capitana Brea, de la Compañía del Águila en Sunken City (V12, 15/11, PROPUESTA de la v2: ciudades/sunken.gd, docs/diseno/ciudades_y_lugares.md §2.2). Sin retrato.",
+&"display_name": "Capitana Brea",
+&"mirror": false,
+&"nicknames": [],
+&"offset": Vector2(0, 0),
+&"portraits": {},
+&"scale": 0.72
+}
