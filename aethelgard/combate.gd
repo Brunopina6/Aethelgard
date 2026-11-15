@@ -5430,6 +5430,12 @@ func _invocar_sobre(obj: Dictionary) -> void:
 	var VID = load("res://invocacion_erebo_video.gd") if ResourceLoader.exists("res://invocacion_erebo_video.gd") else null
 	var ruta_vid: String = VID.ruta_para_ahora() if VID != null else ""
 	var visto_video := false
+	# V12, Érebo híbrida (15/11): opción de Auditoría APAGADA por defecto (invocacion_erebo_hibrida.gd, valor «Híbrida» del
+	# mismo selector; con ella ruta_vid es ""). Señala al enemigo, Érebo le extrae un corazón espectral en tiempo real
+	# y sigue el ritual del vídeo. El mismo dado (antes de los efectos), el mismo ATB y el resultado UNA vez (al_resultado).
+	var HIB = load("res://invocacion_erebo_hibrida.gd") if ResourceLoader.exists("res://invocacion_erebo_hibrida.gd") else null
+	if HIB != null and HIB.activa() and ResourceLoader.exists("res://erebo_idle.fbx"):
+		visto_video = await HIB.invocar(self, obj, es_jefe, al_resultado)
 	if ruta_vid != "":
 		var nueva_sel: bool = ResourceLoader.exists("res://invocacion_erebo_nueva.gd") and load("res://invocacion_erebo_nueva.gd").elegida()
 		var pausa_v: bool = AnimV12.pausa_atb()
