@@ -1,7 +1,7 @@
 extends SceneTree
 # V12 (14/11/2026): el BANCO DE PRUEBAS de Auditoría (banco_pruebas.gd). Sin ventana, con datos aislados.
 #   A. Al entrar: la partida va a su archivo propio, se rehace desde BASE (Kael, Lya y Garon en Oakhaven) y la pantalla
-#      tiene sus 6 selectores de variantes y sus 7 casos (5 combates y 2 exploraciones).
+#      tiene sus 7 selectores de variantes (V12, Érebo híbrida: «Érebo: invocación») y sus 7 casos (5 combates y 2 exploraciones).
 #   B. Combates: cada caso fija su grupo y sus enemigos; Érebo con la Armonía llena (y solo Lya puede invocar); vida de
 #      los enemigos multiplicada; el Custodio aparece con su interruptor de sesión; Nix entra solo en su caso.
 #   C. Nada permanente: lo ganado en un combate (oro, experiencia, objetos, contratos) desaparece al volver al banco.
@@ -93,10 +93,10 @@ func _a() -> void:
 		elif ":" in k:
 			selectores[k.get_slice(":", 0)] = true
 	_ok(casos == BP.COMBATES.size() + BP.EXPLORAR.size() and casos == 9, "A: %d casos en pantalla" % casos)
-	_ok(selectores.size() == 6, "A: %d selectores (%s)" % [selectores.size(), str(selectores.keys())])
+	_ok(selectores.size() == 7, "A: %d selectores (%s)" % [selectores.size(), str(selectores.keys())])
 	b.queue_free()
 	await _esperar(2)
-	hechos.append("A: archivo propio, grupo de partida, 6 selectores y 7 casos")
+	hechos.append("A: archivo propio, grupo de partida, 7 selectores y 7 casos")
 
 
 func _botones(n: Node) -> Array:
