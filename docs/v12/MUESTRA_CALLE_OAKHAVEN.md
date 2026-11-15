@@ -324,6 +324,29 @@ aplicados (decisión del usuario): compilar los sombreados de la muestra en la c
 la pantalla de carga, solo tras instalar) y, para la CPU, guardar la luz del json entre entradas y unir los 41 choques
 (cada fase pesa 6-18 ms en el teléfono).
 
+## 7.d Cierre de las optimizaciones de la entrada (15/11, noche; autorizadas)
+
+Medidas en el PC (RTX 3050 Laptop, Compatibility, ventana 1600×720, perfil BAJO = 3D ×0,75). Datos en
+`D:\REBELUM_diagnostico\muestra_calle_15_11\remedios\` y en las salidas de `pruebas/medir_*`. Ninguna en el Redmi:
+la APK con estas optimizaciones queda PENDIENTE de instalar y medir (el usuario lo instala; no se pidió esta noche).
+
+| Optimización | Resultado medido | Decisión |
+|---|---|---|
+| Precalentar los programas de la calle en la CARGA de la app (`precalentar_en`; solo Auditoría/editor) | 1.ª entrada con la caché de sombreadores vacía: dibujo 134 → 57 ms y +9 → +3 programas compilados al entrar (los 3 que quedan no son de la calle). Entrada normal (caché hecha): 42 ms. Coste en la carga: con caché, fase de sombreadores +≈57 ms (577-609 frente a 492-551 ms), tiempo TOTAL de carga igual (6,4-6,5 s); en frío, fase +1,3 s (2,0 frente a 0,7 s) y total 8,2 frente a 8,1 s; memoria al acabar la carga igual (vídeo 330,7-332,7 MB) | SE QUEDA. La revisión independiente encontró que la ventana del precalentado no copiaba la escala 3D/MSAA del perfil (otra variante del programa): corregido antes de medir |
+| Comprobar que el precalentado DIBUJA de verdad | El recuento de la caché del driver crece durante el precalentado (4 → 10) y no en la entrada; la entrada dibuja en 57 ms (sin él, 134 ms). Pendiente en el Redmi: con caché vacía (tras instalar) el primer dibujo debería bajar de 1,26 s | Verificado en PC; móvil PENDIENTE |
+| Reutilizar los materiales entre entradas | Fase «materiales y mapa de luz»: 15,2-16,1 ms → 0,1 ms (medianas de 11 entradas, 2 tandas) | SE QUEDA; las cachés se sueltan al salir del banco (no llegan al apagado: cierre 0xC0000005 abierto) |
+| Leer la luz del json una vez por proceso | Fase «luz.json»: 1,1-1,5 ms → 0,0 ms en el PC (6-18 ms en el Redmi antes) | SE QUEDA; se suelta al salir del banco |
+| Un solo cuerpo para los 41 choques | 0,9-1,0 ms frente a 0,6 ms con un cuerpo por caja (2 tandas): SIN mejora | DESCARTADA: vuelve el código anterior (un cuerpo por caja), idéntico al aprobado; puertas, escalones, callejón y límites, como antes (prueba pasos 4-5) |
+| Precalentar el RECORRIDO (interruptor del banco) | En el Redmi no aportó (la 1.ª vuelta ya salía limpia) y añade 328 ms en negro | APAGADO, no se propone |
+
+Coste total de la entrada a la muestra en el PC tras todo esto (caché hecha, 11 entradas): fases del _ready ≈ 75 ms,
+de las que ≈ 64 ms son crear a Kael, la cámara, el panel y el regulador (vista3d), que no es de la muestra.
+
+**Batería tras el cierre (`7c8da75`, 2026-11-15_232926): 188 · 1 · 109 · 0.** La fallida es `prueba_audio` (primera
+pulsación en Música: 124 ms frente a 100), intermitente y conocida: repetida suelta con el PC libre falla 3 de 8 veces
+(104 ms) y su peor fotograma vale 82-89 ms con el código de hoy y 79-91 ms con el `menus.gd` anterior (47e8cb1) → sin
+regresión de estos cambios. No se valida con etiqueta esta batería (no está limpia); queda la de `02079bb`.
+
 ## 8. PENDIENTE
 
 - Medida en el Redmi: HECHA (30 FPS sostenidos en el bajo; `REDMI_15_11.md`). Quedan para el usuario: Kael muy azul en
