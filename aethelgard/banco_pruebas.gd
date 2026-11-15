@@ -30,7 +30,8 @@ const NIVEL_COMBATE := 12                         # con todas las magias (grupo.
 const METAS_SESION := ["meshy_e01", "banco_caso", "nix_v12", "oakhaven_propuestas_v12",
 	"oak_franja", "oak_franja_t", "comentarios_dichos",   # (y la hora de Oakhaven y los comentarios ya dichos: de la sesión)
 	"banco_grupo4",                                   # (15/11: el permiso de cuatro activos, grupo.gd max_activos)
-	"calidad_sesion", "banco_proto"]                  # (15/11: [calidad] de la sesión rehecha en cada caso; un banco de medida a medias no sigue)
+	"calidad_sesion", "banco_proto",                  # (15/11: [calidad] de la sesión rehecha en cada caso; un banco de medida a medias no sigue)
+	"barrio_v12", "barrio_interior", "barrio_reloj"]  # (16/11: el barrio experimental: activado, su interior tras CAL y su reloj)
 # Calidad elegida en la sesión (CAL, el selector «Calidad 3D», los bancos A/B de vista3d): sigue entre los casos de la
 # sesión y se quita SOLO al salir.
 const METAS_CALIDAD := ["calidad_proto", "calidad_extra", "muestra_precalentar"]
@@ -101,6 +102,12 @@ const EXPLORAR := {
 	"muestra_calle": {"titulo": "Muestra gráfica: una calle de Oakhaven (en pruebas)", "activos": ["Kael"],
 		"escena": "res://zonas3d/muestra_calle/muestra_calle.tscn",
 		"nota": "Kael andando por una calle hecha de nuevo (tarde dorada horneada). CAL cambia el perfil; RND mide."},
+	# 16/11: BARRIO EXPERIMENTAL de Oakhaven (zonas3d/barrio/, docs/v12/BARRIO_OAKHAVEN.md): la calle ampliada a un
+	# bucle jugable. SOLO aquí (se activa a sí mismo con la meta de sesión «barrio_v12»); fase 0: bloques provisionales,
+	# sin interiores, vecinos ni misión todavía.
+	"barrio": {"titulo": "Barrio de Oakhaven (en pruebas)", "activos": ["Kael", "Lya", "Garon"],
+		"escena": "res://zonas3d/barrio/barrio.tscn",
+		"nota": "Bloques provisionales: caravanas, calle comercial, plaza, talleres, casas y atajo. Las puertas, en obras."},
 }
 
 var cuerpo: VBoxContainer
@@ -180,6 +187,9 @@ static func salir() -> void:
 			Engine.remove_meta(k)
 	if ResourceLoader.has_cached("res://zonas3d/muestra_calle/muestra_calle.gd"):   # (15/11) sus cachés, fuera
 		load("res://zonas3d/muestra_calle/muestra_calle.gd").soltar_caches()
+	for r in ["res://zonas3d/barrio/barrio.gd", "res://zonas3d/barrio/interiores.gd", "res://zonas3d/barrio/barrio_vivo.gd"]:
+		if ResourceLoader.has_cached(r):           # (16/11) las del barrio experimental, igual
+			load(r).soltar_caches()
 	var d := DirAccess.open("user://")             # (15/11) las medidas de RND y PRUEBA de la sesión (vista3d._ruta_medida)
 	if d != null:
 		for f in d.get_files():
