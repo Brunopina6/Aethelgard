@@ -331,8 +331,9 @@ func _marcas_primero() -> void:
 	var mis: Dictionary = E.de("prop_cantero")
 	_limpiar()
 	Engine.set_meta(INTERRUPTOR, true)
-	Oak.aplicar_senal("oak:cantero_marca_2")
+	var t: String = Oak.aplicar_senal("oak:cantero_marca_2")
 	_ok(E.estado(mis) == "oculto", "3d: una marca suelta empieza la misión")
+	_ok("(1 de 3)" in t and not "Diario" in t, "3d: una marca suelta dice que se apunta en el Diario («%s»)" % t)
 	_guardar_y_cargar("con una marca vista antes de empezar")
 	Oak.aplicar_senal("oak:cantero_pedido")
 	_ok(E.estado(mis) == "activo" and E.paso_actual(mis).get("id", "") == "arcon", "3d: tras el encargo, el paso no es el arcón")
@@ -461,7 +462,7 @@ func _en_3d() -> void:
 		_ok(vida.piezas().any(func(x): return x[0] == "pieza:" + p["id"]), "5: la 3D no ofrece %s" % p["id"])
 	vida.usar_pieza("oak_marca_torre")
 	await _esperar(2)
-	_ok(P.estado(Oak.NOMBRE, "cantero_marca_1") and vida.ultimo_aviso.contains("Marca del cantero (1 de 3)"),
+	_ok(P.estado(Oak.NOMBRE, "cantero_marca_1") and vida.ultimo_aviso.contains("(1 de 3)"),
 		"5: la marca de la torre no se apunta («%s»)" % vida.ultimo_aviso)
 	vida.usar_pieza(LOSA)
 	await _esperar(3)

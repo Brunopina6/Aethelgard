@@ -868,7 +868,8 @@ func _brazalete(p: Vector3) -> void:
 			cosas.append([d["id"], sitio(SITIO_3D.get(d["id"], Oak.SITIOS_DETALLE.get(d["id"], Oak.PLAZA)))])
 	if not Progreso.estado(Oak.NOMBRE, "grieta"):
 		cosas.append(["grieta", sitio(_secreto("oak_secreto_velas")["casilla"])])
-	if Propuestas.cumple("cond:cantero_empieza"):              # V12, PROPUESTA: las marcas del cantero que faltan
+	if Propuestas.cumple("cond:cantero_empieza") and not Progreso.estado(Oak.NOMBRE, "cerradura_cantero_abierta"):
+		# V12, PROPUESTA: las marcas del cantero que faltan (15/11: con la losa ya abierta no hacen falta y no brillan)
 		for pz in Propuestas.piezas():
 			var sen := str(pz["senal"]).trim_prefix("oak:")
 			if sen.begins_with("cantero_marca_") and not Progreso.estado(Oak.NOMBRE, sen):

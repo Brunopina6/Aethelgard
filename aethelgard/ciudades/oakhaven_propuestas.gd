@@ -208,4 +208,6 @@ static func aplicar(s: String) -> String:
 		n += 1 if P.estado(NOMBRE, "cantero_marca_%d" % i) else 0
 	if n == 3:
 		P.poner_estado(NOMBRE, "cantero_marcas")
+	if not cumple("cond:cantero_empieza"):        # 15/11: sin la misión empezada no hay nada que apuntar en el Diario
+		return "Una marca tallada a propósito, con sus muescas (%d de 3). Alguien quería que se viera." % n
 	return "Marca del cantero (%d de 3). Apuntada en el Diario." % n
