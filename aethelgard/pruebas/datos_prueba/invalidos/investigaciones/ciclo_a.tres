@@ -1,0 +1,14 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://datos/tipos/investigacion.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "ciclo_a"
+taller = "alquimia"
+nombre = "Ciclo A"
+desc = "Investigación de prueba (15/11): parte de un ciclo de requisitos a propósito."
+requisitos = [{"tipo": "investigacion", "id": "ciclo_b"}]
+pasos = 1
+desbloquea = PackedStringArray()
+borrador = true

@@ -131,7 +131,59 @@ static func validar() -> Array:
 				errores.append("investigación «%s»: desbloquea la receta «%s», que no existe" % [id, rid])
 		for q in v.requisitos:
 			errores.append_array(_errores_requisito(id, q, claves, invs))
+	for ciclo in ciclos_investigacion(invs):          # 15/11: A → B → A y ciclos más largos
+		errores.append("investigaciones en ciclo de requisitos: %s" % " → ".join(ciclo + [ciclo[0]]))
 	return errores
+
+
+# 15/11 (auditoría externa): los ciclos de requisitos «investigacion» (A pide B, B pide A, o más largos). Cada ciclo,
+# con sus ids en orden (sin repetir el primero), y cada uno una sola vez. Una que se pide a sí misma también es un
+# ciclo. Búsqueda en profundidad con «en curso» / «hecho».
+static func ciclos_investigacion(invs: Dictionary) -> Array:
+	var marca := {}
+	var ciclos: Array = []
+	var vistos := {}
+	var ids: Array = invs.keys()
+	ids.sort()
+	for id in ids:
+		_visitar(str(id), invs, marca, [], ciclos, vistos)
+	return ciclos
+
+
+static func _visitar(id: String, invs: Dictionary, marca: Dictionary, camino: Array, ciclos: Array, vistos: Dictionary) -> void:
+	if int(marca.get(id, 0)) == 2:
+		return
+	if int(marca.get(id, 0)) == 1:
+		var ciclo: Array = camino.slice(camino.find(id))
+		var clave := ciclo.duplicate()
+		clave.sort()
+		if not vistos.has(str(clave)):
+			vistos[str(clave)] = true
+			ciclos.append(ciclo)
+		return
+	marca[id] = 1
+	camino.append(id)
+	var v = invs.get(id)
+	if v != null:
+		for q in v.requisitos:
+			if q is Dictionary and str(q.get("tipo", "")) == "investigacion" and invs.has(str(q.get("id", ""))):
+				_visitar(str(q.get("id", "")), invs, marca, camino, ciclos, vistos)
+	camino.pop_back()
+	marca[id] = 2
+
+
+# Los ids que están en algún ciclo (investigacion.gd los da por bloqueados sin recorrerlos: así no se cuelga aunque
+# un dato mal escrito llegue a la APK). Se calcula una vez por catálogo cargado.
+static func en_ciclo(id: String) -> bool:
+	if not _cache.has("_en_ciclo"):
+		var malos := {}
+		for c in ciclos_investigacion(todos("investigaciones")):
+			for x in c:
+				malos[x] = true
+		if not malos.is_empty():
+			push_error("Catálogo: investigaciones en ciclo de requisitos: %s" % str(malos.keys()))
+		_cache["_en_ciclo"] = malos
+	return _cache["_en_ciclo"].has(id)
 
 
 static func _errores_requisito(id: String, q, claves: Dictionary, invs: Dictionary) -> Array:

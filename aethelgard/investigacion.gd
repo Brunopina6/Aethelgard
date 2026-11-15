@@ -29,6 +29,8 @@ static func faltan(id: String) -> Array:
 	var v := _datos(id)
 	if v == null:
 		return ["No existe esa investigación."]
+	if Catalogo.en_ciclo(id):                         # 15/11: un ciclo de requisitos no se recorre (se colgaría)
+		return ["Sus requisitos se piden en círculo: no se puede empezar."]
 	var r: Array = []
 	for q in v.requisitos:
 		match str(q.get("tipo", "")):

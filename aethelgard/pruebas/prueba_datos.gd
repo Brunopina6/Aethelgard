@@ -81,7 +81,21 @@ func _invalidos() -> void:
 			"la investigación «no_existe» no existe", "receta «vacia»: no gasta ningún material",
 			"sin resultado", "requisito no válido", "requisito de nivel no válido", "requisito de material no válido",
 			"requiere «circular», que no existe o es ella misma", "receta «receta_fantasma», que no existe",
-			"pasos no positivos"]:
+			"pasos no positivos",
+			# 15/11: ciclos de requisitos (de dos y de tres) y la que se pide a sí misma
+			"investigaciones en ciclo de requisitos: ciclo_a → ciclo_b → ciclo_a",
+			"investigaciones en ciclo de requisitos: ciclo_x → ciclo_y → ciclo_z → ciclo_x",
+			"investigaciones en ciclo de requisitos: circular → circular"]:
 		if not texto.contains(esperado):
 			_fallo("3: no se detecta «%s»" % esperado)
 	print("Errores detectados en los datos con fallos a propósito:\n", texto)
+	# 15/11: en el juego, una investigación en ciclo se da por bloqueada sin recorrer el ciclo (antes: recursión infinita)
+	var I = load("res://investigacion.gd")
+	for id in ["ciclo_a", "ciclo_y", "circular"]:
+		if not C.en_ciclo(id) or I.estado(id) != "bloqueada" or not " ".join(I.faltan(id)).contains("círculo"):
+			_fallo("3: «%s», en ciclo, no se da por bloqueada (%s)" % [id, I.faltan(id)])
+	if C.en_ciclo("vacia"):
+		_fallo("3: una investigación fuera de ciclo sale en un ciclo")
+	C.usar_raiz("res://datos/")
+	if not C.ciclos_investigacion(C.todos("investigaciones")).is_empty():
+		_fallo("3: las investigaciones reales tienen ciclos: %s" % [C.ciclos_investigacion(C.todos("investigaciones"))])
