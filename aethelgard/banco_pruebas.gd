@@ -16,6 +16,10 @@ extends Control
 #     prueba) y vuelve a la pantalla de carga: al tocar, se carga la partida de siempre, intacta.
 #   - Los selectores de variantes escriben en user://ajustes.cfg, como los de Ajustes: son preferencias de Auditoría,
 #     no partida.
+#   - V12 (15/11, encargo del usuario): la CALIDAD es de la sesión. El regulador adaptable, la detección y Ajustes >
+#     Calidad trabajan sobre una copia en memoria de [calidad] (prototipos/calidad_auto.gd, aislada()): ni ajustes.cfg
+#     ni calidad.log cambian. CAL, el selector «Calidad 3D» y los bancos de medida de vista3d (metas de METAS_CALIDAD) se
+#     quitan al salir, y las medidas de RND/PRUEBA van a user://banco_pruebas_*.csv, que también se borran al salir.
 
 const ARCHIVO := "user://banco_pruebas.save"
 const META := "banco_pruebas"
@@ -25,7 +29,11 @@ const NIVEL_COMBATE := 12                         # con todas las magias (grupo.
 # Interruptores que el banco enciende solo para su sesión (Engine): se quitan al salir.
 const METAS_SESION := ["meshy_e01", "banco_caso", "nix_v12", "oakhaven_propuestas_v12",
 	"oak_franja", "oak_franja_t", "comentarios_dichos",   # (y la hora de Oakhaven y los comentarios ya dichos: de la sesión)
-	"banco_grupo4"]                                   # (15/11: el permiso de cuatro activos, grupo.gd max_activos)
+	"banco_grupo4",                                   # (15/11: el permiso de cuatro activos, grupo.gd max_activos)
+	"calidad_sesion", "banco_proto"]                  # (15/11: [calidad] de la sesión rehecha en cada caso; un banco de medida a medias no sigue)
+# Calidad elegida en la sesión (CAL, el selector «Calidad 3D», los bancos A/B de vista3d): sigue entre los casos de la
+# sesión y se quita SOLO al salir.
+const METAS_CALIDAD := ["calidad_proto", "calidad_extra"]
 const Estilo := preload("res://estilo.gd")
 
 # La partida de partida del banco: el grupo recién llegado a Oakhaven (la del Redmi del 11/11, cmp_oakhaven).
@@ -162,10 +170,15 @@ static func preparar_combate(c) -> void:
 # se cargue es la partida de siempre.
 static func salir() -> void:
 	var P = load("res://progreso.gd")
-	for k in P.CLAVES + METAS_SESION + [META, "archivo_partida_prueba", "partida_lista", "grupo_combate", "combate_fijo",
-			"tipo_combate", "desde_mapa", "escena_retorno", "zona"]:
+	for k in P.CLAVES + METAS_SESION + METAS_CALIDAD + [META, "archivo_partida_prueba", "partida_lista", "grupo_combate",
+			"combate_fijo", "tipo_combate", "desde_mapa", "escena_retorno", "zona"]:
 		if Engine.has_meta(k):
 			Engine.remove_meta(k)
+	var d := DirAccess.open("user://")             # (15/11) las medidas de RND y PRUEBA de la sesión (vista3d._ruta_medida)
+	if d != null:
+		for f in d.get_files():
+			if f.begins_with("banco_pruebas_") and f.ends_with(".csv"):
+				d.remove(f)
 	for extra in ["", ".bak", ".tmp", ".danada", ".bak.danada"]:
 		if FileAccess.file_exists(ARCHIVO + extra):
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(ARCHIVO + extra))
@@ -237,12 +250,29 @@ func _pintar() -> void:
 	var OP = load("res://ciudades/oakhaven_propuestas.gd")
 	_selector("Misión del cantero (solo en el banco)", "cantero", OP.activado(), [[false, "Apagada"], [true, "Activa"]],
 		func(v): Engine.set_meta("oakhaven_propuestas_v12", v))   # solo de sesión: al salir del banco se quita
+	# V12 (15/11): calidad 3D de la sesión, para medir en el teléfono con la resolución FIJA (el perfil en uso tal cual,
+	# sin regulador ni recortes; en «bajo», 3D ×0,75) o con el regulador normal (que puede bajarla). Solo de sesión.
+	var CP = load("res://prototipos/calidad_proto.gd")
+	var fija := Engine.has_meta("calidad_proto")
+	var pf: String = str(Engine.get_meta("calidad_proto")) if fija else CP.actual()
+	_selector("Calidad 3D (solo en el banco)", "regulador", fija, [[false, "Regulador normal"],
+		[true, "Fija: %s · 3D ×%.2f" % [pf, float(CP.PERFILES.get(pf, CP.PERFILES["bajo"])["escala_3d"])]]], _elegir_calidad_fija)
 	cuerpo.add_child(_texto("Combates de prueba (al terminar se vuelve aquí)", 24, Estilo.ORO))
 	for k in COMBATES:
 		_caso(k, COMBATES[k], _combate.bind(k))
 	cuerpo.add_child(_texto("Exploración de prueba (para volver: el botón «Volver al banco», arriba a la izquierda)", 24, Estilo.ORO))
 	for k in EXPLORAR:
 		_caso(k, EXPLORAR[k], _explorar.bind(k))
+
+
+# «Fija»: el perfil que usaría el regulador, tal cual, sin recortes ni regulador (como CAL). «Regulador normal»: sin meta.
+func _elegir_calidad_fija(fija: bool) -> void:
+	var perfil: String = load("res://prototipos/calidad_proto.gd").actual()
+	for m in METAS_CALIDAD:
+		if Engine.has_meta(m):
+			Engine.remove_meta(m)
+	if fija:
+		Engine.set_meta("calidad_proto", perfil)
 
 
 func _selector(nombre: String, clave: String, actual, opciones: Array, elegir: Callable) -> void:

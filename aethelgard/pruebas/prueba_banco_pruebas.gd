@@ -1,7 +1,7 @@
 extends SceneTree
 # V12 (14/11/2026): el BANCO DE PRUEBAS de Auditoría (banco_pruebas.gd). Sin ventana, con datos aislados.
 #   A. Al entrar: la partida va a su archivo propio, se rehace desde BASE (Kael, Lya y Garon en Oakhaven) y la pantalla
-#      tiene sus 7 selectores de variantes (V12, Érebo híbrida: «Érebo: invocación») y sus 10 casos (7 combates y 3
+#      tiene sus 8 selectores (15/11: + «Calidad 3D») (V12, Érebo híbrida: «Érebo: invocación») y sus 10 casos (7 combates y 3
 #      exploraciones; 15/11: + «Grupo de cuatro»).
 #   B. Combates: cada caso fija su grupo y sus enemigos; Érebo con la Armonía llena (y solo Lya puede invocar); vida de
 #      los enemigos multiplicada; el Custodio aparece con su interruptor de sesión; Nix entra solo en su caso.
@@ -14,6 +14,10 @@ extends SceneTree
 #   E. Salir del banco: sin partida en memoria, sin interruptores de sesión, sin su archivo y sin la etiqueta.
 #   F. Fuera del banco: el gancho del combate no hace nada; en Ajustes no sale «Volver al banco de pruebas» (dentro, sí).
 #   G. Los selectores escriben en Ajustes lo mismo que la pestaña Ajustes (y la misión del cantero se enciende con él).
+#   I. (15/11) La CALIDAD es de la sesión: dentro del banco, lo que el regulador o Ajustes guardan en [calidad] y lo que
+#      se registra NO llega a user://ajustes.cfg ni a user://calidad.log (calidad_auto.gd, aislada()), pero sí se aplica
+#      (el escalón baja la escala 3D); cada caso empieza con los ajustes reales; el selector «Calidad 3D» fija el perfil
+#      (bajo: 3D ×0,75) o lo deja al regulador; al salir no queda ninguna meta de calidad ni CSV de medida del banco.
 
 const BP_RUTA := "res://banco_pruebas.gd"
 var BP
@@ -61,6 +65,7 @@ func _probar() -> void:
 	await _f()
 	_g()
 	await _h()
+	await _i()
 	await _e()
 	for r in reales:
 		_ok(_huella(r) == reales[r], "D: la partida de siempre %s cambió" % r)
@@ -97,7 +102,7 @@ func _a() -> void:
 		elif ":" in k:
 			selectores[k.get_slice(":", 0)] = true
 	_ok(casos == BP.COMBATES.size() + BP.EXPLORAR.size() and casos == 11, "A: %d casos en pantalla" % casos)   # (15/11: + la muestra de la calle)
-	_ok(selectores.size() == 7, "A: %d selectores (%s)" % [selectores.size(), str(selectores.keys())])
+	_ok(selectores.size() == 8, "A: %d selectores (%s)" % [selectores.size(), str(selectores.keys())])
 	b.queue_free()
 	await _esperar(2)
 	hechos.append("A: archivo propio, grupo de partida, 7 selectores y %d casos" % casos)
@@ -329,10 +334,54 @@ func _e() -> void:
 	BP.salir()
 	_ok(not BP.en_banco() and P.archivo() != BP.ARCHIVO, "E: al salir, la partida sigue yendo al banco")
 	_ok(not FileAccess.file_exists(BP.ARCHIVO), "E: al salir queda el archivo del banco")
-	for k in ["meshy_e01", "banco_caso", "nix_v12", "oakhaven_propuestas_v12", "oak_franja", "grupo", "inventario", "partida_lista", "archivo_partida_prueba", G.META_GRUPO4]:
+	for k in ["meshy_e01", "banco_caso", "nix_v12", "oakhaven_propuestas_v12", "oak_franja", "grupo", "inventario", "partida_lista", "archivo_partida_prueba", G.META_GRUPO4,
+			"calidad_sesion", "calidad_proto", "calidad_extra", "banco_proto"]:
 		_ok(not Engine.has_meta(k), "E: al salir queda «%s» en la sesión" % k)
 	hechos.append("E: salir deja la sesión sin partida, sin interruptores y sin el archivo del banco")
 	await _esperar(1)
+
+
+# ================================================================= I (la calidad, de la sesión: 15/11)
+func _i() -> void:
+	var Auto = load("res://prototipos/calidad_auto.gd")
+	var Cal = load("res://prototipos/calidad_proto.gd")
+	var h_aj := _huella(Auto.AJUSTES)
+	var h_log := _huella(Auto.REGISTRO)
+	BP.preparar_partida()
+	_ok(Auto.aislada(), "I: dentro del banco, la calidad no está aislada")
+	Auto.guardar({"auto": true, "perfil": "bajo", "perfil_auto": "bajo", "calibrado": true, "nivel": 1, "nivel_de": "bajo"})
+	Auto.registrar("prueba del banco (no debe llegar a calidad.log)")
+	_ok(int(Auto.estado()["nivel"]) == 1, "I: el escalón guardado en la sesión no se lee (%s)" % str(Auto.estado()["nivel"]))
+	_ok(is_equal_approx(float(Cal.datos()["escala_3d"]), 0.70), "I: con el escalón 1, la escala 3D no es 0,70 (%s)" % str(Cal.datos()["escala_3d"]))
+	_ok(_huella(Auto.AJUSTES) == h_aj, "I: guardar [calidad] dentro del banco cambió user://ajustes.cfg")
+	_ok(_huella(Auto.REGISTRO) == h_log, "I: registrar dentro del banco cambió user://calidad.log")
+	BP.preparar_partida()                          # el caso siguiente empieza con los ajustes reales
+	_ok(int(Auto.estado()["nivel"]) == int(Auto.estado_de(Auto._cargar(Auto.AJUSTES))["nivel"]), "I: el escalón de un caso pasa al siguiente")
+	var b = load(BP.ESCENA).instantiate()          # (al abrirse, el banco rehace la sesión: el escalón se pone después)
+	root.add_child(b)
+	await _esperar(2)
+	Auto.guardar({"auto": true, "perfil": "bajo", "perfil_auto": "bajo", "calibrado": true, "nivel": 1, "nivel_de": "bajo"})
+	b._elegir_calidad_fija(true)
+	_ok(str(Engine.get_meta("calidad_proto", "")) == "bajo" and is_equal_approx(float(Cal.datos()["escala_3d"]), 0.75),
+		"I: «Fija» no deja el perfil tal cual (meta %s, escala %s)" % [str(Engine.get_meta("calidad_proto", "")), str(Cal.datos()["escala_3d"])])
+	b._elegir_calidad_fija(false)
+	_ok(not Engine.has_meta("calidad_proto") and is_equal_approx(float(Cal.datos()["escala_3d"]), 0.70),
+		"I: «Regulador normal» no vuelve al escalón de la sesión (escala %s)" % str(Cal.datos()["escala_3d"]))
+	b.queue_free()
+	await _esperar(1)
+	Engine.set_meta("calidad_proto", "medio")
+	Engine.set_meta("calidad_extra", {})
+	Engine.set_meta("banco_proto", {})
+	var csv := FileAccess.open("user://banco_pruebas_rendimiento_x.csv", FileAccess.WRITE)
+	csv.store_line("x")
+	csv.close()
+	BP.salir()
+	for k in ["calidad_sesion", "calidad_proto", "calidad_extra", "banco_proto"]:
+		_ok(not Engine.has_meta(k), "I: al salir queda «%s»" % k)
+	_ok(not FileAccess.file_exists("user://banco_pruebas_rendimiento_x.csv"), "I: al salir queda el CSV de medida del banco")
+	_ok(not Auto.aislada(), "I: fuera del banco la calidad sigue aislada")
+	_ok(_huella(Auto.AJUSTES) == h_aj and _huella(Auto.REGISTRO) == h_log, "I: al salir, ajustes.cfg o calidad.log cambiaron")
+	hechos.append("I: la calidad es de la sesión: el escalón se aplica sin tocar ajustes.cfg ni calidad.log, cada caso empieza limpio, «Calidad 3D» fija bajo ×0,75 o deja al regulador, y salir no deja nada")
 
 
 # ================================================================= H (botón «Volver al banco» y portada alternativa)

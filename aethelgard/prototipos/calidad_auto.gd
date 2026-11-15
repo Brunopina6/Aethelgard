@@ -125,9 +125,33 @@ static func _cargar(ruta: String) -> ConfigFile:
 	return c
 
 
+# V12 (15/11, encargo del usuario): BANCO DE PRUEBAS de Auditoría aislado. Mientras dura (Engine «banco_pruebas»,
+# banco_pruebas.gd META, que aquí se nombra sin cargar el banco: la app normal no lo lleva), [calidad] vive en una
+# copia en memoria (META_SESION): el regulador, la detección y Ajustes siguen funcionando igual (también el recorte en
+# vivo, que lee estado()), pero ni user://ajustes.cfg ni user://calidad.log se tocan. La copia se rehace desde los
+# ajustes reales en cada entrada a la pantalla del banco y desaparece al salir (banco_pruebas.gd).
+const META_BANCO := "banco_pruebas"
+const META_SESION := "calidad_sesion"
+
+
+static func aislada(ruta := AJUSTES) -> bool:
+	return ruta == AJUSTES and (OS.has_feature("auditoria") or OS.has_feature("editor")) 		and bool(Engine.get_meta(META_BANCO, false))
+
+
+static func _sesion() -> ConfigFile:
+	if not Engine.has_meta(META_SESION):
+		var real := _cargar(AJUSTES)
+		var c := ConfigFile.new()
+		if real.has_section(SECCION):
+			for k in real.get_section_keys(SECCION):
+				c.set_value(SECCION, k, real.get_value(SECCION, k))
+		Engine.set_meta(META_SESION, c)
+	return Engine.get_meta(META_SESION)
+
+
 # Lo guardado en [calidad], con valores por defecto y saneado. «existe»: hay sección [calidad].
 static func estado(ruta := AJUSTES) -> Dictionary:
-	return estado_de(_cargar(ruta))
+	return estado_de(_sesion() if aislada(ruta) else _cargar(ruta))
 
 
 static func estado_de(c: ConfigFile) -> Dictionary:
@@ -165,18 +189,25 @@ static func _si_o(v, defecto: bool) -> bool:
 
 # Escribe esas claves de [calidad] sin tocar el resto del archivo (volumen, mapa, regiones, Érebo).
 static func guardar(claves: Dictionary, ruta := AJUSTES) -> Error:
+	if aislada(ruta):                              # (banco de pruebas: solo en memoria)
+		_poner(_sesion(), claves)
+		return OK
 	var c := ConfigFile.new()
 	if FileAccess.file_exists(ruta):
 		var err := c.load(ruta)
 		if err != OK:
 			return err
+	_poner(c, claves)
+	return c.save(ruta)
+
+
+static func _poner(c: ConfigFile, claves: Dictionary) -> void:
 	for k in claves:
 		if claves[k] == null:
 			if c.has_section_key(SECCION, k):
 				c.erase_section_key(SECCION, k)
 		else:
 			c.set_value(SECCION, k, claves[k])
-	return c.save(ruta)
 
 
 # ================================================================= qué perfil y qué FPS
@@ -298,6 +329,8 @@ static func nombre_escalon(perfil: String, nivel: int) -> String:
 static func registrar(texto: String) -> void:
 	var linea := "%s  %s" % [Time.get_datetime_string_from_system(), texto]
 	print("[calidad] ", texto)
+	if aislada():                                  # (banco de pruebas: solo en la consola / logcat)
+		return
 	var f: FileAccess
 	if FileAccess.file_exists(REGISTRO) and FileAccess.open(REGISTRO, FileAccess.READ).get_length() < REGISTRO_MAX:
 		f = FileAccess.open(REGISTRO, FileAccess.READ_WRITE)

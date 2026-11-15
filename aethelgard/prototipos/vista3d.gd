@@ -69,6 +69,7 @@ func _ready() -> void:
 	seguro = kael.global_position
 	_aplicar_perfil()
 	_preparar_regulador()
+	print("[calidad] %s: %s" % [scene_file_path.get_file(), _estado_escala()])   # (15/11) la escala 3D real, en logcat
 	_preparar_sombreados.call_deferred()            # cuando la escena hija ya ha puesto todo lo suyo
 	if Engine.has_meta("banco_proto"):
 		_seguir_banco.call_deferred()
@@ -134,6 +135,19 @@ var _perfil_vivo: Dictionary = {}          # valores con los que está la escena
 var _saltar_muestra := true
 
 
+# (15/11) La escala 3D REAL y quién la pone, para documentar las medidas (logcat y panel RND).
+func _estado_escala() -> String:
+	var vp := get_viewport()
+	var t := Vector2(DisplayServer.window_get_size()) * vp.scaling_3d_scale
+	var quien := "fija" if Engine.has_meta("calidad_proto") else 		("regulador, escalón %d" % regulador.nivel if regulador != null else "sin regulador")
+	return "3D ×%.2f (%d×%d) · %s" % [vp.scaling_3d_scale, int(t.x), int(t.y), quien]
+
+
+# (15/11) Dentro del banco de pruebas de Auditoría, las medidas van a archivos propios que se borran al salir.
+func _ruta_medida(nombre: String) -> String:
+	return ("user://banco_pruebas_" if Engine.get_meta("banco_pruebas", false) else "user://") + nombre
+
+
 func _preparar_regulador() -> void:
 	if Engine.has_meta("banco_proto") or Engine.has_meta("calidad_proto"):
 		return
@@ -183,6 +197,7 @@ func _atender_regulador(acc: Dictionary) -> void:
 		"nivel":
 			auto.guardar({"nivel": acc["nivel"], "nivel_de": regulador.perfil})
 			_aplicar_recortes_en_vivo()
+			print("[calidad] ", _estado_escala())
 			auto.registrar("en %s, %s escalón %d%s (%s)" % [donde, "sube al" if acc.get("subir", false) else "baja al",
 				acc["nivel"], ": " + auto.nombre_escalon(regulador.perfil, acc["nivel"]) if acc["nivel"] > 0 else "", medida])
 		"aviso":
@@ -792,7 +807,7 @@ func _alternar_panel() -> void:
 	_medir_render(panel_rnd.visible)
 	if panel_rnd.visible and _csv == null:
 		var nombre := String(scene_file_path.get_file().get_basename()) if scene_file_path != "" else "escena"
-		_csv = FileAccess.open("user://rendimiento_%s.csv" % nombre, FileAccess.WRITE)
+		_csv = FileAccess.open(_ruta_medida("rendimiento_%s.csv" % nombre), FileAccess.WRITE)
 		if _csv != null:
 			_csv.store_line("tiempo,perfil,fps,ms_mediana,ms_p95,cpu_dibujo_ms,gpu_ms,dibujos,primitivas,memoria_video_mb")
 
@@ -836,8 +851,9 @@ func _medir(delta: float) -> void:
 	_t_rnd = 0.0
 	var v := _valores()
 	var cal = load("res://prototipos/calidad_proto.gd")
-	panel_rnd.text = "%s · %d FPS · %.1f ms (p95 %.1f)\nCPU dibujo %.1f ms · GPU %s\n%d dibujos · %dk triángulos · %d MB vídeo" % [
-		cal.actual(), v[0], v[1], v[2], v[3], ("%.1f ms" % v[4]) if v[4] > 0.0 else "—", v[5], int(v[6] / 1000), int(v[7])]
+	panel_rnd.text = "%s · %d FPS · %.1f ms (p95 %.1f)\nCPU dibujo %.1f ms · GPU %s\n%d dibujos · %dk triángulos · %d MB vídeo\n%s" % [
+		cal.actual(), v[0], v[1], v[2], v[3], ("%.1f ms" % v[4]) if v[4] > 0.0 else "—", v[5], int(v[6] / 1000), int(v[7]),
+		_estado_escala()]
 	if _csv != null:
 		_csv_pendiente.append("%.1f,%s,%d,%.2f,%.2f,%.2f,%.2f,%d,%d,%.1f" % [_t_total, cal.actual(), v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7]])
 		_t_csv += 0.5
@@ -1002,7 +1018,7 @@ func _mostrar_tabla_banco(b: Dictionary) -> void:
 		lineas.append("%-14s  %2dm  %-4s %5.1f  %5.1f ms %5.1f ms %4.1f ms %s  %4d     %4dk    %d MB   %4.1f %%" % [
 			r[0], r[1], "sí" if r[2] else "no", r[3], r[4], r[5], r[6], ("%4.1f ms" % r[7]) if r[7] > 0.0 else "  —   ", int(r[8]), int(r[9] / 1000), int(r[10]), r[11]])
 		csv.append("%s,%d,%s,%.1f,%.2f,%.2f,%.2f,%.2f,%d,%d,%.1f,%.2f" % [r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9], r[10], r[11]])
-	var f := FileAccess.open("user://banco_%s.csv" % scene_file_path.get_file().get_basename(), FileAccess.WRITE)
+	var f := FileAccess.open(_ruta_medida("banco_%s.csv" % scene_file_path.get_file().get_basename()), FileAccess.WRITE)
 	if f != null:
 		f.store_string("\n".join(csv))
 	for l in lineas:
