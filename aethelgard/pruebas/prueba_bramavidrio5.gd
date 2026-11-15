@@ -22,6 +22,9 @@ extends SceneTree
 #      quedan DENTRO de la pantalla (lienzo de 1280 × 720, el mismo en 20:9 y en 16:9: stretch canvas_items con aspect
 #      keep) y de la ventana 3D. Con «comparar» mide también la v4 (solo imprime).
 # «solo=A,C» para algunas partes.
+# AZAR (15/11): combate.gd hace randomize() en su _ready (salvo «-- semilla=N»): en E la semilla 5 va DESPUÉS de
+# root.add_child(c), con el ATB inicial de los enemigos tirado otra vez con ella (como prueba_gorthor_v12.gd), e imprime
+# «SEMILLA». Antes se sembraba antes de add_child y los 240 fotogramas de la entrada eran al azar.
 
 const ARCHIVO := "user://prueba_bramavidrio5.save"
 const G5 := "res://enemigos/bramavidrio/v5/bramavidrio5_3d.gd"
@@ -328,9 +331,12 @@ func _encuadre_combate(version: int) -> void:
 	Engine.set_meta("tipo_combate", "jefe")
 	Engine.set_meta("grupo_combate", B.GRUPO)
 	Engine.set_meta("combate_fijo", B.COMBATE)
-	seed(5)
 	var c = load("res://combate.tscn").instantiate()
-	root.add_child(c)
+	root.add_child(c)                                     # (aquí su _ready hace randomize())
+	seed(5)                                               # desde aquí, el azar del combate es fijo
+	for e in c.enemigos:
+		e["atb"] = randf() * 30.0                         # el ATB inicial, como en combate.gd, ya con la semilla
+	print("SEMILLA 5 · versión %d" % version)
 	var z: Dictionary = c.enemigos[0]
 	var p = c._p3d(z)
 	_ok(p != null and int(p.VERSION) == version, "el combate usa la versión %d (%s)" % [version, p.get_script().resource_path if p != null else "—"])

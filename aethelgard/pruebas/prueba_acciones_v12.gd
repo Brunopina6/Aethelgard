@@ -11,6 +11,12 @@ extends SceneTree
 # renueva, no se suma) y Aurel (una vez por combate, solo Lya; levanta al caído).
 # «fotos=<carpeta>» (con ventana): capturas del menú y de cada acción; «video=<carpeta>»: un JPG cada 2 fotogramas.
 # «casos=a,b»: solo esos.
+# AZAR (15/11): combate.gd hace randomize() en su _ready (salvo «-- semilla=N»), así que la semilla 7 se pone DESPUÉS de
+# root.add_child(c) y se vuelve a tirar el ATB inicial de los enemigos con ella (como prueba_gorthor_v12.gd). Antes se
+# sembraba antes de add_child y cada pasada era un combate distinto (hasta el grupo de enemigos: Grimfang ×2, Slime y
+# Grimfang, Guardián de piedra y Grimfang…). El grupo se elige ahora con la misma semilla (grupo_al_azar de combate.gd)
+# y se fija con «grupo_combate». Cada caso imprime «SEMILLA» y una «TRAZA» por turno de héroe (fotograma del caso,
+# quién, pasos del guion y los PV).
 
 const Acc := preload("res://combate_acciones_v12.gd")
 const CASOS := [
@@ -88,9 +94,14 @@ func _siguiente() -> void:
 	Engine.set_meta("magia_blanca_v12", k["on"])
 	Engine.set_meta("heroes_v2", k["v2"])
 	Engine.set_meta("combate_anim_v12", k["v2"])
-	seed(7)
-	c = load("res://combate.tscn").instantiate()
-	root.add_child(c)
+	seed(7)                                           # el grupo de enemigos, al azar pero con la semilla (antes salía
+	Engine.set_meta("grupo_combate", load("res://combate.gd").grupo_al_azar(load("res://grupo.gd").activos().size()))
+	c = load("res://combate.tscn").instantiate()      # uno distinto en cada pasada: el randomize() de _ready)
+	root.add_child(c)                                 # (aquí su _ready hace randomize())
+	seed(7)                                           # desde aquí, el azar del combate es fijo
+	for e in c.enemigos:
+		e["atb"] = randf() * 30.0                     # el ATB inicial, como en combate.gd, ya con la semilla
+	print("SEMILLA 7 · %s · %s" % [k["n"], ", ".join(c.enemigos.map(func(e): return e["nombre"]))])
 
 
 func _process(_d: float) -> bool:
@@ -177,6 +188,10 @@ func _turno(a) -> void:
 	if not a is Dictionary:
 		return
 	var k: Dictionary = CASOS[caso]
+	var pv := []
+	for f in c.heroes + c.enemigos:
+		pv.append("%s %d" % [f["nombre"], int(f["hp"])])
+	print("TRAZA [%s] f%05d %s (Garon %d, Lya %d) · %s" % [k["n"], frames, a["nombre"], paso["Garon"], paso["Lya"], ", ".join(pv)])
 	if not k["on"]:
 		_apagado(a)
 		return

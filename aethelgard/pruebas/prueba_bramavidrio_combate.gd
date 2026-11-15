@@ -34,6 +34,10 @@ extends SceneTree
 #     sueltos. I: muere mientras aspira: el bucle calla, sin succión, héroes derechos, sin cartel y sin Aliento.
 # Con «medir» solo se mide el equilibrio (varias semillas, 2 y 3 héroes, jugador y automático) y se imprime.
 # Con «fotos=<carpeta>» (y ventana) saca capturas de cada ataque en su momento clave.
+# AZAR (15/11): combate.gd hace randomize() en su _ready (salvo «-- semilla=N»), así que la semilla se pone DESPUÉS de
+# root.add_child(c) y se vuelve a tirar el ATB inicial de los enemigos con ella (como prueba_gorthor_v12.gd). Antes se
+# sembraba antes de add_child y cada combate era al azar («hasta cuatro semillas» eran cuatro combates al azar). Cada
+# combate imprime «SEMILLA» y una «TRAZA» por turno (fotograma del combate, quién o qué hizo el gusano, PV de todos).
 
 const ARCHIVO := "user://prueba_bramavidrio_combate.save"
 var B                                   # combate_bramavidrio.gd (con load: usa el autoload Sonido)
@@ -107,13 +111,16 @@ func _combate(activos: Dictionary, semilla: int, ganados := {}) -> void:
 	Engine.set_meta("tipo_combate", "jefe")
 	Engine.set_meta("grupo_combate", B.GRUPO)
 	Engine.set_meta("combate_fijo", B.COMBATE)
-	seed(semilla)
 	c = load("res://combate.tscn").instantiate()
 	sonidos.clear()
 	impactos.clear()
 	avisos.clear()
 	c.sonido_pedido.connect(func(n: String): sonidos.append([n, Engine.get_process_frames()]))
-	root.add_child(c)
+	root.add_child(c)                                     # (aquí su _ready hace randomize())
+	seed(semilla)                                         # desde aquí, el azar del combate es fijo
+	for e in c.enemigos:
+		e["atb"] = randf() * 30.0                         # el ATB inicial, como en combate.gd, ya con la semilla
+	print("SEMILLA %d · %s" % [semilla, str(activos)])
 	z = c.enemigos[0]
 	zp = c._p3d(z)
 	if zp != null:
@@ -209,6 +216,7 @@ func _jugar(estrategia: String, op := {}) -> Dictionary:
 			turno = false
 			var que := _que_hizo(ant)
 			r["acciones"].append(que)
+			_traza(fr, "Bramavidrio: " + que)
 			if comprobar:
 				_comprobar_turno(que, ant, r)
 			if tras_corte >= 0:
@@ -240,6 +248,7 @@ func _jugar(estrategia: String, op := {}) -> Dictionary:
 				r["bucle_al_matar"] = _bucle_suena()
 		if c.estado == "menu" and c.actor is Dictionary and c.turnos_heroe != decidido:
 			decidido = c.turnos_heroe
+			_traza(fr, "turno de " + str(c.actor["nombre"]))
 			_decidir(estrategia, op)
 		if c.estado == "fin" and f_fin < 0:
 			f_fin = fr
@@ -249,6 +258,14 @@ func _jugar(estrategia: String, op := {}) -> Dictionary:
 	r["gana"] = z["hp"] <= 0 and c.heroes.any(func(h): return h["hp"] > 0)
 	r["turnos_heroe"] = c.turnos_heroe
 	return r
+
+
+# Una línea por turno: fotograma del combate, quién y qué, y los PV de todos (para reproducir una semilla concreta).
+func _traza(fr: int, que: String) -> void:
+	var pv := []
+	for f in c.heroes + c.enemigos:
+		pv.append("%s %d" % [f["nombre"], int(f["hp"])])
+	print("TRAZA %05d %s · %s" % [fr, que, ", ".join(pv)])
 
 
 func _decidir(estrategia: String, op: Dictionary) -> void:

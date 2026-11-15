@@ -17,6 +17,9 @@ extends SceneTree
 #      derrumbe; cada uno una vez, por el bus Efectos, sin descartes y sin sonidos de la otra identidad.
 # Datos aislados (ejecutar_pruebas.ps1); no guarda partida. Sirve con las dos versiones del modelo («bramavidrio_version»).
 #   Godot --headless --path aethelgard --script res://pruebas/prueba_audio_bramavidrio.gd --fixed-fps 30
+# AZAR (15/11): combate.gd hace randomize() en su _ready (salvo «-- semilla=N»): la semilla 97 va DESPUÉS de
+# root.add_child(c), con el ATB inicial de los enemigos tirado otra vez con ella (como prueba_gorthor_v12.gd), e imprime
+# «SEMILLA». Antes se sembraba antes de add_child y el combate era al azar.
 
 const INFORME := "docs/memory/agents/sonido_v12_bramavidrio.md"   # relativo a la raíz del repositorio
 const ARCHIVO := "user://prueba_audio_bramavidrio.save"
@@ -297,7 +300,6 @@ func _combate_de_prueba(identidad: String) -> void:
 	Engine.set_meta("tipo_combate", "jefe")
 	Engine.set_meta("grupo_combate", B.GRUPO)
 	Engine.set_meta("combate_fijo", B.COMBATE)
-	seed(97)
 	_silencio()
 	Son.reiniciar_contadores()
 	pedidos.clear()
@@ -310,7 +312,11 @@ func _combate_de_prueba(identidad: String) -> void:
 			clip = String(m.anim.current_animation)
 			pos = m.anim.current_animation_position
 		pedidos.append([n, Engine.get_process_frames(), clip, pos]))
-	root.add_child(c)
+	root.add_child(c)                                      # (aquí su _ready hace randomize())
+	seed(97)                                               # desde aquí, el azar del combate es fijo
+	for e in c.enemigos:
+		e["atb"] = randf() * 30.0                          # el ATB inicial, como en combate.gd, ya con la semilla
+	print("SEMILLA 97 · %s" % identidad)
 	z = c.enemigos[0]
 	var zp = c._p3d(z)
 	await _esperar(int(2.0 * T))                           # la entrada: emerge y ruge (0,9 s)
