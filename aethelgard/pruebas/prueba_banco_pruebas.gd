@@ -183,7 +183,7 @@ func _b() -> void:
 		if e["clave"] == "meshy_e01":
 			vida_cus1 = int(e["hp_max"])
 	await _cerrar(c)
-	# 16/11: el caso de la rotación es el mismo combate con la vida ×8; el normal, con la de siempre (equilibrio)
+	# 15/11: el caso de la rotación es el mismo combate con la vida ×8; el normal, con la de siempre (equilibrio)
 	c = await _combate("custodio_rotacion")
 	var vida_cus8: int = 0
 	for e in c.enemigos:

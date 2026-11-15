@@ -1,5 +1,5 @@
 extends SceneTree
-# V12 (16/11): VÍDEOS BREVES DE MOVIMIENTO del grupo para que el usuario compare (Nix junto a los protagonistas). No es
+# V12 (15/11): VÍDEOS BREVES DE MOVIMIENTO del grupo para que el usuario compare (Nix junto a los protagonistas). No es
 # una prueba ni cambia nada del juego: se lanza con el Movie Maker de Godot, que graba imagen y sonido a ritmo fijo. Datos
 # aislados (APPDATA y LOCALAPPDATA en una carpeta temporal). Los interruptores se encienden SOLO en esta sesión
 # (Engine.set_meta) y se quitan al acabar: heroes_version, nix_fbx (solo al crear a Nix FBX) y, en «grupo» con Nix,

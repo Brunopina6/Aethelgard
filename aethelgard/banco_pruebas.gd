@@ -63,7 +63,7 @@ const COMBATES := {
 		"vida": 4.0, "armonia": false, "nota": "Ataca y defiende con Garon. Compara la capa Original y la Articulada."},
 	"nix": {"titulo": "Nix en combate (canalizar)", "grupo": 1, "activos": ["Kael", "Garon", "Nix"],
 		"vida": 6.0, "armonia": false, "nota": "Nix entra en el grupo solo aquí. Elige arriba «Nix» Antigua o Desde el FBX."},
-	# 16/11 (pedido del usuario): el equilibrio se juzga con la vida NORMAL; la rotación entera, en un caso aparte ×8
+	# 15/11 (pedido del usuario): el equilibrio se juzga con la vida NORMAL; la rotación entera, en un caso aparte ×8
 	"custodio": {"titulo": "Custodio de Porcelana (equilibrio normal)", "grupo": 28, "activos": ["Kael", "Lya", "Garon"],
 		"vida": 1.0, "armonia": false, "custodio": true,
 		"nota": "Vida de siempre: para juzgar el equilibrio. Cifras PROPUESTAS, sin aprobar."},

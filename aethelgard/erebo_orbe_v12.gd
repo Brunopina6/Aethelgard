@@ -11,7 +11,7 @@ extends Node3D
 # - No toca daño, costes, dados ni tiempos: solo presentación. No cambia el material del orbe.
 # - Limpieza: se quita al estallar el orbe, al cancelar/saltar (erebo_3d.limpiar), si el orbe deja de verse y al salir
 #   del árbol (morir, cambiar de escena); cada invocación quita el anterior antes de crear uno (nunca se acumulan).
-# - Azar PROPIO (16/11, autorizado por el usuario): cada emisor lleva su semilla fija (use_fixed_seed) sacada de un
+# - Azar PROPIO (15/11, autorizado por el usuario): cada emisor lleva su semilla fija (use_fixed_seed) sacada de un
 #   generador propio con semilla constante. Antes, las CPUParticles3D tiraban del azar global y, con el orbe encendido,
 #   cambiaban las tiradas posteriores del combate (prueba_erebo_orbe_v12). Mismo aspecto: solo cambia de dónde sale el azar.
 # - Presupuesto (como en el laboratorio): 96 partículas en «alta», la mitad en «movil», UN quad para la onda.

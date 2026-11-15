@@ -1,10 +1,10 @@
-# Redmi, 16/11 (tarde): resultados REALES con la APK `cbc0536` (versionCode 801)
+# Redmi, 15/11 (tarde): resultados REALES con la APK `cbc0536` (versionCode 801)
 
 Probado por USB en el Redmi del usuario (REDMI A7 Pro, Android 16, 1600×720), con la app de Auditoría. Capturas,
-grabaciones de pantalla (sin audio) y volcados de `timestats` en `D:\REBELUM_diagnostico\redmi_16_11\`.
+grabaciones de pantalla (sin audio) y volcados de `timestats` en `D:\REBELUM_diagnostico\redmi_15_11\`.
 
 ## Antes y después (datos del teléfono)
-- Respaldo nuevo verificado: `D:\REBELUM_respaldos\2026-11-16_redmi_auditoria_antes_consolidada` (693 archivos, SHA-256 igual).
+- Respaldo nuevo verificado: `D:\REBELUM_respaldos\2026-11-15_redmi_auditoria_antes_consolidada` (693 archivos, SHA-256 igual).
 - `ajustes.cfg` restaurado al del 14/11 ANTES y DESPUÉS de las pruebas (el banco había guardado «Híbrida» y «Nix desde
   el FBX»); `banco_pruebas.save` borrado; `partida_exp.save` sin cambios (SHA `567c7323…` antes y después; el juego la
   reescribió al entrar con el mismo contenido).

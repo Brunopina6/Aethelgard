@@ -1,5 +1,5 @@
 extends SceneTree
-# MEDIDA (16/11), no prueba: Sunken City 3D en el PC, con la ventana de verdad. Para cada entrada desde el mapa
+# MEDIDA (15/11), no prueba: Sunken City 3D en el PC, con la ventana de verdad. Para cada entrada desde el mapa
 # (Recursos.cambiar_escena, como mapa._entrar): tiempo de carga hasta el control, el peor fotograma de los 2 s
 # siguientes (tirones de la primera vez) y la memoria (estática, vídeo y texturas). Después, en tres sitios (muelle,
 # Quilla y Cubierta Mayor), 4 s quieto: ms por fotograma REALES (mediana, p95, máximo) con el límite del perfil, y los

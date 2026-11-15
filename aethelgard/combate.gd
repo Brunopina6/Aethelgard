@@ -5406,7 +5406,7 @@ func _invocar_sobre(obj: Dictionary) -> void:
 	fuera.visible = true
 	registro.text = "Lya invoca a Érebo"
 	menu.vibrar(40)
-	# V12 (16/11, autorizado): el azar del COMBATE queda aislado de lo que se VE en la invocación. Las partículas
+	# V12 (15/11, autorizado): el azar del COMBATE queda aislado de lo que se VE en la invocación. Las partículas
 	# (CPUParticles3D) gastan el generador global aunque lleven semilla fija (comprobado en Godot 4.7), así que encender
 	# el orbe, el vídeo u otros efectos cambiaba las tiradas posteriores. Ahora se reserva aquí una semilla del combate
 	# y, al acabar la invocación, el generador vuelve a ella: mismas tiradas posteriores con cualquier efecto. No cambia
@@ -5440,7 +5440,7 @@ func _invocar_sobre(obj: Dictionary) -> void:
 		var nueva_sel: bool = ResourceLoader.exists("res://invocacion_erebo_nueva.gd") and load("res://invocacion_erebo_nueva.gd").elegida()
 		var pausa_v: bool = AnimV12.pausa_atb()
 		var tope: float = VID.atb_teatro(nueva_sel, false)
-		if pausa_v:                                # (16/11) el ATB del vídeo empieza cuando el vídeo avanza de verdad:
+		if pausa_v:                                # (15/11) el ATB del vídeo empieza cuando el vídeo avanza de verdad:
 			set_meta("c12_accion", int(get_meta("c12_accion", 0)) + 1)   # un intento que no arranca no corre ATB de más
 			set_meta("c12_atb_resto", 0.0)
 		var arrancado := [false]

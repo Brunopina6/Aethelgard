@@ -92,7 +92,7 @@ static func ruta_para_ahora() -> String:
 # Reproduce el vídeo a pantalla completa por encima del combate. «saltar» es un Callable que devuelve true cuando el
 # jugador toca para saltar. Devuelve false si no se pudo reproducir (entonces combate.gd usa el teatro de siempre).
 # Nada de lo que hace aquí cambia reglas, daño, turnos ni el ATB.
-# 16/11 (autorizado por el usuario): recuperación AUTOMÁTICA, sin tocar ni pantalla negra:
+# 15/11 (autorizado por el usuario): recuperación AUTOMÁTICA, sin tocar ni pantalla negra:
 #   - el vídeo cuenta como arrancado solo cuando su posición AVANZA (un Theora que no se abre dice is_playing() con
 #     largo 0 y antes esperaba al toque); si no avanza en ESPERA_ARRANQUE s, se sale (false: el teatro de siempre);
 #   - si deja de avanzar a mitad más de PARADO_MAX s, salida controlada (true: el resultado se aplica, una vez);

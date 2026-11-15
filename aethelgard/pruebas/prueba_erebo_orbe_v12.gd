@@ -16,7 +16,7 @@ extends SceneTree
 #   «erebo=exito»: un enemigo normal (GRUPOS[9], Grimfang: muerte, PV a 0, un cambio) y un JEFE (GRUPOS[18], Guardián de
 #                  piedra, sin fases: siempre arranca el orbe y quita maxi(1, round(PV × 0,2)), sin dado; un cambio)
 #   «erebo=fallo»: un enemigo normal (la secuencia de fallo no saca el orbe: ni daño ni efecto)
-# La tirada randi() siguiente a la invocación también se compara EXACTA (16/11: el orbe usa azar propio; antes solo
+# La tirada randi() siguiente a la invocación también se compara EXACTA (15/11: el orbe usa azar propio; antes solo
 # era un aviso porque sus partículas gastaban azar global).
 # Semillas: «semilla_orbe=N» y «semilla_inv=N» para reproducir otra.
 # No toca la partida real: archivo de partida de prueba y user:// aislado del ejecutor.

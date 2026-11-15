@@ -162,9 +162,9 @@ del diseño); nada de que Garon sirviera en la Compañía; nada con forma de bra
   `progreso.gd` CIUDADES[5]).
 - Entrada en el banco de pruebas, si se quiere.
 
-## Mediciones de PC (16/11, sin otros Godot; NO certifican Android)
+## Mediciones de PC (15/11, sin otros Godot; NO certifican Android)
 
-`pruebas/medir_sunken3d.gd`, `D:\REBELUM_diagnostico\sunken\medida_16_11\medida_<perfil>_<frio|cache>.txt`.
+`pruebas/medir_sunken3d.gd`, `D:\REBELUM_diagnostico\sunken\medida_15_11\medida_<perfil>_<frio|cache>.txt`.
 - **Configuración:** NVIDIA RTX 3050 Laptop (OpenGL 3.3, controlador 621.01), AMD Ryzen 7 4800H (14 hilos), ventana
   1280×720, renderizador gl_compatibility. «Frío»: carpeta de datos nueva (sombreadores sin caché); «caché»: la misma
   carpeta otra vez. Tres entradas por proceso desde el mapa (Recursos.cambiar_escena, como mapa._entrar).

@@ -1,5 +1,5 @@
 extends SceneTree
-# V12 (16/11): COMPARACIÓN DEL GRUPO COMPLETO (Kael, Lya, Garon y Nix) para que el usuario decida sobre Nix (altura frente
+# V12 (15/11): COMPARACIÓN DEL GRUPO COMPLETO (Kael, Lya, Garon y Nix) para que el usuario decida sobre Nix (altura frente
 # a los chibi, capucha y flequillo). SOLO CAPTURAS: no cambia ningún modelo, proporción, escala ni ajuste del juego.
 # Con ventana y datos aislados (APPDATA y LOCALAPPDATA en una carpeta temporal). Los interruptores se encienden SOLO en
 # esta sesión (Engine.set_meta) y se quitan al acabar:

@@ -1,5 +1,5 @@
 extends "res://pruebas/prueba_erebo_video.gd"
-# V12 (16/11): GRABACIÓN para que el usuario revise la invocación cinematográfica de Érebo dentro del juego, con sonido:
+# V12 (15/11): GRABACIÓN para que el usuario revise la invocación cinematográfica de Érebo dentro del juego, con sonido:
 # combate de verdad (Kael, Lya y Garon contra Grimfang) → Lya invoca a Érebo → vídeo («abreviada» o «completa») →
 # vuelta al combate con el resultado. No es una prueba: se lanza con el Movie Maker de Godot (--write-movie), que
 # graba imagen y audio a ritmo fijo. Datos aislados (archivo de partida de prueba). La opción de vídeo se elige SOLO en

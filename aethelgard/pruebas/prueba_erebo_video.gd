@@ -18,7 +18,7 @@ extends SceneTree
 #   nueva      → «erebo_nueva» con vídeo: el ATB de V.ATB_TEATRO["nueva"]
 #   completa   → el vídeo completo hasta el final
 #   sin pausa  → con «pausa_atb» desactivado, el ATB corre durante todo el vídeo (como en la primera entrega)
-# 16/11 (recuperación automática, autorizada): sin tocar nada,
+# 15/11 (recuperación automática, autorizada): sin tocar nada,
 #   theora que no abre → reproducir() sale solo en ≈1,5 s (antes esperaba al toque); en el combate, el teatro de
 #                siempre, sin pantalla negra y SIN ATB de más por el intento (el ATB del vídeo empieza al avanzar)
 #   se para    → el vídeo deja de avanzar a mitad: salida controlada en ≈1 s, resultado una vez, ATB de la invocación de
@@ -203,7 +203,7 @@ func _no_carga() -> void:
 	_ok(_capa() == null and padre.get_child_count() == 0, "no arranca: quedan restos (%d nodos)" % padre.get_child_count())
 	_ok(i_mus < 0 or is_equal_approx(AudioServer.get_bus_volume_db(i_mus), db0), "no arranca: la música no vuelve a su volumen")
 	var dura_no_arranca: float = r["dura"]
-	# Un Theora cuyo archivo no se abre da is_playing() = true y get_stream_length() = 0. Hasta el 16/11 reproducir()
+	# Un Theora cuyo archivo no se abre da is_playing() = true y get_stream_length() = 0. Hasta el 15/11 reproducir()
 	# esperaba al toque (pantalla negra); ahora debe salir SOLO, en ≈1,5 s y sin restos.
 	_video_falso(NO_ARRANCA_THEORA, "theora_sin_archivo")
 	r = await _reproducir_a_solas(padre, NO_ARRANCA_THEORA, 4.0)
@@ -266,7 +266,7 @@ func _no_arranca_en_combate() -> void:
 		real.take_over_path(V.ABREVIADA)            # (el de verdad, otra vez en la caché)
 
 
-# 16/11: en el combate, el abreviado sustituido por un Theora que no se abre: el teatro de siempre SIN tocar.
+# 15/11: en el combate, el abreviado sustituido por un Theora que no se abre: el teatro de siempre SIN tocar.
 func _theora_no_abre_en_combate() -> void:
 	V.elegir("abreviada")
 	var real = ResourceLoader.load(V.ABREVIADA, "", ResourceLoader.CACHE_MODE_IGNORE)
@@ -424,7 +424,7 @@ func _invocar(caso: String, modo: String, video: bool, grupo := 9) -> void:
 	if modo in ["no_arranca", "theora_no_abre"]:
 		_ok(vio_capa and vio_teatro, "%s: no intenta el vídeo (%s) o no cae al teatro (%s)" % [caso, vio_capa, vio_teatro])
 		_ok(not tocado, "%s: hizo falta tocar" % caso)
-		if pausa and atb_al_teatro.has("Kael") and _atb_teatro_base >= 0.0:   # (16/11) el intento fallido no corre ATB
+		if pausa and atb_al_teatro.has("Kael") and _atb_teatro_base >= 0.0:   # (15/11) el intento fallido no corre ATB
 			var extra_t: float = float(atb_al_teatro["Kael"]) - float(atb0.get("Kael", 0.0)) - _atb_teatro_base
 			_ok(absf(extra_t) < 0.25, "%s: el intento de vídeo corre ATB (%.2f de más al empezar el teatro, frente al teatro sin vídeo)" % [caso, extra_t])
 		_ok(int(c.get_meta("c12_accion", 0)) == 0, "%s: queda la pausa del ATB puesta (%d)" % [caso, int(c.get_meta("c12_accion", 0))])

@@ -66,7 +66,7 @@ func _hasta(cond: Callable, segundos := 30.0) -> bool:
 	return false
 
 
-# (16/11) espera por RELOJ, solo para las cargas en segundo plano (Recursos.cambiar_escena): con --fixed-fps los
+# (15/11) espera por RELOJ, solo para las cargas en segundo plano (Recursos.cambiar_escena): con --fixed-fps los
 # fotogramas vuelan y la carga tarda en tiempo real; contando fotogramas, en una batería cargada fallaba «8: la región
 # no vuelve a cargarse». (El resto de la prueba espera en tiempo de JUEGO a propósito: diálogos y combate.)
 func _hasta_reloj(cond: Callable, segundos := 60.0) -> bool:

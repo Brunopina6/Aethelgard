@@ -816,7 +816,7 @@ Punto de recuperación: etiqueta `recuperacion/v12/20261115-antes-noche` → `da
     empezaba tras usar la alquimia). Causa: el arreglo C leía `load("res://combate.gd").OBJETOS_COMBATE` desde el
     taller. Arreglo `270c8ed`: la tabla vive en `datos/objetos_combate.gd` (combate.gd la usa igual).
 - **APK:** `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261115-c04d07b-local.apk`, 420,0 MB, SHA-256
-  `9b42c2a4c97ef07bbfd309328041d084701fa89559bae276200880757132dd35`, «TODO CORRECTO». Guion: `GUION_REDMI_16_11.md`.
+  `9b42c2a4c97ef07bbfd309328041d084701fa89559bae276200880757132dd35`, «TODO CORRECTO». Guion: `GUION_REDMI_15_11.md`.
 - **Medidas de PC (sin otros Godot; no certifican Android):**
   - Sunken City 3D (`D:\REBELUM_diagnostico\sunken\medida_sola_15_11\`): 40-75 llamadas de dibujo en bajo (67-75 mil
     primitivas), 54-103 en medio (130-143 mil), 81-152 en alto (147-165 mil). Los ms por fotograma del PC están
@@ -828,14 +828,14 @@ Punto de recuperación: etiqueta `recuperacion/v12/20261115-antes-noche` → `da
   vídeos de Érebo; si se descongela Érebo, las tres propuestas del orbe y el vídeo.
 - **Dependencias ausentes:** catálogo y PDF de Kael («Ataque rúnico»): Kael conserva su menú. Sonidos de mar,
   gaviotas y campana de barco para Sunken (usa sustitutos).
-- **Siguiente acción exacta:** con el Redmi, seguir `GUION_REDMI_16_11.md` desde «Antes de instalar». Sin Redmi:
+- **Siguiente acción exacta:** con el Redmi, seguir `GUION_REDMI_15_11.md` desde «Antes de instalar». Sin Redmi:
   el siguiente sector de Sunken City (el interior del Casco o el resto de vecinos del diseño) con las notas en el
   Diario (`progreso.gd`, `CIUDADES[5]`), o el resto de pruebas con el patrón de semilla antes de add_child (Centinela y Peón ya hechos)
   (`docs/memory/agents/combate.md`, lista G2).
 
-### 16/11 (mañana): revisión de Érebo para el usuario y comprobaciones técnicas
+### 15/11 (mañana): revisión de Érebo para el usuario y comprobaciones técnicas
 - **Archivos para revisar Érebo** (enviados al usuario; NADA aprobado: imagen, ritmo y sonido pendientes de su
-  revisión), en `D:\REBELUM_diagnostico\erebo_cine\revision_16_11\` (SHA-256 en `sha256_mp4.txt`):
+  revisión), en `D:\REBELUM_diagnostico\erebo_cine\revision_15_11\` (SHA-256 en `sha256_mp4.txt`):
   1. `REBELUM_Erebo_1_completa_del_juego.mp4` (20,00 s) y 2. `..._2_abreviada_del_juego.mp4` (6,80 s): copias H.264 +
      AAC de los `.ogv` del proyecto (los originales, comprobados intactos por SHA-256).
   3. `..._3a_en_combate_abreviada.mp4` (18,3 s) y `..._3b_en_combate_completa.mp4` (31,4 s): grabadas en el PC con el
@@ -847,12 +847,12 @@ Punto de recuperación: etiqueta `recuperacion/v12/20261115-antes-noche` → `da
   Esperando por reloj, todas las regiones entran (Sunken 0,9 s, Pastos 1,7 s).
 - **No hace falta cambiar** menus.gd ni tienda.gd: leen combate.gd, pero en el juego ya lo carga la pantalla de carga
   (`carga.gd _preparar_shaders`). La regresión del 15/11 solo pasaba en pruebas que no pasan por ella.
-- **Medida de PC, Nix** (`D:\REBELUM_diagnostico\nix_medida_16_11\`, medir_modelo en frío, sin otros Godot): FBX
+- **Medida de PC, Nix** (`D:\REBELUM_diagnostico\nix_medida_15_11\`, medir_modelo en frío, sin otros Godot): FBX
   35-43 ms y +4,0 MB de texturas; la antigua 41-51 ms y +6,7 MB.
 
-### 16/11, tarde: Érebo reparado e híbrido, Custodio separado, Sunken medido y APK `cbc0536`
+### 15/11, tarde: Érebo reparado e híbrido, Custodio separado, Sunken medido y APK `cbc0536`
 - **Validado:** `cbc0536` (etiqueta `validado/v12/20261115-133330`), batería **185 · 0 · 98 · 0** (`2026-11-15_130355`).
-  Recuperación: `recuperacion/v12/20261116-270c8ed` y `recuperacion/v12/20261116-antes-erebo-hibrido`.
+  Recuperación: `recuperacion/v12/20261115-270c8ed` y `recuperacion/v12/20261115-antes-erebo-hibrido`.
 - **Érebo (descongelado solo para lo autorizado):**
   - azar: las CPUParticles3D gastan el azar global aunque lleven semilla fija (Godot 4.7); `combate._invocar_sobre`
     reserva una semilla al empezar y la repone al acabar → mismas tiradas posteriores con el orbe encendido o apagado
@@ -866,12 +866,20 @@ Punto de recuperación: etiqueta `recuperacion/v12/20261115-antes-noche` → `da
 - **Pruebas:** semilla tras add_child en 11 pruebas más (agente); `prueba_bosque_pastos` espera por reloj solo en su
   recarga. Residuo conocido: el destello del clímax de Bramavidrio (por tiempo real) puede mover una tirada.
 - **Nix antigua** ya no desaparece a 9 m (márgenes de sus tramos de detalle). **Comparación del grupo** (sin cambiar
-  nada): `D:\REBELUM_diagnostico\comparar_grupo_16_11\` (hojas, alturas y 21 vídeos; enviados en parte).
+  nada): `D:\REBELUM_diagnostico\comparar_grupo_15_11\` (hojas, alturas y 21 vídeos; enviados en parte).
 - **Sunken City, medidas de PC reales:** `SUNKEN_3D_V12.md` (carga 1,42-1,49 s en frío, 1,28-1,31 s con caché, 0,89-0,94 s
   después; sin tirones; memoria estable).
 - **APK:** `Aethelgard_androidauditora-20261115-cbc0536-local.apk`, 425,5 MB, versionCode 801, SHA-256
-  `3fd18e4a6560ef58e0056805f413efe905e9481d46949bdf978ffcc9446d3869`. Guion: `GUION_REDMI_16_11.md` (sección de arriba).
+  `3fd18e4a6560ef58e0056805f413efe905e9481d46949bdf978ffcc9446d3869`. Guion: `GUION_REDMI_15_11.md` (sección de arriba).
 - **Redmi:** respaldo nuevo y ajustes restaurados; se perdió el USB antes de instalar.
-- **Siguiente acción exacta:** reconectar el Redmi y seguir `GUION_REDMI_16_11.md` desde la APK `cbc0536`.
+- **Siguiente acción exacta:** reconectar el Redmi y seguir `GUION_REDMI_15_11.md` desde la APK `cbc0536`.
 - **Decisiones del usuario:** Nix en combate (desde cuándo y si el grupo pasa a 4); revisar Érebo híbrida y su
   duración; altura/capucha de Nix con la comparación; cifras del Custodio.
+
+### 15/11, 14:20: corrección de fechas
+El trabajo de la mañana y la tarde del 15/11 se etiquetó por error como «16/11» (la fecha real del sistema era
+2026-11-15). Corregido en código, documentos y carpetas: `GUION_REDMI_15_11.md`, `REDMI_15_11.md`,
+`D:\REBELUM_diagnostico\*_15_11` y `D:\REBELUM_respaldos\2026-11-15_redmi_auditoria_antes_consolidada`. Las etiquetas
+`recuperacion/v12/20261116-270c8ed` y `recuperacion/v12/20261116-antes-erebo-hibrido` NO se borran (norma de no borrar
+etiquetas); sus equivalentes con la fecha correcta son `recuperacion/v12/20261115-270c8ed` y
+`recuperacion/v12/20261115-antes-erebo-hibrido` (mismos commits).
