@@ -84,7 +84,7 @@ const BLOQUES := [
 	["tienda_o", "comercial", Rect2(-32.0, -9.0, 6.0, 8.0), 0.0, 6.5, "casa", true],
 	["horno", "comercial", Rect2(-26.0, -9.0, 8.0, 8.0), 0.0, 6.0, "casa", true],
 	["chimenea_horno", "comercial", Rect2(-21.0, -7.0, 1.2, 1.2), 6.0, 2.2, "muro", false],
-	["hoja_horno", "comercial", Rect2(-22.7, -1.15, 1.4, 0.12), 0.18, 2.3, "puerta", false],
+	["hoja_horno", "comercial", Rect2(-22.7, -1.0, 1.4, 0.08), 0.18, 2.3, "puerta", false],
 	["mostrador_horno", "comercial", Rect2(-20.6, -1.0, 2.2, 0.6), 0.2, 1.0, "bajo", true],
 	["tienda_e", "comercial", Rect2(-18.0, -9.0, 8.0, 8.0), 0.0, 7.0, "casa", true],
 	["puesto_c1", "comercial", Rect2(-30.0, 5.4, 4.0, 1.6), 0.0, 1.4, "bajo", true],
@@ -106,7 +106,7 @@ const BLOQUES := [
 	# T4 patio de talleres: el TALLER del carretero al oeste (bajo: no tapa la calle T5) con su portón al este, la
 	# tonelería de decorado al este, la pila de cajas y las ruedas apoyadas.
 	["taller", "talleres", Rect2(-13.0, -22.0, 8.0, 10.0), 1.4, 3.4, "casa", true],
-	["porton_taller", "talleres", Rect2(-5.12, -20.4, 0.12, 1.8), 1.4, 2.8, "puerta", false],
+	["porton_taller", "talleres", Rect2(-5.0, -20.4, 0.08, 1.8), 1.4, 2.8, "puerta", false],
 	["toneleria", "talleres", Rect2(5.0, -30.0, 4.0, 18.0), 0.4, 5.0, "casa", true],
 	["pila_patio", "talleres", Rect2(2.6, -24.0, 1.6, 1.6), 1.4, 1.2, "decor", true],
 	["ruedas", "talleres", Rect2(-4.9, -15.5, 0.4, 1.6), 0.9, 1.1, "decor", true],
@@ -117,7 +117,7 @@ const BLOQUES := [
 	["casa_r1", "residencial", Rect2(-44.0, -38.0, 9.0, 8.0), 1.4, 6.0, "casa", true],
 	["casa_r2", "residencial", Rect2(-35.0, -38.0, 9.0, 8.0), 1.4, 7.0, "casa", true],
 	["vivienda", "residencial", Rect2(-26.0, -38.0, 8.0, 8.0), 1.4, 6.5, "casa", true],
-	["hoja_vivienda", "residencial", Rect2(-22.7, -30.12, 1.4, 0.12), 1.4, 2.4, "puerta", false],
+	["hoja_vivienda", "residencial", Rect2(-22.7, -30.0, 1.4, 0.08), 1.4, 2.4, "puerta", false],
 	["casa_r4", "residencial", Rect2(-18.0, -38.0, 13.0, 8.0), 1.4, 6.5, "casa", true],
 	["huertos", "residencial", Rect2(-40.0, -26.0, 35.0, 8.0), 0.0, 1.4, "terreno", true],
 	["valla_huertos", "residencial", Rect2(-40.0, -25.7, 26.5, 0.2), 1.4, 0.9, "bajo", true],

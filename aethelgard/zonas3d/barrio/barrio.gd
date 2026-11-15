@@ -309,8 +309,11 @@ func _rotulos() -> void:
 		l.modulate = Color(1.0, 0.94, 0.78)
 		l.outline_modulate = Color(0.30, 0.14, 0.08, 0.85)
 		l.pixel_size = 0.01
-		l.position = T.ancla(T.PUERTAS[id]["ancla"]) + Vector3(0, 3.0, 0)
-		var s := T.sector_de(l.position.x, l.position.z)
+		var umbral := T.ancla(T.PUERTAS[id]["ancla"])
+		var fuera: Vector3 = T.PUERTAS[id]["fuera"]
+		var hacia := Vector3(fuera.x - umbral.x, 0.0, fuera.z - umbral.z).normalized()
+		l.position = umbral + hacia * 0.9 + Vector3(0, 3.0, 0)       # (delante de la fachada: no la corta)
+		var s := T.sector_de(umbral.x, umbral.z)
 		(sectores.get(s, exterior) as Node3D).add_child(l)
 
 
