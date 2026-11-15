@@ -148,7 +148,7 @@ func _ready() -> void:
 	_armado_nido = not _en_nido(kael.global_position)        # al volver de perder, no se repite hasta salir y entrar
 	_armado_gorthor = not _en_arena(kael.global_position)
 	_armado_coloso = not _en_coloso(kael.global_position)
-	if Progreso.hito("enc_herrero_pista") and not Progreso.hito("enc_herrero_veta"):   # V10: la veta, si ya se encontró la pista
+	if _veta_pendiente():                              # V10: la veta, si ya se encontró la pista (o, 15/11, si se perdió el hierro)
 		_crear_veta()
 	Engine.set_meta("zona", ZONA)
 	_sonido_3d()
@@ -554,7 +554,7 @@ func _piezas_al_alcance() -> Array:
 		lista.append(["puerta", T.PUERTA + Vector3(0, 0, 1.2), "Examinar la puerta"])
 	if not cofre_abierto() and Progreso.ganado(ID_NIDO):
 		lista.append(["cofre", T.COFRE_NIDO, "Abrir cofre"])
-	if Progreso.hito("enc_herrero_pista") and not Progreso.hito("enc_herrero_veta"):   # V10: la veta del encargo de Ferro
+	if _veta_pendiente():                              # V10: la veta del encargo de Ferro
 		lista.append(["veta", T.PILAR_PEREGRINO + VETA_DESDE_PILAR, "Picar la veta"])
 	for n in notas:                                    # V12: las notas (con su radio, NotasGar.RADIO)
 		lista.append(["nota:" + n["datos"]["id"], n["pos"], "Examinar", NotasGar.RADIO])
@@ -1023,8 +1023,16 @@ func _pista_herrero(cuando := TRAS_DETALLE) -> void:
 			_crear_veta())
 
 
+# La veta está mientras falte picarla y, desde el 15/11, también en una partida antigua que perdió el hierro sin cerrar el
+# pedido (ciudades/oakhaven.gd, hierro_perdido): entonces vuelve a dar UNO.
+func _veta_pendiente() -> bool:
+	if Progreso.hito("enc_herrero_pista") and not Progreso.hito("enc_herrero_veta"):
+		return true
+	return load("res://ciudades/oakhaven.gd").hierro_perdido()
+
+
 func _crear_veta() -> void:
-	if veta != null or Progreso.hito("enc_herrero_veta"):
+	if veta != null or not _veta_pendiente():
 		return
 	veta = Node3D.new()
 	veta.name = "veta_hierro"
@@ -1058,6 +1066,16 @@ func _crear_veta() -> void:
 
 func _picar_veta() -> void:
 	if Progreso.hito("enc_herrero_veta"):
+		if not load("res://ciudades/oakhaven.gd").hierro_perdido():
+			return
+		load("res://inventario.gd").agregar_objeto("Hierro de la Falla", 1)   # 15/11: recuperación, uno y solo con cero
+		Sonido.efecto("tesoro")
+		_mostrar_aviso("La veta aún guarda hierro: el metal vuelve a cantar. (+1 Hierro de la Falla) Llevádselo a Ferro.", 3.6)
+		if veta != null:
+			veta.queue_free()
+			veta = null
+		guardar_posicion()
+		Progreso.guardar(scene_file_path)
 		return
 	Progreso.poner_hito("enc_herrero_veta")
 	load("res://inventario.gd").agregar_objeto("Hierro de la Falla", 1)

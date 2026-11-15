@@ -210,6 +210,10 @@ const NPCS := [
 		"imagen": "res://personajes/npc/caballero.png", "tinte": Color(1, 0.74, 0.56),
 		"dialogos": [
 			# encargo A, «El pedido de Maese Ferro» (enc_herrero): con el hierro, se decide; antes, lo pide
+			# 15/11: partida antigua que vendió o perdió el hierro antes de entregarlo: Ferro lo nota y manda a la veta
+			# (que vuelve a dar UNO mientras falte; zonas3d/garganta_3d.gd). Sin hierro no hay decisión que tomar.
+			{"dialogo": "oak_ferro_sin_hierro", "si": ["hito:enc_herrero_veta", "!hito:enc_herrero_fin", "cond:hierro_perdido"],
+				"prioridad": true},
 			{"dialogo": "oak_ferro_veta", "si": ["hito:enc_herrero_veta", "!hito:enc_herrero_fin"], "prioridad": true},
 			{"dialogo": "oak_ferro_pedido", "si": ["hito:pv_05", "!hito:enc_herrero_pedido"], "prioridad": true},
 			{"dialogo": "oak_ferro_despues", "si": "hito:enc_herrero_fin"},
@@ -474,6 +478,7 @@ const CONDICIONES := {
 	"kael_salio": "Kael ya ha salido de Oakhaven: tras PV-02 con la exploración 3D; sin ella, siempre (empieza fuera)",
 	"faroles_encendidos": "los tres faroles de la ronda encendidos",
 	"favores_listos": "el barril, las flores y el cucharón",
+	"hierro_perdido": "veta picada, el pedido de Ferro sin cerrar y ningún Hierro de la Falla (15/11, recuperación)",
 }
 const TIPOS_CONDICION := ["hito", "estado", "decision", "grupo", "oro", "modo", "cond", "ganado"]
 const PLURAL := {"Poción": "Pociones", "Éter": "Éter", "Incienso de Ceniza": "Inciensos de Ceniza",
@@ -666,6 +671,8 @@ static func cumple(cond: Variant) -> bool:
 					return P.hito("pv_02") or not load("res://modo3d.gd").activo()
 				"faroles_encendidos":
 					return P.estado(NOMBRE, "farol_1") and P.estado(NOMBRE, "farol_2") and P.estado(NOMBRE, "farol_3")
+				"hierro_perdido":   # 15/11: veta picada, pedido sin cerrar y ningún Hierro de la Falla
+					return hierro_perdido()
 				"favores_listos":
 					return P.estado(NOMBRE, "favor_barril") and P.estado(NOMBRE, "favor_flores") \
 						and P.estado(NOMBRE, "favor_cucharon")
@@ -913,6 +920,16 @@ static func abrir_cerradura(id: String = CERRADURA["id"]) -> String:
 		return "Dentro del arcón: %s.%s" % [_dar(cfg["premio"]),
 			load("res://ciudades/oakhaven_propuestas.gd").al_abrir_arcon()]
 	return "Bajo la losa: %s.%s" % [_dar(cfg["premio"]), load("res://ciudades/oakhaven_propuestas.gd").al_abrir_losa()]
+
+
+# 15/11 (auditoría externa): una partida antigua que vendió o gastó el Hierro de la Falla antes de llevárselo a Ferro
+# (antes de talleres.reservado) se quedaba sin poder cerrar «El pedido de Maese Ferro». Recuperación conservadora: en
+# ESE estado (veta picada, pedido pendiente y cero hierro) la veta de la Garganta vuelve a dar uno. No cierra el
+# encargo ni da nada más; con el hierro en la mochila deja de cumplirse, y la reserva impide venderlo de nuevo.
+static func hierro_perdido() -> bool:
+	var P = _p()
+	return P.hito("enc_herrero_veta") and not P.hito("enc_herrero_fin") \
+		and load("res://inventario.gd").cantidad("Hierro de la Falla") <= 0
 
 
 # Apunta una nota en el Diario (progreso.gd, ver_nota: en «lore_visto»). Devuelve true si es nueva. No completa ningún

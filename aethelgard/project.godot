@@ -129,6 +129,7 @@ directories/dtl_directory={
 "oak_ferro_despues": "res://dialogos/oakhaven/oak_ferro_despues.dtl",
 "oak_ferro_pedido": "res://dialogos/oakhaven/oak_ferro_pedido.dtl",
 "oak_ferro_v": "res://dialogos/oakhaven/oak_ferro_v.dtl",
+"oak_ferro_sin_hierro": "res://dialogos/oakhaven/oak_ferro_sin_hierro.dtl",
 "oak_ferro_veta": "res://dialogos/oakhaven/oak_ferro_veta.dtl",
 "oak_hilda": "res://dialogos/oakhaven/oak_hilda.dtl",
 "oak_mirta": "res://dialogos/oakhaven/oak_mirta.dtl",

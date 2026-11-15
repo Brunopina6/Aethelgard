@@ -186,6 +186,24 @@ func _encargo_a() -> void:
 		Oak.aplicar_senal("oak:hierro_entregar")
 		if Inv.oro() > oro + 80:
 			_fallo("4: el premio se cobra dos veces")
+	# 15/11 (auditoría): partida antigua que ya perdió el hierro: Ferro lo nota, el Diario lo explica, nada se cierra solo
+	_limpiar()
+	var e2: Dictionary = E.de("enc_herrero")
+	for h in ["enc_herrero_pedido", "enc_herrero_pista", "enc_herrero_veta"]:
+		P.poner_hito(h)
+	if not Oak.hierro_perdido():
+		_fallo("4b: veta picada, pedido pendiente y sin hierro no se reconoce como hierro perdido")
+	if Oak.dialogo_de("ferro", 0).get_file().get_basename() != "oak_ferro_sin_hierro":
+		_fallo("4b: sin el hierro, Ferro dice «%s»" % Oak.dialogo_de("ferro", 0).get_file())
+	if not E.pistas_conocidas(e2).any(func(x): return "aún queda" in x):
+		_fallo("4b: el Diario no dice dónde recuperar el hierro")
+	if Oak.aplicar_senal("oak:hierro_entregar") != "" or P.hito("enc_herrero_fin"):
+		_fallo("4b: sin el hierro, el encargo se cierra")
+	Inv.agregar_objeto("Hierro de la Falla", 1)
+	if Oak.hierro_perdido() or Oak.dialogo_de("ferro", 0).get_file().get_basename() != "oak_ferro_veta":
+		_fallo("4b: con el hierro recuperado, Ferro no vuelve a su escena de decidir")
+	if E.pistas_conocidas(e2).any(func(x): return "aún queda" in x):
+		_fallo("4b: con el hierro, el Diario sigue mandando a la veta")
 
 
 func _encargo_b() -> void:

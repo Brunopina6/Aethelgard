@@ -19,6 +19,8 @@ const MISIONES := [
 				"si": ["hito:enc_herrero_pista", "grupo:Garon"]},
 			{"texto": "Al pie del pilar del peregrino, la roca tiene vetas oscuras que brillan como el metal.",
 				"si": ["hito:enc_herrero_pista", "!grupo:Garon"]},
+			{"texto": "Sin el hierro no hay nada que decidir. En la veta de la Falla, junto al pilar, aún queda.",
+				"si": ["hito:enc_herrero_veta", "!hito:enc_herrero_fin", "!material:Hierro de la Falla=1"]},   # 15/11
 			{"texto": "Decidisteis entregarle el hierro a Ferro: lo venderá en su forja.", "si": "decision:hierro_ferro=entregado"},
 			{"texto": "Kael se quedó el hierro. Ferro le enseñará a templarlo en la forja.", "si": "decision:hierro_ferro=kael"}],
 		"recompensa": {}, "pago": "El hierro de la Falla ya tiene dueño: lo que decidisteis lo recuerda Ferro."},

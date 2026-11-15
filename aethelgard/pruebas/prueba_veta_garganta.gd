@@ -5,6 +5,9 @@ extends SceneTree
 #   2. Con la pista de Garon (hito enc_herrero_pista), la veta está; picarla da 1 Hierro de la Falla y el hito
 #      enc_herrero_veta, y la veta desaparece. Con Lya y Garon en el grupo lo comentan (gg_veta).
 #   3. Picarla otra vez no da más hierro. Sin Lya ni Garon: solo el aviso, sin diálogo.
+#   4. (15/11, auditoría) Partida antigua que perdió el hierro (veta picada, pedido sin cerrar, cero hierro): al entrar
+#      la veta vuelve y da UNO; picar otra vez no da más; al volver a entrar con el hierro no está; con el pedido ya
+#      cerrado y sin hierro, tampoco. Nunca cierra el encargo.
 # Termina con «FALLOS: n» y quit(1) si algo no se cumple.
 
 const REGION := "res://zonas3d/garganta_3d.tscn"
@@ -116,7 +119,53 @@ func _process(_d: float) -> bool:
 					fallos.append("3: sin Lya ni Garon, picar no da el hierro o el hito")
 				if dg != null and dg.current_timeline != null and dg.current_timeline.resource_path.ends_with("gg_veta.dtl"):
 					fallos.append("3: sin Lya ni Garon empieza gg_veta")
-				print("OK veta de la Garganta: aparece con la pista, da el hierro una vez, gg_veta con Lya y Garon")
+				if dg != null and dg.current_timeline != null:
+					dg.end_timeline()
+				while _hierro() > 0:                   # la partida antigua: el hierro vendido antes de la reserva
+					inv.gastar(HIERRO)
+				viejo = r
+				change_scene_to_file(REGION)
+				_siguiente(5)
+		5:
+			if _lista() and current_scene != viejo:
+				var r = current_scene
+				if r.veta == null or not r._veta_pendiente():
+					fallos.append("4: sin hierro y con el pedido pendiente, la veta no vuelve")
+				if not r._piezas_al_alcance().any(func(x): return x[0] == "veta"):
+					fallos.append("4: la veta recuperada no tiene botón")
+				r._picar_veta()
+				if _hierro() != 1:
+					fallos.append("4: la veta recuperada no da 1 %s (%d)" % [HIERRO, _hierro()])
+				r._picar_veta()
+				if _hierro() != 1:
+					fallos.append("4: la veta recuperada da hierro dos veces (%d)" % _hierro())
+				if P.hito("enc_herrero_fin"):
+					fallos.append("4: recuperar el hierro cierra el encargo")
+				if not load("res://talleres.gd").reservado(HIERRO):
+					fallos.append("4: el hierro recuperado se puede vender")
+				viejo = r
+				change_scene_to_file(REGION)
+				_siguiente(6)
+		6:
+			if _lista() and current_scene != viejo:
+				var r = current_scene
+				if r.veta != null or r._piezas_al_alcance().any(func(x): return x[0] == "veta"):
+					fallos.append("4: con el hierro en la mochila, la veta sigue ahí")
+				P.poner_hito("enc_herrero_fin")
+				inv.gastar(HIERRO)
+				viejo = r
+				change_scene_to_file(REGION)
+				_siguiente(7)
+		7:
+			if _lista() and current_scene != viejo:
+				var r = current_scene
+				if r.veta != null or r._veta_pendiente():
+					fallos.append("4: con el pedido cerrado, la veta vuelve")
+				var antes := _hierro()
+				r._picar_veta()
+				if _hierro() != antes:
+					fallos.append("4: con el pedido cerrado, picar da hierro")
+				print("OK veta de la Garganta: aparece con la pista, da el hierro una vez, gg_veta con Lya y Garon; recuperación")
 				_terminar()
 				return true
 	return false
