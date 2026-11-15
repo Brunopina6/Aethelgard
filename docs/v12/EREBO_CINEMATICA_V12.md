@@ -191,3 +191,103 @@ Mismo escenario, mismos recursos y mismas cámaras, con otros tiempos.
   - La máscara no tiene animación facial; su expresividad sale de la cabeza, la luz y la silueta, como pide el diseño.
   - La capa no tiene simulación de tela: la mueven los huesos de Mixamo.
   - El haz final se ve casi de frente, como una esfera que viene hacia la cámara.
+
+## 10. Versión MEJORADA (15/11, tarde)
+
+**Encargo** (usuario): «quiero mejorar la cinemática de vídeo original, conservando su diseño y ambiente, corrigiendo
+los movimientos extraños de la cabeza y cuidando efectos, luz, animación y sonido. Mantén también la versión híbrida…
+El vídeo mejorado debe poder integrarse en ella con una transición coherente. No elimines esa secuencia ni sobrescribas
+los originales». Nada de esto está aprobado.
+
+### 10.1 Qué cambia (mismos planos, tiempos y contenido)
+
+Se renderiza con `cinematica_erebo.py … cabeza=firme mejora=si` (sin esas opciones el script hace lo del 14/11):
+
+- **Cabeza firme** (`cabeza=firme`, ver `EREBO_HIBRIDA_V12.md` §9.1): sin el balanceo de zombi del reposo, sin la
+  cabeza ladeada «curiosa», sin agacharla sobre el puño, sin tirón de cuello ni temblor; erguida, la barbilla alta.
+- **Luz**: contraluz de borde plateado (área de 1,4 m detrás y por encima) y otro violeta por el otro lado, que entran con
+  Érebo y laten con el orbe: dibujan la capucha, los hombros y el borde carmesí de la máscara.
+- **Polvo en el aire**: 300 motas finas que flotan, iluminadas, que la absorción arrastra en remolino hacia la mano y
+  la onda del estallido empuja.
+- **El agarre (9,85 s; 2,6 s en la abreviada) se lee con más fuerza**: onda de choque alrededor del orbe, 60 chispas
+  con estela, golpe de zoom (6 %), temblor extra, un destello breve y aberración cromática un instante.
+- **El aplastamiento**: el puño se CARGA (un halo que late cada vez más rápido y crece durante la compresión y la
+  quietud) y al liberar (17,0 s; 5,15 s) estalla un halo esférico que se expande (se ve como una burbuja de energía
+  que deforma la luz), 80 chispas largas, más luz y destello, aberración y temblor.
+- **Compositor**: bloom algo más rico y estrellas suaves (4 puntas) solo en los brillos más fuertes.
+- **Corrección de color y viñeta** al codificar (ffmpeg): un poco más de contraste y saturación, sombras hacia el
+  azul violáceo, altas hacia el magenta, viñeta suave (`GRADO` en el script de codificación, ver 10.4).
+- **Sonido** (`animaciones/erebo/fuentes/sonido_mejorado.py`, sobre la mezcla del 14/11, que no se toca): la ráfaga se
+  recoge 150 ms (−9 dB) antes del destello final y un golpe sordo y un brillo metálico caen EN su fotograma (antes no
+  había ataque en el destello: lo más fuerte cerca era la ráfaga, 0,3-0,4 s antes de la luz); un siseo brillante corto con
+  la onda del agarre; un zumbido grave a −30 dB que crece bajo la pausa mientras el puño se carga y se corta en el
+  estallido. Todo sintetizado. Pico −1,12 dBFS (completa) y −1,68 (abreviada); RMS −17,5 dBFS (antes −17,6).
+- **Sincronía medida** (`pruebas/herramientas/analizar_sonido_erebo.py`, sobre los MP4: destellos de la imagen frente
+  al ATAQUE de sonido más cercano —ventana de 10 ms que supera en 6 dB los 150 ms anteriores—):
+
+  | | Agarre | Estallido | Destello final |
+  |---|---|---|---|
+  | Completa original | (sin destello en la imagen) | +0 ms | sin ataque de sonido |
+  | **Completa mejorada** | **+13 ms** (9,87 s) | **+0 ms** (17,00 s) | **+7 ms** (19,73 s) |
+  | Abreviada original | (sin destello) | +13 ms | sin ataque |
+  | **Abreviada mejorada** | **+0 ms** (2,60 s) | **+13 ms** (5,17 s) | **−17 ms** (6,57 s) |
+
+  Todo dentro de medio fotograma. (Los desfases de +183 ms y de 0,3-0,4 s que se midieron antes salían de medir «la
+  mayor subida de energía», que confundía el golpe con la cola o con lo que sigue a un silencio; el del destello final sí
+  era real y es el que se arregla.)
+
+**Tiempos y duraciones: los mismos** (agarre 9,85 s, estallido 17,0 s, 20,00 s; abreviada 2,6 / 5,15 / 6,80 s): ni
+`invocacion_erebo_video.gd` ni `ATB_TEATRO` cambian.
+
+### 10.2 Dónde está y cómo volver a los originales
+
+- El juego usa los NUEVOS en las rutas de siempre: `videos/erebo_invocacion_completa.ogv` y `_abreviada.ogv` (Theora
+  960×540 a 30 fps, 2 500 kbit/s, Vorbis 160 kbit/s). La opción «Vídeo» sigue siendo experimental y APAGADA.
+- Los ORIGINALES del 14/11, intactos (mismo SHA-256), en `videos/originales_14_11/` (con `.gdignore`: no se importan ni
+  se exportan): `erebo_invocacion_completa_original_14_11.ogv` y `erebo_invocacion_abreviada_original_14_11.ogv`.
+- **Volver a los originales**: copiar esos dos archivos encima de `videos/erebo_invocacion_completa.ogv` y
+  `_abreviada.ogv` (o `git checkout d0f4a65 -- aethelgard/videos/erebo_invocacion_completa.ogv
+  aethelgard/videos/erebo_invocacion_abreviada.ogv`).
+- La híbrida: sus tramos del ritual (`videos/erebo_ritual.ogv`, completa 8,0-20,0 s, y `erebo_ritual_breve.ogv`,
+  abreviada 1,8-6,8 s) salen ahora de esta versión mejorada (con su sonido).
+
+### 10.3 Entregables, tiempos de render y pruebas
+
+En `D:\REBELUM_diagnostico\erebo_cine\mejorada_15_11\`:
+
+| Archivo | Qué es |
+|---|---|
+| `REBELUM_Erebo_cinematica_completa_mejorada.mp4` | la completa nueva, 1280×720 H.264 + AAC, 20,0 s |
+| `REBELUM_Erebo_cinematica_abreviada_mejorada.mp4` | la abreviada nueva, 6,8 s |
+| `REBELUM_Erebo_cinematica_completa_antes_izquierda_despues_derecha.mp4` / `..._abreviada_...` | antes (14/11) y después, lado a lado, con el sonido nuevo |
+| `REBELUM_Erebo_cinematica_hoja_fotogramas_clave.png` | 12 momentos (2,4 / 5,0 / 7,4 / 9,9 / 10,2 / 12,6 / 15,6 / 16,7 / 17,1 / 17,4 / 18,3 / 19,5 s): arriba el original, debajo el nuevo |
+| `empalme_hibrida\REBELUM_Erebo_hibrida_empalme_con_el_video.png` | la híbrida en el corte al vídeo: en la mano, el orbe, justo antes del corte, el primer fotograma del vídeo (completa y abreviada) y el agarre |
+| `hibrida_con_el_video_mejorado\` | la híbrida grabada en un combate (Movie Maker, con sonido) con el ritual nuevo, completa y abreviada |
+| `completa\fotogramas`, `abreviada\fotogramas`, `sonido\` | los PNG maestros (1280×720) y las mezclas nuevas |
+
+**Tiempos de render** (Blender 5.2.3, EEVEE, 20 muestras, 1280×720, RTX 3050): completa 24,5 min (600 fotogramas,
+≈2,45 s cada uno), abreviada 8,8 min (204, ≈2,6 s), y P2-P3 de la completa rehechos con los contraluces redondos
+10,1 min (234). Antes, sin la mejora, ≈1,4 s por fotograma.
+
+**Empalme con la híbrida**: el último plano en tiempo real se acerca al orbe que flota (ahora a 0,42 m y 28°) y el
+vídeo empieza en el primer plano del orbe: mismo orbe violeta, centrado y de tamaño parecido; entre los dos, el destello
+violeta de la híbrida, el sonido de resonancia y 0,25 s de negro del reproductor.
+
+**Pruebas** (`D:\REBELUM_diagnostico\pruebas\2026-11-15_162212\`): `prueba_erebo_video`, `prueba_erebo_video_fallo`,
+`prueba_erebo_hibrida` y `prueba_erebo_hibrida_fallo` SUPERADAS (4 de 4, `FALLOS: 0`). Literal:
+`VIDEO erebo_invocacion_completa.ogv: 20.00 s, posición 0.633 tras 20 fotogramas` · `VIDEO erebo_invocacion_abreviada.ogv:
+6.80 s, posición 0.633 tras 20 fotogramas` · ATB de Kael 39,98 / 40,01 (esperado ≈40,05) ·
+`AZAR randi() tras la invocación: apagada 518376512 · híbrida completa 518376512 · híbrida abreviada 518376512 · apagada
+(control) 518376512` · híbrida completa 25,7 s y abreviada 18,7 s, como antes.
+
+**Pendiente**: que el usuario lo vea y lo apruebe; probar en el Redmi la decodificación del vídeo nuevo (mismo formato
+y tasa de bits que el del 14/11) y escucharlo en el teléfono.
+
+### 10.4 Reproducir
+
+```
+blender -b --factory-startup -P cinematica_erebo.py -- <aethelgard> <salida> version=completa etapa=planos desde=0 hasta=20 muestras=20 cabeza=firme mejora=si
+blender -b --factory-startup -P cinematica_erebo.py -- <aethelgard> <salida> version=abreviada etapa=planos desde=0 hasta=6.8 muestras=20 cabeza=firme mejora=si
+blender -b --factory-startup --python sonido_mejorado.py -- erebo_cine_<v>.wav erebo_cine_<v>_mejorada.wav <v>
+```
+Codificación (ffmpeg): `-vf "eq=contrast=1.08:brightness=-0.012:saturation=1.12,colorbalance=rs=-0.03:gs=-0.02:bs=0.045:rh=0.035:bh=0.02,vignette=angle=PI/4.6,scale=960:540:flags=lanczos,format=yuv420p" -c:v libtheora -b:v 2500k -c:a libvorbis -b:a 160k -ar 44100`.

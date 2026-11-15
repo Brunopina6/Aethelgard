@@ -360,3 +360,11 @@ real (cada 0,4 s, del acercamiento al orbe): `D:\REBELUM_diagnostico\erebo_hibri
 - **La invocación cinematográfica de siempre** sigue con los vídeos del 14/11: los candidatos con la cabeza firme están
   listos (9.1) para cambiarlos si el usuario lo aprueba.
 - `prueba_combate_huella`: referencia desfasada en la integración (E8), ajena a esta rama.
+
+### 9.7 15/11 (noche): el ritual sale de la cinemática MEJORADA
+
+Los tramos del ritual (`videos/erebo_ritual.ogv`, completa 8,0-20,0 s, y `erebo_ritual_breve.ogv`, abreviada
+1,8-6,8 s) se sacan ahora de la cinemática mejorada (`EREBO_CINEMATICA_V12.md` §10: cabeza firme, contraluz, polvo,
+chispas, halo, color y sonido sincronizado). El último plano en tiempo real se acerca más al orbe (0,42 m, 28°) para
+empalmar con el primer plano del orbe con que empieza el vídeo. Pruebas: `prueba_erebo_hibrida` y
+`prueba_erebo_hibrida_fallo` SUPERADAS con los vídeos nuevos (`D:\REBELUM_diagnostico\pruebas\2026-11-15_162212\`).
