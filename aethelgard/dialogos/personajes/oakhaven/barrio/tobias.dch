@@ -1,0 +1,15 @@
+{
+"@path": "res://addons/dialogic/Resources/character.gd",
+"@subpath": NodePath(""),
+&"_translation_id": "",
+&"color": Color(0.56, 0.64, 0.82, 1),
+&"custom_info": {},
+&"default_portrait": "",
+&"description": "PROPUESTA del barrio experimental de Oakhaven (V12, 16/11, solo en el banco de Auditoría: ciudades/oakhaven_barrio.gd). El porteador: del carro de las caravanas al patio y al horno. Sin retrato.",
+&"display_name": "Tobías",
+&"mirror": false,
+&"nicknames": [],
+&"offset": Vector2(0, 0),
+&"portraits": {},
+&"scale": 0.72
+}

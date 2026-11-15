@@ -1,0 +1,3 @@
+odila: ¿Buscas a Damián? Está en el taller. Se trae el trabajo a casa y luego lo busca por todas partes.
+odila: Si es por su galga, mira la repisa, junto al cántaro.
+[signal arg="bar:sabe:galga_en_casa:odila"]

@@ -1,0 +1,6 @@
+damian: He oído que al carro del horno se le partió el pasador. Aquí todo sube por la rampa.
+damian: Si es así, lo corto yo. Pero a ojo no corto un pasador: necesito la galga.
+damian: Y la galga está en casa. Me la llevé anoche y allí se quedó. Calle de arriba.
+[signal arg="bar:oido:pasador_roto:damian"]
+[signal arg="bar:sabe:galga_en_casa:damian"]
+[signal arg="bar:taller"]

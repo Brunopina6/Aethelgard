@@ -1,0 +1,7 @@
+tobias: ¿El carro del horno? Dicen que se le partió una pieza del eje.
+- ¿Quién te lo dijo?
+	tobias: Maela, esta mañana. Iba con harina hasta las cejas y de mal humor.
+- ¿Lo viste tú?
+	tobias: No. Yo cargo cajas, no miro ejes. Pero si Maela lo dice, será verdad.
+tobias: Mientras tanto, yo con las cajas a cuestas. Del carro al patio, del patio al carro.
+[signal arg="bar:oido:pasador_roto:tobias"]

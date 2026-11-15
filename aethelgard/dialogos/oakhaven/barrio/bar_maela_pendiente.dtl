@@ -1,0 +1,7 @@
+maela: El pan entra y sale del horno. Así no se seca, pero tampoco se vende.
+maela: El taller de Damián está arriba, subiendo la rampa del patio. Él sabrá qué pasador lleva.
+- ¿Quién dice que se partió?
+	maela: Lo vi yo, esta mañana. El carro dio un crujido al girar y se quedó cojo.
+- Voy para allá.
+	maela: Gracias. Y si ves a Tobías, que no cargue nada hasta que el carro ruede.
+[signal arg="bar:sabe:pasador_roto:maela"]

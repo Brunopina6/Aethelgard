@@ -21,7 +21,8 @@ extends RefCounted
 
 const FUENTES := ["res://ciudades/oakhaven.gd", "res://datos/encargos_pastos.gd", "res://datos/encargos_oakhaven.gd",
 	"res://datos/encargos_desierto.gd", "res://ciudades/oakhaven_propuestas.gd",   # (la última: PROPUESTA apagada)
-	"res://datos/encargos_sunken.gd"]   # V12 (15/11): Sunken City 3D, PROPUESTA (en pruebas: sin la región no empieza)
+	"res://datos/encargos_sunken.gd",   # V12 (15/11): Sunken City 3D, PROPUESTA (en pruebas: sin la región no empieza)
+	"res://ciudades/oakhaven_barrio.gd"]   # V12 (16/11): barrio de Oakhaven, PROPUESTA (solo en el banco de Auditoría)
 const TIPOS := ["principal", "secundaria", "personal", "secreta", "cadena", "contrato"]
 
 

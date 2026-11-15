@@ -1,0 +1,4 @@
+tobias: Hoy llegó la caravana del sur con tres días de retraso. Yo mismo le descargué las cajas.
+tobias: Los caminos están de barro hasta el eje. Si suben los portes, sube la harina.
+tobias: Y si sube la harina, Maela se enfada. Mejor no estar cerca.
+[signal arg="bar:sabe:caravana_retraso:tobias"]

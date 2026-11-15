@@ -1,0 +1,4 @@
+odila: ¿La galga de Damián? Se la trae a casa y luego la busca por todo el taller.
+odila: Espera, que está en la repisa. ¡Nela, eso no se toca! Toma, aquí la tienes.
+[signal arg="bar:sabe:galga_en_casa:odila"]
+[signal arg="bar:galga"]

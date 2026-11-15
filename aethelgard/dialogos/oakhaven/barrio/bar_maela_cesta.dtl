@@ -1,0 +1,4 @@
+maela: ¡Rueda otra vez! Tobías ya está cargando el carro.
+maela: Toma esta cesta, aún caliente. Es para Odila, la mujer de Damián. Así le pago el pasador.
+maela: Su casa está en la calle de arriba, la del tendedero. ¡Antes de que se enfríe!
+[signal arg="bar:cesta"]

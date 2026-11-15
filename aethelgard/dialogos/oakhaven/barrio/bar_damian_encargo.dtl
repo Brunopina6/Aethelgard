@@ -1,0 +1,9 @@
+damian: ¿El carro de Maela? Ya me lo han contado. Un pasador partido, dices.
+damian: A ojo no corto un pasador. Necesito la galga, y la galga está en casa, en la repisa del hogar.
+- ¿Qué es una galga?
+	damian: Una tablilla con muescas. Mides el agujero del eje y sabes qué grueso cortar.
+- Voy a por ella.
+	damian: Odila te abrirá. Calle de arriba, la puerta del tendedero.
+[signal arg="bar:oido:pasador_roto:damian"]
+[signal arg="bar:sabe:galga_en_casa:damian"]
+[signal arg="bar:taller"]

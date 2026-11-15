@@ -1,0 +1,7 @@
+brena: Seguro que fue Avena. Anoche estaba inquieta y el carro durmió junto al establo.
+brena: Una coz a un eje y adiós pasador. No se lo digas a Maela, que me la deja sin heno.
+- ¿La viste dar la coz?
+	brena: Verla, no. Pero la conozco. Cuando se pone nerviosa, patea.
+- ¿Seguro que fue ella?
+	brena: ¿Quién más? Los carros no se rompen solos. Bueno… a veces sí.
+[signal arg="bar:cree:culpa_caballo:brena"]

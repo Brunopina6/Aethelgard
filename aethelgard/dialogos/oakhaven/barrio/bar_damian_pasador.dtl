@@ -1,0 +1,5 @@
+damian: Tres muescas y media. Buena medida. Espera, que voy a la trastienda.
+damian: Fresno seco, del bueno. Un pasador así aguanta un invierno de baches.
+damian: Toma. Encájalo en el eje con un golpe seco, sin miedo.
+[signal arg="bar:sabe:pasador_roto:damian"]
+[signal arg="bar:pasador"]

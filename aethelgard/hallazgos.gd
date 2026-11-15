@@ -50,7 +50,7 @@ const HALLAZGOS := [
 const FUERA := {
 	"gota_cascada": "Arboleda Mítica (T-090): aún no existe en el juego",
 	"cinta_lumi": "regalo de Lumi en la Arboleda Mítica (T-090): aún no existe",
-	"farol_peregrino": "tienda de Oakhaven (equipo_extra.gd, EN_TIENDA)",
+	"farol_peregrino": "tienda de Oakhaven (equipo_extra.gd, EN_TIENDA); el barrio de prueba da Éter ×2, no el farol",
 	"moneda_aguila": "tienda de Sunken City (EN_TIENDA)",
 	"lagrima_ambar": "primera victoria en el nido de la Garganta (combate.gd, RECOMPENSA_FIJO)",
 	"fauces_gorthor": "al vencer a Gorthor (combate.gd, RECOMPENSA_FIJO)",

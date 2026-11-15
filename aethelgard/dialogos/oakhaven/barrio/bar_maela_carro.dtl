@@ -1,0 +1,8 @@
+maela: ¡Cuidado, que quema! Perdona, vengo del horno con la masa a medias.
+maela: Al carro del reparto se le partió el pasador del eje. Ahí lo tienes, parado en mitad de la calle.
+- ¿Lo viste tú?
+	maela: Con estos ojos. Dio un crujido al girar y se quedó cojo, con la rueda torcida.
+- ¿Y ahora qué?
+	maela: Damián, el carretero, tiene el taller arriba, en el patio. Él sabrá qué pasador lleva.
+maela: El pan no espera: lo vuelvo a meter al horno hasta que el carro ruede.
+[signal arg="bar:sabe:pasador_roto:maela"]
