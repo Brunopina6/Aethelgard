@@ -146,13 +146,16 @@ invocación de siempre con ese resultado (±0,6, como la prueba del vídeo); `c1
 modo. **Azar**: `AZAR randi() tras la invocación: apagada 518376512 · híbrida 518376512 · apagada (control) 518376512`.
 
 **`prueba_erebo_hibrida_fallo` (erebo=fallo): SUPERADA, `FALLOS: 0`.** Apagada con fallo (teatro); Grimfang y Zarzalín
-resistidas (11,7 s: el corazón se escapa, sin orbe ni vídeo, PV sin cambios, «sale vacía» una vez, enemigo de verdad
+resistidas (12,0 s: el corazón se escapa, sin orbe ni vídeo, PV sin cambios, «sale vacía» una vez, enemigo de verdad
 intacto); jefe con el fallo forzado (siempre 20 %, con trozo y ritual); resistida saltada en la extracción.
 
 **Regresión**: `prueba_erebo_video`, `prueba_erebo_video_fallo`, `prueba_erebo_saltar`, `prueba_erebo_nueva` y
-`prueba_combate_huella` SUPERADAS con la híbrida apagada. `prueba_banco_pruebas` pedía 6 selectores: ahora 7 (el nuevo).
+`prueba_combate_huella` SUPERADAS con la híbrida apagada. `prueba_banco_pruebas` pedía 6 selectores: ahora 7 (el nuevo);
+con eso, `prueba_banco_pruebas` y `prueba_banco_pruebas_3d` SUPERADAS.
 
-Pasadas: `D:\REBELUM_diagnostico\pruebas\2026-11-15_120303\` (las dos híbridas) y `...\2026-11-15_120454\` (regresión).
+Pasada final con el código entregado: `D:\REBELUM_diagnostico\pruebas\2026-11-15_122027\` (las dos híbridas, el vídeo,
+saltar y los dos bancos: 6 SUPERADAS, 0 FALLIDAS; mismas cifras que la tabla, la resistida 12,0 s). Regresión anterior
+(huella del combate y la invocación nueva): `...\2026-11-15_120454\`.
 
 ## 7. Grabaciones y capturas
 
