@@ -314,6 +314,19 @@ func _turno_a(quien: Dictionary) -> void:
 	quien["mp"] = maxi(quien["mp"], 60)
 	match paso:
 		0:
+			# 15/11 (revisión de personajes): Nix usa magia negra y NO invoca. Con la Armonía llena y Lya en pie, su
+			# menú principal no tiene la orden INVOCACIÓN (ni apagada); llamar a la acción con Nix de actor no invoca.
+			var armonia_antes: float = c.armonia
+			c.armonia = 1.0
+			c._mostrar_menu()
+			var ordenes: Array = _filas().map(func(i): return str(i.get("tipo", i.get("texto", ""))))
+			_ok(not ("invocacion" in ordenes) and not ("INVOCACIÓN" in ordenes),
+				"el menú de Nix tiene INVOCACIÓN: %s" % [ordenes])
+			_ok("MAGIA" in ordenes, "el menú de Nix no tiene MAGIA: %s" % [ordenes])
+			c._invocar()
+			_ok(c.estado == "menu" and c.inv_erebo == null, "_invocar con Nix de actor invoca (estado %s)" % c.estado)
+			c.armonia = armonia_antes
+			hechos.append("A: menú de Nix %s, sin INVOCACIÓN con la Armonía llena" % [ordenes])
 			c._menu_magia()
 			var escuelas: Array = _filas().filter(func(i): return i.has("escuela")).map(func(i): return i["escuela"])
 			_ok(escuelas == ["nix_ascuas", "nix_aguja", "nix_colapso"], "el menú de Nix: %s" % [escuelas])
