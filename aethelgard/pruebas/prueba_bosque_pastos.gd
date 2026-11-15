@@ -58,12 +58,15 @@ func _esperar(n: int) -> void:
 		await process_frame
 
 
+# (16/11) espera por RELOJ: con --fixed-fps los fotogramas vuelan y las cargas en segundo plano (Recursos.cambiar_escena)
+# tardan en tiempo real; contando fotogramas, en una batería cargada fallaba «8: la región no vuelve a cargarse».
 func _hasta(cond: Callable, segundos := 30.0) -> bool:
-	for i in int(segundos * 30.0):
+	var t0 := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - t0 < int(segundos * 1000.0):
 		if cond.call():
 			return true
 		await process_frame
-	return false
+	return cond.call()
 
 
 func _region_lista() -> bool:

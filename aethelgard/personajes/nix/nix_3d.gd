@@ -101,8 +101,11 @@ func _poner_lod() -> void:
 		if mi is GeometryInstance3D:
 			mi.visibility_range_begin = l[1]
 			mi.visibility_range_end = l[2]
-			mi.visibility_range_begin_margin = 0.5 if l[1] > 0.0 else 0.0
-			mi.visibility_range_end_margin = 0.5 if l[2] > 0.0 else 0.0
+			# (16/11) sin margen: con el fundido apagado, el margen es una histéresis y, si las dos mallas empezaban
+			# ocultas, en la franja de 8,5 a 9,5 m no se veía ninguna (la Nix antigua desaparecía a 9 m de la cámara,
+			# justo el zoom mínimo de la exploración; hallado al grabar la comparación del grupo)
+			mi.visibility_range_begin_margin = 0.0
+			mi.visibility_range_end_margin = 0.0
 			mi.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED
 
 
