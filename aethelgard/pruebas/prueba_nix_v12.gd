@@ -15,6 +15,11 @@ extends SceneTree
 # No toca la partida de verdad.
 
 const MAX_FOTOGRAMAS := 12000
+# AZAR (15/11): combate.gd hace randomize() en su _ready (salvo «-- semilla=N»). Los combates A y C no sembraban (el
+# seed(12345) de R es para la probabilidad del Lento, sin combate, y ese sí era fijo): el daño y el Lento o «Falla» de la
+# Aguja salían al azar. Ahora se siembra DESPUÉS de root.add_child(c) (como prueba_gorthor_v12.gd); el ATB de los
+# enemigos ya lo pone la prueba a 0. Imprime «SEMILLA» por combate y una «TRAZA» por turno de Nix (paso y PV).
+const SEMILLA := 13
 
 var P
 var G
@@ -150,7 +155,9 @@ func _empezar(e: String) -> void:
 	Engine.set_meta("tipo_combate", "normal")
 	Engine.set_meta("grupo_combate", 1)
 	c = load("res://combate.tscn").instantiate()
-	root.add_child(c)
+	root.add_child(c)                              # (aquí su _ready hace randomize())
+	seed(SEMILLA)                                  # desde aquí, el azar del combate es fijo (el ATB enemigo se pone a 0 abajo)
+	print("SEMILLA %d · %s" % [SEMILLA, e])
 	c.MODO_PRUEBAS = false
 	c.sonido_pedido.connect(func(n): sonidos.append(n))
 	for en in c.enemigos:
@@ -312,6 +319,10 @@ func _turno_a(quien: Dictionary) -> void:
 		return
 	var vivos := _vivos()
 	quien["mp"] = maxi(quien["mp"], 60)
+	var pv := []                                   # una línea por turno de Nix (para reproducir la semilla)
+	for f in c.heroes + c.enemigos:
+		pv.append("%s %d" % [f["nombre"], int(f["hp"])])
+	print("TRAZA f%05d Nix paso %d · %s" % [frames - f_inicio, paso, ", ".join(pv)])
 	match paso:
 		0:
 			# 15/11 (revisión de personajes): Nix usa magia negra y NO invoca. Con la Armonía llena y Lya en pie, su

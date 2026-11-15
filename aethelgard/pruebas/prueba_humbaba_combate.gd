@@ -15,6 +15,10 @@ extends SceneTree
 #   B. Combate entero con una estrategia de jugador (defender el Réquiem, Lya cura y quema, el resto golpea): termina;
 #      pasa por las tres fases; al acabar no quedan nodos suyos ni estados en los héroes; los condenados caen con él.
 #   C. Derrota (dos héroes a nivel 1): acaba sin bloquearse.
+# AZAR (15/11): combate.gd hace randomize() en su _ready (salvo «-- semilla=N»), así que la semilla se pone DESPUÉS de
+# root.add_child(c) y se vuelve a tirar el ATB inicial de los enemigos con ella (como prueba_gorthor_v12.gd). Antes se
+# sembraba antes de add_child y los combates eran al azar pese a «semilla 7». Cada combate imprime «SEMILLA» y B y C una
+# «TRAZA» por turno de héroe (fotograma del combate, quién, fase y PV de todos).
 
 const ARCHIVO := "user://prueba_humbaba_combate.save"
 var H
@@ -123,12 +127,15 @@ func _combate(activos: Dictionary, semilla: int) -> void:
 	Engine.set_meta("zona", "bosque")
 	Engine.set_meta("tipo_combate", "jefe")
 	Engine.set_meta("grupo_combate", H.GRUPO)
-	seed(semilla)
 	c = load("res://combate.tscn").instantiate()
 	sonidos.clear()
 	impactos.clear()
 	c.sonido_pedido.connect(func(n: String): sonidos.append([n, Engine.get_process_frames()]))
-	root.add_child(c)
+	root.add_child(c)                                     # (aquí su _ready hace randomize())
+	seed(semilla)                                         # desde aquí, el azar del combate es fijo
+	for e in c.enemigos:
+		e["atb"] = randf() * 30.0                         # el ATB inicial, como en combate.gd, ya con la semilla
+	print("SEMILLA %d · %s" % [semilla, str(activos)])
 	await _esperar(2)
 	var hb := _hb()
 	var p = c._p3d(hb)
@@ -371,6 +378,10 @@ func _jugar(max_fotogramas: int) -> Dictionary:
 		fases[H.fase_de(hb)] = true
 		if c.estado == "menu" and c.actor is Dictionary and c.turnos_heroe != decidido:
 			decidido = c.turnos_heroe
+			var pv := []                                   # una línea por turno de héroe (para reproducir la semilla)
+			for f in c.heroes + c.enemigos:
+				pv.append("%s %d" % [f["nombre"], int(f["hp"])])
+			print("TRAZA %05d %s (fase %d) · %s" % [fr, c.actor["nombre"], H.fase_de(hb), ", ".join(pv)])
 			_decidir()
 		if c.estado == "fin" and f_fin < 0:
 			f_fin = fr

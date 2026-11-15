@@ -8,6 +8,9 @@ extends SceneTree
 # acabar la animación, 0,6-1 s después); el golpe se oye en ese fotograma (Sonido.golpe sube en él) y el daño a los
 # demás es el de la regla de siempre (máx(1, golpe − DEF/2), a la mitad si defienden). También: si el principal
 # esquiva, los demás reciben igual (una vez).
+# AZAR (15/11): combate.gd hace randomize() en su _ready (salvo «-- semilla=N»): la semilla 11 va DESPUÉS de
+# root.add_child(c), con el ATB inicial de los enemigos tirado otra vez con ella (como prueba_gorthor_v12.gd), e imprime
+# «SEMILLA». Antes se sembraba antes de add_child: los 90 fotogramas de combate y el daño forzado eran al azar.
 
 const ARCHIVO := "user://prueba_sincronia_golpes.save"
 var C
@@ -67,9 +70,12 @@ func _caso(grupo: int, clave: String, zona: String, tipo: String, nivel: int) ->
 	Engine.set_meta("zona", zona)
 	Engine.set_meta("tipo_combate", tipo)
 	Engine.set_meta("grupo_combate", grupo)
-	seed(11)
 	c = load("res://combate.tscn").instantiate()
-	root.add_child(c)
+	root.add_child(c)                                  # (aquí su _ready hace randomize())
+	seed(11)                                           # desde aquí, el azar del combate es fijo
+	for e in c.enemigos:
+		e["atb"] = randf() * 30.0                      # el ATB inicial, como en combate.gd, ya con la semilla
+	print("SEMILLA 11 · grupo %d" % grupo)
 	await _esperar(90)
 	c.estado = "fin"                                   # parado: solo lo que se fuerza
 	var f: Dictionary = c.enemigos.filter(func(e): return e["clave"] == clave)[0]
