@@ -302,6 +302,23 @@ static func _color(dd: Dictionary, ix: int, iz: int, nrm: Vector3, ruido: float,
 
 # Malla del suelo en TROZOS (cada uno, un MeshInstance3D con su caja: Godot no dibuja los que no ve).
 static func crear_suelo(padre: Node3D, mat: Material) -> Array:
+	if _mallas_suelo.is_empty():                    # se construyen una vez por sesión (medido: ~180 ms en el PC cada vez)
+		_mallas_suelo = _construir_suelo()
+	var lista: Array = []
+	for k in _mallas_suelo.size():
+		var mi := MeshInstance3D.new()
+		mi.name = "Suelo_%d_%d" % [k % TROZOS.x, k / TROZOS.x]
+		mi.mesh = _mallas_suelo[k]
+		mi.material_override = mat
+		padre.add_child(mi)
+		lista.append(mi)
+	return lista
+
+
+static var _mallas_suelo: Array = []
+
+
+static func _construir_suelo() -> Array:
 	var dd := datos()
 	var alt: PackedFloat32Array = dd["alturas"]
 	var grano := FastNoiseLite.new()
@@ -338,12 +355,7 @@ static func crear_suelo(padre: Node3D, mat: Material) -> Array:
 					st.add_index(a + 1)
 					st.add_index(a + w + 1)
 					st.add_index(a + w)
-			var mi := MeshInstance3D.new()
-			mi.name = "Suelo_%d_%d" % [tx, tz]
-			mi.mesh = st.commit()
-			mi.material_override = mat
-			padre.add_child(mi)
-			lista.append(mi)
+			lista.append(st.commit())
 	return lista
 
 

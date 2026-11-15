@@ -65,6 +65,7 @@ var _recorrido := 0.0
 var _ultima := Vector3.ZERO
 var _t := 0.0
 var t_preparar_ms := 0                    # lo que tarda _ready (medidas)
+var tiempos := {}                         # ms de cada parte del escenario (medidas: pruebas/medir_mapamundi3d.gd)
 
 var capa_ui: CanvasLayer
 var titulo: Label
@@ -147,8 +148,11 @@ func _crear_escenario() -> void:
 	var mat := StandardMaterial3D.new()
 	mat.vertex_color_use_as_albedo = true
 	mat.roughness = 0.92
+	var us := Time.get_ticks_usec()
 	T.crear_suelo(self, mat)
 	T.crear_fisica(self)
+	tiempos["suelo"] = (Time.get_ticks_usec() - us) / 1000.0
+	us = Time.get_ticks_usec()
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	T.cinta_camino(st, D.CAMINO, 1.3)
@@ -162,10 +166,15 @@ func _crear_escenario() -> void:
 	var agua := ShaderMaterial.new()
 	agua.shader = AGUA
 	T.crear_agua(self, agua)
+	tiempos["camino_agua"] = (Time.get_ticks_usec() - us) / 1000.0
+	us = Time.get_ticks_usec()
 	veg = Veg.new()
 	veg.crear(self, mat, nombre_perfil)
+	tiempos["vegetacion"] = (Time.get_ticks_usec() - us) / 1000.0
+	us = Time.get_ticks_usec()
 	maq = Maq.new()
 	maquetas = maq.crear(self, mat, nombre_perfil)
+	tiempos["maquetas"] = (Time.get_ticks_usec() - us) / 1000.0
 	# lo que no se pisa (además del mar, los troncos y lo empinado): las maquetas
 	obstaculos = [[D.SITIOS["oakhaven"]["centro"], 7.9], [D.SITIOS["pastos"]["centro"] + Vector2(0.6, -0.8), 3.8],
 		[D.SITIOS["portal"]["centro"], 1.7], [D.SITIOS["campamento"]["centro"] + Vector2(-1.6, 1.2), 0.95],

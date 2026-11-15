@@ -83,7 +83,7 @@ func _crear_ambiente() -> void:
 	env.background_color = Color(0.03, 0.03, 0.04)
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.ambient_light_color = Color(0.36, 0.46, 0.52)
-	env.ambient_light_energy = 0.75
+	env.ambient_light_energy = 1.25
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	env.tonemap_exposure = 1.1
 	var we := WorldEnvironment.new()
@@ -103,14 +103,14 @@ func _crear_escenario() -> void:
 	mat.roughness = 0.95
 	var k := Kit.new()
 	# el suelo de la cueva (un poco más claro en lo andable) y su física
-	k.caja(Vector3(0, -0.3, 0), Vector3(30, 0.3, 30), Color(0.20, 0.18, 0.17))
+	k.caja(Vector3(0, -0.3, 0), Vector3(30, 0.3, 30), Color(0.26, 0.24, 0.22))
 	var poli := PackedVector2Array(CONTORNO)
 	var tri := Geometry2D.triangulate_polygon(poli)
 	for i in range(0, tri.size(), 3):
 		var a := poli[tri[i]]
 		var b := poli[tri[i + 1]]
 		var c := poli[tri[i + 2]]
-		k.tri(Vector3(a.x, 0.01, a.y), Vector3(b.x, 0.01, b.y), Vector3(c.x, 0.01, c.y), Vector3.UP, Color(0.38, 0.34, 0.30))
+		k.tri(Vector3(a.x, 0.01, a.y), Vector3(b.x, 0.01, b.y), Vector3(c.x, 0.01, c.y), Vector3.UP, Color(0.58, 0.52, 0.45))
 	var cuerpo := StaticBody3D.new()
 	var col := CollisionShape3D.new()
 	var caja := BoxShape3D.new()
@@ -133,11 +133,11 @@ func _crear_escenario() -> void:
 		for j in n:
 			var p := a.lerp(b, (j + 0.5) / n) + fuera * 0.9
 			var alto := rng.randf_range(2.2, 3.6) * (1.25 if p.y < 0.0 else 1.0)
-			var tono := Color(0.33, 0.30, 0.28).lightened(rng.randf_range(-0.05, 0.08))
+			var tono := Color(0.44, 0.40, 0.36).lightened(rng.randf_range(-0.05, 0.08))
 			k.bola(Vector3(p.x, alto * 0.45, p.y), rng.randf_range(1.1, 1.5), tono, alto / 2.6, 3, 6, rng.randf() * TAU)
 	# estalagmitas
 	for e in ESTALAGMITAS:
-		k.cono(Vector3(e.x, 0, e.y), 0.42, rng.randf_range(1.1, 1.8), 6, Color(0.46, 0.42, 0.37))
+		k.cono(Vector3(e.x, 0, e.y), 0.42, rng.randf_range(1.1, 1.8), 6, Color(0.62, 0.57, 0.50))
 	# la poza (el borde de piedra; el agua va aparte)
 	k.cilindro(Vector3(POZA.x, -0.05, POZA.y), RADIO_POZA + 0.25, RADIO_POZA + 0.2, 0.12, 12, Color(0.30, 0.28, 0.27))
 	# helechos en la boca
@@ -161,7 +161,7 @@ func _crear_escenario() -> void:
 		kc.bola(h + Vector3(0, 0.26, 0), 0.16, Color(0.55, 0.95, 0.62), 0.55, 2, 6)
 	kc.instancia(self, "Cristales", cristal, false)
 	# el agua de la poza (quieta, oscura) y la luz del día que entra por la boca
-	var agua := Maq.mat_efecto(0, Color(0.06, 0.16, 0.20), Color(0.20, 0.42, 0.48), 1.0, 0.25)
+	var agua := Maq.mat_efecto(0, Color(0.10, 0.30, 0.38), Color(0.32, 0.62, 0.70), 1.0, 0.25)
 	var poza := MeshInstance3D.new()
 	var disco := CylinderMesh.new()
 	disco.top_radius = RADIO_POZA

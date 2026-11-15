@@ -69,7 +69,8 @@ func crear(padre: Node3D, mat: Material, perfil: String) -> Dictionary:
 	r["campamento"] = _campamento(padre, mat, perfil)
 	r["cueva"] = _cueva(padre, mat)
 	r["secreto"] = _secreto(padre, mat)
-	r["gran_bosque"] = _poste(padre, mat)
+	r["gran_bosque"] = _poste(padre, mat, D.SITIOS["gran_bosque"]["centro"] + Vector2(-1.8, -1.4), "PosteGranBosque")
+	r["bifurcacion"] = _poste(padre, mat, D.BIFURCACION + Vector2(0.6, -1.5), "PosteBifurcacion", 2)   # la bifurcación se lee
 	return r
 
 
@@ -377,14 +378,15 @@ func _secreto(padre: Node3D, mat: Material) -> Node3D:
 
 # ================================================================= poste hacia el Gran Bosque
 
-func _poste(padre: Node3D, mat: Material) -> Node3D:
-	var c: Vector2 = D.SITIOS["gran_bosque"]["centro"] + Vector2(-1.8, -1.4)
+func _poste(padre: Node3D, mat: Material, c: Vector2, nombre: String, flechas := 1) -> Node3D:
 	var o := suelo(c)
 	var k := Kit.new()
 	k.cilindro(o, 0.08, 0.07, 1.6, 5, MADERA)
 	k.caja(o + Vector3(0.25, 1.25, 0), Vector3(0.9, 0.25, 0.06), MADERA.lightened(0.1), -0.7)
+	if flechas > 1:
+		k.caja(o + Vector3(-0.25, 0.95, 0), Vector3(0.9, 0.25, 0.06), MADERA.lightened(0.05), 2.6)
 	var nodo := Node3D.new()
-	nodo.name = "PosteGranBosque"
+	nodo.name = nombre
 	padre.add_child(nodo)
 	k.instancia(nodo, "Maqueta", mat)
 	return nodo
