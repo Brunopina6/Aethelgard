@@ -876,3 +876,81 @@ tocar. Todo comprobado ejecutando, aislado, el 15/11.
   - Redmi.
   - Sonido propio.
   - La nota del caso «custodio» en `banco_pruebas.gd`, que no es un archivo de este encargo.
+
+## 2026-11-15, 11:40 · Semillas en las pruebas de combate que quedaban (rama `claude/v12-semillas-restantes`)
+
+Rama `claude/v12-semillas-restantes` desde `aeb4399`, en el worktree
+`D:\Aethelgard\.claude\worktrees\agent-ac0e10038a79dc528`. **Solo `aethelgard/pruebas/`**: ni el juego ni Érebo. Sin
+push. Commits: `9c0de81`, `cd1721e`, `9ff7f4c` (y este informe). Lo que comprueba cada prueba no cambia.
+
+**Arreglo (el de `prueba_gorthor_v12.gd`)**: `seed()` DESPUÉS de `root.add_child(c)` (el `_ready` de combate.gd hace
+`randomize()`), el ATB inicial de los enemigos otra vez con la semilla, «SEMILLA» por combate y «TRAZA» por turno o por
+paso del guion, con el fotograma relativo al combate (no el absoluto).
+
+**Dos trampas nuevas (comprobado ejecutando, aislado):**
+- **Encuentros al azar**: sin `grupo_combate`, el grupo de enemigos lo elige `_ready` con `randi()` ya «randomizado».
+  En `prueba_acciones_v12` salieron Grimfang ×2, Slime y Grimfang, y Guardián de piedra y Grimfang en tres casos
+  seguidos (`2026-11-15_111942` y `_111959`: huellas distintas). Ahora el grupo se elige con la semilla
+  (`grupo_al_azar` de combate.gd, estática) y se fija con `grupo_combate`. Igual en `prueba_combate_seguro`. Con eso
+  deja de contar `encuentros_azar` (élite cada 6), que con 3 y 5 combates no llegaba nunca.
+- **Combate creado en `_initialize`**: la raíz aún no está en el árbol y el `_ready` llega DESPUÉS de la semilla. Con
+  una copia temporal de `prueba_coloso` (no confirmada y borrada): al sembrar, `enemigos` vacío y `is_inside_tree()`
+  falso; el ATB del Coloso salió 4,5 y 20,6 en dos pasadas (`2026-11-15_112723`, `_112737`). Ahora el primer combate
+  va con `call_deferred` en `prueba_coloso`, `prueba_guardian_bosque` y `prueba_combate_seguro`.
+
+**Por prueba** (2 pasadas seguidas con la misma huella MD5 de las líneas SEMILLA/TRAZA; todas SUPERADAS)
+- `prueba_acciones_v12`: semilla 7 tras add_child, grupo con la semilla (Slime y Grimfang), TRAZA por turno de héroe.
+  `2026-11-15_112124` y `_112146`: 47 líneas, `9C-93-3B-22` las dos.
+- `prueba_audio_bramavidrio`: semilla 97 tras add_child. `_112124`/`_112146`: `1E-DF-CD-48`; el resto del registro,
+  igual salvo «archivos de Bramavidrio que han sonado: 24 / 23» (variantes de sonido.gd con su propio `_rng`, al azar a
+  propósito; solo se imprime, no se comprueba).
+- `prueba_bramavidrio5`: semilla 5 tras add_child en E. `_112332`/`_112422`: registro entero idéntico.
+- `prueba_bramavidrio_combate`: semilla tras add_child; TRAZA por turno del gusano y de cada héroe.
+  `_112332`/`_112422`: 212 líneas, `CD-32-03-34` las dos. Ver el residuo abajo.
+- `prueba_coloso` y `prueba_guardian_bosque`: el `seed()` único de `_initialize` pasa a cada caso (12 y 11), primer
+  caso diferido, TRAZA por paso. `_112956`/`_113102`: `30-96-89-4A` y `06-4C-5A-D4`.
+- `prueba_combate_seguro`: grupo con cada semilla, primer combate diferido, TRAZA por turno enemigo (con «auto» los
+  héroes no pasan por «menu»). `_112956`/`_113102`: `AD-24-52-F2`. Grupos: 1 Slime A, Grimfang, Slime B; 7 Slime,
+  Grimfang; 42 Slime ×2 y Grimfang; 2026 Guardián de piedra y Grimfang; 31337 Slime y Grimfang; las cinco, victoria.
+- `prueba_encuentro_desierto`: semilla tras add_child, TRAZA por turno; `_cerrar` espera 75 fotogramas y, solo si aún
+  suena algo suyo, hasta 5 s reales (antes 2,5 s reales siempre). `_112956`/`_113102`: 160 líneas, `F1-54-83-F6`.
+  U (seed antes de `grupo_mar_cristal()`, sin combate) ya era fijo: sin tocar.
+- `prueba_humbaba_combate`: semilla tras add_child, TRAZA por turno de héroe en B y C. `_113230`/`_113310`:
+  `ED-19-A8-F2`.
+- `prueba_nix_v12`: no tenía el patrón: su `seed(12345)` es la probabilidad del Lento en R, sin combate (ya fijo); los
+  combates A y C no sembraban nada (daño y Lento o «Falla» al azar; la prueba acepta los dos). Ahora SEMILLA 13 tras
+  add_child y TRAZA por turno de Nix. `_113230`/`_113310`: `F9-91-F7-EC`.
+- `prueba_sincronia_golpes`: semilla 11 tras add_child. `_113230`/`_113310`: `85-34-2E-1A` y las líneas OK iguales.
+
+**Dejadas como estaban (la semilla no influye en lo que comprueban)**
+- `prueba_climax_jefe`: congela el combate al momento (velocidad y ATB a 0, cola vacía) y quita vida con
+  `_quitar_pv`, sin azar; `_escapar` tampoco tira dados. Sus esperas en ms reales son a propósito (la posición de la
+  canción va con el reloj).
+- `prueba_banco_pruebas`: combates de 4 fotogramas para mirar datos (vida ×6, Armonía, héroes, interruptores); la
+  huida ya se siembra antes de cada `_turno_enemigo` y en el banco nadie huye.
+
+**Pasada conjunta (las 13, una vez)**: `D:\REBELUM_diagnostico\pruebas\2026-11-15_113415`, **13/13 SUPERADAS**,
+partida real, carpeta real de datos y proyecto sin cambios. Había 10 Godot de otras copias abiertos (otro
+especialista en `D:\Aethelgard_v12`). Huellas iguales a las de las pasadas dobles en 10 de 11 con traza; distinta en
+`prueba_bramavidrio_combate` (`B3-7D-F0-4C`).
+
+**Residuo que NO es de la prueba: el clímax de Bramavidrio va por el reloj real.** En esa pasada, el combate D (Kael y
+Lya, semilla 20261112) diverge en el golpe de Lya del fotograma 3549 (el gusano 41 → 39 en vez de 41 → 36); mismos
+fotogramas, mismas acciones y mismo resultado (gana, 38 turnos de héroe). Causa probable, observada en el código y no
+aislada ejecutando: `combate.gd` lanza `_climax_destello()` cuando `musica_climax.get_playback_position()` llega al
+estallido (línea 1916, «en su momento real»), y el destello crea un `CPUParticles2D` (`_particulas`), que toma su
+semilla del azar global. El fotograma en que pasa depende de la carga de la máquina, y desplaza las tiradas
+siguientes. Solo Bramavidrio tiene el clímax activo (`combate_climax.gd`, JEFES). Lo que comprueba la prueba no
+depende de eso (las cuatro pasadas, SUPERADAS), pero su traza no es reproducible bajo carga una vez el gusano baja del
+20 %. No se ha forzado desde la prueba.
+
+**Límites**
+- Combates guionizados o automáticos, no un jugador.
+- Sin la batería completa ni medidas de rendimiento (por encargo).
+- La causa del residuo, deducida del código; para confirmarla, una pasada del D con `combate_climax.ACTIVO = false`
+  (cambio del juego, no hecho).
+
+**Peticiones (archivos de otros)**
+- `combate.gd` (`_climax_destello` / `_particulas`): que las partículas no tiren del azar global (semilla propia o
+  `use_fixed_seed` si este Godot lo tiene en CPUParticles2D), o disparar el destello por fotogramas desde que empieza la
+  canción. La misma idea vale para el orbe de Érebo (informe de las 02:10).
