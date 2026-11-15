@@ -12,6 +12,9 @@ extends "res://enemigos/v12_comun/enemigo_v12_3d.gd"
 #   (14/11, noche) e01__attack_porton 2,7 s: e01_a2 «Avance del Portón»: aviso 0,00 · fija 0,75 · carrera [1,00, 1,45)
 #   (en el sitio: el combate desplaza el nodo) · IMPACTO 1,30 · frena 1,45 · guardia 1,90 · reposo 2,70.
 #   e01__hit 0,6 s (recibir un golpe) · e01__death 1,9 s (de rodillas y vencido sobre las manos; en el suelo a 1,30).
+#   (15/11) e01__attack_sello 2,8 s: e01_a3 «Sello de Clausura»: separa las manos 0,00 · marca de cerradura 0,20
+#   («aviso») · las manos a la llave del pecho 0,45 · centro fijo 0,80 («fija_direccion») · pecho y cabeza al sello 0,95 ·
+#   IMPACTO 1,30 con las palmas extendidas (activo [1,30, 1,50)) · recupera desde 1,50 hasta 2,80. Raíz y pies quietos.
 # El combate pide los clips por los nombres del juego (reposo, caminar, correr, ataque): aquí se añaden como ALIAS del
 # mismo recurso Animation (no son clips nuevos ni copias).
 # Materiales: los del GLB (color, normal y metálico-rugosidad de Meshy a 1024 px), sin el atlas ni el brillo de la
@@ -22,12 +25,15 @@ const RUTA_CLIPS := "res://enemigos/meshy_e01/meshy_e01_clips.json"
 const ALTURA := 1.85
 const CENTRO := Vector3(0.0, 1.05, 0.0)
 const ALIAS := {"reposo": "e01__idle", "caminar": "e01__walk", "correr": "e01__walk", "ataque": "e01__attack_prensa",
-	"prensa": "e01__attack_prensa", "porton": "e01__attack_porton", "recibir_golpe": "e01__hit", "derrota": "e01__death"}
+	"prensa": "e01__attack_prensa", "porton": "e01__attack_porton", "sello": "e01__attack_sello", "recibir_golpe": "e01__hit",
+	"derrota": "e01__death"}
 const EVENTOS := {
 	"ataque": {"aviso": 0.0, "fija_direccion": 0.65, "impacto": 0.90, "fin_activo": 1.10},
 	"e01__attack_prensa": {"aviso": 0.0, "fija_direccion": 0.65, "impacto": 0.90, "fin_activo": 1.10},
 	"porton": {"aviso": 0.0, "fija_direccion": 0.75, "carrera": 1.0, "impacto": 1.30, "fin_activo": 1.45},
 	"e01__attack_porton": {"aviso": 0.0, "fija_direccion": 0.75, "carrera": 1.0, "impacto": 1.30, "fin_activo": 1.45},
+	"sello": {"aviso": 0.20, "fija_direccion": 0.80, "impacto": 1.30, "fin_activo": 1.50},
+	"e01__attack_sello": {"aviso": 0.20, "fija_direccion": 0.80, "impacto": 1.30, "fin_activo": 1.50},
 }
 
 
@@ -66,6 +72,8 @@ func _clip_de(ataque: String) -> String:
 			return "ataque"
 		"porton":
 			return "porton"
+		"sello":
+			return "sello"
 	return super._clip_de(ataque)
 
 
@@ -81,6 +89,11 @@ func golpe_fuerte(al_golpear := Callable()) -> void:
 # e01_a2 · Avance del Portón: el clip con su impacto (al_golpear UNA vez, en 1,30 s); el combate lo desplaza en la carrera.
 func porton(al_golpear := Callable()) -> void:
 	await atacar("porton", al_golpear)
+
+
+# e01_a3 · Sello de Clausura: el clip en su sitio con su impacto (al_golpear UNA vez, en 1,30 s); muerto a medias, nada.
+func sello(al_golpear := Callable()) -> void:
+	await atacar("sello", al_golpear)
 
 
 # Con e01__death (14/11, noche), la derrota de la base (el clip, y el combate lo desvanece tras su «caida»). Sin él

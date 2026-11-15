@@ -31,9 +31,24 @@ extends RefCounted
 #     sitio) y el IMPACTO, a 1,30, al llegar.
 #   · EN FILA, como la Prensa: el elegido ×1,1 del ataque (12-16 de la ficha con su ataque de 13) y el de detrás ×0,5.
 #   · Empuje de 0,7 m → RETROCESO del 25 % de la barra ATB (la regla del 15 % para 0,4 m, a escala), sin defender.
-#   · Recarga compartida: tras cualquiera de los dos especiales, dos turnos de guardia; luego el OTRO especial (Prensa,
-#     guardia, guardia, Avance, guardia, guardia, Prensa…). Sello de Clausura (a3): pendiente.
+#   · Recarga compartida: tras cada especial, sus turnos de guardia; luego el SIGUIENTE especial de la rotación.
 #   · Cifras PROPUESTAS (×1,1, 25 %): sin partidas reales todavía.
+#
+# e01_a3 · Sello de Clausura (15/11; mismo método): «un círculo de radio 1,3 m a máximo 5 m, fijado antes de activar»
+#   · El centro: el héroe vivo a ≤ 5 m con más aliados a ≤ 1,3 m (empate: el que elegiría «agresivo»); si nadie está a
+#     ≤ 5 m, el punto a 5 m hacia el más cercano. La Guardia de Garon no cambia el centro: cubre en el impacto.
+#   · Aviso dentro del clip (anticipación 1,30 s): la marca de cerradura aparece a 0,20 s sobre el centro y lo sigue hasta
+#     0,80 s, cuando el centro se FIJA (un pulso marfil); a 1,30 s (IMPACTO, activo [1,30, 1,50)) golpea a TODOS los
+#     héroes vivos que estén dentro del círculo en ese momento, UNA vez por ejecución y objetivo; la marca se borra.
+#   · Daño ARCANO (magia: sin restar la defensa física, sin crítico ni esquiva; defender lo deja a la mitad; el Anillo del
+#     Alba cuenta como contra cualquier magia) de SELLO_DANO_MIN a SELLO_DANO_MAX × mult.
+#   · −15 % de velocidad (ATB) durante 1 turno del afectado: la barra que le lleva a su PRÓXIMO turno se llena más
+#     despacio; al llegarle el turno, vuelve a su velocidad (si ya tenía la barra llena, cuenta la siguiente). No silencia
+#     ni inmoviliza.
+#   · Raíz quieta: no anda; el clip va en su sitio.
+#   · cooldown_own_turns = 3: tres turnos de guardia tras el Sello.
+#   · Rotación de los tres especiales con su recarga: Prensa, G, G, Avance, G, G, Sello, G, G, G, Prensa…
+#   · TODAS las cifras del Sello (y su escala en píxeles) son PROPUESTA, sin equilibrar: constantes SELLO_* de abajo.
 #   · Muerte a media Prensa: no golpea (enemigo_v12_3d.gd no llama al impacto si está muerto y aquí se comprueba su vida)
 #     y la marca se borra (vigilar, repasar y al_acabar).
 
@@ -60,6 +75,25 @@ const COLOR_MARCA := Color(1.0, 0.74, 0.32)
 const COLOR_CERAMICA := Color(0.93, 0.90, 0.82)
 const COLOR_POLVO := Color(0.72, 0.66, 0.55)
 const MARCA_TAM := Vector2(150.0, 190.0)          # el rectángulo en el suelo (aplastado como _onda: ×0,32 en vertical)
+
+# ---- e01_a3 · Sello de Clausura: PROPUESTA, sin equilibrar (15/11). Todo lo configurable del Sello está aquí. ----
+const ATAQUE_ID_A3 := "e01_a3"
+const SELLO_DANO_MIN := 9                         # daño arcano (ficha: 9-13), × mult del turno
+const SELLO_DANO_MAX := 13
+const SELLO_RADIO_M := 1.3                        # radio del círculo
+const SELLO_ALCANCE_M := 5.0                      # el centro, a 5 m como mucho del Custodio
+const SELLO_REDUCCION_VEL := 0.15                 # −15 % de velocidad (ATB)…
+const SELLO_TURNOS_LENTO := 1                     # …durante 1 turno del afectado
+const SELLO_CD_TURNOS := 3                        # cooldown_own_turns de la ficha
+const T_SELLO_MARCA := 0.20                       # la marca aparece (evento «aviso» del clip)
+const T_SELLO_FIJA := 0.80                        # el centro se fija (evento «fija_direccion»)
+const T_SELLO_IMPACTO := 1.30                     # IMPACTO (evento «impacto»; activo hasta 1,50)
+const SELLO_APLASTADO := 0.32                     # el suelo visto en la pantalla (como las demás marcas)
+const COLOR_SELLO := Color(0.17, 0.15, 0.22)      # el disco de cerradura, opaco
+const COLOR_MARFIL := Color(0.97, 0.93, 0.82)     # el pulso y el borde (sin luces: solo dibujo 2D)
+# Rotación de especiales y la recarga de cada uno (cooldown_own_turns).
+const ROTACION := ["prensa", "porton", "sello"]
+const CD_DE := {"prensa": CD_TURNOS, "porton": CD_TURNOS, "sello": SELLO_CD_TURNOS}
 
 static var _instancias := 0                       # attack_instance_id: uno por ejecución de la Prensa
 
@@ -96,19 +130,28 @@ static func al_entrar(c, e: Dictionary, p) -> void:
 
 # Los instantes del clip (presentación): la marca aparece en el aviso y se fija a 0,65 s.
 static func _al_evento(clip: String, nombre: String, c, e: Dictionary) -> void:
-	if not clip in ["ataque", "e01__attack_prensa", "porton", "e01__attack_porton"]:
+	if not clip in ["ataque", "e01__attack_prensa", "porton", "e01__attack_porton", "sello", "e01__attack_sello"]:
 		return
 	var at: Dictionary = e.get("e01_ataque", {})
 	if at.is_empty() or int(e["hp"]) <= 0:
 		return
 	if nombre == "aviso":
 		at["t_aviso"] = Engine.get_process_frames()
-		if at.get("ataque", "") == ATAQUE_ID_A2:
+		if at.get("ataque", "") == ATAQUE_ID_A3:
+			_marcar_sello(c, e, at)
+		elif at.get("ataque", "") == ATAQUE_ID_A2:
 			_marcar_franja(c, e, at)
 		else:
 			_marcar(c, e, at)
 	elif nombre == "fija_direccion":
 		at["t_fija"] = Engine.get_process_frames()
+		if at.get("ataque", "") == ATAQUE_ID_A3:
+			at["centro"] = _centro_sello(c, e, at)        # desde aquí no se mueve
+			at["centro_fijo"] = true
+			var n = at.get("marca_nodo", null)
+			if n != null and is_instance_valid(n):
+				n.position = at["centro"]
+			_pulso(c, at["centro"])
 		_fijar(e)
 	elif nombre == "fin_activo":
 		at["t_fin_activo"] = Engine.get_process_frames()
@@ -121,7 +164,7 @@ static func estados(e: Dictionary) -> PackedStringArray:
 	if e.get("e01_guardia", false):
 		r.append("Guardia")
 	if int(e.get("e01_cd", 0)) > 0:
-		r.append("%s en %d" % ["Avance" if _siguiente(e) == "porton" else "Prensa", int(e["e01_cd"]) + 1])
+		r.append("%s en %d" % [{"porton": "Avance", "sello": "Sello"}.get(_siguiente(e), "Prensa"), int(e["e01_cd"]) + 1])
 	return r
 
 
@@ -132,6 +175,8 @@ static func info(e: Dictionary) -> Array:
 		return ["Recupera fuerzas: se cubre en sus próximos %d turnos" % int(e["e01_cd"])]
 	if _siguiente(e) == "porton":
 		return ["⚠ Su próximo turno: Avance del Portón, embestida en fila (defiéndete)"]
+	if _siguiente(e) == "sello":
+		return ["⚠ Su próximo turno: Sello de Clausura, un círculo en el suelo (magia; frena la barra)"]
 	return ["⚠ Su próximo turno: Prensa del Umbral, en fila (defiéndete)"]
 
 
@@ -150,6 +195,8 @@ static func turno(c, f: Dictionary, vivos: Array, mult: float) -> void:
 			await _prensa(c, f, vivos, mult)
 		"porton":
 			await _porton(c, f, vivos, mult)
+		"sello":
+			await _sello(c, f, vivos, mult)
 		_:
 			await _guardia(c, f)
 
@@ -158,9 +205,10 @@ static func _elegir(f: Dictionary) -> String:
 	return "guardia" if int(f.get("e01_cd", 0)) > 0 else _siguiente(f)
 
 
-# El especial que toca: el otro del último (el primero, la Prensa).
+# El especial que toca: el siguiente de la ROTACION tras el último (el primero, la Prensa).
 static func _siguiente(f: Dictionary) -> String:
-	return "porton" if str(f.get("e01_especial", "")) == "prensa" else "prensa"
+	var i: int = ROTACION.find(str(f.get("e01_especial", "")))
+	return ROTACION[(i + 1) % ROTACION.size()] if i >= 0 else ROTACION[0]
 
 
 static func _guardia(c, f: Dictionary) -> void:
@@ -237,6 +285,168 @@ static func _porton(c, f: Dictionary, vivos: Array, mult: float) -> void:
 	f["e01_ultimo"] = at
 	f["e01_cd"] = CD_TURNOS
 	f["e01_especial"] = "porton"
+
+
+# ================================================================= e01_a3 · Sello de Clausura
+
+# Píxeles de la pantalla por metro del mundo: los de su propio modelo (su ventana 3D muestra «alto_vista» metros en
+# «vp.y» píxeles y se dibuja a «esc»). 840 × 0,6 / 3,0 = 168 px/m.
+static func px_por_m(c) -> float:
+	var m: Dictionary = c.MODELOS.get(CLAVE, {})
+	if m.is_empty():
+		return 168.0
+	return float(m["vp"].y) * float(m["esc"]) / float(m["alto_vista"])
+
+
+# La distancia en el suelo, en metros: la pantalla aplasta la profundidad (SELLO_APLASTADO), así que lo vertical cuenta más.
+static func distancia_m(c, a: Vector2, b: Vector2) -> float:
+	var d := b - a
+	return Vector2(d.x, d.y / SELLO_APLASTADO).length() / px_por_m(c)
+
+
+# El centro: el héroe vivo a ≤ SELLO_ALCANCE_M con más aliados vivos a ≤ SELLO_RADIO_M (empate: el que elegiría
+# «agresivo»). Si nadie está a su alcance, el punto a SELLO_ALCANCE_M hacia el más cercano (y no lleva principal).
+static func elegir_centro(c, f: Dictionary, vivos: Array) -> Dictionary:
+	var pie: Vector2 = c._suelo_de(f)
+	var cerca: Array = vivos.filter(func(h): return h["hp"] > 0 and distancia_m(c, pie, c._suelo_de(h)) <= SELLO_ALCANCE_M)
+	if cerca.is_empty():
+		var lejos: Array = vivos.filter(func(h): return h["hp"] > 0)
+		if lejos.is_empty():
+			return {"principal": {}, "punto": pie}
+		lejos.sort_custom(func(a, b): return distancia_m(c, pie, c._suelo_de(a)) < distancia_m(c, pie, c._suelo_de(b)))
+		var d: Vector2 = c._suelo_de(lejos[0]) - pie
+		var real := Vector2(d.x, d.y / SELLO_APLASTADO).normalized() * SELLO_ALCANCE_M * px_por_m(c)
+		return {"principal": {}, "punto": pie + Vector2(real.x, real.y * SELLO_APLASTADO)}
+	var mejor := -1
+	var empatados: Array = []
+	for h in cerca:
+		var n := 0
+		for o in vivos:
+			if o["hp"] > 0 and not is_same(o, h) and distancia_m(c, c._suelo_de(h), c._suelo_de(o)) <= SELLO_RADIO_M:
+				n += 1
+		if n > mejor:
+			mejor = n
+			empatados = [h]
+		elif n == mejor:
+			empatados.append(h)
+	var elegido: Dictionary = empatados[0] if empatados.size() == 1 else c._elegir_objetivo("agresivo", empatados)
+	return {"principal": elegido, "punto": c._suelo_de(elegido), "aliados": mejor}
+
+
+# El centro ahora: fijo desde 0,80; antes, sobre el principal (si sigue vivo) o el punto elegido.
+static func _centro_sello(c, _f: Dictionary, at: Dictionary) -> Vector2:
+	if at.get("centro_fijo", false):
+		return at["centro"]
+	var h: Dictionary = at.get("principal", {})
+	if not h.is_empty() and h["hp"] > 0:
+		return c._suelo_de(h)
+	return at["centro"]
+
+
+# Los héroes vivos dentro del círculo de «centro».
+static func dentro_del_sello(c, centro: Vector2) -> Array:
+	return c.heroes.filter(func(h): return h["hp"] > 0 and distancia_m(c, centro, c._suelo_de(h)) <= SELLO_RADIO_M)
+
+
+# e01_a3: en su sitio (raíz quieta), la marca desde 0,20, el centro fijo a 0,80 y el IMPACTO a 1,30 a todos los de dentro.
+static func _sello(c, f: Dictionary, vivos: Array, mult: float) -> void:
+	var eleccion := elegir_centro(c, f, vivos)
+	_instancias += 1
+	var principal: Dictionary = eleccion["principal"]
+	var at := {"id": _instancias, "ataque": ATAQUE_ID_A3, "principal": principal, "resto": [], "golpeados": {},
+		"t_impacto": -1, "centro": eleccion["punto"], "centro_fijo": false, "mult": mult, "dentro": [], "danos": {},
+		"aliados_cerca": int(eleccion.get("aliados", -1))}
+	f["e01_ataque"] = at
+	_contar(f, "sello")
+	c.registro.text = "%s gira la llave de su pecho: ¡Sello de Clausura%s!" % [f["nombre"],
+		(" sobre %s" % principal["nombre"]) if not principal.is_empty() else ""]
+	var golpe := func():
+		if int(at["t_impacto"]) >= 0 or int(f["hp"]) <= 0:     # una vez; y muerto a medias, nada
+			return
+		at["t_impacto"] = Engine.get_process_frames()
+		var centro := _centro_sello(c, f, at)
+		at["centro"] = centro
+		at["centro_fijo"] = true
+		_quitar_marca(f)
+		var dentro: Array = dentro_del_sello(c, centro)
+		at["dentro"] = dentro.map(func(h): return h["nombre"])
+		var golpeados: Array = []
+		c.dano_magico_entrante = true                         # V12, accesorios: es magia (Anillo del Alba)
+		for h in dentro:
+			var obj: Dictionary = c._cubre(h)                 # la Guardia de Garon: se lo lleva él (una vez)
+			if obj["hp"] <= 0 or not _registrar(f, at, obj):
+				continue
+			var d: int = maxi(1, int(randi_range(SELLO_DANO_MIN, SELLO_DANO_MAX) * mult))
+			if obj.get("defendiendo", false):
+				d = maxi(1, int(d * 0.5))
+			d = c.Acc12.reducir(c, obj, d)
+			var real: int = c._quitar_pv(obj, d)
+			c._golpe_visual(obj, real, "")
+			at["danos"][obj["nombre"]] = real
+			golpeados.append(obj)
+		c.dano_magico_entrante = false
+		for h in golpeados:
+			if lentitud(c, f, h):
+				_contar(f, "lentitud")
+		if not golpeados.is_empty():
+			Sonido.golpe(false, golpeados.any(func(h): return h.get("defendiendo", false)))
+		_pulso(c, centro)
+		c._temblor(3.0)
+	var p = c._p3d(f)
+	if p == null or not p.has_method("sello"):
+		await c.get_tree().create_timer(T_SELLO_IMPACTO).timeout
+		golpe.call()
+		await c.get_tree().create_timer(0.5).timeout
+	else:
+		f["animando"] = true
+		Sonido.voz(f, "ataque")
+		await p.sello(golpe)
+		f["animando"] = false
+	_quitar_marca(f)
+	f.erase("e01_ataque")
+	f["e01_ultimo"] = at
+	f["e01_cd"] = CD_DE["sello"]
+	f["e01_especial"] = "sello"
+	c._actualizar()
+
+
+# −SELLO_REDUCCION_VEL de velocidad hasta que le llegue su próximo turno (SELLO_TURNOS_LENTO). Se guarda lo quitado y se
+# devuelve lo mismo (si otra cosa cambia su velocidad entre medias, no se pisa). Si ya estaba lento, no se acumula.
+static func lentitud(c, f: Dictionary, h: Dictionary) -> bool:
+	if h["hp"] <= 0 or h.has("e01_lento"):
+		return false
+	var quitado: float = float(h["vel"]) * SELLO_REDUCCION_VEL
+	h["vel"] = float(h["vel"]) - quitado
+	var lleno: bool = float(h.get("atb", 0.0)) >= c.ATB_MAX or c.cola.any(func(x): return is_same(x, h))
+	h["e01_lento"] = {"quitado": quitado, "turnos": SELLO_TURNOS_LENTO, "espera_vaciar": lleno, "atb_max": c.ATB_MAX}
+	if not f.has("e01_lentos"):
+		f["e01_lentos"] = []
+	f["e01_lentos"].append(h)
+	c._numero_flotante(h, "Lento", COLOR_MARFIL, 26, Vector2(30, -30))
+	return true
+
+
+# Cada fotograma (repasar): al llegarle el turno al afectado (la barra llena), recupera su velocidad. Si al recibirlo ya
+# la tenía llena, cuenta la siguiente barra.
+static func _repasar_lentos(f: Dictionary, forzar := false) -> void:
+	var lista: Array = f.get("e01_lentos", [])
+	for h in lista.duplicate():
+		var l = h.get("e01_lento", null)
+		if not (l is Dictionary):
+			lista.erase(h)
+			continue
+		var atb := float(h.get("atb", 0.0))
+		if l["espera_vaciar"] and atb < float(l["atb_max"]):
+			l["espera_vaciar"] = false
+		if forzar or h["hp"] <= 0 or (not l["espera_vaciar"] and atb >= float(l["atb_max"])):
+			l["turnos"] = int(l["turnos"]) - 1
+			if forzar or h["hp"] <= 0 or int(l["turnos"]) <= 0:
+				h["vel"] = float(h["vel"]) + float(l["quitado"])
+				h.erase("e01_lento")
+				lista.erase(h)
+				_contar(f, "lentitud_fin")
+			else:
+				l["espera_vaciar"] = true
 
 
 # Daño UNA vez por (ejecución, objetivo). Devuelve si este golpe cuenta.
@@ -438,6 +648,55 @@ static func _marcar_franja(c, f: Dictionary, at: Dictionary) -> void:
 		r.queue_redraw(), 0.0, 1.0, 0.25)
 
 
+# La marca del Sello: un disco de cerradura (oscuro, opaco) con su ojo de llave y el borde marfil, del radio del círculo,
+# en el suelo sobre el centro. Aparece a 0,20 s y, hasta que se fija a 0,80 s, se pone sobre el centro de ese momento.
+static func _marcar_sello(c, f: Dictionary, at: Dictionary) -> void:
+	_quitar_marca(f)
+	var raiz := Node2D.new()
+	raiz.name = "MarcaSello"
+	# En el suelo DEBAJO de los luchadores (con las sombras, que se pintan encima): el disco es opaco y, encima de ellos,
+	# taparía los pies de quien está dentro (visto en las capturas del 15/11). Las otras marcas, translúcidas, siguen igual.
+	var suelo = c.get("sombras")
+	if suelo is Node2D:
+		suelo.add_child(raiz)
+		suelo.move_child(raiz, 0)
+	else:
+		raiz.z_index = 1
+		c.escena.add_child(raiz)
+	var r := Node2D.new()
+	r.position = _centro_sello(c, f, at)
+	r.scale = Vector2(1.0, SELLO_APLASTADO)
+	raiz.add_child(r)
+	var radio: float = SELLO_RADIO_M * px_por_m(c)
+	var fija := [false]
+	var alfa := [0.0]
+	r.draw.connect(func():
+		var a: float = alfa[0]
+		r.draw_circle(Vector2.ZERO, radio, Color(COLOR_SELLO, (0.82 if fija[0] else 0.55) * a))
+		r.draw_arc(Vector2.ZERO, radio, 0.0, TAU, 72, Color(COLOR_MARFIL, (1.0 if fija[0] else 0.7) * a), 8.0 if fija[0] else 5.0)
+		r.draw_arc(Vector2.ZERO, radio * 0.78, 0.0, TAU, 72, Color(COLOR_MARFIL, 0.35 * a), 3.0)
+		# el ojo de la cerradura, en el mismo plano del suelo
+		var k := radio * 0.16
+		r.draw_circle(Vector2(0, -k * 1.6), k, Color(COLOR_MARFIL, 0.9 * a))
+		r.draw_colored_polygon(PackedVector2Array([Vector2(-k * 0.55, -k * 1.2), Vector2(k * 0.55, -k * 1.2),
+			Vector2(k * 0.9, k * 2.2), Vector2(-k * 0.9, k * 2.2)]), Color(COLOR_MARFIL, 0.9 * a)))
+	f["e01_marca"] = raiz
+	f["e01_marca_fija"] = fija
+	at["marca_nodo"] = r
+	var t: Tween = raiz.create_tween()
+	t.tween_method(func(k: float):
+		alfa[0] = k
+		if is_instance_valid(r):
+			if not at.get("centro_fijo", false):
+				r.position = _centro_sello(c, f, at)
+			r.queue_redraw(), 0.0, 1.0, 0.25)
+
+
+# Un pulso marfil que se abre en el suelo (al fijar el centro y al golpear). Sin luces: la onda 2D de siempre.
+static func _pulso(c, centro: Vector2) -> void:
+	c._onda(centro, Color(COLOR_MARFIL, 0.9), 24.0, SELLO_RADIO_M * px_por_m(c), 0.4, 6.0)
+
+
 static func _fijar(f: Dictionary) -> void:
 	var m = f.get("e01_marca", null)
 	if m == null or not is_instance_valid(m):
@@ -470,12 +729,15 @@ static func vigilar(_c, f: Dictionary, _d: int) -> void:
 static func repasar(f: Dictionary) -> void:
 	if f.has("e01_marca") and (int(f["hp"]) <= 0 or f.get("huido", false)):
 		_quitar_marca(f)
+	if f.has("e01_lentos"):                                 # Sello: la lentitud dura hasta el próximo turno del afectado
+		_repasar_lentos(f)
 
 
 static func al_acabar(enemigos: Array) -> void:
 	for e in enemigos:
 		if es(e):
 			_quitar_marca(e)
+			_repasar_lentos(e, true)                        # (la velocidad de los héroes, la de antes)
 
 
 static func nodos_vivos(enemigos: Array) -> Array:
