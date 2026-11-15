@@ -7,6 +7,7 @@
 # más cercano (subida de energía en ventanas de 10 ms).
 import io, os, re, struct, subprocess, sys, wave
 
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 FFMPEG = r"C:\Users\G513\Downloads\Hunyuan3D2_WinPortable\python_standalone\Scripts\ffmpeg.exe"
 mp4, log = sys.argv[1], sys.argv[2]
 salida = sys.argv[3] if len(sys.argv) > 3 else None

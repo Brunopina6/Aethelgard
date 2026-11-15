@@ -639,6 +639,7 @@ func _secuencia(_ctx: Dictionary) -> void:
 	if ruta_ritual(_modo) != "":
 		create_tween().tween_property(_esc["titulo"], "modulate:a", 0.0, 0.3)
 		destello(Color(0.93, 0.88, 1.0, 0.55), 0.35)
+		sonar(SND % "resonancia", -7.0, 1.0)                    # (el destello antes del vídeo, con su sonido)
 		await esperar(0.15)
 
 
@@ -698,6 +699,8 @@ func _extraer(objetivo_mano: Vector3, e1: Vector3, u: Vector3, lado_mano: Vector
 		_fase("sale")
 		_cabeza(1.0, func(): return _vfx.corazon.global_position if _vfx != null and is_instance_valid(_vfx) else null, 0.2)
 		_vfx.romper_hilo()                                      # sale del todo
+		sonar(SND % "fractura", -9.0, 1.35)                     # (15/11: el destello de la salida tenía la imagen sin golpe)
+		sonar(SND % "resonancia", -8.0, 1.2)
 		_vfx.tension = 0.0
 		sacudir(0.03, 0.2)
 		destello(Color(0.85, 0.8, 1.0, 0.25), 0.2)
@@ -718,6 +721,7 @@ func _extraer(objetivo_mano: Vector3, e1: Vector3, u: Vector3, lado_mano: Vector
 			_fase("trozo")
 			_cabeza(1.0, func(): return _vfx.fragmento.global_position if _vfx != null and is_instance_valid(_vfx) else null, 0.2)
 			_vfx.partir(erebo._punta_mano)                      # vuelve, pero se queda un trozo en la mano
+			sonar(SND % "fractura", -9.0, 1.15)
 			_vfx.tension = 0.0
 			sacudir(0.04, 0.25)
 			destello(Color(0.85, 0.8, 1.0, 0.25), 0.2)
@@ -725,6 +729,7 @@ func _extraer(objetivo_mano: Vector3, e1: Vector3, u: Vector3, lado_mano: Vector
 		else:
 			_fase("se_escapa")
 			_vfx.volver(0.4)                                    # se le escapa y vuelve al pecho
+			sonar(SND % "pulso", -3.0, 0.7)
 			_vfx.tension = 0.0
 			await _tirar(fuera, 0.35)                           # la mano se cierra sobre nada
 			if saltada(): return
