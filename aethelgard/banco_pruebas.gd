@@ -64,8 +64,8 @@ const COMBATES := {
 	"nix": {"titulo": "Nix en combate (canalizar)", "grupo": 1, "activos": ["Kael", "Garon", "Nix"],
 		"vida": 6.0, "armonia": false, "nota": "Nix entra en el grupo solo aquí. Elige arriba «Nix» Antigua o Desde el FBX."},
 	"custodio": {"titulo": "Custodio de Porcelana (meshy_e01)", "grupo": 28, "activos": ["Kael", "Lya", "Garon"],
-		"vida": 1.0, "armonia": false, "custodio": true,
-		"nota": "Piloto: reposo, andar y Prensa del Umbral. Afinidades neutras provisionales."},
+		"vida": 8.0, "armonia": false, "custodio": true,   # 15/11: ×8 para ver la rotación entera (con ×1 moría tras la Prensa)
+		"nota": "Prensa del Umbral, Avance del Portón y Sello de Clausura (cifras PROPUESTAS). Vida ×8 para ver los tres."},
 }
 const EXPLORAR := {
 	"oakhaven": {"titulo": "Oakhaven con Kael, Lya y Garon", "activos": ["Kael", "Lya", "Garon"],
