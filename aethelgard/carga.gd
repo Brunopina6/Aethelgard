@@ -353,6 +353,14 @@ func _preparar_shaders() -> void:
 			C.brillo_vfx(est["env"], ef, movil)
 			est["vp"].add_child(ef)
 
+	# V12 (15/11): la muestra gráfica de la calle (solo Auditoría/editor, la escena del banco): sus programas se compilan
+	# aquí y no al entrar (zonas3d/muestra_calle/muestra_calle.gd, precalentar_en).
+	if load("res://banco_pruebas.gd").permitido() and ResourceLoader.exists("res://zonas3d/muestra_calle/muestra_calle.gd"):
+		var u0 := Time.get_ticks_usec()
+		var vp_muestra = load("res://zonas3d/muestra_calle/muestra_calle.gd").precalentar_en(vista_3d)
+		if vp_muestra != null:
+			print("[carga] muestra de la calle a precalentar (montada en %.0f ms)" % ((Time.get_ticks_usec() - u0) / 1000.0))
+
 	vista_2d = SubViewport.new()
 	vista_2d.size = Vector2i(256, 256)
 	vista_2d.render_target_update_mode = SubViewport.UPDATE_ALWAYS

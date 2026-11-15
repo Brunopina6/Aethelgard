@@ -97,6 +97,56 @@ func _marca(n: String) -> void:
 		diag.marca(n)
 
 
+# (15/11, remedio de la entrada) PRECALENTADO EN LA CARGA DE LA APP (carga.gd, solo Auditoría/editor). En el Redmi, la
+# primera entrada tras instalar tardaba 1,26 s en DIBUJAR su primer fotograma: el driver compilaba los programas de la
+# calle. Aquí se monta, fuera de la vista y sin la escena entera (sin Kael, interfaz ni sonido), lo mismo que dibuja la
+# muestra: su ambiente (niebla, mapeo de tonos, ajustes), su sol y el modelo con SUS materiales en el perfil en uso, en
+# una ventana pequeña que carga.gd dibuja unos fotogramas y luego borra. Tras instalar, la compilación pasa a la
+# pantalla de carga; después, el driver la lee de su caché. Devuelve la ventana (o null si no hay muestra).
+static func precalentar_en(padre: Node) -> SubViewport:
+	var yo = load("res://zonas3d/muestra_calle/muestra_calle.gd")
+	if not ResourceLoader.exists(MODELO):
+		return null
+	var cal = load("res://prototipos/calidad_proto.gd")
+	var t = yo.new()                                  # (sin árbol: no corre su _ready; solo construye)
+	t.perfil = cal.datos()
+	t.nombre_perfil = cal.actual()
+	t.modo = "luz"
+	t.luz = t._leer_luz()
+	t._crear_ambiente()                               # «Ambiente» y «Sol», hijos de t
+	var vp := SubViewport.new()
+	vp.size = Vector2i(160, 72)
+	vp.own_world_3d = true
+	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	padre.add_child(vp)
+	for n in t.get_children():
+		t.remove_child(n)
+		vp.add_child(n)
+	var calle: Node3D = (load(MODELO) as PackedScene).instantiate()
+	var res := int(MAPA_LUZ.get(t.nombre_perfil, 2048))
+	var ruta_luz := RAIZ + "modelos/calle_luz_%d.png" % res
+	var tex_luz: Texture2D = load(ruta_luz) if ResourceLoader.exists(ruta_luz) else null
+	var cache := {}
+	for mi in calle.find_children("*", "MeshInstance3D", true, false):
+		var m := mi as MeshInstance3D
+		for s in m.mesh.get_surface_count():
+			var orig := m.mesh.surface_get_material(s)
+			var nombre := orig.resource_name if orig != null else ""
+			var vertice := String(m.name) == "piezas"
+			var clave := ("v:" if vertice else "") + nombre
+			if not cache.has(clave):
+				cache[clave] = t._material(nombre, tex_luz, vertice)
+			m.set_surface_override_material(s, cache[clave])
+	vp.add_child(calle)
+	var c := Camera3D.new()
+	vp.add_child(c)
+	camara_muestra(c, SITIO_FOTO)                     # la misma vista: todo el modelo dentro del encuadre
+	c.far = 200.0
+	c.current = true
+	t.free()
+	return vp
+
+
 static func camara_muestra(c: Camera3D, k: Vector3) -> void:
 	c.projection = Camera3D.PROJECTION_PERSPECTIVE
 	c.global_position = k + OFFSET_CAMARA
@@ -182,11 +232,17 @@ func en_banco() -> bool:
 	return Engine.has_meta("banco_proto")
 
 
+# (15/11, remedio de la entrada) La luz (≈ 60 KB, 10 622 números de las sondas) se lee y se interpreta UNA vez por
+# proceso y se guarda (en el Redmi costaba 6-18 ms en cada entrada). Las sondas son de solo lectura.
+static var _luz_cache := {}
+
+
 func _leer_luz() -> Dictionary:
-	if not FileAccess.file_exists(LUZ_JSON):
-		return {}
-	var d = JSON.parse_string(FileAccess.get_file_as_string(LUZ_JSON))
-	return d if d is Dictionary else {}
+	if _luz_cache.is_empty() and FileAccess.file_exists(LUZ_JSON):
+		var d = JSON.parse_string(FileAccess.get_file_as_string(LUZ_JSON))
+		if d is Dictionary:
+			_luz_cache = d
+	return _luz_cache
 
 
 # ================================================================= la luz de la tarde (la misma que la del horneado)
@@ -322,18 +378,25 @@ func _material(nombre: String, tex_luz: Texture2D, vertice := false) -> Material
 	return m
 
 
+# (15/11, remedio de la entrada) Todas las cajas en UN cuerpo (antes, un StaticBody3D por caja: 41 cuerpos que crear y
+# registrar en la física al entrar). Mismas cajas, mismas posiciones: el choque no cambia.
+var _cuerpo_choques: StaticBody3D
+
+
 func _choque(n: Node3D) -> void:
+	if _cuerpo_choques == null:
+		_cuerpo_choques = StaticBody3D.new()
+		_cuerpo_choques.name = "Choques"
+		add_child(_cuerpo_choques)
 	var t := n.global_transform
 	var tam := t.basis.get_scale() * 2.0
-	var cuerpo := StaticBody3D.new()
-	cuerpo.name = String(n.name).replace("choque_", "Choque")
-	cuerpo.transform = Transform3D(t.basis.orthonormalized(), t.origin)
 	var col := CollisionShape3D.new()
+	col.name = String(n.name).replace("choque_", "Choque")
+	col.transform = Transform3D(t.basis.orthonormalized(), t.origin)
 	var caja := BoxShape3D.new()
 	caja.size = Vector3(absf(tam.x), absf(tam.y), absf(tam.z))
 	col.shape = caja
-	cuerpo.add_child(col)
-	add_child(cuerpo)
+	_cuerpo_choques.add_child(col)
 
 
 # El suelo que se pisa: una caja con la cara de arriba a 6 cm (lo alto de las losas: los pies no se hunden).

@@ -77,7 +77,12 @@ func _entrada_del_banco() -> void:
 func _sin_usos_fuera() -> void:
 	var usos: Array = []
 	_buscar("res://", usos)
-	_ok(usos == ["res://banco_pruebas.gd"], "2: fuera del banco nadie nombra la muestra (%s)" % str(usos))
+	_ok(usos == ["res://banco_pruebas.gd", "res://carga.gd"], "2: fuera del banco nadie nombra la muestra, salvo el precalentado de la carga (%s)" % str(usos))
+	# (15/11) carga.gd la precalienta SOLO si el banco está permitido (Auditoría/editor): la línea que la nombra lo exige
+	var lineas_carga := Array(FileAccess.get_file_as_string("res://carga.gd").split("
+")).filter(
+		func(l): return "muestra_calle" in l and not l.strip_edges().begins_with("#"))
+	_ok(not lineas_carga.is_empty() and "permitido()" in lineas_carga[0], "2: la carga solo precalienta la muestra con el banco permitido (%s)" % str(lineas_carga))
 	var cfg := ConfigFile.new()
 	_ok(cfg.load("res://export_presets.cfg") == OK, "2: se lee export_presets.cfg")
 	for sec in cfg.get_sections():
@@ -135,8 +140,9 @@ func _escena_cargada(perfil: String) -> void:
 	_ok(v.tex_luz_usada.ends_with("calle_luz_2048.png"), "3: con el perfil %s, el mapa de luz de 2048 (%s)" % [perfil,
 		v.tex_luz_usada])
 	var choques := 0
-	for n in v.get_children():
-		if n is StaticBody3D:
+	var cuerpo = v.get_node_or_null("Choques")       # (15/11: un solo cuerpo «Choques» con una caja por choque)
+	for n in (cuerpo.get_children() if cuerpo != null else []):
+		if n is CollisionShape3D:
 			choques += 1
 	_ok(choques >= 30, "3: %d choques" % choques)
 	_ok(not (v.luz.get("sondas", {}) as Dictionary).is_empty(), "3: las sondas de luz están")
