@@ -759,3 +759,96 @@ daba fallos falsos en la huella)
 - **Animaciones (si se quiere):** un gesto de «carga» propio para Grimfang y el Gólem; hoy el aviso usa el texto, la
   señal y la voz, y el golpe, su animación de ataque de siempre.
 - **Sonido (si se quiere):** un sonido corto para el aviso (hoy, la voz de ataque del enemigo).
+
+## 2026-11-15, 02:10 · Estabilidad de las pruebas de combate V12 (auditoría sobre da0e336): orbe y vídeo de Érebo, Gorthor, Velador y Gólem
+
+Rama `claude/v12-pruebas-combate-estabilidad`, desde `claude/rebelum-v12` @ `178c9cd`, en el worktree
+`D:\Aethelgard\.claude\worktrees\agent-a5473fc2726e08dbd`. Solo pruebas: **Érebo (original, orbe y vídeo) no se ha
+tocado**, ni fórmulas ni equilibrio. Sin push. Commits: `141eeb6` (G1), `38586b3` (G2), `89fb8d6` (F1), `dae1f2e` (F2).
+
+**1. Causas reproducidas (comprobado ejecutando, aislado, 15/11)**
+- **G1, Gorthor y Velador al azar.** `seed(semilla)` iba antes de `root.add_child(c)` y `combate._ready` hace
+  `randomize()` (sin `-- semilla=N`): A, C, E y Q eran combates al azar. Tres pasadas del A original con la misma
+  «semilla 5» dieron tres combates distintos (`D:\REBELUM_diagnostico\pruebas\2026-11-15_012810`, `_012827`, `_012844`:
+  Devorar 3 / 1 / 2, acciones distintas). Fallos de batería por esto: Gorthor A el 14/11 (`2026-11-14_215231`) y el Q del
+  Velador dos veces (`2026-11-14_031907`, `2026-11-14_144902`). Con el arreglo, tres pasadas del A con la misma traza
+  (MD5 `F6-8E-CF-CB`, `2026-11-15_013221`, `_013237`, `_013252`). Barrido de semillas del A con estrategia (1-4, 6-11 y la
+  5): gana en las 11; la derrota del 14/11 fue una semilla al azar que no se puede recuperar (randomize).
+- **G2, mismo patrón en el Gólem**: su Q falló una vez por esto (`2026-11-14_040607`, «se pierden 70 PV y con el de
+  siempre 35»). Arreglado igual.
+- **F1, orbe:** `muerte_o_dano` daba `true` en los dos lados con `erebo=exito` pasara lo que pasara.
+- **F2, vídeo:** con un VideoStream que no arranca, ni la unidad ni el combate tenían prueba; tampoco fallo, jefe, nueva,
+  completa ni sin pausa.
+
+**2. Cambios (solo `aethelgard/pruebas/`)**
+- `prueba_gorthor_v12.gd`, `prueba_velador_v12.gd`, `prueba_golem_v12.gd`: semilla después de `add_child` y el ATB
+  inicial de los enemigos otra vez con ella (como `prueba_combate_huella.gd`); «SEMILLA» por combate; Gorthor y Velador,
+  además, una «TRAZA» por turno (quién, qué, PV) y `semilla_A=N` (o `_C`, `_D`, `_E`, `_Q`); `_cerrar` espera 75
+  fotogramas y, solo si aún suena algo suyo, hasta 5 s reales (el audio sin ventana va con el reloj real; antes, 2,5 s
+  reales siempre). Velador D: el grupo lo sigue eligiendo `_ready` al azar (a propósito); si en 24 no salen los dos
+  tipos, hasta 48 (0,75^48 ≈ 1 en un millón).
+- `prueba_erebo_orbe_v12.gd` (y `_nueva`, que la hereda): apagado / encendido / apagado de control con la semilla tras
+  `add_child` y otra antes de `_invocar_sobre`; comparación exacta de PV antes y después, daño, cambios de PV del objetivo
+  y de los demás, PV y PM de todos, Armonía, ATB de todos (ATB lento, sin tope), estado, fotogramas hasta volver y
+  registro. Casos: Grimfang (muerte, 1 cambio) y JEFE `GRUPOS[18]` (Guardián de piedra: 180 → 144, `maxi(1, round(PV ×
+  0,2))`, 1 cambio). Nuevas `prueba_erebo_orbe_v12_fallo.gd` y `_nueva_fallo.gd` (`erebo=fallo`: sin orbe, sin daño).
+- `prueba_erebo_video.gd`: semilla fija; `reproducir()` a solas con ruta inexistente (false al momento) y con un
+  `VideoStream` sin reproductor puesto en la caché con `take_over_path` (false en 2,17 s, música devuelta, sin restos);
+  en el combate, el abreviado sustituido así (solo en la prueba): cae al teatro, resultado una vez, `c12_accion` a 0;
+  jefe (36 de 180, «roba parte de su vida»); nueva con vídeo (ATB de `ATB_TEATRO["nueva"]`); completa hasta el final;
+  `pausa_atb_v12 = false` (el ATB corre todo el rato). Nueva `prueba_erebo_video_fallo.gd` (`erebo=fallo`: apagado y
+  abreviada «sale vacía» sin daño con el ATB de fallo, nueva con fallo, jefe con fallo forzado = 20 %).
+- `lista_pruebas.txt`: tres líneas nuevas (orbe con fallo, orbe nueva con fallo, vídeo con fallo) y notas al día.
+
+**3. Verificación (aislada; partida real, carpeta real de datos y proyecto sin cambios en todas las pasadas)**
+- Tres pasadas seguidas de las afectadas, JUNTAS (orbe ×4, vídeo ×2, Gorthor, Velador, Gólem, `prueba_solo_lya_invoca`
+  y `prueba_combate_huella`), 11/11 SUPERADAS cada una: `D:\REBELUM_diagnostico\pruebas\2026-11-15_015055`,
+  `2026-11-15_015844` y `2026-11-15_020627` (la 2.ª marca «proyecto: CAMBIADO» porque durante ella escribí este informe,
+  `docs/memory/agents/combate.md`; ninguna prueba toca archivos). Huellas MD5 de las líneas TRAZA / SEMILLA / OK (sin el número de fotograma absoluto, que
+  cambia con lo que tarda en callar el audio entre combates, y sin el D del Velador, al azar a propósito): **iguales en
+  las tres** para las once pruebas. Duraciones (pasada 1): Gorthor 112 s (antes 157), Velador 136 s (antes 264), Gólem
+  98 s, orbe 17,6 / 16,3 / 7,2 / 7,6 s, vídeo 14,9 / 7,8 s. Antes, además, un pase completo de Gorthor y Velador
+  (`2026-11-15_014405`) y el A de Gorthor ×3 solo; las TRAZA, iguales salvo el fotograma absoluto.
+- Contraprueba F1 (copia temporal `prueba_erebo_orbe_v12_contra.gd`, NO confirmada y borrada): quitando 1 PV de más
+  solo en el lado encendido al sacar el orbe, la prueba FALLA con 7 fallos (`2026-11-15_014928`: «cambios_objetivo»
+  1 / 2; jefe «pv1» 144 / 143, «dano» 36 / 37…). La comparación vieja («muerte_o_dano») habría dado `true` igual.
+- Contraprueba G1: el A original con la misma semilla, tres combates distintos; el arreglado, la misma traza tres veces.
+
+**4. Hallazgos que NO se arreglan (Érebo congelado) y siguen como AVISO**
+- **El orbe gasta azar global.** Con todo lo demás exacto, la tirada `randi()` siguiente a la invocación cambia con el
+  orbe encendido (Grimfang: apagado 1520304005 = control, encendido 8125373; jefe: 3445666316 / 3853673737; con la
+  nueva, igual). Las CPUParticles3D del orbe tiran del generador global. Hoy no cambia nada del combate (el resultado ya
+  está aplicado y el ATB es el mismo), pero lo siguiente que tire el azar (el siguiente golpe, crítico o decisión
+  enemiga) sale distinto con el efecto encendido. Propuesta (para cuando se descongele): `seed`/`use_fixed_seed` propios
+  en las partículas del orbe, o guardar y restaurar el estado del generador alrededor de su creación.
+- **Un vídeo Theora que no se abre cuelga `reproducir()` hasta el toque.** `is_playing()` da `true` y el largo 0, así que
+  ni el corte de 1,5 s ni la salvaguarda (largo + 2 s) actúan: en el combate sería pantalla negra hasta tocar; al tocar
+  devuelve `true` (el resultado se aplica sin teatro). Propuesta: considerar que arrancó solo si `stream_position`
+  avanza, y salir si a los 1,5 s sigue en 0.
+- **ATB de más si el vídeo no arranca.** Con `pausa_atb`, el intento fallido (≈2,17 s: fundidos y la espera de 1,5 s)
+  corre el ATB de todos y después el teatro da el suyo entero: 5,63 s de ATB frente a 3,47 s del teatro solo, en el
+  mismo combate (≈2,2 s de más para héroes y enemigos por igual).
+- **Sin ventana, el vídeo no acaba solo.** La posición sigue más allá del final (8,77 s en el de 6,8; 21,97 en el de
+  20,0) e `is_playing()` no se apaga: «completa hasta el final» y «abreviada» terminan por la salvaguarda (largo + 2 s).
+  La prueba lo admite (dura < largo + 5 s); el final natural en el teléfono, pendiente de verificar.
+
+**5. Siguen frágiles o sin arreglar (G2: el mismo patrón `seed()` antes de `add_child`, sin `semilla=` en la lista)**
+- Con apartado Q estadístico (riesgo como el Gólem y el Velador; sin fallos al azar vistos en el historial):
+  `prueba_centinela_v12` (191/198) y `prueba_peon_v12` (`_combate`, seed antes de add_child).
+- Combates al azar sin Q (en el historial, sus fallos son de desarrollo, no de azar): `prueba_acciones_v12` (91/93),
+  `prueba_audio_bramavidrio` (300/313), `prueba_bramavidrio5`, `prueba_bramavidrio_combate`, `prueba_climax_jefe`,
+  `prueba_coloso`, `prueba_combate_seguro`, `prueba_encuentro_desierto`, `prueba_guardian_bosque`,
+  `prueba_humbaba_combate`, `prueba_meshy_e01`, `prueba_nix_v12`, `prueba_sincronia_golpes` y `prueba_banco_pruebas`.
+  Con `semilla=` en la lista (no afectadas): `prueba_combate_anim_v12`, `prueba_equilibrio`, `prueba_turnos_v12`.
+- `prueba_velador_v12` D: el grupo del encuentro al azar sigue al azar (es lo que prueba); fallaría con probabilidad
+  ≈ 1 en un millón.
+
+**6. Límites**
+- Los combates de las pruebas son guiones (estrategia fija o ataques automáticos), no un jugador.
+- El orbe: comparado en el PC sin ventana (calidad «alta», 96 partículas); en el móvil no.
+- Las TRAZA llevan el fotograma absoluto (`Engine.get_process_frames()`): para comparar dos pasadas hay que quitarlo.
+- Los nuevos `.gd` no tienen `.uid` (no se abre el editor); Godot los crea al abrirlo.
+- Errata del mensaje de `dae1f2e`: dice «las cuatro líneas nuevas» de la lista; son tres.
+
+**7. Peticiones**
+- Ninguna en archivos de otros. Si se descongela Érebo: las dos propuestas del apartado 4.
