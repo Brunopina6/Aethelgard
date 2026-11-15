@@ -92,7 +92,7 @@ func _a() -> void:
 			casos += 1
 		elif ":" in k:
 			selectores[k.get_slice(":", 0)] = true
-	_ok(casos == BP.COMBATES.size() + BP.EXPLORAR.size() and casos == 8, "A: %d casos en pantalla" % casos)
+	_ok(casos == BP.COMBATES.size() + BP.EXPLORAR.size() and casos == 9, "A: %d casos en pantalla" % casos)
 	_ok(selectores.size() == 6, "A: %d selectores (%s)" % [selectores.size(), str(selectores.keys())])
 	b.queue_free()
 	await _esperar(2)
@@ -178,6 +178,18 @@ func _b() -> void:
 	c = await _combate("custodio")
 	var hay: bool = c.enemigos.any(func(e): return e["clave"] == "meshy_e01" and load("res://combate_meshy_e01.gd").es(e))
 	_ok(hay, "B: el combate del Custodio no lo trae con su personalidad")
+	var vida_cus1: int = 0
+	for e in c.enemigos:
+		if e["clave"] == "meshy_e01":
+			vida_cus1 = int(e["hp_max"])
+	await _cerrar(c)
+	# 16/11: el caso de la rotación es el mismo combate con la vida ×8; el normal, con la de siempre (equilibrio)
+	c = await _combate("custodio_rotacion")
+	var vida_cus8: int = 0
+	for e in c.enemigos:
+		if e["clave"] == "meshy_e01":
+			vida_cus8 = int(e["hp_max"])
+	_ok(vida_cus1 > 0 and vida_cus8 == int(round(vida_cus1 * 8.0)), "B: la vida del Custodio normal %d y la de la rotación %d (esperado ×8)" % [vida_cus1, vida_cus8])
 	await _cerrar(c)
 
 	c = await _combate("nix")

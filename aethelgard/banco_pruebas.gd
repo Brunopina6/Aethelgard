@@ -63,9 +63,13 @@ const COMBATES := {
 		"vida": 4.0, "armonia": false, "nota": "Ataca y defiende con Garon. Compara la capa Original y la Articulada."},
 	"nix": {"titulo": "Nix en combate (canalizar)", "grupo": 1, "activos": ["Kael", "Garon", "Nix"],
 		"vida": 6.0, "armonia": false, "nota": "Nix entra en el grupo solo aquí. Elige arriba «Nix» Antigua o Desde el FBX."},
-	"custodio": {"titulo": "Custodio de Porcelana (meshy_e01)", "grupo": 28, "activos": ["Kael", "Lya", "Garon"],
-		"vida": 8.0, "armonia": false, "custodio": true,   # 15/11: ×8 para ver la rotación entera (con ×1 moría tras la Prensa)
-		"nota": "Prensa del Umbral, Avance del Portón y Sello de Clausura (cifras PROPUESTAS). Vida ×8 para ver los tres."},
+	# 16/11 (pedido del usuario): el equilibrio se juzga con la vida NORMAL; la rotación entera, en un caso aparte ×8
+	"custodio": {"titulo": "Custodio de Porcelana (equilibrio normal)", "grupo": 28, "activos": ["Kael", "Lya", "Garon"],
+		"vida": 1.0, "armonia": false, "custodio": true,
+		"nota": "Vida de siempre: para juzgar el equilibrio. Cifras PROPUESTAS, sin aprobar."},
+	"custodio_rotacion": {"titulo": "Custodio: ver la rotación (vida ×8)", "grupo": 28, "activos": ["Kael", "Lya", "Garon"],
+		"vida": 8.0, "armonia": false, "custodio": true,
+		"nota": "Solo para VER Prensa, Avance y Sello seguidos. Vida ×8: NO sirve para juzgar el equilibrio."},
 }
 const EXPLORAR := {
 	"oakhaven": {"titulo": "Oakhaven con Kael, Lya y Garon", "activos": ["Kael", "Lya", "Garon"],
