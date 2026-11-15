@@ -78,32 +78,43 @@ func _probar() -> void:
 	print("SEMILLA %d · erebo=%s" % [semilla, forzado])
 	if forzado == "fallo":
 		await _invocar("apagada, fallo", "no", "", 9)
-		await _invocar("Grimfang, resistida", "hibrida_breve", "", 9)
-		await _invocar("Zarzalín, resistida", "hibrida_breve", "", 10)
-		await _invocar("jefe con fallo forzado (Guardián)", "hibrida_breve", "", 18)
-		await _invocar("resistida, saltada en la extracción", "hibrida_breve", "saltar:agarra", 9)
+		await _invocar("Grimfang, resistida (completa)", "hibrida", "", 9)
+		await _invocar("Grimfang, resistida (abreviada)", "hibrida_breve", "", 9)
+		await _invocar("Zarzalín, resistida (abreviada)", "hibrida_breve", "", 10)
+		await _invocar("jefe con fallo forzado (Guardián, completa)", "hibrida", "", 18)
+		await _invocar("jefe con fallo forzado (Gorthor, abreviada)", "hibrida_breve", "", 5)
+		await _invocar("resistida, saltada en la extracción (completa)", "hibrida", "saltar:agarra", 9)
+		await _invocar("resistida, saltada en la extracción (abreviada)", "hibrida_breve", "saltar:agarra", 9)
 	else:
 		_selector()
 		await _invocar("apagada (teatro de siempre)", "no", "", 9)
 		await _invocar("Grimfang, humanoide 3D", "hibrida", "", 9)
 		await _invocar("apagada otra vez (control del azar)", "no", "", 9)
-		await _invocar("Slime, pequeño 2D", "hibrida_breve", "", 7)
-		await _invocar("Zarzalín, sin pecho humano", "hibrida_breve", "", 10)
-		await _invocar("Bramavidrio, grande con núcleo", "hibrida_breve", "", 13)
-		await _invocar("JEFE Guardián de piedra (2D)", "hibrida", "", 18)
-		await _invocar("JEFE Gorthor (3D)", "hibrida_breve", "", 5)
-		await _invocar("saltar en la señal", "hibrida_breve", "saltar:senalar", 9)
-		await _invocar("saltar en el acercamiento", "hibrida_breve", "saltar:acercamiento", 9)
-		await _invocar("saltar en la extracción", "hibrida_breve", "saltar:agarra", 9)
-		await _invocar("saltar en el ritual (vídeo)", "hibrida", "saltar:video_arranca", 9)
+		await _invocar("Grimfang, abreviada", "hibrida_breve", "", 9)
+		await _invocar("Slime, pequeño 2D (abreviada)", "hibrida_breve", "", 7)
+		await _invocar("Zarzalín, sin pecho humano (completa)", "hibrida", "", 10)
+		await _invocar("Bramavidrio, grande con núcleo (abreviada)", "hibrida_breve", "", 13)
+		await _invocar("Bramavidrio, grande con núcleo (completa)", "hibrida", "", 13)
+		await _invocar("JEFE Guardián de piedra (2D, completa)", "hibrida", "", 18)
+		await _invocar("JEFE Gorthor (3D, abreviada)", "hibrida_breve", "", 5)
+		for m in ["hibrida", "hibrida_breve"]:
+			var n := "completa" if m == "hibrida" else "abreviada"
+			await _invocar("saltar en la señal (%s)" % n, m, "saltar:senalar:0.25", 9)
+			await _invocar("saltar en la extracción (%s)" % n, m, "saltar:agarra:0.25", 9)
+			await _invocar("saltar al entrar en el vídeo (%s)" % n, m, "saltar:video_arranca:0.05", 9)
+			await _invocar("saltar en el destello final (%s)" % n, m, "saltar:video_destello:0.0", 9)
+		await _invocar("saltar en el acercamiento (abreviada)", "hibrida_breve", "saltar:acercamiento:0.25", 9)
+		await _invocar("saltar a mitad del ritual (completa)", "hibrida", "saltar:video_arranca:4.0", 9)
 		await _invocar("todo en tiempo real (hibrida_3d)", "hibrida_3d", "", 9)
 		await _sin_video()
 		var a: int = _randi.get("apagada (teatro de siempre)", -1)
 		var b: int = _randi.get("Grimfang, humanoide 3D", -2)
 		var a2: int = _randi.get("apagada otra vez (control del azar)", -3)
+		var b2: int = _randi.get("Grimfang, abreviada", -4)
 		_ok(a == a2, "control: las dos apagadas no dan la misma tirada siguiente (%d / %d)" % [a, a2])
-		_ok(a == b, "azar: la tirada randi() siguiente cambia con la híbrida (apagada %d, encendida %d)" % [a, b])
-		print("AZAR randi() tras la invocación: apagada %d · híbrida %d · apagada (control) %d" % [a, b, a2])
+		_ok(a == b, "azar: la tirada randi() siguiente cambia con la híbrida completa (apagada %d, encendida %d)" % [a, b])
+		_ok(a == b2, "azar: la tirada randi() siguiente cambia con la híbrida abreviada (apagada %d, encendida %d)" % [a, b2])
+		print("AZAR randi() tras la invocación: apagada %d · híbrida completa %d · híbrida abreviada %d · apagada (control) %d" % [a, b, b2, a2])
 	H.elegir_modo("no")
 	for k in P.CLAVES + ["partida_lista", "grupo_combate", "tipo_combate", "zona", "grupo_activo"]:
 		if Engine.has_meta(k):
@@ -124,6 +135,9 @@ func _selector() -> void:
 		"selector «hibrida»: %s / vídeo %s" % [H.modo(), V.modo()])
 	H.elegir_modo("abreviada")
 	_ok(not H.activa() and V.modo() == "abreviada" and H.valor_selector() == "abreviada", "selector «abreviada»: %s / %s" % [H.modo(), V.modo()])
+	H.elegir_modo("hibrida_breve")
+	_ok(H.modo() == "hibrida_breve" and H.activa() and V.modo() == "no" and V.ruta_para_ahora() == "" and H.valor_selector() == "hibrida_breve",
+		"selector «hibrida_breve» (Híbrida abreviada): %s / vídeo %s" % [H.modo(), V.modo()])
 	H.elegir_modo("no")
 	_ok(not H.activa() and V.modo() == "no" and H.valor_selector() == "no", "selector «no»: %s / %s" % [H.modo(), V.modo()])
 	_ok(H.ruta_ritual("hibrida") == H.RITUAL and H.ruta_ritual("hibrida_breve") == H.RITUAL_BREVE and H.ruta_ritual("hibrida_3d") == "",
@@ -243,6 +257,9 @@ func _invocar(caso: String, modo_inv: String, accion: String, grupo: int) -> voi
 	var anuncios := {"corazon": 0, "roba": 0, "vacia": 0}
 	var reg_previo := ""
 	var fase_salto := accion.get_slice(":", 1) if accion.begins_with("saltar:") else ""
+	var tras_salto := float(accion.get_slice(":", 2)) if accion.get_slice_count(":") > 2 else 0.25
+	var escena_pos0: Vector2 = c.escena.position
+	var escena_esc0: Vector2 = c.escena.scale
 	for i in 6000:
 		var n = c.get_node_or_null("EreboHibrida")
 		if n != null:
@@ -270,7 +287,7 @@ func _invocar(caso: String, modo_inv: String, accion: String, grupo: int) -> voi
 			bajo = true
 		if fase_salto != "" and not saltado and inv != null and is_instance_valid(inv):
 			for r in registro:
-				if r[0] == fase_salto and inv._t_juego > r[1] + (0.9 if fase_salto == "video_arranca" else 0.25):
+				if r[0] == fase_salto and inv._t_juego >= r[1] + tras_salto:
 					saltado = true
 					t_salto = reloj
 					await _saltar()
@@ -330,13 +347,17 @@ func _invocar(caso: String, modo_inv: String, accion: String, grupo: int) -> voi
 					_ok(r[1] < 0.12 and r[2], "%s: el corazón no está en la mano (%.3f m, visible %s)" % [caso, r[1], r[2]])
 				if r[0] == "medida":
 					print("%s: caja %s · contacto %s · escala de Érebo %.2f" % [caso, r[1], r[2], r[3]])
+				if r[0] == "cabeza":                     # la cabeza firme: sin ladearse ni dar tirones
+					_ok(absf(r[1]) < 2.0 and r[2] < 6.0 and r[3] < 160.0 and r[4] > 0.99,
+						"%s: cabeza ladeada %.1f° (máx. %.1f°), giro máx. %.0f °/s, peso %.2f" % [caso, r[1], r[2], r[3], r[4]])
+					print("%s: CABEZA ladeo %.2f° (máx. %.2f° desde el contacto) · giro máx. %.0f °/s" % [caso, r[1], r[2], r[3]])
 		else:
 			_ok(saltado, "%s: no se llegó a la fase «%s» para saltar (%s)" % [caso, fase_salto, fases])
 			var antes := ""                              # la fase en la que se saltó (sin las de diagnóstico)
 			for f in fases:
 				if f == "saltada":
 					break
-				if not f in ["medida", "error_mano", "corazon_mano"]:
+				if not f in ["medida", "error_mano", "corazon_mano", "cabeza"]:
 					antes = f
 			_ok(antes == fase_salto, "%s: se saltó en «%s» y no en «%s»" % [caso, antes, fase_salto])
 			_ok(t_fin > 0.0 and t_fin - t_salto < 3.0, "%s: tras saltar tarda %.2f s en volver" % [caso, t_fin - t_salto])
@@ -373,6 +394,22 @@ func _invocar(caso: String, modo_inv: String, accion: String, grupo: int) -> voi
 	_ok(is_equal_approx(Engine.time_scale, 1.0), "%s: el tiempo no vuelve a 1" % caso)
 	_ok(c.inv_erebo == null, "%s: queda inv_erebo" % caso)
 	_ok(c.escena.visible, "%s: los luchadores no vuelven a verse" % caso)
+	_ok(c.escena.position == escena_pos0 and c.escena.scale == escena_esc0, "%s: la cámara del combate no vuelve (%s %s → %s %s)" % [
+		caso, escena_pos0, escena_esc0, c.escena.position, c.escena.scale])
+	if c.estado != "fin":                                # los controles: el menú vuelve y responde
+		var respondio := false
+		for h in c.heroes:                               # (el ATB va lento en esta prueba: que le toque a alguien ya)
+			if h["hp"] > 0:
+				h["atb"] = maxf(h["atb"], c.ATB_MAX - 0.5)
+		for i in 900:
+			if c.estado == "menu" and c.menu.activo and c.actor is Dictionary:
+				var quien: String = c.actor["nombre"]
+				c._defender()
+				await _esperar(3)
+				respondio = c.estado != "menu" or not (c.actor is Dictionary and c.actor["nombre"] == quien)
+				break
+			await _esperar(1)
+		_ok(respondio, "%s: tras volver, el menú no aparece o no responde (estado «%s»)" % [caso, c.estado])
 	var ventanas1 := _ventanas()
 	for id in ventanas0:
 		if ventanas1.has(id):

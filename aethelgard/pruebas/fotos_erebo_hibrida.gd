@@ -21,6 +21,7 @@ var c = null
 var salida := "D:/REBELUM_diagnostico/erebo_hibrida"
 var grupos: Array = [9]
 var forzado := "exito"
+var cada := 0.0              # «cada=0.33»: además, una captura cada tanto (s de juego) del acercamiento al orbe (la cabeza)
 
 
 func _initialize() -> void:
@@ -35,6 +36,8 @@ func _initialize() -> void:
 				grupos.append(int(g))
 		elif a.begins_with("erebo="):
 			forzado = a.substr(6)
+		elif a.begins_with("cada="):
+			cada = float(a.substr(5))
 	Engine.set_meta("archivo_partida_prueba", ARCHIVO)
 	DirAccess.make_dir_recursive_absolute(salida)
 	_hacer.call_deferred()
@@ -59,6 +62,7 @@ func _foto(nombre: String) -> void:
 
 
 func _uno(grupo: int) -> void:
+	_t_cada = 0.0
 	for k in P.CLAVES + ["partida_lista", "grupo_combate", "tipo_combate", "zona"]:
 		if Engine.has_meta(k):
 			Engine.remove_meta(k)
@@ -94,6 +98,17 @@ func _uno(grupo: int) -> void:
 		if inv != null:
 			_ultimo_registro = inv.registro.duplicate()
 			var ahora: float = inv._t_juego
+			if cada > 0.0:
+				var t_ac := -1.0
+				var t_fin_c := INF
+				for r in inv.registro:
+					if r[0] == "acercamiento":
+						t_ac = r[1]
+					if r[0] in ["ritual_video", "fallo"]:
+						t_fin_c = r[1] + 0.3
+				if t_ac >= 0.0 and ahora >= t_ac and ahora <= t_fin_c and ahora >= _t_cada:
+					_t_cada = ahora + cada
+					await _foto(pref + "c_%05.2f" % (ahora - t_ac))
 			for m in MOMENTOS:
 				if hechas.has(m[2]):
 					continue
@@ -118,3 +133,4 @@ func _uno(grupo: int) -> void:
 
 
 var _ultimo_registro: Array = []
+var _t_cada := 0.0
