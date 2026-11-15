@@ -314,6 +314,16 @@ en `D:\REBELUM_diagnostico\muestra_calle_15_11\correcciones\` (`antes_*`, `despu
    (`prueba_banco_pruebas` parte I). Fuera queda, documentado: los conmutadores de pruebas del Gran Bosque en Ajustes
    y los selectores de variantes del banco siguen guardando en ajustes.cfg (preferencias de Auditoría, a mano).
 
+**En el Redmi (15/11, 22:45, APK `4eb4f9b` v849; detalle en `REDMI_15_11.md`):** las tres correcciones se ven en la
+pantalla real; 30 FPS sostenidos con la resolución fija (×0,75, 1200×540) y con el regulador normal (se quedó en el
+escalón 0); el tirón de la primera entrada tras instalar es de DIBUJO (compilar 3 programas nuevos, 1,26 s en negro,
+una vez por instalación); los de las entradas siguientes, de CPU (72-184 ms + el cambio de escena, en negro); los de
+la primera vuelta del 15/11 no se reproducen en tres arranques en frío; el precalentado no aporta y se queda apagado;
+el aislamiento de la calidad deja el teléfono idéntico sin restaurar nada. Posibles remedios para la entrada, NO
+aplicados (decisión del usuario): compilar los sombreados de la muestra en la carga inicial de la app (mueve ≈ 1,2 s a
+la pantalla de carga, solo tras instalar) y, para la CPU, guardar la luz del json entre entradas y unir los 41 choques
+(cada fase pesa 6-18 ms en el teléfono).
+
 ## 8. PENDIENTE
 
 - Medida en el Redmi: HECHA (30 FPS sostenidos en el bajo; `REDMI_15_11.md`). Quedan para el usuario: Kael muy azul en

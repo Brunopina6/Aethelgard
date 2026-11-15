@@ -164,3 +164,44 @@ torreón → volver al oeste (≈ 40 s por vuelta). Siete ciclos seguidos de 20:
   datos del usuario). Descargas sin tocar salvo la APK nueva, que se deja.
 - **Siguen PENDIENTES (una pasada limpia no los resuelve):** el cierre intermitente de Godot (0xC0000005) tras
   `prueba_banco_pruebas` con «FALLOS: 0»; la rareza de las transparencias en bajo/medio (`MUESTRA_CALLE_OAKHAVEN.md` §7).
+
+## Sesión 15/11, 22:45-23:05: correcciones de la muestra (APK `4eb4f9b`, v849; la instaló el usuario)
+
+APK de Auditoría `4eb4f9b` (contenido validado `02079bb`, 189 · 0), 431,9 MB, SHA-256 `6f90aad2…8e3778`. Estado previo
+en `D:\REBELUM_respaldos\2026-11-15_redmi_antes_sesion_2245` (igual al de las 21:00). Perfil bajo. Medidas, registros
+`[tirones]`/`[calidad]` (logcat) y capturas en `D:\REBELUM_diagnostico\redmi_15_11\correcciones\`.
+
+**Tres arranques en frío** (cada uno: abrir la app, banco, muestra, una vuelta sin capturas; timestats por tramo):
+
+| Arranque | Entrada a la muestra (diagnóstico) | Entrada (timestats, 9 s) | 1.ª vuelta | PSS banco · calle |
+|---|---|---|---|---|
+| 1, recién instalada, «Fija ×0,75» | instanciar → 1.er dibujo **1433 ms, 1264 de DIBUJO**; caché de sombreadores 167 → 170 (+3) | 1 fotograma de ≈ 1 s | **30,38 FPS; 1120/1204 a 33 ms, 13 a 50, ninguno peor** | 764 · 792 MB |
+| 1, 2.ª entrada, «Fija» | 119 ms (dibujo 5,6; caché +0) | 1 de 200 ms | 30,36; 6 a 50 ms | 787 · 816 |
+| 1, 3.ª entrada, «Regulador normal» (2 vueltas) | 72 ms (dibujo 4,2) | 1 de 134 ms | 30,36; 2270/2407 a 33 ms, 28 a 50, 1 de 66, 1 de 118; **escalón 0 todo el rato** | 791 · 789 |
+| 2, caché llena, sin precalentar | 184 ms (dibujo 51; caché +0) | 1 de 300 ms | 30,37; 11 a 50 ms, ninguno peor | 756 · 785 |
+| 3, caché llena, CON precalentado | 179 ms + precalentado 328 ms (tapado) | 1 de 300 ms | 30,36; 13 a 50, 2 de 86 ms | 756 · 766 |
+
+- **Medición controlada:** «Fija» = 3D ×0,75 (1200×540, sin regulador) y «Regulador normal» (empezó y se quedó en el
+  escalón 0, la misma escala): mismo resultado, 30 FPS sostenidos. Calor: batería 26,3 → 29,5 °C en 20 min con tres
+  arranques; estado térmico 0.
+- **Tirones de ENTRADA (causa medida):**
+  - la PRIMERA entrada tras instalar: el tiempo está en el **dibujo** del primer fotograma (1,26 s) y la caché de
+    sombreadores crece en ese momento → compilar los programas nuevos (los sombreados cambiados). Una vez por
+    instalación; ocurre con la pantalla en negro de la carga;
+  - después (caché llena): 72-184 ms medidos desde la escena (dibujo 4-51 ms; el resto, el _ready: GLB, materiales,
+    choques, luz.json, Kael), más ≈ 60-120 ms antes de la escena (cambio de escena y liberar el banco) que no mide el
+    diagnóstico → **CPU**, no sombreados. También con la pantalla en negro.
+- **Tirones de la PRIMERA VUELTA del 15/11 (c1, 66-300 ms):** NO se reproducen en ninguno de los tres arranques en frío
+  (ni recién instalada). Lo que era distinto en c1: 4 capturas por adb durante la vuelta y el regulador bajando de
+  escalón (cambio de escala 3D) a mitad, en una APK con los sombreados de antes. No se ha demostrado cuál de esas fue la
+  causa; el diagnóstico queda en la APK para la próxima vez.
+- **Precalentado del recorrido:** sin beneficio medible (la 1.ª vuelta ya salía limpia) y añade 328 ms en negro →
+  se queda APAGADO; no se propone.
+- **Las tres correcciones en la pantalla real** (`redmi_cmp_*.png`): Kael junto a la pared oeste arriba del callejón se
+  ve entero (cámara en el eje del callejón); en la sombra ya no es azul intenso (gris neutro) y tiene sombra de contacto
+  bajo los pies; al sol, igual que antes con algo más de contacto alrededor de los pies.
+- **Aislamiento de la calidad, comprobado en el teléfono:** tras toda la sesión (selector «Fija»/«Regulador normal», el
+  regulador activo, tres arranques) los 7 archivos de `files/` tienen el MISMO SHA-256 y la misma lista que antes, **sin
+  restaurar nada a mano** (partida `567c7323…`, ajustes `3ee5aaf2…`, calidad.log `8fd08287…`). Solo cambia la caché de
+  sombreadores del sistema (+3 programas).
+- **Siguen ABIERTOS:** el cierre 0xC0000005 (diagnóstico en `MUESTRA_CALLE_OAKHAVEN.md` §8) y las transparencias.

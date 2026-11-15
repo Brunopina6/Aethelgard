@@ -944,3 +944,15 @@ Validado: `dc878e9` (`validado/v12/20261115-170245`, 188 · 0). APK v834 instala
 - Teléfono devuelto al estado previo (SHA iguales; `ajustes.cfg` y `calidad.log` restaurados byte a byte).
 - PENDIENTES que NO se dan por resueltos: cierre intermitente de Godot (0xC0000005) y transparencias en bajo/medio.
 - **Siguiente acción:** esperar la decisión del usuario sobre las observaciones de la muestra y sobre su extensión.
+
+## RELEVO 15/11, 23:05: correcciones de la muestra probadas en el Redmi (LEER PRIMERO)
+- Hecho (autorizado por el usuario): cámara en el eje del callejón, luz de Kael en sombra sin azul, sombra de contacto,
+  diagnóstico de tirones, calidad del banco aislada y selector «Calidad 3D» (fija ×0,75 / regulador). Validado
+  `02079bb` (`validado/v12/20261115-224238`, 189 · 0). APK `4eb4f9b` v849 instalada y probada (`REDMI_15_11.md`,
+  sesión 22:45): 30 FPS, tirón de entrada tras instalar = compilar sombreados (una vez), resto CPU en negro; la 1.ª
+  vuelta ya no tiene tirones; precalentado apagado (no aporta); teléfono idéntico sin restaurar.
+- Versión anterior: `recuperacion/v12/20261115-antes-correcciones-muestra` (`47e8cb1`).
+- ABIERTOS (no se declaran resueltos): cierre 0xC0000005 (recursos de render/texto retenidos por cachés estáticas al
+  apagar; el experimento 20+20 no lo reprodujo) y transparencias en bajo/medio.
+- **Siguiente acción:** decisión del usuario sobre los remedios de la entrada (compilar en la carga, caché de la luz,
+  unir choques) y sobre extender la renovación. NO extender sin que lo pida.
