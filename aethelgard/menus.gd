@@ -860,16 +860,20 @@ func _pintar_ajustes() -> void:
 		var fev := HBoxContainer.new()
 		fev.add_theme_constant_override("separation", 6)
 		cuerpo.add_child(_texto("Érebo: invocación cinematográfica", 18, COLOR_SUAVE))
-		for op in [["no", "No"], ["abreviada", "Abreviada"], ["completa", "Completa"], ["primera", "1.ª completa"], ["hibrida", "Híbrida"]]:
+		var fhb := HBoxContainer.new()                          # (V12, Érebo híbrida: sus dos valores, en otra línea)
+		fhb.add_theme_constant_override("separation", 6)
+		for op in [["no", "No"], ["abreviada", "Abreviada"], ["completa", "Completa"], ["primera", "1.ª completa"],
+				["hibrida", "Híbrida"], ["hibrida_breve", "Híbrida abreviada"]]:
 			var mo: String = op[0]
 			var bv := _boton(("● " if mo == ev_act else "○ ") + op[1], 18, Vector2(140, 34), "erebo_cine:%s" % mo)
 			bv.pressed.connect(func():
 				EH.elegir_modo(mo)                            # (los del vídeo los guarda el vídeo)
 				Sonido.efecto("ui_tic")
 				_pintar_de_nuevo())
-			fev.add_child(bv)
+			(fhb if mo.begins_with("hibrida") else fev).add_child(bv)
 		cuerpo.add_child(fev)
-		cuerpo.add_child(_texto("Solo Auditoría: vídeo prerenderizado (≈20 s o ≈7 s). «1.ª completa»: la primera vez entera, luego la abreviada. «Híbrida»: Érebo va hasta el enemigo elegido, le saca un corazón espectral y sigue el ritual del vídeo. Tocar la pantalla la salta. No cambia el daño.", 16, COLOR_SUAVE))
+		cuerpo.add_child(fhb)
+		cuerpo.add_child(_texto("Solo Auditoría: vídeo prerenderizado (≈20 s o ≈7 s). «1.ª completa»: la primera vez entera, luego la abreviada. «Híbrida»: Érebo va hasta el enemigo elegido, le saca un corazón espectral y sigue el ritual del vídeo (≈24 s; «Híbrida abreviada», con el ritual corto, ≈16 s). Tocar la pantalla la salta. No cambia el daño.", 16, COLOR_SUAVE))
 		# V12 (14/11), fase 3C: la magia Agua mejorada (vfx/agua_v12.gd), APAGADA por defecto. Solo Auditoría o editor.
 		var AGV = load("res://vfx/agua_v12.gd")
 		var ag_act: bool = AGV.activo()
