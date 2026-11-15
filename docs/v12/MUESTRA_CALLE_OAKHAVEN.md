@@ -274,12 +274,67 @@ Refutados (no se cambian): el regulador de calidad que guarda en ajustes (lo hac
 banco), el «21/22 FPS» de las capturas de vistas (es el contador general durante la captura, no la medida), el coste de
 reenviar los parámetros de la sombra de Kael, el humo del alto, y los binarios del primer horneado en la historia.
 
+## 7.c Correcciones tras el Redmi (15/11, noche; autorizadas por el usuario)
+
+Versión anterior conservada: etiqueta `recuperacion/v12/20261115-antes-correcciones-muestra` (`47e8cb1`) y copia de sus
+fuentes en `D:\REBELUM_diagnostico\muestra_calle_15_11\correccionesntes_47e8cb1\`. Investigación previa en paralelo
+(5 investigadores y un crítico) y revisión independiente después (4 revisores + escépticos; 6 hallazgos corregidos en
+`02079bb`). Capturas antes/después con la MISMA cámara de juego y los mismos sitios (`pruebas/fotos_muestra_correcciones.gd`)
+en `D:\REBELUM_diagnostico\muestra_calle_15_11\correcciones\` (`antes_*`, `despues_*`, `cmp_*`, `pies_3.png`).
+
+1. **Callejón (Kael tapado).** No era el faldón del tejado sino la esquina del piso volado de la casa del oeste (poste,
+   entramado, postigo; x ≈ −1,8, y 3,1-5,65) y su alero: con Kael pegado a la pared oeste (x ≈ −1,45) la cámara, que le
+   seguía en x, miraba por detrás de esa esquina. Arreglo: **zona de cámara local** — dentro del callejón la cámara se
+   queda en su eje (x = 0), sin girar ni cambiar altura, inclinación o campo; entra suave de la boca (z −2,0) al primer
+   escalón (z −3,4) y se apaga fuera del ancho (|x| 1,8 → 2,6). En la calle, idéntica. Descartado ocultar/recortar el
+   tejado: no quitaba el obstáculo real, obligaba a descartes caros en el Mali y a rehornear. VERIFICADO en PC
+   (`cmp_callejon_oeste_entero.png`, prueba paso 7).
+2. **Kael azul en sombra.** El ambiente de Kael usaba el «cielo puro» del horneado (B/R lineal 1,79; sin rebotes
+   cálidos), mientras la sombra horneada del callejón es casi neutra (B/R 1,11-1,22). Arreglo: el tono del ambiente de
+   Kael se pesa por el SOL de la sonda — al sol queda exactamente como antes; en sombra toma el tono de la sombra
+   horneada con la MISMA luminancia (se conserva la diferencia sol/sombra). VERIFICADO en PC: B/R de la luz de Kael en
+   el callejón 1,16 (antes ≈ 3,7), luminancia igual (0,143 / 0,143), sin cambios al sol (`cmp_kael_todos.png`).
+3. **Sombra de contacto.** La de antes quedaba casi entera bajo el cuerpo de Kael (y la larga, detrás de él desde esta
+   cámara). Arreglo en los tres sombreados del suelo (copias idénticas): salida temprana también por distancia, núcleo
+   más ancho y algo adelantado hacia la cámara, elipse de contacto más marcada (al sol alargada hacia la sombra; en
+   sombra redonda) y contacto fuerte también en sombra (0,70). Sin transparencias ni pasadas nuevas. Coste estimado en
+   Mali-G57 (malioc): +0,35 ciclos por fragmento en el peor camino (4,81 → 5,15; registros ≤ 32; sin ZS tardío)
+   (`correcciones/malioc_despues.txt`). VERIFICADO en PC (`pies_3.png`): ahora se ve oscurecido alrededor de los pies.
+4. **Tirones.** NO se atribuyen todavía. Se añadió un diagnóstico que solo mide (`diagnostico_tirones.gd`, líneas
+   «[tirones]» en logcat): fases de la entrada, reparto de cada tirón medido en su fotograma (espera / física / proceso /
+   dibujo) y archivos de la caché de sombreadores al entrar, tras los primeros dibujos y al salir. Primer dato (PC): la
+   fase más larga de la entrada es crear a Kael, la cámara, el panel y el regulador (≈ 140 ms de 240), trabajo de CPU.
+   Remedio CANDIDATO, apagado: el precalentado del recorrido (interruptor de sesión del banco «Muestra: precalentar»;
+   ≈ 290 ms tapado en negro en la primera entrada) para comparar con y sin él en el teléfono.
+5. **Ajustes del banco aislados.** Dentro del banco, [calidad] vive en memoria (`calidad_auto.gd`, `aislada()`): el
+   regulador, la detección y Ajustes > Calidad funcionan, pero ni `ajustes.cfg` ni `calidad.log` cambian; CAL, el
+   selector y los bancos de medida se quitan al salir; las medidas de RND/PRUEBA van a `banco_pruebas_*.csv` y se
+   borran al salir. Selector nuevo «Calidad 3D (solo en el banco)»: «Regulador normal» o «Fija: bajo · 3D ×0,75»
+   (1200×540 en el Redmi). La escala 3D real sale en logcat («[calidad]») y en el panel RND. VERIFICADO en PC
+   (`prueba_banco_pruebas` parte I). Fuera queda, documentado: los conmutadores de pruebas del Gran Bosque en Ajustes
+   y los selectores de variantes del banco siguen guardando en ajustes.cfg (preferencias de Auditoría, a mano).
+
 ## 8. PENDIENTE
 
 - Medida en el Redmi: HECHA (30 FPS sostenidos en el bajo; `REDMI_15_11.md`). Quedan para el usuario: Kael muy azul en
   la sombra del callejón, su sombra poco visible y el tejado del oeste que puede taparle arriba del callejón.
 - El regulador de calidad escribe en `ajustes.cfg` también desde el banco (visto en el Redmi): decidir si el banco lo aísla.
-- El cierre intermitente de Godot (0xC0000005) tras `prueba_banco_pruebas`: sin resolver.
+- El cierre intermitente de Godot (0xC0000005) tras `prueba_banco_pruebas`: **ABIERTO, en diagnóstico** (15/11, noche;
+  datos en `D:\REBELUM_diagnostico\cierre_0xC0000005\`):
+  - Con el ejecutor de pruebas: 1 cierre en 10 pasadas seguidas (la 1.ª, con el PC cargado por otras tareas). En la que
+    se cierra, la prueba ya terminó («FALLOS: 0») y el registro de errores queda VACÍO; en las buenas, el motor escribe
+    al apagarse 6 líneas de objetos y recursos que siguen vivos. → El cierre ocurre durante el apagado del motor.
+  - Con `--verbose`: al salir siguen vivos 383 objetos y 120 recursos, entre ellos 45 texturas y 1 sombreado del servidor
+    de render y 8 fuentes del servidor de texto, retenidos por cachés ESTÁTICAS de guiones (estilo.gd: tema y fuentes;
+    material_arma.gd: sombreado; enemigo_v12_3d.gd: atlas; catalogo.gd; npc_chibi.gd…). Una variante de la prueba que
+    vacía esas cachés antes de apagar (`pruebas/diag_cierre_banco.gd`) deja 0 recursos de render y de texto vivos (186
+    objetos, solo guiones).
+  - Hipótesis (NO demostrada): esos recursos se liberan cuando los servidores ya no existen. Comparación 20 + 20
+    pasadas lanzando Godot directamente: 0 cierres en las dos variantes → el cierre no se reprodujo así; no se puede
+    decir si el vaciado lo evita. Siguiente paso: repetir la comparación con el ejecutor de pruebas y con el PC cargado.
+  - No se ha cambiado nada del juego por esto.
+- La rareza de las transparencias en bajo/medio (§7): **ABIERTA**, sin investigar todavía (las correcciones la evitan:
+  no usan transparencias).
 - Visto bueno del usuario a la dirección (la tarde dorada, la cámara más baja que la de Oakhaven, el estilo).
 - La imagen de referencia no se recibió: lo de §1.a sale de la descripción.
 - La rareza de las transparencias en bajo/medio (§7).
