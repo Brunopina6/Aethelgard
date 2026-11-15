@@ -766,3 +766,25 @@ de Oakhaven y Pastos Verdes; después, el siguiente lote de la matriz (personaje
   - aprobar el cantero como canon y encenderlo por defecto;
   - ver y oír los vídeos de Érebo;
   - las cifras propuestas del Custodio.
+
+## RELEVO 15/11, noche autónoma (LEER PRIMERO): auditoría externa, Sunken City 3D y revisión de personajes
+
+Encargo del usuario del 15/11 (noche, sin Redmi): reparar los fallos comprobados de la auditoría externa (hecha sobre
+`da0e336`), conservar lo funcional, construir la siguiente ubicación 3D y dejar una APK de Auditoría consolidada.
+Punto de recuperación: etiqueta `recuperacion/v12/20261115-antes-noche` → `da0e336`.
+
+### Punto de control 01:40 (commits locales, sin subir)
+- `d9dc733` A: cantero, la losa abierta primero empieza la misión (antes, oculta en el Diario). Casos 3c/3d.
+- `3596779` B: Hierro de la Falla perdido en partidas antiguas: Ferro lo nota, el Diario lo explica, la veta da UNO.
+- `178c9cd` A (detalles): marca suelta sin misión no dice «Diario»; el brazalete no brilla con la losa abierta.
+- `629c75f` C: talleres.error_receta(): la receta se valida entera antes de gastar; equipable repetido no gasta.
+- `1a2f0a1` D: ciclos de investigaciones (catalogo.ciclos_investigacion, en_ciclo; antes, Stack overflow).
+- `7de9482` E: progreso.errores_estructura() en leer(); 29 copias reales de partidas de los respaldos: 29 válidas.
+- `5f32cec` prueba_rasgos_grupo (solo Lya invoca, Nix, par de Garon una vez, Oro a 13).
+- Cada arreglo con contraprueba (sin él, su prueba falla: 2, 2, 42, 3+Stack overflow y 14 fallos).
+- Cerrado sin cambio: el PV máximo del Custodio de 161 a 145 tras «Congelado» es la congelación de Frostfang
+  (combate.gd `_congelar`: −2 de Vitalidad = −16 PV máximos durante RONDAS_CONGELACION; se devuelven al acabar).
+- Kael «Ataque rúnico»: el catálogo y el PDF de Kael NO existen (buscados en docs, `D:\REBELUM_entrada_13_11` y
+  `D:\REBELUM_diagnostico\v12`). Se conserva su menú de hoy (MAGIA Fuego/Rayo, sin INVOCACIÓN). Dependencia abierta.
+- En marcha (agentes en worktrees propios): sector 3D de Sunken City; pruebas exactas del orbe, vídeo de Érebo y
+  Gorthor/Velador con semilla; revisión visual de Nix y de la capa de Garon.
