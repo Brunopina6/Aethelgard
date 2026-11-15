@@ -919,3 +919,18 @@ Validado: `dc878e9` (`validado/v12/20261115-170245`, 188 · 0). APK v834 instala
 - **Siguiente acción:** muestra gráfica experimental de UNA calle de Oakhaven (escena aparte, solo Auditoría, apagada
   por defecto; no se extiende al resto del juego hasta que el usuario la vea). Plan y avance en
   `docs/v12/MUESTRA_CALLE_OAKHAVEN.md`.
+
+## RELEVO 15/11, noche (20:00): muestra gráfica de una calle de Oakhaven integrada (LEER PRIMERO)
+- **Muestra** (`MUESTRA_CALLE_OAKHAVEN.md`): escena aparte `zonas3d/muestra_calle/`, solo desde el banco de Auditoría
+  («Muestra gráfica: una calle de Oakhaven (en pruebas)»), apagada para el juego; excluida de las APK sin banco. Hecha
+  por un agente (rama `area-grafico/muestra-calle`, integrada por cherry-pick) con generador de Blender reproducible y
+  luz horneada. Revisión independiente: 6 hallazgos corregidos en `e857b93`, validado con 189 · 0 (`2026-11-15_200905`) (faroles de pie negros, título, dos
+  aserciones, medida sin vsync, comparación justa: 27 llamadas frente a 80 de la Calle del Cuervo, solo con Kael).
+- **Verificado en PC:** 30 FPS con su límite en bajo y medio; 2,2-2,8 ms sin límite en el bajo; capturas antes/después,
+  vídeo `kael_calle_bajo.mp4` en `D:\REBELUM_diagnostico\muestra_calle_15_11\`.
+- **Pendiente:** medirla en el Redmi (hace falta una APK nueva); visto bueno del usuario a la dirección (tarde dorada,
+  cámara más baja); la hora azul horneada; texturas pintadas a mano; la rareza de las transparencias en bajo/medio.
+- **Siguiente acción:** esperar a que el usuario vea la muestra. NO extender la renovación al resto del juego sin su
+  visto bueno.
+- Batería: un cierre de Godot con fallo de memoria (0xC0000005) tras `prueba_banco_pruebas` con «FALLOS: 0» es
+  intermitente y anterior (ya en `2026-11-15_024023`); sola pasa 3/3.
