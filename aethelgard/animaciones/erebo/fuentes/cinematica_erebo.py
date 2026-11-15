@@ -1221,6 +1221,233 @@ def poner_camara(t):
     return nombre
 
 
+# ------------------------------------------------------------------ V12 (15/11): versión MEJORADA («mejora=si»)
+# Petición del usuario: «la cinemática de antes mejorada, que se vea de puta madre, con efectos». Por defecto («no») el
+# script hace exactamente lo del 14/11. Con «mejora=si», encima de la misma escena, los mismos planos y tiempos:
+#   · luz: contraluz de borde plateado y violeta detrás de Érebo (dibuja la capucha y los hombros) que late con el orbe;
+#   · polvo en el aire: motas finas que flotan, iluminadas por el orbe, que la absorción arrastra en remolino;
+#   · el AGARRE (9,85 s) se lee con más fuerza: onda de choque alrededor del orbe, chispas con estela, destello breve de
+#     toda la imagen, golpe de zoom y más temblor;
+#   · el APLASTAMIENTO: el puño se carga (halo que late y crece en la quietud) y al liberar estalla un halo esférico,
+#     más chispas, más luz y más destello, con aberración cromática un instante;
+#   · compositor: bloom más rico y estrellas suaves en los brillos fuertes (la corrección de color y la viñeta se hacen
+#     al codificar, con ffmpeg: ver docs/v12/EREBO_CINEMATICA_V12.md §10).
+MEJORA = OPC.get("mejora", "no") == "si"
+
+
+def quad_cam(pos, vel, tam, cam_p, estela_max=0.4):
+    hacia = (cam_p - pos).normalized()
+    lado = hacia.cross(Vector((0, 0, 1))).normalized() if abs(hacia.z) < 0.99 else Vector((1, 0, 0))
+    arriba = lado.cross(hacia).normalized()
+    vproj = vel - hacia * vel.dot(hacia)
+    estela = min(vproj.length * (1 / FPS) * 1.4, estela_max)
+    if vproj.length > 1e-4:
+        ej = vproj.normalized(); perp = hacia.cross(ej).normalized()
+    else:
+        ej, perp = arriba, lado
+    le = tam + estela
+    return [pos - ej * le - perp * tam, pos - ej * le + perp * tam, pos + ej * tam + perp * tam, pos + ej * tam - perp * tam]
+
+
+if MEJORA:
+    PUNTOS["orbe_agarre"] = evaluar(T["agarre"], lambda: (hueso_mundo(MANO) @ M_ORBE_EN_MANO).translation.copy())
+    rim, rim_d = luz("rim_plata", 'AREA', (0.72, 0.8, 1.0), 0.6)
+    rim_d.size = 1.4
+    rim.location = PUNTOS["pecho_fin"] + Vector((0.55, 1.9, 1.15))
+    rim.rotation_euler = (PUNTOS["pecho_fin"] + ARRIBA * 0.25 - rim.location).to_track_quat('-Z', 'Y').to_euler()
+    rim2, rim2_d = luz("rim_violeta", 'AREA', (0.62, 0.32, 1.0), 0.6)
+    rim2_d.size = 1.0
+    rim2.location = PUNTOS["pecho_fin"] + Vector((-1.1, 1.3, 0.6))
+    rim2.rotation_euler = (PUNTOS["pecho_fin"] + ARRIBA * 0.1 - rim2.location).to_track_quat('-Z', 'Y').to_euler()
+    for d_ in (rim_d, rim2_d):
+        d_.volume_factor = 0.05
+    N_POLVO = 300
+    polvo = malla_quads("polvo", N_POLVO, mat_mota("polvo", False))
+    POLVO = []
+    for i in range(N_POLVO):
+        r = random.Random(9100 + i)
+        POLVO.append(dict(p=Vector((r.uniform(-1.6, 1.6), r.uniform(-2.4, 1.2), r.uniform(0.05, 2.4))),
+                          v=Vector((r.uniform(-0.03, 0.03), r.uniform(-0.03, 0.03), r.uniform(0.005, 0.03))),
+                          tam=r.uniform(0.4, 1.3), fase=r.uniform(0, math.tau),
+                          c=r.choices([(0.62, 0.3, 1.0), (0.82, 0.86, 1.0), (1.0, 0.45, 0.7)], [0.55, 0.35, 0.1])[0]))
+    N_CHISPA = 140
+    chispas = malla_quads("chispas", N_CHISPA, mat_mota("chispa", False))
+    CHISPA = []
+    for i in range(N_CHISPA):
+        r = random.Random(9900 + i)
+        CHISPA.append(dict(d=azar_unidad(r), v=r.uniform(1.2, 4.5), vida=r.uniform(0.25, 0.7), tam=r.uniform(0.5, 1.2),
+                           c=r.choices([(1.0, 0.95, 1.0), (0.8, 0.55, 1.0), (1.0, 0.35, 0.65)], [0.45, 0.4, 0.15])[0],
+                           grupo=0 if i < 60 else 1))
+    onda_agarre, onda_agarre_v = anillo("onda_agarre", (0.9, 0.75, 1.0))
+    m_halo = bpy.data.materials.new("halo")
+    nt = m_halo.node_tree
+    nt.nodes.clear()
+    out_h = nodo(nt, "ShaderNodeOutputMaterial", 800, 0)
+    lw_h = nodo(nt, "ShaderNodeLayerWeight", -400, 0, Blend=0.35)
+    pw_h = nodo(nt, "ShaderNodeMath", -200, 0); pw_h.operation = 'POWER'; pw_h.inputs[1].default_value = 2.5
+    nt.links.new(lw_h.outputs["Facing"], pw_h.inputs[0])
+    V_HALO = nodo(nt, "ShaderNodeValue", -200, 200)
+    mu_h = nodo(nt, "ShaderNodeMath", 0, 0); mu_h.operation = 'MULTIPLY'
+    nt.links.new(pw_h.outputs[0], mu_h.inputs[0]); nt.links.new(V_HALO.outputs[0], mu_h.inputs[1])
+    em_h = nodo(nt, "ShaderNodeEmission", 250, 100, Color=(0.78, 0.6, 1.0, 1))
+    nt.links.new(mu_h.outputs[0], em_h.inputs["Strength"])
+    tr_h = nodo(nt, "ShaderNodeBsdfTransparent", 250, -100)
+    ad_h = nodo(nt, "ShaderNodeAddShader", 500, 0)
+    nt.links.new(em_h.outputs[0], ad_h.inputs[0]); nt.links.new(tr_h.outputs[0], ad_h.inputs[1])
+    nt.links.new(ad_h.outputs[0], out_h.inputs[0])
+    m_halo.surface_render_method = 'BLENDED'; m_halo.use_backface_culling = False
+    bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=3, radius=1.0)
+    halo = bpy.context.object; halo.name = "halo_estallido"
+    halo.data.materials.append(m_halo)
+    halo.hide_render = True
+
+
+def mejorar(t):
+    cam_p = CAM.matrix_world.translation.copy()
+    luz_v = V_LUZ.outputs[0].default_value
+    pos_o = orbe.matrix_world.translation.copy()
+    # --- golpes: agarre y liberación (zoom, temblor extra, destello, aberración)
+    xa = t - T["agarre"]
+    xl = t - T["libera"]
+    golpe = (math.exp(-xa / 0.16) if xa >= 0 else 0.0) * 0.8 + (math.exp(-xl / 0.22) if xl >= 0 else 0.0)
+    cam_d.lens *= 1.0 + 0.06 * golpe
+    if golpe > 0.01:
+        CAM.matrix_world = Matrix.Translation(temblor(t) * 0.8) @ CAM.matrix_world
+    fl = destello_em.inputs["Strength"].default_value
+    if 0.0 <= xa < 0.12:
+        fl = max(fl, 0.3 * math.exp(-xa / 0.035))
+    if 0.0 <= xl < 0.2:
+        fl = max(fl, 3.0 * math.exp(-xl / 0.045))
+    destello_em.inputs["Strength"].default_value = fl
+    destello.hide_render = fl <= 0.001
+    if xl >= 0:
+        luz_explo_d.energy *= 1.3
+    try:
+        ld.inputs["Dispersion"].default_value = 0.012 + 0.03 * (math.exp(-xa / 0.12) if xa >= 0 else 0.0) + \
+            0.06 * (math.exp(-xl / 0.18) if xl >= 0 else 0.0)
+    except Exception:
+        pass
+    # --- contraluz de borde: entra con Érebo, late con el orbe, se enciende al estallar
+    t_manos = T["manos"] if T["manos"] is not None else T["P2"]
+    ent = suave(tramo(t, t_manos, t_manos + 1.0))
+    rim_d.energy = (200.0 + 100.0 * min(luz_v, 2.0)) * ent + (500.0 * math.exp(-xl / 0.4) if xl >= 0 else 0.0)
+    rim2_d.energy = (90.0 + 60.0 * min(luz_v, 2.0)) * ent
+    # --- polvo en el aire
+    co, cl = [], []
+    absorbe = suave(tramo(t, T["absorbe"], T["orbe_muerto"])) * (1 - suave(tramo(t, T["comprime"], T["comprime"] + 0.5)))
+    for p in POLVO:
+        pos = p["p"] + p["v"] * t + Vector((math.sin(t * 0.7 + p["fase"]), math.cos(t * 0.6 + p["fase"]), 0)) * 0.02
+        if absorbe > 0:
+            hacia = pos_o - pos
+            giro = hacia.cross(ARRIBA)
+            pos = pos + (hacia * 0.25 + giro * 0.15) * absorbe
+        vel = p["v"] + ((pos_o - pos) * 0.6 * absorbe)
+        if xl >= 0:
+            sale = pos - PUNTOS["puno_lib"]
+            pos = pos + sale.normalized() * 1.2 * (1 - math.exp(-xl * 2.0)) / max(sale.length, 0.3)
+            vel = vel + sale.normalized() * 3.0 * math.exp(-xl * 2.0)
+        dc = (cam_p - pos).length
+        tam = 0.0022 * p["tam"] * min(max(dc / 1.6, 0.3), 1.6)
+        a_ = 0.55 * suave(tramo(dc, 0.25, 0.7)) * suave(tramo(t, 0.3, 1.5)) * (0.6 + 0.25 * min(luz_v, 2.0))
+        co.extend(quad_cam(pos, vel, tam, cam_p, 0.06))
+        c = p["c"]
+        cl.extend([(c[0] * 1.6, c[1] * 1.6, c[2] * 1.6, a_)] * 4)
+    me = polvo.data
+    me.vertices.foreach_set("co", [x for v in co for x in v])
+    me.attributes["col"].data.foreach_set("color", [x for c in cl for x in c])
+    me.update()
+    # --- chispas con estela: grupo 0 en el agarre (desde el orbe), grupo 1 en la liberación (desde el puño)
+    co, cl = [], []
+    for p in CHISPA:
+        x = xa if p["grupo"] == 0 else xl
+        centro = pos_o if p["grupo"] == 0 else PUNTOS["puno_lib"]
+        if p["grupo"] == 0:
+            centro = PUNTOS["orbe_agarre"]
+        if x < 0 or x > p["vida"]:
+            co.extend([centro] * 4); cl.extend([(0, 0, 0, 0)] * 4)
+            continue
+        esc_v = 0.35 if p["grupo"] == 0 else 1.0
+        v = p["d"] * p["v"] * esc_v
+        k_ = 3.0
+        pos = centro + v * (1 - math.exp(-k_ * x)) / k_ + Vector((0, 0, -0.4 * x * x))
+        vel = v * math.exp(-k_ * x)
+        a_ = 1.0 - x / p["vida"]
+        dc = (cam_p - pos).length
+        tam = 0.0025 * p["tam"] * min(max(dc / 1.6, 0.3), 1.4)
+        co.extend(quad_cam(pos, vel, tam, cam_p, 0.25 if p["grupo"] == 1 else 0.06))
+        c = p["c"]
+        f_ = 4.0 * a_
+        cl.extend([(c[0] * f_, c[1] * f_, c[2] * f_, min(1.0, a_ * 1.4))] * 4)
+    me = chispas.data
+    me.vertices.foreach_set("co", [x for v in co for x in v])
+    me.attributes["col"].data.foreach_set("color", [x for c in cl for x in c])
+    me.update()
+    # --- onda del agarre alrededor del orbe, de cara a la cámara
+    if 0.0 <= xa < 0.6:
+        r_ = 0.03 + 0.32 * (1 - math.exp(-xa * 7.0))
+        onda_agarre.hide_render = False
+        onda_agarre.matrix_world = Matrix.Translation(PUNTOS.get("orbe_agarre", pos_o)) @ \
+            (cam_p - pos_o).to_track_quat('Z', 'Y').to_matrix().to_4x4() @ diag4((r_, r_, r_, 1.0))
+        onda_agarre_v.outputs[0].default_value = 7.0 * math.exp(-xa / 0.14)
+    else:
+        onda_agarre.hide_render = True
+    # --- el puño se carga (comprime → quieto) y el halo estalla al liberar
+    if T["comprime"] + 0.3 <= t < T["libera"]:
+        carga = suave(tramo(t, T["comprime"] + 0.3, T["libera"]))
+        pulso = 0.5 + 0.5 * math.sin(t * (18.0 + 30.0 * carga))
+        r_ = 0.045 + 0.03 * carga + 0.006 * pulso
+        halo.hide_render = False
+        halo.matrix_world = Matrix.Translation(PUNTOS["puno_comp"]) @ diag4((r_, r_, r_, 1.0))
+        V_HALO.outputs[0].default_value = (1.5 + 5.0 * carga) * (0.7 + 0.3 * pulso)
+    elif 0.0 <= xl < 1.2:
+        r_ = 0.06 + 2.4 * (1 - math.exp(-xl * 3.2))
+        halo.hide_render = False
+        halo.matrix_world = Matrix.Translation(PUNTOS["puno_lib"]) @ diag4((r_, r_, r_, 1.0))
+        V_HALO.outputs[0].default_value = 4.0 * math.exp(-xl / 0.2)
+    else:
+        halo.hide_render = True
+
+
+def componer_mejorado():
+    """Bloom más rico y estrellas suaves en los brillos más fuertes (encima del compositor de siempre)."""
+    try:
+        gl.inputs["Threshold"].default_value = 0.6
+        gl.inputs["Strength"].default_value = 0.62
+        try:
+            gl.inputs["Size"].default_value = 0.8
+        except Exception:
+            pass
+        st = ng.nodes.new("CompositorNodeGlare")
+        ok = False
+        for nombre_t in ("Streaks", "STREAKS"):
+            try:
+                st.inputs["Type"].default_value = nombre_t
+                ok = True
+                break
+            except Exception:
+                pass
+        if not ok:
+            print("MEJORA: sin estrellas (tipo Streaks no disponible)")
+            return
+        for k_, v_ in (("Threshold", 2.2), ("Strength", 0.22)):
+            try:
+                st.inputs[k_].default_value = v_
+            except Exception:
+                pass
+        for k_, v_ in (("Streaks", 4), ("Streaks Angle", math.radians(25))):
+            try:
+                st.inputs[k_].default_value = v_
+            except Exception:
+                pass
+        for l_ in list(gl.outputs[0].links):
+            ng.links.remove(l_)
+        ng.links.new(gl.outputs[0], st.inputs["Image"])
+        ng.links.new(st.outputs[0], ld.inputs["Image"])
+        print("MEJORA: compositor con bloom y estrellas")
+    except Exception as e_:
+        print("MEJORA: compositor de siempre (", e_, ")")
+
+
 # ------------------------------------------------------------------ todo en el tiempo t
 def latido(t):
     v = 0.0
@@ -1353,6 +1580,8 @@ def actualizar(t):
     destello.matrix_world = CAM.matrix_world @ Matrix.Translation((0, 0, -0.05)) @ diag4((0.2, 0.2, 1.0, 1.0))
     actualizar_particulas(t, palma, codo_, palma)
     motas.hide_render = negras.hide_render = OPC.get("motas", "si") == "no"
+    if MEJORA:
+        mejorar(t)
     return nombre
 
 
@@ -1400,6 +1629,8 @@ ng.links.new(gl.outputs[0], ld.inputs["Image"])
 ng.links.new(ld.outputs[0], go.inputs[0])
 if OPC.get("comp", "si") != "no":
     sc.compositing_node_group = ng
+if MEJORA:
+    componer_mejorado()
 sc.render.image_settings.file_format = 'PNG'
 os.makedirs(SALIDA, exist_ok=True)
 
