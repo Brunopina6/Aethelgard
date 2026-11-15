@@ -12,7 +12,7 @@ const ARCHIVO := "user://fotos_erebo_hibrida.save"
 const MOMENTOS := [["senalar", 0.6, "01_senalado"], ["objetivo", 0.7, "02_objetivo"], ["aparece", 2.0, "03_erebo_surge"],
 	["acercamiento", 0.6, "04_acercamiento"], ["contacto", 0.06, "05_mano_en_el_pecho"], ["agarra", 0.45, "06_corazon_saliendo"],
 	["sale", 0.35, "07_corazon_fuera"], ["se_escapa", 0.3, "07_se_escapa"], ["trozo", 0.35, "07_trozo"],
-	["en_la_mano", 0.75, "08_en_la_mano"], ["orbe", 0.75, "09_orbe"], ["video_arranca", 1.2, "10_ritual_agarre"],
+	["en_la_mano", 0.75, "08_en_la_mano"], ["orbe", 0.75, "09_orbe"], ["orbe", 1.2, "09b_antes_del_corte"], ["video_arranca", 0.05, "10a_empalme"], ["video_arranca", 1.2, "10_ritual_agarre"],
 	["video_arranca", 6.5, "11_ritual_estallido"], ["ritual_3d", 1.0, "10_ritual_3d"], ["fallo", 0.9, "10_fallo_se_hunde"]]
 
 var P

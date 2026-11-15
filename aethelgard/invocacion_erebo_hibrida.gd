@@ -621,7 +621,7 @@ func _secuencia(_ctx: Dictionary) -> void:
 	var flota := mano + arriba * 0.22 * _k + frente * 0.12 * _k
 	_vfx.soltar(flota, 0.45)
 	_cabeza(1.0, flota, 0.2)
-	plano(flota + frente * 0.75 * _k + arriba * 0.05 * _k, flota, 0.9, 30.0)
+	plano(flota + frente * 0.42 * _k + arriba * 0.04 * _k, flota, 1.1, 28.0)   # (15/11: más cerca, como el primer plano del orbe con que empieza el vídeo)
 	await esperar(0.45)
 	if saltada(): return
 	if ruta_ritual(_modo) != "":                                # el violeta del orbe del vídeo (solo en este Érebo)
