@@ -1882,6 +1882,17 @@ def escala_y_guardar(img, carpeta, objs_vertice):
         luz.data.foreach_get("color", l)
         c = c.reshape(n, 4)
         l = l.reshape(n, 4)
+        # (15/11, revisión) las esquinas de lo que da luz («brillo»: los cristales de los faroles de pie) no se
+        # multiplican por la luz horneada: su Base Color es negro y el horneado las dejaba a 0 (cristales negros).
+        idx_brillo = [i for i, mt in enumerate(vm.materials) if mt is not None and mt.name == "brillo"]
+        if idx_brillo:
+            mat_pol = np.zeros(len(vm.polygons), np.int32)
+            vm.polygons.foreach_get("material_index", mat_pol)
+            mat_esq = np.zeros(len(vm.loops), np.int32)
+            for p in vm.polygons:
+                mat_esq[p.loop_start:p.loop_start + p.loop_total] = mat_pol[p.index]
+            mantener = np.isin(mat_esq, idx_brillo)
+            l[mantener, :3] = escala
         c[:, :3] = np.clip(c[:, :3] * l[:, :3] / escala, 0, 1)
         col.data.foreach_set("color", c.ravel())
         vm.color_attributes.remove(luz)

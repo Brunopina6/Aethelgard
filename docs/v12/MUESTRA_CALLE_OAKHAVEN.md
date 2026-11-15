@@ -138,8 +138,21 @@ Capturas `pN_*`: las de las pasadas 1-5 salieron a 1280×720 (lo que dibuja el j
 - **Ojo:** el antes es la **hora azul** canónica de Oakhaven y el después la **tarde dorada**: la comparación mezcla
   calidad y hora. Hornear una variante a la hora azul con el mismo guion es directo (otro sol, otro cielo, faroles más
   fuertes) y no se ha hecho.
-- Coste del antes (mismas capturas, medianas de 30 fotogramas): Calle del Cuervo con la cámara de la muestra, **82
-  llamadas · 208 305 primitivas** (bajo) y 93 · 312 551 (medio); con la de juego, 67 · 190 665 (bajo).
+- **Coste antes / después, medido IGUAL** (corregido el 15/11 tras la revisión; `pruebas/medir_antes_despues_calle.gd`,
+  texto en `medidas/medida_antes_despues_{bajo,medio}.txt`): la misma herramienta, la misma cámara respecto a Kael,
+  **solo Kael** en las dos escenas, la escena quieta, sin sincronía vertical ni límite, medianas de 90 fotogramas:
+
+  | Perfil · cámara | ANTES: Calle del Cuervo | DESPUÉS: la muestra |
+  |---|---|---|
+  | bajo · de la muestra | 80 llamadas · 165 491 primitivas · GPU 0,53 ms · CPU 1,14 ms | **27** · 76 702 · GPU 0,40 · CPU 0,87 |
+  | bajo · de juego | 63 · 147 509 · GPU 0,47 · CPU 0,98 | **27** · 76 710 · GPU 0,45 · CPU 0,89 |
+  | medio · de la muestra | 81 · 226 187 · GPU 0,70 · CPU 1,46 | **27** · 76 704 · GPU 0,48 · CPU 0,92 |
+  | medio · de juego | 64 · 205 421 · GPU 0,69 · CPU 1,50 | **27** · 76 704 · GPU 0,44 · CPU 0,85 |
+  | memoria (bajo) | vídeo 51,3 MB · texturas 25,3 MB | vídeo 41,3 · texturas 26,4 |
+
+  Las cifras que daba antes este documento (82 llamadas · 208 305 primitivas, etc.) salían de las capturas: un solo
+  fotograma, sin guardar en ningún archivo y con Lya y Garon en el antes; no eran comparables y se sustituyen por estas.
+  Ojo: el antes es una calle de una ciudad entera (con lo que se ve detrás); la muestra es solo una calle.
 
 **Vídeo:** `kael_calle_bajo.mp4` (28 s, 1280×720, 30 FPS, perfil bajo; Movie Maker de Godot + ffmpeg): Kael anda (clip
 de andar, 1,4 m/s) del oeste a la puerta, a la boca del callejón, sube los escalones (entra en la sombra), baja y sigue
@@ -154,12 +167,15 @@ apenas cambian entre ellos.
 
 | Perfil | Carga (hasta el control) | Con su límite (ms reales) | Sin límite (ms reales) | CPU dibujo | GPU dibujo | Llamadas | Primitivas | Vídeo / texturas |
 |---|---|---|---|---|---|---|---|---|
-| bajo | 769 ms | 33,3 / p95 33,4 / máx 33,8 (30 FPS) | 6,9 / p95 7,5 / máx 8,5 | 0,85 ms | 0,41 ms | 31 | 77 134 | 39,7 / 24,9 MB |
+| bajo | 769 ms (699 al repetir) | 33,3 / p95 33,4 / máx 33,8 (30 FPS) | **2,2-2,8 / p95 2,7-4,1 / máx 4,3-6,4** (sin vsync, 15/11) | 0,85 ms | 0,41 ms | 31 | 77 134 | 39,7 / 24,9 MB |
 | medio | 746 ms | 33,3 / 33,4 / 33,7 (30 FPS) | 6,9 / 7,5 / 8,5 | 0,86 ms | 0,41 ms | 31 | 77 144 | 42,2 / 27,4 MB |
 | alto | 723 ms | 16,7 / 16,7 / 17,2 (60 FPS) | 7,0 / 7,4 / 9,2 | 0,96 ms | 0,78 ms | 32 | 77 182 | 60,0 / 45,2 MB |
 
-- «Sin límite» se queda en ≈ 7 ms porque lo marca otra cosa del PC (probablemente la sincronía con la pantalla), no la
-  escena: la GPU dibuja en 0,4 ms.
+- **Corregido tras la revisión (15/11):** el «sin límite» de ≈ 7 ms era la sincronía vertical (el refresco de 144 Hz
+  de la pantalla del PC), no la escena: la herramienta no la quitaba. Ya la quita (y la restaura) y, repetida en el bajo,
+  da 2,2-2,8 ms de mediana según el sitio (`medidas/medida_muestra_bajo.txt`; la medida anterior se guarda como
+  `medida_muestra_bajo_con_vsync_agente.txt`). Las filas de medio y alto de «sin límite» siguen con la sincronía
+  puesta: no valen como coste.
 - La memoria de texturas sube 17,5 MB al entrar en el bajo, pero las texturas de la muestra son ≈ 2 MB (8 × 512² y el mapa
   de 1024², comprimidos): el resto es Kael (sus texturas del FBX). Las primitivas que cuenta el motor son las del dibujo
   opaco.
@@ -197,8 +213,8 @@ Nada descargado, de pago ni en la nube; **sin Hunyuan3D**; sin complementos, add
 (vuelos, aleros, buhardilla, chimeneas, polea, torreón, letrero), luz con dirección y ambiente igual en los tres perfiles
 —incluido el bajo, que hoy no tiene sombras—, suelo de losas con juntas que se deshace en tierra, vegetación en grupos y
 rincones con historia; Kael con la misma luz que la calle, que se apaga en la sombra, y con sombra de contacto. Barata:
-31 llamadas, 77 000 primitivas, 0,4 ms de GPU en el PC (la Calle del Cuervo de hoy: 82 llamadas y 208 000 primitivas en
-el bajo) y ≈ 5 ciclos por fragmento estimados en el Mali-G57.
+27 llamadas, 77 000 primitivas, 0,4 ms de GPU en el PC (la Calle del Cuervo de hoy, medida igual y solo con Kael: 80
+llamadas y 165 000 primitivas en el bajo; ver §3) y ≈ 5 ciclos por fragmento estimados en el Mali-G57.
 
 **Lo que aún no llega a la calidad pedida (FFIX Moguri):**
 - Las texturas son de código: tienen grano y dibujo, pero no la pincelada, la suciedad pintada ni el detalle a mano de
@@ -212,7 +228,7 @@ el bajo) y ≈ 5 ciclos por fragmento estimados en el Mali-G57.
 - No hay vecinos, ni sonido ambiente, ni interacción: es una muestra visual.
 
 **Riesgos de rendimiento en el Redmi (PENDIENTE de medir):**
-- Por GPU, poco riesgo: sombreados de ≈ 5 ciclos sin luz ni descartes, 31 llamadas y sin transparencias en el bajo.
+- Por GPU, poco riesgo: sombreados de ≈ 5 ciclos sin luz ni descartes, 27-31 llamadas y sin transparencias en el bajo.
 - Memoria: lo de la muestra es pequeño; lo que pesa es Kael (texturas del FBX). El GLB pesa 5 MB y el PNG del mapa
   grande 4,4 MB (en el APK, comprimidos a ETC2).
 - Calidad en el teléfono: el ETC2 puede dar bandas en los degradados del mapa de luz; la luz de vértices se guarda en 8
@@ -234,6 +250,26 @@ el bajo) y ≈ 5 ciclos por fragmento estimados en el Mali-G57.
 4. Una pasada de **textura pintada a mano** (o pintada sobre el horneado) para acercarse a la referencia.
 5. Vecinos y objetos móviles con las sondas (misma luz que Kael) y sombras de contacto en el sombreado del suelo.
 6. Medir en el Redmi antes de nada, con el perfil bajo, y decidir si el medio usa el mapa grande.
+
+## 7.b Revisión independiente (15/11, tras la entrega del agente)
+
+Cuatro revisores (regresiones, móvil, pruebas y normas) y un escéptico por cada uno; 13 hallazgos, 6 confirmados y
+corregidos en la rama V12:
+1. **Los cristales de los dos faroles de pie salían NEGROS** (su color de vértice se multiplicó por la luz horneada, que
+   en un material negro con solo emisión es 0). Arreglo en el juego: `calle_brillo.gdshader` tiene un color fijo para la
+   malla «piezas» (sin rehornear); y en el generador (`crear_calle.py`, `escala_y_guardar`) las esquinas «brillo» ya no
+   se multiplican, para el próximo horneado (NO ejecutado: el GLB es el mismo). Comprobado con una foto
+   (`revision_farol_vista_libre_bajo_1600x720.png`) y en la prueba.
+2. El título de la muestra se montaba sobre «PARTIDA DE PRUEBA» y el contador de FPS al entrar desde el banco: bajado a
+   y = 40.
+3. Una aserción de la prueba no podía fallar («el banco solo existe en Auditoría o en el editor»): ahora lee la condición
+   de verdad de `banco_pruebas.permitido()`.
+4. La sonda del callejón no comprobaba el SOL: ahora sí (sol 0,00 en el callejón frente a 1,00 en la calle).
+5. «Sin límite» medía la sincronía vertical (§4).
+6. La comparación de coste antes/después no era comparable ni estaba guardada (§3).
+Refutados (no se cambian): el regulador de calidad que guarda en ajustes (lo hacen igual todas las escenas 3D del
+banco), el «21/22 FPS» de las capturas de vistas (es el contador general durante la captura, no la medida), el coste de
+reenviar los parámetros de la sombra de Kael, el humo del alto, y los binarios del primer horneado en la historia.
 
 ## 8. PENDIENTE
 

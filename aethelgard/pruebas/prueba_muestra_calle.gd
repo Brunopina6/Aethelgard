@@ -7,7 +7,7 @@ extends SceneTree
 #   3. La escena carga: la calle (GLB), sus materiales sustituidos (con el mapa de luz que toca al perfil), los choques,
 #      las sondas de luz y Kael.
 #   4. Kael anda: con un destino a 4 m (de x −2 a 2), se mueve, con el clip de andar/correr, sobre el suelo, y la cámara le sigue.
-#   5. No atraviesa las casas ni sale de lo andable; la sonda da menos sol en el callejón que en la calle.
+#   5. No atraviesa las casas ni sale de lo andable; la sonda da menos sol y menos cielo en el callejón que en la calle.
 #   6. Con el perfil bajo, el mapa de luz pequeño (1024).
 # Partida propia (Engine «archivo_partida_prueba»): nunca la de verdad. Imprime «FALLOS: n».
 
@@ -61,8 +61,13 @@ func _entrada_del_banco() -> void:
 			"1: título «%s»" % d["titulo"])
 		_ok(d["activos"] == ["Kael"], "1: solo Kael (%s)" % str(d["activos"]))
 	_ok(ResourceLoader.exists(ESCENA), "1: la escena existe")
-	_ok(not BP.permitido() or OS.has_feature("editor") or OS.has_feature("auditoria"),
-		"1: el banco solo existe en Auditoría o en el editor")
+	# (15/11, revisión) antes era una tautología (no podía fallar): ahora se lee la condición de verdad del banco.
+	var fuente_bp: String = FileAccess.get_file_as_string("res://banco_pruebas.gd")
+	var i_perm := fuente_bp.find("static func permitido()")
+	var cuerpo_perm: String = fuente_bp.substr(i_perm, 160).get_slice("
+", 1) if i_perm >= 0 else ""
+	_ok(cuerpo_perm.strip_edges().begins_with('return OS.has_feature("auditoria") or OS.has_feature("editor")'),
+		"1: el banco solo se permite en Auditoría o en el editor («%s»)" % cuerpo_perm.strip_edges())
 
 
 func _sin_usos_fuera() -> void:
@@ -131,6 +136,14 @@ func _escena_cargada(perfil: String) -> void:
 			choques += 1
 	_ok(choques >= 30, "3: %d choques" % choques)
 	_ok(not (v.luz.get("sondas", {}) as Dictionary).is_empty(), "3: las sondas de luz están")
+	# (15/11, revisión) los cristales de los faroles de pie (malla «piezas») llevan su color fijo: el horneado los dejó a 0
+	var cristales_fijos := 0
+	for mi in v.calle.find_children("piezas", "MeshInstance3D", true, false):
+		for si in (mi as MeshInstance3D).mesh.get_surface_count():
+			var mt := (mi as MeshInstance3D).get_surface_override_material(si) as ShaderMaterial
+			if mt != null and mt.shader == v.SH_BRILLO:
+				cristales_fijos += 1 if bool(mt.get_shader_parameter("usar_color_fijo")) else 0
+	_ok(cristales_fijos >= 1, "3: los cristales de los faroles de pie llevan su color fijo (si no, saldrían negros)")
 	_ok(v.kael != null and v.kael.is_inside_tree(), "3: Kael está")
 	_ok(absf(v.kael.global_position.x - v.INICIO.x) < 0.2 and absf(v.kael.global_position.z - v.INICIO.z) < 0.2,
 		"3: Kael empieza en el inicio (%s)" % str(v.kael.global_position))
@@ -176,5 +189,5 @@ func _no_atraviesa() -> void:
 	_ok(v.kael.global_position.z < 3.4, "5: no sale de la calle por el sur (z = %.2f)" % v.kael.global_position.z)
 	var calle: Vector2 = v.sonda(Vector3(-4.0, 0.0, 1.0))
 	var callejon: Vector2 = v.sonda(Vector3(0.0, 0.85, -6.5))
-	_ok(calle.x > 0.8 and callejon.y < calle.y, "5: sondas: sol %.2f / cielo %.2f en la calle; sol %.2f / cielo %.2f en el callejón" % [
+	_ok(calle.x > 0.8 and callejon.x < calle.x - 0.3 and callejon.y < calle.y, "5: sondas: sol %.2f / cielo %.2f en la calle; sol %.2f / cielo %.2f en el callejón" % [
 		calle.x, calle.y, callejon.x, callejon.y])

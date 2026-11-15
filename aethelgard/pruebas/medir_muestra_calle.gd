@@ -4,7 +4,7 @@ extends SceneTree
 #   - la entrada con Recursos.cambiar_escena (como desde el banco): tiempo hasta el control y el peor fotograma de los 2 s
 #     siguientes (tirones de la primera vez), y la memoria (estática, vídeo y texturas);
 #   - en cuatro sitios (el inicio, la puerta, la esquina y el callejón), 4 s quieto con el límite del perfil (30 FPS en bajo
-#     y medio): ms por fotograma REALES (mediana, p95, máximo); y otros 4 s SIN límite: ms reales, y los ms de CPU y de GPU
+#     y medio): ms por fotograma REALES (mediana, p95, máximo); y otros 4 s SIN límite ni sincronía vertical: ms reales, y los ms de CPU y de GPU
 #     del dibujo que mide el motor, llamadas de dibujo y primitivas (del dibujo opaco: lo transparente no lo cuenta el
 #     motor en Compatibility, comprobado el 15/11).
 # Resultado de PC: NO certifica Android (el Redmi está PENDIENTE).
@@ -99,6 +99,9 @@ func _medir() -> void:
 		var fps_perfil: int = v.perfil_fps
 		v.perfil_fps = 0                                         # sin límite (vista3d._process lo pone cada fotograma)
 		Engine.max_fps = 0
+		# (15/11, revisión) y SIN sincronía vertical: con ella, los ms «sin límite» eran el refresco de la pantalla (144 Hz)
+		var vsync_antes := DisplayServer.window_get_vsync_mode()
+		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 		await _frames(20)
 		var cpu: Array = []
 		var gpu: Array = []
@@ -122,6 +125,7 @@ func _medir() -> void:
 			perfil, s, fps_perfil, _resumen(ms), _resumen(libre), cpu[cpu.size() / 2] if cpu.size() > 0 else -1.0,
 			gpu[gpu.size() / 2] if gpu.size() > 0 else -1.0, dib, prim])
 		v.perfil_fps = fps_perfil
+		DisplayServer.window_set_vsync_mode(vsync_antes)
 	_nota("[%s] al final: %s" % [perfil, _mem()])
 	if salida != "":
 		DirAccess.make_dir_recursive_absolute(salida)

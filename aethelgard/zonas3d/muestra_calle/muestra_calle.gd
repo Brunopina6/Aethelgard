@@ -200,6 +200,7 @@ func _material(nombre: String, tex_luz: Texture2D, vertice := false) -> Material
 		var b := ShaderMaterial.new()
 		b.shader = SH_BRILLO
 		b.set_shader_parameter("energia", 1.45 if nombre_perfil == "alto" else 1.2)
+		b.set_shader_parameter("usar_color_fijo", vertice)   # (15/11) los cristales de los faroles de pie («piezas»)
 		return b
 	if modo != "luz":                                              # pasadas sin hornear: luz en tiempo real
 		var s := StandardMaterial3D.new()
@@ -469,7 +470,7 @@ func _crear_interfaz() -> void:
 	add_child(capa)
 	titulo = Label.new()
 	titulo.text = "Muestra gráfica · una calle de Oakhaven (en pruebas) · perfil %s" % nombre_perfil
-	titulo.position = Vector2(250, 14)
+	titulo.position = Vector2(250, 40)   # (15/11) debajo de «PARTIDA DE PRUEBA» y del contador de FPS (y 4-26)
 	titulo.add_theme_font_size_override("font_size", 18)
 	titulo.add_theme_color_override("font_color", Color(1.0, 0.95, 0.84))
 	titulo.add_theme_color_override("font_outline_color", Color(0.12, 0.08, 0.06, 0.85))
