@@ -117,6 +117,8 @@ static func escena_de(indice: int) -> String:
 # poner la partida en Engine: así una partida con la Garganta 2D a medias sigue en la 3D, en el sitio equivalente, y la
 # 2D no se cuela. La escena 3D convierte la posición (posicion_desde_2d); sin posición, se entra por el principio.
 static func escena_equivalente(escena: String, lugar := -1) -> String:
+	if escena in [MAPAMUNDI, MAPAMUNDI_CUEVA]:              # V12, mapamundi 3D: apagado, la partida vuelve al mapa de siempre
+		return "" if mapamundi_activo() else "res://mapa.tscn"   # (en el sitio equivalente: pos_mapa, que deja el mapamundi)
 	var es_zona := escena == ZONA_2D and lugar in EQUIVALENTES_ZONA    # V12, Gran Bosque: la zona generada de ese lugar
 	if not EQUIVALENTES.has(escena) and not es_zona:
 		# Al revés (V12): una partida guardada en la 3D de una región que va en 3D por defecto, con la 2D elegida en
@@ -157,6 +159,31 @@ static func escena_equivalente(escena: String, lugar := -1) -> String:
 	else:
 		Engine.set_meta("pos_3d_ok", false)
 	return ruta
+
+
+# V12, mapamundi 3D (15/11): EXPERIMENTAL DE AUDITORÍA, APAGADO POR DEFECTO. La primera región del mapamundi 3D
+# (zonas3d/mapamundi_3d.gd, docs/v12/MAPAMUNDI_3D_V12.md). Encendido con la exploración 3D activa y «mapamundi3d» elegido
+# en Ajustes (solo Auditoría o editor) o como argumento («mapamundi2d» lo apaga en las pruebas). Apagado, el mapa de
+# siempre no cambia en nada.
+const MAPAMUNDI := "res://zonas3d/mapamundi_3d.tscn"
+const MAPAMUNDI_CUEVA := "res://zonas3d/cueva_provisional_3d.tscn"
+const MAPAMUNDI_LUGARES := {OAKHAVEN: "oakhaven", PASTOS_VERDES: "pastos"}   # lugar → su entrada en el mapamundi
+
+
+static func mapamundi_activo() -> bool:
+	var args := OS.get_cmdline_user_args()
+	if not activo() or "mapamundi2d" in args:
+		return false
+	return "mapamundi3d" in args or elegida("mapamundi3d")
+
+
+# Adónde se sale de una ubicación (Oakhaven 3D, Pastos Verdes 3D): con el mapamundi 3D encendido, a él, junto a la
+# entrada de ese lugar (Engine «mm3d_llegada»); si no, al mapa de siempre.
+static func salida_al_mapa(indice: int) -> String:
+	if mapamundi_activo() and MAPAMUNDI_LUGARES.has(indice) and ResourceLoader.exists(MAPAMUNDI):
+		Engine.set_meta("mm3d_llegada", MAPAMUNDI_LUGARES[indice])
+		return MAPAMUNDI
+	return "res://mapa.tscn"
 
 
 # V12, Gran Bosque: el «lugar» de Engine que zona.tscn necesita (como lo deja mapa.gd al entrar), si la partida no lo trae.

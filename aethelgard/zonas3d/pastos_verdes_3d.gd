@@ -1376,7 +1376,7 @@ func _salir() -> void:
 	var t := create_tween()
 	t.tween_property(fundido, "color:a", 1.0, 0.5)
 	await t.finished
-	Recursos.cambiar_escena(load("res://progreso.gd").MAPA)
+	Recursos.cambiar_escena(load("res://modo3d.gd").salida_al_mapa(INDICE))   # V12, mapamundi 3D: apagado, el mapa de siempre
 
 
 # Una salida en cada extremo del camino: la del principio, un poco más allá del sitio donde se entra, y la del

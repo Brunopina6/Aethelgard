@@ -114,8 +114,10 @@ static func contexto_de(e: Node) -> String:
 			return "carga"
 		"res://combate.tscn":
 			return "combate"
-		"res://mapa.tscn":
+		"res://mapa.tscn", "res://zonas3d/mapamundi_3d.tscn":   # V12, mapamundi 3D (en pruebas): la música del mapa
 			return "mapa"
+		"res://zonas3d/cueva_provisional_3d.tscn":               # V12, mapamundi 3D: la cueva provisional
+			return "mazmorra"
 		"res://isla.tscn":
 			return "viento"
 		"res://garganta.tscn", "res://zonas3d/garganta_3d.tscn":   # la Garganta 2D y la 3D (T-095)

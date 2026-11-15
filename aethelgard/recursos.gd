@@ -477,11 +477,16 @@ func cambiar_escena(ruta: String) -> void:
 		escena = ResourceLoader.load_threaded_get(ruta) as PackedScene
 	if ruta == "res://mapa.tscn" and desde != ESCENA_COMBATE and desde != ruta:   # se sale de una zona o mazmorra
 		liberar_grupo("zona")
+	var err := OK
 	if escena != null:
-		get_tree().change_scene_to_packed(escena)
+		err = get_tree().change_scene_to_packed(escena)
 	else:
 		push_warning("No se pudo cargar en segundo plano: " + ruta)
-		get_tree().change_scene_to_file(ruta)
+		err = get_tree().change_scene_to_file(ruta)
+	# V12, mapamundi 3D: si no se pudo cambiar, la escena que lo pidió y sabe recuperarse (carga_fallida) vuelve a dar
+	# el control; el negro se quita igual (abajo). Las demás escenas, como siempre.
+	if err != OK and is_instance_valid(esc) and esc.has_method("carga_fallida"):
+		esc.carga_fallida(ruta)
 	await get_tree().process_frame
 	await get_tree().process_frame
 	_poner_fps()
