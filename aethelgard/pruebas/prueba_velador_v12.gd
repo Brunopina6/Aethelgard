@@ -15,6 +15,10 @@ extends SceneTree
 #      defender / defendiendo / con la Guardia de Garon, cortada por daño y por Quiebra; herida fuerte; derrota.
 #   C. 1, 2 y 3 héroes a nivel del bosque, automáticos.  D. Un encuentro al azar del bosque con el interruptor.
 #   E. Derrota y huida.  Q. Equilibrio frente a los encuentros de siempre de su tamaño, en el bosque.
+# AZAR (15/11): combate.gd hace randomize() en su _ready (salvo «-- semilla=N»), así que la semilla se pone DESPUÉS de
+# root.add_child(c) y se vuelve a tirar el ATB inicial de los enemigos con ella (como prueba_combate_huella.gd). Antes se
+# sembraba antes de add_child y A, C, E y Q eran combates al azar. Cada combate imprime «SEMILLA» y una línea «TRAZA» por
+# turno; «semilla_A=N» (o _C, _D, _E, _Q) cambia la semilla de ese caso. D sigue eligiendo el grupo al azar (a propósito).
 
 const ARCHIVO := "user://prueba_velador_v12.save"
 const MAX_FOTOGRAMAS := 16000
@@ -154,14 +158,18 @@ func _combate(activos: Dictionary, grupo: int, semilla: int, encendido := true, 
 		Engine.set_meta("grupo_combate", grupo)
 	if encendido:
 		Engine.set_meta(PE.INTERRUPTOR, true)
-	seed(semilla)
 	c = load("res://combate.tscn").instantiate()
 	sonidos.clear()
 	impactos.clear()
 	danos.clear()
 	hp_prev.clear()
 	c.sonido_pedido.connect(func(n: String): sonidos.append([n, Engine.get_process_frames()]))
-	root.add_child(c)
+	root.add_child(c)                                     # (aquí su _ready hace randomize() y, sin grupo, lo elige)
+	seed(semilla)                                         # desde aquí, el azar del combate es fijo
+	for e in c.enemigos:
+		e["atb"] = randf() * 30.0                         # el ATB inicial, como en combate.gd, ya con la semilla
+	print("SEMILLA %d · %s · grupo %d · %s · %s" % [semilla, str(activos), grupo, "encendido" if encendido else "apagado",
+		",".join(c.enemigos.map(func(e): return e["nombre"]))])
 	for e in c.enemigos:
 		var p = c._p3d(e)
 		if PE.es(e):
@@ -187,8 +195,11 @@ func _cerrar() -> void:
 		await _esperar(60)
 		c.queue_free()
 		c = null
+	await _esperar(75)                                    # 2,5 s de juego a 30 fotogramas por segundo
+	# (el audio sin ventana avanza con el reloj real, no con los fotogramas: si aún suena algo suyo, se le dan hasta 5 s
+	# reales para acabar. Antes se esperaban siempre 2,5 s reales.)
 	var t0 := Time.get_ticks_msec()
-	while Time.get_ticks_msec() - t0 < 2500:
+	while _suena_suyo() and Time.get_ticks_msec() - t0 < 5000:
 		await process_frame
 	_ok(not _suena_suyo(), "al cerrar el combate sigue sonando algo del Velador")
 	await _esperar(5)
@@ -246,6 +257,7 @@ func _jugar(estrategia: String, comprobar := true) -> Dictionary:
 		if quien != null and not is_same(actual, quien):
 			if PE.es(quien):
 				var que := _que_hizo(quien, ant)
+				_traza("%s: %s" % [quien["nombre"], que])
 				r["acciones"].append(que)
 				var lista: Array = r["por_peon"].get(quien["nombre"], [])
 				lista.append(que)
@@ -270,7 +282,7 @@ func _jugar(estrategia: String, comprobar := true) -> Dictionary:
 			previo = {"base": _foto_estado(null), "conts": conts, "rigs": rigs}
 		if c.estado == "menu" and c.actor is Dictionary and c.turnos_heroe != decidido:
 			decidido = c.turnos_heroe
-			_decidir(estrategia)
+			_traza("%s: %s" % [c.actor["nombre"], _decidir(estrategia)])
 		if c.estado == "fin" and f_fin < 0:
 			f_fin = fr
 			r["pv_fin"] = 0
@@ -282,7 +294,24 @@ func _jugar(estrategia: String, comprobar := true) -> Dictionary:
 	r["gana"] = c.enemigos.all(func(e): return e["hp"] <= 0) and c.heroes.any(func(h): return h["hp"] > 0)
 	for e in _peones():
 		r["cortados"] += int(_cont(e).get("raiz_cortada", 0))
+	_traza("fin %s · gana %s" % [r["fin"], r["gana"]])
 	return r
+
+
+# Una línea por turno: fotograma, quién y qué, y los PV de todos (para reproducir una semilla concreta).
+func _traza(que: String) -> void:
+	var pv := []
+	for f in c.heroes + c.enemigos:
+		pv.append("%s %d" % [f["nombre"], int(f["hp"])])
+	print("TRAZA %05d T%d %s · %s" % [Engine.get_process_frames(), c.turnos_heroe, que, ", ".join(pv)])
+
+
+# «semilla_A=N» (o _C, _D, _E, _Q) en la línea de órdenes cambia la semilla de ese caso.
+func _semilla(caso: String, defecto: int) -> int:
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("semilla_%s=" % caso):
+			return int(a.get_slice("=", 1))
+	return defecto
 
 
 
@@ -429,16 +458,16 @@ func _comprobar_turno(e: Dictionary, que: String, ant: Dictionary, ultimo: Array
 		_ok(e.get("defendiendo", false) or e.get("vl_abierta", false), "%s: tras su turno no vuelve a la guardia" % n)
 
 
-func _decidir(estrategia: String) -> void:
+func _decidir(estrategia: String) -> String:
 	var a: Dictionary = c.actor
 	var alc: Array = c._alcanzables()
 	if alc.is_empty():
 		c._defender()
-		return
+		return "defender (sin objetivo)"
 	if estrategia == "auto":
 		c._menu_objetivo("atacar", "")
 		c._confirmar_objetivo(alc[0])
-		return
+		return "atacar a %s" % alc[0]["nombre"]
 	var vs: Array = _peones().filter(func(e): return e["hp"] > 0)
 	var v: Dictionary = vs[0] if not vs.is_empty() else {}
 	var otros: Array = alc.filter(func(e): return not PE.es(e))
@@ -446,16 +475,16 @@ func _decidir(estrategia: String) -> void:
 		var heridos: Array = c.heroes.filter(func(h): return h["hp"] > 0 and float(h["hp"]) / h["hp_max"] < 0.45)
 		if not heridos.is_empty() and c._puede_pagar(c.NIVELES_MAGIA["Cura"][0]["coste"]):
 			c._elegir_hechizo("Cura", 1, true)
-			return
+			return "Cura"
 		var o = v.get("vl_objetivo", null)
 		if v.get("cargando", false) and o is Dictionary and is_same(o, a):
 			c._defender()
-			return
+			return "defender (Raíz)"
 	if a["nombre"] == "Garon" and not v.is_empty() and not v.get("cargando", false) and a["mp"] >= c.GUARDIA["coste"]:
 		var lya = c.heroes.filter(func(h): return h["nombre"] == "Lya" and h["hp"] > 0)
 		if not lya.is_empty() and str(lya[0].get("guardia_de", "")) == "":
 			c._guardia(lya[0])
-			return
+			return "Guardia a Lya"
 	# contra la guardia: si está en guardia y hay otros enemigos, a ellos; si no, a él (dos golpes la abren)
 	var t: Dictionary = alc[0]
 	if not v.is_empty() and (v.get("vl_abierta", false) or v.get("cargando", false) or otros.is_empty()):
@@ -464,6 +493,7 @@ func _decidir(estrategia: String) -> void:
 		t = otros[0]
 	c._menu_objetivo("atacar", "")
 	c._confirmar_objetivo(t)
+	return "atacar a %s" % t["nombre"]
 
 
 # ================================================================= S
@@ -490,7 +520,7 @@ func _s() -> void:
 # ================================================================= A
 
 func _a() -> void:
-	await _combate({"Kael": 5, "Lya": 4, "Garon": 4}, 27, 5, true, "bosque")
+	await _combate({"Kael": 5, "Lya": 4, "Garon": 4}, 27, _semilla("A", 5), true, "bosque")
 	var v: Dictionary = _peones()[0]
 	v["hp_max"] *= 3
 	v["hp"] = v["hp_max"]
@@ -663,7 +693,7 @@ func _b() -> void:
 
 func _c() -> void:
 	for caso in [[{"Kael": 4}, 25, 21], [{"Kael": 5, "Lya": 4}, 26, 13], [{"Kael": 5, "Lya": 4, "Garon": 4}, 27, 31]]:
-		await _combate(caso[0], caso[1], caso[2], true, "bosque")
+		await _combate(caso[0], caso[1], caso[2] + _semilla("C", 0), true, "bosque")
 		var r := await _jugar("auto")
 		_ok(r["fin"], "C %s: no termina (%s)" % [str(caso[0]), str(r["acciones"])])
 		hechos.append("C %s contra GRUPOS[%d], automático: %s, %s" % [str(caso[0]), caso[1], "gana" if r["gana"] else "pierde",
@@ -675,11 +705,19 @@ func _d() -> void:
 	# Encuentros al azar de verdad (sin grupo forzado): con el interruptor, en el bosque, alguno de los primeros 24 arranques
 	# trae su grupo (uno de cada cuatro); los demás, los de siempre. (No se predice la semilla desde fuera: el arranque
 	# del combate gasta azar antes de elegir el grupo.)
+	# 15/11: el grupo lo elige combate._ready tras su randomize() (no se puede fijar sin «-- semilla=N», que fijaría
+	# también los 24 arranques iguales): sale al azar. Para que no falle por mala suerte (0,75^24 ≈ 0,1 % sin ninguno),
+	# si en 24 no se han visto los dos tipos se sigue hasta 48 (0,75^48 ≈ 1 en un millón). Lo demás de cada combate, con
+	# su semilla (tras add_child).
 	var vistos := 0
 	var semilla := -1
 	var otros := 0
-	for s in 24:
-		await _combate({"Kael": 5, "Lya": 4, "Garon": 4}, -1, 900 + s, true, "bosque")
+	var hechos_d := 0
+	for s in 48:
+		if s >= 24 and vistos >= 1 and otros >= 1:
+			break
+		hechos_d += 1
+		await _combate({"Kael": 5, "Lya": 4, "Garon": 4}, -1, _semilla("D", 900) + s, true, "bosque")
 		var n := _peones().size()
 		if n > 0:
 			_ok(n == 1, "D: su encuentro trae %d de los suyos" % n)
@@ -692,13 +730,13 @@ func _d() -> void:
 			otros += 1
 		c.estado = "fin"
 		await _cerrar()
-	_ok(vistos >= 1 and otros >= 1, "D: en 24 encuentros al azar del bosque, %d con el Velador y %d de siempre" % [vistos, otros])
-	hechos.append("D encuentros al azar del bosque con el interruptor: %d de 24 con el Velador (el primero, semilla %d, jugado)" % [vistos, semilla])
+	_ok(vistos >= 1 and otros >= 1, "D: en %d encuentros al azar del bosque, %d con el Velador y %d de siempre" % [hechos_d, vistos, otros])
+	hechos.append("D encuentros al azar del bosque con el interruptor: %d de %d con el Velador (el primero, semilla %d, jugado)" % [vistos, hechos_d, semilla])
 
 
 func _e() -> void:
 	var oro0: int = Inv.oro()
-	await _combate({"Kael": 1, "Lya": 1}, 26, 3, true, "bosque")
+	await _combate({"Kael": 1, "Lya": 1}, 26, _semilla("E", 3), true, "bosque")
 	for z in _peones():
 		z["atk"] = 140
 		z["hp_max"] = 4000
@@ -709,7 +747,7 @@ func _e() -> void:
 	_ok(Inv.oro() <= oro0, "E: perdiendo da monedas")
 	hechos.append("E derrota: %s" % ",".join(r["acciones"]))
 	await _cerrar()
-	await _combate({"Kael": 5, "Lya": 4, "Garon": 4}, 27, 4, true, "bosque")
+	await _combate({"Kael": 5, "Lya": 4, "Garon": 4}, 27, _semilla("E", 3) + 1, true, "bosque")
 	for fr in 3000:
 		await _esperar(1)
 		if c.estado == "menu" and c.actor is Dictionary:
@@ -732,7 +770,7 @@ func _q() -> void:
 			var perdidos := 0
 			var turnos := 0
 			for s in 6:
-				await _combate(caso[0], caso[2] if encendido else caso[1], 700 + s, encendido, "bosque")
+				await _combate(caso[0], caso[2] if encendido else caso[1], _semilla("Q", 700) + s, encendido, "bosque")
 				var pv0 := 0
 				for h in c.heroes:
 					pv0 += int(h["hp_max"])

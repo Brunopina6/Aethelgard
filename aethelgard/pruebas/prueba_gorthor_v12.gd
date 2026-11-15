@@ -20,6 +20,11 @@ extends SceneTree
 #   E. Derrota (sin premio).
 #   Q. Equilibrio frente al Gorthor de siempre (GRUPOS[5], 6 semillas, solo ataques automáticos, perdonar).
 # Con «fotos=<carpeta>» (y ventana) guarda fotogramas del B para los vídeos (indice.txt).
+# AZAR (15/11): combate.gd hace randomize() en su _ready (salvo «-- semilla=N»), así que la semilla se pone DESPUÉS de
+# root.add_child(c) y se vuelve a tirar el ATB inicial de los enemigos con ella (como prueba_combate_huella.gd). Antes se
+# sembraba antes de add_child y A, C, E y Q eran combates al azar (A falló una vez en batería el 14/11). Cada combate
+# imprime «SEMILLA» y una línea «TRAZA» por turno (quién, qué hizo y los PV); «semilla_A=N» (o _C, _E, _Q) cambia la
+# semilla de ese caso para reproducir uno concreto.
 
 const ARCHIVO := "user://prueba_gorthor_v12.save"
 const MAX_FOTOGRAMAS := 20000
@@ -172,14 +177,17 @@ func _combate(activos: Dictionary, semilla: int, encendido := true, fijo := "gar
 		Engine.set_meta("combate_fijo", fijo)
 	if encendido:
 		Engine.set_meta(GT.INTERRUPTOR, true)
-	seed(semilla)
 	c = load("res://combate.tscn").instantiate()
 	sonidos.clear()
 	impactos.clear()
 	danos.clear()
 	hp_prev.clear()
 	c.sonido_pedido.connect(func(n: String): sonidos.append([n, Engine.get_process_frames()]))
-	root.add_child(c)
+	root.add_child(c)                                     # (aquí su _ready hace randomize())
+	seed(semilla)                                         # desde aquí, el azar del combate es fijo
+	for e in c.enemigos:
+		e["atb"] = randf() * 30.0                         # el ATB inicial, como en combate.gd, ya con la semilla
+	print("SEMILLA %d · %s · %s · %s" % [semilla, str(activos), "encendido" if encendido else "apagado", fijo])
 	var g := _gorthor()
 	var p = c._p3d(g) if not g.is_empty() else null
 	if encendido:
@@ -206,8 +214,11 @@ func _cerrar() -> void:
 		_ok(GT.nodos_vivos(c.enemigos).is_empty(), "al acabar quedan sus brasas: %s" % str(GT.nodos_vivos(c.enemigos)))
 		c.queue_free()
 		c = null
+	await _esperar(75)                                    # 2,5 s de juego a 30 fotogramas por segundo
+	# (el audio sin ventana avanza con el reloj real, no con los fotogramas: si aún suena algo suyo, se le dan hasta 5 s
+	# reales para acabar; los sonidos duran < 2,5 s. Antes se esperaban siempre 2,5 s reales.)
 	var t0 := Time.get_ticks_msec()
-	while Time.get_ticks_msec() - t0 < 2500:
+	while _suena_suyo() and Time.get_ticks_msec() - t0 < 5000:
 		await process_frame
 	_ok(not _suena_suyo(), "al cerrar el combate sigue sonando algo de Gorthor")
 	await _esperar(5)
@@ -268,6 +279,7 @@ func _jugar(estrategia: String, decision: String, comprobar := true) -> Dictiona
 			if str(quien.get("clave", "")) == "gorthor":
 				var que := _que_hizo(quien, ant)
 				r["acciones"].append(que)
+				_traza("Gorthor: %s" % que)
 				if comprobar:
 					_comprobar_turno(quien, que, ant, ultimo)
 				ultimo = [que, c.turnos_heroe]
@@ -282,6 +294,7 @@ func _jugar(estrategia: String, decision: String, comprobar := true) -> Dictiona
 			en_decision += 1
 		if en_decision > 60 and r["decidido"] == "":           # (como un jugador: tras caer de rodillas y abrirse el menú)
 			r["decidido"] = decision
+			_traza("decisión: %s" % decision)
 			var g := _gorthor()
 			if decision == "acabar":
 				c._acabar(g)
@@ -289,7 +302,7 @@ func _jugar(estrategia: String, decision: String, comprobar := true) -> Dictiona
 				c._perdonar(g)
 		if c.estado == "menu" and c.actor is Dictionary and c.turnos_heroe != decidido:
 			decidido = c.turnos_heroe
-			_decidir(estrategia)
+			_traza("%s: %s" % [c.actor["nombre"], _decidir(estrategia)])
 		if c.estado == "fin" and f_fin < 0:
 			f_fin = fr
 			r["pv_fin"] = 0
@@ -299,7 +312,24 @@ func _jugar(estrategia: String, decision: String, comprobar := true) -> Dictiona
 			break
 	r["fin"] = c.estado == "fin"
 	r["gana"] = r["fin"] and c.heroes.any(func(h): return h["hp"] > 0)   # (acaba: gana, perdona o pierde)
+	_traza("fin %s · gana %s" % [r["fin"], r["gana"]])
 	return r
+
+
+# Una línea por turno: fotograma, quién y qué, y los PV de todos (para reproducir una semilla concreta).
+func _traza(que: String) -> void:
+	var pv := []
+	for f in c.heroes + c.enemigos:
+		pv.append("%s %d" % [f["nombre"], int(f["hp"])])
+	print("TRAZA %05d T%d %s · %s" % [Engine.get_process_frames(), c.turnos_heroe, que, ", ".join(pv)])
+
+
+# «semilla_A=N» (o _C, _E, _Q) en la línea de órdenes cambia la semilla de ese caso.
+func _semilla(caso: String, defecto: int) -> int:
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("semilla_%s=" % caso):
+			return int(a.get_slice("=", 1))
+	return defecto
 
 
 func _que_hizo(e: Dictionary, ant: Dictionary) -> String:
@@ -346,32 +376,33 @@ func _comprobar_turno(e: Dictionary, que: String, ant: Dictionary, ultimo: Array
 			_ok(golpeados.is_empty() and imp.is_empty(), "%s: aturdido y hace daño" % n)
 
 
-func _decidir(estrategia: String) -> void:
+func _decidir(estrategia: String) -> String:
 	var a: Dictionary = c.actor
 	var alc: Array = c._alcanzables()
 	if alc.is_empty():
 		c._defender()
-		return
+		return "defender (sin objetivo)"
 	if estrategia == "auto":
 		c._menu_objetivo("atacar", "")
 		c._confirmar_objetivo(alc[0])
-		return
+		return "atacar a %s" % alc[0]["nombre"]
 	var g := _gorthor()
 	var t: Dictionary = g if not g.is_empty() and g["hp"] > 0 else alc[0]
 	if g.get("gt_hoguera", false):
 		if a["nombre"] == "Lya" and c._puede_pagar(c.NIVELES_MAGIA["Agua"][0]["coste"]):
 			c._elegir_hechizo("Agua", 1)                    # el agua apaga las brasas
 			c._confirmar_objetivo(t)
-			return
+			return "Agua a %s" % t["nombre"]
 		c._defender()
-		return
+		return "defender (Hoguera)"
 	if a["nombre"] == "Lya":
 		var heridos: Array = c.heroes.filter(func(h): return h["hp"] > 0 and float(h["hp"]) / h["hp_max"] < 0.45)
 		if not heridos.is_empty() and c._puede_pagar(c.NIVELES_MAGIA["Cura"][0]["coste"]):
 			c._elegir_hechizo("Cura", 1, true)
-			return
+			return "Cura"
 	c._menu_objetivo("atacar", "")
 	c._confirmar_objetivo(t)
+	return "atacar a %s" % t["nombre"]
 
 
 # ================================================================= S
@@ -398,7 +429,7 @@ func _a() -> void:
 	var Extra = load("res://equipo_extra.gd")
 	var lista: Array = Inv.datos()["equipables"]
 	lista.erase("fauces_gorthor")
-	await _combate({"Kael": 9, "Lya": 9, "Garon": 9}, 5, true)
+	await _combate({"Kael": 9, "Lya": 9, "Garon": 9}, _semilla("A", 5), true)
 	var g := _gorthor()
 	g["hp_max"] = int(g["hp_max"] * 1.5)
 	g["hp"] = g["hp_max"]
@@ -558,12 +589,12 @@ func _turno_sin_atacar(g: Dictionary, vivos: Array) -> bool:
 # ================================================================= C, E
 
 func _c() -> void:
-	await _combate({"Kael": 8, "Lya": 8}, 13, true)
+	await _combate({"Kael": 8, "Lya": 8}, _semilla("C", 13), true)
 	var r := await _jugar("auto", "perdonar")
 	_ok(r["fin"], "C dos héroes: no termina (%s)" % str(r["acciones"]))
 	hechos.append("C Kael y Lya (nivel 8), automático: %s, %s" % ["gana" if r["gana"] else "pierde", ",".join(r["acciones"])])
 	await _cerrar()
-	await _combate({"Kael": 9}, 21, true)
+	await _combate({"Kael": 9}, _semilla("C", 13) + 8, true)
 	r = await _jugar("auto", "perdonar")
 	_ok(r["fin"], "C Kael solo: no termina (%s)" % str(r["acciones"]))
 	hechos.append("C Kael solo (nivel 9), automático: %s, %s" % ["gana" if r["gana"] else "pierde", ",".join(r["acciones"])])
@@ -573,7 +604,7 @@ func _c() -> void:
 func _e() -> void:
 	var lista: Array = Inv.datos()["equipables"]
 	lista.erase("fauces_gorthor")
-	await _combate({"Kael": 1, "Lya": 1}, 3, true)
+	await _combate({"Kael": 1, "Lya": 1}, _semilla("E", 3), true)
 	var g := _gorthor()
 	g["atk"] = 120
 	var r := await _jugar("auto", "perdonar", false)
@@ -595,7 +626,7 @@ func _q() -> void:
 			var turnos := 0
 			var hogueras := 0
 			for s in 6:
-				await _combate(niveles, 800 + s, encendido, "")
+				await _combate(niveles, _semilla("Q", 800) + s, encendido, "")
 				var pv0 := 0
 				for h in c.heroes:
 					pv0 += int(h["hp_max"])
