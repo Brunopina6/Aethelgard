@@ -33,7 +33,7 @@ const METAS_SESION := ["meshy_e01", "banco_caso", "nix_v12", "oakhaven_propuesta
 	"calidad_sesion", "banco_proto"]                  # (15/11: [calidad] de la sesión rehecha en cada caso; un banco de medida a medias no sigue)
 # Calidad elegida en la sesión (CAL, el selector «Calidad 3D», los bancos A/B de vista3d): sigue entre los casos de la
 # sesión y se quita SOLO al salir.
-const METAS_CALIDAD := ["calidad_proto", "calidad_extra"]
+const METAS_CALIDAD := ["calidad_proto", "calidad_extra", "muestra_precalentar"]
 const Estilo := preload("res://estilo.gd")
 
 # La partida de partida del banco: el grupo recién llegado a Oakhaven (la del Redmi del 11/11, cmp_oakhaven).
@@ -257,6 +257,10 @@ func _pintar() -> void:
 	var pf: String = str(Engine.get_meta("calidad_proto")) if fija else CP.actual()
 	_selector("Calidad 3D (solo en el banco)", "regulador", fija, [[false, "Regulador normal"],
 		[true, "Fija: %s · 3D ×%.2f" % [pf, float(CP.PERFILES.get(pf, CP.PERFILES["bajo"])["escala_3d"])]]], _elegir_calidad_fija)
+	# (15/11) Precalentar el recorrido de la muestra de la calle en su primera entrada (candidato a remedio de los
+	# tirones de la primera vuelta; solo de sesión, para medir con y sin él).
+	_selector("Muestra: precalentar (solo en el banco)", "precalentar", bool(Engine.get_meta("muestra_precalentar", false)),
+		[[false, "No"], [true, "Sí"]], func(v): Engine.set_meta("muestra_precalentar", v))
 	cuerpo.add_child(_texto("Combates de prueba (al terminar se vuelve aquí)", 24, Estilo.ORO))
 	for k in COMBATES:
 		_caso(k, COMBATES[k], _combate.bind(k))

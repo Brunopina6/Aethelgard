@@ -79,6 +79,22 @@ var anclas := {}
 var titulo: Label
 var materiales_usados: Array = []
 var tex_luz_usada := ""                     # el mapa de luz cargado (para las pruebas)
+# (15/11) Diagnóstico de tirones (solo mide; diagnostico_tirones.gd) y precalentado del recorrido (interruptor de
+# sesión del banco «muestra_precalentar», APAGADO: para comparar con y sin él en el teléfono).
+const Diag := preload("res://zonas3d/muestra_calle/diagnostico_tirones.gd")
+const PUNTOS_CALENTAR := [Vector3(-6.6, 0, -1.2), Vector3(0.0, 0, -2.6), Vector3(0.0, 0.85, -6.2), Vector3(7.6, 0, 0.8)]
+static var _precalentado := {}              # perfil/modo → ya hecho en este proceso
+var diag = null
+var _u_init := 0
+
+
+func _init() -> void:
+	_u_init = Time.get_ticks_usec()
+
+
+func _marca(n: String) -> void:
+	if diag != null:
+		diag.marca(n)
 
 
 static func camara_muestra(c: Camera3D, k: Vector3) -> void:
@@ -89,12 +105,20 @@ static func camara_muestra(c: Camera3D, k: Vector3) -> void:
 
 
 func _ready() -> void:
+	if not Engine.has_meta("muestra_sin_diagnostico"):
+		diag = Diag.new()
+		diag.name = "DiagTirones"
+		add_child(diag)
+		diag.empezar(self, _u_init)
 	var cal = load("res://prototipos/calidad_proto.gd")
 	perfil = cal.datos()
 	nombre_perfil = cal.actual()
 	modo = str(Engine.get_meta("muestra_modo", "luz"))
+	_marca("calidad")
 	luz = _leer_luz()
+	_marca("luz.json")
 	super()
+	_marca("Kael, cámara, panel y regulador")
 	info.visible = false
 	_crear_interfaz()
 	_colocar_kael(INICIO)
@@ -103,6 +127,47 @@ func _ready() -> void:
 	if has_node("/root/Sonido"):
 		Sonido.oyente_3d(kael, cam)
 		Sonido.pasos_3d(kael, func(_p): return "piedra")
+	_marca("interfaz, Kael al inicio y sonido")
+	if Engine.get_meta("muestra_precalentar", false):
+		_precalentar_recorrido.call_deferred()
+
+
+# (15/11, candidato a remedio de los tirones de la primera vuelta; APAGADO salvo con el interruptor del banco) En la
+# PRIMERA entrada del proceso, tapado en negro: Kael corre un fotograma en cada punto del recorrido (cámara, luz, sombra
+# y animación de correr como allí) y vuelve al inicio; luego se destapa. Sin pisadas.
+func _precalentar_recorrido() -> void:
+	var clave := nombre_perfil + "/" + modo
+	if _precalentado.has(clave) or kael == null or DisplayServer.get_name() == "headless":
+		return
+	_precalentado[clave] = true
+	var u0 := Time.get_ticks_usec()
+	var capa := CanvasLayer.new()
+	capa.layer = 119                                  # bajo el negro de Recursos (120), sobre la escena
+	var tapa := ColorRect.new()
+	tapa.color = Color.BLACK
+	tapa.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tapa.set_anchors_preset(Control.PRESET_FULL_RECT)
+	capa.add_child(tapa)
+	add_child(capa)
+	var pasos := kael.get_node_or_null("Pasos")
+	if pasos != null:
+		pasos.process_mode = Node.PROCESS_MODE_DISABLED
+	for p in PUNTOS_CALENTAR:
+		_colocar_kael(p)
+		kael.marcha(VELOCIDAD)
+		await get_tree().process_frame
+		await get_tree().process_frame
+		if not is_instance_valid(kael):
+			return
+	kael.parar_marcha()
+	_colocar_kael(INICIO)
+	await get_tree().process_frame
+	if pasos != null:
+		pasos.process_mode = Node.PROCESS_MODE_INHERIT
+	print("[tirones] precalentado del recorrido: %.0f ms" % ((Time.get_ticks_usec() - u0) / 1000.0))
+	var t := create_tween()
+	t.tween_property(tapa, "color:a", 0.0, 0.25)
+	t.tween_callback(capa.queue_free)
 
 
 func en_banco() -> bool:
@@ -169,9 +234,11 @@ func _crear_escenario() -> void:
 	if not ResourceLoader.exists(MODELO):
 		push_warning("Muestra de calle: falta %s (fuente/crear_calle.py)" % MODELO)
 		return
+	_marca("ambiente")
 	calle = (load(MODELO) as PackedScene).instantiate()
 	calle.name = "Calle"
 	add_child(calle)
+	_marca("instanciar el GLB")
 	var tex_luz: Texture2D = null
 	var res := int(MAPA_LUZ.get(nombre_perfil, 2048))
 	var ruta_luz := RAIZ + "modelos/calle_luz_%d.png" % res
@@ -192,6 +259,7 @@ func _crear_escenario() -> void:
 				cache[clave] = _material(nombre, tex_luz, vertice)
 				materiales_usados.append(clave)
 			m.set_surface_override_material(s, cache[clave])
+	_marca("materiales y mapa de luz")
 	for n in calle.find_children("*", "", true, false):
 		var nodo := n as Node3D
 		if nodo == null:
@@ -202,6 +270,7 @@ func _crear_escenario() -> void:
 			anclas[String(nodo.name).trim_prefix("ancla_")] = nodo.global_position
 	_suelo_choque()
 	_atmosfera()
+	_marca("choques y atmósfera")
 
 
 func _material(nombre: String, tex_luz: Texture2D, vertice := false) -> Material:

@@ -27,6 +27,8 @@ func _initialize() -> void:
 			etiqueta = a.trim_prefix("etiqueta=")
 		elif a.begins_with("salida="):
 			salida = a.trim_prefix("salida=")
+		elif a == "precalentar":                     # (el interruptor de sesión del banco)
+			Engine.set_meta("muestra_precalentar", true)
 	Engine.set_meta("archivo_partida_prueba", "user://fotos_muestra_correcciones.save")
 	Engine.set_meta("calidad_proto", perfil)
 	Engine.set_meta("muestra_sin_titulo", true)
