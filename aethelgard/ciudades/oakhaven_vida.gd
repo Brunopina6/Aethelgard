@@ -169,7 +169,8 @@ const RUTINAS := {
 			"frase": "Recién cogidas. Huelen a mañana."},
 		"tarde": {"casilla": Vector2(44, 29), "hace": "quieto", "donde": "en su puesto de flores",
 			"frase": "Las que quedan, a mitad de precio."},
-		"anochecer": {"casilla": Vector2(40, 19.5), "hasta": Vector2(40, 14), "hace": "pasea",
+		# 15/11: por la orilla oeste de la calle (por el eje, de 2 m de ancho, tapaba el paso al Árbol con el mundo vivo)
+		"anochecer": {"casilla": Vector2(39.45, 19.5), "hasta": Vector2(39.45, 14), "hace": "pasea",
 			"donde": "llevando flores al Árbol por la Calle del Árbol", "frase": "Las que sobran, para el Árbol."},
 	},
 	"posadera": {
@@ -189,7 +190,9 @@ const RUTINAS := {
 			"frase": "El humo sube recto. Noche tranquila."},
 	},
 	"bastian": {
-		"manana": {"casilla": Vector2(50, 26), "hasta": Vector2(66, 26), "hace": "pasea",
+		# 15/11: por la orilla norte de la calle, junto a los faroles que cuenta (por el eje, de 2 m de ancho, tapaba el paso
+		# a la torre y a la herrería: Kael se paraba ante él una y otra vez; pruebas/fotos_paso_vecinos)
+		"manana": {"casilla": Vector2(50, 25.45), "hasta": Vector2(66, 25.45), "hace": "pasea",
 			"donde": "contando los faroles de la Calle del Mercado", "frase": "Uno, dos, tres… ¡Este está torcido!"},
 		"tarde": {"casilla": Vector2(40, 43), "hace": "quieto", "donde": "en la Calle Mayor",
 			"frase": "Pronto los encienden. ¡Me encanta!"},
