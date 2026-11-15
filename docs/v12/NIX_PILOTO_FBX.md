@@ -122,7 +122,7 @@ No se hizo en esta sesión (registrado con precisión para el siguiente paso):
 - Retoque de los clips de la Nix chibi a proporciones adultas; medir `vel_andar`/`vel_correr` con
   `prueba_anim_pies.gd`; cara expresiva (parpadeo y expresiones: el FBX no tiene párpados ni boca separados; la cara
   es textura); retrato de diálogo.
-- La franja clara del pecho bajo los mechones; los texeles de la mandíbula; `RightHandMiddle1` sin pesos.
+- La franja clara del pecho bajo los mechones; los texeles de la mandíbula; `RightHandMiddle1` sin pesos. **15/11: arreglado** (la mano del cetro cierra los dedos; ver `REVISION_PERSONAJES_15_11.md` §3).
 - Escala: el PDF da 1,18 m; el juego normaliza a 1,7 m por los huesos (como a los demás héroes). Decidir la altura
   de Nix junto al grupo.
 
@@ -303,7 +303,7 @@ No se pasó la batería completa (solo toca archivos de Nix y sus pruebas). Hab�
 - Emisión separada de iris y ornamentos con las tres intensidades y su limpieza en interrupción, muerte, pausa y fin.
 - Verla en el Redmi y medir (coste de 19,5 mil triángulos y 2 materiales; overdraw de capucha y faldones) sin otra carga.
 - Texturas de 2048 para el perfil de PC: no se rehicieron con el mono negro y el pelo ceniza (solo las de 1024).
-- `RightHandMiddle1` sigue sin pesos; los texeles oscuros de la mandíbula quedan bajo la capucha y el cuello alto negro,
+- `RightHandMiddle1` sigue sin pesos; los texeles oscuros de la mandíbula quedan bajo la capucha y el cuello alto negro, **15/11: arreglado** (la mano del cetro cierra los dedos; ver `REVISION_PERSONAJES_15_11.md` §3).
   sin corregir en su origen.
 - Faldones: con 2 huesos por lado no se pliegan al arrodillarse; las bolsas son cajas sencillas.
 - El encuadre del combate (`combate.gd`, entrada `nix3d`: `esc` 0,56, `alto_vista` 2,45, `centro_y` 1,12) es el de la
