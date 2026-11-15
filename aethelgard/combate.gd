@@ -5406,6 +5406,12 @@ func _invocar_sobre(obj: Dictionary) -> void:
 	fuera.visible = true
 	registro.text = "Lya invoca a Érebo"
 	menu.vibrar(40)
+	# V12 (16/11, autorizado): el azar del COMBATE queda aislado de lo que se VE en la invocación. Las partículas
+	# (CPUParticles3D) gastan el generador global aunque lleven semilla fija (comprobado en Godot 4.7), así que encender
+	# el orbe, el vídeo u otros efectos cambiaba las tiradas posteriores. Ahora se reserva aquí una semilla del combate
+	# y, al acabar la invocación, el generador vuelve a ella: mismas tiradas posteriores con cualquier efecto. No cambia
+	# probabilidades, daño ni costes (el dado se sigue tirando igual, con el mismo generador).
+	var azar_tras_invocar := randi()
 	var es_jefe: bool = obj.get("personalidad", "") == "jefe" or obj.get("fases", false) or obj.get("ultimo_aliento", false)
 	var out := {"dano": 0}                         # (las funciones anónimas no cambian variables de fuera)
 	var al_resultado := func(r: Dictionary):
@@ -5466,6 +5472,7 @@ func _invocar_sobre(obj: Dictionary) -> void:
 	_actualizar()
 	await _espera_invocacion(0.7)
 	fuera.visible = false
+	seed(azar_tras_invocar)                        # (ver arriba: el combate sigue con su propio azar)
 	_terminar_turno(false)
 
 

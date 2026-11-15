@@ -16,8 +16,8 @@ extends SceneTree
 #   «erebo=exito»: un enemigo normal (GRUPOS[9], Grimfang: muerte, PV a 0, un cambio) y un JEFE (GRUPOS[18], Guardián de
 #                  piedra, sin fases: siempre arranca el orbe y quita maxi(1, round(PV × 0,2)), sin dado; un cambio)
 #   «erebo=fallo»: un enemigo normal (la secuencia de fallo no saca el orbe: ni daño ni efecto)
-# La tirada randi() siguiente a la invocación también se compara, pero solo como AVISO informativo: las partículas
-# (CPUParticles3D) pueden gastar azar global y el orbe no se toca para esto.
+# La tirada randi() siguiente a la invocación también se compara EXACTA (16/11: el orbe usa azar propio; antes solo
+# era un aviso porque sus partículas gastaban azar global).
 # Semillas: «semilla_orbe=N» y «semilla_inv=N» para reproducir otra.
 # No toca la partida real: archivo de partida de prueba y user:// aislado del ejecutor.
 
@@ -149,6 +149,9 @@ func _comparar(caso: String, grupo: int) -> void:
 		else:
 			_ok(int(r["dano"]) == 0 and int(r["cambios_objetivo"]) == 0,
 				"%s: con fallo pierde PV (%d → %d, %d cambios)" % [caso, r["pv0"], r["pv1"], r["cambios_objetivo"]])
+	_ok(a["randi"] == b["randi"] and a["randi"] == a2["randi"],
+		"%s: la tirada randi() siguiente cambia con el orbe (apagado %d, encendido %d, control %d)" % [caso,
+		a["randi"], b["randi"], a2["randi"]])
 	if a["randi"] != b["randi"] or a["randi"] != a2["randi"]:
 		avisos.append("%s: la tirada randi() siguiente difiere (apagado %d, encendido %d, control %d): %s" % [caso,
 			a["randi"], b["randi"], a2["randi"], "el orbe gasta azar global" if a["randi"] == a2["randi"] else

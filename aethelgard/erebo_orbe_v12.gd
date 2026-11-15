@@ -11,6 +11,9 @@ extends Node3D
 # - No toca daño, costes, dados ni tiempos: solo presentación. No cambia el material del orbe.
 # - Limpieza: se quita al estallar el orbe, al cancelar/saltar (erebo_3d.limpiar), si el orbe deja de verse y al salir
 #   del árbol (morir, cambiar de escena); cada invocación quita el anterior antes de crear uno (nunca se acumulan).
+# - Azar PROPIO (16/11, autorizado por el usuario): cada emisor lleva su semilla fija (use_fixed_seed) sacada de un
+#   generador propio con semilla constante. Antes, las CPUParticles3D tiraban del azar global y, con el orbe encendido,
+#   cambiaban las tiradas posteriores del combate (prueba_erebo_orbe_v12). Mismo aspecto: solo cambia de dónde sale el azar.
 # - Presupuesto (como en el laboratorio): 96 partículas en «alta», la mitad en «movil», UN quad para la onda.
 #   Con «reducir destellos» no hay onda ni ráfaga, solo la espiral.
 
@@ -66,6 +69,7 @@ var _t := 0.0
 var _onda_hecha := false
 var _apagando := false
 var _vida_max := 0.0
+var _azar := RandomNumberGenerator.new()      # (semilla fija en _init: nunca el azar global del combate)
 
 
 # ---------------------------------------------------------------- opción (Auditoría / editor / pruebas)
@@ -102,6 +106,10 @@ static func elegir(si: bool) -> Error:
 
 func _cant(n: int) -> int:
 	return n if calidad == "alta" else maxi(4, n / 2)
+
+
+func _init() -> void:
+	_azar.seed = 0x0E5EB0
 
 
 func _ready() -> void:
@@ -249,6 +257,8 @@ func _espiral(cantidad: int, vida: float, tex: Texture2D, tam: float, aditivo: b
 
 func _particulas(cantidad: int, vida: float, tex: Texture2D, tam: float, aditivo: bool) -> CPUParticles3D:
 	var p := CPUParticles3D.new()
+	p.use_fixed_seed = true                     # azar propio del emisor: no toca el generador global del combate
+	p.seed = _azar.randi()
 	p.amount = cantidad
 	p.lifetime = vida
 	var m := StandardMaterial3D.new()
