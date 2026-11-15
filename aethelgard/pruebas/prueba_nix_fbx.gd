@@ -101,6 +101,21 @@ func _comprobar_modelo() -> void:
 			if absf(s - 1.0) > 0.02:
 				mal += 1
 		_ok(mal == 0, "pesos normalizados (%d vértices mal)" % mal)
+		# 15/11 (revisión de personajes, p12_mano.py): la mano del cetro cierra los dedos. Antes RightHandMiddle1 no
+		# movía ningún vértice y los dedos iban con la palma (mano abierta con el asta atravesándola).
+		var dedos := {}
+		var bb: PackedInt32Array = a[Mesh.ARRAY_BONES]
+		for i in nv:
+			for k in 4:
+				if w[i * 4 + k] > 0.3:
+					var bi: int = bb[i * 4 + k]
+					var nombre: String = String(mi.skin.get_bind_name(bi)) if mi.skin != null and mi.skin.get_bind_name(bi) != &"" \
+						else nix.skel.get_bone_name(mi.skin.get_bind_bone(bi) if mi.skin != null else bi)
+					for hb in ["RightHandMiddle1", "RightHandMiddle2", "LeftHandMiddle1"]:
+						if nombre.ends_with(hb):
+							dedos[hb] = dedos.get(hb, 0) + 1
+		_ok(dedos.get("RightHandMiddle1", 0) >= 15 and dedos.get("RightHandMiddle2", 0) >= 15,
+			"dedos de la mano del cetro con peso (vértices > 0,3: %s)" % str(dedos))
 		var m = mi.mesh.surface_get_material(0)
 		var tex: Texture2D = m.albedo_texture if m is BaseMaterial3D else null
 		_ok(tex != null and tex.get_width() == 1024, "color de 1024 (%s)" % (str(tex.get_size()) if tex else "sin textura"))
