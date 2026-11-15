@@ -38,6 +38,8 @@ var _c: Node                         # el combate
 var _esc := {}                       # el escenario (capa, ventana, mundo, cámara...)
 var _tapado: Array = []
 var _vfx: Node3D
+var _cabeza_m: Node = null          # la cabeza firme de Érebo (vfx/erebo_cabeza_firme.gd)
+var _cabeza_original := false
 var _exito := false
 var _jefe := false
 var _modo := "hibrida"
@@ -392,6 +394,14 @@ func _montar_escenario(c: Node, obj: Dictionary) -> void:
 	_invocador = lya
 	_objetivo = doble
 	await _preparar({"objetivo": doble, "invocador": lya})
+	# la cabeza firme (15/11, petición del usuario): un modificador propio sobre el esqueleto de ESTE Érebo
+	# («erebo_cabeza=original»: sin la cabeza firme, solo para comparar; el modificador queda a peso 0 y solo mide)
+	if erebo.get("skel") != null and erebo.get("gestos") != null:
+		_cabeza_m = load("res://vfx/erebo_cabeza_firme.gd").new()
+		_cabeza_m.name = "CabezaFirme"
+		erebo.skel.add_child(_cabeza_m)
+		_cabeza_m.preparar(erebo.gestos)
+		_cabeza_original = "erebo_cabeza=original" in OS.get_cmdline_user_args()
 	_vfx = load("res://vfx/erebo_extraccion.gd").new()
 	mundo.add_child(_vfx)
 
@@ -547,8 +557,9 @@ func _secuencia(_ctx: Dictionary) -> void:
 	await _hasta_fin(erebo.emerger_quieto.bind(1.5, 0.05))
 	if saltada(): return
 
-	# 3 · Se acerca (0,9 s): por detrás de su hombro derecho, hacia el pecho del enemigo
+	# 3 · Se acerca (0,9 s): por detrás de su hombro derecho, hacia el pecho del enemigo (la cabeza, firme y fija en él)
 	_fase("acercamiento")
+	_cabeza(1.0, objetivo_mano, 0.45)
 	var hombro := e1 + der_e * 1.25 * _k + u * 1.35 * _k + arriba * 1.15 * _k
 	plano(hombro + u * 0.4 * _k + arriba * 0.1, objetivo_mano, 0.0, 40.0)
 	plano(hombro, objetivo_mano.lerp(e1 + arriba * 0.8 * _k, 0.3), 1.1, 38.0)
@@ -566,9 +577,12 @@ func _secuencia(_ctx: Dictionary) -> void:
 		evento.emit("fallo")
 		_lya_gesto("fallo")
 		var mano_v: Vector3 = erebo._punta_mano()                # la mano vacía, de cerca
+		_cabeza(1.0, mano_v, 0.2)
 		plano(mano_v + _lado * 0.95 * _k + u * 0.55 * _k + arriba * 0.15 * _k, mano_v, 0.35, 34.0)
 		await esperar(0.8)
 		if saltada(): return
+		if _cabeza_m != null:
+			registro.append(["cabeza", _cabeza_m.ladeo, _cabeza_m.ladeo_max, _cabeza_m.vel_max_medida, _cabeza_m.peso])
 		if camara != null:                                      # corte al plano general: se hunde
 			if _cam_tw != null and _cam_tw.is_valid():
 				_cam_tw.kill()
@@ -579,12 +593,13 @@ func _secuencia(_ctx: Dictionary) -> void:
 
 	# 6a · El corazón (o el trozo) en su mano: se aparta y se vuelve hacia la cámara para mostrarlo
 	_fase("en_la_mano")
+	_cabeza(1.0, func(): return (_vfx.fragmento if _jefe else _vfx.corazon).global_position if _vfx != null and is_instance_valid(_vfx) else null, 0.2)
 	_e2 = e1 + u * (0.55 * _k)
 	erebo.deslizar(_e2, 0.7)
 	var frente := (u * 0.45 + lado_a).normalized()            # de cara a la cámara, de espaldas al enemigo (no lo tapa)
 	erebo.mirar(frente, 0.5)
 	var cara := _e2 + arriba * 1.0 * _k
-	plano(cara + frente * 1.85 * _k + arriba * 0.1 * _k, cara - arriba * 0.2 * _k, 0.6, 36.0)
+	plano(cara + frente * 1.85 * _k + arriba * 0.1 * _k, cara - arriba * 0.2 * _k, 0.0, 36.0)   # (corte: el viaje cruzaba su capucha)
 	sonar(SND % "pulso", -3.0, 1.0)
 	if not _jefe:
 		_vaciar()                                               # el enemigo se queda sin fuerzas
@@ -592,6 +607,8 @@ func _secuencia(_ctx: Dictionary) -> void:
 	if saltada(): return
 	var en_mano: Node3D = _vfx.fragmento if _jefe else _vfx.corazon
 	registro.append(["corazon_mano", en_mano.global_position.distance_to(erebo._punta_mano()), en_mano.visible])
+	if _cabeza_m != null:                                       # (ladeo ahora y máximo, y giro más rápido, desde el acercamiento)
+		registro.append(["cabeza", _cabeza_m.ladeo, _cabeza_m.ladeo_max, _cabeza_m.vel_max_medida, _cabeza_m.peso])
 	sonar(SND % "pulso", -2.0, 1.1)
 	await esperar(0.45)
 	if saltada(): return
@@ -603,6 +620,7 @@ func _secuencia(_ctx: Dictionary) -> void:
 	var mano: Vector3 = erebo._punta_mano()
 	var flota := mano + arriba * 0.22 * _k + frente * 0.12 * _k
 	_vfx.soltar(flota, 0.45)
+	_cabeza(1.0, flota, 0.2)
 	plano(flota + frente * 0.75 * _k + arriba * 0.05 * _k, flota, 0.9, 30.0)
 	await esperar(0.45)
 	if saltada(): return
@@ -642,6 +660,8 @@ func _extraer(objetivo_mano: Vector3, e1: Vector3, u: Vector3, lado_mano: Vector
 	erebo.anim.seek(0.80, true)
 	# el contacto: onda en el pecho, pausa de impacto, el enemigo se arquea
 	_fase("contacto")
+	if _cabeza_m != null:                                       # (mide la cabeza desde aquí: el mismo tramo con y sin)
+		_cabeza_m.medir = true
 	registro.append(["error_mano", erebo._punta_mano().distance_to(objetivo_mano)])   # (la punta, en el contacto)
 	evento.emit("contacto")
 	sonar(SND % "pulso", 0.0)
@@ -676,6 +696,7 @@ func _extraer(objetivo_mano: Vector3, e1: Vector3, u: Vector3, lado_mano: Vector
 		await _tirar(objetivo_mano.lerp(fuera, 0.45), 0.7)
 		if saltada(): return
 		_fase("sale")
+		_cabeza(1.0, func(): return _vfx.corazon.global_position if _vfx != null and is_instance_valid(_vfx) else null, 0.2)
 		_vfx.romper_hilo()                                      # sale del todo
 		_vfx.tension = 0.0
 		sacudir(0.03, 0.2)
@@ -695,6 +716,7 @@ func _extraer(objetivo_mano: Vector3, e1: Vector3, u: Vector3, lado_mano: Vector
 		if saltada(): return
 		if _jefe:
 			_fase("trozo")
+			_cabeza(1.0, func(): return _vfx.fragmento.global_position if _vfx != null and is_instance_valid(_vfx) else null, 0.2)
 			_vfx.partir(erebo._punta_mano)                      # vuelve, pero se queda un trozo en la mano
 			_vfx.tension = 0.0
 			sacudir(0.04, 0.25)
@@ -783,9 +805,17 @@ func _ritual_video(ruta: String) -> bool:
 	lanzar.call()
 	var t := 0.0
 	var largo: float = LARGO.get(ruta, 20.0)
+	var destello := false
 	while not r["hecho"]:
 		await get_tree().process_frame
 		t += get_process_delta_time()
+		if r["arranco"] and not destello:                       # (fin del vídeo: su destello final, para pruebas)
+			var capa_v = c.get_node_or_null("EreboCinematica")
+			if capa_v != null:
+				for vp in capa_v.find_children("*", "VideoStreamPlayer", true, false):
+					if not vp.visible:
+						destello = true
+						_fase("video_destello")
 		if t > largo + 6.0:                    # salvaguarda propia: nunca se queda colgada
 			parar[0] = true
 	_fase("video_fin")
@@ -799,6 +829,7 @@ func _ritual_video(ruta: String) -> bool:
 func _ritual_3d() -> void:
 	if erebo == null or not is_instance_valid(erebo):
 		return
+	_cabeza(1.0, func(): return erebo.orbe.global_position if erebo != null and is_instance_valid(erebo) and erebo.orbe.visible else null, 0.2)
 	var arriba := Vector3.UP
 	var ante := _e2 + arriba * 0.85 * _k
 	plano(_e2 + _lado * 2.0 * _k + _hacia * 0.25 + arriba * 1.0 * _k, ante, 0.4, 34.0)
@@ -819,3 +850,18 @@ func _al_saltar() -> void:
 		_vfx.quitar()
 	_vfx = null
 	_fase("saltada")
+
+
+# La cabeza firme: «peso» en «dur» segundos y a qué mira (un punto o una función que lo da cada fotograma).
+func _cabeza(peso: float, que = null, dur := 0.5) -> void:
+	if _cabeza_m == null or not is_instance_valid(_cabeza_m):
+		return
+	if _cabeza_original:
+		return
+	if que is Callable:
+		_cabeza_m.sigue = que
+	elif que is Vector3:
+		_cabeza_m.sigue = Callable()
+		_cabeza_m.mirar_a = que
+	create_tween().tween_property(_cabeza_m, "peso", peso, dur).set_trans(Tween.TRANS_SINE)
+
