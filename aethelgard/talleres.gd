@@ -28,7 +28,9 @@ static func puede(id: String, con_borradores := false) -> String:
 			return "Necesitas %s." % str(load("res://inventario.gd")._objeto_base(pieza).get("nombre", pieza))
 	var Inv = load("res://inventario.gd")
 	for clave in r.materiales:
-		if reservado(clave):
+		if reservado(clave) and RESERVADO_PARA.get(clave, "") != id:   # (la receta a la que va reservado sí lo usa)
+			if RESERVADO_PARA.has(clave) and Investigacion.estado(RESERVA_HASTA_ESTUDIAR.get(clave, "")) == "completada":
+				return "Ese %s es para otra cosa: guárdalo." % clave
 			return "Maese Ferro espera ese %s: llévaselo antes." % clave if clave == "Hierro de la Falla" \
 				else "Hace falta el %s para investigar antes." % clave
 		if Inv.cantidad(clave) < int(r.materiales[clave]):
@@ -106,9 +108,15 @@ static func reservado(material: String) -> bool:
 		return P.hito("enc_herrero_veta") and not P.hito("enc_herrero_fin")
 	if material == "Polvo de cantera":
 		return Investigacion.estado("lya_cantera") != "completada"
-	if material == "Bronce del Águila":
-		return Investigacion.estado("kael_bronce_aguila") != "completada"
+	if material == "Bronce del Águila":            # 15/11: hasta FORJAR la Guarda del Águila, no solo hasta estudiarla
+		return not RESERVADO_PARA[material] in load("res://inventario.gd").datos().get("hechas", [])
 	return false
+
+
+# Material único → la receta de un solo uso a la que va (y que sí puede gastarlo). Sin esto, venderlo entre estudiar y
+# forjar dejaba la recompensa perdida para siempre (revisión del coordinador, 15/11).
+const RESERVADO_PARA := {"Bronce del Águila": "kael_guarda_aguila"}
+const RESERVA_HASTA_ESTUDIAR := {"Bronce del Águila": "kael_bronce_aguila"}
 
 
 static func fabricar(id: String, con_borradores := false) -> bool:

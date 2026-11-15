@@ -336,13 +336,17 @@ func _correr() -> void:
 		_mal("6: no se puede estudiar «El bronce del casco»")
 	I.avanzar("kael_bronce_aguila")
 	var vit0: int = int(load("res://grupo.gd").estadisticas("Kael")["atributos"]["vitalidad"])
-	if I.estado("kael_bronce_aguila") != "completada" or Ta.reservado(Sunk.MATERIAL) or Ta.puede("kael_guarda_aguila") != "":
+	if I.estado("kael_bronce_aguila") != "completada" or Ta.puede("kael_guarda_aguila") != "":
 		_mal("6: estudiado, la receta no se puede forjar («%s»)" % Ta.puede("kael_guarda_aguila"))
+	elif not Ta.reservado(Sunk.MATERIAL):   # (la tienda no ofrece vender lo reservado: tienda.gd, _pintar)
+		_mal("6: estudiado pero sin forjar, el bronce se puede vender (y la Guarda quedaría perdida)")
 	elif not Ta.fabricar("kael_guarda_aguila") or Inv.cantidad(Sunk.MATERIAL) != 0 \
 			or int(load("res://grupo.gd").estadisticas("Kael")["atributos"]["vitalidad"]) != vit0 + 2:
 		_mal("6: forjar la Guarda del Águila no da +2 de vitalidad o no gasta el bronce")
 	elif Ta.fabricar("kael_guarda_aguila") or Ta.puede("kael_guarda_aguila") == "":
 		_mal("6: la Guarda del Águila se forja dos veces")
+	elif Ta.reservado(Sunk.MATERIAL):
+		_mal("6: forjada la Guarda, el bronce sigue reservado")
 	else:
 		_ok("6: el bronce, reservado hasta estudiarlo; la Guarda del Águila: +2 de vitalidad para siempre, una vez")
 
