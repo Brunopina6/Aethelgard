@@ -13,6 +13,10 @@ const OAKHAVEN := ["res://zona.tscn", "res://ciudad_oakhaven.tscn"]
 #   6. Si no se puede escribir, la partida anterior queda intacta.
 #   7. Partida nueva (sin archivo): cargar() deja guardar.
 #   8. Sin archivo propio, una prueba nunca guarda (tampoco en user://partida.save).
+#   9. (15/11, auditoría) Partida legible pero con la estructura mal («grupo» como texto, listas que no son listas,
+#      posiciones que no son posiciones…): no se acepta; se recupera la copia buena y la mala se aparta en «.danada»;
+#      guardar después no copia la mala sobre la buena. Una clave desconocida (versión más nueva) sí se acepta, y la
+#      partida del PC (caso 3) sigue cargando.
 
 const ARCHIVO := "user://prueba_guardado_protegido.save"
 
@@ -44,6 +48,8 @@ func _initialize() -> void:
 	_escritura_fallida()
 	_limpiar()
 	_partida_nueva()
+	_limpiar()
+	_estructura()
 	_limpiar()
 	Engine.remove_meta("archivo_partida_prueba")
 	print("OK guardado protegido: ", ", ".join(hechos))
@@ -95,6 +101,62 @@ func _sin_archivo_propio() -> void:
 		fallos.append("8: una prueba sin archivo propio ha tocado %s" % P.GUARDADO)
 	Engine.remove_meta("partida_lista")
 	hechos.append("8 sin archivo propio no guarda")
+
+
+# 9. Estructura mal (15/11).
+func _estructura() -> void:
+	var buena := var_to_str(_partida_completa())
+	var malas := {
+		"grupo como texto": {"grupo": "Kael, Lya y Garon"},
+		"héroe como número": {"grupo": {"Kael": 5}},
+		"grupo_activo como texto": {"grupo_activo": "Kael"},
+		"grupo_activo con un número": {"grupo_activo": ["Kael", 3]},
+		"inventario como lista": {"inventario": ["Poción"]},
+		"objetos como lista": {"inventario": {"oro": 5, "objetos": ["Poción"]}},
+		"cantidad como texto": {"inventario": {"objetos": {"Poción": "tres"}}},
+		"oro como texto": {"inventario": {"oro": "mucho"}},
+		"hitos como lista": {"hitos": ["pv_01"]},
+		"mazmorra como texto": {"mazmorras": {"oakhaven": "abierta"}},
+		"pos_mapa como texto": {"pos_mapa": "300,400"},
+		"pos_3d como 2D": {"pos_3d": Vector2(1, 2)},
+		"prologo como texto": {"prologo_visto": "sí"},
+		"escena como número": {"escena_guardada": 7},
+	}
+	for caso in malas:
+		_limpiar()
+		var mala := _partida_completa()
+		for k in malas[caso]:
+			mala[k] = malas[caso][k]
+		if P.errores_estructura(mala).is_empty():
+			fallos.append("9: «%s» pasa la validación" % caso)
+		_poner(ARCHIVO + ".bak", buena)
+		_poner(ARCHIVO, var_to_str(mala))
+		if P.leer(ARCHIVO) != null:
+			fallos.append("9: leer() acepta «%s»" % caso)
+		var escena: String = P.cargar()
+		if not escena in OAKHAVEN or Engine.get_meta("inventario", {}).get("oro", 0) != 321:
+			fallos.append("9: con «%s» no se recupera la copia buena (escena «%s»)" % [caso, escena])
+		if not FileAccess.file_exists(ARCHIVO + ".danada"):
+			fallos.append("9: con «%s» la mala no se aparta en «.danada»" % caso)
+	# guardar sobre una principal mala no la copia en «.bak»
+	_limpiar()
+	_poner(ARCHIVO, var_to_str({"grupo": "texto"}))
+	_poner(ARCHIVO + ".bak", buena)
+	if not P.escribir(_partida_completa(), ARCHIVO) or P.leer(ARCHIVO + ".bak") == null:
+		fallos.append("9: guardar sobre una principal mala estropea la copia «.bak»")
+	# una clave desconocida (versión más nueva) y valores enteros/decimales intercambiados se aceptan
+	_limpiar()
+	var nueva := _partida_completa()
+	nueva["clave_del_futuro"] = ["lo que sea"]
+	nueva["pos_zona_lugar"] = 0.0
+	nueva["grupo_activo"] = ["Kael", "Lya"]
+	nueva["mazmorras"] = {"oakhaven": {"cerradura_vista": true}}
+	if not P.errores_estructura(nueva).is_empty():
+		fallos.append("9: una partida válida da errores: %s" % [P.errores_estructura(nueva)])
+	_poner(ARCHIVO, var_to_str(nueva))
+	if P.leer(ARCHIVO) == null:
+		fallos.append("9: una clave desconocida hace rechazar la partida")
+	hechos.append("9 estructura mal → copia buena y «.danada»")
 
 
 # 1. Una sesión que no cargó la partida no la pisa.

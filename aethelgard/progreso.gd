@@ -296,12 +296,85 @@ static func _en_prueba() -> bool:
 	return "--script" in OS.get_cmdline_args() or not OS.get_cmdline_user_args().is_empty()
 
 
-# Lee una partida: el diccionario, o null si no existe o no se puede leer.
+# Lee una partida: el diccionario, o null si no existe, no se puede leer o su estructura no es la de una partida
+# (15/11: un diccionario legible con «grupo» como texto se aceptaba y rompía grupo.gd al restaurarlo). Con null,
+# cargar() pasa sola a la copia «.tmp» o «.bak» y aparta la mala en «.danada»; escribir() no la copia sobre un «.bak»
+# bueno.
 static func leer(ruta: String):
 	if not FileAccess.file_exists(ruta):
 		return null
 	var d = str_to_var(FileAccess.get_file_as_string(ruta))
-	return d if d is Dictionary else null
+	if not d is Dictionary:
+		return null
+	var e := errores_estructura(d)
+	if not e.is_empty():
+		push_warning("La partida %s no tiene la estructura esperada: %s" % [ruta, "; ".join(e)])
+		return null
+	return d
+
+
+# 15/11 (auditoría externa): tipos de las claves de la partida. Una clave AUSENTE es válida (partida antigua: la del PC
+# no trae «grupo» ni «inventario», y así se conserva); una clave desconocida se ignora (partida de una versión más
+# nueva). Solo se rechaza lo que rompería al restaurar o al jugar: un tipo distinto del que escribe el juego.
+const _DIC := ["grupo", "inventario", "cofres_abiertos", "lore_visto", "mazmorras", "combates_ganados", "decisiones",
+	"hitos", "investigaciones", "gremio", "taberna", "buscador", "firmamento"]
+const _BOOL := ["prologo_visto", "pos_mapa_ok", "pos_zona_ok", "pos_isla_ok", "pos_3d_ok"]
+const _NUM := ["incienso", "pos_zona_lugar", "pos_3d_lugar", "encuentros_azar", "formato"]
+const _V2 := ["pos_mapa", "pos_zona", "pos_isla"]
+const _LISTAS := ["grupo_activo", "grupo_miembros"]
+
+
+static func errores_estructura(d: Dictionary) -> Array:
+	var e: Array = []
+	for k in _DIC:
+		if d.has(k) and not d[k] is Dictionary:
+			e.append("%s no es un diccionario (%s)" % [k, type_string(typeof(d[k]))])
+	for k in _BOOL:
+		if d.has(k) and not d[k] is bool:
+			e.append("%s no es sí/no" % k)
+	for k in _NUM:
+		if d.has(k) and not (d[k] is int or d[k] is float):
+			e.append("%s no es un número" % k)
+	for k in _V2:
+		if d.has(k) and not (d[k] is Vector2 or d[k] is Vector2i):
+			e.append("%s no es una posición" % k)
+	if d.has("pos_3d") and not d["pos_3d"] is Vector3:
+		e.append("pos_3d no es una posición 3D")
+	if d.has("escena_guardada") and not (d["escena_guardada"] is String or d["escena_guardada"] is StringName):
+		e.append("escena_guardada no es texto")
+	for k in _LISTAS:
+		if d.has(k):
+			if not d[k] is Array:
+				e.append("%s no es una lista" % k)
+			elif not d[k].all(func(x): return x is String or x is StringName):
+				e.append("%s tiene algo que no es un nombre" % k)
+	if not e.is_empty():
+		return e
+	# dentro: lo que leen grupo.gd, inventario.gd y estado()
+	if d.has("grupo"):
+		for n in d["grupo"]:
+			var h = d["grupo"][n]
+			if not h is Dictionary or (h.has("nivel") and not (h["nivel"] is int or h["nivel"] is float)):
+				e.append("grupo: «%s» no es un héroe válido" % str(n))
+	if d.has("inventario"):
+		var i: Dictionary = d["inventario"]
+		if i.has("oro") and not (i["oro"] is int or i["oro"] is float):
+			e.append("inventario: el oro no es un número")
+		for k in ["objetos", "equipo", "mejoras", "tecnicas", "mejoras_objeto"]:
+			if i.has(k) and not i[k] is Dictionary:
+				e.append("inventario: %s no es un diccionario" % k)
+		for k in ["equipables", "hechas"]:
+			if i.has(k) and not i[k] is Array:
+				e.append("inventario: %s no es una lista" % k)
+		if i.get("objetos") is Dictionary:
+			for o in i["objetos"]:
+				if not (i["objetos"][o] is int or i["objetos"][o] is float):
+					e.append("inventario: la cantidad de «%s» no es un número" % str(o))
+	if d.has("mazmorras"):
+		for m in d["mazmorras"]:
+			if not d["mazmorras"][m] is Dictionary:
+				e.append("mazmorras: «%s» no es un diccionario" % str(m))
+	return e
 
 
 # Escribe la partida en «.tmp», la comprueba y sustituye la anterior. Devuelve false si no se pudo: en las pruebas, la
