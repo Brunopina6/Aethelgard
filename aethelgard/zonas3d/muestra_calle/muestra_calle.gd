@@ -40,6 +40,18 @@ const CAMPO := 38.0
 const CAMARA_X := Vector2(-3.5, 3.5)
 const ANDABLE := Rect2(-13.2, -7.3, 26.4, 10.5)   # x, z: la calle, la boca del callejón y su rellano
 const CALLEJON_X := 1.55
+# (15/11, corrección 1) En el callejón la cámara no se va con Kael hacia las paredes: el vuelo, el poste de esquina y el
+# alero de la casa del oeste (y los de la del este) le tapaban un costado arriba. Se queda en el eje (x = 0), sin girar
+# ni cambiar altura, inclinación o campo; entra de la boca (z −2,0: peso 0) al primer escalón (z −3,4: peso 1) y se
+# apaga fuera del ancho del callejón (|x| 1,8 → 2,6). En la calle, igual que antes.
+const CALLEJON_EJE_X := 0.0
+const CALLEJON_ENTRA := Vector2(2.0, 3.4)     # −z: de la boca al primer escalón
+const CALLEJON_LADO := Vector2(1.8, 2.6)      # |x|: dentro del callejón → en la calle
+# (15/11, corrección 2) Tono (lineal, máximo 1) de la luz horneada en la sombra del callejón (calle_luz_1024.png: B/R
+# 1,11-1,22). El «cielo_color» del json es el cielo puro de una placa sin suelo (B/R 1,79 lineal): sin los rebotes
+# cálidos, Kael salía muy azul en la sombra. Se pesa por el SOL de la sonda: al sol (sol 1), Kael queda exactamente
+# como antes; en sombra (sol 0), el tono de la sombra horneada con la MISMA luminancia (se conserva sol/sombra).
+const TONO_SOMBRA := Color(0.862, 0.836, 1.0)
 # Vistas fijas para las capturas: [nombre, posición, punto al que mira, campo] (iguales en fuente/crear_calle.py)
 const VISTAS := [
 	["vista_puerta", Vector3(-6.2, 3.4, 5.6), Vector3(-6.4, 1.6, -2.4), 38.0],
@@ -60,6 +72,7 @@ var _sol_base := 1.0
 var _amb_base := 0.5
 var _sol_k := 1.0
 var _cielo_k := 1.0
+var _tono_cielo := Color(1, 1, 1)                # (corrección 2) el color del ambiente de antes (sRGB, máximo 1)
 var materiales_sombra: Array = []           # los ShaderMaterial que dibujan la sombra de Kael
 var calle: Node3D
 var anclas := {}
@@ -113,7 +126,8 @@ func _crear_ambiente() -> void:
 	var cielo: Array = luz.get("cielo_color", [0.30, 0.34, 0.45])
 	var c_cielo := Color(cielo[0], cielo[1], cielo[2])
 	_amb_base = maxf(c_cielo.r, maxf(c_cielo.g, c_cielo.b))
-	ambiente.ambient_light_color = Color(c_cielo.r / _amb_base, c_cielo.g / _amb_base, c_cielo.b / _amb_base)
+	_tono_cielo = Color(c_cielo.r / _amb_base, c_cielo.g / _amb_base, c_cielo.b / _amb_base)
+	ambiente.ambient_light_color = _tono_cielo
 	ambiente.ambient_light_energy = _amb_base
 	ambiente.fog_enabled = true                                   # bruma cálida, lejos: profundidad
 	ambiente.fog_light_color = Color(0.86, 0.76, 0.62)
@@ -396,10 +410,20 @@ func _colocar_camara(peso: float) -> void:
 	if cam == null or kael == null:
 		return
 	var k := kael.global_position
-	var meta := Vector3(clampf(k.x, CAMARA_X.x, CAMARA_X.y), 0.0, SITIO_FOTO.z + minf(0.0, k.z - SITIO_FOTO.z) * 0.55)
+	var mx := lerpf(clampf(k.x, CAMARA_X.x, CAMARA_X.y), CALLEJON_EJE_X, peso_callejon(k))   # (corrección 1)
+	var meta := Vector3(mx, 0.0, SITIO_FOTO.z + minf(0.0, k.z - SITIO_FOTO.z) * 0.55)
 	meta.y = k.y * 0.6
 	foco = foco.lerp(meta, peso)
 	camara_muestra(cam, foco)
+
+
+# (corrección 1) 0 en la calle, 1 dentro del callejón: la cámara va al eje del callejón.
+func peso_callejon(k: Vector3) -> float:
+	return smoothstep(CALLEJON_ENTRA.x, CALLEJON_ENTRA.y, -k.z) 		* (1.0 - smoothstep(CALLEJON_LADO.x, CALLEJON_LADO.y, absf(k.x)))
+
+
+static func _lum(c: Color) -> float:
+	return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b
 
 
 # Las sondas (calle_luz.json): cuánto sol y cuánto cielo hay a 1 m del suelo donde está Kael (interpolado).
@@ -435,19 +459,32 @@ func _luz_kael(peso: float) -> void:
 	_sol_k = lerpf(_sol_k, v.x, peso)
 	_cielo_k = lerpf(_cielo_k, v.y, peso)
 	sol.light_energy = _sol_base * _sol_k
-	ambiente.ambient_light_energy = _amb_base * (0.55 + 0.45 * _cielo_k)
+	var energia := _amb_base * (0.55 + 0.45 * _cielo_k)          # (la de antes)
+	var w := 1.0 - clampf(_sol_k, 0.0, 1.0)                       # (corrección 2) 0 al sol, 1 en sombra
+	if w <= 0.001:
+		ambiente.ambient_light_color = _tono_cielo
+		ambiente.ambient_light_energy = energia
+		return
+	var antes := _tono_cielo.srgb_to_linear()                     # Godot pasa el color del ambiente a lineal
+	var t := antes.lerp(TONO_SOMBRA, w)
+	var m := maxf(t.r, maxf(t.g, t.b))
+	t = Color(t.r / m, t.g / m, t.b / m)
+	ambiente.ambient_light_color = t.linear_to_srgb()
+	ambiente.ambient_light_energy = energia * _lum(antes) / _lum(t)   # misma luminancia que antes
 
 
 func _sombras_kael() -> void:
 	if kael == null:
 		return
 	var p := kael.global_position
-	var larga := 0.6 * clampf(_sol_k, 0.0, 1.0)
-	var contacto := 0.62 + 0.1 * (1.0 - _sol_k)
+	var s := clampf(_sol_k, 0.0, 1.0)
+	var larga := 0.62 * s                       # (corrección 3) deja el suelo al tono de las sombras horneadas
+	var contacto := lerpf(0.70, 0.78, s)        # al sol más marcado; en sombra sigue fuerte (la señal de apoyo)
 	for m in materiales_sombra:
 		m.set_shader_parameter("kael_pos", p)
 		m.set_shader_parameter("sombra_fuerza", larga)
 		m.set_shader_parameter("contacto_fuerza", contacto)
+		m.set_shader_parameter("sol_kael", s)
 
 
 func _process(delta: float) -> void:

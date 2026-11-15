@@ -9,6 +9,9 @@ extends SceneTree
 #   4. Kael anda: con un destino a 4 m (de x −2 a 2), se mueve, con el clip de andar/correr, sobre el suelo, y la cámara le sigue.
 #   5. No atraviesa las casas ni sale de lo andable; la sonda da menos sol y menos cielo en el callejón que en la calle.
 #   6. Con el perfil bajo, el mapa de luz pequeño (1024).
+#   7. (15/11, correcciones tras el Redmi) La cámara se queda en el eje del callejón con Kael junto a la pared (y en la
+#      calle sigue a Kael como antes); en la sombra del callejón la luz ambiente de Kael ya no es azul (B/R lineal < 1,35)
+#      con la misma luminancia que antes, y al sol no cambia; la sombra de contacto recibe cuánto sol tiene Kael.
 # Partida propia (Engine «archivo_partida_prueba»): nunca la de verdad. Imprime «FALLOS: n».
 
 const ESCENA := "res://zonas3d/muestra_calle/muestra_calle.tscn"
@@ -42,6 +45,7 @@ func _correr() -> void:
 		_escena_cargada("medio")
 		await _anda()
 		await _no_atraviesa()
+		await _correcciones()
 	await _cargar("bajo")
 	if v != null:
 		_ok(v.tex_luz_usada.ends_with("calle_luz_1024.png"), "6: con el perfil bajo, el mapa de luz de 1024 (%s)" % v.tex_luz_usada)
@@ -169,6 +173,25 @@ func _anda() -> void:
 	_ok(p1.y > -0.05 and p1.y < 0.3, "4: sobre el suelo (y = %.2f)" % p1.y)
 	_ok(v.cam.global_position.x > cam0.x + 2.0, "4: la cámara le sigue (x %.1f → %.1f)" % [cam0.x, v.cam.global_position.x])
 	_ok(absf(v.cam.global_rotation_degrees.y) < 0.01, "4: la cámara no gira")
+
+
+func _correcciones() -> void:
+	v._colocar_kael(Vector3(-1.45, 0.0, -7.1))
+	await _frames(20)
+	_ok(absf(v.cam.global_position.x) < 0.05, "7: en el callejón, junto a la pared oeste, la cámara se queda en el eje (x = %.2f)" % v.cam.global_position.x)
+	var c: Color = v.ambiente.ambient_light_color.srgb_to_linear()
+	var lum_antes: float = v._amb_base * (0.55 + 0.45 * v._cielo_k) * v._lum(v._tono_cielo.srgb_to_linear())
+	var lum_ahora: float = v._lum(c) * v.ambiente.ambient_light_energy
+	_ok(c.b / maxf(c.r, 0.001) < 1.35, "7: en la sombra del callejón, la luz de Kael ya no es azul (B/R %.2f)" % (c.b / maxf(c.r, 0.001)))
+	_ok(absf(lum_ahora - lum_antes) < 0.02 * lum_antes, "7: en sombra, la luminancia de la luz de Kael es la de antes (%.3f frente a %.3f)" % [lum_ahora, lum_antes])
+	var sk = (v.materiales_sombra[0] as ShaderMaterial).get_shader_parameter("sol_kael") if not v.materiales_sombra.is_empty() else null
+	_ok(sk != null and float(sk) < 0.05, "7: la sombra de contacto sabe que Kael está en sombra (sol_kael %s)" % str(sk))
+	v._colocar_kael(Vector3(-4.0, 0.0, 1.0))
+	await _frames(20)
+	_ok(is_equal_approx(v.cam.global_position.x, -3.5), "7: en la calle la cámara sigue a Kael como antes (x = %.2f)" % v.cam.global_position.x)
+	_ok(v.ambiente.ambient_light_color.is_equal_approx(v._tono_cielo), "7: al sol, la luz ambiente de Kael es la de antes")
+	sk = (v.materiales_sombra[0] as ShaderMaterial).get_shader_parameter("sol_kael") if not v.materiales_sombra.is_empty() else null
+	_ok(sk != null and float(sk) > 0.95, "7: al sol, la sombra de contacto lo sabe (sol_kael %s)" % str(sk))
 
 
 func _no_atraviesa() -> void:
