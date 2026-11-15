@@ -956,3 +956,16 @@ Validado: `dc878e9` (`validado/v12/20261115-170245`, 188 · 0). APK v834 instala
   apagar; el experimento 20+20 no lo reprodujo) y transparencias en bajo/medio.
 - **Siguiente acción:** decisión del usuario sobre los remedios de la entrada (compilar en la carga, caché de la luz,
   unir choques) y sobre extender la renovación. NO extender sin que lo pida.
+
+## RELEVO 16/11, 00:20: optimizaciones cerradas; empieza el barrio de Oakhaven (LEER PRIMERO)
+- Encargo nocturno del usuario (15/11, 23:50): cerrar optimizaciones → barrio jugable de Oakhaven (interiores, rutinas,
+  misión «Antes de que se enfríe») → Sunken City → Arboleda Mítica. Autonomía para decisiones técnicas reversibles;
+  canon y gastos: documentar y seguir. Sin push, PR, fusiones ni instalaciones en el teléfono.
+- Optimizaciones (`MUESTRA_CALLE_OAKHAVEN.md` §7.d): precalentado en la carga (corregido para la misma variante),
+  materiales y luz reutilizados entre entradas (soltados al salir del banco); un solo cuerpo de choques DESCARTADO (sin
+  mejora). APK `eb68d54` v854 (SHA `1d318c5e…693456`) en el PC, NO instalada; guion en `GUION_REDMI_15_11.md`.
+- Batería `7c8da75`: 188 · 1 (prueba_audio intermitente, sin regresión medida). Última validada: `02079bb`.
+- Recuperación antes del barrio: `recuperacion/v12/20261116-antes-barrio` (`eb68d54`).
+- Barrio: plan en `BARRIO_OAKHAVEN_PLAN.md` (estudio en `D:\REBELUM_diagnostico\barrio_oakhaven\estudio\`). Fase 0
+  (contrato y blockout) → agentes A (exterior/kit), B (interiores), C (rutinas/misión) en ramas `area-barrio-*`.
+- ABIERTOS: cierre 0xC0000005, transparencias en bajo/medio, prueba_audio intermitente.

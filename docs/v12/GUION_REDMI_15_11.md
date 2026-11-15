@@ -3,6 +3,25 @@
 > Escrito la noche del 15 al 15/11, sin el teléfono: esta noche NO se ha instalado nada ni se han tocado datos del
 > Redmi. Todo lo de abajo está comprobado SOLO en el PC; nada certifica Android.
 
+## PARA MAÑANA (16/11): APK `eb68d54` con las optimizaciones de la muestra — NO instalada (Redmi desconectado)
+
+- **Archivo:** `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261116-eb68d54-local.apk` (432,0 MB, «TODO CORRECTO»),
+  versionCode **854**, SHA-256 `1d318c5e11fed9eec18c95a26379b7bf32624e614662e31ff9efb18319693456`. Copiarla a Descargas
+  por USB (comprobar el SHA en el teléfono) y que la instale el usuario. Instalada ahora: v849 (`4eb4f9b`).
+- **Antes:** respaldo byte a byte (`adb exec-out run-as … cat`) de ajustes.cfg, partida_exp.save(.bak), calidad.log y
+  SHA de los 7 archivos de `files/` (como `D:\REBELUM_respaldos6-11-15_redmi_antes_sesion_2245`).
+- **Qué probar (perfil bajo; distinguir SIEMPRE: «Fija ×0,75» (1200×540), «Regulador normal» y resolución completa
+  ×1,0 — esta última solo con CAL «alto», y NO declarar calidad completa por medir a ×0,75):**
+  1. Primer arranque tras instalar: logcat `[carga]` (tiempo total y «fase de sombreadores») y la 1.ª entrada a la
+     muestra (`[tirones] entrada 1 · instanciar→1.er dibujo … dibujo …`, caché +N). Esperado: el primer dibujo ya no
+     tarda 1,26 s (los programas de la calle se compilan en la carga) — comprobar, no suponer.
+  2. Segundo arranque (caché llena): `[carga]` total frente a la v849 (≈ 14-16 s) — el precalentado no debe alargarla.
+  3. Entradas 2.ª y siguientes: fases «materiales y mapa de luz» y «luz.json» (en v849: 6-26 y 6-18 ms) ≈ 0.
+  4. Recorrido (puerta, callejón, esquina) con «Fija» y con «Regulador normal»: FPS, picos, PSS al entrar/salir.
+  5. Choques: andar contra la puerta verde, subir y bajar los escalones del callejón y los límites (son los de
+     siempre: un cuerpo por caja).
+- **Al terminar:** salir del banco; los 7 archivos con el mismo SHA SIN restaurar (aislamiento de la calidad).
+
 ## MUESTRA GRÁFICA DE LA CALLE en el Redmi (15/11, noche; encargo del usuario tras ver la muestra)
 
 APK de Auditoría compilada desde `3a08f35` (contenido de `e857b93`, validado 189 · 0). La instala el usuario desde
