@@ -305,6 +305,8 @@ func _losa_primero() -> void:
 	_ok(E.estado(mis) == "activo", "3c: con la losa abierta primero, la misión sigue oculta en el Diario")
 	_ok(E.paso_actual(mis).get("id", "") == "volver", "3c: con la losa abierta primero, el paso no es volver")
 	_ok(not Oak.cerradura_abierta(), "3c: abrir la losa abre también el arcón")
+	var ids_c: Array = E.pasos_conocidos(mis).map(func(x): return x["id"])
+	_ok(ids_c == ["losa", "volver"], "3c: el Diario da por hechos pasos que no se hicieron: %s" % str(ids_c))
 	var pistas: Array = E.pistas_conocidas(mis)
 	_ok(not pistas.any(func(x): return "muesca" in x or "nota" in x.to_lower() or "aprendiz:" in x.to_lower()),
 		"3c: con la losa primero se regalan pistas no examinadas (%s)" % str(pistas))

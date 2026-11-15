@@ -91,9 +91,11 @@ const MISIONES := [
 		"fin": "estado_de:oakhaven/cantero_fin",
 		"pasos": [
 			{"id": "arcon", "texto": "Abre el arcón del Concejo, bajo el pórtico.",
-				"hecho": "cond:cantero_arcon"},   # (o la losa ya abierta: entonces el arcón no hace falta)
+				"hecho": "cond:cantero_arcon",   # (o la losa ya abierta: entonces el arcón no hace falta)
+				"saltado_si": "cond:cantero_arcon_saltado"},   # 15/11: abierta la losa sin el arcón, no sale como hecho
 			{"id": "marcas", "texto": "Encuentra las tres marcas del cantero por la ciudad.",
-				"hecho": "estado_de:oakhaven/cantero_marcas"},
+				"hecho": "estado_de:oakhaven/cantero_marcas",
+				"saltado_si": "cond:cantero_marcas_saltadas"},   # 15/11: la losa adivinada sin ver las tres marcas
 			{"id": "losa", "texto": "Busca la losa del cantero y ábrela con lo que dicen las marcas.",
 				"hecho": "estado_de:oakhaven/cerradura_cantero_abierta"},
 			{"id": "volver", "texto": "Lleva el cincel y la carta al aprendiz del cantero, en la plaza.",
@@ -146,6 +148,12 @@ static func cumple(c: String) -> bool:
 			or P.estado(NOMBRE, "cerradura_cantero_abierta"))
 	if c == "cond:cantero_arcon":
 		return _p().estado(NOMBRE, "cerradura_abierta") or _p().estado(NOMBRE, "cerradura_cantero_abierta")
+	if c == "cond:cantero_arcon_saltado":           # (15/11) la losa abierta y el arcón cerrado
+		return _p().estado(NOMBRE, "cerradura_cantero_abierta") and not _p().estado(NOMBRE, "cerradura_abierta")
+	if c == "cond:cantero_marcas_saltadas":         # (15/11) la losa abierta sin haber visto las tres marcas
+		var P = _p()
+		return P.estado(NOMBRE, "cerradura_cantero_abierta") and not (P.estado(NOMBRE, "cantero_marca_1")
+			and P.estado(NOMBRE, "cantero_marca_2") and P.estado(NOMBRE, "cantero_marca_3"))
 	push_warning("Propuestas de Oakhaven: condición desconocida «%s»" % c)
 	return false
 

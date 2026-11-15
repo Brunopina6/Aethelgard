@@ -102,10 +102,14 @@ static func paso_actual(e: Dictionary) -> Dictionary:
 
 # V12: los pasos que el jugador ya conoce, en orden: los hechos y el que toca ahora ({"id", "texto", "hecho"}).
 # Los posteriores al actual no se dan (no se adelanta lo que aún no se sabe).
+# 15/11: un paso con «saltado_si» que se cumple no se enseña (se dio por hecho por otro camino sin hacerlo de verdad:
+# no se marca como hecho algo que el jugador no hizo).
 static func pasos_conocidos(e: Dictionary) -> Array:
 	var r: Array = []
 	var actual := paso_actual(e)
 	for p in e["m"].get("pasos", []):
+		if str(p.get("saltado_si", "")) != "" and cumple(p["saltado_si"], e["fuente"]):
+			continue
 		var hecho := cumple(p.get("hecho", ""), e["fuente"])
 		if hecho or p == actual:
 			r.append({"id": p.get("id", ""), "texto": str(p["texto"]), "hecho": hecho})
