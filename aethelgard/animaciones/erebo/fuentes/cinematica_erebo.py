@@ -437,6 +437,51 @@ def cierre_dedos(t):
     return {d: PUNO[d] + (APERTURA[d] * 1.3 - PUNO[d]) * k for d in DEDOS}
 
 
+# V12, Érebo híbrida (15/11): «cabeza=firme» (petición del usuario: «la cabeza tiene que estar de una forma imponente y
+# segura de lo que hace»). Por defecto («original») todo es como el render del 14/11. Con «firme»:
+#   · el cuello y la cabeza dejan de seguir el balanceo del clip de reposo («Thriller Idle», de zombi: la cabeza se
+#     mece y cae a los lados) y quedan erguidos, con la barbilla algo alta;
+#   · sin la inclinación «curiosa» de la cabeza al descubrir el orbe, sin agachar la cabeza sobre el puño al comprimir
+#     (el pecho se cierra sobre el puño, la cabeza no), sin el tirón de cuello de las sacudidas (la espalda sí se
+#     arquea, a la mitad) y sin el temblor de la quietud;
+#   · mira el orbe con un leve gesto de barbilla hacia abajo mientras lo agarra (8°, sin ladear) y sube al absorber.
+FIRME = OPC.get("cabeza", "original") == "firme"
+
+
+def _pose_firme(t, pose):
+    cuello, cab = "mixamorig:Neck", "mixamorig:Head"
+    r = suave(tramo(t, T["cara"] - 0.4, T["cara"]))         # entra en 0,4 s, antes de que la cámara suba a la máscara
+    for h in (cuello, cab):                                  # erguidos: casi la pose de descanso
+        q, l = pose[h]
+        pose[h] = (q.slerp(Quaternion(), 0.9 * r), l)
+    alto = r
+    if t >= T["comprime"]:                                   # comprime: el pecho sobre el puño, la cabeza alta
+        enc = suave(tramo(t, T["comprime"], T["quieto"])) * (1 - suave2(tramo(t, T["libera"], T["libera"] + 0.15)))
+        lib = suave2(tramo(t, T["libera"], T["libera"] + 0.15)) * (1 - 0.6 * suave(tramo(t, T["libera"] + 0.6, T["fin"])))
+        girar(pose, "mixamorig:Spine1", (1, 0, 0), 4.0 * enc - 8.0 * lib)
+        girar(pose, "mixamorig:Spine2", (1, 0, 0), 3.0 * enc - 6.0 * lib)
+        girar(pose, cuello, (1, 0, 0), -4.0 * enc - 4.0 * lib)       # compensa: la mirada al frente
+    sac = 0.0
+    for ts in T["sacude"]:
+        if t >= ts:
+            x = t - ts
+            sac += (x / 0.12 if x < 0.12 else math.exp(-(x - 0.12) / 0.5))
+    if T["absorbe"] <= t < T["comprime"] + 0.5:              # se crece mientras absorbe (la espalda, no el cuello)
+        lento = suave(tramo(t, T["absorbe"], T["orbe_muerto"]))
+        girar(pose, "mixamorig:Spine1", (1, 0, 0), -3.0 * sac - 4.0 * lento)
+        girar(pose, "mixamorig:Spine2", (1, 0, 0), -2.5 * sac - 3.0 * lento)
+    if T["cara"] is not None:                                # mira el orbe al agarrarlo: barbilla abajo, sin ladear
+        k = suave(tramo(t, T["alcanza"], T["agarre"])) * (1 - suave(tramo(t, T["absorbe"], T["absorbe"] + 0.8)))
+        girar(pose, cab, (1, 0, 0), 8.0 * k)
+        alto = r * (1.0 - k)
+    girar(pose, cuello, (1, 0, 0), -5.0 * alto)               # la barbilla alta
+    girar(pose, cab, (1, 0, 0), -3.0 * alto)
+    c = cierre_dedos(t)
+    if c is not None:
+        pose = dedos(pose, c)
+    return pose
+
+
 def pose_en(t):
     salir = clip("salir", f_salir(t))
     if VERSION == "completa" and t < T["P3"]:
@@ -445,6 +490,8 @@ def pose_en(t):
         t0 = T["P3"] if VERSION == "completa" else T["cara_fin"]
         rep = clip("reposo", ((t - t0) % (130 / FPS)))
         pose = mezcla(salir, rep, suave(tramo(t, t0, t0 + 0.5)))
+    if FIRME and t >= T["cara"] - 0.4:                   # (antes, mientras se levanta, la pose del clip «salir»)
+        return _pose_firme(t, pose)
     if t >= T["comprime"]:                                # se encorva sobre el puño; al liberar, se yergue de golpe
         enc = suave(tramo(t, T["comprime"], T["quieto"])) * (1 - suave2(tramo(t, T["libera"], T["libera"] + 0.15)))
         lib = suave2(tramo(t, T["libera"], T["libera"] + 0.15)) * (1 - 0.6 * suave(tramo(t, T["libera"] + 0.6, T["fin"])))
