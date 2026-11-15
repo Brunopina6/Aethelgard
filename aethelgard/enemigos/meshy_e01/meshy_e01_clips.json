@@ -16,6 +16,7 @@
   "walk": "e01__walk",
   "attack_01": "e01__attack_prensa",
   "attack_02": "e01__attack_porton",
+  "attack_03": "e01__attack_sello",
   "hit_front": "e01__hit",
   "death": "e01__death"
  },
@@ -25,6 +26,7 @@
   "correr": "e01__walk",
   "ataque": "e01__attack_prensa",
   "porton": "e01__attack_porton",
+  "sello": "e01__attack_sello",
   "recibir_golpe": "e01__hit",
   "derrota": "e01__death"
  },
@@ -76,6 +78,17 @@
    "bucle": false,
    "eventos": {
     "en_el_suelo": 1.3
+   }
+  },
+  "e01__attack_sello": {
+   "duracion": 2.8,
+   "bucle": false,
+   "eventos": {
+    "aviso": 0.2,
+    "fija_direccion": 0.8,
+    "impacto": 1.3,
+    "fin_activo": 1.5,
+    "recupera": 1.5
    }
   }
  },
@@ -144,6 +157,16 @@
    "cadera_z_final_m": 0.4174,
    "cadera_baja_pct_altura": 23.8,
    "fin_vs_reposo_grados": 342.187,
+   "inicio_vs_reposo_grados": 0.0
+  },
+  "e01__attack_sello": {
+   "min_z_malla": -0.0,
+   "min_z_manos": 0.5495,
+   "cadera_baja_max_m": 0.025,
+   "pie_desliz_max_m": 0.0,
+   "pie_z_apoyo_max_m": 0.0,
+   "cadera_baja_pct_altura": 1.4,
+   "fin_vs_reposo_grados": 0.0,
    "inicio_vs_reposo_grados": 0.0
   }
  },

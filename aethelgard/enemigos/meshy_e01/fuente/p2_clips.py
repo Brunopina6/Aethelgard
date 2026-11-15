@@ -1,5 +1,5 @@
-# meshy_e01 · pasos 3 y 4: clips e01__idle, e01__walk, e01__attack_prensa y (14/11, noche) e01__attack_porton,
-# e01__hit y e01__death (horneados a 30 fps), medidas, renders y GLB.
+# meshy_e01 · pasos 3 y 4: clips e01__idle, e01__walk, e01__attack_prensa, (14/11, noche) e01__attack_porton,
+# e01__hit y e01__death y (15/11) e01__attack_sello (horneados a 30 fps), medidas, renders y GLB.
 #   blender -b --factory-startup -P p2_clips.py -- <blend con rig (p1)> <carpeta salida GLB> <carpeta render> [sin_render]
 #
 # Autoría: cada clip es una FUNCIÓN del tiempo que coloca la cadera, la columna, el pecho, el cuello, la cabeza, las
@@ -295,6 +295,33 @@ def c_death(t):
     return por_claves(DERROTA, t)
 
 
+# ------------------------------------------------------------------ 15/11: Sello de Clausura (e01_a3)
+# e01_a3 «Sello de Clausura» (ataques_propuestos.json): 2,8 s; anticipación hasta 1,30; activo [1,30, 1,50); recupera
+# desde 1,50. Poses clave: 0,00 separa las manos del torso · 0,45 las aproxima a la llave del pecho · 0,95 pecho y cabeza
+# miran al sello (en el suelo, delante) · 1,30 extiende ambas palmas · 1,50 se apaga el foco y recupera hasta 2,80.
+# «Root quieto; sólo torso, cabeza y brazos»: la cadera se queda en la del reposo (ni se mueve ni gira) y los pies,
+# plantados; solo columna, pecho, cuello, cabeza, clavículas, hombreras y las manos (objetivos de IK).
+S_SEPARA = simetrica(cadera_loc=(0, 0.0, -0.025), pecho=(0, 0, 0), cabeza=(-2, 0, 0),
+                     mano_L=((0.10, -0.10, 0.14), (-20, 0, -24)), clav_L=(0, -2, 0), hombrera_L=(0, -6, 0))
+S_LLAVE = simetrica(cadera_loc=(0, 0.0, -0.025), columna=(-1, 0, 0), pecho=(-3, 0, 0), cuello=(2, 0, 0), cabeza=(-8, 0, 0),
+                    mano_L=((-0.15, -0.30, 0.40), (-70, 0, -42)), clav_L=(0, 4, 0), hombrera_L=(0, 2, 0))
+S_MIRA = simetrica(cadera_loc=(0, 0.0, -0.025), columna=(4, 0, 0), pecho=(9, 0, 0), cuello=(-4, 0, 0), cabeza=(-16, 0, 0),
+                   mano_L=((-0.13, -0.36, 0.34), (-78, 0, -34)), clav_L=(0, 5, 0), hombrera_L=(0, 3, 0))
+S_PALMAS = simetrica(cadera_loc=(0, 0.0, -0.025), columna=(6, 0, 0), pecho=(12, 0, 0), cuello=(-5, 0, 0), cabeza=(-18, 0, 0),
+                     mano_L=((-0.09, -0.54, 0.40), (-92, 0, -8)), clav_L=(0, 8, -6), hombrera_L=(0, 6, 0))
+S_SOSTIENE = simetrica(cadera_loc=(0, 0.0, -0.025), columna=(6, 0, 0), pecho=(13, 0, 0), cuello=(-5, 0, 0), cabeza=(-19, 0, 0),
+                       mano_L=((-0.09, -0.56, 0.38), (-94, 0, -8)), clav_L=(0, 8, -6), hombrera_L=(0, 6, 0))
+S_RECOGE = simetrica(cadera_loc=(0, 0.0, -0.025), columna=(2, 0, 0), pecho=(4, 0, 0), cabeza=(-6, 0, 0),
+                     mano_L=((-0.06, -0.22, 0.18), (-40, 0, -14)), clav_L=(0, 2, 0))
+SELLO = [(0.0, REPOSO_A, suave), (0.20, S_SEPARA, suave), (0.45, S_LLAVE, suave), (0.95, S_MIRA, suave),
+         (1.30, S_PALMAS, sale), (1.50, S_SOSTIENE, suave), (2.05, S_RECOGE, suave), (2.80, REPOSO_A, suave)]
+T_SELLO = 2.8
+
+
+def c_sello(t):
+    return por_claves(SELLO, t)
+
+
 CLIPS = [
     {"nombre": "e01__idle", "dur": 2.4, "bucle": True, "f": c_idle, "eventos": {}},
     {"nombre": "e01__walk", "dur": T_ANDAR, "bucle": True, "f": c_walk,
@@ -306,6 +333,9 @@ CLIPS = [
                  "recupera": 1.45}},
     {"nombre": "e01__hit", "dur": T_GOLPE, "bucle": False, "f": c_hit, "eventos": {}},
     {"nombre": "e01__death", "dur": T_DERROTA, "bucle": False, "f": c_death, "eventos": {"en_el_suelo": 1.30}},
+    # 15/11: la marca de cerradura desde 0,20 («aviso»), su centro fijo a 0,80 («fija_direccion»), IMPACTO a 1,30
+    {"nombre": "e01__attack_sello", "dur": T_SELLO, "bucle": False, "f": c_sello,
+     "eventos": {"aviso": 0.20, "fija_direccion": 0.80, "impacto": 1.30, "fin_activo": 1.50, "recupera": 1.50}},
 ]
 
 
@@ -508,7 +538,8 @@ if not SIN_RENDER:
     TOMAS = {"e01__idle": [0.0, 1.2], "e01__walk": [0.0, 0.3, 0.6, 0.9],
              "e01__attack_prensa": [0.0, 0.25, 0.65, 0.80, 0.90, 1.10, 1.65, 2.40],
              "e01__attack_porton": [0.0, 0.25, 0.50, 1.00, 1.15, 1.30, 1.45, 1.90, 2.70],
-             "e01__hit": [0.0, 0.12, 0.6], "e01__death": [0.25, 0.85, 1.30, 1.90]}
+             "e01__hit": [0.0, 0.12, 0.6], "e01__death": [0.25, 0.85, 1.30, 1.90],
+             "e01__attack_sello": [0.0, 0.20, 0.45, 0.80, 0.95, 1.30, 1.50, 2.05, 2.80]}
     SOLO_TOMAS = [x for x in argv if x.startswith("tomas=")]
     if SOLO_TOMAS:                                  # (para revisar solo los clips nuevos: tomas=a,b)
         quiero = SOLO_TOMAS[0][6:].split(",")
@@ -557,9 +588,11 @@ json.dump({"id": "meshy_e01", "nombre": "Custodio de Porcelana (nombre de diseñ
            "huesos": len(EXPORTABLES), "deformantes": rig["deformantes"], "max_influencias": rig["max_influencias"],
            "fps": FPS, "textura": "%d px (color, normal, metálico-rugosidad; WebP dentro del GLB)" % RES_TEX,
            "mapa_diseno": {"idle": "e01__idle", "walk": "e01__walk", "attack_01": "e01__attack_prensa",
-                           "attack_02": "e01__attack_porton", "hit_front": "e01__hit", "death": "e01__death"},
+                           "attack_02": "e01__attack_porton", "attack_03": "e01__attack_sello", "hit_front": "e01__hit",
+                           "death": "e01__death"},
            "mapa_juego": {"reposo": "e01__idle", "caminar": "e01__walk", "correr": "e01__walk", "ataque": "e01__attack_prensa",
-                          "porton": "e01__attack_porton", "recibir_golpe": "e01__hit", "derrota": "e01__death"},
+                          "porton": "e01__attack_porton", "sello": "e01__attack_sello", "recibir_golpe": "e01__hit",
+                          "derrota": "e01__death"},
            "velocidad_andar_m_s": round(VEL_ANDAR, 3),
            "clips": {c["nombre"]: {"duracion": c["dur"], "bucle": c["bucle"], "eventos": c["eventos"]} for c in CLIPS},
            "medidas": medidas, "generador": "enemigos/meshy_e01/fuente/p1_rig.py + p2_clips.py (Blender %s)" % bpy.app.version_string},
