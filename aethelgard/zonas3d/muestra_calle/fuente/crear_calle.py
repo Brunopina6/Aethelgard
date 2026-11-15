@@ -137,7 +137,7 @@ MADERA_GRIS = (0.62, 0.58, 0.52)
 VERDE_PUERTA = (0.26, 0.46, 0.38)
 AZUL_POSTIGO = (0.30, 0.52, 0.62)
 ROJO_POSTIGO = (0.66, 0.30, 0.22)
-TEJA = ((0.80, 0.44, 0.30), (0.84, 0.48, 0.33), (0.76, 0.41, 0.29), (0.82, 0.50, 0.36))
+TEJA = ((0.76, 0.43, 0.31), (0.79, 0.46, 0.33), (0.73, 0.41, 0.30), (0.77, 0.47, 0.35))
 PIZARRA = ((0.42, 0.46, 0.56), (0.50, 0.54, 0.62), (0.38, 0.42, 0.52))
 MUSGO = (0.48, 0.56, 0.30)
 PIEDRA = ((0.66, 0.63, 0.58), (0.60, 0.58, 0.55), (0.71, 0.67, 0.61), (0.56, 0.53, 0.50))
@@ -576,7 +576,7 @@ def faldon(M, a_izq, a_der, sube, filas_col, grueso=0.05, solape=0.32, alero_col
         u = -0.05
         while u < largo_u:
             tramo = min(largo_u + 0.05 - u, RND.uniform(0.7, 1.7))
-            col = jit(elige(filas_col), 0.06)
+            col = jit(filas_col[(f * 3 + int(u * 2.3)) % len(filas_col)], 0.035)
             if RND.random() < musgo * 0.55 * (1.0 - f / filas * 0.7):
                 col = mezcla(col, MUSGO, RND.uniform(0.12, 0.32))
             hund = RND.uniform(-0.012, 0.012)
@@ -953,11 +953,25 @@ def torreon(M, V):
     for yy in (0.0, (y1 - y0) * 0.5, y1 - y0 - 0.12):
         cilindro(M, (cx, y0 + yy, cz), [(0, r + 0.03), (0.13, r + 0.03)], n, "madera", MADERA_OSC, suave=True,
                  tapa_arriba=False)
+    for k in range(n):                                   # pies derechos del entramado del torreón (y una cruz de cada dos)
+        a = (k + 0.5) * math.tau / n
+        d = Vector((math.cos(a), 0, math.sin(a)))
+        if d.z < -0.3:
+            continue                                     # (los del lado de la casa no se ven)
+        viga(M, Vector((cx, y0 + 0.12, cz)) + d * (r + 0.02), Vector((cx, y1 - 0.12, cz)) + d * (r + 0.02), 0.1,
+             "madera", MADERA_OSC, alto=0.07)
+        if k % 2 == 0:
+            a2 = (k + 1.5) * math.tau / n
+            d2 = Vector((math.cos(a2), 0, math.sin(a2)))
+            hm = (y1 - y0) * 0.5
+            viga(M, Vector((cx, y0 + hm + 0.1, cz)) + d * (r + 0.015), Vector((cx, y1 - 0.15, cz)) + d2 * (r + 0.015),
+                 0.08, "madera", MADERA_OSC, alto=0.06)
     for k, (ang, luz) in enumerate(((math.radians(70), True), (math.radians(150), False), (math.radians(10), False))):
         d = Vector((math.cos(ang), 0, math.sin(ang)))
         c = Vector((cx, y0 + 0.75, cz)) + d * (r + 0.02)
         rot = Matrix((d.cross(Vector((0, 1, 0))) * -1, Vector((0, 1, 0)), d)).transposed()
-        caja(M, c, (0.32, 0.48, 0.04), "brillo" if luz else "hierro", LUZ_VENTANA if luz else CRISTAL, rot=rot)
+        caja(M, c, (0.3, 0.44, 0.04), "brillo" if luz else "hierro", (0.86, 0.62, 0.34) if luz else CRISTAL, rot=rot)
+        caja(M, c + d * 0.025, (0.04, 0.44, 0.03), "madera", MADERA_OSC, rot=rot)                   # parteluz
         caja(M, c + d * 0.03 + Vector((0, 0.36, 0)), (0.56, 0.08, 0.08), "madera", MADERA_OSC, rot=rot)
         caja(M, c + d * 0.04 + Vector((0, -0.34, 0)), (0.56, 0.07, 0.12), "madera", MADERA_OSC, rot=rot)
     # el tejado cónico de pizarra en hiladas, con alero
