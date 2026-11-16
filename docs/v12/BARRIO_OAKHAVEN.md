@@ -354,3 +354,206 @@ llamadas y ≈ 65 000 primitivas (casi todo, los personajes). **Medido en el PC:
   `prueba_muestra_calle`.
 - **Pendiente de móvil**: FPS, PSS y tirones en el Redmi (perfil bajo) al entrar en cada interior. La primera entrada
   carga el GLB en un hilo al acercarse (a menos de 8 m) y usa los mismos programas que la muestra (ya precalentados).
+
+## 7. Sección C: vida, misión y conocimiento (agente C, rama `area-barrio-c` desde `a4cbbe8`)
+
+> 16/11/2026. Todo sigue siendo **PROPUESTA [P]**, solo en el banco de Auditoría y **apagado fuera de él** (`Barrio.activado()`
+> exige `banco_pruebas` y `barrio_v12`; fuera, las señales no hacen nada y la misión queda oculta aunque la partida traiga
+> sus claves). La guardia del prólogo sigue en `puerta(id)` y, además, ninguna señal ni pieza cambia nada sin
+> `prologo_visto` y `pv_02`.
+
+### 7.1 Qué hay
+
+**Archivos (dueño C):**
+- `ciudades/oakhaven_barrio.gd`; `zonas3d/barrio/{barrio_vivo.gd, npc_barrio.gd, utensilios.gd}`;
+- `dialogos/oakhaven/barrio/*.dtl` (24) y `dialogos/personajes/oakhaven/barrio/*.dch` (6);
+- `fuente/crear_caballo.py` y las adiciones de `fuente/crear_npc_chibi.py` (125 líneas añadidas, ninguna cambiada);
+- los modelos `personajes/npc_v12/{panadera,porteador,encargada_establo,caballo}/` y los atlas `herrero/damian.png`,
+  `campesina/odila.png` y `nina/nela.png`;
+- las pruebas `pruebas/{prueba_barrio_datos,prueba_barrio_vivo,fotos_barrio_recorrido}.gd` (en `lista_pruebas.txt`).
+
+**Fuera de la carpeta, lo mínimo:** una línea en `encargos.gd` (FUENTES) y la nota del farol en `hallazgos.gd` («el barrio
+de prueba da Éter ×2, no el farol»). `project.godot` **no se toca**: los `.dch` se registran en tiempo de juego
+(`registrar_dialogic`); el import de Godot lo reescribe con los personajes nuevos y se deshace antes de cada commit.
+
+#### Rutinas (plan §4) — `barrio_vivo.gd`
+- **Programas compilados** (pasos `ir`, `tarea`, `coger`, `dejar`, `entrar`/`salir` de un interior y `evento`): el paso que
+  toca es `(reloj − retraso) mod ciclo`, O(1). Sin navegación ni física: posición, clip y **dónde está cada objeto** salen
+  del instante. Fuera de la vista o lejos no se dibuja, no se anima y no tiene choques (Kael no los pisa por `ocupa()`).
+  Animación cada fotograma a < 12 m, a 15 Hz hasta 28 m, quieta más lejos; no se dibuja a > 34 m.
+- **Ciclos medidos** (con los interiores sin hacer, cada tramo de dentro dura 3 s):
+
+  | Vecino | normal | carro_parado (misión empezada) | reparto (carro arreglado) |
+  |---|---|---|---|
+  | Maela, la panadera | 125,5 s (22 tramos) | 87,6 s | 161,5 s |
+  | Tobías, el porteador | 303,7 s (la pila del patio está a ~72 m del carro) | 119,9 s (sentado junto al carro) | 173,0 s |
+  | Brena, la encargada del establo | 110,7 s (24 tramos) | — | — |
+
+  - **Maela**: amasa y hornea **dentro** del horno, coge la **bandeja**, sale, la deja en el mostrador, llena la **cesta** y
+    la lleva al puesto del pan de la plaza; vuelve, recoge y mete la bandeja. Con la misión empezada espera junto al
+    carro mirando la rueda; con él arreglado, la bandeja va al carro.
+  - **Tobías**: del carro de caravanas, una **caja** a la pila del patio de talleres y un **saco de harina** a la pila junto
+    a la puerta del horno (fuera de su eje). Con el carro parado, sentado junto a él; con él arreglado, carga cajas en el
+    carro del horno.
+  - **Brena**: **cepillo** del gancho → cepilla a Avena (25 s) → lo cuelga → **cubo** → pozo (llenar) → abrevadero (verter:
+    se ve el agua y Avena bebe 14 s) → deja el cubo → echa heno (Avena come 20 s) → devuelve el cubo.
+  - **Damián** (carretero), **Odila** (costurera) y **Nela** (su hija), en su puesto con su tarea. Con su interior hecho por
+    B (`Interiores.ORIGEN`), dentro (`int_taller_potro`, `int_vivienda_odila`, `int_vivienda_nela`). Mientras no, junto a
+    su puerta, fuera de umbrales y caminos (`Barrio.PUESTOS[*].fuera`).
+- **Objetos sujetos:** una ubicación lógica por objeto (`sitio:<nombre>` o `mano`); una copia por sitio y otra en la mano
+  (BoneAttachment3D en `pecho` o `mano.R` del chibi, colocada con la pose de reposo; en la cápsula, un punto fijo). El
+  cambio va a mitad de coger o dejar, por el reloj, nunca por la pose del clip. Al compilar se comprueba que **nada se
+  coge donde no está ni se deja sin llevarlo** y que cada programa acaba donde empieza (`errores` vacío). La caja y el saco
+  que Tobías deja en las pilas vuelven al carro al empezar su ciclo siguiente (se ve un instante, una vez cada 5 min).
+- **Hablar interrumpe:** si cruza un umbral, primero cruza; si coge o deja, termina; se para con su reloj congelado, se
+  gira hacia Kael y usa `llevar_quieto` si lleva algo (no `hablar`). Al acabar el diálogo (o la frase suelta, 3,2 s) sigue
+  donde estaba sin perder objetos (`retraso += pausa`). Si Kael se le pone delante, espera (nunca en un umbral). Kael
+  nunca queda atrapado: si ya está dentro del círculo de un vecino, puede salir.
+- **La misión cambia el programa** (`Barrio.programa`), no la hora: al empezar el ciclo siguiente, o al momento si no se le
+  ve. El reloj, los retrasos y los programas viven en la meta de sesión `barrio_reloj` (CAL y «Guardar y recargar» no los
+  reinician; `banco_pruebas.salir()` la quita).
+- **Avena** (yegua) atada ante el establo, mirando al abrevadero: no anda; `reposo`, `beber`, `comer` y `sacudir` según la
+  rutina de Brena. Nada de montura ni carreras. Kael no la atraviesa.
+
+#### Misión «Antes de que se enfríe» (plan §5) — `oakhaven_barrio.gd`
+- **Pasos:** carro → taller → galga → medir → pasador → reparar → entrega (la cesta) → volver.
+- **Estados** (bool en `mazmorras["oak_barrio"]`): `enf_carro_visto`, `enf_taller`, `enf_galga`, `enf_medida`, `enf_pasador`,
+  `enf_reparado`, `enf_cesta`, `enf_entrega`, `enf_fin`, `viv_llamado` y los `j_*` del conocimiento.
+- `empieza = cond:enf_empieza` (activado, prólogo y pv_02, y carro visto, taller, medida o pasador).
+  `fin = cond:enf_terminada` (activado y `enf_fin`: apagado nunca sale «hecha»). **Sin cuenta atrás.**
+- **Fuera de orden** (probado):
+  - la galga suelta se guarda y NO empieza (su pista sale al empezar);
+  - el taller primero (Damián lo ha oído por la rampa) empieza la misión;
+  - medir antes del taller vale con la galga (y pone el carro visto);
+  - el pasador solo con la medida; la cesta solo con el carro arreglado; el premio solo tras la entrega;
+  - todas las señales son idempotentes (salir a mitad o repetir un diálogo no rompe nada).
+- **La galga es un ESTADO** (`enf_galga`), no inventario. Dentro de la vivienda, la pieza «Coger la galga» de la repisa
+  (`int_vivienda_repisa`). Mientras B no tenga la vivienda, **Odila la trae a la puerta** (`bar_odila_galga_puerta`, con
+  `cond:vivienda_cerrada`). Pista del taller: el clavo vacío con la silueta (`int_taller_clavo`).
+- **El carro** (`carro_horno`) hace lo que toca según el estado: examinar (empieza), medir con la galga o poner el pasador.
+  El botón es fijo («Examinar el carro»): ver la petición de contrato 6.3.
+- **Premio único: «Éter» ×2** (decisión del coordinador; catálogo real), una sola vez: `enf_fin` se pone ANTES de darlo.
+- La trastienda del taller se abre con `enf_taller` (`paso_interno("trastienda")`); la cortina del horno y la alcoba,
+  siempre. La primera vez se «llama» a la vivienda (Odila abre, `viv_llamado`) **solo cuando B la tenga hecha** (así la
+  prueba de A, que espera «en obras», sigue igual).
+
+#### Conocimiento sabe / ha oído / cree (plan §6)
+- `AFIRMACIONES` (verdad o no) y `SABER` (vecino, afirmación, modo, «de» y «si»; gana la última regla que se cumple):
+  - Maela **sabe** que se partió el pasador; Tobías lo **ha oído** a Maela (y lo sabe con el carro arreglado);
+  - Brena **cree** (falso) que Avena le dio una coz al carro, hasta que Kael examina a Avena (`j_sabe_no_culpa_caballo`)
+    y Brena cambia de frase;
+  - Damián lo ha oído por la rampa (o a Kael) y lo sabe con la medida; Damián, Odila y Nela saben que la galga está en casa.
+- Cada diálogo declara `dice` y sus señales `bar:<modo>:<af>:<npc>` guardan bools DEL JUGADOR (`j_<modo>_<af>` y
+  `j_<modo>_<af>_<npc>`). **Solo lo sabido de primera mano avanza** (Maela o el propio carro); lo oído y lo creído va al
+  Diario con su fuente («Tobías (se lo oyó a Maela): …», «Brena cree que…»). Opciones «¿Quién te lo dijo?» y «¿Lo viste tú?».
+- **Rumores:** solo caravanas (el retraso de la del sur), caminos (barro, la ronda doble de la guardia) y precios (portes,
+  peajes, hilo). Ningún texto nombra niebla, Sello, Érebo, tapiz, corona, niño ni aldeas; «se quedó en casa», nunca «se le
+  olvidó». Frases al pasar ≤ 48, globos y avisos ≤ 110, pistas ≤ 15 palabras.
+
+#### Modelos (Blender 5.2.3 por guion, respetando el turno de `horneado.lock`)
+- Oficios nuevos **sin herramienta horneada** (las manos libres para los objetos): `panadera` (Maela, 5804 triángulos),
+  `porteador` (Tobías, 5360) y `encargada_establo` (Brena, 5768), con el esqueleto común de 22 huesos. Clips nuevos solo
+  para ellos: `caminar_llevar`, `llevar_quieto`, `coger`, `dejar`, `hornear`, `amasar`, `cepillar` y `verter`.
+- Personas nuevas de oficios que ya existían, **solo su atlas** (sacado a otra carpeta con el 4.º argumento y copiado):
+  Damián (`herrero`), Odila (`campesina`) y Nela (`nina`). Ningún GLB existente cambia.
+- **Avena es un PROTOTIPO** (`fuente/crear_caballo.py`: 2612 triángulos, 17 huesos, atlas propio, sin Hunyuan3D), para
+  enseñarlo al usuario, no el definitivo. Láminas en `D:\REBELUM_diagnostico\barrio_oakhaven\c\modelos\caballo_*.png`.
+  Sin el GLB, una reserva de cajas.
+- Utensilios: **cajas de reserva** opacas de su color y tamaño (`utensilios.gd`) hasta que B entregue
+  `zonas3d/barrio/modelos/utensilios.glb` (un nodo por utensilio con su nombre y el pivote en el punto de agarre; se usa
+  solo, sin tocar código).
+
+### 7.2 Cómo se prueba
+
+- **`pruebas/prueba_barrio_datos.gd`** (auto, sin ventana): controles de los comprobadores; apagado no cambia nada (la
+  misión oculta aunque la partida traiga sus claves); condiciones (`error_condicion`), anclas del contrato, piezas y
+  puestos de fuera (andables, fuera de umbrales, a ≥ 3 m de las puertas, a ≥ 2,5 m entre sí); textos; SABER coherente y
+  cada diálogo con lo que su vecino sabe, ha oído o cree; la misión en orden normal, galga primero, taller primero y medir
+  antes del taller, **guardando y cargando en cada paso**; Éter ×2 una vez; sin pv_02 o sin el prólogo no empieza;
+  partida antigua; Dialogic: los 6 personajes y **29 recorridos** de diálogos y opciones (habla solo su vecino, cada
+  frase con su `.dch`, llegan todas las señales).
+- **`pruebas/prueba_barrio_vivo.gd`** (auto, sin ventana, con la región de verdad en el banco): programas sin errores;
+  ciclos completos muestreados cada 0,1 s (una ubicación por objeto, coger y dejar junto a su sitio, nada en umbrales ni
+  delante de puertas, nadie pisa a Avena, lo que se ve es lo que dice su ubicación); **hablar en cada paso** (13 de Maela,
+  11 de Tobías, 20 de Brena: el resto, dentro del horno) y en el umbral (primero cruza); Dialogic desde el botón de la
+  región (Brena con el cepillo, `llevar_quieto`, reloj congelado, sigue al acabar); salto fuera de la vista igual a lo
+  simulado; la misión cambia los programas; Kael no pisa ni queda atrapado; quien anda espera; Avena bebe y se ve el
+  agua. **`us_proceso` de la vida: 170-320 µs en el PC** (límite de la prueba 1,5 ms).
+- **`pruebas/fotos_barrio_recorrido.gd`** (ventana, controles normales): la misión entera dos veces (orden normal con
+  «Guardar y recargar» a mitad, y la galga primero), con clics, Intro y el botón de recargar; capturas y `recorrido.txt`.
+  `modo=rutinas` visita cada rutina (vídeo). Resultado: ver 6.4.
+- Batería (`ejecutar_pruebas.ps1 -Solo prueba_barrio_trazado,prueba_barrio_datos,prueba_barrio_vivo,prueba_banco_pruebas,
+  prueba_banco_pruebas_3d,prueba_muestra_calle,prueba_encargos,prueba_diario_misiones,prueba_hallazgos,prueba_ciudad_datos,
+  prueba_oakhaven_propuestas,prueba_mundo_vivo`): **12 superadas, 0 fallidas**; partida real, carpeta real de datos y
+  proyecto sin cambios. (La del trazado de A sigue igual: por eso la vivienda solo se «llama» con el interior hecho.)
+
+### 7.3 Peticiones de contrato (C no toca archivos de A ni de B)
+
+**A A (región `barrio.gd`):**
+1. **Botón según el estado:** en `piezas_al_alcance()`, usar `Barrio.boton(pid)` (ya existe) en vez de
+   `PIEZAS[pid]["boton"]`. El carro diría «Medir el eje con la galga» y «Poner el pasador» en su momento (hoy dice
+   siempre «Examinar el carro» y el aviso cuenta lo que se ha hecho).
+2. **Aviso y diálogo:** al empezar un diálogo (`iniciar_dialogo`), ocultar el aviso que esté a la vista (el del carro se
+   superpone al globo de Maela un instante; se ve en la captura `A02_maela`).
+3. **`ocupa()` y el toque:** `_ajustar_destino` para en la primera muestra prohibida; si la recta roza el círculo de un
+   vecino (0,42 m), Kael no se mueve y hay que tocar otro sitio. `ocupa()` ya deja SALIR a Kael si está dentro del círculo;
+   sugerencia: que la región deje pasar rozando (o rodee) cuando el destino está más allá del vecino.
+4. **Prueba del trazado:** ya se puede añadir «examinables a ≥ 2,5 m» con `Barrio.PIEZAS` (la de datos de C ya lo mira
+   para los de fuera).
+5. **Integración:** precalentar en `carga.gd` los GLB nuevos (`panadera`, `porteador`, `encargada_establo`, `caballo`) y,
+   cuando exista, `barrio_npc.gdshader` (la luz de los vecinos por sonda: hoy usan el material de la familia chibi con la
+   luz en tiempo real de la fase 0, sin parpadeo porque no hay `_luz_kael` horneada).
+6. **Sombras:** la región no pasa el perfil a los vecinos después del `_ready`; la vida lee `region.perfil.sombras` al
+   montar (CAL recarga la escena, así que vale).
+
+**A B (interiores):**
+1. Las anclas que usa C (todas del contrato): `int_horno_{artesa,boca,salida,estante}`, `int_taller_{potro,clavo,salida}` y
+   `int_vivienda_{repisa,rincon,odila,nela,salida}`. `int_<id>_salida` es el punto de la puerta por dentro por donde
+   entran y salen los vecinos (Maela entra y sale del horno por ahí).
+2. Lo andable de dentro: Maela anda en **rectas** entre `salida`, `boca` y `artesa`: que no crucen muebles.
+3. `abrir_paso("trastienda", …)` debe preguntar a `Barrio.paso_interno("trastienda")` (cerrada hasta `enf_taller`).
+4. `utensilios.glb`: un nodo por utensilio con su nombre del contrato y el pivote en el punto de agarre (base apoyada en
+   y = 0); `utensilios.gd` lo usa solo. Sin él, cajas de reserva.
+5. Al hacer la vivienda, la primera vez se «llama» (`Barrio.puerta("vivienda")` devuelve el aviso de Odila y pone
+   `viv_llamado`); la prueba del trazado de A, que hoy espera «en obras», tendrá que aceptarlo.
+6. Con el interior hecho, Damián, Odila y Nela pasan dentro solos (`Barrio.interior_hecho`), y la galga se coge de la
+   repisa (pieza `galga`) en vez de traerla Odila a la puerta.
+
+### 7.4 Capturas y vídeos (`D:\REBELUM_diagnostico\barrio_oakhaven\c\`)
+
+- `recorrido\`: el recorrido jugado (los 6 tramos, cada paso de la misión en orden normal y con la galga primero, el Diario
+  al empezar y al acabar, Avena) y `recorrido.txt`. En `recorrido7\` la misión entera, **dos veces, completa con los
+  controles normales** (A: orden normal con «Guardar y recargar» a mitad, Éter ×2 una vez y nada al repetir; B: la galga
+  primero, que no empieza la misión, y medir, que sí). Sus 2 fallos eran de la prueba (al examinar a Avena el botón
+  ofrecía «Hablar con Brena», que estaba al lado): se corrigió el acercamiento y la grabación lo confirma
+  (`video_mision
+ecorrido.txt`; su único aviso es un punto detrás de Avena, también corregido).
+- `modelos\`: láminas del prototipo de Avena (`caballo_tres_cuartos/perfil/frente/beber/comer/sacudir.png`).
+- `video\`: `mision.mp4` (3 min 38 s: la misión A entera jugada, con la recarga a mitad) y `rutinas.mp4` (1 min 04 s:
+  Brena cepilla y vierte, Tobías coge y lleva la caja, Maela deja la bandeja y coge la cesta), del Movie Maker a 30 fps y
+  1280×720 pasados a MP4 H.264 con ffmpeg (los `.avi` originales, al lado). Capturas de cada rutina en `rutinas2\`.
+- Las carpetas `recorrido`, `recorrido2` a `recorrido6` y `rutinas` son intentos anteriores (con fallos de la prueba ya
+  corregidos); no valen como resultado.
+
+### 7.5 Estado (separado)
+
+- **Diseñado:** las 3 rutinas, los 3 puestos y Avena; la misión con sus 8 pasos y el fuera de orden; el modelo sabe / ha
+  oído / cree; los textos y las 6 voces; el contrato con A y B (6.3).
+- **Construido:** todo lo de 6.1 (datos, vida, diálogos, modelos por guion, prototipo de Avena y pruebas).
+- **Integrado:** en la región de A tal como está (fase 0): la vida monta, las piezas y los vecinos salen en el botón, los
+  diálogos y sus señales pasan por `iniciar_dialogo` y `Barrio.aplicar`, guardar y «Guardar y recargar» conservan la
+  misión y el reloj. **Sin integrar** (esperan a B): los interiores (Maela dentro del horno, Damián en el taller, Odila y
+  Nela en casa, la galga en la repisa, el clavo, la trastienda); hoy esa parte está preparada y documentada, y lo de dentro
+  se juega fuera (Odila trae la galga a la puerta).
+- **Probado en el PC:** `prueba_barrio_datos` y `prueba_barrio_vivo` superadas; el recorrido jugado (6.4); la batería
+  del encargo (6.2).
+- **Pendiente de móvil (Redmi):** nada medido aún. La vida cuesta 0,17-0,32 ms en el PC; hay que medir en el Redmi el
+  coste de 6 chibis animados + Avena (llamadas, primitivas, us_proceso) con el perfil bajo, y ver la luz de los vecinos
+  cuando A hornee (riesgo 1 del plan: `barrio_npc.gdshader`).
+
+### 7.6 Decisiones para el usuario (propuestas, sin canon)
+
+- Los nombres y oficios (Maela, Tobías, Brena, Damián, Odila, Nela, Avena) y sus textos son PROPUESTA.
+- Avena es un prototipo de guion: si gusta la idea, falta su versión buena (o un caballo hecho a mano).
+- El ciclo de Tobías es largo (≈ 5 min) porque la pila del patio de talleres está lejos del carro: se puede acortar
+  llevando la caja a la plaza.

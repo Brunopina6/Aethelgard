@@ -270,8 +270,8 @@ func _junto_a_avena() -> Vector3:
 	for i in 16:
 		var a := TAU * i / 16.0
 		var q := c + Vector3(sin(a), 0, cos(a)) * 1.4
-		if not T.andable(q.x, q.z) or v.vivo.ocupa(q):
-			continue
+		if not T.andable(q.x, q.z) or v.vivo.ocupa(q) or not v.vivo.recta_libre(_kael(), q):
+			continue                                     # (se llega en línea recta: sin rodear a Avena)
 		if _plana(q, brena) > nota:
 			nota = _plana(q, brena)
 			mejor = q
@@ -535,12 +535,13 @@ func _rutinas() -> void:
 			["maela", "coger", 20.0]]:
 		var id: String = paso[0]
 		var w: Dictionary = v.vivo.vecinos[id]
-		var objetivo := -1.0
+		var objetivo := -INF
 		for s in w["segs"]:
 			if s["lugar"] == "" and s["clip"] == paso[1]:
-				objetivo = float(s["t0"]) - 4.0
+				objetivo = fposmod(float(s["t0"]) - 4.0, float(w["ciclo"]))
 				break
-		if objetivo < 0.0:
+		if objetivo == -INF:
+			_nota("rutina %s: sin «%s» fuera" % [id, paso[1]])
 			continue
 		var tau: float = v.vivo.estado_de(id)["tau"]
 		v.vivo.avanzar_reloj(fposmod(objetivo - tau, float(w["ciclo"])))   # (adelanta el reloj del barrio a ese momento)
