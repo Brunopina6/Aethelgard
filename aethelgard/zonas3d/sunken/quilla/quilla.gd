@@ -133,6 +133,7 @@ func _montar() -> void:
 		if cuerpo.get_child_count() == 0:
 			cuerpo.queue_free()
 	_crear_sombra_kael()
+	_sin_compensar()
 	var Obreros = load(RAIZ + "obreros.gd")
 	if Obreros != null and casco.region != null:
 		obreros = Obreros.new()
@@ -214,6 +215,54 @@ func apartar(z_kael: float, z_camara: float, region_: Node) -> void:
 
 # ================================================================= Kael: sondas y sombra de contacto
 
+# La luz horneada es la misma en los tres perfiles: el brillo extra del perfil sin sombras (vista3d.gd,
+# _compensar_sin_sombras: «brillo_sin_sombras» de la escena, 1,15 en Sunken) haría el bajo más claro que el medio.
+# Se deshace aquí, solo con la Quilla horneada.
+func _sin_compensar() -> void:
+	if not horneado or Engine.has_meta("luz_sin_compensar") or bool(casco.perfil.get("sombras", false)):
+		return
+	var region: Node = casco.region
+	var we = region.get_node_or_null("Ambiente") if region != null else null
+	var k = region.get("brillo_sin_sombras") if region != null else null
+	if not we is WorldEnvironment or k == null or float(k) <= 0.0:
+		return
+	var env: Environment = (we as WorldEnvironment).environment
+	env.adjustment_brightness /= float(k)
+	env.adjustment_contrast /= 1.0 + (float(k) - 1.0) * 0.3
+
+
+# El sol de Kael (y de Lya y Garon, que le siguen): una copia del sol de la escena que solo les alumbra a ellos (capa
+# 10). Las sondas la apagan cuando Kael pisa la sombra horneada; el sol de siempre sigue igual para el agua, los vecinos
+# y la cuadrilla (antes, al bajar el único sol, la laguna se oscurecía con Kael). La sombra en tiempo real del sol de la
+# escena ya no hace falta (lo horneado no la recibe ni la proyecta): la lleva solo el de Kael.
+const CAPA_KAEL := 1 << 9
+var sol_kael: DirectionalLight3D
+var _capas_hechas := 0
+
+
+func _preparar_sol_kael(escena: Node) -> void:
+	var sol: DirectionalLight3D = escena.get("sol")
+	if sol == null:
+		return
+	sol_kael = sol.duplicate() as DirectionalLight3D
+	sol_kael.name = "SolKael"
+	sol_kael.light_cull_mask = CAPA_KAEL
+	escena.add_child(sol_kael)
+	sol.light_cull_mask = sol.light_cull_mask & ~CAPA_KAEL
+	sol.shadow_enabled = false
+	_sol_base = sol_kael.light_energy
+
+
+func _capas_grupo(escena: Node) -> void:
+	var n := 0
+	for raiz in [escena.get("kael"), escena.get("grupo")]:
+		if raiz is Node:
+			for g in (raiz as Node).find_children("*", "GeometryInstance3D", true, false):
+				(g as GeometryInstance3D).layers = CAPA_KAEL
+				n += 1
+	_capas_hechas = n
+
+
 func _crear_sombra_kael() -> void:
 	var hs: Array = luz.get("hacia_sol", [-0.786, 0.530, 0.318])
 	var lejos := -Vector2(hs[0], hs[2]).normalized()
@@ -256,24 +305,19 @@ func cada_fotograma(delta: float, escena: Node) -> void:
 	if kael == null:
 		return
 	if horneado:
-		var sol: DirectionalLight3D = escena.get("sol")
-		var amb: Environment = null
-		var we = escena.get_node_or_null("Ambiente")
-		if we is WorldEnvironment:
-			amb = (we as WorldEnvironment).environment
-		if sol != null and _sol_base < 0.0:
-			_sol_base = sol.light_energy
-		if amb != null and _amb_base < 0.0:
-			_amb_base = amb.ambient_light_energy
+		if sol_kael == null:
+			_preparar_sol_kael(escena)
+		if Engine.get_process_frames() % 30 == 0:                # (el grupo puede crear mallas después: las armas)
+			_capas_grupo(escena)
 		var v := sonda(kael.global_position)
 		var k := 1.0 - exp(-6.0 * delta) if _sombra_lista else 1.0
+		if not _sombra_lista:
+			_capas_grupo(escena)
 		_sombra_lista = true
 		_sol_k = lerpf(_sol_k, v.x, k)
 		_cielo_k = lerpf(_cielo_k, v.y, k)
-		if sol != null:
-			sol.light_energy = _sol_base * (0.12 + 0.88 * _sol_k)
-		if amb != null:
-			amb.ambient_light_energy = _amb_base * (0.7 + 0.3 * _cielo_k)
+		if sol_kael != null:
+			sol_kael.light_energy = _sol_base * (0.12 + 0.88 * _sol_k)
 		var s := clampf(_sol_k, 0.0, 1.0)
 		var p := kael.global_position
 		for m in materiales_sombra:
