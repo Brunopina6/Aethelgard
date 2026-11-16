@@ -1,0 +1,22 @@
+{
+ "lino": {
+  "ancho_px": 196,
+  "caras": 456
+ },
+ "farol": {
+  "ancho_px": 59,
+  "caras": 81
+ },
+ "macetas": {
+  "ancho_px": 97,
+  "caras": 906
+ },
+ "banco": {
+  "ancho_px": 140,
+  "caras": 54
+ },
+ "cantaro": {
+  "ancho_px": 79,
+  "caras": 223
+ }
+}

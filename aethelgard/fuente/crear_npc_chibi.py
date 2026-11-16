@@ -1214,7 +1214,11 @@ oficio("campesina", figura=Figura(sb=0.97, sx=0.96, st=0.98, sh=1.02, ojo=(0.17,
                                        tela=(0.94, 0.92, 0.86), extra=(0.85, 0.25, 0.18)),
                  "rosa": P_("clara", (0.86, 0.66, 0.36), "azul", ojos="normal", boca="risa",
                             ropa=(0.86, 0.62, 0.70), ropa2=(0.45, 0.58, 0.36), acento=(0.98, 0.95, 0.88),
-                            tela=(0.96, 0.94, 0.90), extra=(0.95, 0.55, 0.75))})
+                            tela=(0.96, 0.94, 0.90), extra=(0.95, 0.55, 0.75)),
+                 # (16/11, Arboleda Mítica, tramo experimental: Yedra [P], la hospedera; paleta lima, crema y oro)
+                 "yedra": P_("clara", (0.42, 0.26, 0.15), "verde", ojos="normal", boca="sonrisa",
+                            ropa=(0.42, 0.56, 0.24), ropa2=(0.62, 0.54, 0.40), acento=(0.80, 0.74, 0.58),
+                            tela=(0.88, 0.85, 0.78), extra=(0.37, 0.58, 0.20))})
 
 
 # --- anciano: encorvado, calvo con barba larga, bastón ----------------------------------------------------------------------
@@ -1258,7 +1262,10 @@ oficio("anciana", figura=Figura(sb=0.92, sx=0.97, st=1.08, sh=1.0, ojo=(0.17, 0.
                               ropa=(0.30, 0.40, 0.30), ropa2=(0.40, 0.30, 0.22), acento=(0.70, 0.55, 0.60)),
                  "abuela_palomas": P_("morena", (0.80, 0.78, 0.76), "pardo", ojos="mayor", boca="sonrisa",
                                       arrugas=True, ropa=(0.55, 0.30, 0.30), ropa2=(0.30, 0.28, 0.36),
-                                      acento=(0.85, 0.80, 0.62))})
+                                      acento=(0.85, 0.80, 0.62)),
+                 # (16/11, Arboleda Mítica, tramo experimental: la abuela Nívea [P], la de «abajo todo es gris»)
+                 "nivea": P_("clara", (0.95, 0.95, 0.97), "azul", ojos="mayor", boca="sonrisa", arrugas=True,
+                             ropa=(0.40, 0.50, 0.60), ropa2=(0.58, 0.52, 0.42), acento=(0.52, 0.62, 0.42))})
 
 
 # --- niño: cabeza grande, gorra, espada de madera ----------------------------------------------------------------------------
