@@ -1,7 +1,8 @@
 extends Node
 # Recursos (autoload, Godot 4.x): guarda en memoria lo que se ha cargado para que no haya tirones.
 #   Grupo "comun": lo carga la pantalla de carga (carga.gd) y no se libera nunca.
-#   Grupo "zona": lo que usa la zona en la que estás; se libera al volver al mapa del mundo.
+#   Grupo "zona": lo que usa la zona en la que estás; se libera al volver al mapa del mundo (y al entrar en el banco de
+#   pruebas de Auditoría o salir de él).
 # Mientras un recurso esté guardado aquí, cualquier load() de esa ruta en otro script es instantáneo
 # (Godot devuelve el mismo recurso ya cargado). Los scripts pueden pedirlo con Recursos.obtener(ruta).
 # También cambia de escena (cambiar_escena): pantalla negra, carga en segundo plano (con una línea
@@ -18,6 +19,7 @@ const EXCLUIR := ["res://addons/", "res://para_meshy/", "res://.godot/", "res://
 const FPS_COMBATE := 60
 const FPS_NORMAL := 30
 const ESCENA_COMBATE := "res://combate.tscn"
+const ESCENA_BANCO := "res://banco_pruebas.tscn"   # (banco_pruebas.gd, ESCENA)
 const ORO := Color("E8C46A")
 # Contador de FPS pequeño arriba en el centro, para medir en el móvil. Ponlo en false para el juego final.
 const MOSTRAR_FPS := true
@@ -493,6 +495,8 @@ func cambiar_escena(ruta: String) -> void:
 		escena = ResourceLoader.load_threaded_get(ruta) as PackedScene
 	if ruta == "res://mapa.tscn" and desde != ESCENA_COMBATE and desde != ruta:   # se sale de una zona o mazmorra
 		liberar_grupo("zona")
+	elif ESCENA_BANCO in [ruta, desde]:   # (16/11) al volver al banco de pruebas o al salir de él, lo de la zona probada
+		liberar_grupo("zona")             # (la isla, el tramo de la Arboleda...) tampoco se queda en memoria
 	var err := OK
 	if escena != null:
 		err = get_tree().change_scene_to_packed(escena)

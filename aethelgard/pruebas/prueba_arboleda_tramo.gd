@@ -16,6 +16,8 @@ extends SceneTree
 #      (y en su archivo), y el dibujo se ve en la Hospedería. La Cinta de Lumi sigue fuera (hallazgos.gd).
 #   F. Hospedería: entrar (la isla se oculta), Yedra, dormir (cobra 20 y cura), sin dinero (aviso de error), guardar
 #      dentro (pos_isla = la puerta de la terraza; al volver a cargar se aparece fuera), salir, ir al portal y al mapa.
+#   H. «Volver al banco» (Recursos.cambiar_escena con destino el banco) suelta las texturas de la isla y del tramo (grupo
+#      «zona»), y salir del banco hacia otra escena suelta lo que hubiera (revisión del 16/11).
 #   G. Frases ≤ 110 y sin vetos (D-033 y D-073; y nada que explique la niebla).
 # Uso: godot --path aethelgard --resolution 1600x720 --script res://pruebas/prueba_arboleda_tramo.gd -- <carpeta> sin_prologo
 # Imprime «FALLOS: n» y sale con 1 si hay alguno.
@@ -551,5 +553,27 @@ func _hospederia(v) -> void:
 	var en_zona: Array = R.grupos["zona"].keys().filter(func(k): return str(k).begins_with(CARPETA))
 	_ok(en_zona.is_empty(), "F: en el mapa siguen cargados %d recursos del tramo" % en_zona.size())
 	hechos.append("F: salir a la terraza, bajar por el portal y llegar al mapa (recursos del tramo soltados)")
+	await _volver_al_banco()
 	BP.salir()
 	_ok(not FileAccess.file_exists(BP.ARCHIVO), "F: la partida del banco no se borra al salir")
+
+
+# H: lo de la isla y del tramo (grupo «zona» de Recursos) no se queda en memoria al volver al banco ni al salir de él.
+func _de_zona() -> Array:
+	return R.grupos["zona"].keys().filter(func(k): return str(k).begins_with(CARPETA) or str(k).begins_with("res://isla/"))
+
+
+func _volver_al_banco() -> void:
+	R.cambiar_escena(ESCENA)
+	var v = await _esperar_escena(ESCENA)
+	_ok(v != null and not _de_zona().is_empty(), "H: al volver al tramo no se carga nada de la isla ni del tramo en «zona»")
+	var n := _de_zona().size()
+	R.cambiar_escena(BP.ESCENA)                    # (como el botón «Volver al banco» de recursos.gd)
+	var b = await _esperar_escena(BP.ESCENA)
+	_ok(b != null, "H: no se vuelve al banco")
+	_ok(_de_zona().is_empty(), "H: en el banco siguen cargados %d recursos de la isla o del tramo" % _de_zona().size())
+	R.guardar("res://pruebas/zona_de_prueba", Resource.new(), "zona")
+	R.cambiar_escena(ESCENA)                       # salir del banco (a una exploración; hacia la carga, igual)
+	v = await _esperar_escena(ESCENA)
+	_ok(v != null and not R.grupos["zona"].has("res://pruebas/zona_de_prueba"), "H: al salir del banco no se suelta «zona»")
+	hechos.append("H: en el tramo %d recursos de la isla y del tramo en «zona»; al volver al banco, 0; al salir del banco, «zona» se suelta" % n)
