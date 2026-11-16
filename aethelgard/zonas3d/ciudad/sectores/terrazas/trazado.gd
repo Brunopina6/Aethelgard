@@ -256,8 +256,8 @@ const GRAFO := {
 }
 
 # ---------------------------------------------------------------------------------------------------- cámara
-# Sin zonas: el foco es Kael. (Un «eje» en el atajo o en las escaleras, de 4 m de ancho, hacía saltar el foco al entrar:
-# con la cámara del barrio, una zona debe ser bastante más ancha que su margen de 2,5 m.)
+# Sin zonas: el foco es Kael. (Un «eje» en el atajo o en las escaleras, de 4 m de ancho, no se pone: con el margen de 2,5 m
+# de las zonas, el foco saltaría al entrar en una zona tan estrecha; calculado, no probado.)
 const CAMARA_ZONAS := []
 
 
