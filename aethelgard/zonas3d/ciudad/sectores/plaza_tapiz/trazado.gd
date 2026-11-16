@@ -3,10 +3,13 @@ extends RefCounted
 # con el nivel que se espera de cada sector (plano en docs/v12/CIUDAD_OAKHAVEN_PLAN.md §2; contrato en
 # docs/v12/CIUDAD_OAKHAVEN.md), COMPLETADO por el agente de maqueta A (docs/v12/ciudad_sectores/A.md; lo suyo, marcado
 # «(A)»): toldos sobre los puestos, el puesto de flores de Rosa [C], puestos bajo la lonja, árboles con banco, el mirador
-# del pretil, la pila del mercado, puertas en las calles largas y los sitios de la gente prevista.
+# del pretil, la pila del mercado, puertas en las calles largas, los faroles de la Calle Mayor [C], la Plazuela de la
+# Botica [C] y los sitios de la gente prevista.
 # Es del agente de maqueta A (sectores 1 y 2): puede cambiar todo lo de DENTRO, pero no las
 # cotas ni los anchos de sus bordes (plano.gd, CONEXIONES): Calle Mayor (z 62, cota 0), Calle del Árbol (z −15, cota 4),
 # Calle del Cuervo (x −30, cota 2), Calle del Mercado (x 45, cota 3) y Paso Cubierto de la Botica (x −30, cota 2).
+# (A) El soportal (x 4..8) y la acera oeste (x −5..−4) de la Calle Mayor siguen, llanos a cota 0, en el sector 1: el paso
+# real por z 62 va de x −5 a x 8 (más ancho que la conexión acordada, −4..4; pedido al coordinador).
 #
 # Coordenadas de CIUDAD (x este, z sur, y arriba; origen en el centro de la fuente). Lo que hay [P] salvo lo marcado [C].
 #   - Plaza ALTA (cota 4): la fuente de la Plaza del Tapiz [C] en el centro, con su pilón; la tienda [C] al este; al
@@ -14,10 +17,12 @@ extends RefCounted
 #   - ESCALINATA (4 → 2) de 20 m de ancho, con pretiles a los lados.
 #   - Plaza BAJA (cota 2): el mercado, con la LONJA (seis pilares y su tejado: un paso cubierto), puestos y el tablón del
 #     Gremio [C] en la fachada este; salen la Calle del Cuervo al oeste y la del Mercado al este (sube a 3).
-#   - Calle MAYOR (2 → 0) al sur, con un SOPORTAL [P] en su lado este (pilares y planta encima).
-#   - Callejón y PASO CUBIERTO de la Botica [P]: la Botica de Selene [C] al sur de la plaza; el paso va bajo una casa
-#     hasta los Pasajes Viejos (x −30).
-# Cómo se lee cada lista: zonas3d/ciudad/trazado_comun.gd (formatos del barrio).
+#   - Calle MAYOR (2 → 0) al sur, con un SOPORTAL [P] en su lado este (pilares y planta encima) y faroles [C].
+#   - La Botica de Selene [C] al sur de la plaza, con su PLAZUELA [C] (rampa suave del callejón a la Calle Mayor: el atajo
+#     de la Calle Mayor a la botica y al Paso Cubierto); el callejón y el PASO CUBIERTO de la Botica [P]: el paso va bajo
+#     una casa hasta los Pasajes Viejos (x −30).
+# Cómo se lee cada lista: zonas3d/ciudad/trazado_comun.gd (formatos del barrio). (A) Las hojas de puerta van FUERA de la
+# fachada (no dentro de la caja de la casa).
 
 const C := preload("res://zonas3d/ciudad/trazado_comun.gd")
 const ID := "plaza_tapiz"
@@ -35,12 +40,16 @@ const SUELOS := [
 	["plaza_tapiz", Rect2(4.0, 30.0, 4.0, 30.0), "z", 2.0, 0.0],         # el soportal (la misma pendiente)
 	["plaza_tapiz", Rect2(-5.0, 30.0, 1.0, 30.0), "z", 2.0, 0.0],        # (A) la acera oeste, hasta las fachadas
 	["plaza_tapiz", Rect2(-4.0, 60.0, 8.0, 2.0), "", 0.0, 0.0],          # remate llano de la Calle Mayor (borde z 62, cota 0)
+	["plaza_tapiz", Rect2(4.0, 60.0, 4.0, 2.0), "", 0.0, 0.0],           # (A) remate llano del soportal (sigue en el sector 1)
+	["plaza_tapiz", Rect2(-5.0, 60.0, 1.0, 2.0), "", 0.0, 0.0],          # (A) remate llano de la acera (sigue en el sector 1)
 	["plaza_tapiz", Rect2(-17.0, 30.0, 3.0, 24.0), "", 2.0, 2.0],        # callejón de la Botica (norte-sur)
+	["plaza_tapiz", Rect2(-14.0, 44.0, 9.0, 4.0), "x", 2.0, 0.93],       # (A) Plazuela de la Botica [C]: del callejón a la acera (12 %)
 	["plaza_tapiz", Rect2(-30.0, 54.0, 16.0, 3.0), "", 2.0, 2.0],        # Paso Cubierto de la Botica (borde x −30, cota 2)
 ]
 
 # ---------------------------------------------------------------------------------------------------- bloques
-# Los pilares del soportal siguen la pendiente de la calle: base = 2 − (z − 30)/15; arriba, todos a 5,2.
+# Los pilares del soportal siguen la pendiente de la calle: base = 2 − (z − 30)/15; arriba, todos a 5,2. Los faroles de la
+# Calle Mayor [C «un farol cada 5 casillas»], a 2,4 m sobre la acera (oeste) y colgados en el soportal (este), alternos.
 const BLOQUES := [
 	# la fuente [C] (el aspecto dorado es de la referencia [P])
 	["fuente_pilon", "plaza_tapiz", Rect2(-3.0, -3.0, 6.0, 6.0), 4.0, 0.7, "bajo", true],
@@ -53,14 +62,14 @@ const BLOQUES := [
 	# fachadas de la plaza alta
 	["casa_n_o", "plaza_tapiz", Rect2(-17.0, -15.0, 12.0, 3.0), 4.0, 7.0, "casa", true],
 	["casa_n_e", "plaza_tapiz", Rect2(5.0, -15.0, 12.0, 3.0), 4.0, 7.0, "casa", true],
-	["hoja_casa_plaza", "plaza_tapiz", Rect2(10.3, -12.08, 1.4, 0.08), 4.0, 2.4, "puerta", false],
+	["hoja_casa_plaza", "plaza_tapiz", Rect2(10.3, -12.0, 1.4, 0.08), 4.0, 2.4, "puerta", false],
 	["casa_o_alta", "plaza_tapiz", Rect2(-30.0, -15.0, 13.0, 19.0), 4.0, 8.0, "casa", true],
 	["tienda", "plaza_tapiz", Rect2(17.0, -15.0, 28.0, 19.0), 4.0, 8.0, "casa", true],
 	["hoja_tienda", "plaza_tapiz", Rect2(16.92, -5.7, 0.08, 1.4), 4.0, 2.4, "puerta", false],
 	# fachadas de la plaza baja
 	["casa_o_baja", "plaza_tapiz", Rect2(-30.0, 4.0, 13.0, 16.0), 2.0, 8.0, "casa", true],
 	["casa_gremio", "plaza_tapiz", Rect2(23.0, 4.0, 22.0, 16.0), 2.0, 8.0, "casa", true],
-	["tablon_gremio", "plaza_tapiz", Rect2(22.6, 14.0, 0.4, 2.4), 2.0, 2.2, "decor", true],
+	["tablon_gremio", "plaza_tapiz", Rect2(22.6, 14.0, 0.4, 2.4), 2.0, 1.5, "decor", true],    # (A) bajo: no tapa a Kael
 	# la lonja: seis pilares y su tejado (cubierta: se aclara si tapa a Kael)
 	["lonja_p1", "plaza_tapiz", Rect2(8.0, 13.0, 0.5, 0.5), 2.0, 4.0, "muro", true],
 	["lonja_p2", "plaza_tapiz", Rect2(13.75, 13.0, 0.5, 0.5), 2.0, 4.0, "muro", true],
@@ -96,19 +105,27 @@ const BLOQUES := [
 	["copa_plaza_ne", "plaza_tapiz", Rect2(11.5, -11.5, 5.0, 5.0), 6.5, 3.0, "copa", false],
 	["banco_fuente", "plaza_tapiz", Rect2(-6.5, -1.0, 0.6, 2.0), 4.0, 0.45, "bajo", true],
 	["banco_mirador", "plaza_tapiz", Rect2(-16.0, 2.8, 3.0, 0.6), 4.0, 0.45, "bajo", true],
-	# el sur de la plaza: casas al sur de la Calle del Cuervo, la Botica de Selene [C], el paso cubierto
+	# el sur de la plaza: casas al sur de la Calle del Cuervo, la Botica de Selene [C] con su plazuela [C] (A), el callejón
+	# y el paso cubierto. (A) Las casas llegan hasta el suelo (sin rendijas) y su base sigue la acera en pendiente.
 	["casa_cuervo_s", "plaza_tapiz", Rect2(-30.0, 26.0, 13.0, 28.0), 2.0, 7.0, "casa", true],
-	["botica", "plaza_tapiz", Rect2(-14.0, 31.0, 9.0, 13.0), 2.0, 6.5, "casa", true],
 	["hoja_casa_cuervo", "plaza_tapiz", Rect2(-24.7, 25.92, 1.4, 0.08), 2.0, 2.4, "puerta", false],         # (A)
-	["hoja_casa_callejon", "plaza_tapiz", Rect2(-17.08, 45.3, 0.08, 1.4), 2.0, 2.4, "puerta", false],       # (A)
-	["hoja_casa_baja_o", "plaza_tapiz", Rect2(-17.08, 15.8, 0.08, 1.4), 2.0, 2.4, "puerta", false],         # (A)
-	["hoja_casa_mayor_so", "plaza_tapiz", Rect2(-5.08, 51.3, 0.08, 1.4), 2.0 - 22.0 / 15.0, 2.4, "puerta", false],   # (A)
-	["hoja_botica", "plaza_tapiz", Rect2(-14.08, 36.3, 0.08, 1.4), 2.0, 2.3, "puerta", false],
-	["casa_mayor_so", "plaza_tapiz", Rect2(-14.0, 45.0, 9.0, 15.0), 1.0, 7.0, "casa", true],
+	["hoja_casa_callejon_n", "plaza_tapiz", Rect2(-17.0, 36.3, 0.08, 1.4), 2.0, 2.4, "puerta", false],      # (A)
+	["hoja_casa_callejon", "plaza_tapiz", Rect2(-17.0, 45.3, 0.08, 1.4), 2.0, 2.4, "puerta", false],        # (A)
+	["hoja_casa_baja_o", "plaza_tapiz", Rect2(-17.0, 15.8, 0.08, 1.4), 2.0, 2.4, "puerta", false],          # (A)
+	["botica", "plaza_tapiz", Rect2(-14.0, 30.0, 9.0, 14.0), 1.0, 7.5, "casa", true],
+	["hoja_botica", "plaza_tapiz", Rect2(-10.7, 44.0, 1.4, 0.08), 1.45, 2.3, "puerta", false],              # (A) a la plazuela
+	["escaparate_botica", "plaza_tapiz", Rect2(-5.0, 33.6, 0.1, 2.4), 2.0 - 4.8 / 15.0 + 0.7, 1.3, "decor", false],   # (A)
+	["secadero_botica", "plaza_tapiz", Rect2(-14.5, 35.0, 0.5, 2.4), 2.0, 1.3, "bajo", true],               # (A) hierbas al sol
+	["casa_mayor_so", "plaza_tapiz", Rect2(-14.0, 48.0, 9.0, 14.0), 0.0, 8.0, "casa", true],
+	["hoja_casa_mayor_so", "plaza_tapiz", Rect2(-5.0, 51.3, 0.08, 1.4), 2.0 - 22.0 / 15.0, 2.4, "puerta", false],   # (A)
+	["farol_callejon", "plaza_tapiz", Rect2(-14.25, 50.35, 0.25, 0.3), 4.4, 0.5, "decor", false],           # (A)
 	["casa_paso_s", "plaza_tapiz", Rect2(-30.0, 57.0, 16.0, 5.0), 2.0, 6.0, "casa", true],
+	["hoja_casa_paso", "plaza_tapiz", Rect2(-24.7, 56.92, 1.4, 0.08), 2.0, 2.4, "puerta", false],           # (A)
 	["cubierta_paso", "plaza_tapiz", Rect2(-26.0, 54.0, 12.0, 3.0), 4.8, 4.0, "cubierta", false],
-	# la Calle Mayor: el soportal (pilares y planta encima) y las casas del este
-	["cubierta_soportal", "plaza_tapiz", Rect2(4.0, 30.0, 4.0, 30.0), 5.2, 3.8, "cubierta", false],
+	["farol_paso", "plaza_tapiz", Rect2(-19.15, 55.35, 0.3, 0.3), 4.0, 0.6, "decor", false],                # (A)
+	# la Calle Mayor: el soportal (pilares y planta encima, que baja con la casa que la sostiene) y las casas del este
+	["cubierta_soportal", "plaza_tapiz", Rect2(4.0, 30.0, 4.0, 14.0), 5.2, 3.8, "cubierta", false],
+	["cubierta_soportal_s", "plaza_tapiz", Rect2(4.0, 44.0, 4.0, 18.0), 5.2, 2.3, "cubierta", false],       # (A)
 	["pilar_soportal_1", "plaza_tapiz", Rect2(4.0, 33.8, 0.4, 0.4), 2.0 - 4.0 / 15.0, 3.2 + 4.0 / 15.0, "muro", true],
 	["pilar_soportal_2", "plaza_tapiz", Rect2(4.0, 37.8, 0.4, 0.4), 2.0 - 8.0 / 15.0, 3.2 + 8.0 / 15.0, "muro", true],
 	["pilar_soportal_3", "plaza_tapiz", Rect2(4.0, 41.8, 0.4, 0.4), 2.0 - 12.0 / 15.0, 3.2 + 12.0 / 15.0, "muro", true],
@@ -116,17 +133,34 @@ const BLOQUES := [
 	["pilar_soportal_5", "plaza_tapiz", Rect2(4.0, 49.8, 0.4, 0.4), 2.0 - 20.0 / 15.0, 3.2 + 20.0 / 15.0, "muro", true],
 	["pilar_soportal_6", "plaza_tapiz", Rect2(4.0, 53.8, 0.4, 0.4), 2.0 - 24.0 / 15.0, 3.2 + 24.0 / 15.0, "muro", true],
 	["pilar_soportal_7", "plaza_tapiz", Rect2(4.0, 57.8, 0.4, 0.4), 2.0 - 28.0 / 15.0, 3.2 + 28.0 / 15.0, "muro", true],
-	["casa_sur_e", "plaza_tapiz", Rect2(8.0, 31.0, 15.0, 13.0), 2.0, 7.0, "casa", true],
+	["pilar_soportal_8", "plaza_tapiz", Rect2(4.0, 61.6, 0.4, 0.4), 0.0, 5.2, "muro", true],                # (A)
+	["casa_sur_e", "plaza_tapiz", Rect2(8.0, 27.0, 15.0, 17.0), 1.0, 8.0, "casa", true],
+	["hoja_casa_lonja", "plaza_tapiz", Rect2(15.3, 26.92, 1.4, 0.08), 2.0, 2.4, "puerta", false],           # (A)
 	["casa_mercado_s", "plaza_tapiz", Rect2(23.0, 26.0, 22.0, 18.0), 2.5, 7.0, "casa", true],
 	["hoja_casa_mercado", "plaza_tapiz", Rect2(32.3, 25.92, 1.4, 0.08), 2.5, 2.4, "puerta", false],         # (A)
 	["hoja_casa_soportal", "plaza_tapiz", Rect2(7.92, 37.3, 0.08, 1.4), 2.0 - 8.0 / 15.0, 2.4, "puerta", false],     # (A)
+	["hoja_casa_soportal_s", "plaza_tapiz", Rect2(7.92, 51.3, 0.08, 1.4), 2.0 - 22.0 / 15.0, 2.4, "puerta", false],  # (A)
 	["banco_mercado", "plaza_tapiz", Rect2(29.0, 20.0, 3.0, 0.6), 2.3, 0.45, "bajo", true],                 # (A)
-	["casa_e_baja", "plaza_tapiz", Rect2(8.0, 45.0, 37.0, 17.0), 0.5, 7.0, "casa", true],
+	["casa_e_baja", "plaza_tapiz", Rect2(8.0, 44.0, 37.0, 18.0), 0.0, 7.5, "casa", true],
+	# (A) faroles de la Calle Mayor: en las fachadas del oeste y colgados en el soportal, alternos cada 5 m
+	["farol_mayor_o1", "plaza_tapiz", Rect2(-5.0, 31.85, 0.25, 0.3), 2.0 - 2.0 / 15.0 + 2.4, 0.5, "decor", false],
+	["farol_mayor_o2", "plaza_tapiz", Rect2(-5.0, 36.85, 0.25, 0.3), 2.0 - 7.0 / 15.0 + 2.4, 0.5, "decor", false],
+	["farol_mayor_o3", "plaza_tapiz", Rect2(-5.0, 41.85, 0.25, 0.3), 2.0 - 12.0 / 15.0 + 2.4, 0.5, "decor", false],
+	["farol_mayor_o4", "plaza_tapiz", Rect2(-5.0, 50.85, 0.25, 0.3), 2.0 - 21.0 / 15.0 + 2.4, 0.5, "decor", false],
+	["farol_mayor_o5", "plaza_tapiz", Rect2(-5.0, 55.85, 0.25, 0.3), 2.0 - 26.0 / 15.0 + 2.4, 0.5, "decor", false],
+	["farol_mayor_o6", "plaza_tapiz", Rect2(-5.0, 60.85, 0.25, 0.3), 2.4, 0.5, "decor", false],
+	["farol_soportal_e1", "plaza_tapiz", Rect2(4.45, 34.35, 0.25, 0.3), 2.0 - 4.5 / 15.0 + 2.6, 0.5, "decor", false],
+	["farol_soportal_e2", "plaza_tapiz", Rect2(4.45, 39.35, 0.25, 0.3), 2.0 - 9.5 / 15.0 + 2.6, 0.5, "decor", false],
+	["farol_soportal_e3", "plaza_tapiz", Rect2(4.45, 44.35, 0.25, 0.3), 2.0 - 14.5 / 15.0 + 2.6, 0.5, "decor", false],
+	["farol_soportal_e4", "plaza_tapiz", Rect2(4.45, 49.35, 0.25, 0.3), 2.0 - 19.5 / 15.0 + 2.6, 0.5, "decor", false],
+	["farol_soportal_e5", "plaza_tapiz", Rect2(4.45, 54.35, 0.25, 0.3), 2.0 - 24.5 / 15.0 + 2.6, 0.5, "decor", false],
+	["farol_soportal_e6", "plaza_tapiz", Rect2(4.45, 59.35, 0.25, 0.3), 2.0 - 29.5 / 15.0 + 2.6, 0.5, "decor", false],
 ]
 # Las casas que la escena aclara cuando tapan a Kael (además de las cubiertas y las copas): las que quedan al SUR de lo
-# andable (la cámara mira desde el sur). (A) Y las hojas de las puertas en sus fachadas norte (se aclaran con su casa).
-const OCULTABLES := ["casa_cuervo_s", "casa_paso_s", "botica", "casa_sur_e", "casa_mercado_s", "hoja_casa_cuervo",
-	"hoja_casa_mercado"]
+# andable (la cámara mira desde el sur). (A) Y las hojas de las puertas en sus fachadas norte (se aclaran con su casa); la
+# casa al sur de la Plazuela de la Botica.
+const OCULTABLES := ["casa_cuervo_s", "casa_paso_s", "botica", "casa_sur_e", "casa_mercado_s", "casa_mayor_so",
+	"hoja_casa_cuervo", "hoja_casa_mercado", "hoja_casa_lonja", "hoja_casa_paso"]
 
 # ---------------------------------------------------------------------------------------------------- anclas
 # Puntos EN el suelo (la «y» la da altura()). «puerta_*» son umbrales; «n_*», nodos del grafo; «reserva_*», lugares
@@ -145,20 +179,25 @@ const ANCLAS := {
 	"vendedora_ciruelas": Vector3(-4.8, 2.0, 21.4), # la vendedora de ciruelas [C mundo vivo]
 	"vecinos_lonja": Vector3(13.0, 2.0, 20.0),      # vecinos comprando bajo la lonja
 	"ninos_fuente": Vector3(-4.5, 4.0, 0.0),        # niños jugando junto a la fuente
-	"selene": Vector3(-15.4, 2.0, 38.6),            # Selene [C], a la puerta de la botica
+	"selene": Vector3(-11.8, 1.7384, 45.6),         # Selene [C], a la puerta de la botica, en su plazuela
 	"mirador_pretil": Vector3(-13.0, 4.0, 2.4),     # el mirador del pretil, sobre el mercado
 	"banco_arbol": Vector3(-15.4, 4.0, -6.2),       # a la sombra del árbol del noroeste
 	"pila_mercado": Vector3(-15.8, 2.0, 11.8),      # la pila del mercado [P]
+	"secadero_botica": Vector3(-15.0, 2.0, 36.2),   # ante el secadero de hierbas de la botica [P]
 	"puerta_casa_cuervo": Vector3(-24.0, 2.0, 25.95),
+	"puerta_casa_callejon_n": Vector3(-16.95, 2.0, 37.0),
 	"puerta_casa_callejon": Vector3(-16.95, 2.0, 46.0),
 	"puerta_casa_baja_o": Vector3(-16.95, 2.0, 16.5),
 	"puerta_casa_mayor_so": Vector3(-4.95, 0.5333, 52.0),
 	"puerta_casa_mercado": Vector3(33.0, 2.5, 25.95),
 	"puerta_casa_soportal": Vector3(7.95, 1.4667, 38.0),
+	"puerta_casa_soportal_s": Vector3(7.95, 0.5333, 52.0),
+	"puerta_casa_lonja": Vector3(16.0, 2.0, 26.95),
+	"puerta_casa_paso": Vector3(-24.0, 2.0, 56.95),
 	"n_lonja": Vector3(14.0, 2.0, 19.0),
 	"puerta_tienda": Vector3(16.95, 4.0, -5.0),
-	"puerta_botica": Vector3(-14.05, 2.0, 37.0),
-	"puerta_casa_plaza": Vector3(11.0, 4.0, -12.0),
+	"puerta_botica": Vector3(-10.0, 1.5244, 44.05),
+	"puerta_casa_plaza": Vector3(11.0, 4.0, -11.95),
 	"n_pie_arbol": Vector3(0.0, 4.0, -13.5),
 	"n_alta": Vector3(8.0, 4.0, 0.0),
 	"n_escalinata": Vector3(0.0, 3.0, 7.0),
@@ -168,7 +207,9 @@ const ANCLAS := {
 	"n_mercado": Vector3(42.0, 2.95, 23.0),
 	"n_mayor": Vector3(0.0, 1.0, 45.0),
 	"n_mayor_s": Vector3(0.0, 0.0, 61.0),
+	"n_plazuela": Vector3(-9.0, 1.4056, 46.0),
 	"n_callejon": Vector3(-15.5, 2.0, 42.0),
+	"n_callejon_m": Vector3(-15.5, 2.0, 46.0),
 	"n_callejon_s": Vector3(-15.5, 2.0, 55.5),
 	"n_paso": Vector3(-28.0, 2.0, 55.5),
 }
@@ -179,13 +220,15 @@ const ANCLAS := {
 const PUERTAS := {
 	"tienda": {"fuera": Vector3(15.6, 4.0, -5.0), "mira": PI / 2.0, "radio": 1.6, "texto": "Entrar en la tienda",
 		"ancla": "puerta_tienda", "nombre": "Tienda"},
-	"botica": {"fuera": Vector3(-15.4, 2.0, 37.0), "mira": PI / 2.0, "radio": 1.6, "texto": "Entrar en la botica",
+	"botica": {"fuera": Vector3(-10.0, 1.5244, 45.4), "mira": PI, "radio": 1.6, "texto": "Entrar en la botica",
 		"ancla": "puerta_botica", "nombre": "Botica de Selene"},
 	"casa_plaza": {"fuera": Vector3(11.0, 4.0, -10.6), "mira": PI, "radio": 1.6, "texto": "Entrar en la casa",
 		"ancla": "puerta_casa_plaza", "nombre": "Casa"},
 	# (A) las calles largas, con puerta cada pocos metros
 	"casa_cuervo": {"fuera": Vector3(-24.0, 2.0, 24.6), "mira": 0.0, "radio": 1.6, "texto": "Entrar en la casa",
 		"ancla": "puerta_casa_cuervo", "nombre": "Casa"},
+	"casa_callejon_n": {"fuera": Vector3(-15.6, 2.0, 37.0), "mira": -PI / 2.0, "radio": 1.6, "texto": "Entrar en la casa",
+		"ancla": "puerta_casa_callejon_n", "nombre": "Casa"},
 	"casa_callejon": {"fuera": Vector3(-15.6, 2.0, 46.0), "mira": -PI / 2.0, "radio": 1.6, "texto": "Entrar en la casa",
 		"ancla": "puerta_casa_callejon", "nombre": "Casa"},
 	"casa_baja_o": {"fuera": Vector3(-15.6, 2.0, 16.5), "mira": -PI / 2.0, "radio": 1.6, "texto": "Entrar en la casa",
@@ -196,10 +239,17 @@ const PUERTAS := {
 		"ancla": "puerta_casa_mercado", "nombre": "Casa"},
 	"casa_soportal": {"fuera": Vector3(6.6, 1.4667, 38.0), "mira": PI / 2.0, "radio": 1.6, "texto": "Entrar en la casa",
 		"ancla": "puerta_casa_soportal", "nombre": "Casa"},
+	"casa_soportal_s": {"fuera": Vector3(6.6, 0.5333, 52.0), "mira": PI / 2.0, "radio": 1.6, "texto": "Entrar en la casa",
+		"ancla": "puerta_casa_soportal_s", "nombre": "Casa"},
+	"casa_lonja": {"fuera": Vector3(16.0, 2.0, 25.7), "mira": 0.0, "radio": 1.6, "texto": "Entrar en la casa",
+		"ancla": "puerta_casa_lonja", "nombre": "Casa"},
+	"casa_paso": {"fuera": Vector3(-24.0, 2.0, 55.6), "mira": 0.0, "radio": 1.6, "texto": "Entrar en la casa",
+		"ancla": "puerta_casa_paso", "nombre": "Casa"},
 }
 
 # El grafo del sector (tramos RECTOS que se andan enteros, como en el barrio). Sus extremos en los bordes (n_pie_arbol,
-# n_cuervo, n_mercado, n_mayor_s, n_paso) enlazan con el grafo global del plano (c_<conexión>).
+# n_cuervo, n_mercado, n_mayor_s, n_paso) enlazan con el grafo global del plano (c_<conexión>). (A) La plazuela de la
+# Botica es el atajo de la Calle Mayor al callejón y al Paso Cubierto.
 const GRAFO := {
 	"n_pie_arbol": ["n_alta"],
 	"n_alta": ["n_pie_arbol", "n_escalinata"],
@@ -209,10 +259,12 @@ const GRAFO := {
 	"n_baja_so": ["n_baja", "n_callejon"],
 	"n_cuervo": ["n_baja"],
 	"n_mercado": ["n_baja"],
-	"n_mayor": ["n_baja", "n_mayor_s"],
+	"n_mayor": ["n_baja", "n_mayor_s", "n_plazuela"],
 	"n_mayor_s": ["n_mayor"],
-	"n_callejon": ["n_baja_so", "n_callejon_s"],
-	"n_callejon_s": ["n_callejon", "n_paso"],
+	"n_plazuela": ["n_mayor", "n_callejon_m"],
+	"n_callejon": ["n_baja_so", "n_callejon_m"],
+	"n_callejon_m": ["n_callejon", "n_plazuela", "n_callejon_s"],
+	"n_callejon_s": ["n_callejon_m", "n_paso"],
 	"n_paso": ["n_callejon_s"],
 }
 
