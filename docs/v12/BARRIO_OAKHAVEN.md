@@ -1,6 +1,7 @@
 # Barrio experimental de Oakhaven: fase 0 (contrato y blockout jugable)
 
 > 16/11/2026. Rama `area-barrio-fase0` (desde `2d7745d`). Plan completo: `docs/v12/BARRIO_OAKHAVEN_PLAN.md`.
+> **Fase A (agente A, rama `area-barrio-a`): los seis tramos horneados con el acabado de la muestra → §6.**
 > Todo el barrio es **PROPUESTA [P]**: solo existe en el banco de pruebas de Auditoría y está **apagado fuera de él**.
 > Siguen abiertas las decisiones del usuario del plan §1: (a) arrabal extramuros, (b) el nombre, (c) la tarde dorada
 > frente a la hora azul del canon.
@@ -168,18 +169,13 @@ static func soltar_caches() -> void  # (vacío en la fase 0)
 ## 5. Pendiente
 
 ### A (exterior, kit de Blender y región)
-- `fuente/kit_barrio.py`: la COPIA refactorizada del kit de `crear_calle.py`, que no se toca, con `Sector{nombre, semilla, rnd}`. Y `fuente/crear_barrio.py` (`--solo`, `--fase blockout|completa`, `--muestras`).
-- `barrio.json`, escrito desde `trazado.gd`: lo leen Blender (recorte y sondas) y la prueba del lado sur.
-- Hornear primero `comercial` + `plaza` y medir en el Redmi; después, el resto:
-  - escala de luz común;
-  - sondas PNG por sector;
-  - materiales de la muestra sin cambios.
-  - Hay que sustituir el blockout de cada `Sector_<s>` por su GLB, conservando los nombres de `T.BLOQUES` como guía y un `choque_*` por caja.
-- `sonda()` real por sector y la luz de Kael (sol y cielo), como la muestra.
-- La visibilidad manual por sector con `sectores`. `soltar_caches()` de verdad cuando haya cachés.
-- `pruebas/medir_barrio.gd`.
+Hecho en la fase A (ver §6). Queda:
+- **Medir en el Redmi** (perfil bajo, APK del banco copiada por USB): FPS, PSS, tirones de entrada y por tramo. Todo lo de §6 es PC.
+- Lo que se ve mal o flojo (§6.5): losas en sombra muy oscuras y destellos blancos en sus juntas; el atajo y los talleres
+  con tejados grandes en primer plano (la cámara de la fase 0).
 - Ampliar la prueba con «examinables a ≥ 2,5 m» cuando C tenga `PIEZAS`.
-- **Integración**: el precalentado en `carga.gd` (y `barrio_npc.gdshader`).
+- **Integración** (orquestador): el precalentado en `carga.gd` (y `barrio_npc.gdshader` de C); y en `export_presets.cfg`,
+  excluir `zonas3d/barrio/*` donde ya se excluye `zonas3d/muestra_calle/*` (el barrio precarga sombreados de la muestra).
 
 ### B (interiores)
 - Rellenar `ORIGEN` y construir los tres interiores en `construir()`:
@@ -557,3 +553,126 @@ ecorrido.txt`; su único aviso es un punto detrás de Avena, también corregido)
 - Avena es un prototipo de guion: si gusta la idea, falta su versión buena (o un caballo hecho a mano).
 - El ciclo de Tobías es largo (≈ 5 min) porque la pila del patio de talleres está lejos del carro: se puede acortar
   llevando la caja a la plaza.
+
+## 8. Fase A: los seis tramos horneados (16/11, noche, agente A)
+
+> Rama `area-barrio-a` (desde `a4cbbe8`). Sigue siendo **PROPUESTA [P]**, solo en el banco y apagado fuera de él.
+> Capturas, comparaciones, medidas y vídeo: `D:\REBELUM_diagnostico\barrio_oakhaven\a\`.
+
+### 8.1 Qué está hecho (diseñado → construido → integrado → probado en PC)
+
+| Tramo | Identidad | Horneado | En la región | Probado en PC |
+|---|---|---|---|---|
+| T1 caravanas | Puerta de caravanas con dos torres almenadas y el rastrillo bajado; establo de tablas con dos cuadras a medio portón, pajar, polea, gancho del cepillo y herradura; abrevadero de piedra con agua; carro de caravana cargado; pozo bajo; fardos; cerca de varas; rodadas y paja | Sí (256 muestras, 2048/1024) | Sí | Sí |
+| T2 comercial | Tienda de telas (escaparate, toldo a rayas, letrero); **el horno de Maela** (planta de sillería, puerta en arco ABIERTA con la luz del obrador en el umbral, mostrador a la calle bajo un arco rebajado con la tapa levantada y pan, chimenea ancha, letrero de la hogaza, sacos de harina); ultramarinos de hastial con balcón y toneles en la boca; lado sur bajo con puestos de verdura y cacharros, cajones y el **carro de reparto parado con la rueda torcida** | Sí | Sí | Sí |
+| T3 plaza | Losas rectangulares a matajunta con un anillo oscuro; **lonja** con soportal de dos arcos y columnas; la **muralla de Oakhaven** con talud, contrafuertes, matacanes, almenas y el **postigo cerrado** (farol y poyo); tejados de la ciudad asomando; puestos del pan (toldo bajo), fruta y flores; árbol del mercado al noroeste; pretil con macetas | Sí | Sí | Sí |
+| T4 talleres | **Taller del carretero** (nave baja de tablas sobre zócalo que baja a la rampa, portón doble abierto, letrero de la rueda, aperos); ruedas apoyadas; potro con rueda a medio hacer; muela; tablones; **tonelería** larga con portones, aros y toneles; la casa del fondo con galería | Sí | Sí | Sí |
+| T5 residencial | Cinco casas distintas (alero, hastial, buhardillas); **la vivienda** con puerta verde en arco, rosal, macetas y banco; **tendederos** con ropa bajo los vuelos; canaleta; **huertos** con bancales, coles, judías en tutores, caseta y frutales; muro del arrabal; campos al fondo | Sí | Sí | Sí |
+| T6 atajo | Dos tramos de **escalones** de sillería, el **arco** rebajado entre las casas, la **hornacina** con velas encendidas y figurilla, faroles, macetas, hiedra, cerca de varas a los huertos | Sí | Sí | Sí |
+
+Todos con el acabado aprobado de la muestra: su arquitectura (casas de alero y de hastial **generalizadas** de `casa_a` y
+`casa_b`), sus colores, sus 8 texturas (las mismas PNG) y sus 4 sombreados **sin cambios ni programas nuevos**; la misma
+tarde dorada (sol 252°/24°, cielo frío) y la **misma escala de luz (2,229)** en todos los sectores. Probado en el
+**Redmi: NO** (pendiente).
+
+### 8.2 Cómo está hecho
+
+- `fuente/exportar_trazado.gd` escribe `modelos/barrio.json` **desde** `trazado.gd` (suelos, cotas, bloques, anclas, grafo,
+  zonas de cámara). Blender no repite ningún número a mano.
+- `fuente/kit_barrio.py`: COPIA refactorizada del kit de `crear_calle.py` (que no se toca; cada bloque dice de qué líneas
+  sale). Cambios: `Sector{nombre, semilla, rnd, anclas, choques}` (rehacer un tramo no mueve los demás), `marco(origen,
+  giro)` para fachadas que miran al este u oeste, recorte con las cámaras del barrio, sondas en PNG, escala común,
+  `FUSION` hierro→piedra y barro→revoque (comparten textura: dos superficies menos por objeto), y la luz de vértices sin
+  luciérnagas (una esquina se baja a 2 × la mediana de su cara).
+- `fuente/crear_barrio.py` (`--solo s1,s2`, `--fase arquitectura|completa`, `--muestras`, `--res`, `--sin-horneado`,
+  `--sin-recorte`):
+  - construye **todo** el barrio en una sesión y hornea cada sector con los demás como tapadores (sin costuras);
+  - un `choque_<id>` por bloque sólido del trazado, **con las mismas medidas que el blockout**: el recuento de choques no
+    cambia (57) y Kael anda igual; las piezas sueltas en lo andable llevan `choque_<s>_p<n>` (17) solo si están a más de
+    0,8 m de toda arista del grafo, del bucle, de las anclas, de las puertas y de los umbrales;
+  - recorte con **318 cámaras posibles** (Kael en cada metro de lo andable → su foco → la cámara de la zona);
+  - **cobertura de pantalla** de cada sector (lo fijo y las piezas por separado) desde cada cámara, con una rejilla de
+    64 × 36 rayos (16:9, 38°): la visibilidad por sector de la región;
+  - lo lejano (campos y árboles) va en `barrio_fondo.glb` aparte (si no, las cajas envolventes de los sectores medían
+    100 m y Godot no descartaba nada).
+  - Tiempo en el PC (RTX 3050, OptiX): **≈ 4,8 min** todo (construir 4 s, cobertura y recorte ≈ 70 s, horneado ≈ 20 s por
+    sector a 256 muestras, exportar); un sector suelto con `--solo`, ≈ 1-1,7 min.
+- Salidas (`zonas3d/barrio/modelos/`): `barrio_<s>.glb` (fijo con mapa de luz, piezas y vegetación con luz en los
+  vértices, choques y anclas), `barrio_<s>_luz_{2048,1024}.png`, `barrio_<s>_sondas.png` (R = sol, G = cielo, rejilla de
+  0,25 m sobre el sector + 1 m; se importa como `Image`), `barrio_fondo.glb` y `barrio_luz.json` (escala, sol y cielo
+  medidos, rejillas, triángulos, cámaras y cobertura). 54 MB en total (los GLB, 0,5-5,8 MB).
+- Regenerar: `blender -b --factory-startup -P aethelgard/zonas3d/barrio/fuente/crear_barrio.py -- aethelgard/zonas3d/barrio`
+  y reimportar (`godot --headless --path aethelgard --import`, con datos aislados). Antes, el turno de horneado
+  (`D:\REBELUM_coordinacion\horneado.lock`).
+
+### 8.3 La región (`barrio.gd`; el contrato de B y C no cambia)
+
+- Un sector con su GLB y su entrada en `barrio_luz.json` se dibuja horneado; si no, en blockout (como la fase 0). Engine
+  `barrio_solo_blockout` lo pone todo en cajas (las capturas del antes).
+- Ambiente, sol y cielo **de la muestra** (con algún tramo horneado); materiales de la muestra, el estático con el mapa
+  de luz de su sector (1024 en bajo, 2048 en medio y alto).
+- `sonda(p)` real: la rejilla PNG del sector (interpolada); un sector en blockout, la provisional (1; 0,7); dentro, la de
+  B. La **luz de Kael** y su **sombra de contacto** son las de la muestra, con el tono en sombra ya corregido (la luz de
+  Kael va de 0 a 2,07 de sol en caravanas, prueba 9).
+- **Visibilidad por sector**: con las 3 cámaras medidas más cercanas a la de ahora, lo fijo de un sector se dibuja si
+  ocupa ≥ 2,5 % de la pantalla, y sus piezas y vegetación si sus piezas ocupan ≥ 1,5 % (`UMBRAL_VISTA`,
+  `UMBRAL_DETALLE`); el sector de Kael, siempre entero. La sombra de Kael solo se manda a los materiales que se dibujan.
+- `soltar_caches()` suelta materiales, luz y sondas (lo llama `banco.salir()`).
+- Rótulos «(en obras)» solo para las puertas cuyo interior no está en `Interiores.ORIGEN`.
+- Cambio fuera de mi carpeta, documentado: `pruebas/prueba_muestra_calle.gd` admite `zonas3d/barrio/barrio.gd` como único
+  uso nuevo de la muestra (reutiliza sus sombreados y texturas, plan §8).
+
+### 8.4 Medidas en el PC (VERIFICADO; NO certifica el Redmi)
+
+RTX 3050 Laptop + Ryzen 7 4800H, Compatibility, ventana 1600×720, `pruebas/medir_barrio.gd`, con Kael, Lya y Garon;
+«sin límite» = sin tope de FPS ni sincronía vertical; textos en `a\medidas\medida_barrio_{bajo,medio}.txt`.
+
+| Tramo (sitio de las capturas) | Sectores que se dibujan | Llamadas | Primitivas | ms sin límite (mediana / p95) | CPU / GPU dibujo |
+|---|---|---|---|---|---|
+| caravanas | caravanas, comercial (fijo), atajo | 57 | 120 313 | 4,2 / 6,0 | 1,51 / 0,81 |
+| comercial | comercial | 41 | 107 549 | 3,6 / 5,4 | 1,19 / 0,66 |
+| plaza | comercial (fijo), plaza, talleres | 63 | 153 335 | 3,5 / 4,7 | 1,25 / 0,63 |
+| talleres | plaza (fijo), talleres, residencial (fijo) | 57 | 133 389 | 3,9 / 5,5 | 1,38 / 0,71 |
+| residencial | residencial | 42 | 132 229 | 4,2 / 6,0 | 1,45 / 0,80 |
+| atajo | caravanas (fijo), residencial (fijo), atajo | 53 | 105 136 | 3,5 / 5,0 | 1,20 / 0,63 |
+
+(perfil bajo; el medio da las mismas llamadas y primitivas y 3,1-3,4 ms de mediana.) Con el límite, 33,3 ms (30 FPS)
+en todos, máximo 33,7.
+- **Presupuesto §9**: ≤ 18 llamadas por sector → **11-14** (caravanas 11, comercial 13, plaza 14, talleres 13,
+  residencial 14, atajo 12); ≤ 65 en pantalla → **41-63**; ≤ 160 k primitivas → **105-153 k**. Triángulos por sector
+  (lo dibujable tras el recorte): 20-65 k (residencial 64,5 k, algo por encima de los 60 k del plan; el resto, debajo).
+  Sin la visibilidad por sector eran 70-117 llamadas y 230-330 k primitivas.
+- Entrada (Recursos.cambiar_escena, primera del proceso): **1,15 s** hasta el control en bajo (1,17 en medio; la muestra,
+  0,77 s); memoria al entrar: vídeo 73,9 MB y texturas 47,0 MB en bajo (86,5 / 59,5 en medio).
+- Sin medir: Redmi (FPS, PSS, tirones), malioc (los sombreados son los de la muestra: 4,8-5,15 ciclos).
+
+### 8.5 Valoración honesta y lo provisional
+
+**Conseguido:** los seis tramos se leen como el mismo barrio que la muestra (mismo entramado, tejas, revoques, luz) y cada
+uno con su identidad y su historia (el horno abierto con su luz, el carro parado, el establo, la lonja y la muralla, el
+carretero, los tendederos y los huertos, la hornacina). Kael anda el bucle entero con el grupo y la cámara de la fase 0.
+
+**Lo que no está a la altura todavía:**
+- **Suelo en sombra**: las losas (luz en los vértices, el método de la muestra) salen bastante más oscuras que la tierra
+  horneada en el mapa de luz justo al lado, y en sus juntas aparecen trazos blancos. Se nota en la rampa de los talleres,
+  en el atajo y en la sombra del muro de caravanas (sombras largas: el sol está a 24°). Comprobado que el color de los
+  vértices llega igual a Godot que sale de Blender y que la irradiancia horneada de las losas no es menor que la del suelo;
+  la causa no está aislada. Siguientes pasos posibles: hornear las losas al mapa de luz en las zonas de sombra, o un mapa
+  aparte para el suelo.
+- **La cámara de la fase 0** en el atajo y en los talleres: los tejados de las casas de la boca ocupan mucho cuadro (Kael
+  se ve, pero en un pasillo estrecho). Es del trazado, no del acabado: se puede bajar el alero de esas casas o mover la
+  zona de cámara.
+- Los vecinos que asoman poco se dibujan solo con lo fijo o no se dibujan: al andar puede haber algún cambio pequeño en el
+  borde de la pantalla (umbrales ajustables en `barrio.gd`).
+- Las ventanas encendidas son planas (como en la muestra); la paja del patio es sencilla; el fondo lejano es plano.
+- Rótulos «(en obras)» encima de las puertas mientras B no tenga los interiores.
+
+**Capturas** (`D:\REBELUM_diagnostico\barrio_oakhaven\a\`, 1600×720, perfil bajo, la MISMA cámara de juego y el mismo
+sitio de Kael): `antes_barrio_<n>_*` (todo en blockout), `despues_barrio_<n>_*` y `comparar_<n>_antes_arriba_despues_abajo.png`
+para 0 plano, 1 caravanas, 2 comercial, 3 plaza, 4 talleres, 5 residencial, 6 atajo. **Vídeo**:
+`barrio_recorrido_bajo.mp4` (73 s, 1280×720, 30 FPS, perfil bajo; Movie Maker + ffmpeg; `pruebas/grabar_barrio.gd`):
+Kael anda el bucle entero a 2,2 m/s con el grupo.
+
+**Pruebas**: `ejecutar_pruebas.ps1 -Solo prueba_barrio_trazado,prueba_banco_pruebas,prueba_banco_pruebas_3d,prueba_muestra_calle`
+→ **4 superadas, 0 fallidas** (partida y datos reales sin cambios). `prueba_barrio_trazado` añade la parte 9 (tramos
+horneados, choques, mapa de 1024 en bajo, solo los 4 sombreados, sondas con sol y sombra, luz de Kael, visibilidad).
