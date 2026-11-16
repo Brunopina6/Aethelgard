@@ -1,0 +1,14 @@
+[remap]
+
+importer="image"
+type="Image"
+uid="uid://b1pkq45ughwtm"
+path="res://.godot/imported/barrio_residencial_sondas.png-d99aef96ef41a0e4d9640e058c9aa53f.image"
+
+[deps]
+
+source_file="res://zonas3d/barrio/modelos/barrio_residencial_sondas.png"
+dest_files=["res://.godot/imported/barrio_residencial_sondas.png-d99aef96ef41a0e4d9640e058c9aa53f.image"]
+
+[params]
+
