@@ -20,12 +20,14 @@ const CRISTAL := Vector2(1373, 1800)              # el cristal de la plaza (late
 const ALTO_FIGURA := 112.0                         # px en pantalla de las figuras nuevas (los NPC antiguos: 120)
 # Atrezo de la terraza (fuente/crear_terraza.py → render_isla.gd → preparar_tramo.gd): imagen, pies en la isla (en lo
 # andable de la terraza, comprobado en la máscara), radio que no se atraviesa, si ondea (el lino) y su escala. El lino y
-# el banco, en la cornisa de detrás del árbol (se asoma a las nubes); el farol, al pie de la escalera de madera.
+# el banco, en la cornisa de detrás del árbol (se asoma a las nubes); el farol, al pie de la escalera de madera. Las
+# macetas, junto a la puerta pero FUERA del paso a la cornisa (el único: de la terraza sube en diagonal entre la pared
+# y el árbol, y=2024-2048): en (2462, 2046) con radio 20 lo cerraban (revisión del 16/11; prueba_arboleda_tramo, BFS).
 const PIEZAS := [
 	{"imagen": "piezas/lino.png", "pies": Vector2(2672, 1990), "bloquea": 0.0, "ondea": true, "escala": 0.8},
 	{"imagen": "piezas/banco.png", "pies": Vector2(2522, 1950), "bloquea": 26.0, "ondea": false, "escala": 0.9},
 	{"imagen": "piezas/farol.png", "pies": Vector2(2298, 2158), "bloquea": 10.0, "ondea": false},
-	{"imagen": "piezas/macetas.png", "pies": Vector2(2462, 2046), "bloquea": 20.0, "ondea": false},
+	{"imagen": "piezas/macetas.png", "pies": Vector2(2450, 2064), "bloquea": 16.0, "ondea": false},
 	{"imagen": "piezas/cantaro.png", "pies": Vector2(2402, 2150), "bloquea": 16.0, "ondea": false},
 ]
 const SHADER_PIEZA := """

@@ -6,6 +6,9 @@ extends SceneTree
 #      musica.gd; fuera de las APK 0, 1 y 2; isla_paso.png sin cambios (suma MD5); no se precarga; música «viento».
 #   B. Máscara combinada (isla_paso + paso_extra): desde LLEGADA se llega a la terraza, a la puerta y a la cornisa, y
 #      ninguna celda nueva queda suelta.
+#   B2. Con las piezas y los vecinos puestos (_choca_pieza y _choca_npc, como al andar): desde la puerta de la terraza se
+#      llega al lino y al banco de la cornisa (las macetas cerraban el único paso: revisión del 16/11), y Kael anda de
+#      verdad hasta el lino siguiendo ese camino.
 #   C. Andar de verdad: de lo alto de la escalera de piedra a la puerta, con destino (toque/ratón) y con teclas en
 #      diagonal (resbala por un eje y no se atasca).
 #   D. Kael queda tapado detrás de cada pieza nueva y detrás del mostrador (lectura de píxel, como prueba_tapa).
@@ -216,6 +219,7 @@ func _juego() -> void:
 	_ok(v.aviso.text.begins_with("Abuela Nívea:"), "E: Nívea no habla")
 	_foto("2_plaza_lumi_nivea")
 	hechos.append("E: Lumi (frase [C] y luego la petición [P]) y Nívea en la plaza")
+	await _cornisa(v)                              # (antes de _andar: D mide con Kael como lo deja _andar)
 	await _andar(v)
 	await _tapado_piezas(v)
 	await _hospederia(v)
@@ -265,6 +269,81 @@ func _andar(v) -> void:
 	_foto("4_teclas_diagonal")
 	hechos.append("C: tocando llega a la puerta (en línea recta: a %.0f px%s); con ↗ cruza el puente y sube hasta x %.0f, %s (parado %d fotogramas al final: el muro de la casa)" % [
 		d1, "" if d1 <= 8.0 else ", por el puente sí", max_x, str(v.jugador.position), quieto])
+
+
+# B2: BFS en celdas de 4 px por la terraza, el paso y la cornisa, con lo que mira _se_anda al andar (las piezas, los
+# vecinos y la máscara combinada). Del lino (no bloquea) se pide su celda; del banco (bloquea 26), llegar a su lado.
+const ZONA_CORNISA := Rect2(2150, 1880, 650, 380)
+
+func _cornisa(v) -> void:
+	var r := ZONA_CORNISA
+	var w := int(r.size.x / 4)
+	var h := int(r.size.y / 4)
+	var centro := func(k: int) -> Vector2: return r.position + Vector2((k % w) * 4 + 2, (k / w) * 4 + 2)
+	var anda := func(p: Vector2) -> bool: return not v._choca_pieza(p) and not v._choca_npc(p) and v._se_anda(p)
+	var lino: Vector2
+	var banco: Vector2
+	var r_banco := 0.0
+	for s in v.piezas:
+		if "lino" in s.get_meta("pieza"):
+			lino = s.position
+		elif "banco" in s.get_meta("pieza"):
+			banco = s.position
+			r_banco = s.get_meta("bloquea")
+	var ini := int((v.PUERTA_HOSPEDERIA.y - r.position.y) / 4) * w + int((v.PUERTA_HOSPEDERIA.x - r.position.x) / 4)
+	_ok(anda.call(centro.call(ini)), "B2: la puerta de la terraza no se anda")
+	var padre := PackedInt32Array()
+	padre.resize(w * h)
+	padre.fill(-2)
+	padre[ini] = -1
+	var cola := [ini]
+	var i := 0
+	var k_lino := -1
+	var d_lino := INF
+	var d_banco := INF
+	while i < cola.size():
+		var k: int = cola[i]
+		i += 1
+		var p: Vector2 = centro.call(k)
+		if p.distance_to(lino) < d_lino:
+			d_lino = p.distance_to(lino)
+			k_lino = k
+		d_banco = minf(d_banco, p.distance_to(banco))
+		for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			var x: int = k % w + d.x
+			var y: int = k / w + d.y
+			if x < 0 or y < 0 or x >= w or y >= h or padre[y * w + x] != -2:
+				continue
+			if anda.call(centro.call(y * w + x)):
+				padre[y * w + x] = k
+				cola.append(y * w + x)
+	_ok(d_lino < 6.0, "B2: desde la puerta no se llega al lino (la celda más cerca, a %.0f px)" % d_lino)
+	_ok(d_banco < r_banco + 8.0, "B2: desde la puerta no se llega al banco (a %.0f px; bloquea %.0f)" % [d_banco, r_banco])
+	# andar de verdad: de la puerta al lino, con destino (toque) por el camino del BFS, un punto cada 12 px
+	var camino: Array = []
+	var k2 := k_lino
+	while k2 >= 0:
+		camino.push_front(centro.call(k2))
+		k2 = padre[k2]
+	v.jugador.position = v.PUERTA_HOSPEDERIA
+	v.camara.reset_smoothing()
+	for j in range(3, camino.size() + 2, 3):
+		var meta: Vector2 = camino[mini(j, camino.size() - 1)]
+		v.destino = meta
+		v.tiene_destino = true
+		for f in 30:
+			await process_frame
+			if v.jugador.position.distance_to(meta) < 6.0 or not v.tiene_destino:
+				break
+	var fin: float = v.jugador.position.distance_to(lino)
+	_ok(fin < 12.0, "B2: andando por el camino, Kael se queda a %.0f px del lino (%s)" % [fin, str(v.jugador.position)])
+	await _frames(5)
+	_foto("3b_cornisa_lino")
+	v.tiene_destino = false                         # (si no, seguiría andando hacia el lino)
+	v.jugador.position = v.PUERTA_HOSPEDERIA
+	v.camara.reset_smoothing()
+	hechos.append("B2: con piezas y vecinos, de la puerta al lino (celda a %.0f px) y al banco (a %.0f px, bloquea %.0f): %d celdas; andando, Kael llega a %.0f px del lino (%d puntos)" % [
+		d_lino, d_banco, r_banco, cola.size(), fin, camino.size()])
 
 
 # D: para cada pieza, Kael detrás (sus pies 5 px por encima de los de la pieza): donde se ven a la vez la pieza y Kael,
