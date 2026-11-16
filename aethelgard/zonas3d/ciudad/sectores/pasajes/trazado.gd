@@ -2,14 +2,14 @@ extends RefCounted
 # CIUDAD DE OAKHAVEN (V12, 16/11; EXPERIMENTAL): sector 5, PASAJES VIEJOS. Maqueta del agente C (sectores 5 y 6) sobre el
 # trazado mínimo de M0. Plano: docs/v12/CIUDAD_OAKHAVEN_PLAN.md §2-§3; contrato: docs/v12/CIUDAD_OAKHAVEN.md; lo hecho
 # aquí: docs/v12/ciudad_sectores/C.md. Bordes acordados (plano.gd, CONEXIONES; no se cambian aquí): Paso Cubierto de la
-# Botica (x −30, z 54..57, cota 2), Pasaje de las Velas (z 50, x −70..−68, cota 2) y Arco de los Pasajes (x −30,
+# Botica (x −30, z 54..57, cota 2), Pasaje del Corro (z 50, x −70..−68, cota 2) y Arco de los Pasajes (x −30,
 # z 80..83, cota 1).
 #
 # Coordenadas de CIUDAD (x este, z sur, y arriba). Todo es PROPUESTA [P] salvo lo marcado [C] (ciudades/oakhaven.gd: el
 # callejón de Pip «al fondo, una grieta con luz», la grieta «paso estrecho y escondido al Patio de las Velas», el Patio de
 # las Velas «rincón escondido» con un altar pequeño y velas encendidas). La Botica de Selene [C] está al otro lado del Paso
 # Cubierto, en la plaza (sector 2, agente A): aquí NO se duplica.
-#   - NORTE (cota 2): el Pasaje de las Velas baja del Patio del Cuervo; el Callejón de las Macetas [P] (al oeste, con un
+#   - NORTE (cota 2): el Pasaje del Corro baja del Patio del Cuervo; el Callejón de las Macetas [P] (al oeste, con un
 #     pilón) y el Callejón Alto [P] (al este) salen de él; la Plazuela del Pozo [P] (ensanche para orientarse, pozo, árbol,
 #     el taller del cestero [P] y, al fondo, el Palomar Viejo [P], la referencia que se ve de lejos: 12 m, sobre los
 #     tejados) y el Paso Cubierto de la Botica (corredor bajo una casa) hasta la plaza.
@@ -37,7 +37,7 @@ const ID := "pasajes"
 # Rampas: «z» de norte a sur, «x» de oeste a este. Las escaleras son rampas (≤ 40 %); los niveles distintos los separan
 # casas y muros (sin saltos de más de 0,3 m entre casillas vecinas).
 const SUELOS := [
-	["pasajes", Rect2(-70.0, 50.0, 2.0, 8.5), "", 2.0, 2.0],          # 0 Pasaje de las Velas (borde z 50, cota 2), 2 m
+	["pasajes", Rect2(-70.0, 50.0, 2.0, 8.5), "", 2.0, 2.0],          # 0 Pasaje del Corro (borde z 50, cota 2), 2 m
 	["pasajes", Rect2(-86.0, 52.0, 16.0, 2.0), "", 2.0, 2.0],         # 1 Callejón de las Macetas [P], 2 m
 	["pasajes", Rect2(-86.0, 54.0, 2.0, 11.0), "z", 2.0, 1.5],        # 2 Escalera de las Macetas [P] (rampa suave)
 	["pasajes", Rect2(-68.0, 56.0, 18.0, 2.5), "", 2.0, 2.0],         # 3 Callejón Alto [P], 2,5 m
@@ -68,7 +68,7 @@ const BLOQUES := [
 	["muralla_oeste_s", "pasajes", Rect2(-100.0, 50.0, 3.0, 43.0), 0.0, 10.0, "muro", true],
 	["muralla_so_o", "pasajes", Rect2(-100.0, 93.0, 30.0, 2.5), 0.0, 8.0, "muro", true],
 	["muralla_so_e", "pasajes", Rect2(-70.0, 93.0, 40.0, 2.5), 0.0, 8.0, "muro", true],
-	# norte: Callejón de las Macetas y Pasaje de las Velas
+	# norte: Callejón de las Macetas y Pasaje del Corro
 	# las macetas, ENCIMA de la tapia (en el suelo dejaban el callejón en 1,5 m); a media tapia, un pilón con su caño [P]
 	# (deja 1,65 m de paso)
 	["tapia_macetas", "pasajes", Rect2(-86.0, 50.0, 16.0, 2.0), 2.0, 2.6, "muro", true],

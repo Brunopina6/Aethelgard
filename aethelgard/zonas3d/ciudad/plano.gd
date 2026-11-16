@@ -92,7 +92,7 @@ const CONEXIONES := [
 		"desde": 50.0, "hasta": 54.0, "cota": 10.0, "tipo": "calle"},
 	{"id": "rampa_carros", "nombre": "Rampa de los Carros [P]", "a": "puerta_sur", "b": "ribera", "borde": "x", "en": 45.0,
 		"desde": 76.0, "hasta": 82.0, "cota": 0.0, "tipo": "calle"},
-	{"id": "pasaje_velas", "nombre": "Pasaje de las Velas [P]", "a": "cuervo", "b": "pasajes", "borde": "z", "en": 50.0,
+	{"id": "pasaje_velas", "nombre": "Pasaje del Corro [P]", "a": "cuervo", "b": "pasajes", "borde": "z", "en": 50.0,
 		"desde": -70.0, "hasta": -68.0, "cota": 2.0, "tipo": "pasaje"},
 	{"id": "arco_pasajes", "nombre": "Arco de los Pasajes [P]", "a": "pasajes", "b": "puerta_sur", "borde": "x", "en": -30.0,
 		"desde": 80.0, "hasta": 83.0, "cota": 1.0, "tipo": "calle"},
@@ -112,7 +112,7 @@ const ANCLAS := {
 	"ref_plaza_tapiz": Vector3(0.0, 4.0, -4.6),             # ante la fuente de la Plaza del Tapiz [C] (lado norte)
 	"ref_oficios": Vector3(68.0, 4.8, 21.4),                # ante la forja de Maese Ferro [C pendiente]
 	"ref_terrazas": Vector3(-60.0, 12.0, -64.0),            # el lavadero de la terraza alta [P]
-	"ref_pasajes": Vector3(-56.0, 1.43, 70.0),              # el Patio de las Velas [C]
+	"ref_pasajes": Vector3(-56.0, 1.44, 70.0),              # el Patio de las Velas [C]
 	"ref_cuervo": Vector3(-78.0, 3.0, 6.4),                 # ante la Taberna del Cuervo Oxidado [C]
 	"ref_barrio_alto": Vector3(0.0, 16.0, -83.0),           # al pie del Árbol Milenario [C]
 	"ref_ribera": Vector3(96.0, -2.0, 72.0),                # bajo la Torre de la Campana [C]

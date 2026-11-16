@@ -67,7 +67,7 @@ Molino).
 | `paso_botica` | Paso Cubierto de la Botica [P] | 5 ↔ 2 | x = −30 | z 54..57 | 3 (pasaje) | 2 |
 | `subida_colina` | Subida de la Colina [C] | 3 ↔ 7 | z = −15 | x 50..54 | 4 | 10 |
 | `rampa_carros` | Rampa de los Carros [P] | 1 ↔ 8 | x = 45 | z 76..82 | 6 | 0 |
-| `pasaje_velas` | Pasaje de las Velas [P] | 6 ↔ 5 | z = 50 | x −70..−68 | 2 (pasaje) | 2 |
+| `pasaje_velas` | Pasaje del Corro [P] | 6 ↔ 5 | z = 50 | x −70..−68 | 2 (pasaje) | 2 |
 | `arco_pasajes` | Arco de los Pasajes [P] | 5 ↔ 1 | x = −30 | z 80..83 | 3 | 1 |
 | `escalera_molino` | Escalera del Molino [P] | 3 ↔ 8 | z = 55 | x 60..63 | 3 | 3 |
 
@@ -192,6 +192,6 @@ obras)», paso cubierto): el blockout se dibuja, Kael y el grupo se ven, lo ocul
   Redmi (guion propio). Nada medido aún.
 - Recorrido con los controles normales a 1600×720 y 1280×720 por una persona (las pruebas andan con «destino», que es lo
   mismo que un toque, pero sin ventana).
-- Los nombres nuevos [P] de M0 (Calle del Árbol, Escaleras de las Terrazas, Pasaje de las Velas, Arco de los Pasajes,
+- Los nombres nuevos [P] de M0 (Calle del Árbol, Escaleras de las Terrazas, Pasaje del Corro, Arco de los Pasajes,
   Escalera del Molino, paseo del Concejo, terraza de las Raíces) se suman a las decisiones del plan §8.
 - El barrio repartido en la ciudad (plan §4) y los vecinos por sector: fase de maqueta y de vida, no de M0.

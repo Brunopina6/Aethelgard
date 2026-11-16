@@ -129,7 +129,7 @@ const FINO := 0.6
 
 static func fino(b: Array) -> bool:
 	var r: Rect2 = b[2]
-	return r.size.x <= FINO and r.size.y <= FINO
+	return r.size.x <= FINO + 0.001 and r.size.y <= FINO + 0.001   # (margen: Rect2 guarda float32; 0,6 queda en 0,6000000238)
 
 
 # Los bloques que cortan el segmento desde → hasta: [[id, ocultable]] (sin los finos). Filtra antes por la planta.

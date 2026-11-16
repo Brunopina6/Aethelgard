@@ -2,7 +2,7 @@ extends RefCounted
 # CIUDAD DE OAKHAVEN (V12, 16/11; EXPERIMENTAL): sector 6, PATIO DEL CUERVO. Maqueta del agente C (sectores 5 y 6) sobre el
 # trazado mínimo de M0. Plano: docs/v12/CIUDAD_OAKHAVEN_PLAN.md §2-§3; contrato: docs/v12/CIUDAD_OAKHAVEN.md; lo hecho
 # aquí: docs/v12/ciudad_sectores/C.md. Bordes acordados (plano.gd, CONEXIONES; no se cambian aquí): Calle del Cuervo
-# (x −30, z 20..26, cota 2), Escaleras de las Terrazas (z −5, x −62..−58, cota 3) y Pasaje de las Velas (z 50,
+# (x −30, z 20..26, cota 2), Escaleras de las Terrazas (z −5, x −62..−58, cota 3) y Pasaje del Corro (z 50,
 # x −70..−68, cota 2).
 #
 # Coordenadas de CIUDAD (x este, z sur, y arriba). Todo es PROPUESTA [P] salvo lo marcado [C] (ciudades/oakhaven.gd: la
@@ -22,7 +22,7 @@ extends RefCounted
 #   - LA CALLE DEL CUERVO [C] baja de 3 a 2 hacia la plaza, con un soportal [P] (pilares y planta encima) y la tonelería
 #     [P] en su lado norte.
 #   - ABAJO (cota 2): el Corro de los Niños [P] (sitio de juego, rayuela, árbol, un tronco de banco), separado del patio
-#     por un pretil y un muro de tierra con una escalinata; de él sale el Pasaje de las Velas hacia los Pasajes Viejos y
+#     por un pretil y un muro de tierra con una escalinata; de él sale el Pasaje del Corro hacia los Pasajes Viejos y
 #     el Callejón del Corro [P], que sube a la boca de la Calle del Cuervo (otro bucle), con una puerta en su recodo.
 # Cómo se lee cada lista: zonas3d/ciudad/trazado_comun.gd (formatos del barrio).
 
@@ -43,7 +43,7 @@ const SUELOS := [
 	["cuervo", Rect2(-97.0, -1.0, 9.0, 10.0), "", 3.0, 3.0],             # 7 Corral de la Posada [P], sin salida
 	["cuervo", Rect2(-80.0, 27.0, 6.0, 3.0), "z", 3.0, 2.0],             # 8 escalinata del corro (33 %)
 	["cuervo", Rect2(-86.0, 30.0, 22.0, 9.0), "", 2.0, 2.0],             # 9 Corro de los Niños [P]
-	["cuervo", Rect2(-70.0, 39.0, 2.0, 11.0), "", 2.0, 2.0],             # 10 Pasaje de las Velas (borde z 50, cota 2)
+	["cuervo", Rect2(-70.0, 39.0, 2.0, 11.0), "", 2.0, 2.0],             # 10 Pasaje del Corro (borde z 50, cota 2)
 	["cuervo", Rect2(-58.0, -2.0, 10.0, 2.5), "", 3.0, 3.0],             # 11 Callejón del Tonel [P], tramo este-oeste
 	["cuervo", Rect2(-50.0, 0.5, 2.0, 19.5), "", 3.0, 3.0],              # 12 Callejón del Tonel, tramo norte-sur (2 m)
 	["cuervo", Rect2(-58.0, 26.0, 2.0, 7.0), "z", 3.0, 2.0],             # 13 Callejón del Corro [P]: baja (14 %)
@@ -101,7 +101,7 @@ const BLOQUES := [
 	["casa_corro_ne", "cuervo", Rect2(-64.0, 30.0, 6.0, 3.0), 2.0, 4.5, "casa", true],
 	# la casa del oeste abre al corro por su cara ESTE (la cámara la ve; la de norte no se veía)
 	["hoja_corro", "cuervo", Rect2(-86.0, 35.8, 0.08, 1.4), 2.0, 2.3, "puerta", false],
-	# la puerta del Pasaje de las Velas (cara oeste, de canto para la cámara): un tejadillo saliente la señala desde arriba
+	# la puerta del Pasaje del Corro (cara oeste, de canto para la cámara): un tejadillo saliente la señala desde arriba
 	["hoja_pasaje", "cuervo", Rect2(-68.08, 44.3, 0.08, 1.4), 2.0, 2.3, "puerta", false],
 	["tejadillo_pasaje", "cuervo", Rect2(-68.8, 44.0, 0.8, 2.0), 4.6, 0.25, "cubierta", false],
 	["arbol_corro", "cuervo", Rect2(-73.0, 36.0, 0.55, 0.55), 2.0, 2.6, "arbol", true],

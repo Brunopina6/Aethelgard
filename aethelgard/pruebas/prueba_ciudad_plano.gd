@@ -14,9 +14,12 @@ extends SceneTree
 #      ancho mínimo según su tipo; la recta de 3 m a un lado a 3 m al otro se anda en los dos sentidos.
 #   6. Grafo global simétrico con sus nodos en lo andable; los grafos locales, simétricos y con aristas rectas andables.
 #   7. Cámara: la del barrio (altura, distancia, inclinación, campo, sin girar); el foco no salta entre casillas vecinas.
-#   8. Kael visible: en una muestra de lo andable (cada metro), el rayo de la cámara a su cabeza no corta ningún bloque que
+#   8. Kael visible: en una muestra de lo andable (cada metro, y además TODAS las casillas del borde de lo andable, junto a
+#      bloques y huecos, donde la muestra de cada metro no veía casas ni carros: revisión del 16/11), el rayo de la cámara a su cabeza no corta ningún bloque que
 #      la escena no aclare (se imprimen cuántas casillas necesitan aclarar algo) ni ningún suelo de otro nivel. Los
 #      bloques finos (pilares ≤ 0,6 m) no cuentan: son más estrechos que Kael.
+#   9. Sin huecos junto a lo andable (16/11, revisiones de la maqueta): ninguna casilla andable tiene una vecina sin suelo de
+#      ningún sector ni bloque (salvo cubierta, copa o puerta) encima: eso es una zanja o una pared invisible.
 # Imprime «FALLOS: n».
 
 const P := preload("res://zonas3d/ciudad/plano.gd")
@@ -50,6 +53,7 @@ func _correr() -> void:
 	_grafos()
 	_camara()
 	_visible()
+	_huecos()
 	print("(%.1f s)" % ((Time.get_ticks_msec() - t0) / 1000.0))
 	print("FALLOS: %d" % fallos)
 	quit(1 if fallos > 0 else 0)
@@ -394,7 +398,7 @@ func _visible() -> void:
 	var tapados: Array = []
 	var por_bloque := {}
 	for k in celdas:
-		if posmod(k.x, 4) != 0 or posmod(k.y, 4) != 0:
+		if (posmod(k.x, 4) != 0 or posmod(k.y, 4) != 0) and not _borde(k):
 			continue
 		muestras += 1
 		var p := Vector3((k.x + 0.5) * PASO, celdas[k][0], (k.y + 0.5) * PASO)
@@ -414,7 +418,45 @@ func _visible() -> void:
 			por_bloque[clave] = int(por_bloque.get(clave, 0)) + 1
 			if tapados.size() < 12:
 				tapados.append("%s tapa en %s" % [clave, str(Vector2(p.x, p.z))])
-	print("VISIBILIDAD: %d casillas de muestra (cada metro); en %d la escena aclara algo (cubiertas, copas u ocultables)" % [
+	print("VISIBILIDAD: %d casillas de muestra (cada metro y todo el borde de lo andable); en %d la escena aclara algo (cubiertas, copas u ocultables)" % [
 		muestras, con_aclarado])
 	_ok(por_bloque.is_empty() and muestras > 1000, "8: Kael visible desde la cámara en toda la muestra (bloques que tapan: %s; ej. %s)" % [
 		str(por_bloque), str(tapados)])
+
+
+func _borde(k: Vector2i) -> bool:
+	for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+		if not celdas.has(k + d):
+			return true
+	return false
+
+
+# ================================================================= 9
+
+func _huecos() -> void:
+	# Lo que «tapa» el suelo en la rejilla: los suelos de todos los sectores y los bloques que no pasan por encima.
+	var cubierto := {}
+	for s in IDS:
+		var t = P.TRAZADOS[s]
+		var rects: Array = []
+		for su in t.SUELOS:
+			rects.append(su[1])
+		for b in t.BLOQUES:
+			if not String(b[5]) in ["cubierta", "copa", "puerta"]:
+				rects.append(b[2])
+		for r in rects:
+			for i in range(floori((r as Rect2).position.x / PASO), ceili((r as Rect2).end.x / PASO)):
+				for j in range(floori((r as Rect2).position.y / PASO), ceili((r as Rect2).end.y / PASO)):
+					if (r as Rect2).has_point(Vector2((i + 0.5) * PASO, (j + 0.5) * PASO)):
+						cubierto[Vector2i(i, j)] = true
+	var por := {}
+	var ej: Array = []
+	for k in celdas:
+		for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			var q: Vector2i = k + d
+			if not celdas.has(q) and not cubierto.has(q):
+				var s: String = celdas[k][1]
+				por[s] = int(por.get(s, 0)) + 1
+				if ej.size() < 12:
+					ej.append("%s junto a %s" % [s, str(Vector2((q.x + 0.5) * PASO, (q.y + 0.5) * PASO))])
+	_ok(por.is_empty(), "9: ningún borde de lo andable da a un hueco sin suelo ni bloque (por sector %s; ej. %s)" % [str(por), str(ej)])
