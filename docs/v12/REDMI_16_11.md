@@ -61,6 +61,33 @@ por USB a Descargas (SHA comprobado en el teléfono) e instalada por el usuario 
   rodearla (el juego no busca camino; la herramienta del PC usaba A*). Es diseño de la maqueta: valorar mover la fuente
   o abrir el paso.
 
+## El resto del guion de la noche (14:00-14:15), perfil BAJO, escala FIJA ×0,75
+Cada caso: entrada desde el banco (12 s, con la carga) y un tramo de 24 s con 8 toques (norte, oeste, este, sur).
+Registros y capturas en `D:\REBELUM_diagnostico\redmi_16_11\casos\`. 0 errores en el registro de cada caso.
+
+| Caso | Entrada (12 s) | Tramo (24 s) | PSS banco → dentro → banco |
+|---|---|---|---|
+| Barrio de Oakhaven (6 tramos horneados) | 341 fot.; **1 de 1 s** (carga), 50=9 | 30,36 FPS; 33=753, 50=5, 66=2 | 889 → **953** (917 andando) → 913 |
+| Muestra de la calle | 366 fot.; 1 de 300 ms, 50=1 | 30,37 FPS; 33=726, 50=14, 86=1, 102=1 | 913 → 916 (921) → 920 |
+| Arboleda (Hospedería) | 352 fot.; 1 de 750 ms | 29,85 FPS; 33=780, **50=44**, 66-250 ms=9 | 916 → **957** (913) → 935 |
+| Sunken City con la Quilla horneada (muelle → popa) | 323 fot.; **1 de 1 s**, 102=1 | 30,37 FPS; 33=751, 50=5 | 930 → **979** (957) → 951 |
+
+- **Los cuatro sostienen 30 FPS** andando. La Arboleda es la que más fotogramas de 50 ms tiene (5 %) y picos de hasta
+  250 ms (sin línea base de antes de la Hospedería en el Redmi: no se puede atribuir).
+- La entrada del barrio y la de Sunken tienen un fotograma de ≈ 1 s (la carga de la escena, como las demás regiones).
+- **La memoria del banco SUBE de un caso al siguiente**: 888 → 913 → 916 → 935 → 951 MB tras ciudad ×4, barrio,
+  muestra, Arboleda y Sunken. Dentro de Sunken con la Quilla, 979 MB (por encima de 950). En la ciudad sola, 3 ciclos
+  seguidos NO crecieron (900-902). Puede ser caché de recursos que se queda tras cada escena distinta (no una fuga por
+  ciclo); PENDIENTE de medir en el PC con el mismo orden (`D:\REBELUM_diagnostico\pruebas` no tiene esa prueba).
+- **No se llegó a la Quilla** dentro de Sunken (el tramo quedó en el muelle y la popa), ni se entró en los interiores del
+  barrio ni se subió la escalera de la Arboleda: esas partes del guion siguen SIN PROBAR en el teléfono.
+- Un toque cayó por error en un combate de prueba del banco (Custodio): se salió con «Huir»; partida aislada, sin efecto.
+
+## Al terminar (14:15)
+Calidad del banco vuelta a «Regulador normal», Quilla a «No», «Salir del banco». `partida_exp.save` (`567c7323…`),
+`ajustes.cfg`, `calidad.log`: IGUALES al respaldo; sin `banco_pruebas.save`.
+
 ## Sin probar hoy en el Redmi
-Muestra de la calle, barrio, Sunken con la Quilla, Arboleda (guion `GUION_REDMI_15_11.md`, «PARA EL 16/11»), y la
-optimización del perfil bajo de la ciudad (en marcha en el PC: no va en esta APK).
+Interiores del barrio y su misión, la Quilla por dentro, la escalera y la Hospedería de la Arboleda, los sectores de la
+ciudad no andados, el regulador normal (todo se midió con escala fija) y la optimización del perfil bajo de la ciudad (en
+marcha en el PC: no va en esta APK).
