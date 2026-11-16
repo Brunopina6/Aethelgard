@@ -110,7 +110,7 @@ const BLOQUES := [
 	["horno_maela", "oficios", Rect2(88.0, 30.0, 8.0, 17.0), 4.6, 6.0, "casa", true],
 	["hoja_horno", "oficios", Rect2(90.4, 46.92, 1.2, 0.08), 4.7, 2.3, "puerta", false],
 	["chimenea_horno", "oficios", Rect2(92.0, 33.0, 1.2, 1.2), 10.6, 2.2, "muro", false],
-	["banco_horno", "oficios", Rect2(96.1, 38.0, 0.5, 2.2), 5.8, 0.45, "bajo", true],
+	["banco_horno", "oficios", Rect2(96.1, 38.0, 0.5, 2.2), 5.8, 0.7, "bajo", true],
 	["pretil_horno_o", "oficios", Rect2(63.5, 53.0, 12.5, 0.4), 3.0, 1.2, "muro", true],
 	["pretil_horno_c", "oficios", Rect2(76.0, 53.0, 12.0, 0.4), 3.85, 1.1, "muro", true],
 	["pretil_horno_e", "oficios", Rect2(88.0, 53.0, 12.0, 0.4), 4.5, 1.2, "muro", true],
