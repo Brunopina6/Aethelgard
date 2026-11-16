@@ -211,9 +211,14 @@ func ids_montados() -> Array:
 	return P.ORDEN.filter(func(id): return montados.has(id))
 
 
-# Aclara en los sectores montados lo ocultable que corta el rayo de la cámara a la cabeza de Kael.
-func aclarar(desde: Vector3, hasta: Vector3) -> int:
+# Aclara en los sectores montados lo ocultable que corta los rayos de la cámara a «puntos» (Kael y el grupo: sector.gd).
+func aclarar(desde: Vector3, puntos, ahora := 0.0) -> int:
 	var n := 0
 	for id in montados:
-		n += (montados[id] as Node).aclarar(desde, hasta)
+		n += (montados[id] as Node).aclarar(desde, puntos, ahora)
 	return n
+
+
+func olvidar_aclarados() -> void:
+	for id in montados:
+		(montados[id] as Node).olvidar_aclarados()

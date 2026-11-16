@@ -8,7 +8,10 @@ extends "res://prototipos/vista3d.gd"
 # maqueta lejana. Kael y el grupo con los controles normales (tocar/clic y teclas): lo que se pisa y a qué altura lo dicen
 # los trazados (plano.andable / plano.altura: escaleras y rampas andables), y no se atraviesan los bloques (choques de los
 # sectores montados). Cámara inclinada sin girar, la del barrio, con zonas por sector; lo que la escena puede ocultar
-# (cubiertas, copas y las casas OCULTABLES de cada trazado) se aclara si se pone entre la cámara y la cabeza de Kael.
+# (cubiertas, copas y las casas OCULTABLES de cada trazado) se aclara si se pone entre la cámara y Kael (cabeza, cintura,
+# pies y lados) o el grupo cercano, y sigue aclarado un momento (sin parpadeo). Con teclas o mando, Kael se desliza a lo
+# largo de una pared si va en diagonal contra ella; un toque en un sector sin montar (maqueta lejana, sin choques) cae
+# en el plano. (Arreglos del recorrido, 16/11: docs/v12/ciudad_sectores/RECORRIDO.md §7.)
 # Puertas solo previstas: «Aún no se puede entrar (en obras).». Nunca se cargan interiores.
 #
 # API de región (la del barrio): kael, cam, perfil · avisar(texto, efecto, seg) · guardar() · guardar_posicion() ·
@@ -162,6 +165,7 @@ func _colocar_kael(p: Vector3) -> void:
 	destino = null
 	if cargador != null:
 		cargador.actualizar(p, true)
+		cargador.olvidar_aclarados()                  # (lo aclarado donde estaba no sigue aclarado: sector.gd, SOSTEN)
 	foco = P.foco_camara(p)
 	_colocar_camara(1.0)
 
@@ -173,11 +177,33 @@ func _colocar_camara(peso: float) -> void:
 	P.poner_camara(cam, foco)
 
 
-# Lo que tapa a Kael se aclara (en vista3d, lo del grupo «ocluye»; aquí, lo ocultable de los sectores montados).
+# Lo que tapa a Kael se aclara (en vista3d, lo del grupo «ocluye»; aquí, lo ocultable de los sectores montados). No solo
+# la cabeza: con solo ella, una hoja de puerta, una lona o un arco dejaban a Kael asomando la cabeza (o nada) justo donde
+# se pulsa «Entrar», medio Kael quedaba tapado de lado pegado a una esquina (la cámara no gira: su ancho va en x) y el
+# grupo se quedaba detrás de lo que nadie aclaraba (recorrido y verificación, 16/11). Ahora, rayos de la cámara a la
+# cabeza, la cintura, los pies y los dos lados de Kael, y a la cabeza, la cintura y los pies de quien del grupo esté a
+# menos de GRUPO_CERCA (a los pies: al entrar, la hoja de la Puerta del Sur cortaba las piernas de Lya y Garon).
+const PUNTOS_KAEL := [Vector3(0.0, Comun.ALTO_CABEZA, 0.0), Vector3(0.0, 0.8, 0.0), Vector3(0.0, 0.25, 0.0),
+	Vector3(-0.25, 0.8, 0.0), Vector3(0.25, 0.8, 0.0), Vector3(-0.25, 1.4, 0.0), Vector3(0.25, 1.4, 0.0)]
+const PUNTOS_GRUPO := [Vector3(0.0, 1.4, 0.0), Vector3(0.0, 0.8, 0.0), Vector3(0.0, 0.25, 0.0)]
+const GRUPO_CERCA := 8.0
+var _t_juego := 0.0                        # segundos de juego (el sostén de los aclarados, sector.gd)
+
+
 func _oclusion() -> void:
 	if cam == null or kael == null or cargador == null:
 		return
-	aclarados = cargador.aclarar(cam.global_position, kael.global_position + Vector3(0.0, Comun.ALTO_CABEZA, 0.0))
+	var k := kael.global_position
+	var puntos: Array = []
+	for d in PUNTOS_KAEL:
+		puntos.append(k + d)
+	if grupo != null:
+		for n in grupo.nodos():
+			var g: Vector3 = (n as Node3D).global_position
+			if Vector2(g.x - k.x, g.z - k.z).length() < GRUPO_CERCA:
+				for d in PUNTOS_GRUPO:
+					puntos.append(g + d)
+	aclarados = cargador.aclarar(cam.global_position, puntos, _t_juego)
 
 
 func _prohibido(p: Vector3) -> bool:
@@ -223,7 +249,8 @@ func _ajustar_destino(p):
 # suelo, vale como antes (Kael va hacia él).
 func _punto_suelo(pantalla: Vector2):
 	var desde := cam.project_ray_origin(pantalla)
-	var hasta := desde + cam.project_ray_normal(pantalla) * 500.0
+	var dir := cam.project_ray_normal(pantalla)
+	var hasta := desde + dir * 500.0
 	var excluir: Array[RID] = []
 	var reserva = null
 	for i in 8:
@@ -231,7 +258,7 @@ func _punto_suelo(pantalla: Vector2):
 		q.exclude = excluir
 		var r := get_world_3d().direct_space_state.intersect_ray(q)
 		if r.is_empty():
-			return reserva
+			break
 		var p: Vector3 = r["position"]
 		if p.y < P.altura(p.x, p.z) + 1.0:
 			if P.andable(p.x, p.z) or not String((r["collider"] as Node).name).begins_with("Choque_"):
@@ -239,7 +266,35 @@ func _punto_suelo(pantalla: Vector2):
 			if reserva == null:
 				reserva = p
 		excluir.append(r["rid"])
-	return reserva
+	if reserva != null:
+		return reserva
+	return _punto_plano(desde, dir)
+
+
+# Si los choques no dan suelo, el mismo rayo contra el PLANO: el primer punto andable con el rayo a su cota o por debajo.
+# Lo que se ve de un sector sin montar es su maqueta lejana, sin choques: a la entrada del Paso Cubierto de la Botica,
+# en el bajo (3 sectores), el suelo de los Pasajes se veía a 4 m y el toque se perdía (verificación, 16/11). El plano
+# ya manda en lo que se pisa, y _ajustar_destino corta el camino en lo no andable.
+const RAYO_PLANO := 120.0
+
+
+func _punto_plano(desde: Vector3, dir: Vector3):
+	var paso := 0.25
+	var anterior := 0.0
+	var t := 0.0
+	while t <= RAYO_PLANO:
+		var q := desde + dir * t
+		if P.sector_en_caja(q.x, q.z) != "" and q.y <= P.altura(q.x, q.z) + 0.02 and P.andable(q.x, q.z):
+			var u := anterior                      # (afinado: el primero a 2,5 cm)
+			while u < t:
+				var w := desde + dir * u
+				if w.y <= P.altura(w.x, w.z) + 0.02 and P.andable(w.x, w.z):
+					return Vector3(w.x, P.altura(w.x, w.z), w.z)
+				u += 0.025
+			return Vector3(q.x, P.altura(q.x, q.z), q.z)
+		anterior = t
+		t += paso
+	return null
 
 
 func suelo_de_pasos(p: Vector3) -> String:
@@ -378,13 +433,62 @@ func _process(delta: float) -> void:
 		boton_accion.visible = false
 		_colocar_camara(1.0 - exp(-suavizado * delta))
 		return
+	_t_juego += delta
+	var k0 := kael.global_position
 	super(delta)
+	_deslizar(delta, k0)
 	cargador.actualizar(kael.global_position)
 	_comprobar_cerca()
 	_t_titulo -= delta
 	if _t_titulo <= 0.0:
 		_t_titulo = 0.5
 		_poner_titulo()
+
+
+# Con teclas o mando, en DIAGONAL contra una pared: si el paso entero no pasa (vista3d.gd lo descarta), Kael se desliza a
+# lo largo de ella con la parte del paso que sí pasa (solo en x o solo en z), con las mismas reglas (_altura_suelo:
+# escalón, rodillas y lo que no se pisa). Pegado a la pared norte del Paso de la Botica, ↑+→ avanzaba 0,10 m en 1,5 s
+# (verificación, 16/11). Solo en la ciudad: vista3d.gd es de todas las regiones 3D y no cambia. Con clics, no (el toque
+# lleva a un punto: si una esquina lo frena, se vuelve a tocar).
+var _deslizando := false
+
+
+func _deslizar(delta: float, k0: Vector3) -> void:
+	var dir := direccion_teclas
+	var desliza := false
+	if dir.length() > 0.1 and absf(dir.x) > 0.05 and absf(dir.y) > 0.05 and kael.global_position.is_equal_approx(k0) \
+			and not ocupado():
+		var paso := Vector3(dir.x, 0.0, dir.y).normalized()
+		var total := VELOCIDAD * clampf(dir.length(), STICK_MIN, 1.0) * delta
+		var partes := [Vector3(paso.x, 0.0, 0.0), Vector3(0.0, 0.0, paso.z)]
+		if absf(paso.z) > absf(paso.x):
+			partes.reverse()
+		for parte in partes:
+			var largo := total * (parte as Vector3).length()
+			var hacia := (parte as Vector3).normalized()
+			var tramos := maxi(1, ceili(largo / TRAMO_MAX))
+			var andado := 0.0
+			for t in tramos:
+				var siguiente: Vector3 = kael.global_position + hacia * (largo / tramos)
+				var y := _altura_suelo(siguiente, kael.global_position.y)
+				if is_nan(y):
+					break
+				kael.global_position = Vector3(siguiente.x, y, siguiente.z)
+				andado += largo / tramos
+			if andado > 0.0:
+				desliza = true
+				kael.mirar(paso, 0.12)
+				if kael.has_method("marcha"):
+					kael.marcha(andado / maxf(delta, 0.0001))   # (movimiento sigue en "": vista3d no la para)
+				elif not _deslizando:
+					kael.andar()
+				break
+	if _deslizando and not desliza and movimiento == "":
+		if kael.has_method("parar_marcha"):
+			kael.parar_marcha()
+		else:
+			kael.reposo()
+	_deslizando = desliza
 
 
 # [id, posición, radio, texto] de lo que se usa cerca: las puertas previstas y la Puerta del Sur.

@@ -17,7 +17,8 @@ extends SceneTree
 # En cada parada: que Kael llega (distancia), que no pisa lo que no es andable ni atraviesa cajas sólidas (cada
 # fotograma), que no se atasca (tiempo), que el grupo le sigue (distancia, sobre lo andable) y que Kael se VE: cabeza y
 # pies dentro del cuadro y ningún bloque sin aclarar entre la cámara y su cabeza (los ocultables de los sectores montados
-# han de estar aclarados; lo no ocultable o la maqueta lejana de un sector sin montar, FALLO).
+# han de estar aclarados; lo no ocultable o la maqueta lejana de un sector sin montar, FALLO) ni nada ocultable sin
+# aclarar delante de su cintura y sus pies, ni (ya parados) de la cabeza y la cintura del grupo a menos de 8 m.
 # Imprime una línea por tramo, «RECORRIDO: n tramos, m fallos» y «FALLOS: m».
 # Uso (con ventana; sin ventana también corre, sin capturas):
 #   Godot --path aethelgard --script res://pruebas/recorrido_ciudad.gd --fixed-fps 30 --resolution 1600x720 --
@@ -654,6 +655,41 @@ func _visibilidad() -> String:
 						mal.append("%s/%s en la maqueta lejana (sector sin montar)" % [s, id])
 	for su in P.suelos_que_tapan(k):
 		mal.append("suelo " + su)
+	# (16/11, arreglos) la cintura y los pies: lo ocultable que los tapa ha de estar aclarado (antes la escena solo miraba
+	# la cabeza y una hoja de puerta o una lona dejaban a Kael asomando la cabeza)
+	for h in [0.8, 0.25]:
+		for x in _sin_aclarar(desde, k + Vector3(0.0, h, 0.0)):
+			mal.append("%s sin aclarar a %.2f m" % [x, h])
+	return ", ".join(mal)
+
+
+# Lo ocultable de los sectores montados que corta el rayo desde → p sin estar aclarado.
+func _sin_aclarar(desde: Vector3, p: Vector3) -> Array:
+	var r: Array = []
+	var claro: Material = Blockout.material(true)
+	for s in v.cargador.montados:
+		var t = P.trazado(s)
+		for x in Comun.tapan(t.BLOQUES, t.OCULTABLES, desde, p):
+			if x[1]:
+				var mi = v.cargador.montados[s].get_node_or_null("Ocultable_" + String(x[0]))
+				if mi == null or mi.material_override != claro:
+					r.append("%s/%s" % [s, x[0]])
+	return r
+
+
+# (16/11, arreglos) El grupo, ya parado: a su cabeza y su cintura, nada ocultable sin aclarar (si está a < 8 m de Kael).
+func _grupo_visible() -> String:
+	if v.grupo == null:
+		return ""
+	var mal: Array = []
+	var desde: Vector3 = v.cam.global_position
+	for n in v.grupo.nodos():
+		var g: Vector3 = (n as Node3D).global_position
+		if _plana(g, _kael()) >= 8.0:
+			continue
+		for h in [1.4, 0.8]:
+			for x in _sin_aclarar(desde, g + Vector3(0.0, h, 0.0)):
+				mal.append("%s: %s sin aclarar a %.1f m" % [n.name, x, h])
 	return ", ".join(mal)
 
 
@@ -727,6 +763,9 @@ func _cerrar_tramo(sector: String, tipo: String, nombre: String, r: Dictionary, 
 		var g: Dictionary = await _grupo()
 		if not g["ok"]:
 			mal.append("grupo: " + g["txt"])
+		var gv := _grupo_visible() if _vivo() else ""
+		if gv != "":
+			mal.append("grupo tapado: " + gv)
 		if int(_t.get("grupo_fuera", 0)) > 15:
 			mal.append("grupo fuera de lo andable %d fotogramas (%s)" % [_t["grupo_fuera"], _t.get("grupo_donde", "")])
 		r["grupo"] = g["lejos"]

@@ -28,6 +28,52 @@ func _initialize() -> void:
 	_correr.call_deferred()
 
 
+# (16/11, arreglos del recorrido: docs/v12/ciudad_sectores/RECORRIDO.md §7) el aclarado por varios puntos (cintura y pies
+# de Kael y el grupo), su sostén de SOSTEN s y el toque que cae en el plano cuando los choques no dan suelo.
+func _arreglos_recorrido(ps: Node3D) -> void:
+	var claro: Material = load("res://zonas3d/ciudad/blockout.gd").material(true)
+	var sec := ps as Node
+	var casa := ps.get_node("Ocultable_casa_sur_e") as MeshInstance3D
+	var caja: AABB = sec.ocultables.filter(func(o): return o[0] == casa)[0][1][0]
+	var desde := Vector3(caja.get_center().x, caja.end.y + 8.0, caja.end.z + 10.0)      # al sur y por encima de la casa
+	var detras := Vector3(caja.get_center().x, caja.position.y + 0.3, caja.position.z - 1.0)   # al norte, a ras de suelo
+	var arriba := Vector3(caja.get_center().x, caja.end.y + 30.0, caja.position.z - 1.0)       # (este no la cruza)
+	sec.olvidar_aclarados()
+	sec.aclarar(desde, [arriba], 10.0)
+	_ok(casa.material_override != claro, "C: un rayo que no cruza la casa no la aclara")
+	sec.aclarar(desde, [arriba, detras], 10.0)
+	_ok(casa.material_override == claro, "C: con varios puntos, basta uno tapado (los pies) para aclararla")
+	sec.aclarar(desde, [arriba], 10.0 + sec.SOSTEN * 0.5)
+	_ok(casa.material_override == claro, "C: sigue aclarada %.2f s después de dejar de tapar (sin parpadeo)" % (sec.SOSTEN * 0.5))
+	sec.aclarar(desde, [arriba], 10.0 + sec.SOSTEN + 0.05)
+	_ok(casa.material_override != claro, "C: y vuelve a opaca pasado el sostén (%.2f s)" % sec.SOSTEN)
+	sec.aclarar(desde, [detras], 20.0)
+	sec.olvidar_aclarados()
+	sec.aclarar(desde, [arriba], 20.01)
+	_ok(casa.material_override != claro, "C: al colocar a Kael de golpe, lo aclarado antes no se sostiene")
+	sec.olvidar_aclarados()                     # (los tiempos de arriba van por delante del reloj de la escena)
+	# el toque contra el plano (lo que se ve de un sector sin montar no tiene choques)
+	var n := 0
+	var bien := 0
+	var malos: Array = []
+	for w in [Vector3(-33.0, 2.0, 55.5), P.ancla("inicio"), P.ancla("ref_plaza_tapiz"), P.ancla("ref_terrazas"), P.ancla("ref_barrio_alto")]:
+		if not P.andable(w.x, w.z):
+			malos.append("%s no es andable" % w)
+			continue
+		var cam := Vector3(w.x, w.y + 10.8, w.z + 14.2)
+		var r = v._punto_plano(cam, (w - cam).normalized())
+		n += 1
+		if r != null and (r as Vector3).distance_to(w) < 0.1:
+			bien += 1
+		else:
+			malos.append("%s → %s" % [w, r])
+	_ok(bien == n, "C: el toque contra el plano cae donde se toca (%d de %d) %s" % [bien, n, str(malos)])
+	var cielo = v._punto_plano(Vector3(0.0, 20.0, 60.0), Vector3(0.0, 0.3, -1.0).normalized())
+	var fuera = v._punto_plano(Vector3(0.0, 10.0, 110.0), Vector3(0.0, -0.5, 1.0).normalized())
+	_ok(cielo == null and fuera == null, "C: el cielo y el campo de fuera de la ciudad no dan toque (%s, %s)" % [str(cielo), str(fuera)])
+	await _frames(1)
+
+
 func _ok(cond: bool, t: String) -> void:
 	if cond:
 		print("OK " + t)
@@ -244,6 +290,7 @@ func _escena() -> void:
 	await _frames(3)
 	_ok(ps != null and (ps.get_node("Ocultable_casa_sur_e") as MeshInstance3D).material_override == load("res://zonas3d/ciudad/blockout.gd").material(false),
 		"C: y vuelve a opaca al apartarse")
+	await _arreglos_recorrido(ps)
 	await _conexiones_andadas()
 	# vuelta al inicio: los mismos sectores y los mismos nodos que la vez anterior que se llegó igual (inicio → Árbol →
 	# inicio, dos veces: la primera deja lo que la histéresis guarde de antes)

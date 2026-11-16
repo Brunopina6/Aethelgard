@@ -81,6 +81,11 @@ func _rotulos() -> void:
 	var ref := Comun.ancla(trazado.ANCLAS, trazado.SUELOS, donde)
 	var l := _rotulo("Rotulo_sector", "%s (maqueta)" % P.SECTORES[id]["nombre"], 52)
 	l.position = ref + Vector3(0.0, 6.5, 0.0)
+	# cerca de la cámara (Kael unos 14 m al norte de su ancla, o en el lavadero bajo él) salía enorme y cortado, o por
+	# delante del grupo (recorrido, 16/11): no se dibuja a menos de ROTULO_CERCA (el título de la pantalla ya dice el sector)
+	l.visibility_range_begin = ROTULO_CERCA
+	l.visibility_range_begin_margin = 2.0
+	l.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
 	for pid in trazado.PUERTAS:
 		var d: Dictionary = trazado.PUERTAS[pid]
 		var umbral := Comun.ancla(trazado.ANCLAS, trazado.SUELOS, d["ancla"])
@@ -88,6 +93,12 @@ func _rotulos() -> void:
 		var hacia := Vector3(fuera.x - umbral.x, 0.0, fuera.z - umbral.z).normalized()
 		var lp := _rotulo("Rotulo_" + String(pid), "%s (en obras)" % d.get("nombre", pid), 40)
 		lp.position = umbral + hacia * 0.9 + Vector3(0.0, 3.0, 0.0)
+		lp.visibility_range_begin = ROTULO_CERCA
+		lp.visibility_range_begin_margin = 2.0
+		lp.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
+
+
+const ROTULO_CERCA := 10.0
 
 
 func _rotulo(nombre: String, texto: String, tam: int) -> Label3D:
@@ -104,25 +115,59 @@ func _rotulo(nombre: String, texto: String, tam: int) -> Label3D:
 	return l
 
 
-# Aclara (copia medio transparente del material) lo ocultable que corta el rayo desde (la cámara) → hasta (la cabeza de
-# Kael) o que está a menos de CERCA_CAMARA de la cámara (con Kael junto a la muralla sur, la cámara queda encima de la
-# puerta y sus torres llenaban los lados del cuadro), y devuelve a opaco lo demás. Devuelve cuántas quedan aclaradas.
+# Aclara (copia medio transparente del material) lo ocultable que corta algún segmento desde (la cámara) → cada uno de
+# «puntos» (la cabeza, la cintura, los pies y los lados de Kael y la cintura, la cabeza y los pies del grupo cercano:
+# ciudad.gd, _oclusion) o que está a menos de CERCA_CAMARA de la cámara (con Kael junto a la muralla sur, la cámara
+# queda encima de la puerta y sus torres llenaban los lados del cuadro), y devuelve a opaco lo demás. Lo aclarado sigue
+# aclarado SOSTEN segundos (de juego, «ahora») después de dejar de tapar: andando, el rayo entraba y salía del borde de
+# una caja y la pieza parpadeaba (recorrido, 16/11). Devuelve cuántas quedan aclaradas.
+# (Recorrido, 16/11: con solo la cabeza, una hoja de puerta, una lona o un arco tapaban a Kael de los hombros abajo, y
+# al grupo entero, sin aclararse.)
 const CERCA_CAMARA := 6.0
+const SOSTEN := 1.0
+var _tapo_en := PackedFloat64Array()       # por ocultable: el último momento en que tapó
 
 
-func aclarar(desde: Vector3, hasta: Vector3) -> int:
+func aclarar(desde: Vector3, puntos, ahora := 0.0) -> int:
+	if puntos is Vector3:
+		puntos = [puntos]
 	aclarados = 0
-	for o in ocultables:
+	if _tapo_en.size() != ocultables.size():
+		_tapo_en.resize(ocultables.size())
+		_tapo_en.fill(-INF)
+	var zona := AABB(desde, Vector3.ZERO)          # lo que abarcan todos los segmentos (descarta deprisa)
+	for p in puntos:
+		zona = zona.expand(p)
+	zona = zona.grow(0.01)
+	for i in ocultables.size():
+		var o: Array = ocultables[i]
 		var tapa := false
 		for c in o[1]:
 			var caja := c as AABB
 			var cerca := Vector3(clampf(desde.x, caja.position.x, caja.end.x), clampf(desde.y, caja.position.y, caja.end.y),
 				clampf(desde.z, caja.position.z, caja.end.z))
-			if caja.intersects_segment(desde, hasta) or cerca.distance_to(desde) < CERCA_CAMARA:
+			if cerca.distance_to(desde) < CERCA_CAMARA:
 				tapa = true
 				break
+			if not caja.intersects(zona):
+				continue
+			for p in puntos:
+				if caja.intersects_segment(desde, p):
+					tapa = true
+					break
+			if tapa:
+				break
+		if tapa:
+			_tapo_en[i] = ahora
+		elif ahora - _tapo_en[i] < SOSTEN:
+			tapa = true
 		var mi: MeshInstance3D = o[0]
 		mi.material_override = Blockout.material(tapa)
 		if tapa:
 			aclarados += 1
 	return aclarados
+
+
+# Sin el sostén (Kael colocado de golpe en otro sitio: lo de antes no ha de seguir aclarado).
+func olvidar_aclarados() -> void:
+	_tapo_en.fill(-INF)
