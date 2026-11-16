@@ -1,0 +1,7 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://zonas3d/ciudad/sector.gd" id="1"]
+
+[node name="Sector_plaza_tapiz" type="Node3D"]
+script = ExtResource("1")
+id = "plaza_tapiz"
