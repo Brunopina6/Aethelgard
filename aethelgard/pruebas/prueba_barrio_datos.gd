@@ -532,7 +532,10 @@ func _mision() -> void:
 	_ok(_paso(e) == "galga" and B.paso_interno("trastienda"), "5N: tras el taller, paso %s / trastienda cerrada" % _paso(e))
 	_ok(B.dialogo_de("damian").ends_with("bar_damian_galga.dtl"), "5N: Damián no pide la galga")
 	_diario_sin_adelantar(e, "N2")
-	_ok(B.puerta("vivienda") == B.LLAMAR and B.estado("viv_llamado") and B.puerta("vivienda") == "", "5N: la primera vez no se llama a la puerta")
+	if B.interior_hecho("vivienda"):
+		_ok(B.puerta("vivienda") == B.LLAMAR and B.estado("viv_llamado") and B.puerta("vivienda") == "", "5N: la primera vez no se llama a la puerta")
+	else:                                                     # (sin el interior de B: Odila está fuera; no se llama)
+		_ok(B.puerta("vivienda") == "" and not B.estado("viv_llamado"), "5N: sin interior, se llama a una puerta en obras")
 	t = _hacer("galga", "N galga")
 	_ok(B.estado("enf_galga") and _paso(e) == "medir", "5N: coger la galga no avanza (paso %s)" % _paso(e))
 	_ok(B.accion("galga")["texto"] == B.PIEZAS["galga"]["texto_sin"], "5N: la galga se puede coger dos veces")
@@ -563,7 +566,7 @@ func _mision() -> void:
 	_ok(E.estado(e) == "hecho" and _eter() == eter0 + 2, "5N: tras cargar al final, la misión o el premio cambian")
 	_ok(B.dialogo_de("maela").ends_with("bar_maela_despues.dtl"), "5N: Maela no dice lo de después")
 	for k in B.ESTADOS:
-		if k in ["j_visto_clavo", "j_sabe_no_culpa_caballo"]:
+		if k in ["j_visto_clavo", "j_sabe_no_culpa_caballo"] or (k == "viv_llamado" and not B.interior_hecho("vivienda")):
 			continue
 		_ok(B.estado(k), "5N: al final falta «%s»" % k)
 

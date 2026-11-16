@@ -442,11 +442,12 @@ static func fuente_de(id: String, af: String) -> String:
 
 # ================================================================= piezas y puertas
 
-# "" = se puede pasar; si no, el aviso. La guardia del prólogo va primero; en la vivienda, la primera vez se llama.
+# "" = se puede pasar; si no, el aviso. La guardia del prólogo va primero; en la vivienda, la primera vez se llama (solo
+# con el interior construido por B: mientras no, Odila está fuera, en su puerta, y la región dice «en obras»).
 static func puerta(id: String) -> String:
 	if not puede_pasar():
 		return TEXTO_PROLOGO
-	if id == "vivienda" and activado() and not estado("viv_llamado"):
+	if id == "vivienda" and activado() and interior_hecho("vivienda") and not estado("viv_llamado"):
 		poner("viv_llamado")
 		return LLAMAR
 	return ""
