@@ -1084,7 +1084,12 @@ oficio("herrero", figura=Figura(sb=1.04, sx=1.18, st=1.22, sh=0.98, ojo=(0.17, 0
                  "cantero_aprendiz": P_("clara", (0.36, 0.26, 0.17), "gris", ojos="normal", boca="media_sonrisa",
                                         tela=(0.78, 0.77, 0.74), ropa=(0.36, 0.42, 0.50), ropa2=(0.52, 0.51, 0.49),
                                         acento=(0.70, 0.66, 0.56), pantalon=(0.34, 0.33, 0.34),
-                                        cuero=(0.42, 0.36, 0.30))})
+                                        cuero=(0.42, 0.36, 0.30)),
+                 # 16/11 (PROPUESTA, la cuadrilla de la Quilla de Sunken City 3D, zonas3d/sunken/quilla/obreros.gd): el
+                 # calafate, con el delantal negro de brea, camisa de lona y pañuelo rojo.
+                 "calafate": P_("morena", (0.34, 0.32, 0.30), "gris", ojos="seria", boca="media_sonrisa",
+                                tela=(0.74, 0.70, 0.60), ropa=(0.22, 0.30, 0.40), ropa2=(0.30, 0.27, 0.24),
+                                acento=(0.66, 0.20, 0.17), pantalon=(0.26, 0.28, 0.32), cuero=(0.16, 0.13, 0.11))})
 
 
 # --- mercader: barriga, chaleco y delantal corto, gorro blando, bolsa de monedas ---------------------------------------
@@ -1180,7 +1185,12 @@ oficio("campesino", figura=Figura(sb=1.0, sx=1.02, st=1.0, sh=1.0, ojo=(0.17, 0.
        tarea="cavar",
        personas={"campesino_huerto": P_("morena", (0.30, 0.20, 0.12), "pardo", ojos="normal", boca="sonrisa",
                                         ropa=(0.55, 0.42, 0.25), ropa2=(0.42, 0.36, 0.28), acento=(0.7, 0.55, 0.3),
-                                        tela=(0.90, 0.86, 0.74), pantalon=(0.36, 0.38, 0.30), extra=(0.75, 0.25, 0.20))})
+                                        tela=(0.90, 0.86, 0.74), pantalon=(0.36, 0.38, 0.30), extra=(0.75, 0.25, 0.20)),
+                 # 16/11 (PROPUESTA, la cuadrilla de la Quilla de Sunken City 3D): la carpintera de ribera; la azada
+                 # del campesino se lee como su azuela. Chaleco de lona, pañuelo verde y sombrero de paja.
+                 "carpintera": P_("clara", (0.52, 0.26, 0.12), "verde", ojos="normal", boca="media_sonrisa", pecas=True,
+                                  ropa=(0.72, 0.66, 0.54), ropa2=(0.40, 0.34, 0.28), acento=(0.80, 0.62, 0.32),
+                                  tela=(0.86, 0.82, 0.72), pantalon=(0.30, 0.34, 0.40), extra=(0.30, 0.52, 0.44))})
 
 
 # --- campesina: falda, pañuelo en la cabeza, cesta al brazo ---------------------------------------------------------------
@@ -1317,7 +1327,15 @@ oficio("viajero", figura=Figura(sb=1.02, sx=1.0, st=1.0, sh=0.98, ojo=(0.17, 0.4
                  # Capa y capucha carmesí (el color de la bandera del Águila), casaca azul de marino y ribetes de oro.
                  "brea": P_("morena", (0.70, 0.30, 0.12), "ambar", ojos="alegre", boca="risa", pecas=True,
                             ropa=(0.62, 0.17, 0.17), ropa2=(0.20, 0.26, 0.42), acento=(0.92, 0.74, 0.36),
-                            cuero=(0.42, 0.28, 0.16))})
+                            cuero=(0.42, 0.28, 0.16)),
+                 # 16/11 (PROPUESTA, la cuadrilla de la Quilla de Sunken City 3D): dos marineros de la Compañía; el
+                 # bastón del viajero se lee como su bichero. Azul de marino y lona, sin el carmesí de la capitana.
+                 "marinero_1": P_("media", (0.18, 0.13, 0.10), "pardo", ojos="normal", boca="sonrisa",
+                                  ropa=(0.24, 0.32, 0.46), ropa2=(0.80, 0.76, 0.66), acento=(0.62, 0.52, 0.34),
+                                  cuero=(0.36, 0.26, 0.16)),
+                 "marinero_2": P_("morena", (0.10, 0.08, 0.07), "ambar", ojos="alegre", boca="risa",
+                                  ropa=(0.70, 0.64, 0.50), ropa2=(0.26, 0.36, 0.42), acento=(0.30, 0.50, 0.46),
+                                  cuero=(0.40, 0.28, 0.18))})
 
 
 # --- barrendero: delantal largo, pañuelo, escoba --------------------------------------------------------------------------------
