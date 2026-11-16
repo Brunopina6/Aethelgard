@@ -6,18 +6,22 @@ extends RefCounted
 # cota 3) desde el Patio del Cuervo y su remate alto (x −30, z −64..−60, cota 12) hacia el Barrio Alto. Anclas globales que
 # caen aquí: «ref_terrazas» (−60, 12, −64, el lavadero) y «reserva_piezas_patio» (−80, 10, −50).
 #
-# El recorrido es el ATAJO de la taberna al barrio alto sin pasar por la plaza: sube en zigzag por cuatro terrazas.
+# El recorrido es el ATAJO de la taberna al barrio alto sin pasar por la plaza. La SUBIDA DIRECTA va por el este, en una
+# sola línea de escaleras (x −49..−44): Glicinias → T1 → Escalera de los Tendederos → T2 → Escalera del Este → T3 →
+# Escalera del Lavadero → T4 → Barrio Alto (≈ 85 m dentro del sector). El OESTE es el rodeo del barrio, con su razón: la
+# casa de Odila y Nela, el Atajo de la Hornacina, la plazuela con la fuente, el Patio de la Pieza y el lavadero.
 #   base (3) ── Escalinata de las Glicinias [P] (centro, dos tramos y un rellano con pérgola) ──► T1 (6)
 #   T1, Calle de las Casas: la calle residencial del barrio (plan §4): la VIVIENDA de Odila y Nela [P] con su patio
-#       delantero (rosal, banco), tendederos, huertos abajo, el pretil con vistas al Patio del Cuervo.
+#       delantero cerrado por tapias bajas (rosal, banco), tendederos, huertos en bancales abajo, el pretil con vistas.
+#   T1 ── Escalera de los Tendederos [P] (este, junto a la casa estrecha, dos tramos y rellano) ──► T2 (8)
 #   T1 ── Atajo de la Hornacina [P] (oeste: el atajo del barrio, dos tramos de escalones, arco y hornacina) ──► T2 (8)
 #   T2 y la Plazuela de los Juegos [P]: el ensanche para orientarse, con la fuente de las Terrazas y sitio de niños.
 #   T2 ── Escalera del Este [P] (dos tramos y rellano) ──► T3 (10)
-#   T3, Calle del Patio: pasa BAJO la Casa Puente [P] (paso bajo edificio) y acaba al oeste en el PATIO DE LA PIEZA
-#       [P] (callejón sin salida con razón: el sitio reservado de la Pieza Huérfana, plan §3).
-#   T3 ── Escalera del Lavadero [P] (centro, dos tramos y rellano) ──► T4 (12)
-#   T4, Terraza del Lavadero [P]: el lavadero cubierto de la terraza alta (la referencia), ropa tendida, y al este el
-#       remate hacia el Barrio Alto (x −30).
+#   T3, Calle del Patio: pasa BAJO la Casa Puente [P] (paso bajo edificio sobre dos pilares) y acaba al oeste en el
+#       PATIO DE LA PIEZA [P] (callejón sin salida con razón: el sitio reservado de la Pieza Huérfana, plan §3).
+#   T3 ── Escalera del Lavadero [P] (este, en línea con la del Este, dos tramos y rellano) ──► T4 (12)
+#   T4, Terraza del Lavadero [P]: el lavadero cubierto de la terraza alta (la referencia, con el Palomar del Lavadero
+#       [P] que asoma sobre los tejados), ropa tendida, y al este el remate hacia el Barrio Alto (x −30).
 # Las terrazas suben hacia el NORTE (la cámara está al sur): las casas de cada terraza tienen su fachada al norte de su
 # calle y su espalda contra la terraza de arriba; las que quedan al sur de la calle de arriba son OCULTABLES (la escena las
 # aclara cuando tapan a Kael). Los escalones son rampas continuas (≤ 33 %), como el atajo del barrio.
@@ -50,13 +54,18 @@ const SUELOS := [
 	# T3 (10): Calle del Patio y el Patio de la Pieza [P]
 	["terrazas", Rect2(-74.0, -53.0, 30.0, 4.0), "", 10.0, 10.0],       # 14 la calle (bajo la Casa Puente en x −66..−60)
 	["terrazas", Rect2(-87.0, -58.0, 13.0, 9.0), "", 10.0, 10.0],       # 15 el patio (sin salida)
-	# Escalera del Lavadero [P] (10 → 12)
-	["terrazas", Rect2(-56.0, -56.0, 4.0, 3.0), "z", 11.0, 10.0],       # 16
-	["terrazas", Rect2(-56.0, -57.0, 4.0, 1.0), "", 11.0, 11.0],        # 17 rellano
-	["terrazas", Rect2(-56.0, -60.0, 4.0, 3.0), "z", 12.0, 11.0],       # 18
+	# Escalera del Lavadero [P] (10 → 12), en la misma línea que la Escalera del Este (la subida directa)
+	["terrazas", Rect2(-48.0, -56.0, 4.0, 3.0), "z", 11.0, 10.0],       # 16
+	["terrazas", Rect2(-48.0, -57.0, 4.0, 1.0), "", 11.0, 11.0],        # 17 rellano
+	["terrazas", Rect2(-48.0, -60.0, 4.0, 3.0), "z", 12.0, 11.0],       # 18
 	# T4 (12): Terraza del Lavadero [P]
 	["terrazas", Rect2(-70.0, -66.0, 40.0, 6.0), "", 12.0, 12.0],       # 19 la terraza (borde x −30, cota 12)
 	["terrazas", Rect2(-66.0, -72.0, 12.0, 6.0), "", 12.0, 12.0],       # 20 el ensanche del lavadero
+	# Escalera de los Tendederos [P] (6 → 8): la subida DIRECTA de T1 a T2, enfrente de la Escalera del Este (al final de
+	# la lista para no mover los números de los suelos de arriba)
+	["terrazas", Rect2(-49.0, -29.0, 4.0, 4.0), "z", 7.0, 6.0],         # 21 primer tramo (25 %)
+	["terrazas", Rect2(-49.0, -31.0, 4.0, 2.0), "", 7.0, 7.0],          # 22 rellano
+	["terrazas", Rect2(-49.0, -35.0, 4.0, 4.0), "z", 8.0, 7.0],         # 23 segundo tramo
 ]
 
 # ---------------------------------------------------------------------------------------------------- bloques
@@ -90,8 +99,8 @@ const BLOQUES := [
 	["casa_t1_c", "terrazas", Rect2(-69.0, -35.0, 7.0, 10.0), 6.0, 5.5, "casa", true],
 	["casa_glicinia", "terrazas", Rect2(-62.0, -35.0, 9.0, 10.0), 6.0, 6.5, "casa", true],
 	["glicinia_fachada", "terrazas", Rect2(-62.0, -25.7, 9.0, 0.7), 8.6, 1.4, "copa", false],
-	["casa_t1_e1", "terrazas", Rect2(-53.0, -33.0, 8.0, 8.0), 6.0, 4.5, "casa", true],
-	["ladera_t1_e1", "terrazas", Rect2(-53.0, -35.0, 8.0, 2.0), 6.0, 2.0, "terreno", true],
+	["casa_t1_e1", "terrazas", Rect2(-53.0, -33.0, 4.0, 8.0), 6.0, 4.5, "casa", true],     # la casa estrecha, junto a la escalera
+	["ladera_t1_e1", "terrazas", Rect2(-53.0, -35.0, 4.0, 2.0), 6.0, 2.8, "terreno", true],  # jardinera (0,8 sobre T2)
 	["casa_t1_e2", "terrazas", Rect2(-45.0, -35.0, 7.0, 10.0), 6.0, 7.0, "casa", true],
 	["tendedero_t1", "terrazas", Rect2(-52.0, -24.2, 6.0, 0.1), 8.5, 0.1, "cubierta", false],
 	["tendedero_patio", "terrazas", Rect2(-78.0, -26.6, 6.0, 0.1), 8.5, 0.1, "cubierta", false],
@@ -120,7 +129,7 @@ const BLOQUES := [
 	["casa_t3_o", "terrazas", Rect2(-74.0, -60.0, 8.0, 7.0), 10.0, 6.0, "casa", true],
 	["casa_puente", "terrazas", Rect2(-66.0, -60.0, 10.0, 7.0), 10.0, 6.5, "casa", true],
 	["paso_casa_puente", "terrazas", Rect2(-66.0, -53.0, 6.0, 4.0), 12.8, 3.7, "cubierta", false],
-	["casa_t3_e", "terrazas", Rect2(-52.0, -60.0, 8.0, 7.0), 10.0, 5.0, "casa", true],
+	["casa_t3_e", "terrazas", Rect2(-56.0, -60.0, 8.0, 7.0), 10.0, 5.0, "casa", true],
 	["relleno_t3_e", "terrazas", Rect2(-44.0, -60.0, 14.0, 11.0), 10.0, 1.5, "terreno", true],
 	# --- T4: el lavadero cubierto (la referencia), sus pilares, la ropa tendida, las casas altas, huertos y muralla
 	["casa_t4_o", "terrazas", Rect2(-74.0, -66.0, 4.0, 6.0), 12.0, 5.0, "casa", true],
@@ -177,7 +186,8 @@ const ANCLAS := {
 	"puerta_casa_t2_c": Vector3(-80.0, 8.0, -41.0),
 	"puerta_casa_t2_fin": Vector3(-44.05, 8.0, -38.0),
 	"puerta_casa_patio": Vector3(-86.95, 10.0, -53.5),
-	"puerta_casa_t3_e": Vector3(-48.0, 10.0, -53.0),
+	"puerta_casa_t3_e": Vector3(-52.0, 10.0, -53.0),
+	"puerta_casa_t1_e1": Vector3(-51.0, 6.0, -25.0),
 	"puerta_casa_t4_o": Vector3(-69.95, 12.0, -63.0),
 	"puerta_casa_t4_n1": Vector3(-49.0, 12.0, -66.0),
 	"n_pie": Vector3(-60.0, 3.0, -6.0),
@@ -185,6 +195,8 @@ const ANCLAS := {
 	"n_t1": Vector3(-60.0, 6.0, -22.5),
 	"n_t1_o": Vector3(-88.0, 6.0, -22.5),
 	"n_t1_e": Vector3(-40.0, 6.0, -22.5),
+	"n_t1_esc": Vector3(-47.0, 6.0, -22.5),          # pie de la Escalera de los Tendederos
+	"n_escalera_t1": Vector3(-47.0, 7.0, -30.0),
 	"n_atajo": Vector3(-88.0, 7.0, -30.0),
 	"n_t2_o": Vector3(-88.0, 8.0, -38.0),
 	"n_t2": Vector3(-66.0, 8.0, -38.0),
@@ -195,7 +207,8 @@ const ANCLAS := {
 	"n_t3_c": Vector3(-54.0, 10.0, -51.0),
 	"n_t3": Vector3(-63.0, 10.0, -51.0),
 	"n_patio": Vector3(-80.0, 10.0, -51.0),
-	"n_escalera_lav": Vector3(-54.0, 11.0, -56.5),
+	"n_escalera_lav": Vector3(-46.0, 11.0, -56.5),
+	"n_t4_esc": Vector3(-46.0, 12.0, -63.0),         # la llegada de la subida directa a T4
 	"n_t4": Vector3(-54.0, 12.0, -63.0),
 	"n_lavadero": Vector3(-60.0, 12.0, -67.0),
 	"n_t4_o": Vector3(-68.5, 12.0, -63.0),
@@ -221,8 +234,10 @@ const PUERTAS := {
 		"ancla": "puerta_casa_t2_fin", "nombre": "Casa"},
 	"casa_patio": {"fuera": Vector3(-85.6, 10.0, -53.5), "mira": -PI / 2.0, "radio": 1.6, "texto": "Entrar en la casa",
 		"ancla": "puerta_casa_patio", "nombre": "Casa del patio"},
-	"casa_t3_e": {"fuera": Vector3(-48.0, 10.0, -51.6), "mira": PI, "radio": 1.6, "texto": "Entrar en la casa",
+	"casa_t3_e": {"fuera": Vector3(-52.0, 10.0, -51.6), "mira": PI, "radio": 1.6, "texto": "Entrar en la casa",
 		"ancla": "puerta_casa_t3_e", "nombre": "Casa"},
+	"casa_t1_e1": {"fuera": Vector3(-51.0, 6.0, -23.6), "mira": PI, "radio": 1.6, "texto": "Entrar en la casa",
+		"ancla": "puerta_casa_t1_e1", "nombre": "Casa estrecha"},
 	"casa_t4_o": {"fuera": Vector3(-68.6, 12.0, -63.0), "mira": -PI / 2.0, "radio": 1.6, "texto": "Entrar en la casa",
 		"ancla": "puerta_casa_t4_o", "nombre": "Casa"},
 	"casa_t4_n1": {"fuera": Vector3(-49.0, 12.0, -64.6), "mira": PI, "radio": 1.6, "texto": "Entrar en la casa",
@@ -231,28 +246,33 @@ const PUERTAS := {
 
 # El grafo del sector (tramos RECTOS que se andan enteros, como en el barrio). Sus extremos en los bordes (n_pie hacia el
 # Patio del Cuervo, n_t4_e hacia el Barrio Alto) enlazan con el grafo global del plano (c_escaleras_terrazas,
-# c_terrazas_altas). La ruta principal es el atajo de la taberna al barrio alto.
+# c_terrazas_altas). La ruta principal es el atajo de la taberna al barrio alto, por la SUBIDA DIRECTA del este:
+# n_pie → n_rellano → n_t1 → n_t1_esc → n_escalera_t1 → n_t2_e → n_escalera_e → n_t3_e → n_escalera_lav → n_t4_esc →
+# n_t4_e (≈ 85 m). El oeste (Atajo de la Hornacina, plazuela, Patio de la Pieza, lavadero) es el rodeo del barrio.
 const GRAFO := {
 	"n_pie": ["n_rellano"],
 	"n_rellano": ["n_pie", "n_t1"],
-	"n_t1": ["n_rellano", "n_t1_o", "n_t1_e"],
+	"n_t1": ["n_rellano", "n_t1_o", "n_t1_esc"],
 	"n_t1_o": ["n_t1", "n_atajo"],
-	"n_t1_e": ["n_t1"],
+	"n_t1_esc": ["n_t1", "n_t1_e", "n_escalera_t1"],
+	"n_t1_e": ["n_t1_esc"],
+	"n_escalera_t1": ["n_t1_esc", "n_t2_e"],
 	"n_atajo": ["n_t1_o", "n_t2_o"],
 	"n_t2_o": ["n_atajo", "n_t2"],
 	"n_t2": ["n_t2_o", "n_plazuela", "n_t2_e"],
 	"n_plazuela": ["n_t2"],
-	"n_t2_e": ["n_t2", "n_escalera_e"],
+	"n_t2_e": ["n_t2", "n_escalera_e", "n_escalera_t1"],
 	"n_escalera_e": ["n_t2_e", "n_t3_e"],
-	"n_t3_e": ["n_escalera_e", "n_t3_c"],
-	"n_t3_c": ["n_t3_e", "n_t3", "n_escalera_lav"],
+	"n_t3_e": ["n_escalera_e", "n_t3_c", "n_escalera_lav"],
+	"n_t3_c": ["n_t3_e", "n_t3"],
 	"n_t3": ["n_t3_c", "n_patio"],
 	"n_patio": ["n_t3"],
-	"n_escalera_lav": ["n_t3_c", "n_t4"],
-	"n_t4": ["n_escalera_lav", "n_lavadero", "n_t4_o", "n_t4_e"],
+	"n_escalera_lav": ["n_t3_e", "n_t4_esc"],
+	"n_t4_esc": ["n_escalera_lav", "n_t4", "n_t4_e"],
+	"n_t4": ["n_t4_esc", "n_lavadero", "n_t4_o"],
 	"n_lavadero": ["n_t4"],
 	"n_t4_o": ["n_t4"],
-	"n_t4_e": ["n_t4"],
+	"n_t4_e": ["n_t4_esc"],
 }
 
 # ---------------------------------------------------------------------------------------------------- cámara
