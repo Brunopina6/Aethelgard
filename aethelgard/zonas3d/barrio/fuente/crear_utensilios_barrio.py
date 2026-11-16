@@ -151,7 +151,7 @@ def utensilios():
     M = K.Malla()
     forma = [(z, y) for z, y in K.galga_2d()]
     K.placa(M, list(reversed([(-p[0] + 0.03, p[1] - 0.045) for p in forma])), (0.0075, 0.0, 0.0), (0, 0, 1), (0, 1, 0), 0.015, "madera",
-            K.FRESNO)
+            K.FRESNO, atras=True)                                             # (las dos caras: se ve tumbada o de canto)
     K.caja_mm(M, (-0.009, -0.035, -0.33), (0.009, 0.035, -0.31), "hierro", K.LATON)       # la marca de latón
     u["galga"] = M
     # pasador (una mano, por el medio): el pasador nuevo de fresno, 0,22 m, con su cabeza

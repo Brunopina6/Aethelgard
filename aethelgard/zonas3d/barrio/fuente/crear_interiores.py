@@ -90,14 +90,14 @@ AZUL_POSTIGO = (0.30, 0.50, 0.60)
 VERDE_POSTIGO = (0.30, 0.46, 0.36)
 PAN = ((0.70, 0.44, 0.22), (0.76, 0.50, 0.26), (0.64, 0.38, 0.19), (0.80, 0.56, 0.30))
 MIMBRE = (0.74, 0.58, 0.36)
-SACO = (0.86, 0.80, 0.66)
+SACO = (0.93, 0.88, 0.76)
 HARINA = (0.96, 0.94, 0.88)
-BARRO_COCIDO = ((0.74, 0.42, 0.30), (0.70, 0.40, 0.28), (0.78, 0.47, 0.33), (0.66, 0.37, 0.27))
+BARRO_COCIDO = ((0.70, 0.47, 0.37), (0.66, 0.44, 0.35), (0.74, 0.51, 0.39), (0.63, 0.42, 0.34))
 LADRILLO = ((0.68, 0.36, 0.25), (0.62, 0.32, 0.22), (0.72, 0.40, 0.28))
 PIEDRA = ((0.66, 0.63, 0.58), (0.60, 0.58, 0.55), (0.71, 0.67, 0.61), (0.56, 0.53, 0.50))
 TELAS = [(0.92, 0.90, 0.84), (0.52, 0.66, 0.80), (0.86, 0.42, 0.34), (0.94, 0.82, 0.52), (0.62, 0.74, 0.56)]
 TIZNE = (0.16, 0.13, 0.11)
-PINTURA = (0.20, 0.14, 0.11)                # la silueta pintada de las herramientas en la pared del taller
+PINTURA = (0.50, 0.24, 0.16)                # la silueta pintada (almagre) de las herramientas en la pared del taller
 
 
 def lin(c, a=1.0):
@@ -409,10 +409,12 @@ def murete_sur(S, alto, puerta, mat, col):
     """El murete de la casa de muñecas (lo que se ve del muro sur) con la puerta, y el resto del muro sur y el techo
     para el horneado (oculto)."""
     hueco = [(puerta[0], puerta[1], -1.0, 9.0)] if puerta else []
-    tramo_muro(S.M, "s", -0.3, S.W + 0.3, 0.0, alto, hueco, mat, col, S.W, S.D)
+    base = col if callable(col) else (lambda p, c=col: c)
+    corte = lambda p: tuple(c * 0.5 for c in base(p)) if p.z > S.D + 0.2 else base(p)
+    tramo_muro(S.M, "s", -0.3, S.W + 0.3, 0.0, alto, hueco, mat, corte, S.W, S.D)
     tramos = [(-0.32, puerta[0]), (puerta[1], S.W + 0.32)] if puerta else [(-0.32, S.W + 0.32)]
     for a, b in tramos:                                                  # la albardilla (sin cruzar la puerta)
-        caja_mm(S.M, (a, alto, S.D - 0.02), (b, alto + 0.06, S.D + 0.32), "sillar", (0.80, 0.74, 0.64))
+        caja_mm(S.M, (a, alto, S.D - 0.02), (b, alto + 0.06, S.D + 0.32), "sillar", (0.64, 0.59, 0.52))
     if puerta:
         caja_mm(S.M, (puerta[0], 0.0, S.D - 0.05), (puerta[1], 0.035, S.D + 0.3), "sillar", (0.74, 0.70, 0.62))   # umbral
     tramo_muro(S.O, "s", -0.3, S.W + 0.3, alto + 0.06, S.H + 0.3, S.huecos["s"], "revoque", (0.8, 0.75, 0.66), S.W, S.D)
@@ -595,7 +597,7 @@ def herramienta_colgada(S, x, y, z_pared, forma, col, silueta=True, presente=Tru
     if silueta:
         pts = [(px * 1.08 - 0.01, py * 1.08 - 0.01) for px, py in forma]
         placa(S.M, pts, (x, y, z_pared + 0.004), (1, 0, 0), (0, 1, 0), 0.003, "revoque", PINTURA, lados=False)
-    caja(S.P, (x + 0.02, y + 0.08, z_pared + 0.02), (0.012, 0.012, 0.05), "hierro", HIERRO)        # el clavo
+    caja(S.P, (x + 0.03, y + 0.05, z_pared + 0.025), (0.014, 0.014, 0.05), "hierro", HIERRO)       # el clavo
     if presente:
         placa(S.P, forma, (x, y, z_pared + 0.012), (1, 0, 0), (0, 1, 0), 0.02, mat, col)
 
@@ -665,8 +667,8 @@ def horno():
     S.bloqueo(6.15, 4.4, W, 4.6)
     # --- EL HORNO DE BÓVEDA (pared norte): base de piedra, bóveda de ladrillo, la boca con las brasas, la campana
     caja_mm(S.M, (0.6, 0.0, 0.0), (3.4, 0.95, 1.8), "sillar", jit((0.70, 0.64, 0.56)))
-    for k in range(9):                                                   # la bóveda: anillos de ladrillo
-        a0, a1 = k / 9 * math.pi * 0.5, (k + 1) / 9 * math.pi * 0.5
+    for k in range(16):                                                  # la bóveda: anillos de ladrillo
+        a0, a1 = k / 16 * math.pi * 0.5, (k + 1) / 16 * math.pi * 0.5
         r0, r1 = math.cos(a0), math.cos(a1)
         y0, y1 = 0.95 + math.sin(a0) * 0.95, 0.95 + math.sin(a1) * 0.95
         col = jit(elige(LADRILLO), 0.06)
@@ -852,11 +854,16 @@ def taller():
     S.hueco("s", 9.2, 10.8, 2.4, 3.6)
     S.hueco("s", 11.6, 12.4, 0.0, 2.0)
     # --- suelos: tierra apisonada en la nave, tablas en la trastienda
+    def tierra_en(p):
+        n = 0.5 + 0.25 * math.sin(p.x * 1.7 + 0.6 * math.sin(p.z * 2.3)) + 0.25 * math.sin(p.z * 1.3 + p.x * 0.4)
+        col = mezcla((0.58, 0.49, 0.38), (0.66, 0.56, 0.43), n)
+        viruta = (1.0 - suave(0.3, 1.6, (p - Vector((8.4, 0, 3.6))).length)) * 0.45
+        viruta = max(viruta, (1.0 - suave(0.3, 1.4, (p - Vector((10.9, 0, 1.0))).length)) * 0.5)
+        paso = (1.0 - suave(0.2, 0.9, abs(p.z - 2.1))) * suave(9.0, 12.0, p.x) * 0.25          # el camino del portón
+        return mezcla(mezcla(col, FRESNO, viruta), (0.50, 0.42, 0.33), paso)
+
     def tierra(ix, iz, c):
-        col = jit((0.62, 0.52, 0.40), 0.04)
-        viruta = (1.0 - suave(0.3, 1.6, (c - Vector((8.4, 0, 3.6))).length)) * 0.45
-        viruta = max(viruta, (1.0 - suave(0.3, 1.4, (c - Vector((10.9, 0, 1.0))).length)) * 0.5)
-        return mezcla(col, FRESNO, viruta)
+        return tierra_en
     rejilla(S.M, 4.0, 0.0, W, D, 0.0, 0.5, 0.5, 0.0, "tierra", tierra, (0.5, 0.42, 0.32))
     rejilla(S.M, 0.0, 0.0, 4.0, D, 0.0, 0.22, 8.0, 0.012, "madera",
             lambda ix, iz, c: jit(mezcla(MADERA_GRIS, MADERA, RND.random() * 0.5), 0.04), (0.2, 0.16, 0.12),
@@ -1001,6 +1008,25 @@ def taller():
     S.bloqueo(12.3, 3.6, W, 4.4)
     S.ancla("cantaro", 11.6, 0.0, 4.0)
     S.objeto("cantaro", "ofrecido", "el agua del cántaro (la ofrece Damián)")
+    # el estante sobre el torno (cajas, tarros de cola y de sebo), pinas colgadas en el tabique y un rollo de cuerda
+    caja_mm(S.M, (9.6, 2.15, 0.0), (12.2, 2.21, 0.36), "madera", jit(MADERA_OSC), veta="larga")
+    for x in (9.8, 12.0):
+        viga(S.M, (x, 2.15, 0.02), (x, 1.85, 0.02), 0.05, "madera", MADERA_OSC)
+    caja_mm(S.P, (9.75, 2.21, 0.05), (10.25, 2.45, 0.32), "madera", jit(MADERA_GRIS))
+    caja_mm(S.P, (10.3, 2.21, 0.06), (10.6, 2.36, 0.3), "madera", jit(MADERA))
+    for k in range(4):
+        tarro(S.P, (10.9 + k * 0.3, 2.21, 0.18), RND.uniform(0.14, 0.22), 0.07, jit((0.62, 0.50, 0.36), 0.08))
+    for k in range(3):                                                    # pinas colgadas (las piezas del aro)
+        c = Vector((4.18, 2.75, 1.2 + k * 0.9))
+        for s_ in range(4):
+            a0, a1 = math.pi * (0.15 + s_ * 0.175), math.pi * (0.15 + (s_ + 1) * 0.175)
+            viga(S.P, c + Vector((0.04, math.sin(a0) * 0.55 - 0.45, math.cos(a0) * 0.55)),
+                 c + Vector((0.04, math.sin(a1) * 0.55 - 0.45, math.cos(a1) * 0.55)), 0.07, "madera", jit(FRESNO), alto=0.08)
+        caja(S.P, (4.17, 2.8, c.z), (0.03, 0.03, 0.03), "hierro", HIERRO)
+    for k in range(6):                                                    # el rollo de cuerda en su clavija
+        a0, a1 = k * math.tau / 6, (k + 1) * math.tau / 6
+        viga(S.P, (12.88, 1.7 + math.sin(a0) * 0.2, 5.3 + math.cos(a0) * 0.2), (12.88, 1.7 + math.sin(a1) * 0.2, 5.3 + math.cos(a1) * 0.2),
+             0.05, "tela", (0.76, 0.66, 0.48))
     # un candil colgado sobre el banco (luz cálida de trabajo) y el polipasto de las ruedas
     viga(S.P, (6.0, H - 0.2, 0.9), (6.0, 2.55, 0.9), 0.01, "hierro", HIERRO)
     cilindro(S.M, (6.0, 2.35, 0.9), [(0, 0.05), (0.12, 0.08), (0.2, 0.03)], 8, "hierro", LATON)
@@ -1055,7 +1081,7 @@ def vivienda():
     S = Sala("vivienda", W, D, H)
     S.camara = {"x": [3.6, 4.4], "z": [2.0, 4.6]}
     cal = (0.94, 0.91, 0.84)
-    rodapie = (0.74, 0.46, 0.32)                                        # zócalo pintado de almagre
+    rodapie = (0.64, 0.43, 0.33)                                        # zócalo pintado de almagre
     # --- huecos: ventana de la alcoba al oeste (el sol de la tarde en el suelo), la de Odila al este, las del sur
     ventana(S, "o", 1.95, 2.75, YA + 1.05, YA + 1.85, postigo=AZUL_POSTIGO)
     ventana(S, "e", 3.95, 4.95, 1.05, 2.0, postigo=AZUL_POSTIGO)
@@ -1120,7 +1146,7 @@ def vivienda():
     tarro(S.P, (0.55, 1.5, 4.05), 0.2, 0.07, (0.66, 0.70, 0.74))
     tarro(S.P, (0.5, 1.5, 5.05), 0.16, 0.06)
     caja(S.P, (0.6, 1.56, 4.35), (0.22, 0.12, 0.16), "madera", MADERA_OSC)
-    S.sitios["galga"] = {"pos": [0.6, 1.508, 4.88], "yaw": 0.0, "giro": 90.0, "luz": 0.95}   # tumbada, a lo largo
+    S.sitios["galga"] = {"pos": [0.98, 1.508, 4.9], "yaw": 0.0, "giro": 90.0, "luz": 1.0}   # tumbada, a lo largo
     S.bloqueo(0.0, 3.85, 1.2, 5.55)
     S.ancla("repisa", 1.65, 0.0, 4.6)
     S.objeto("repisa", "examinable", "la repisa del hogar, con la galga del carretero encima")
@@ -1198,7 +1224,7 @@ def vivienda():
     S.luz(6.1, YA + 1.85, 0.16, 6.0, VELA, 0.02)
     # EL RINCÓN DE NELA: la alfombra de tiras, la rueda de juguete (eco del taller), la muñeca, los tacos
     for k in range(6):
-        col = TELAS[(k * 2) % len(TELAS)]
+        col = mezcla(TELAS[(k * 2) % len(TELAS)], (0.55, 0.42, 0.32), 0.3)
         caja_mm(S.M, (4.6, YA + 0.005, 0.45 + k * 0.22), (6.3, YA + 0.018, 0.45 + (k + 1) * 0.22 - 0.01), "tela", jit(col, 0.04))
     rueda(S.P, (5.35, YA + 0.13, 1.15), 0.12, 6, eje="x", col=FRESNO, llanta=False)
     viga(S.P, (5.35, YA + 0.13, 1.15), (5.75, YA + 0.02, 1.62), 0.02, "madera", MADERA_CLARA)
@@ -1478,7 +1504,9 @@ def hornear(ob_fijo, objs_vertice, img):
     nota("piezas horneadas a los vértices")
 
 
-OBJETIVO = {"horno": 1.0, "taller": 0.95, "vivienda": 0.9}
+OBJETIVO = {"horno": 0.95, "taller": 0.9, "vivienda": 0.85}      # la luz del percentil 70 de lo fijo, en Godot
+REFERENCIA = 70                                                  # (la mediana la hunden los bajos y los cantos)
+V_ESCALA = 3.0                                                   # piezas: COLOR_0 = tinte × luz × k / V_ESCALA
 RELLENO = {"horno": 0.9, "taller": 1.1, "vivienda": 0.9}         # vatios por m² de techo
 COMPRESION = 4.0                                                 # lo más brillante queda en ≈ 5 × la mediana
 
@@ -1497,7 +1525,8 @@ def escala_y_guardar(S, img, carpeta, objs_vertice):
     px = np.array(img.pixels[:], np.float32).reshape(h, w, 4)
     lum = px[..., :3].max(-1)
     validos = lum[lum > 0.0005]
-    mediana = float(np.median(validos)) if validos.size else 1.0
+    mediana = float(np.percentile(validos, REFERENCIA)) if validos.size else 1.0
+    k = OBJETIVO.get(S.id, 1.0) / max(mediana, 1e-4)
     px[..., :3] = np.where((lum > 0.0005)[..., None], comprimir(px[..., :3], mediana), px[..., :3])
     lum = px[..., :3].max(-1)
     validos = lum[lum > 0.0005]
@@ -1532,15 +1561,16 @@ def escala_y_guardar(S, img, carpeta, objs_vertice):
             for p in vm.polygons:
                 mat_esq[p.loop_start:p.loop_start + p.loop_total] = mat_pol[p.index]
         l[:, :3] = comprimir(np.maximum(l[:, :3], 0.0), mediana)
+        l[:, :3] *= k / V_ESCALA                         # (con la exposición ya puesta: valores medios, sin perderse en 8 bits)
         if idx_brillo:
-            l[np.isin(mat_esq, idx_brillo), :3] = escala
-        c[:, :3] = np.clip(c[:, :3] * l[:, :3] / escala, 0, 1)
+            l[np.isin(mat_esq, idx_brillo), :3] = 1.0
+        c[:, :3] = np.clip(c[:, :3] * l[:, :3], 0, 1)
         col.data.foreach_set("color", c.ravel())
         vm.color_attributes.remove(luz)
         vm.color_attributes.active_color = vm.color_attributes["Col"]
-    # exposición de interior: la mediana de la luz de lo fijo queda en OBJETIVO (la relación entre el fuego, la ventana y
-    # los rincones no cambia; solo cuánta luz hay en conjunto). Godot multiplica por «escala» (= escala_mapa × k).
-    k = OBJETIVO.get(S.id, 1.0) / max(mediana, 1e-4)
+    # exposición de interior: el percentil 70 de la luz de lo fijo queda en OBJETIVO (la relación entre el fuego, la
+    # ventana y los rincones no cambia; solo cuánta luz hay en conjunto). Godot multiplica lo fijo por «escala»
+    # (= escala_mapa × k) y las piezas por «escala_vertice» (= V_ESCALA).
     return escala, mediana, k
 
 
@@ -1626,9 +1656,10 @@ def hacer(constructor):
     hornear(ob_fijo, [ob_pie] + extras, img_luz)
     if HORNEAR:
         escala, mediana, k = escala_y_guardar(S, img_luz, carpeta_mod, [ob_pie] + extras)
-        datos.update({"escala_mapa": escala, "mediana": mediana, "k_exposicion": k, "escala": escala * k})
+        datos.update({"escala_mapa": escala, "mediana": mediana, "k_exposicion": k, "escala": escala * k,
+                      "escala_vertice": V_ESCALA})
     else:
-        datos.update({"escala_mapa": 1.0, "mediana": 1.0, "k_exposicion": 1.0, "escala": 1.0})
+        datos.update({"escala_mapa": 1.0, "mediana": 1.0, "k_exposicion": 1.0, "escala": 1.0, "escala_vertice": 1.0})
     objs = [o for o in (ob_fijo, ob_pie, ob_ocu) if o is not None] + extras
     dg = bpy.context.evaluated_depsgraph_get()
     vs, ps = [], []

@@ -474,6 +474,7 @@ func _materiales(id: String, inst: Node, d: Dictionary) -> void:
 	var ruta_luz := RAIZ + "modelos/int_%s_luz_1024.png" % id
 	var tex_luz: Texture2D = load(ruta_luz) if ResourceLoader.exists(ruta_luz) and bool(d.get("horneado", false)) else null
 	var escala := float(d.get("escala", 1.0)) * float(BRILLO.get(id, 1.0))
+	var escala_v := float(d.get("escala_vertice", 1.0)) * float(BRILLO.get(id, 1.0))
 	for mi in inst.find_children("*", "MeshInstance3D", true, false):
 		var m := mi as MeshInstance3D
 		m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -483,7 +484,7 @@ func _materiales(id: String, inst: Node, d: Dictionary) -> void:
 			var nombre := orig.resource_name if orig != null else ""
 			var clave := "%s|%s|%s|%s" % [id, nombre, vertice, tex_luz != null]
 			if not _mats.has(clave):
-				_mats[clave] = _material(nombre, vertice, tex_luz, escala)
+				_mats[clave] = _material(nombre, vertice, tex_luz, escala_v if vertice else escala)
 			var mat: Material = _mats[clave]
 			m.set_surface_override_material(s, mat)
 			if mat is ShaderMaterial and nombre != "brillo" and not (_mats_sombra[id] as Array).has(mat):
