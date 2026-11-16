@@ -10,7 +10,8 @@ extends SceneTree
 #      números son los de la muestra de la calle (altura, distancia, inclinación, campo) y no gira.
 #   5. Lado sur bajo en los tramos de este a oeste (≤ 1,6 m sobre la calle a menos de 4 m del paso).
 #   6. La región: carga en el banco, se activa (barrio_v12), construye el blockout (6 sectores, choques), tiene la API
-#      del contrato, las puertas dicen «en obras» (y sin el prólogo, la guardia), guarda en el lugar 102.
+#      del contrato, las puertas entran y salen si su interior existe (si no, «en obras»; sin el prólogo, la guardia),
+#      guarda en el lugar 102.
 #   7. Kael recorre el bucle completo con «destino» (caravanas → comercial → plaza → talleres → casas → atajo →
 #      caravanas), sobre el suelo y sin girar la cámara, y no entra en las casas.
 #   8. Fuera del banco la región no se construye (vuelve a la carga) y el barrio no está activado; al salir del banco no
@@ -280,7 +281,9 @@ func _region() -> void:
 	for f in ["avisar", "guardar", "ocupado", "sonda", "iniciar_dialogo", "ancla", "guardar_posicion"]:
 		_ok(v.has_method(f), "6: la región tiene %s()" % f)
 	_ok(v.sonda(T.ancla("n_plaza")) == Vector2(1.0, 0.7), "6: sonda provisional (sol 1, cielo 0,7)")
-	_ok(v.ancla("n_plaza") == T.ancla("n_plaza") and v.ancla("int_horno_boca") == Vector3.ZERO, "6: ancla() exterior y de interior (stub)")
+	var I = load("res://zonas3d/barrio/interiores.gd")
+	_ok(v.ancla("n_plaza") == T.ancla("n_plaza") and (v.ancla("int_horno_boca") != Vector3.ZERO) == I.ORIGEN.has("horno"),
+		"6: ancla() exterior y de interior (con el interior construido, su ancla real)")
 	_ok(v.kael.global_position.distance_to(T.ancla("inicio")) < 0.3, "6: Kael empieza en el inicio (%s)" % str(v.kael.global_position))
 	_ok(not v.ocupado(), "6: no está ocupado")
 	_ok(not v.iniciar_dialogo("res://no_existe.dtl"), "6: iniciar_dialogo con una ruta que no existe devuelve false")
@@ -292,8 +295,38 @@ func _region() -> void:
 		v._comprobar_cerca()
 		_ok(v.cerca == "entrar_" + id and v.boton_accion.visible and v.boton_accion.text == T.PUERTAS[id]["texto"],
 			"6: junto a la puerta de %s, el botón «%s» (%s)" % [id, T.PUERTAS[id]["texto"], v.cerca])
+		# (integración 16/11) con su interior construido (B) se entra y se sale de verdad; la vivienda pide llamar la
+		# primera vez (C); sin interior, «en obras»
+		Engine.set_meta("prologo_visto", false)
+		v._bloqueo = 0.0
 		v._accion()
-		_ok(v.ultimo_aviso == v.TEXTO_OBRAS and v.interior == "", "6: %s: «%s»" % [id, v.ultimo_aviso])
+		_ok(v.ultimo_aviso == Barrio.TEXTO_PROLOGO and v.interior == "", "6: %s sin el prólogo: guardia («%s»)" % [id, v.ultimo_aviso])
+		Engine.set_meta("prologo_visto", true)
+		v._bloqueo = 0.0
+		v._accion()
+		if I.ORIGEN.has(id):
+			for i in 3:                                 # (la vivienda: «Llamar a la puerta» y luego se entra)
+				await _fundido()
+				if v.interior == id:
+					break
+				v._bloqueo = 0.0
+				v._colocar_kael(T.PUERTAS[id]["fuera"])
+				await _frames(2)
+				v._comprobar_cerca()
+				v._accion()
+			_ok(v.interior == id, "6: %s: se entra (interior «%s», aviso «%s»)" % [id, v.interior, v.ultimo_aviso])
+			if v.interior == id:
+				v._colocar_kael(v.interiores.salida(id))
+				await _frames(2)
+				v._bloqueo = 0.0
+				v._comprobar_cerca()
+				v._accion()
+				await _fundido()
+			_ok(v.interior == "" and v.kael.global_position.distance_to(T.PUERTAS[id]["fuera"]) < 2.0,
+				"6: %s: se sale junto a la puerta (%s)" % [id, str(v.kael.global_position)])
+		else:
+			_ok(v.ultimo_aviso == v.TEXTO_OBRAS and v.interior == "", "6: %s: «%s»" % [id, v.ultimo_aviso])
+		continue
 		Engine.set_meta("prologo_visto", false)
 		v._bloqueo = 0.0
 		v._accion()
@@ -303,6 +336,14 @@ func _region() -> void:
 	_ok(int(Engine.get_meta("pos_3d_lugar", -1)) == 102 and Engine.get_meta("pos_3d_ok", false), "6: guardar pone el lugar 102")
 	_ok(FileAccess.file_exists(BP.ARCHIVO), "6: guardar escribe el archivo del banco")
 	_ok(absf(v.cam.global_rotation_degrees.y) < 0.001, "6: la cámara de la región no gira")
+
+
+func _fundido() -> void:
+	for i in 240:
+		await process_frame
+		if not v.cambiando:
+			break
+	await _frames(3)
 
 
 # ================================================================= 7

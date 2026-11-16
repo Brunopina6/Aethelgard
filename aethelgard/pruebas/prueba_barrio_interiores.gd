@@ -270,6 +270,9 @@ func _entrar(id: String) -> void:
 	await _frames(3)
 	_pulsar("entrar_" + id)
 	await _esperar_fundido()
+	if v.interior != id:                              # (integración con C: la vivienda, la primera vez, se llama)
+		_pulsar("entrar_" + id)
+		await _esperar_fundido()
 
 
 func _salir(id: String) -> void:
