@@ -144,9 +144,11 @@ const BLOQUES := [
 ]
 # Las casas que la escena aclara cuando tapan a Kael (además de las cubiertas y las copas): las que quedan al SUR de lo
 # andable (la cámara mira desde el sur). Las dice prueba_ciudad_plano (sección 8), que mira cada metro; repasadas casilla a
-# casilla (0,25 m): casa_corro_ne tapa a Kael pegado al pretil del patio (z 26,3) y casa_pie, desde el Pie de las Escaleras.
+# casilla (0,25 m): casa_corro_ne tapa a Kael pegado al pretil del patio (z 26,3) y casa_pie, desde el Pie de las Escaleras;
+# el hastial y la chimenea de la taberna, desde la terraza baja de las Terrazas (al norte).
 const OCULTABLES := ["casa_patio_o", "casa_barriles", "casa_calle_s1", "casa_calle_s2", "casa_calle_s3", "casa_corro_o",
-	"casas_corro_so", "casas_corro_se", "casa_callejon_corro", "casa_corro_ne", "casa_pie"]
+	"casas_corro_so", "casas_corro_se", "casa_callejon_corro", "casa_corro_ne", "casa_pie", "hastial_taberna",
+	"chimenea_taberna"]
 
 # El sitio de la Feria de los Oficios [P] en el patio (plan §3: la celebración): un área, no un punto, que deja libres el
 # paso de 3 m a la escalinata del corro (z 23,5..26,6) y el centro del patio (el nodo n_patio, en −68; 20). Contiene el
