@@ -984,3 +984,17 @@ Validado: `dc878e9` (`validado/v12/20261115-170245`, 188 · 0). APK v834 instala
   lista_pruebas.txt, prueba_banco_pruebas.gd, crear_npc_chibi.py, recursos.gd, export_presets.cfg), pasar las pruebas
   específicas y, con todo dentro, la batería completa, la APK de Auditoría y el guion; después, la Arboleda Mítica
   (plan en `SUNKEN_ARBOLEDA_PLAN.md` §3).
+
+## RELEVO 16/11, 04:10: barrio y Quilla integrados; pulido y Arboleda en marcha (LEER PRIMERO)
+- INTEGRADO en `claude/rebelum-v12` (cherry-pick; recuperaciones `recuperacion/v12/20261116-antes-barrio-b`, `-antes-barrio-a`,
+  `-antes-sunken-quilla`, `-barrio-integrado`): barrio de Oakhaven completo (A exterior horneado de 6 tramos, B 3 interiores
+  horneados, C rutinas + misión «Antes de que se enfríe» + sabe/oído/cree) y la Quilla horneada de Sunken (apagada por
+  interruptor). 14 pruebas específicas: 14·0. Índice de Dialogic con los personajes y diálogos del barrio en project.godot.
+- El recorrido JUGADO de la misión (`fotos_barrio_recorrido`) a 1280×720 da 30 fallos en los interiores (la herramienta se
+  escribió antes que ellos); a 1600×720, además, la franja negra de 16:9 desplazaba los clics (no es un fallo del juego:
+  `pruebas/diag_barrio_paso.gd`).
+- EN MARCHA: pulido del barrio (workflow de 2 agentes: región — rótulos, luz dentro, NaN de altura en una costura, suelo en
+  sombra con trazos blancos, cámara de atajo/talleres, precalentado, triángulos del residencial — y datos — piezas de dentro,
+  galga, vecinos dentro, recorrido a cualquier resolución con la misión entera); Arboleda Mítica (`area-arboleda-hospederia`).
+- Siguiente acción: integrar el pulido, pasar el recorrido jugado (0 fallos a 1280 y 1600), revisión independiente, batería
+  completa, APK de Auditoría y guion; luego la Arboleda.
