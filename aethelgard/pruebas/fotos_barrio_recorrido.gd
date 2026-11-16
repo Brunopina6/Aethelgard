@@ -137,8 +137,11 @@ func _andar_a(c: Vector3, cerca := 0.6) -> bool:
 		if _plana(_kael(), c) < cerca:
 			return true
 		if v.get("destino") == null:
-			if reintentos > 6:
+			if reintentos > 10:
 				break
+			if reintentos > 0:
+				await _frames(12)                        # (un vecino en medio: le da tiempo a apartarse)
+				f += 12
 			reintentos += 1
 			var objetivo := c
 			if reintentos % 2 == 0:                      # (algo en medio, un vecino: probar por un lado, como haría quien juega)
@@ -241,8 +244,14 @@ func _hablar_con(id: String, foto: String) -> String:
 		var junto := _junto_a(p)
 		if _plana(_kael(), junto) > 4.0:
 			var pts: Array = v.vivo._ruta(_kael(), junto, "", "recorrido")
-			await _andar_a(pts[1] if pts.size() > 2 else junto, 1.0)
-			f += 30
+			var siguiente: Vector3 = junto
+			for q in pts.slice(1):                       # (el primer punto del camino que no sea donde ya está)
+				if _plana(_kael(), q) > 1.0:
+					siguiente = q
+					break
+			var f0 := Engine.get_process_frames()
+			await _andar_a(siguiente, 1.0)
+			f += maxi(30, Engine.get_process_frames() - f0)
 		else:
 			await _andar_a(junto, 0.5)
 			await _frames(6)
@@ -250,6 +259,23 @@ func _hablar_con(id: String, foto: String) -> String:
 	Engine.time_scale = 1.0
 	_ok(false, "no se llega a hablar con %s" % id)
 	return ""
+
+
+# Junto a Avena (a 1,4 m de su ancla), lo más lejos posible de Brena.
+func _junto_a_avena() -> Vector3:
+	var c := T.ancla("establo_caballo")
+	var brena: Vector3 = v.vivo.vecinos["brena"]["pos"]
+	var mejor := c + Vector3(1.4, 0, 0)
+	var nota := -INF
+	for i in 16:
+		var a := TAU * i / 16.0
+		var q := c + Vector3(sin(a), 0, cos(a)) * 1.4
+		if not T.andable(q.x, q.z) or v.vivo.ocupa(q):
+			continue
+		if _plana(q, brena) > nota:
+			nota = _plana(q, brena)
+			mejor = q
+	return mejor
 
 
 # Tras hablar, un paso atrás (lejos del vecino) para no quedarse pegado a él.
@@ -469,6 +495,8 @@ func _mision_normal() -> void:
 	await _foto("t6_atajo")
 	await _ir(T.ancla("n_establo"), "el establo")
 	await _foto("A16_establo_avena")
+	await _andar_a(_junto_a_avena(), 0.3)                  # (del lado contrario a Brena, para que el botón sea el de Avena)
+	await _segundos(0.4)
 	await _accion("Examinar a Avena")
 	await _segundos(1.0)
 	_ok(Barrio.estado("j_sabe_no_culpa_caballo"), "A: examinar a Avena no apunta nada")
