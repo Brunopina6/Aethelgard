@@ -371,6 +371,8 @@ const APAGADOS := {
 	# musica.gd): unos 12 MB y 3 MB que se precargaban sin usarse (pruebas/herramientas/listar_precarga.gd)
 	"res://enemigos/humbaba/": "humbaba_v12",
 	"res://audio/musica/pastos/pastoral_pulse.ogg": "musica_pastos",
+	# V12 (16/11): la Quilla horneada de Sunken City (EXPERIMENTAL, interruptor de sesión del banco; ≈ 9 MB)
+	"res://zonas3d/sunken/quilla/": "sunken_quilla_v12",
 }
 const BRAMAVIDRIO := "res://enemigos/bramavidrio/"
 var _encendidos := {}

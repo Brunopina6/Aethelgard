@@ -34,7 +34,8 @@ const METAS_SESION := ["meshy_e01", "banco_caso", "nix_v12", "oakhaven_propuesta
 	"barrio_v12", "barrio_interior", "barrio_reloj"]  # (16/11: el barrio experimental: activado, su interior tras CAL y su reloj)
 # Calidad elegida en la sesión (CAL, el selector «Calidad 3D», los bancos A/B de vista3d): sigue entre los casos de la
 # sesión y se quita SOLO al salir.
-const METAS_CALIDAD := ["calidad_proto", "calidad_extra", "muestra_precalentar"]
+const METAS_CALIDAD := ["calidad_proto", "calidad_extra", "muestra_precalentar",
+	"sunken_quilla_v12"]   # (16/11: la Quilla horneada de Sunken, EXPERIMENTAL; aquí y no en METAS_SESION, que se borran en cada caso)
 const Estilo := preload("res://estilo.gd")
 
 # La partida de partida del banco: el grupo recién llegado a Oakhaven (la del Redmi del 11/11, cmp_oakhaven).
@@ -277,6 +278,9 @@ func _pintar() -> void:
 	# tirones de la primera vuelta; solo de sesión, para medir con y sin él).
 	_selector("Muestra: precalentar (solo en el banco)", "precalentar", bool(Engine.get_meta("muestra_precalentar", false)),
 		[[false, "No"], [true, "Sí"]], func(v): Engine.set_meta("muestra_precalentar", v))
+	# (16/11) Sunken City 3D con la Quilla horneada (zonas3d/sunken/quilla/, EXPERIMENTAL; docs/v12/SUNKEN_QUILLA.md)
+	_selector("Sunken: Quilla horneada (solo en el banco)", "sunken_quilla", bool(Engine.get_meta("sunken_quilla_v12", false)),
+		[[false, "No"], [true, "Sí"]], func(v): Engine.set_meta("sunken_quilla_v12", v))
 	cuerpo.add_child(_texto("Combates de prueba (al terminar se vuelve aquí)", 24, Estilo.ORO))
 	for k in COMBATES:
 		_caso(k, COMBATES[k], _combate.bind(k))
