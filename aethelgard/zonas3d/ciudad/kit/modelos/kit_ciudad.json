@@ -1,0 +1,2417 @@
+{
+ "version": 1,
+ "generado": "2026-11-16 10:11",
+ "escala_luz": 2.229212239845512,
+ "sol": {
+  "rumbo": 252.0,
+  "elevacion": 24.0
+ },
+ "texturas": "res://zonas3d/muestra_calle/texturas/",
+ "mapa_luz": [
+  "kit_luz_2048.png",
+  "kit_luz_1024.png"
+ ],
+ "muestras": 128,
+ "modulos": {
+  "vivienda_terrazas": {
+   "sectores": [
+    "4 Las Terrazas"
+   ],
+   "uso": "Vivienda de las Terrazas: hastial a la calle, balcón de madera con macetas y una glicinia que trepa por la jamba y corre bajo el balcón. Puerta en arco 1,15 × 2,4 m.",
+   "tipo": "fachada",
+   "envolvente": [
+    [
+     -0.63,
+     -0.6,
+     -6.65
+    ],
+    [
+     7.03,
+     9.44,
+     1.55
+    ]
+   ],
+   "medidas": [
+    7.66,
+    10.04,
+    8.2
+   ],
+   "huella": [
+    0.0,
+    -6.0,
+    6.4,
+    0.0
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 4881,
+    "piezas": 602,
+    "vegetacion": 2663,
+    "total": 8146
+   },
+   "anclas": {
+    "humo_0": [
+     4.9,
+     9.519,
+     -3.4
+    ],
+    "puerta": [
+     3.2,
+     0.0,
+     0.9
+    ]
+   },
+   "choques": 1
+  },
+  "vivienda_terrazas_escalera": {
+   "sectores": [
+    "4 Las Terrazas"
+   ],
+   "uso": "Vivienda de las Terrazas con escalera exterior de 17 peldaños (0,176 × 0,30 m) a la puerta del piso y rellano volado sobre la puerta de abajo; macetas en los peldaños y baranda de madera.",
+   "tipo": "fachada",
+   "envolvente": [
+    [
+     -0.51,
+     -0.6,
+     -6.13
+    ],
+    [
+     8.51,
+     8.57,
+     1.25
+    ]
+   ],
+   "medidas": [
+    9.02,
+    9.17,
+    7.38
+   ],
+   "huella": [
+    0.0,
+    -5.6,
+    8.0,
+    1.25
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 4586,
+    "piezas": 350,
+    "vegetacion": 1144,
+    "total": 6080
+   },
+   "anclas": {
+    "humo_0": [
+     1.2,
+     8.65,
+     -3.0
+    ],
+    "farol_0": [
+     5.4,
+     2.31,
+     0.57
+    ],
+    "puerta": [
+     6.4,
+     0.0,
+     0.9
+    ],
+    "puerta_alta": [
+     6.35,
+     3.0,
+     0.75
+    ]
+   },
+   "choques": 2
+  },
+  "forja": {
+   "sectores": [
+    "3 Calle de los Oficios"
+   ],
+   "uso": "Taller y forja: planta baja de sillería con la boca del taller en arco rebajado, fragua encendida bajo un tejadillo, yunque, pila de templar, chimenea ancha y letrero de la herradura.",
+   "tipo": "fachada",
+   "envolvente": [
+    [
+     -0.52,
+     -0.6,
+     -6.73
+    ],
+    [
+     8.11,
+     9.62,
+     1.97
+    ]
+   ],
+   "medidas": [
+    8.63,
+    10.22,
+    8.7
+   ],
+   "huella": [
+    0.0,
+    -6.2,
+    7.6,
+    0.0
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 3969,
+    "piezas": 315,
+    "vegetacion": 0,
+    "total": 4284
+   },
+   "anclas": {
+    "humo_0": [
+     6.0,
+     9.7,
+     -2.6
+    ],
+    "brasa_0": [
+     5.6,
+     1.05,
+     0.75
+    ],
+    "puerta": [
+     2.0,
+     0.0,
+     1.2
+    ]
+   },
+   "choques": 3
+  },
+  "tienda_toldo": {
+   "sectores": [
+    "2 Plaza del Tapiz",
+    "3 Calle de los Oficios"
+   ],
+   "uso": "Tienda con escaparate encendido de telas, toldo a rayas (borde a 2,28 m), letrero y puerta de dintel.",
+   "tipo": "fachada",
+   "envolvente": [
+    [
+     -0.51,
+     -0.6,
+     -6.03
+    ],
+    [
+     7.36,
+     8.67,
+     1.46
+    ]
+   ],
+   "medidas": [
+    7.87,
+    9.27,
+    7.48
+   ],
+   "huella": [
+    0.0,
+    -5.5,
+    6.8,
+    0.0
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 4288,
+    "piezas": 720,
+    "vegetacion": 1098,
+    "total": 6106
+   },
+   "anclas": {
+    "humo_0": [
+     5.3,
+     8.75,
+     -3.2
+    ],
+    "puerta": [
+     5.05,
+     0.0,
+     0.9
+    ]
+   },
+   "choques": 3
+  },
+  "casa_pasajes": {
+   "sectores": [
+    "5 Pasajes Viejos"
+   ],
+   "uso": "Casa de los Pasajes Viejos: estrecha (3,8 m), de tres alturas con dos vuelos, revoque gris de cal, hiedra, farol y un leve desplome hacia el este (antigua).",
+   "tipo": "fachada",
+   "envolvente": [
+    [
+     -0.46,
+     -0.6,
+     -6.65
+    ],
+    [
+     4.62,
+     11.39,
+     2.05
+    ]
+   ],
+   "medidas": [
+    5.08,
+    11.99,
+    8.7
+   ],
+   "huella": [
+    0.0,
+    -6.0,
+    3.8,
+    0.0
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 3627,
+    "piezas": 0,
+    "vegetacion": 1163,
+    "total": 4790
+   },
+   "anclas": {
+    "humo_0": [
+     2.9,
+     11.466,
+     -3.6
+    ],
+    "farol_0": [
+     3.708,
+     2.21,
+     0.577
+    ],
+    "puerta": [
+     1.9,
+     0.0,
+     0.9
+    ]
+   },
+   "choques": 1
+  },
+  "casa_noble": {
+   "sectores": [
+    "7 Barrio Alto de las Raíces"
+   ],
+   "uso": "Casa noble del Barrio Alto: planta baja de sillería con portada en arco (1,7 × 3,1 m) entre pilastras, rejas, piso noble con balcón corrido de hierro, cornisa y tejado de pizarra con dos chimeneas.",
+   "tipo": "fachada",
+   "envolvente": [
+    [
+     -0.35,
+     -0.6,
+     -8.53
+    ],
+    [
+     9.95,
+     11.98,
+     0.79
+    ]
+   ],
+   "medidas": [
+    10.3,
+    12.58,
+    9.32
+   ],
+   "huella": [
+    0.0,
+    -8.0,
+    9.6,
+    0.0
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 6263,
+    "piezas": 210,
+    "vegetacion": 1057,
+    "total": 7530
+   },
+   "anclas": {
+    "humo_0": [
+     0.9,
+     12.06,
+     -3.925
+    ],
+    "humo_1": [
+     8.7,
+     12.06,
+     -3.925
+    ],
+    "farol_0": [
+     2.5,
+     2.61,
+     0.6
+    ],
+    "farol_1": [
+     7.1,
+     2.61,
+     0.6
+    ],
+    "puerta": [
+     4.8,
+     0.0,
+     1.0
+    ]
+   },
+   "choques": 1
+  },
+  "almacen_ribera": {
+   "sectores": [
+    "8 La Ribera Baja"
+   ],
+   "uso": "Almacén de la Ribera: nave de tablas sobre zócalo, portón doble abierto (2,8 × 3,0 m), puerta del pajar con viga de polea, muelle de carga de piedra, sacos y toneles.",
+   "tipo": "fachada",
+   "envolvente": [
+    [
+     -0.45,
+     -0.6,
+     -7.58
+    ],
+    [
+     9.55,
+     6.97,
+     1.45
+    ]
+   ],
+   "medidas": [
+    10.0,
+    7.57,
+    9.03
+   ],
+   "huella": [
+    0.0,
+    -7.0,
+    9.0,
+    1.45
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 3838,
+    "piezas": 1196,
+    "vegetacion": 147,
+    "total": 5181
+   },
+   "anclas": {
+    "farol_0": [
+     4.75,
+     2.96,
+     0.61
+    ],
+    "puerta": [
+     3.0,
+     0.0,
+     1.2
+    ]
+   },
+   "choques": 6
+  },
+  "arco_paso": {
+   "sectores": [
+    "5 Pasajes Viejos",
+    "1 Puerta del Sur",
+    "7 Barrio Alto"
+   ],
+   "uso": "Arco de paso en un muro de sillería de 0,7 m: vano de 2,4 m de medio punto (clave a 3,6 m), dovelas en las dos caras y albardilla.",
+   "tipo": "fachada",
+   "envolvente": [
+    [
+     -0.73,
+     -0.12,
+     -0.76
+    ],
+    [
+     4.65,
+     4.44,
+     0.27
+    ]
+   ],
+   "medidas": [
+    5.38,
+    4.56,
+    1.03
+   ],
+   "huella": [
+    0.0,
+    -0.7,
+    4.6,
+    0.0
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 290,
+    "piezas": 0,
+    "vegetacion": 644,
+    "total": 934
+   },
+   "anclas": {
+    "paso": [
+     2.3,
+     0.0,
+     -0.35
+    ]
+   },
+   "choques": 2
+  },
+  "arco_rebajado_paso": {
+   "sectores": [
+    "3 Calle de los Oficios",
+    "8 La Ribera Baja",
+    "2 Plaza del Tapiz"
+   ],
+   "uso": "Arco rebajado de paso (vano 3,2 m, clave a 3,1 m) en un muro de revoque de 0,6 m con dovelas de sillería.",
+   "tipo": "fachada",
+   "envolvente": [
+    [
+     -0.05,
+     -0.3,
+     -0.66
+    ],
+    [
+     5.25,
+     4.12,
+     0.69
+    ]
+   ],
+   "medidas": [
+    5.3,
+    4.42,
+    1.35
+   ],
+   "huella": [
+    0.0,
+    -0.6,
+    5.2,
+    0.0
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 424,
+    "piezas": 0,
+    "vegetacion": 0,
+    "total": 424
+   },
+   "anclas": {
+    "farol_0": [
+     0.55,
+     2.61,
+     0.57
+    ],
+    "paso": [
+     2.6,
+     0.0,
+     -0.3
+    ]
+   },
+   "choques": 2
+  },
+  "puerta_arco": {
+   "sectores": [
+    "todos"
+   ],
+   "uso": "Puerta de calle en arco de dovelas (1,2 × 2,5 m), hoja verde de tablas con aldaba, en un paño de muro de 2,8 × 3,4 m.",
+   "tipo": "muro",
+   "envolvente": [
+    [
+     -0.02,
+     -0.3,
+     -0.42
+    ],
+    [
+     2.82,
+     3.4,
+     0.58
+    ]
+   ],
+   "medidas": [
+    2.84,
+    3.7,
+    1.0
+   ],
+   "huella": [
+    0.0,
+    -0.4,
+    2.8,
+    0.0
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 532,
+    "piezas": 70,
+    "vegetacion": 102,
+    "total": 704
+   },
+   "anclas": {
+    "puerta": [
+     1.4,
+     0.0,
+     0.9
+    ]
+   },
+   "choques": 1
+  },
+  "puerta_dintel": {
+   "sectores": [
+    "todos"
+   ],
+   "uso": "Puerta de dintel de madera sobre jambas de piedra (1,1 × 2,3 m), hoja roja, en un paño de 2,6 × 3,2 m.",
+   "tipo": "muro",
+   "envolvente": [
+    [
+     -0.02,
+     -0.3,
+     -0.42
+    ],
+    [
+     2.62,
+     3.2,
+     0.17
+    ]
+   ],
+   "medidas": [
+    2.64,
+    3.5,
+    0.59
+   ],
+   "huella": [
+    0.0,
+    -0.4,
+    2.6,
+    0.0
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 478,
+    "piezas": 0,
+    "vegetacion": 0,
+    "total": 478
+   },
+   "anclas": {
+    "puerta": [
+     1.3,
+     0.0,
+     0.9
+    ]
+   },
+   "choques": 1
+  },
+  "porton_doble": {
+   "sectores": [
+    "3 Calle de los Oficios",
+    "8 La Ribera Baja",
+    "1 Caravanas"
+   ],
+   "uso": "Portón de dos hojas abierto (2,6 × 2,8 m) en un paño de tablas de 4 × 3,6 m.",
+   "tipo": "muro",
+   "envolvente": [
+    [
+     -0.76,
+     -0.3,
+     -0.32
+    ],
+    [
+     4.7,
+     3.6,
+     0.64
+    ]
+   ],
+   "medidas": [
+    5.46,
+    3.9,
+    0.96
+   ],
+   "huella": [
+    0.0,
+    -0.3,
+    4.0,
+    0.0
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 310,
+    "piezas": 0,
+    "vegetacion": 0,
+    "total": 310
+   },
+   "anclas": {
+    "puerta": [
+     2.0,
+     0.0,
+     1.2
+    ]
+   },
+   "choques": 0
+  },
+  "ventana_postigos": {
+   "sectores": [
+    "todos"
+   ],
+   "uso": "Ventana de 0,7 × 1,0 m con postigos abiertos, jardinera y flores, en un paño de 1,6 × 2,0 m (para cosido de fachadas).",
+   "tipo": "muro",
+   "envolvente": [
+    [
+     -0.02,
+     -0.3,
+     -0.32
+    ],
+    [
+     1.62,
+     2.0,
+     0.56
+    ]
+   ],
+   "medidas": [
+    1.64,
+    2.3,
+    0.88
+   ],
+   "huella": [
+    0.0,
+    -0.3,
+    1.6,
+    0.0
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 286,
+    "piezas": 0,
+    "vegetacion": 287,
+    "total": 573
+   },
+   "anclas": {},
+   "choques": 0
+  },
+  "ventana_encendida": {
+   "sectores": [
+    "todos"
+   ],
+   "uso": "Ventana encendida (cristal que da luz) de 0,6 × 0,95 m con postigos azules.",
+   "tipo": "muro",
+   "envolvente": [
+    [
+     -0.02,
+     -0.3,
+     -0.32
+    ],
+    [
+     1.62,
+     2.0,
+     0.36
+    ]
+   ],
+   "medidas": [
+    1.64,
+    2.3,
+    0.68
+   ],
+   "huella": [
+    0.0,
+    -0.3,
+    1.6,
+    0.0
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 274,
+    "piezas": 0,
+    "vegetacion": 0,
+    "total": 274
+   },
+   "anclas": {},
+   "choques": 0
+  },
+  "hornacina": {
+   "sectores": [
+    "5 Pasajes Viejos"
+   ],
+   "uso": "Paño de muro (1,8 × 3,4 m) con la hornacina de la muestra: arco, velas encendidas, figurilla y flores.",
+   "tipo": "muro",
+   "envolvente": [
+    [
+     -0.02,
+     -0.3,
+     -0.42
+    ],
+    [
+     2.23,
+     3.4,
+     0.26
+    ]
+   ],
+   "medidas": [
+    2.25,
+    3.7,
+    0.68
+   ],
+   "huella": [
+    0.0,
+    -0.4,
+    1.8,
+    0.0
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 155,
+    "piezas": 0,
+    "vegetacion": 611,
+    "total": 766
+   },
+   "anclas": {
+    "hornacina": [
+     0.9,
+     2.4,
+     0.18
+    ]
+   },
+   "choques": 0
+  },
+  "escalera_recta": {
+   "sectores": [
+    "4 Las Terrazas",
+    "7 Barrio Alto",
+    "5 Pasajes Viejos"
+   ],
+   "uso": "Escalera recta de 6 peldaños (contrahuella 0,165 m, huella 0,32 m; sube 0,99 m en 1,92 m), 2,2 m de ancho, con zancas de sillería escalonadas.",
+   "tipo": "escalera",
+   "envolvente": [
+    [
+     -0.34,
+     -0.3,
+     -1.93
+    ],
+    [
+     2.54,
+     1.2,
+     0.01
+    ]
+   ],
+   "medidas": [
+    2.88,
+    1.5,
+    1.94
+   ],
+   "huella": [
+    -0.3,
+    -1.92,
+    2.5,
+    0.0
+   ],
+   "sube": 0.99,
+   "nota": null,
+   "triangulos": {
+    "fijo": 324,
+    "piezas": 0,
+    "vegetacion": 48,
+    "total": 372
+   },
+   "anclas": {
+    "pie": [
+     1.1,
+     0.0,
+     0.5
+    ],
+    "cima": [
+     1.1,
+     0.99,
+     -2.32
+    ]
+   },
+   "choques": 0
+  },
+  "escalera_rellano": {
+   "sectores": [
+    "4 Las Terrazas",
+    "7 Barrio Alto (Calle del Árbol)"
+   ],
+   "uso": "Escalera de dos tramos de 6 peldaños con rellano de 1,6 m (sube 1,98 m en 5,44 m), 2,4 m de ancho, pretiles de piedra, balaustrada en el rellano, farol y macetas.",
+   "tipo": "escalera",
+   "envolvente": [
+    [
+     -0.39,
+     -0.3,
+     -5.45
+    ],
+    [
+     2.79,
+     4.29,
+     0.02
+    ]
+   ],
+   "medidas": [
+    3.18,
+    4.59,
+    5.47
+   ],
+   "huella": [
+    -0.35,
+    -5.44,
+    2.75,
+    0.0
+   ],
+   "sube": 1.98,
+   "nota": null,
+   "triangulos": {
+    "fijo": 1544,
+    "piezas": 284,
+    "vegetacion": 249,
+    "total": 2077
+   },
+   "anclas": {
+    "farol_0": [
+     0.77,
+     3.82,
+     -3.32
+    ],
+    "pie": [
+     1.2,
+     0.0,
+     0.5
+    ],
+    "rellano": [
+     1.2,
+     0.99,
+     -2.72
+    ],
+    "cima": [
+     1.2,
+     1.98,
+     -5.84
+    ]
+   },
+   "choques": 0
+  },
+  "rampa": {
+   "sectores": [
+    "3 Calle de los Oficios",
+    "8 Rampa de los Carros"
+   ],
+   "uso": "Rampa empedrada de 2,6 × 6 m que sube 0,6 m (5,7°), con bordillos de sillería y costados de piedra.",
+   "tipo": "escalera",
+   "envolvente": [
+    [
+     -0.01,
+     -0.3,
+     -6.01
+    ],
+    [
+     2.61,
+     0.8,
+     0.01
+    ]
+   ],
+   "medidas": [
+    2.62,
+    1.1,
+    6.02
+   ],
+   "huella": [
+    0.0,
+    -6.0,
+    2.6,
+    0.0
+   ],
+   "sube": 0.6,
+   "nota": null,
+   "triangulos": {
+    "fijo": 64,
+    "piezas": 1705,
+    "vegetacion": 0,
+    "total": 1769
+   },
+   "anclas": {
+    "pie": [
+     1.3,
+     0.0,
+     0.5
+    ],
+    "cima": [
+     1.3,
+     0.6,
+     -6.4
+    ]
+   },
+   "choques": 0
+  },
+  "empedrado_4x4": {
+   "sectores": [
+    "todos"
+   ],
+   "uso": "Losa de suelo de 4 × 4 m: losas irregulares de Voronoi (las de la muestra) sobre tierra; se repite sin costura visible.",
+   "tipo": "suelo",
+   "envolvente": [
+    [
+     0.0,
+     -0.08,
+     -4.0
+    ],
+    [
+     4.0,
+     0.02,
+     0.0
+    ]
+   ],
+   "medidas": [
+    4.0,
+    0.1,
+    4.0
+   ],
+   "huella": [
+    0.0,
+    -4.0,
+    4.0,
+    0.0
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 8,
+    "piezas": 2745,
+    "vegetacion": 0,
+    "total": 2753
+   },
+   "anclas": {},
+   "choques": 0
+  },
+  "losas_plaza_4x4": {
+   "sectores": [
+    "2 Plaza del Tapiz",
+    "7 Barrio Alto"
+   ],
+   "uso": "Losa de suelo de 4 × 4 m: losas rectangulares a matajunta (las de la plaza del barrio).",
+   "tipo": "suelo",
+   "envolvente": [
+    [
+     0.0,
+     -0.08,
+     -4.0
+    ],
+    [
+     4.0,
+     0.01,
+     0.0
+    ]
+   ],
+   "medidas": [
+    4.0,
+    0.09,
+    4.0
+   ],
+   "huella": [
+    0.0,
+    -4.0,
+    4.0,
+    0.0
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 8,
+    "piezas": 760,
+    "vegetacion": 0,
+    "total": 768
+   },
+   "anclas": {},
+   "choques": 0
+  },
+  "balcon_madera": {
+   "sectores": [
+    "4 Las Terrazas",
+    "5 Pasajes Viejos"
+   ],
+   "uso": "Balcón volado de madera (2,0 × 0,8 m) con ménsulas, balaustres de tabla, puerta-ventana y macetas; se pega a una fachada con el suelo a ≥ 2,6 m.",
+   "tipo": "muro",
+   "envolvente": [
+    [
+     -0.02,
+     -0.45,
+     -0.32
+    ],
+    [
+     2.62,
+     2.6,
+     0.82
+    ]
+   ],
+   "medidas": [
+    2.64,
+    3.05,
+    1.14
+   ],
+   "huella": [
+    0.0,
+    -0.3,
+    2.6,
+    0.8
+   ],
+   "sube": null,
+   "nota": "y = 0 del módulo = suelo del balcón − 0,3 m",
+   "triangulos": {
+    "fijo": 466,
+    "piezas": 210,
+    "vegetacion": 306,
+    "total": 982
+   },
+   "anclas": {},
+   "choques": 0
+  },
+  "balcon_hierro": {
+   "sectores": [
+    "7 Barrio Alto de las Raíces",
+    "2 Plaza del Tapiz"
+   ],
+   "uso": "Balcón de losa de piedra con moldura y baranda de barrotes de hierro (2,6 × 0,75 m) y puerta-ventana.",
+   "tipo": "muro",
+   "envolvente": [
+    [
+     -0.02,
+     -0.41,
+     -0.32
+    ],
+    [
+     3.22,
+     2.8,
+     0.79
+    ]
+   ],
+   "medidas": [
+    3.24,
+    3.21,
+    1.11
+   ],
+   "huella": [
+    0.0,
+    -0.3,
+    3.2,
+    0.75
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 670,
+    "piezas": 70,
+    "vegetacion": 102,
+    "total": 842
+   },
+   "anclas": {},
+   "choques": 0
+  },
+  "tejado_dos_aguas": {
+   "sectores": [
+    "todos"
+   ],
+   "uso": "Tejado suelto a dos aguas de teja (cubre 6 × 5 m, alero de 0,45 m, cumbrera a 2,2 m sobre el alero) con hastiales de revoque; para cuerpos añadidos.",
+   "tipo": "muro",
+   "envolvente": [
+    [
+     -0.5,
+     -0.17,
+     -5.53
+    ],
+    [
+     6.5,
+     2.37,
+     0.53
+    ]
+   ],
+   "medidas": [
+    7.0,
+    2.54,
+    6.07
+   ],
+   "huella": [
+    -0.45,
+    -5.45,
+    6.45,
+    0.45
+   ],
+   "sube": null,
+   "nota": "y = 0 = la línea del alero (encima del muro)",
+   "triangulos": {
+    "fijo": 1382,
+    "piezas": 0,
+    "vegetacion": 0,
+    "total": 1382
+   },
+   "anclas": {},
+   "choques": 0
+  },
+  "tejado_alero_largo": {
+   "sectores": [
+    "3 Calle de los Oficios",
+    "1 Caravanas",
+    "8 La Ribera Baja"
+   ],
+   "uso": "Tejadillo de un agua con alero largo (5 × 2 m) sobre canes y tornapuntas, pegado a un muro (de 3,2 m a 2,6 m: se pasa debajo).",
+   "tipo": "muro",
+   "envolvente": [
+    [
+     -0.15,
+     -0.3,
+     -0.32
+    ],
+    [
+     5.15,
+     3.6,
+     2.07
+    ]
+   ],
+   "medidas": [
+    5.3,
+    3.9,
+    2.39
+   ],
+   "huella": [
+    0.0,
+    -0.3,
+    5.0,
+    2.0
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 384,
+    "piezas": 0,
+    "vegetacion": 0,
+    "total": 384
+   },
+   "anclas": {},
+   "choques": 0
+  },
+  "tejado_soportal": {
+   "sectores": [
+    "1 Caravanas",
+    "2 Plaza (Calle Mayor)",
+    "6 Patio del Cuervo"
+   ],
+   "uso": "Porche de madera: tejado de un agua sobre pies derechos con zapatas (6 × 2,4 m; libre 2,55 m), para delante de una fachada.",
+   "tipo": "muro",
+   "envolvente": [
+    [
+     -0.25,
+     0.0,
+     -0.06
+    ],
+    [
+     6.25,
+     3.43,
+     2.82
+    ]
+   ],
+   "medidas": [
+    6.5,
+    3.43,
+    2.88
+   ],
+   "huella": [
+    0.0,
+    0.0,
+    6.0,
+    2.75
+   ],
+   "sube": null,
+   "nota": "z = 0 = la fachada a la que se arrima (sin muro propio)",
+   "triangulos": {
+    "fijo": 628,
+    "piezas": 0,
+    "vegetacion": 0,
+    "total": 628
+   },
+   "anclas": {},
+   "choques": 3
+  },
+  "soportal_arcos": {
+   "sectores": [
+    "2 Plaza del Tapiz (lonja)",
+    "2 Calle Mayor"
+   ],
+   "uso": "Soportal de piedra de dos arcos de medio punto sobre columnas (fondo 2,4 m; clave a 4,2 m) con piso de entramado encima y tejado de alero (7,2 × 6 m).",
+   "tipo": "fachada",
+   "envolvente": [
+    [
+     -0.45,
+     -0.6,
+     -6.48
+    ],
+    [
+     7.65,
+     9.77,
+     1.08
+    ]
+   ],
+   "medidas": [
+    8.1,
+    10.37,
+    7.56
+   ],
+   "huella": [
+    0.0,
+    -6.0,
+    7.2,
+    0.0
+   ],
+   "sube": null,
+   "nota": "soportal andable: z de −2,4 a 0, suelo a +0,12",
+   "triangulos": {
+    "fijo": 4714,
+    "piezas": 115,
+    "vegetacion": 574,
+    "total": 5403
+   },
+   "anclas": {
+    "farol_0": [
+     3.6,
+     3.31,
+     -1.83
+    ],
+    "puerta": [
+     2.16,
+     0.12,
+     -1.5
+    ]
+   },
+   "choques": 4
+  },
+  "corredor_cubierto": {
+   "sectores": [
+    "5 Pasajes Viejos",
+    "6 Patio del Cuervo"
+   ],
+   "uso": "Corredor cubierto de madera (tramo de 4 m que se repite en x; 2,4 m de ancho, libre 2,5 m): pies derechos con zapatas, carreras, tirantes y tejadillo a dos aguas.",
+   "tipo": "muro",
+   "envolvente": [
+    [
+     -0.2,
+     0.0,
+     -2.82
+    ],
+    [
+     4.05,
+     3.4,
+     0.42
+    ]
+   ],
+   "medidas": [
+    4.25,
+    3.4,
+    3.25
+   ],
+   "huella": [
+    0.0,
+    -2.4,
+    4.0,
+    0.0
+   ],
+   "sube": null,
+   "nota": "repetir cada 4 m en x; el siguiente tramo pone sus pies a x+0,1",
+   "triangulos": {
+    "fijo": 704,
+    "piezas": 0,
+    "vegetacion": 0,
+    "total": 704
+   },
+   "anclas": {},
+   "choques": 4
+  },
+  "paso_bajo_casa": {
+   "sectores": [
+    "5 Pasajes Viejos (Paso Cubierto de la Botica)"
+   ],
+   "uso": "Paso bajo casa: bóveda rebajada de 2,8 m de luz (clave a 3,0 m) que atraviesa 5 m de casa, con piso de entramado volado encima y tejado; farol dentro.",
+   "tipo": "fachada",
+   "envolvente": [
+    [
+     -0.5,
+     -0.3,
+     -5.53
+    ],
+    [
+     6.1,
+     9.37,
+     1.13
+    ]
+   ],
+   "medidas": [
+    6.6,
+    9.67,
+    6.66
+   ],
+   "huella": [
+    0.0,
+    -5.0,
+    5.6,
+    0.0
+   ],
+   "sube": null,
+   "nota": "el paso (x 1,4-4,2) es andable; techo libre 2,32 m bajo las vigas",
+   "triangulos": {
+    "fijo": 2814,
+    "piezas": 0,
+    "vegetacion": 819,
+    "total": 3633
+   },
+   "anclas": {
+    "humo_0": [
+     4.6,
+     9.45,
+     -2.8
+    ],
+    "farol_0": [
+     1.96,
+     1.86,
+     -2.5
+    ],
+    "paso_sur": [
+     2.8,
+     0.0,
+     0.6
+    ],
+    "paso_norte": [
+     2.8,
+     0.0,
+     -5.6
+    ]
+   },
+   "choques": 2
+  },
+  "balaustrada": {
+   "sectores": [
+    "4 Las Terrazas",
+    "7 Barrio Alto (miradores)"
+   ],
+   "uso": "Balaustrada de piedra de 3 m (1,0 m de alto): plinto, balaustres torneados, pasamanos y pilares; se repite en x.",
+   "tipo": "muro",
+   "envolvente": [
+    [
+     -0.03,
+     -0.05,
+     -0.35
+    ],
+    [
+     3.03,
+     1.16,
+     0.05
+    ]
+   ],
+   "medidas": [
+    3.06,
+    1.21,
+    0.4
+   ],
+   "huella": [
+    0.0,
+    -0.36,
+    3.0,
+    0.05
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 828,
+    "piezas": 0,
+    "vegetacion": 0,
+    "total": 828
+   },
+   "anclas": {},
+   "choques": 1
+  },
+  "muro_terraza": {
+   "sectores": [
+    "4 Las Terrazas",
+    "7 Barrio Alto"
+   ],
+   "uso": "Muro de contención de una terraza: sillería de 5 m × 2,4 m con albardilla, mechinales, plantas que cuelgan y flores en las juntas (la terraza alta queda detrás, a +2,4).",
+   "tipo": "muro",
+   "envolvente": [
+    [
+     -0.04,
+     -0.3,
+     -0.95
+    ],
+    [
+     5.22,
+     2.67,
+     0.64
+    ]
+   ],
+   "medidas": [
+    5.26,
+    2.97,
+    1.59
+   ],
+   "huella": [
+    0.0,
+    -0.9,
+    5.0,
+    0.3
+   ],
+   "sube": 2.4,
+   "nota": null,
+   "triangulos": {
+    "fijo": 70,
+    "piezas": 0,
+    "vegetacion": 896,
+    "total": 966
+   },
+   "anclas": {},
+   "choques": 1
+  },
+  "muralla_almena": {
+   "sectores": [
+    "muralla (1, 7, 8)"
+   ],
+   "uso": "Tramo de muralla de 6 m: 7 m de alto y 2,4 m de grueso, talud, dos arcos ciegos de descarga en la cara de dentro (la que ve la cámara), adarve a 7 m y parapeto almenado hacia fuera.",
+   "tipo": "muro",
+   "envolvente": [
+    [
+     -0.19,
+     -0.6,
+     -2.41
+    ],
+    [
+     6.47,
+     8.91,
+     0.89
+    ]
+   ],
+   "medidas": [
+    6.66,
+    9.51,
+    3.3
+   ],
+   "huella": [
+    0.0,
+    -2.4,
+    6.0,
+    0.5
+   ],
+   "sube": 7.0,
+   "nota": null,
+   "triangulos": {
+    "fijo": 662,
+    "piezas": 0,
+    "vegetacion": 1383,
+    "total": 2045
+   },
+   "anclas": {
+    "adarve": [
+     3.0,
+     7.0,
+     -1.2
+    ]
+   },
+   "choques": 1
+  },
+  "torre_muralla": {
+   "sectores": [
+    "8 Ribera (ronda)",
+    "1 Puerta del Sur",
+    "muralla"
+   ],
+   "uso": "Torre cuadrada de muralla (4,6 × 4,6 m, 11 m hasta las almenas) con saeteras, puerta en arco, matacán y chapitel de pizarra (cumbre a 15,5 m).",
+   "tipo": "fachada",
+   "envolvente": [
+    [
+     -0.31,
+     -0.6,
+     -4.9
+    ],
+    [
+     4.91,
+     17.15,
+     0.69
+    ]
+   ],
+   "medidas": [
+    5.22,
+    17.75,
+    5.59
+   ],
+   "huella": [
+    0.0,
+    -4.6,
+    4.6,
+    0.0
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 1074,
+    "piezas": 0,
+    "vegetacion": 728,
+    "total": 1802
+   },
+   "anclas": {
+    "farol_0": [
+     3.3,
+     2.61,
+     0.57
+    ],
+    "puerta": [
+     2.3,
+     0.0,
+     0.9
+    ]
+   },
+   "choques": 1
+  },
+  "fuente_plaza": {
+   "sectores": [
+    "2 Plaza del Tapiz"
+   ],
+   "uso": "Fuente de la plaza (propuesta del aspecto «dorado» de la referencia, adaptado a la paleta): grada y pila octogonales de sillería (Ø 4,6 m), fuste con dos tazas de latón dorado, remate de piña y cortinas de agua.",
+   "tipo": "atrezo",
+   "envolvente": [
+    [
+     -2.25,
+     -0.2,
+     -2.28
+    ],
+    [
+     2.28,
+     3.3,
+     2.23
+    ]
+   ],
+   "medidas": [
+    4.53,
+    3.5,
+    4.51
+   ],
+   "huella": [
+    -2.3,
+    -2.3,
+    2.3,
+    2.3
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 1006,
+    "piezas": 0,
+    "vegetacion": 108,
+    "total": 1114
+   },
+   "anclas": {},
+   "choques": 3
+  },
+  "toldo_mercado": {
+   "sectores": [
+    "2 Gran Mercado",
+    "6 Patio del Cuervo (Feria)"
+   ],
+   "uso": "Puesto de mercado con toldo a dos aguas de lona a rayas (2,8 × 2,2 m; borde a 2,3 m, cumbrera a 2,85 m) sobre cuatro postes, mesa de caballetes con fruta, coles y cestas.",
+   "tipo": "atrezo",
+   "envolvente": [
+    [
+     -1.55,
+     -0.01,
+     -1.3
+    ],
+    [
+     1.55,
+     2.91,
+     1.3
+    ]
+   ],
+   "medidas": [
+    3.1,
+    2.92,
+    2.6
+   ],
+   "huella": [
+    -1.4,
+    -1.1,
+    1.4,
+    1.1
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 324,
+    "piezas": 1039,
+    "vegetacion": 96,
+    "total": 1459
+   },
+   "anclas": {
+    "vendedor": [
+     0.0,
+     0.0,
+     -0.55
+    ]
+   },
+   "choques": 2
+  },
+  "toldo_vela": {
+   "sectores": [
+    "2 Gran Mercado",
+    "4 Las Terrazas (patios)",
+    "6 Patio del Cuervo"
+   ],
+   "uso": "Toldo de vela a rayas tendido entre cuatro mástiles (3,6 × 3,0 m; de 3,0 m detrás a 2,55 m delante) con sus cuerdas; para dar sombra a un paso o un patio.",
+   "tipo": "atrezo",
+   "envolvente": [
+    [
+     -2.17,
+     0.0,
+     -1.83
+    ],
+    [
+     2.17,
+     3.45,
+     1.83
+    ]
+   ],
+   "medidas": [
+    4.33,
+    3.45,
+    3.66
+   ],
+   "huella": [
+    -2.02,
+    -1.68,
+    2.02,
+    1.68
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 200,
+    "piezas": 0,
+    "vegetacion": 0,
+    "total": 200
+   },
+   "anclas": {},
+   "choques": 4
+  },
+  "banco_piedra": {
+   "sectores": [
+    "todos"
+   ],
+   "uso": "Banco de piedra (1,6 × 0,45 m, asiento a 0,45 m).",
+   "tipo": "atrezo",
+   "envolvente": [
+    [
+     -0.8,
+     -0.0,
+     -0.23
+    ],
+    [
+     0.8,
+     0.47,
+     0.24
+    ]
+   ],
+   "medidas": [
+    1.61,
+    0.48,
+    0.47
+   ],
+   "huella": [
+    -0.8,
+    -0.23,
+    0.8,
+    0.23
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 0,
+    "piezas": 36,
+    "vegetacion": 0,
+    "total": 36
+   },
+   "anclas": {
+    "sentarse": [
+     0.0,
+     0.45,
+     0.35
+    ]
+   },
+   "choques": 1
+  },
+  "banco_madera": {
+   "sectores": [
+    "todos"
+   ],
+   "uso": "Banco de tablas con respaldo (1,7 × 0,5 m).",
+   "tipo": "atrezo",
+   "envolvente": [
+    [
+     -0.85,
+     -0.0,
+     -0.27
+    ],
+    [
+     0.85,
+     0.9,
+     0.22
+    ]
+   ],
+   "medidas": [
+    1.7,
+    0.9,
+    0.49
+   ],
+   "huella": [
+    -0.85,
+    -0.25,
+    0.85,
+    0.25
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 0,
+    "piezas": 108,
+    "vegetacion": 0,
+    "total": 108
+   },
+   "anclas": {
+    "sentarse": [
+     0.0,
+     0.45,
+     0.35
+    ]
+   },
+   "choques": 1
+  },
+  "barriles": {
+   "sectores": [
+    "3 Oficios",
+    "6 Patio del Cuervo",
+    "8 Ribera Baja"
+   ],
+   "uso": "Grupo de tres barriles (dos de pie y uno tumbado sobre calzos).",
+   "tipo": "atrezo",
+   "envolvente": [
+    [
+     -0.73,
+     0.0,
+     -0.55
+    ],
+    [
+     0.61,
+     0.85,
+     0.85
+    ]
+   ],
+   "medidas": [
+    1.33,
+    0.85,
+    1.4
+   ],
+   "huella": [
+    -0.75,
+    -0.6,
+    0.65,
+    0.85
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 0,
+    "piezas": 744,
+    "vegetacion": 0,
+    "total": 744
+   },
+   "anclas": {},
+   "choques": 3
+  },
+  "cajas": {
+   "sectores": [
+    "1 Caravanas",
+    "3 Oficios",
+    "8 Ribera Baja"
+   ],
+   "uso": "Pila de cajones y sacos de mercancía.",
+   "tipo": "atrezo",
+   "envolvente": [
+    [
+     -0.69,
+     -0.0,
+     -0.35
+    ],
+    [
+     0.8,
+     0.97,
+     0.87
+    ]
+   ],
+   "medidas": [
+    1.49,
+    0.97,
+    1.21
+   ],
+   "huella": [
+    -0.7,
+    -0.35,
+    0.8,
+    0.85
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 0,
+    "piezas": 770,
+    "vegetacion": 0,
+    "total": 770
+   },
+   "anclas": {},
+   "choques": 3
+  },
+  "puesto_mercado": {
+   "sectores": [
+    "2 Gran Mercado"
+   ],
+   "uso": "Puesto sin toldo: mesa de caballetes (2,2 × 0,8 m) con cajones de fruta, cesta de pan y tinaja.",
+   "tipo": "atrezo",
+   "envolvente": [
+    [
+     -1.67,
+     -0.01,
+     -0.35
+    ],
+    [
+     1.62,
+     1.07,
+     0.41
+    ]
+   ],
+   "medidas": [
+    3.29,
+    1.08,
+    0.76
+   ],
+   "huella": [
+    -1.7,
+    -0.4,
+    1.65,
+    0.45
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 0,
+    "piezas": 832,
+    "vegetacion": 0,
+    "total": 832
+   },
+   "anclas": {},
+   "choques": 1
+  },
+  "farol_pie": {
+   "sectores": [
+    "todos"
+   ],
+   "uso": "Farol de pie de la muestra (poste de 3,3 m con brazo y farol encendido).",
+   "tipo": "atrezo",
+   "envolvente": [
+    [
+     -0.17,
+     -0.1,
+     -0.17
+    ],
+    [
+     0.67,
+     3.3,
+     0.17
+    ]
+   ],
+   "medidas": [
+    0.84,
+    3.4,
+    0.34
+   ],
+   "huella": [
+    -0.17,
+    -0.17,
+    0.85,
+    0.17
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 148,
+    "piezas": 0,
+    "vegetacion": 0,
+    "total": 148
+   },
+   "anclas": {
+    "farol_0": [
+     0.55,
+     2.83,
+     0.0
+    ]
+   },
+   "choques": 1
+  },
+  "farol_pared": {
+   "sectores": [
+    "todos"
+   ],
+   "uso": "Farol en brazo de hierro para colgar de una fachada (pivote en el muro, a 2,9 m).",
+   "tipo": "muro",
+   "envolvente": [
+    [
+     -0.12,
+     2.42,
+     0.0
+    ],
+    [
+     0.12,
+     3.05,
+     0.7
+    ]
+   ],
+   "medidas": [
+    0.24,
+    0.63,
+    0.7
+   ],
+   "huella": [
+    -0.2,
+    0.0,
+    0.2,
+    0.7
+   ],
+   "sube": null,
+   "nota": "y = 0 = el suelo bajo el farol",
+   "triangulos": {
+    "fijo": 136,
+    "piezas": 0,
+    "vegetacion": 0,
+    "total": 136
+   },
+   "anclas": {
+    "farol_0": [
+     0.0,
+     2.61,
+     0.58
+    ]
+   },
+   "choques": 0
+  },
+  "macetas": {
+   "sectores": [
+    "4 Las Terrazas",
+    "todos"
+   ],
+   "uso": "Grupo de tres macetas de barro con flores (geranios, margaritas, lavanda).",
+   "tipo": "atrezo",
+   "envolvente": [
+    [
+     -0.64,
+     0.0,
+     -0.59
+    ],
+    [
+     0.46,
+     0.67,
+     0.33
+    ]
+   ],
+   "medidas": [
+    1.1,
+    0.67,
+    0.92
+   ],
+   "huella": [
+    -0.6,
+    -0.5,
+    0.4,
+    0.3
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 0,
+    "piezas": 210,
+    "vegetacion": 306,
+    "total": 516
+   },
+   "anclas": {},
+   "choques": 0
+  },
+  "maceta_limonero": {
+   "sectores": [
+    "4 Las Terrazas",
+    "7 Barrio Alto",
+    "2 Plaza"
+   ],
+   "uso": "Tinaja grande con un limonero (1,9 m) y sus limones.",
+   "tipo": "atrezo",
+   "envolvente": [
+    [
+     -0.55,
+     0.0,
+     -0.44
+    ],
+    [
+     0.61,
+     1.82,
+     0.5
+    ]
+   ],
+   "medidas": [
+    1.16,
+    1.82,
+    0.94
+   ],
+   "huella": [
+    -0.42,
+    -0.42,
+    0.42,
+    0.42
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 0,
+    "piezas": 228,
+    "vegetacion": 360,
+    "total": 588
+   },
+   "anclas": {},
+   "choques": 1
+  },
+  "abrevadero": {
+   "sectores": [
+    "1 Caravanas",
+    "8 La Ribera Baja",
+    "3 Oficios"
+   ],
+   "uso": "Abrevadero de piedra (2,2 × 0,7 × 0,6 m) con agua y su pilar con caño de latón.",
+   "tipo": "atrezo",
+   "envolvente": [
+    [
+     -1.7,
+     -0.1,
+     -0.35
+    ],
+    [
+     1.36,
+     1.62,
+     0.46
+    ]
+   ],
+   "medidas": [
+    3.06,
+    1.72,
+    0.82
+   ],
+   "huella": [
+    -1.7,
+    -0.35,
+    1.1,
+    0.35
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 110,
+    "piezas": 0,
+    "vegetacion": 30,
+    "total": 140
+   },
+   "anclas": {},
+   "choques": 2
+  },
+  "carro": {
+   "sectores": [
+    "1 Caravanas",
+    "3 Oficios",
+    "8 La Ribera Baja"
+   ],
+   "uso": "Carro de dos ruedas (Ø 1,2 m) cargado de sacos, un tonel y cajones, con la lanza apoyada en el suelo.",
+   "tipo": "atrezo",
+   "envolvente": [
+    [
+     -1.53,
+     -0.01,
+     -0.88
+    ],
+    [
+     2.52,
+     1.5,
+     0.88
+    ]
+   ],
+   "medidas": [
+    4.05,
+    1.51,
+    1.76
+   ],
+   "huella": [
+    -1.25,
+    -0.85,
+    2.5,
+    0.85
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 0,
+    "piezas": 1337,
+    "vegetacion": 0,
+    "total": 1337
+   },
+   "anclas": {},
+   "choques": 3
+  },
+  "carretilla": {
+   "sectores": [
+    "3 Oficios",
+    "4 Las Terrazas"
+   ],
+   "uso": "La carretilla de la muestra, con sacos.",
+   "tipo": "atrezo",
+   "envolvente": [
+    [
+     -1.25,
+     -0.01,
+     -0.38
+    ],
+    [
+     0.89,
+     0.76,
+     0.38
+    ]
+   ],
+   "medidas": [
+    2.15,
+    0.77,
+    0.77
+   ],
+   "huella": [
+    -1.3,
+    -0.4,
+    0.9,
+    0.4
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 0,
+    "piezas": 450,
+    "vegetacion": 0,
+    "total": 450
+   },
+   "anclas": {},
+   "choques": 1
+  },
+  "tendedero": {
+   "sectores": [
+    "4 Las Terrazas"
+   ],
+   "uso": "Cuerda de tender de 4 m con ropa, entre dos escuadras de hierro a 3,2 m (por encima de Kael); se cuelga de una fachada.",
+   "tipo": "muro",
+   "envolvente": [
+    [
+     -0.01,
+     2.36,
+     -0.01
+    ],
+    [
+     4.01,
+     3.22,
+     0.79
+    ]
+   ],
+   "medidas": [
+    4.03,
+    0.85,
+    0.8
+   ],
+   "huella": [
+    0.0,
+    0.0,
+    4.0,
+    0.8
+   ],
+   "sube": null,
+   "nota": "z = 0 = la fachada",
+   "triangulos": {
+    "fijo": 192,
+    "piezas": 180,
+    "vegetacion": 0,
+    "total": 372
+   },
+   "anclas": {},
+   "choques": 0
+  },
+  "glicinia_pergola": {
+   "sectores": [
+    "4 Las Terrazas",
+    "7 Barrio Alto (jardines)"
+   ],
+   "uso": "Pérgola de madera (3,0 × 2,4 m, libre 2,6 m) cubierta por una glicinia en flor: tronco retorcido en un pie, hojas por encima y racimos colgantes (el más bajo a ≈ 2,0 m).",
+   "tipo": "atrezo",
+   "envolvente": [
+    [
+     -1.8,
+     -0.01,
+     -1.58
+    ],
+    [
+     1.8,
+     3.28,
+     1.5
+    ]
+   ],
+   "medidas": [
+    3.6,
+    3.28,
+    3.08
+   ],
+   "huella": [
+    -1.8,
+    -1.5,
+    1.8,
+    1.5
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 204,
+    "piezas": 348,
+    "vegetacion": 2404,
+    "total": 2956
+   },
+   "anclas": {},
+   "choques": 4
+  },
+  "glicinia_muro": {
+   "sectores": [
+    "4 Las Terrazas",
+    "5 Pasajes Viejos"
+   ],
+   "uso": "Glicinia en flor para arrimar a una fachada (3,2 m de ancho, hasta 4,3 m): tronco que sube junto a una puerta y dos ramas con racimos.",
+   "tipo": "muro",
+   "envolvente": [
+    [
+     0.0,
+     -0.01,
+     -0.1
+    ],
+    [
+     3.42,
+     4.45,
+     0.69
+    ]
+   ],
+   "medidas": [
+    3.42,
+    4.46,
+    0.79
+   ],
+   "huella": [
+    0.0,
+    0.0,
+    3.2,
+    0.45
+   ],
+   "sube": null,
+   "nota": "z = 0 = la fachada",
+   "triangulos": {
+    "fijo": 12,
+    "piezas": 264,
+    "vegetacion": 960,
+    "total": 1236
+   },
+   "anclas": {},
+   "choques": 0
+  },
+  "cipres_alto": {
+   "sectores": [
+    "7 Barrio Alto",
+    "4 Las Terrazas",
+    "muralla"
+   ],
+   "uso": "Ciprés estilizado de 7 m (Ø 1,4 m).",
+   "tipo": "atrezo",
+   "envolvente": [
+    [
+     -0.73,
+     -0.05,
+     -0.72
+    ],
+    [
+     0.74,
+     7.05,
+     0.73
+    ]
+   ],
+   "medidas": [
+    1.47,
+    7.1,
+    1.46
+   ],
+   "huella": [
+    -0.75,
+    -0.75,
+    0.75,
+    0.75
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 0,
+    "piezas": 108,
+    "vegetacion": 1158,
+    "total": 1266
+   },
+   "anclas": {},
+   "choques": 1
+  },
+  "cipres_bajo": {
+   "sectores": [
+    "7 Barrio Alto",
+    "4 Las Terrazas",
+    "2 Plaza"
+   ],
+   "uso": "Ciprés joven de 4,2 m (Ø 1 m).",
+   "tipo": "atrezo",
+   "envolvente": [
+    [
+     -0.52,
+     -0.05,
+     -0.53
+    ],
+    [
+     0.52,
+     4.24,
+     0.51
+    ]
+   ],
+   "medidas": [
+    1.04,
+    4.29,
+    1.05
+   ],
+   "huella": [
+    -0.55,
+    -0.55,
+    0.55,
+    0.55
+   ],
+   "sube": null,
+   "nota": null,
+   "triangulos": {
+    "fijo": 0,
+    "piezas": 108,
+    "vegetacion": 482,
+    "total": 590
+   },
+   "anclas": {},
+   "choques": 1
+  }
+ }
+}
