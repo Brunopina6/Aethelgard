@@ -73,8 +73,9 @@ const BLOQUES := [
 	# --- base: bancales de huertos y la ladera entre la base y T1, la pérgola de las glicinias
 	["huerto_o", "terrazas", Rect2(-97.0, -12.0, 35.0, 7.0), 3.0, 1.2, "terreno", true],
 	["huerto_e", "terrazas", Rect2(-58.0, -12.0, 28.0, 7.0), 3.0, 1.2, "terreno", true],
-	["banda_1_o", "terrazas", Rect2(-97.0, -20.0, 32.0, 8.0), 3.0, 3.0, "terreno", true],
-	["banda_1_e", "terrazas", Rect2(-55.0, -20.0, 25.0, 8.0), 3.0, 3.0, "terreno", true],
+	# bancales a 5,0: 1 m de caída bajo el pretil de T1 (la terraza se lee como terraza)
+	["banda_1_o", "terrazas", Rect2(-97.0, -20.0, 32.0, 8.0), 3.0, 2.0, "terreno", true],
+	["banda_1_e", "terrazas", Rect2(-55.0, -20.0, 25.0, 8.0), 3.0, 2.0, "terreno", true],
 	["jardinera_glicinia_o", "terrazas", Rect2(-65.0, -20.0, 3.0, 5.0), 4.5, 1.5, "terreno", true],
 	["jardinera_glicinia_e", "terrazas", Rect2(-58.0, -20.0, 3.0, 5.0), 4.5, 1.5, "terreno", true],
 	["glicinia_o", "terrazas", Rect2(-65.5, -20.5, 4.0, 5.5), 7.0, 1.6, "copa", false],
@@ -87,7 +88,7 @@ const BLOQUES := [
 	["pretil_t1_e", "terrazas", Rect2(-58.0, -20.4, 20.0, 0.4), 6.0, 0.9, "bajo", true],
 	["pretil_t1_fin", "terrazas", Rect2(-38.4, -25.0, 0.4, 4.6), 6.0, 0.9, "bajo", true],
 	["banco_t1", "terrazas", Rect2(-84.0, -20.9, 2.4, 0.5), 6.0, 0.45, "bajo", true],
-	["banda_t1_fin", "terrazas", Rect2(-38.0, -35.0, 8.0, 15.0), 3.0, 3.0, "terreno", true],
+	["banda_t1_fin", "terrazas", Rect2(-38.0, -35.0, 8.0, 15.0), 3.0, 1.5, "terreno", true],   # el mirador asoma 1,5 m
 	["casa_atajo_o", "terrazas", Rect2(-97.0, -35.0, 7.0, 10.0), 6.0, 6.0, "casa", true],
 	["casa_atajo_e", "terrazas", Rect2(-86.0, -35.0, 7.0, 10.0), 6.0, 5.0, "casa", true],
 	["vivienda_odila", "terrazas", Rect2(-78.0, -35.0, 8.0, 7.0), 6.0, 6.5, "casa", true],
@@ -111,10 +112,10 @@ const BLOQUES := [
 	["casa_t2_o", "terrazas", Rect2(-97.0, -49.0, 10.0, 8.0), 8.0, 6.0, "casa", true],
 	["casa_t2_c", "terrazas", Rect2(-87.0, -49.0, 13.0, 8.0), 8.0, 5.0, "casa", true],
 	["muro_plazuela", "terrazas", Rect2(-74.0, -49.0, 16.0, 2.0), 8.0, 2.0, "terreno", true],
-	["pretil_plazuela", "terrazas", Rect2(-74.0, -49.4, 8.0, 0.4), 10.0, 0.9, "bajo", true],
+	["pretil_plazuela", "terrazas", Rect2(-74.0, -49.4, 16.0, 0.4), 10.0, 0.9, "bajo", true],   # todo el borde de T3
 	["casa_t2_e", "terrazas", Rect2(-58.0, -49.0, 10.0, 8.0), 8.0, 6.0, "casa", true],
 	["casa_t2_fin", "terrazas", Rect2(-44.0, -41.0, 6.0, 6.0), 8.0, 5.0, "casa", true],
-	["huerto_t2_fin", "terrazas", Rect2(-38.0, -41.0, 8.0, 6.0), 6.0, 2.0, "terreno", true],
+	["huerto_t2_fin", "terrazas", Rect2(-38.0, -41.0, 8.0, 6.0), 4.5, 3.5, "terreno", true],
 	["relleno_t2_e", "terrazas", Rect2(-44.0, -49.0, 14.0, 8.0), 8.0, 2.0, "terreno", true],
 	["fuente_terrazas", "terrazas", Rect2(-67.5, -45.5, 3.0, 3.0), 8.0, 0.8, "bajo", true],
 	["fuente_terrazas_cano", "terrazas", Rect2(-66.3, -44.3, 0.6, 0.6), 8.8, 1.4, "decor", true],
@@ -127,16 +128,22 @@ const BLOQUES := [
 	["casa_patio_n", "terrazas", Rect2(-97.0, -66.0, 23.0, 8.0), 10.0, 7.0, "casa", true],
 	["peana_pieza", "terrazas", Rect2(-82.0, -57.6, 3.0, 1.0), 10.0, 0.6, "bajo", true],
 	["casa_t3_o", "terrazas", Rect2(-74.0, -60.0, 8.0, 7.0), 10.0, 6.0, "casa", true],
-	["casa_puente", "terrazas", Rect2(-66.0, -60.0, 10.0, 7.0), 10.0, 6.5, "casa", true],
-	["paso_casa_puente", "terrazas", Rect2(-66.0, -53.0, 6.0, 4.0), 12.8, 3.7, "cubierta", false],
+	# la Casa Puente, baja (techo 14) para que el lavadero y su palomar se vean detrás; su planta alta cruza la calle
+	# (2,8 m libres) y apoya al sur en dos pilares finos sobre la línea del pretil
+	["casa_puente", "terrazas", Rect2(-66.0, -60.0, 10.0, 7.0), 10.0, 4.0, "casa", true],
+	["paso_casa_puente", "terrazas", Rect2(-66.0, -53.0, 6.0, 4.0), 12.8, 1.2, "cubierta", false],
+	["pilar_puente_o", "terrazas", Rect2(-66.0, -49.5, 0.5, 0.5), 10.0, 2.8, "muro", true],
+	["pilar_puente_e", "terrazas", Rect2(-60.5, -49.5, 0.5, 0.5), 10.0, 2.8, "muro", true],
 	["casa_t3_e", "terrazas", Rect2(-56.0, -60.0, 8.0, 7.0), 10.0, 5.0, "casa", true],
 	["relleno_t3_e", "terrazas", Rect2(-44.0, -60.0, 14.0, 11.0), 10.0, 1.5, "terreno", true],
+	# pretil del borde sur de T4 sobre el relleno (no resta suelo ni toca el borde con el Barrio Alto): 0,9 sobre T4
+	["pretil_t4_e", "terrazas", Rect2(-44.0, -60.0, 14.0, 0.4), 11.5, 1.4, "bajo", true],
 	# --- T4: el lavadero cubierto (la referencia), sus pilares, la ropa tendida, las casas altas, huertos y muralla
 	["casa_t4_o", "terrazas", Rect2(-74.0, -66.0, 4.0, 6.0), 12.0, 5.0, "casa", true],
-	["lavadero", "terrazas", Rect2(-63.0, -70.5, 6.0, 2.5), 12.0, 0.8, "bajo", true],
-	["tejadillo_lavadero", "terrazas", Rect2(-64.0, -71.5, 8.0, 4.5), 14.8, 0.4, "cubierta", false],
-	["pilar_lavadero_1", "terrazas", Rect2(-64.0, -71.5, 0.4, 0.4), 12.0, 2.8, "muro", true],
-	["pilar_lavadero_2", "terrazas", Rect2(-56.4, -71.5, 0.4, 0.4), 12.0, 2.8, "muro", true],
+	["lavadero", "terrazas", Rect2(-63.0, -70.0, 6.0, 2.0), 12.0, 0.8, "bajo", true],     # 2 m de paso detrás
+	["tejadillo_lavadero", "terrazas", Rect2(-64.0, -72.0, 8.0, 5.0), 14.8, 0.4, "cubierta", false],
+	["pilar_lavadero_1", "terrazas", Rect2(-64.0, -72.0, 0.4, 0.4), 12.0, 2.8, "muro", true],
+	["pilar_lavadero_2", "terrazas", Rect2(-56.4, -72.0, 0.4, 0.4), 12.0, 2.8, "muro", true],
 	["pilar_lavadero_3", "terrazas", Rect2(-64.0, -67.4, 0.4, 0.4), 12.0, 2.8, "muro", true],
 	["pilar_lavadero_4", "terrazas", Rect2(-56.4, -67.4, 0.4, 0.4), 12.0, 2.8, "muro", true],
 	["tendedero_lavadero", "terrazas", Rect2(-55.4, -71.6, 0.1, 4.0), 14.4, 0.1, "cubierta", false],
@@ -144,6 +151,8 @@ const BLOQUES := [
 	["casa_alta_2", "terrazas", Rect2(-85.0, -79.0, 11.0, 13.0), 12.0, 6.0, "casa", true],
 	["casa_alta_3", "terrazas", Rect2(-74.0, -80.0, 8.0, 14.0), 12.0, 8.0, "casa", true],
 	["casa_lavadero_n", "terrazas", Rect2(-66.0, -80.0, 12.0, 8.0), 12.0, 5.0, "casa", true],
+	# Palomar del Lavadero [P]: el hito vertical de la terraza alta (techo 21), dentro de la casa de detrás del lavadero
+	["palomar_lavadero", "terrazas", Rect2(-58.0, -74.0, 2.0, 2.0), 12.0, 9.0, "muro", true],
 	["casa_t4_n1", "terrazas", Rect2(-54.0, -76.0, 10.0, 10.0), 12.0, 6.5, "casa", true],
 	["casa_t4_n2", "terrazas", Rect2(-44.0, -74.0, 8.0, 8.0), 12.0, 5.0, "casa", true],
 	["huerto_t4_e", "terrazas", Rect2(-36.0, -80.0, 6.0, 14.0), 12.0, 0.8, "terreno", true],
@@ -177,7 +186,7 @@ const ANCLAS := {
 	"fuente_terrazas": Vector3(-66.0, 8.0, -41.8),   # ante la fuente de la plazuela
 	"vecino_patio": Vector3(-84.0, 10.0, -51.0),     # un vecino barre su patio (el de la Pieza)
 	"lavandera_1": Vector3(-61.0, 12.0, -67.6),      # lavanderas en el lavadero
-	"lavandera_2": Vector3(-58.0, 12.0, -71.6),
+	"lavandera_2": Vector3(-58.0, 12.0, -71.0),
 	"tendedero_lavadero": Vector3(-55.0, 12.0, -68.5),
 	"puerta_vivienda": Vector3(-74.0, 6.0, -28.0),
 	"puerta_casa_glicinia": Vector3(-57.5, 6.0, -25.0),
