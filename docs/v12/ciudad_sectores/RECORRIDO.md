@@ -1,6 +1,8 @@
 # Ciudad de Oakhaven, maqueta: RECORRIDO con los controles normales (16/11, EXPERIMENTAL [P])
 
 Rama `area-ciudad-recorrido` (desde `b5cafa7`). Herramienta: `aethelgard/pruebas/recorrido_ciudad.gd` (con ventana).
+**Arreglos** de lo que encontraron este recorrido y dos verificaciones independientes: rama `area-ciudad-recorrido-2`
+(desde `1a38acf`, la punta de `area-ciudad-recorrido`), §7.
 Plano y contrato: `docs/v12/CIUDAD_OAKHAVEN_PLAN.md`, `docs/v12/CIUDAD_OAKHAVEN.md`; sectores: `A.md`-`D.md` de esta
 carpeta. No se ha medido rendimiento (encargo): la herramienta quita el tope de FPS de la escena para ir más deprisa y el
 tiempo del juego lo fija `--fixed-fps 30`.
@@ -30,7 +32,8 @@ En **cada parada** (fin de tramo) comprueba:
 | No pisa lo sólido | cada fotograma, 4 puntos del paso del fotograma con `plano.andable` (lo sólido no es andable) y la altura contra `plano.altura` | una sola vez, o más de 0,15 m fuera del suelo del plano |
 | No se atasca | tiempo contra el largo de la ruta (a 4,2 m/s) | más de 1,6 × lo previsto + 6 s, o se para 7 veces antes de donde se toca (dice qué lo frena: el rayo de las rodillas y contra qué) |
 | El grupo le sigue | tras pararse (hasta 2,5 s): cada uno sobre lo andable (0,12 m de tolerancia: el rastro que siguen son puntos de Kael cada 0,2 m y la cuerda roza las esquinas) y a menos de 6 m; cada fotograma, fuera de lo andable y saltos (reaparecer) | fuera de lo andable al pararse o más de 15 fotogramas en el tramo; más lejos de 6 m |
-| Kael se ve | cabeza (1,5 m) y pies proyectados con la cámara dentro del cuadro; el rayo cámara → cabeza (`trazado_comun.tapan`, las mismas cajas que dibuja la escena) contra los bloques de los OCHO sectores: si es de un sector montado y ocultable, su malla ha de estar aclarada (`material_override` = el material claro); si no es ocultable, fallo; si su sector no está montado y su bloque sale en la maqueta lejana (≥ 1,5 m), fallo (la lejana no se aclara); y `plano.suelos_que_tapan` | cualquiera de esos; en marcha, cada medio segundo, como aviso |
+| Kael se ve | cabeza (1,5 m) y pies proyectados con la cámara dentro del cuadro; el rayo cámara → cabeza (`trazado_comun.tapan`, las mismas cajas que dibuja la escena) contra los bloques de los OCHO sectores: si es de un sector montado y ocultable, su malla ha de estar aclarada (`material_override` = el material claro); si no es ocultable, fallo; si su sector no está montado y su bloque sale en la maqueta lejana (≥ 1,5 m), fallo (la lejana no se aclara); y `plano.suelos_que_tapan`. Desde `area-ciudad-recorrido-2`, además: nada ocultable sin aclarar delante de su cintura (0,8 m) y sus pies (0,25 m) | cualquiera de esos; en marcha, cada medio segundo, como aviso |
+| El grupo se ve (desde `area-ciudad-recorrido-2`) | ya parado, rayos de la cámara a la cabeza (1,4 m) y la cintura (0,8 m) de Lya y Garon si están a menos de 8 m de Kael | algo ocultable sin aclarar delante |
 
 Imprime una línea por tramo (`TRAMO n [sector] tipo «nombre»: llega en s, clics, falta, grupo a, aclarados · foto`), los
 avisos, lo cubierto y «RECORRIDO: n tramos, m fallos» (y «FALLOS: m»). Guarda `recorrido.txt`, capturas JPG en los sitios
@@ -145,12 +148,12 @@ Las capturas se llaman `NNN_<sector>_<tipo>_<nombre>.jpg`. Las de los sitios cr�
 | # | Problema | Dónde | Gravedad | Estado |
 |---|---|---|---|---|
 | 1 | **Un pretil se quedaba los toques del suelo que tapa.** `_punto_suelo` ignoraba lo que está a más de 1 m sobre el suelo (tejados), pero lo alto de un pretil de 0,9 m sí contaba como «suelo»: en el Paseo del Concejo (Barrio Alto, cota 10) el pretil del sur recogía los toques del metro de paseo que hay detrás de él, y Kael iba hacia el pretil y se paraba. Lo encontró el recorrido (todos los toques en esa franja «caían» en `Choque_pretil_colina_1` o `Choque_pretil_paseo_o`). | `zonas3d/ciudad/ciudad.gd`, `_punto_suelo` | media (afecta al toque en cualquier sitio con un pretil o banco delante) | **Arreglado**: lo alto de un bloque que no se pisa queda solo de reserva; si el rayo encuentra suelo andable detrás, vale ese suelo. Comprobado aparte (Kael en dos puntos del paseo, 30 toques en la franja de 1 m tras el pretil cada uno): antes **27 de 60** caían donde se tocaba, ahora **60 de 60**. Sin cambio de comportamiento donde no hay pretil (si detrás no hay suelo, vale como antes). |
-| 2 | **Kael se para en las esquinas** al ir en diagonal: el rayo de las rodillas de `vista3d` (0,3 m más allá de cada paso) corta de lado la esquina de una caja y Kael no se desliza. Visto saliendo del Callejón de los Fardos hacia el patio (esquina del `almacen_so`) y saliendo del cobertizo de carros (el `carro_cobertizo`). Quien juega tiene que tocar otra vez, más recto. | `prototipos/vista3d.gd` (compartido por todas las regiones 3D) | baja | **Pendiente** (no es local a la ciudad). La herramienta lo evita como lo haría una persona: no toca en diagonal pegado a una esquina. |
+| 2 | **Kael se para en las esquinas** al ir en diagonal: el rayo de las rodillas de `vista3d` (0,3 m más allá de cada paso) corta de lado la esquina de una caja y Kael no se desliza. Visto saliendo del Callejón de los Fardos hacia el patio (esquina del `almacen_so`) y saliendo del cobertizo de carros (el `carro_cobertizo`). Quien juega tiene que tocar otra vez, más recto. | `prototipos/vista3d.gd` (compartido por todas las regiones 3D) | baja | **Pendiente** con clics (no es local a la ciudad). La herramienta lo evita como lo haría una persona: no toca en diagonal pegado a una esquina. Con teclas o mando, arreglado en la ciudad (§7, problema 9: Kael se desliza a lo largo de la pared). |
 | 3 | **El grupo roza las esquinas** de las cajas sólidas unos centímetros (Lya en la esquina del puesto de flores, 8 cm, quieta 8 s mientras Kael esperaba bajo el toldo; Garon 7 cm dentro del muro de la grieta; Lya en un bancal del huerto): siguen el rastro de Kael (un punto cada 0,2 m) y la cuerda entre dos puntos, al doblar, corta la esquina. Por eso la tolerancia de 0,12 m; quedan 3 avisos de 1-6 fotogramas por pasada. | `zonas3d/grupo_3d.gd` (compartido) | baja (no se ve: el cuerpo es más ancho que el roce) | **Pendiente**, descrito. Nunca se quedan atrás (0 reapariciones) ni a más de 3,6 m al pararse. |
 | 4 | **Clics de botón que no entraban** a 1600×720 (2 de unos 200 en una pasada: una puerta «en obras» y el último «Volver al banco»; a 1280×720, ninguno): lo más probable, el puntero real del PC sobre la ventana, que mueve el ratón entre la pulsación y la suelta del clic simulado (el botón deja de contar la pulsación). | entorno de la prueba | — | **Arreglado en la herramienta**: el puntero se mueve antes al botón y, si el clic no hace nada, se vuelve a pulsar (hasta 3 veces, como quien vuelve a tocar); las repeticiones se cuentan («botones pulsados otra vez»). No es del juego. |
 | 5 | **Sin ventana no se puede**: con `--headless` la ventana es de 64×64, y con `--fixed-fps 30` la PRIMERA carga en hilo de una escena con guiones (`Recursos.cambiar_escena`) falla con «Parse Error: Failed» (también el barrio y la muestra de la calle desde el banco; con ventana, o sin `--fixed-fps`, carga bien). | entorno de pruebas (`recursos.gd`/cargas en hilo + `--headless --fixed-fps`) | baja (solo pruebas) | **Pendiente**, descrito; por eso la prueba va como «ventana». |
 | 6 | Dos `cubierta` sin suelo debajo: las lonas de los carros de caravana (encima de un carro sólido). No son un paso. | `puerta_sur/trazado.gd` | — | Correcto, no se recorren. |
-| 7 | Los rótulos 3D «… (en obras)» se dibujan por delante de Kael cuando está junto a la puerta (p. ej. «Almacén del fondo» en el Callejón de los Fardos). | `sector.gd`, `_rotulos` | baja (maqueta) | Visto en las capturas; sin cambiar (son de la maqueta; las puertas de verdad no llevarán rótulo). |
+| 7 | Los rótulos 3D «… (en obras)» se dibujan por delante de Kael cuando está junto a la puerta (p. ej. «Almacén del fondo» en el Callejón de los Fardos). | `sector.gd`, `_rotulos` | baja (maqueta) | Visto en las capturas; sin cambiar (son de la maqueta; las puertas de verdad no llevarán rótulo). En §7 (problema 7) los rótulos, de sector y de puerta, dejan de dibujarse a menos de 10 m de la cámara; este caso (a unos 16 m) sigue igual. |
 | 8 | Algunos tramos largos piden muchos toques (hasta ≈ 30 del Paseo del Concejo a la Calle del Árbol): pretiles, giros y escaleras donde el siguiente punto al que se llega en línea recta queda cerca. | — | — | Observación (no es un fallo: Kael llega a su tiempo). |
 
 Lo que NO falló en ninguna pasada: Kael nunca pisó lo no andable ni atravesó una caja sólida; siempre se vio (cabeza y
@@ -162,11 +165,74 @@ pasan bien a la ventana con la franja de 160 px).
 
 ## 6. Pendiente
 
-- Problemas 2, 3 y 5 (§5): fuera de lo local a la ciudad (`vista3d.gd`, `grupo_3d.gd`, cargas en hilo con
-  `--headless --fixed-fps`).
+- Problemas 2 (con clics), 3 y 5 (§5): fuera de lo local a la ciudad (`vista3d.gd`, `grupo_3d.gd`, cargas en hilo con
+  `--headless --fixed-fps`). Lo de §7 está en su tabla.
 - Pasar el recorrido también en los perfiles medio y alto (`perfil=medio|alto`): aquí, el bajo (el del Redmi y el que más
   maqueta lejana deja ver); y en el Redmi de verdad con el dedo (no hay guion de móvil para esto).
 - Cuando los sectores cambien (casas, patios, la vida), volver a pasarlo: las paradas salen de los trazados (pendientes,
   cubiertas, puertas), pero los callejones sin salida y los atajos están escritos en la herramienta (`SIN_SALIDA`,
   `ATAJOS`) con los nombres de las anclas de hoy.
 - Rendimiento: sin medir (encargo).
+
+## 7. Arreglos (rama `area-ciudad-recorrido-2`, 16/11)
+
+Desde `1a38acf`. Lo que encontraron este recorrido y dos verificaciones independientes (visibilidad y «romper»). Cada
+problema se reprodujo antes de tocarlo, con los controles normales (entrar por el botón del banco, clics en coordenadas
+de ventana, flechas), con dos herramientas de diagnóstico (no son pruebas de la lista):
+
+- `aethelgard/pruebas/diag_ciudad_visibilidad.gd` (de la verificación de visibilidad, sin cambios): el mismo recorrido
+  y, cada 2 fotogramas, rayos de la cámara a los pies, la cintura, la cabeza y los lados de Kael y a la cintura y la
+  cabeza del grupo; los aclarados que parpadean (3 cambios en 1 s); con `sitios=1`, solo los 17 sitios donde se vio algo.
+- `aethelgard/pruebas/diag_ciudad_arreglos.gd` (nueva): el grupo en el primer cuadro al entrar; tocar el suelo de los
+  Pasajes desde la entrada del Paso de la Botica viniendo de la Calle Mayor (pasajes sin montar, bajo); ↑ y ↑+→ pegado a
+  la pared norte del Paso de la Botica; rótulos dibujados a menos de 10 m de la cámara.
+
+| # | Problema (gravedad) | Reproducido | Arreglo | Estado |
+|---|---|---|---|---|
+| 1 | Kael tapado de los hombros abajo (o entero) por una hoja de puerta, un tejado, una lona o un arco que se pueden aclarar, justo donde se pulsa «Entrar»: la escena solo miraba la cabeza (media) | sí: hojas del soportal 1-3 de los Oficios, casa del huertano, lona del carro 1, arco de las Escaleras de las Terrazas (`sitios_antes`, 3,5-4,7 s cada uno) | `ciudad._oclusion` pasa varios puntos a `cargador.aclarar` / `sector.aclarar`: cabeza (1,5 m), cintura (0,8), pies (0,25) y los dos lados (±0,25 m en x, a 0,8 y 1,4); se aclara lo ocultable que corte cualquier segmento cámara → punto, con un descarte rápido por la caja de todos los segmentos | **arreglado**: 0 casos en la pasada entera |
+| 2 | Lya o Garon tapados por lo ocultable que no se aclaraba (solo contaba Kael) (media) | sí: 33 casos (29 claves bloque-persona) en la pasada de la verificación, 4 en `sitios_antes` | cabeza (1,4), cintura (0,8) y pies (0,25) de quien del grupo esté a menos de 8 m de Kael | **arreglado**: 0 casos |
+| 3 | Medio Kael tapado de lado, pegado a la esquina de algo ocultable (baja) | sí: corredor cubierto de los Pasajes, `casa_escalerilla_o`, 3,7 s | los puntos de los lados (problema 1) | **arreglado**: 0 casos |
+| 4 | Aclarados que parpadean al andar: el rayo entra y sale del borde de una caja (baja) | sí: dintel de la Puerta del Sur y casa del paso de los vecinos (`sitios_antes`) | `sector.aclarar`: lo aclarado sigue aclarado `SOSTEN` = 1,0 s de juego después de dejar de tapar. Con 0,35 s (lo propuesto) y con 0,6 s seguían 1-3 parpadeos por pasada (los puntos del grupo, en marcha); con 1,0, ninguno. Al colocar a Kael de golpe (`_colocar_kael`), el sostén se olvida: la prueba del cargador («vuelve a opaca al apartarse», a los 3 fotogramas) pasa sin cambiarla | **arreglado**: 0 parpadeos en la pasada entera |
+| 5 | Bajo los toldos del mercado, el mostrador del puesto (bajo, sólido, no ocultable) tapa a Kael (baja) | sí, en la pasada de la verificación (puestos 1-3 y de fruta, 1,1-1,4 s) | `puesto_1/2/3`, `puesto_fruta`, `puesto_lonja_1/2` y `puesto_flores` a OCULTABLES de `sectores/plaza_tapiz/trazado.gd`, con los puntos de la cintura y los pies | **arreglado**: 0 casos; antes y después en `antes_y_despues\02` a `04` |
+| 6 | Al entrar, la hoja de la Puerta del Sur corta las piernas de Lya y Garon en el primer cuadro (baja) | sí: `diag_antes_1600x720`, «Lya y Garon a 0,25 m: puerta_sur/puerta_sur» | los pies del grupo (problema 2); el ancla de inicio no se mueve | **arreglado**: el grupo se ve entero (`antes_y_despues\09_entrada_grupo.jpg`) |
+| 7 | Rótulos 3D de sector enormes y cortados cerca de la cámara, o encima del grupo (baja) | sí: el de la plaza a 5,8 m y el del Barrio Alto a 6,7 m de la cámara, dibujados | `sector._rotulos`: `visibility_range_begin` = 10 m (margen 2, fundido propio) en los rótulos de sector y de puerta. El título de la pantalla ya nombra el sector | **arreglado**: ninguno a menos de 10 m; `antes_y_despues\08` (Barrio Alto) |
+| 8 | Un sector que se ve pero no está montado pierde los toques: ante el Paso de la Botica viniendo de la Calle Mayor (bajo: puerta_sur, plaza_tapiz y cuervo montados), el suelo de los Pasajes a 4-10 m no se podía tocar (media) | sí: 3 de 3 toques perdidos, `_punto_suelo` da null y Kael no se mueve | `ciudad._punto_suelo`: si los choques no dan suelo, `_punto_plano` recorre el mismo rayo contra el plano (pasos de 0,25 m hasta 120 m, afinado a 2,5 cm) y devuelve el primer punto andable con el rayo a su cota; `_ajustar_destino` sigue cortando en lo no andable. Sin cambio cuando los choques dan suelo o reserva. El cargador no cambia | **arreglado**: 0 de 3 perdidos (Kael anda 6,6 m hacia el pasaje y el cargador monta los Pasajes) |
+| 9 | Con teclas o mando, Kael no se desliza a lo largo de una pared en diagonal (baja) | sí: ↑+→ 1,5 s pegado a la pared norte del Paso de la Botica, 0,20 m | `ciudad._deslizar` (tras `vista3d._process`): si el paso entero no pasa, prueba solo en x y solo en z con el mismo `_altura_suelo` (escalón, rodillas, lo no andable), el más alineado primero, y anima la marcha. `vista3d.gd` NO cambia (las otras regiones siguen igual). Con clics, no (el toque va a un punto) | **arreglado** en la ciudad: 4,45 m (libre, unos 4,5); al soltar, Kael no sigue andando en el sitio |
+| 10 | Kael se para en las esquinas con CLICS en diagonal (rayo de las rodillas de `vista3d`) (baja) | no se repite aparte (la herramienta lo evita) | ninguno: `vista3d.gd` es compartido | **pendiente** (§5, problema 2) |
+| 11 | El grupo roza las esquinas de cajas sólidas unos centímetros (baja) | sí: 2 avisos de 1-2 fotogramas por pasada (pilar del soportal 1, jardín de la plaza del Árbol) | ninguno: `grupo_3d.gd` es compartido | **pendiente** (§5, problema 3) |
+| 12 | Sin ventana no se puede pasar (64×64; carga en hilo con `--fixed-fps`) (baja) | no se repite (descrito en §5) | ninguno: entorno de pruebas | **pendiente**; la prueba sigue como «ventana» |
+| 13 | Rótulos «… (en obras)» por delante de Kael junto a la puerta (baja) | visto en las capturas | ninguno (son de la maqueta); a menos de 10 m de la cámara ya no se dibujan (problema 7), pero este caso está a unos 16 m | **sin cambiar** (descartado: maqueta) |
+| 14 | Dos cubiertas sin suelo: las lonas de los carros 1 y 2 | — | ninguno | **descartado**: correcto, no son un paso |
+
+`recorrido_ciudad.gd` comprueba ahora en cada parada también la cintura y los pies de Kael y la cabeza y la cintura del
+grupo (§1), y `prueba_ciudad_cargador.gd`, el aclarado por varios puntos, el sostén, que se olvida al colocar a Kael y el
+toque contra el plano (y que el cielo y el campo de fuera de la ciudad no dan toque).
+
+Pasada final (perfil bajo, `--fixed-fps 30`, con ventana, en el PC; cada pasada con su propia carpeta de datos):
+
+| | 1600×720 | 1280×720 |
+|---|---|---|
+| **RECORRIDO** (con las comprobaciones nuevas) | **430 tramos, 0 fallos** | **430 tramos, 0 fallos** |
+| Cubierto | lo mismo que en §3 | igual |
+| Clics en el suelo / botones repetidos | 1 579 / 0 | 1 579 / 0 |
+| Paradas con algo aclarado | 297 (antes 275) | 297 |
+| Avisos | los 2 roces del grupo de siempre (problema 11) | igual |
+| Visibilidad (`diag_ciudad_visibilidad.gd`: la pasada entera más la ronda, el Árbol y la muralla, 438 tramos, 0 fallos) | **0 casos** (antes, en la verificación, por claves: 11 Kael solo cabeza, 7 aclarado sin llegar a la cintura, 29 grupo tapado, 2 parpadeos) | — |
+| Sitios (`sitios=1`, 17) | 0 casos (antes 19 claves) | — |
+| `diag_ciudad_arreglos.gd` | 0 fallos (antes 4) | 0 fallos |
+
+Las dos resoluciones dan las MISMAS 430 líneas (sin los nombres de las capturas). Pruebas (ejecutor, `-Solo
+prueba_ciudad_plano,prueba_ciudad_cargador`): **SUPERADAS 2 · FALLIDAS 0** (pasada
+`D:\REBELUM_diagnostico\pruebas\2026-11-16_124224`; plano 64 OK, cargador 98 OK; partida real y carpeta real sin
+cambios).
+
+Capturas y vídeos, fuera del repositorio, en `D:\REBELUM_diagnostico\ciudad_oakhaven\recorrido\arreglos-2\`:
+`1600x720\` y `1280x720\` (163 capturas, `recorrido.txt`, `out.log`, `video\`), `recorrido_ciudad_1600x720.mp4` y
+`recorrido_ciudad_1280x720.mp4`; `visibilidad_1600x720\visibilidad.txt`; `sitios_antes\` y `sitios_despues\`;
+`diag_antes_1600x720\`, `diag_despues_1600x720\` y `diag_despues_1280x720\`; `antes_y_despues\` (izquierda, antes, en la
+rama `area-ciudad-recorrido`; derecha, después: la entrada, los toldos de fruta, flores y puesto 2, el corredor, las
+Escaleras de las Terrazas, el tendedero del lavadero, la raíz en arco, el grupo al entrar, la pared con teclas y el
+toque en los Pasajes sin montar); `sosten_0_6\`, las pasadas con el sostén de 0,6 s (1-3 parpadeos).
+
+No se ha medido rendimiento (encargo). El aclarado hace ahora hasta 13 segmentos por ocultable montado en cada
+fotograma, con un descarte por caja; `_punto_plano` solo corre en un toque que los choques no resuelven.
