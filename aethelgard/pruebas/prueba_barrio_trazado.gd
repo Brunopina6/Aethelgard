@@ -306,8 +306,9 @@ func _region() -> void:
 		await _frames(2)
 		v._bloqueo = 0.0
 		v._comprobar_cerca()
-		_ok(v.cerca == "entrar_" + id and v.boton_accion.visible and v.boton_accion.text == T.PUERTAS[id]["texto"],
-			"6: junto a la puerta de %s, el botón «%s» (%s)" % [id, T.PUERTAS[id]["texto"], v.cerca])
+		var texto_esperado: String = "Llamar a la puerta" if id == "vivienda" and not Barrio.estado("viv_llamado") else T.PUERTAS[id]["texto"]
+		_ok(v.cerca == "entrar_" + id and v.boton_accion.visible and v.boton_accion.text == texto_esperado,
+			"6: junto a la puerta de %s, el botón «%s» (%s)" % [id, texto_esperado, v.cerca])
 		# (integración 16/11) con su interior construido (B) se entra y se sale de verdad; la vivienda pide llamar la
 		# primera vez (C); sin interior, «en obras»
 		Engine.set_meta("prologo_visto", false)

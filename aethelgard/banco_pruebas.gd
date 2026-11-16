@@ -109,7 +109,7 @@ const EXPLORAR := {
 	# sin interiores, vecinos ni misión todavía.
 	"barrio": {"titulo": "Barrio de Oakhaven (en pruebas)", "activos": ["Kael", "Lya", "Garon"],
 		"escena": "res://zonas3d/barrio/barrio.tscn",
-		"nota": "Bloques provisionales: caravanas, calle comercial, plaza, talleres, casas y atajo. Las puertas, en obras."},
+		"nota": "Bloques provisionales: caravanas, calle comercial, plaza, talleres, casas y atajo. Horno, taller y vivienda visitables; la misión «Antes de que se enfríe»."},
 	# 16/11: ARBOLEDA MÍTICA, tramo «La escalera de la Hospedería» (zonas3d/arboleda_tramo/, docs/v12/ARBOLEDA_HOSPEDERIA.md):
 	# la isla 2D pintada con la escalera unida a la terraza, la Hospedería del Peregrino y «Una flor para Lumi». SOLO aquí.
 	"arboleda": {"titulo": "Arboleda Mítica: la escalera de la Hospedería (en pruebas)", "activos": ["Kael", "Lya", "Garon"],

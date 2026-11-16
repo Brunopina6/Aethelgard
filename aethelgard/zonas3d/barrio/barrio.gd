@@ -733,7 +733,7 @@ func _ajustar_destino(p):
 		return null
 	var desde := kael.global_position
 	var hacia: Vector3 = p
-	var n := int(Vector2(hacia.x - desde.x, hacia.z - desde.z).length() / 0.25)
+	var n := int(Vector2(hacia.x - desde.x, hacia.z - desde.z).length() / 0.1)   # (integración: cada 0,1 m; Kael anda a pasos de 0,15)
 	var ultimo = null
 	for i in n + 1:
 		var q := desde.lerp(hacia, float(i) / maxf(n, 1))
@@ -1352,7 +1352,10 @@ func piezas_al_alcance() -> Array:
 	if interior == "":
 		for id in T.PUERTAS:
 			var d: Dictionary = T.PUERTAS[id]
-			r.append(["entrar_" + id, d["fuera"], d["radio"], d["texto"]])
+			var texto: String = d["texto"]
+			if id == "vivienda" and Barrio.activado() and Barrio.interior_hecho("vivienda") and not Barrio.estado("viv_llamado"):
+				texto = "Llamar a la puerta"                 # (integración: la primera vez se llama; C, puerta())
+			r.append(["entrar_" + id, d["fuera"], d["radio"], texto])
 	elif interiores != null:
 		r.append(["salir_" + interior, interiores.salida(interior), RADIO_SALIR, "Salir"])
 	_ids_vivo.clear()

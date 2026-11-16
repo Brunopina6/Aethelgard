@@ -94,7 +94,6 @@ var _avisado := false
 var _cam_id := ""
 var _cam_pos := Vector3.ZERO
 var _cam_ms := 0
-var _luz_fuera := {}                       # lo que había en la región antes de entrar (para devolverlo)
 var choques := 0                           # cuerpos de choque creados (para las pruebas)
 
 static var _datos := {}                    # id → Dictionary (interiores/<id>.json), una vez por proceso
@@ -173,12 +172,8 @@ func mostrar(id: String) -> void:
 		var n: Node3D = _nodos[k]
 		n.visible = k == id
 		n.process_mode = Node.PROCESS_MODE_INHERIT if k == id else Node.PROCESS_MODE_DISABLED
-	if id != "" and actual == "":
-		_luz_dentro(id)
-	elif id == "" and actual != "":
-		_luz_fuera_otra_vez()
-	elif id != "" and id != actual:
-		_luz_dentro(id)
+	# (integración 16/11) la luz de dentro y de fuera la pone SOLO la región (barrio.gd, _luz_kael / _luz_kael_dentro, con
+	# Interiores.LUZ_KAEL y FONDO_DENTRO de aquí): una sola autoridad, sin escribir dos veces en el mismo fotograma.
 	actual = id
 	_cam_id = ""
 	_avisado = false
@@ -352,43 +347,6 @@ func sonda(p: Vector3) -> Vector2:
 		var v11: float = a[(iz + 1) * nx + ix + 1]
 		r[par[1]] = lerpf(lerpf(v00, v10, tx), lerpf(v01, v11, tx), tz)
 	return r
-
-
-# Dentro: el sol de la región, más débil y cálido; el ambiente, de fuego y paredes; el fondo, oscuro (lo que hay más allá
-# de la casa de muñecas). Se guarda lo de fuera para devolverlo al salir.
-func _luz_dentro(id: String) -> void:
-	if region == null:
-		return
-	var amb = region.get("ambiente")
-	var sol = region.get("sol")
-	if _luz_fuera.is_empty() and amb is Environment and sol is DirectionalLight3D:
-		_luz_fuera = {"fondo": amb.background_color, "amb_color": amb.ambient_light_color,
-			"amb": amb.ambient_light_energy, "bruma": amb.fog_enabled, "sol": sol.light_energy, "sol_color": sol.light_color}
-	var l: Dictionary = LUZ_KAEL.get(id, {})
-	if amb is Environment and not l.is_empty():
-		amb.background_color = FONDO_DENTRO
-		amb.ambient_light_color = l["amb_color"]
-		amb.ambient_light_energy = l["amb"]
-		amb.fog_enabled = false
-	if sol is DirectionalLight3D and not l.is_empty():
-		sol.light_energy = l["sol"]
-		sol.light_color = l["sol_color"]
-
-
-func _luz_fuera_otra_vez() -> void:
-	if region == null or _luz_fuera.is_empty():
-		return
-	var amb = region.get("ambiente")
-	var sol = region.get("sol")
-	if amb is Environment:
-		amb.background_color = _luz_fuera["fondo"]
-		amb.ambient_light_color = _luz_fuera["amb_color"]
-		amb.ambient_light_energy = _luz_fuera["amb"]
-		amb.fog_enabled = _luz_fuera["bruma"]
-	if sol is DirectionalLight3D:
-		sol.light_energy = _luz_fuera["sol"]
-		sol.light_color = _luz_fuera["sol_color"]
-	_luz_fuera = {}
 
 
 # ================================================================= cada fotograma (solo dentro)
