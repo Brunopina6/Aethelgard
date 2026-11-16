@@ -8,6 +8,7 @@
 #                                                                       completa)
 #     --muestras N     muestras de Cycles (por defecto 160)
 #     --res N          lado del mapa de luz grande (por defecto 2048; el pequeño, la mitad)
+#     --solo-sondas    no construye ni hornea: rehace las sondas de fuera de lo andable con el quilla.glb ya hecho
 #
 # QUÉ HACE
 #   1. Construye el sector ENTERO con el guion de siempre (zonas3d/sunken/fuente/crear_sunken.py), que se ejecuta aquí
@@ -1401,8 +1402,14 @@ def altura_suelo(x, z):
     return 0.0
 
 
-def sondas(bvh):
-    """Cuánto sol y cuánto cielo llega a 1 m sobre lo que se pisa (rejilla de 0,5 m sobre todo el sector)."""
+PISO_CASAS = 0.3        # el piso de las plataformas de las casas (zonas3d/sunken/quilla/obreros.gd, Y)
+
+
+def sondas(bvh, previas=None):
+    """Cuánto sol y cuánto cielo llega a 1 m sobre lo que se pisa (rejilla de 0,5 m sobre todo el sector). Fuera de lo
+    andable, a 1 m sobre el piso de las casas: ahí trabaja la cuadrilla (quilla.gd oscurece a cada vecino según su
+    sonda; antes valía 1 y salían a pleno sol bajo los toldos y los porches). Con «previas» (--solo-sondas), lo andable
+    se copia de ellas tal cual (lo de Kael no cambia) y solo se calcula lo de fuera."""
     x0, x1, z0, z1, paso = 29.5, 56.0, 18.0, 61.0, 0.5
     nx, nz = int((x1 - x0) / paso) + 1, int((z1 - z0) / paso) + 1
     hs = HACIA_SOL
@@ -1422,11 +1429,11 @@ def sondas(bvh):
         for i in range(nx):
             x, z = x0 + i * paso, z0 + j * paso
             dentro = any(a <= x <= c and b <= z <= d for (a, b, c, d) in ANDABLE)
-            if not dentro:
-                sol.append(1.0)
-                cielo.append(1.0)
+            if dentro and previas is not None:
+                sol.append(previas["sol"][j * nx + i])
+                cielo.append(previas["cielo"][j * nx + i])
                 continue
-            pb = Vector((x, -z, altura_suelo(x, z) + 1.0))
+            pb = Vector((x, -z, (altura_suelo(x, z) if dentro else PISO_CASAS) + 1.0))
             s = sum(1 for d in dirs_sol if bvh.ray_cast(pb, Vector((d.x, -d.z, d.y)), 200.0)[0] is None)
             c = sum(1 for d in dirs_cielo if bvh.ray_cast(pb, Vector((d.x, -d.z, d.y)), 60.0)[0] is None)
             sol.append(round(s / len(dirs_sol), 3))
@@ -1589,4 +1596,36 @@ def main():
     nota("HECHO %s" % json.dumps({k: v for k, v in datos.items() if k != "sondas"}))
 
 
-main()
+def solo_sondas():
+    """--solo-sondas: rehace SOLO las sondas de fuera de lo andable con el modelos/quilla.glb ya horneado (sin volver a
+    construir ni hornear nada). Lo andable se queda como estaba en luz/quilla_luz.json (se calculó con las caras que solo
+    van al horneado y no viajan en el GLB); el resto del JSON, igual."""
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    ruta_json = os.path.join(CARPETA, "luz", "quilla_luz.json")
+    with open(ruta_json, encoding="utf-8") as f:
+        datos = json.load(f)
+    previas = datos["sondas"]
+    bpy.ops.import_scene.gltf(filepath=os.path.join(CARPETA, "modelos", "quilla.glb"))
+    dg = bpy.context.evaluated_depsgraph_get()
+    vs, ps = [], []
+    for o in bpy.context.scene.objects:
+        if o.type != 'MESH':
+            continue
+        m = o.evaluated_get(dg).data
+        b = len(vs)
+        vs.extend([o.matrix_world @ v.co for v in m.vertices])
+        ps.extend([[b + i for i in p.vertices] for p in m.polygons])
+    bvh = BVHTree.FromPolygons(vs, ps)
+    nuevas = sondas(bvh, previas)
+    assert (nuevas["nx"], nuevas["nz"], nuevas["origen"]) == (previas["nx"], previas["nz"], previas["origen"])
+    datos["sondas"] = nuevas
+    with open(ruta_json, "w", encoding="utf-8") as f:
+        json.dump(datos, f)
+    fuera = sum(1 for k, s in enumerate(nuevas["sol"]) if s != previas["sol"][k])
+    nota("sondas de fuera de lo andable rehechas: %d de %d cambian" % (fuera, len(nuevas["sol"])))
+
+
+if "--solo-sondas" in argv:
+    solo_sondas()
+else:
+    main()

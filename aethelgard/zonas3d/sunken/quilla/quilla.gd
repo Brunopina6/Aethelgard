@@ -129,7 +129,7 @@ func _montar() -> void:
 			m.reparent(piv, true)
 			bandera_mallas.append(m)
 		elif nombre.begins_with("corona_"):
-			coronas.append({"z": float(nombre.trim_prefix("corona_")) / 10.0, "nodo": m, "oculta": false})
+			coronas.append({"z": float(nombre.trim_prefix("corona_")) / 10.0, "nodo": m, "oculta": false, "halos": []})
 		if cuerpo.get_child_count() == 0:
 			cuerpo.queue_free()
 	_crear_sombra_kael()
@@ -205,12 +205,27 @@ func apartar(z_kael: float, z_camara: float, region_: Node) -> void:
 		c["oculta"] = quiere
 		if is_instance_valid(c["nodo"]):
 			(c["nodo"] as Node3D).visible = not quiere
+		for h in c["halos"]:
+			if is_instance_valid(h):
+				(h as Node3D).visible = not quiere
 	var b: bool = PALO_Z > z_kael + 0.35 and PALO_Z < z_camara + 1.0
 	if b != _bandera_apartada:
 		_bandera_apartada = b
 		for mi in bandera_mallas:
 			if is_instance_valid(mi):
 				region_._transparente(mi, b)
+
+
+# El halo de un farol (casco._faroles): el de las costillas 44 y 32 cuelga de su corona y se oculta con ella (si no, al
+# ocultar la corona quedaba flotando sin su farol).
+func halo_farol(nombre: String, halo: Node3D) -> void:
+	var dm := nombre.trim_prefix("farol_")
+	if not dm.is_valid_int():
+		return
+	for c in coronas:
+		if absf(float(c["z"]) - float(dm)) < 0.05:
+			c["halos"].append(halo)
+			halo.visible = not c["oculta"]
 
 
 # ================================================================= Kael: sondas y sombra de contacto
@@ -327,6 +342,46 @@ func cada_fotograma(delta: float, escena: Node) -> void:
 			m.set_shader_parameter("sol_kael", s)
 	if obreros != null:
 		obreros.avanzar(delta, escena)
+	if horneado:
+		_luz_npcs(delta, escena)
+
+
+# Ulla, Brea y la cuadrilla: el sol de la escena ya no hace sombra (_preparar_sol_kael) y lo horneado no la proyecta
+# sobre ellos, así que bajo la lona y los porches salían a pleno sol. La sonda de donde está cada uno oscurece su color
+# lo mismo que pierde Kael en la sombra (su sol al 12 % con el mismo ambiente: ≈ 0,6 de la luz). Cada uno lleva una
+# copia opaca del material de su persona (el mismo programa: nada nuevo que compilar ni transparencias).
+const SOMBRA_NPC := 0.6
+var luz_npcs := {}                        # chibi → {"mat": StandardMaterial3D, "base": Color, "k": float}
+
+
+func _luz_npcs(delta: float, escena: Node) -> void:
+	var chibis: Array = []
+	var vec = escena.get("vecinos")
+	if vec is Dictionary:
+		for id in vec:
+			chibis.append(vec[id].get("chibi"))
+	if obreros != null:
+		for o in obreros.lista:
+			chibis.append(o["chibi"])
+	var a := 1.0 - exp(-6.0 * delta)
+	for c in chibis:
+		if c == null or not is_instance_valid(c) or c.malla == null:
+			continue
+		var d = luz_npcs.get(c)
+		if d == null:
+			var orig := c.malla.material_override as StandardMaterial3D
+			if orig == null:
+				continue
+			d = {"mat": orig.duplicate(), "base": orig.albedo_color, "k": -1.0}
+			c.malla.material_override = d["mat"]
+			luz_npcs[c] = d
+		var objetivo := lerpf(SOMBRA_NPC, 1.0, clampf(sonda((c as Node3D).global_position).x, 0.0, 1.0))
+		var k: float = objetivo if d["k"] < 0.0 else lerpf(d["k"], objetivo, a)
+		if absf(k - float(d["k"])) < 0.002:
+			continue
+		d["k"] = k
+		var b: Color = d["base"]
+		(d["mat"] as StandardMaterial3D).albedo_color = Color(b.r * k, b.g * k, b.b * k, b.a)
 
 
 # ================================================================= la cuadrilla (para sunken_3d.gd)

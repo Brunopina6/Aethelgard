@@ -365,6 +365,7 @@ func _faroles() -> void:
 		add_child(halo)
 		var suelo_y := T.altura(p.x, p.z)
 		if quilla != null:                                       # (la Quilla horneada: su luz ya está en las tablas)
+			quilla.halo_farol(nombre, halo)                      # (el halo se oculta con la corona de su costilla)
 			continue
 		if nombre != "farol_archivo":
 			var disco := MeshInstance3D.new()
