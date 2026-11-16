@@ -362,6 +362,13 @@ func _preparar_shaders() -> void:
 		var vp_muestra = load("res://zonas3d/muestra_calle/muestra_calle.gd").precalentar_en(vista_3d)
 		if vp_muestra != null:
 			print("[carga] muestra de la calle a precalentar (montada en %.0f ms)" % ((Time.get_ticks_usec() - u0) / 1000.0))
+			# V12 (16/11): el barrio experimental de Oakhaven (también solo en el banco) usa los programas de la muestra; lo
+			# que añade (los vecinos y Avena) se monta en el mismo SubViewport (zonas3d/barrio/barrio.gd, precalentar_en).
+			if ResourceLoader.exists("res://zonas3d/barrio/barrio.gd") and not "sin_precalentar_barrio" in OS.get_cmdline_user_args():
+				var u1 := Time.get_ticks_usec()
+				var piezas_barrio: int = load("res://zonas3d/barrio/barrio.gd").precalentar_en(vp_muestra)
+				print("[carga] barrio de Oakhaven a precalentar: %d modelos (montados en %.0f ms)" % [piezas_barrio,
+					(Time.get_ticks_usec() - u1) / 1000.0])
 
 	vista_2d = SubViewport.new()
 	vista_2d.size = Vector2i(256, 256)

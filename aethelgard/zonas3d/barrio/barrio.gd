@@ -183,6 +183,44 @@ static func soltar_caches() -> void:
 	_sondas_cache = {}
 
 
+# (16/11, pulido: precalentado) Lo que el barrio dibuja y el precalentado de la muestra no cubre. Medido con la caché de
+# sombreadores VACÍA (la carga con los estudios de combate y la muestra, y luego el barrio desde el banco, los 6 tramos y
+# el horno): la entrada compilaba 2 programas más; todo lo demás (tramos, interiores, utensilios) son los 4 sombreados de
+# la muestra. Son los de la gente: los vecinos de C (la familia chibi con sus oficios y personas) y Avena. Se montan
+# DENTRO del SubViewport del precalentado de la muestra (su mismo ambiente, sol y escala 3D: la misma variante) y
+# delante de su cámara. Solo en la carga con banco_pruebas.permitido() (carga.gd), como la muestra.
+static func precalentar_en(vp: Node) -> int:
+	if vp == null:
+		return 0
+	var M = load("res://zonas3d/muestra_calle/muestra_calle.gd")
+	var sitio: Vector3 = M.SITIO_FOTO
+	var raiz := Node3D.new()
+	raiz.name = "PrecalentadoBarrio"
+	vp.add_child(raiz)
+	var n := 0
+	var NpcBarrio = load("res://zonas3d/barrio/npc_barrio.gd")
+	var sombras := bool(load("res://prototipos/calidad_proto.gd").datos().get("sombras", false))
+	for id in Barrio.NPCS:
+		var ch: Array = Barrio.NPCS[id].get("chibi", [])
+		if ch.size() < 2 or not NpcBarrio.hay(ch[0], ch[1]):
+			continue
+		var c: Node3D = NpcBarrio.crear_barrio(ch[0], ch[1])
+		if not c.listo:
+			c.free()
+			continue
+		raiz.add_child(c)
+		c.sombra(sombras)
+		c.position = sitio + Vector3(-3.0 + 1.2 * n, 0.0, 0.0)
+		n += 1
+	var ruta_caballo := "res://personajes/npc_v12/caballo/caballo.glb"
+	if ResourceLoader.exists(ruta_caballo):
+		var cab: Node3D = (load(ruta_caballo) as PackedScene).instantiate()
+		raiz.add_child(cab)
+		cab.position = sitio + Vector3(3.5, 0.0, -1.0)
+		n += 1
+	return n
+
+
 func _leer_luz() -> Dictionary:
 	if _luz_cache.is_empty() and FileAccess.file_exists(LUZ_JSON):
 		var d = JSON.parse_string(FileAccess.get_file_as_string(LUZ_JSON))
