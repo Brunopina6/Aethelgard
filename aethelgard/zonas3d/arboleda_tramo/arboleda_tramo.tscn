@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://zonas3d/arboleda_tramo/arboleda_tramo.gd" id="1_tramo"]
+
+[node name="arboleda_tramo" type="Node2D"]
+script = ExtResource("1_tramo")
