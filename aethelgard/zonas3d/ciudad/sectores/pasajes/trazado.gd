@@ -52,7 +52,7 @@ const SUELOS := [
 	["pasajes", Rect2(-97.0, 69.0, 7.0, 2.0), "", 1.5, 1.5],          # 18 Rincón del Sol [P], sin salida
 	["pasajes", Rect2(-58.0, 82.0, 2.0, 4.0), "", 1.0, 1.0],          # 19 paso bajo casa al huerto
 	["pasajes", Rect2(-70.0, 86.0, 20.0, 6.0), "", 1.0, 1.0],         # 20 Huerto de la Muralla [P], sin salida
-	["pasajes", Rect2(-96.0, 50.0, 10.0, 12.0), "", 2.0, 2.0],        # 21 Corral del Rincón [P], sin salida
+	["pasajes", Rect2(-97.0, 50.0, 11.0, 12.0), "", 2.0, 2.0],        # 21 Corral del Rincón [P], sin salida
 ]
 
 # ---------------------------------------------------------------------------------------------------- bloques
@@ -129,6 +129,7 @@ const BLOQUES := [
 	["bancal_1", "pasajes", Rect2(-64.0, 88.0, 5.0, 0.8), 1.0, 0.35, "bajo", true],
 	["bancal_2", "pasajes", Rect2(-64.0, 90.0, 5.0, 0.8), 1.0, 0.35, "bajo", true],
 	["bancal_3", "pasajes", Rect2(-69.0, 88.0, 4.0, 0.8), 1.0, 0.35, "bajo", true],
+	["bancal_muralla", "pasajes", Rect2(-70.0, 92.0, 20.0, 1.0), 1.0, 0.5, "bajo", true],
 	["pozo_huerto", "pasajes", Rect2(-53.0, 89.5, 1.2, 1.2), 1.0, 0.9, "bajo", true],
 	# Patio de los Vecinos: fuente, tendedero, árbol; el paso bajo casa a la Calle Baja
 	["fuente_vecinos", "pasajes", Rect2(-81.0, 69.0, 2.0, 2.0), 1.5, 0.8, "bajo", true],
