@@ -1009,3 +1009,29 @@ Validado: `dc878e9` (`validado/v12/20261115-170245`, 188 · 0). APK v834 instala
   siguiente posible sin decisiones: la fase B de Sunken (paso de babor y El Ancla Seca) tras medir la Quilla en el
   teléfono, y el ejemplo pequeño de Rastreadores (`ACTIVIDADES_FUTURAS.md`).
 - ABIERTOS: cierre 0xC0000005, transparencias en bajo/medio, prueba_audio intermitente.
+
+## RELEVO 16/11, 14:40: ciudad de Oakhaven en maqueta, probada en el Redmi; pausa por el límite semanal hasta el 17/11 19:00 (LEER PRIMERO)
+- **Encargo en curso** (16/11, mañana): ciudad completa de Oakhaven (×10 el barrio), experimental, solo desde el banco.
+  Plano `docs/v12/CIUDAD_OAKHAVEN_PLAN.md`; contrato y cargador `docs/v12/CIUDAD_OAKHAVEN.md`; sectores
+  `docs/v12/ciudad_sectores/{A,B,C,D}.md`; recorrido `RECORRIDO.md`; medidas PC `MEDIDAS_PC.md`; kit de Blender
+  `docs/v12/CIUDAD_KIT.md` (52 módulos, láminas en `D:\REBELUM_diagnostico\ciudad_oakhaven\kit\`).
+- **Hecho e integrado** en `claude/rebelum-v12` (sin validar con batería completa; último validado sigue siendo `e8ed88f`):
+  maqueta de 8 sectores, 11 814 m² andables (barrio 1 055), 12 conexiones; kit modular; recorrido con clics reales
+  430 tramos 0 fallos a 1600×720 y 1280×720 con verificación independiente y arreglos (aclarado por varios puntos);
+  pruebas `prueba_ciudad_plano` (con huecos y visibilidad de borde) y `prueba_ciudad_cargador` en verde.
+- **Redmi** (`docs/v12/REDMI_16_11.md`): APK `2afc6ed` v975 INSTALADA por el usuario. Bajo y medio a 30 FPS (ciudad, barrio,
+  muestra, Arboleda, Sunken); alto 32 FPS y 954 MB. Partida `567c7323…` y ajustes intactos; banco cerrado.
+- **EN MARCHA al pausar**: flujo «optimizar-ciudad-bajo» (rama `area-ciudad-optimiza`, desde `2afc6ed`; luego revisión y
+  `area-ciudad-optimiza-2`). Objetivo: bajo ≤ 65 llamadas (hoy p95 79, máx 98) y montar sector sin tirón. Si el límite lo
+  cortó, mirar qué commits dejó (`git log 2afc6ed..area-ciudad-optimiza`), repetir sus medidas y, solo con mejora
+  demostrada y recorrido_ciudad/diag_ciudad_visibilidad a 0, integrarlo por cherry-pick. Reanudable con Workflow
+  `resumeFromRunId` (script en la carpeta de la sesión) o a mano.
+- **Pendiente siguiente**: (1) 12 errores «material is null» al liberar el precalentado de la carga (Redmi; reproducir en el
+  PC CON ventana tras la carga; sin causa encontrada leyendo); (2) PSS del banco que sube entre escenas distintas (888 →
+  951 MB); (3) hallazgos de visibilidad del Redmi (pilar fino delante de Kael, rótulo de sector enorme, fuente en el eje);
+  (4) andar en el Redmi los 5 sectores restantes, la Quilla por dentro, interiores del barrio, escalera de la Arboleda,
+  regulador normal; (5) batería completa y validar; (6) decisiones del usuario (nombres [P], fuente dorada, hora del
+  día, Doña Encina [C pendiente], presupuesto de medio/alto).
+- **Paralelo del usuario**: ChatGPT prepara otra ciudad sobre el ZIP `D:\REBELUM_compartir\aethelgard_chatgpt_20261116.zip`
+  (no toca este repositorio); el usuario está creando NPC por su cuenta: NO tocar ni mover sus archivos nuevos sin
+  preguntar.
