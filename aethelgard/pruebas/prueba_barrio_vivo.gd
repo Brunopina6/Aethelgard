@@ -566,6 +566,16 @@ func _dentro() -> void:
 	_ok(Engine.get_meta("mazmorras", {}).get(Barrio.NOMBRE, {}) == antes, "8: tocar lo privado cambia la partida")
 	await _frames(int(v.PAUSA_FRASE * 60) + 20)
 	_ok(dm["charla"] == "", "8: Damián no vuelve a lo suyo tras contestar")
+	# hablarle MIENTRAS contesta (o dice una frase): se habla ya (antes el botón no hacía nada durante 3,2 s)
+	r._accion_barrio("banco_corte")
+	await _frames(3)
+	v.hablar("damian")
+	await _frames(3)
+	_ok(dm["charla"] == "hablando" and dm["con_dialogo"] and D != null and D.current_timeline != null,
+		"8: hablar con Damián mientras contesta no empieza su diálogo (%s, %s)" % [dm["charla"], dm["con_dialogo"]])
+	if D != null and D.current_timeline != null:
+		D.end_timeline(true)
+	await _frames(10)
 	await _salir()
 	# la galga: en la repisa hasta cogerla; luego no; con el pasador, en su clavo del taller
 	await _entrar("vivienda")

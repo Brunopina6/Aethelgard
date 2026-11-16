@@ -69,7 +69,7 @@ const VEL := 0.78                # m/s andando
 const VEL_LLEVAR := 0.62         # m/s cargando
 const DUR_COGER := 0.8           # s de coger o dejar (el objeto cambia a la mitad)
 const DUR_DENTRO := 3.0          # s de cada tramo dentro de un interior que aún no existe (B)
-const PASO_RUTA := 0.25          # m entre muestras al comprobar una recta
+const PASO_RUTA := 0.1           # m entre muestras al comprobar una recta (0,25 dejaba pasar esquinas finas)
 const RADIO_AVENA := 0.5         # m alrededor del eje del cuerpo de Avena (nadie la pisa)
 const LARGO_AVENA := 2.2
 const RUMBO_AVENA := -0.52       # rotation.y: mira al abrevadero (sur-suroeste)
@@ -713,7 +713,25 @@ func _nodo_cercano(p: Vector3) -> String:
 		if d < dmin and recta_libre(p, q):
 			dmin = d
 			mejor = n
+	if mejor == "":
+		# (p junto a un umbral, como la puerta del taller por fuera: ninguna recta lo libra del todo; el nodo más cercano
+		# con la recta andable sin mirar los umbrales, mejor que una recta que atraviesa casas)
+		for n in T.GRAFO:
+			var q := T.ancla(n)
+			var d := Vector2(q.x - p.x, q.z - p.z).length()
+			if d < dmin and _recta_andable(p, q):
+				dmin = d
+				mejor = n
 	return mejor
+
+
+func _recta_andable(a: Vector3, b: Vector3) -> bool:
+	var n := maxi(1, ceili(Vector2(b.x - a.x, b.z - a.z).length() / 0.1))
+	for i in range(0, n + 1):
+		var p := a.lerp(b, float(i) / n)
+		if not T.andable(p.x, p.z):
+			return false
+	return true
 
 
 func _bfs(a: String, b: String) -> Array:
@@ -1152,6 +1170,8 @@ func _charla(v: Dictionary, k: Vector3) -> void:
 
 func hablar(id: String) -> void:
 	var v: Dictionary = vecinos.get(id, {})
+	if not v.is_empty() and v["charla"] == "hablando" and not v["con_dialogo"]:
+		_reanudar(v)                                     # (diciendo una frase o contestando a lo tocado: se habla ya)
 	if v.is_empty() or v["charla"] != "":
 		return
 	v["espera"] = 0.0
