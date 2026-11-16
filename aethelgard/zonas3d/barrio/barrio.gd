@@ -237,6 +237,7 @@ func _crear_ambiente() -> void:
 	sol.shadow_enabled = bool(perfil.get("sombras", false))
 	sol.directional_shadow_max_distance = float(perfil.get("dist_sombras", 40.0))
 	add_child(sol)
+	_guardar_luz_fija()
 
 
 # La de muestra_calle.gd (_crear_ambiente), con barrio_luz.json: el mismo sol, el mismo cielo y los mismos ajustes.
@@ -283,6 +284,7 @@ func _crear_ambiente_horneado() -> void:
 	sol.light_energy = _sol_base
 	sol.shadow_enabled = false                 # (sombras horneadas; la de Kael va en los sombreados del suelo)
 	add_child(sol)
+	_guardar_luz_fija()
 
 
 # ================================================================= los tramos horneados (fase A)
@@ -467,6 +469,12 @@ func _crear_escenario() -> void:
 
 
 # Una losa de suelo por SUELO: llana o inclinada (rampa o escalones), con la cara de arriba exactamente en altura().
+# (16/11, pulido) Cada losa se SOLAPA SOLAPE_SUELO con sus vecinas por los cuatro lados: antes las losas se tocaban justo
+# en la costura (x −32 entre caravanas y comercial, z −8 al pie de la rampa…) y el rayo que baja de _altura_suelo, al caer
+# exactamente en la arista, devolvía la normal de la cara del extremo (horizontal) y Kael no pasaba (NAN en (−32; 0; 2)).
+# Con el solape, en la costura siempre hay una cara de arriba (la vecina más alta, a menos de 1,2 cm en los escalones).
+const SOLAPE_SUELO := 0.05
+
 func _suelo(s: Array) -> void:
 	var r: Rect2 = s[1]
 	var eje: String = s[2]
@@ -491,12 +499,12 @@ func _suelo(s: Array) -> void:
 		bz = dir
 		bx = Vector3.RIGHT
 		by = bz.cross(bx)
-		tam = Vector3(lado.x, GRUESO_SUELO, largo)
+		tam = Vector3(lado.x + 2.0 * SOLAPE_SUELO, GRUESO_SUELO, largo + 2.0 * SOLAPE_SUELO)
 	else:
 		bx = dir
 		bz = Vector3.BACK
 		by = bz.cross(bx)
-		tam = Vector3(largo, GRUESO_SUELO, lado.z)
+		tam = Vector3(largo + 2.0 * SOLAPE_SUELO, GRUESO_SUELO, lado.z + 2.0 * SOLAPE_SUELO)
 	var base := Basis(bx, by, bz)
 	var centro := (a + b) * 0.5 - by * (GRUESO_SUELO * 0.5)
 	_caja_blockout(s[0], Transform3D(base, centro), tam, COLOR_SUELO.get(s[0], COLOR_FONDO), true, "Suelo",
@@ -587,6 +595,8 @@ func _colocar_kael(p: Vector3) -> void:
 	seguro = p
 	foco = T.foco_camara(p)
 	destino = null
+	_meta_final = null
+	_rodeando = false
 	_colocar_camara(1.0)
 	_luz_kael(1.0)
 	_sombras_kael()
@@ -613,13 +623,30 @@ func _colocar_camara(peso: float) -> void:
 	T.poner_camara(cam, foco)
 
 
-# Por dónde se anda: fuera, el trazado (y sin pisar a los vecinos); dentro, lo que diga el interior.
+# Por dónde se anda: fuera, el trazado; dentro, lo que diga el interior; y, en los dos, sin pisar a los vecinos (dentro
+# del horno Kael tampoco atraviesa a Maela: vivo.ocupa mira la zona de Kael).
 func _prohibido(p: Vector3) -> bool:
+	if _prohibido_suelo(p):
+		return true
+	if vivo != null and vivo.ocupa(p):
+		return true
+	return _en_obstaculo_extra(p)
+
+
+# Lo fijo (sin vecinos): fuera, el trazado; dentro, el interior.
+func _prohibido_suelo(p: Vector3) -> bool:
 	if interior != "":
 		return interiores == null or not interiores.andable(p)
-	if not T.andable(p.x, p.z):
-		return true
-	return vivo != null and vivo.ocupa(p)
+	return not T.andable(p.x, p.z)
+
+
+# Fuera, lo que se pisa es la cota del trazado: si el rayo de vista3d da otra (la tapa de un bloque o de una pieza suelta
+# en la misma arista de lo andable, como los cajones de x −10), no se sube encima: no se pasa.
+func _altura_suelo(p: Vector3, y_actual: float) -> float:
+	var h := super(p, y_actual)
+	if interior != "" or is_nan(h):
+		return h
+	return h if absf(h - T.altura(p.x, p.z)) < 0.1 else NAN
 
 
 func suelo_de_pasos(p: Vector3) -> String:
@@ -646,6 +673,228 @@ func _punto_suelo(pantalla: Vector2):
 	return null
 
 
+# ----------------------------------------------------------------- tocar el suelo y los vecinos (petición 3 de C)
+# Antes, la recta hasta lo tocado se cortaba en la primera muestra que pisaba a un vecino: si rozaba su círculo, Kael no
+# se movía. Ahora el destino solo se corta por lo FIJO (trazado o interior); si la recta roza a un vecino (o a Avena),
+# Kael lo RODEA: cada fotograma va a la tangente de su círculo (con HOLGURA_RODEO) por el lado más corto, así que bordea
+# el círculo hasta ver la meta y sigue recto. Nunca lo atraviesa (_prohibido sigue mirando vivo.ocupa). Si lo tocado cae
+# encima de un vecino, se queda delante. Si no hay rodeo andable, se para delante como antes.
+const HOLGURA_RODEO := 0.22                # m de más sobre el radio del vecino al rodearlo
+const ROZA := 0.04                         # una recta a menos de radio + esto «roza» (más lejos pasa recta, rozando)
+const T_RODEO_MAX := 8.0                   # s: si no llega en este tiempo rodeando, se para
+var obstaculos_extra: Array = []           # (para las pruebas) cápsulas [a: Vector2, b: Vector2, radio] que cuentan como vecinos
+var _meta_final = null                     # adónde va Kael de verdad mientras rodea (Vector3) o null
+var _puesto = null                         # el último destino que puso el rodeo (si es otro, alguien lo cambió)
+var _rodeando := false
+var _punto_rodeo := Vector2.ZERO
+var _t_rodeo := 0.0
+
+
+func _ajustar_destino(p):
+	if p == null or kael == null:
+		return null
+	var desde := kael.global_position
+	var hacia: Vector3 = p
+	var n := int(Vector2(hacia.x - desde.x, hacia.z - desde.z).length() / 0.25)
+	var ultimo = null
+	for i in n + 1:
+		var q := desde.lerp(hacia, float(i) / maxf(n, 1))
+		if _prohibido_suelo(q):
+			break
+		ultimo = q
+	_meta_final = ultimo
+	_puesto = ultimo
+	_rodeando = false
+	_t_rodeo = 0.0
+	_mejor_falta = INF
+	_t_sin_avance = 0.0
+	return ultimo
+
+
+# [a, b, radio] en planta: los vecinos visibles de la zona de Kael (un punto) y Avena fuera (su eje). Los que ya tienen a
+# Kael dentro no cuentan (vivo.ocupa le deja salir).
+func _obstaculos() -> Array:
+	var r: Array = []
+	var k := Vector2(kael.global_position.x, kael.global_position.z)
+	if vivo != null:
+		var ro: float = vivo.RADIO_OCUPA
+		for id in vivo.vecinos:
+			var d: Dictionary = vivo.vecinos[id]
+			if not d["visible"] or d["lugar"] != vivo.zona:
+				continue
+			var q: Vector3 = d["pos"]
+			var c := Vector2(q.x, q.z)
+			if c.distance_to(k) >= ro:
+				r.append([c, c, ro])
+		if vivo.zona == "" and vivo.avena != null:
+			var e: Array = vivo.eje_avena()
+			var a := Vector2(e[0].x, e[0].z)
+			var b := Vector2(e[1].x, e[1].z)
+			if _dist_punto_segmento(k, a, b) >= vivo.RADIO_AVENA:
+				r.append([a, b, vivo.RADIO_AVENA])
+	for o in obstaculos_extra:
+		if _dist_punto_segmento(k, o[0], o[1]) >= float(o[2]):
+			r.append(o)
+	return r
+
+
+func _en_obstaculo_extra(p: Vector3) -> bool:
+	if obstaculos_extra.is_empty() or kael == null:
+		return false
+	var q := Vector2(p.x, p.z)
+	var k := Vector2(kael.global_position.x, kael.global_position.z)
+	for o in obstaculos_extra:
+		if _dist_punto_segmento(q, o[0], o[1]) < float(o[2]) and _dist_punto_segmento(k, o[0], o[1]) >= float(o[2]):
+			return true
+	return false
+
+
+func _dentro_obstaculo(q: Vector2, margen: float) -> bool:
+	for o in _obstaculos():
+		if _dist_punto_segmento(q, o[0], o[1]) < float(o[2]) + margen:
+			return true
+	return false
+
+
+static func _punto_en_segmento(p: Vector2, a: Vector2, b: Vector2) -> Vector2:
+	var ab := b - a
+	var l2 := ab.length_squared()
+	if l2 < 0.000001:
+		return a
+	return a + ab * clampf((p - a).dot(ab) / l2, 0.0, 1.0)
+
+
+static func _dist_punto_segmento(p: Vector2, a: Vector2, b: Vector2) -> float:
+	return p.distance_to(_punto_en_segmento(p, a, b))
+
+
+# Distancia entre los segmentos pq y ab, y el punto de ab más cercano a pq (muestreo fino: son tramos de pocos metros).
+static func _cerca_segmentos(p: Vector2, q: Vector2, a: Vector2, b: Vector2) -> Array:
+	var mejor := INF
+	var punto := a
+	var n := maxi(1, ceili(p.distance_to(q) / 0.05))
+	for i in n + 1:
+		var s := p.lerp(q, float(i) / n)
+		var c := _punto_en_segmento(s, a, b)
+		var d := s.distance_to(c)
+		if d < mejor:
+			mejor = d
+			punto = c
+	return [mejor, punto]
+
+
+# Cada fotograma (antes de andar): si Kael va a una meta tocada y la recta roza a alguien, el destino de este fotograma es
+# la tangente del círculo por el lado más corto. Si un vecino que anda se le cruza y le corta un paso, lo vuelve a
+# intentar (los vecinos se mueven); se rinde si en T_SIN_AVANCE no se acerca a la meta o tras T_RODEO_MAX.
+const T_SIN_AVANCE := 1.5
+var _mejor_falta := INF
+var _t_sin_avance := 0.0
+
+
+func _rodear(delta: float) -> void:
+	if _meta_final == null:
+		return
+	var k := Vector2(kael.global_position.x, kael.global_position.z)
+	var meta: Vector3 = _meta_final
+	var m := _delante_de_vecino(k, Vector2(meta.x, meta.z))
+	if direccion_teclas.length() > 0.1 or k.distance_to(m) < 0.15:   # las teclas o el stick mandan; o ya llegó
+		if direccion_teclas.length() <= 0.1:
+			destino = null
+		_dejar_de_rodear()
+		return
+	if destino != null and not (destino as Vector3).is_equal_approx(_puesto):
+		_dejar_de_rodear()                             # alguien puso otro destino
+		return
+	var falta := k.distance_to(m)
+	if falta < _mejor_falta - 0.05:
+		_mejor_falta = falta
+		_t_sin_avance = 0.0
+	else:
+		_t_sin_avance += delta
+	if _rodeando:
+		_t_rodeo += delta
+	if _t_sin_avance > T_SIN_AVANCE or _t_rodeo > T_RODEO_MAX:
+		destino = null                                 # (no avanza: se queda donde está, como el vigilante de atascos)
+		_dejar_de_rodear()
+		return
+	var w = _tangente(k, m)
+	if w == null:
+		destino = Vector3(m.x, meta.y, m.y)
+		_rodeando = false
+	else:
+		_rodeando = true
+		_punto_rodeo = w
+		destino = Vector3(w.x, kael.global_position.y, w.y)
+	_puesto = destino
+
+
+# Si ahora hay un vecino encima de la meta, la meta de este fotograma es delante de él (en la recta desde Kael); si se va,
+# Kael sigue hasta la meta tocada.
+func _delante_de_vecino(k: Vector2, m: Vector2) -> Vector2:
+	var atras := k - m
+	var largo := atras.length()
+	if largo < 0.001:
+		return m
+	var dir := atras / largo
+	var andado := 0.0
+	while andado < largo and _dentro_obstaculo(m + dir * andado, 0.05):
+		andado += 0.1
+	return m + dir * minf(andado, largo)
+
+
+func _dejar_de_rodear() -> void:
+	_meta_final = null
+	_rodeando = false
+	_t_rodeo = 0.0
+	_mejor_falta = INF
+	_t_sin_avance = 0.0
+
+
+# El punto al que ir para rodear el primer obstáculo que roza la recta k→m (null si no roza ninguno o no hay rodeo).
+func _tangente(k: Vector2, m: Vector2):
+	var primero = null
+	var t_min := INF
+	for o in _obstaculos():
+		var cs: Array = _cerca_segmentos(k, m, o[0], o[1])
+		if float(cs[0]) < float(o[2]) + ROZA:
+			var t := k.distance_to(cs[1])
+			if t < t_min:
+				t_min = t
+				primero = [cs[1], float(o[2])]
+	if primero == null:
+		return null
+	var c: Vector2 = primero[0]
+	var rho: float = float(primero[1]) + HOLGURA_RODEO
+	var kc := k - c
+	var d := kc.length()
+	var candidatos: Array = []
+	if d > rho + 0.02:
+		var alfa := acos(rho / d)
+		var th := kc.angle()
+		for s in [1.0, -1.0]:
+			var tg := c + Vector2.from_angle(th + s * alfa) * rho
+			candidatos.append(tg + (tg - k).normalized() * 0.3)       # (un poco más allá: no se para en la tangente)
+	else:                                          # ya en la holgura: de lado, alejándose un poco
+		var u := kc / maxf(d, 0.001)
+		for s in [1.0, -1.0]:
+			candidatos.append(k + u.orthogonal() * s * 0.5 + u * 0.1)
+	candidatos.sort_custom(func(a, b): return k.distance_to(a) + a.distance_to(m) < k.distance_to(b) + b.distance_to(m))
+	for w in candidatos:
+		if _recta_suelo(k, w):
+			return w
+	return null
+
+
+func _recta_suelo(a: Vector2, b: Vector2) -> bool:
+	var y := kael.global_position.y
+	var n := maxi(1, ceili(a.distance_to(b) / 0.1))
+	for i in n + 1:
+		var q := a.lerp(b, float(i) / n)
+		if _prohibido_suelo(Vector3(q.x, y, q.y)):
+			return false
+	return true
+
+
 func _crear_grupo() -> void:
 	if not perfil.get("grupo", true):
 		return
@@ -665,6 +914,8 @@ func _crear_grupo() -> void:
 
 func _parar_kael() -> void:
 	destino = null
+	_meta_final = null
+	_rodeando = false
 	if movimiento != "":
 		movimiento = ""
 		if kael.has_method("parar_marcha"):
@@ -809,9 +1060,43 @@ static func _lum(c: Color) -> float:
 	return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b
 
 
-# El sol y el cielo de Kael siguen a la sonda (muestra_calle.gd, _luz_kael, con la corrección 2 del tono en sombra).
+# LA LUZ DE KAEL (y de los vecinos con sombreado normal): UNA SOLA AUTORIDAD, la región (acuerdo con B, 16/11; docs §9).
+# Fuera: el sol y el cielo siguen a la sonda de su sector (muestra_calle.gd, _luz_kael, con la corrección 2 del tono en
+# sombra). Dentro: interiores.sonda(p) con el tono de cada sala (Interiores.LUZ_KAEL, de B): el sol de las ventanas sube
+# en sus manchas y el relleno (cielo y fuegos) sube el ambiente; el fondo oscuro y sin bruma. Lo de B en
+# interiores.mostrar() queda tapado: la región escribe después en el mismo fotograma (_pasar_dentro / _pasar_fuera →
+# _colocar_kael → aquí, con la pantalla en negro), así que no se ve ningún salto al entrar ni al salir.
+const SOL_MANCHA := 1.2                    # dentro: el sol de Kael en una mancha de sol de ventana (sonda 1) = sala × (1 + esto)
+var _luz_fija := {}                        # lo de fuera tal como lo crea la región (fondo, bruma, colores; blockout: todo)
+var _luz_en := "?"                         # dónde se pusieron por última vez el fondo, la bruma y los colores
+
+
+func _guardar_luz_fija() -> void:
+	if ambiente == null or sol == null:
+		return
+	_luz_fija = {"fondo": ambiente.background_color, "amb_color": ambiente.ambient_light_color,
+		"amb": ambiente.ambient_light_energy, "bruma": ambiente.fog_enabled, "sol": sol.light_energy,
+		"sol_color": sol.light_color}
+
+
 func _luz_kael(peso: float) -> void:
-	if kael == null or sol == null or acabados.is_empty() or interior != "":
+	if kael == null or sol == null or ambiente == null:
+		return
+	if _luz_fija.is_empty():
+		_guardar_luz_fija()
+	if interior != "" and interiores != null:
+		_luz_kael_dentro(peso)
+		return
+	if _luz_en != "":
+		_luz_en = ""
+		ambiente.background_color = _luz_fija["fondo"]
+		ambiente.fog_enabled = _luz_fija["bruma"]
+		sol.light_color = _luz_fija["sol_color"]
+		if acabados.is_empty():                    # (todo en blockout: la luz provisional, fija)
+			sol.light_energy = _luz_fija["sol"]
+			ambiente.ambient_light_color = _luz_fija["amb_color"]
+			ambiente.ambient_light_energy = _luz_fija["amb"]
+	if acabados.is_empty():
 		return
 	var v := sonda(kael.global_position)
 	_sol_k = lerpf(_sol_k, v.x, peso)
@@ -829,6 +1114,23 @@ func _luz_kael(peso: float) -> void:
 	t = Color(t.r / mx, t.g / mx, t.b / mx)
 	ambiente.ambient_light_color = t.linear_to_srgb()
 	ambiente.ambient_light_energy = energia * _lum(antes) / _lum(t)
+
+
+func _luz_kael_dentro(peso: float) -> void:
+	var l: Dictionary = Interiores.LUZ_KAEL.get(interior, {})
+	if l.is_empty():
+		return
+	if _luz_en != interior:
+		_luz_en = interior
+		ambiente.background_color = Interiores.FONDO_DENTRO
+		ambiente.fog_enabled = false
+		ambiente.ambient_light_color = l["amb_color"]
+		sol.light_color = l["sol_color"]
+	var v: Vector2 = interiores.sonda(kael.global_position)
+	_sol_k = lerpf(_sol_k, v.x, peso)
+	_cielo_k = lerpf(_cielo_k, v.y, peso)
+	sol.light_energy = float(l["sol"]) * (1.0 + SOL_MANCHA * clampf(_sol_k, 0.0, 1.0))
+	ambiente.ambient_light_energy = float(l["amb"]) * clampf(0.85 + 0.5 * _cielo_k, 0.95, 1.35)
 
 
 # La dirección y el largo de la sombra larga (los de la muestra: el sol horneado, 1,45 m de Kael).
@@ -930,9 +1232,17 @@ func iniciar_dialogo(ruta: String) -> bool:
 		return false
 	_parar_kael()
 	boton_accion.visible = false
+	_ocultar_aviso()                               # (petición 2 de C: el aviso no se superpone al globo)
 	dialogo_actual = ruta
 	dg.start(ruta)
 	return true
+
+
+func _ocultar_aviso() -> void:
+	if _tween_aviso != null and _tween_aviso.is_valid():
+		_tween_aviso.kill()
+	if aviso != null:
+		aviso.modulate.a = 0.0
 
 
 func _al_senal(arg) -> void:
@@ -967,6 +1277,7 @@ func _process(delta: float) -> void:
 		return
 	if not _avisos_cola.is_empty() and (_tween_aviso == null or not _tween_aviso.is_running()):
 		avisar(str(_avisos_cola.pop_front()), "", 3.2)
+	_rodear(delta)
 	super(delta)
 	_luz_kael(1.0 - exp(-6.0 * delta))
 	_sombras_kael()
@@ -1017,7 +1328,7 @@ func piezas_al_alcance() -> Array:
 		var de_dentro := a.begins_with("int_")
 		if (interior == "" and de_dentro) or (interior != "" and not a.begins_with("int_%s_" % interior)):
 			continue
-		r.append([pid, ancla(a), float(d.get("radio", 1.4)), str(d.get("boton", "Examinar"))])
+		r.append([pid, ancla(a), float(d.get("radio", 1.4)), Barrio.boton(pid)])   # (petición 1 de C: según el estado)
 	return r
 
 

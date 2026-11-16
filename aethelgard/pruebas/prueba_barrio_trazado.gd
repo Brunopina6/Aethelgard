@@ -19,6 +19,10 @@ extends SceneTree
 #   9. (fase A, 16/11) Los tramos horneados: su GLB sin blockout, un choque por cada caja sólida del trazado, el mapa de
 #      luz de 1024 en el bajo, solo los 4 sombreados de la muestra (sin programas nuevos), sondas con sol y con sombra,
 #      la luz de Kael siguiendo a la sonda y el sector de Kael siempre dibujado (visibilidad por sector).
+#  10. (pulido de la región, 16/11) rótulos «(en obras)» solo sin interior; el botón según el estado (Barrio.boton); el
+#      aviso se oculta al empezar un diálogo; dentro, Kael no pisa a los vecinos; la luz de Kael, una sola autoridad y sin
+#      saltos visibles al entrar y salir; tocar el suelo rodea a un vecino en la recta (sin atravesarlo) y se queda delante
+#      si se toca encima; NINGUNA casilla andable da NAN en _altura_suelo (las costuras de los suelos).
 # Partida propia del banco (user://banco_pruebas.save, en la carpeta aislada de la pasada). Imprime «FALLOS: n».
 
 const ESCENA := "res://zonas3d/barrio/barrio.tscn"
@@ -53,6 +57,7 @@ func _correr() -> void:
 	_lado_sur()
 	await _region()
 	if v != null:
+		await _pulido()
 		await _bucle()
 		await _no_entra()
 	await _fuera_del_banco()
@@ -433,6 +438,195 @@ func _fundido() -> void:
 	await _frames(3)
 
 
+# ================================================================= 10 (pulido de la región)
+
+func _pulido() -> void:
+	var I = load("res://zonas3d/barrio/interiores.gd")
+	var Barrio = load("res://ciudades/oakhaven_barrio.gd")
+	var P = load("res://progreso.gd")
+	# rótulos
+	for id in T.PUERTAS:
+		var hay: bool = v.find_child("Rotulo_" + id, true, false) != null
+		_ok(hay == not I.ORIGEN.has(id), "10: rótulo «(en obras)» de %s solo si no tiene interior (rótulo %s, interior %s)" % [
+			id, hay, I.ORIGEN.has(id)])
+	# el botón según el estado
+	v._colocar_kael(T.ancla("carro_horno"))
+	await _frames(2)
+	v._bloqueo = 0.0
+	v._comprobar_cerca()
+	var t0: String = v.boton_accion.text
+	P.poner_estado(Barrio.NOMBRE, "enf_galga", true)
+	v._comprobar_cerca()
+	var t1: String = v.boton_accion.text
+	P.poner_estado(Barrio.NOMBRE, "enf_galga", false)
+	_ok(v.cerca == "carro_horno" and t0 == "Examinar el carro" and t1 == "Medir el eje con la galga",
+		"10: el botón del carro sigue a Barrio.boton (antes «%s», con la galga «%s»)" % [t0, t1])
+	# el aviso se oculta al empezar un diálogo
+	v.avisar("Prueba del aviso")
+	await create_timer(0.4).timeout
+	var a0: float = v.aviso.modulate.a
+	var D = root.get_node_or_null("Dialogic")
+	var empezo: bool = v.iniciar_dialogo(Barrio.ruta_dialogo("bar_brena_caminos"))
+	await _frames(2)
+	_ok(a0 > 0.5 and empezo and v.aviso.modulate.a < 0.01, "10: el aviso (%.2f) se oculta al empezar un diálogo (%.2f; empezó %s)" % [
+		a0, v.aviso.modulate.a, empezo])
+	if D != null and D.current_timeline != null:
+		D.end_timeline(true)
+	await _frames(10)
+	v._bloqueo = 0.0
+	await _luz_y_dentro()
+	await _rodeo()
+	_sin_nan()
+
+
+# Entrar y salir del horno mirando cada fotograma (con el fundido) el sol de Kael: con la pantalla visible (fundido < 0,98)
+# el color del sol es SIEMPRE el de donde está Kael (sin un fotograma con la luz del otro lado).
+func _luz_y_dentro() -> void:
+	var I = load("res://zonas3d/barrio/interiores.gd")
+	if not I.ORIGEN.has("horno"):
+		print("(10: sin el interior del horno: no se comprueba la luz de dentro)")
+		return
+	var fuera_color: Color = v._luz_fija["sol_color"]
+	var dentro_color: Color = I.LUZ_KAEL["horno"]["sol_color"]
+	var saltos: Array = []
+	v._colocar_kael(T.PUERTAS["horno"]["fuera"])
+	await _frames(2)
+	v._bloqueo = 0.0
+	v._comprobar_cerca()
+	v._accion()
+	for i in 240:
+		await process_frame
+		_mirar_luz(fuera_color, dentro_color, saltos)
+		if not v.cambiando and v.interior == "horno":
+			break
+	_ok(v.interior == "horno", "10: se entra en el horno")
+	if v.interior != "horno":
+		return
+	_ok(v.ambiente.background_color.is_equal_approx(I.FONDO_DENTRO) and not v.ambiente.fog_enabled,
+		"10: dentro, fondo oscuro y sin bruma (los pone la región)")
+	var s0: Vector2 = v.interiores.sonda(v.kael.global_position)
+	var esperado: float = float(I.LUZ_KAEL["horno"]["sol"]) * (1.0 + v.SOL_MANCHA * clampf(s0.x, 0.0, 1.0))
+	_ok(absf(v.sol.light_energy - esperado) < 0.05, "10: dentro, el sol de Kael sale de interiores.sonda (%.2f, esperado %.2f)" % [
+		v.sol.light_energy, esperado])
+	# dentro, Kael no pisa a los vecinos: un vecino de prueba en lo andable delante de Kael
+	var k: Vector3 = v.kael.global_position
+	var q := k + Vector3(0.0, 0.0, -1.0)
+	if v.interiores.andable(q):
+		v.obstaculos_extra = [[Vector2(q.x, q.z), Vector2(q.x, q.z), 0.42]]
+		_ok(v._prohibido(q) and not v._prohibido_suelo(q), "10: dentro, _prohibido respeta a los vecinos (además del interior)")
+		v.obstaculos_extra = []
+	if v.vivo != null:
+		for id in v.vivo.vecinos:
+			var w: Dictionary = v.vivo.vecinos[id]
+			if w["visible"] and w["lugar"] == "horno":
+				var p: Vector3 = w["pos"]
+				_ok(v._prohibido(p), "10: dentro del horno, Kael no pisa a %s (%s)" % [id, str(p)])
+	v._colocar_kael(v.interiores.salida("horno"))
+	await _frames(2)
+	v._bloqueo = 0.0
+	v._comprobar_cerca()
+	v._accion()
+	for i in 240:
+		await process_frame
+		_mirar_luz(fuera_color, dentro_color, saltos)
+		if not v.cambiando and v.interior == "":
+			break
+	await _frames(3)
+	_mirar_luz(fuera_color, dentro_color, saltos)
+	_ok(v.interior == "" and v.sol.light_color.is_equal_approx(fuera_color) and not v.ambiente.background_color.is_equal_approx(I.FONDO_DENTRO),
+		"10: al salir, el sol y el fondo de fuera")
+	_ok(saltos.is_empty(), "10: con la pantalla visible, la luz de Kael siempre es la de su lado (saltos: %s)" % str(saltos))
+
+
+func _mirar_luz(fuera_color: Color, dentro_color: Color, saltos: Array) -> void:
+	if v.fundido.color.a >= 0.98:
+		return
+	var esperado: Color = dentro_color if v.interior != "" else fuera_color
+	if not v.sol.light_color.is_equal_approx(esperado):
+		saltos.append("interior «%s», fundido %.2f, sol %s" % [v.interior, v.fundido.color.a, str(v.sol.light_color)])
+
+
+# Tocar el suelo con un vecino en medio de la recta (en la plaza, llana y abierta): Kael lo rodea y llega, sin entrar en su
+# círculo; tocar encima de él deja a Kael delante.
+func _rodeo() -> void:
+	var a := Vector3(-6.0, 0.4, -1.0)
+	var b := Vector3(0.0, 0.4, -1.0)
+	var c := Vector2(-3.0, -1.0)
+	var radio := 0.42
+	v._colocar_kael(a)
+	await _frames(2)
+	v.obstaculos_extra = [[c, c, radio]]
+	v.destino = v._ajustar_destino(b)
+	var cerca_min := INF
+	var rodeo := false
+	for i in 400:
+		await process_frame
+		var k: Vector3 = v.kael.global_position
+		cerca_min = minf(cerca_min, Vector2(k.x, k.z).distance_to(c))
+		rodeo = rodeo or v._rodeando
+		if v.destino == null and v._meta_final == null:
+			break
+	var k2: Vector3 = v.kael.global_position
+	var falta := Vector2(k2.x - b.x, k2.z - b.z).length()
+	_ok(falta < 0.3 and cerca_min >= radio and rodeo, "10: con un vecino en la recta, Kael lo rodea y llega (a %.2f m; lo más cerca, %.2f m del centro; rodeó %s)" % [
+		falta, cerca_min, rodeo])
+	v._colocar_kael(a)
+	await _frames(2)
+	v.destino = v._ajustar_destino(Vector3(c.x, 0.4, c.y))
+	for i in 300:
+		await process_frame
+		if v.destino == null and v._meta_final == null:
+			break
+	k2 = v.kael.global_position
+	var d := Vector2(k2.x, k2.z).distance_to(c)
+	_ok(d >= radio and d < radio + 0.5, "10: tocar encima del vecino deja a Kael delante (a %.2f m del centro)" % d)
+	v.obstaculos_extra = []
+	v._colocar_kael(T.ancla("inicio"))
+	await _frames(2)
+
+
+# Ninguna casilla andable da NAN en _altura_suelo (con Kael encima, sin vecinos): en las esquinas de la rejilla de 0,25 m
+# (ahí caen las costuras de los suelos, todas en metros enteros) y en sus centros.
+func _sin_nan() -> void:
+	var vivo = v.vivo
+	v.vivo = null
+	var ext: Array = v.obstaculos_extra
+	v.obstaculos_extra = []
+	var guardado: Vector3 = v.kael.global_position
+	var malos: Array = []
+	var n := 0
+	for s in T.SUELOS:
+		var r: Rect2 = s[1]
+		for i in range(floori(r.position.x / PASO), ceili(r.end.x / PASO) + 1):
+			for j in range(floori(r.position.y / PASO), ceili(r.end.y / PASO) + 1):
+				for o in [0.0, 0.5]:
+					var x: float = (i + o) * PASO
+					var z: float = (j + o) * PASO
+					if T.suelo_en(x, z) < 0 or not T.andable(x, z) or _en_cara_de_bloque(x, z):
+						continue
+					var y := T.altura(x, z)
+					var p := Vector3(x, y, z)
+					v.kael.global_position = p
+					n += 1
+					var h: float = v._altura_suelo(p, y)
+					if is_nan(h) or absf(h - y) > 0.03:
+						malos.append("(%.2f, %.2f) → %s" % [x, z, str(h)])
+	v.kael.global_position = guardado
+	v.vivo = vivo
+	v.obstaculos_extra = ext
+	_ok(malos.is_empty(), "10: ninguna casilla andable da NAN ni otra altura en _altura_suelo (%d puntos; %d mal: %s)" % [
+		n, malos.size(), str(malos.slice(0, 12))])
+
+
+# Un punto en la misma cara de un bloque sólido (Rect2 es semiabierto: el borde final del bloque «es andable», pero ahí el
+# rayo toca la arista del bloque). No es una casilla: se deja fuera.
+func _en_cara_de_bloque(x: float, z: float) -> bool:
+	for b in T.BLOQUES:
+		if b[6] and (b[2] as Rect2).grow(0.01).has_point(Vector2(x, z)):
+			return true
+	return false
+
+
 # ================================================================= 7
 
 func _bucle() -> void:
@@ -443,18 +637,37 @@ func _bucle() -> void:
 	var giro := 0.0
 	for i in range(1, T.BUCLE.size()):
 		var meta := T.ancla(T.BUCLE[i])
-		v.destino = meta
+		v.destino = v._ajustar_destino(meta)              # (como un toque: rodea a quien se cruce)
+		var traza: Array = []                             # (los últimos fotogramas, para el diagnóstico si no llega)
 		for f in 900:
 			await process_frame
 			var k: Vector3 = v.kael.global_position
+			traza.append("k=(%.2f,%.2f) destino %s rodeando %s meta %s" % [k.x, k.z, str(v.destino), v._rodeando, str(v._meta_final)])
+			if traza.size() > 40:
+				traza.pop_front()
 			sectores_vistos[T.sector_de(k.x, k.z)] = true
 			peor_y = maxf(peor_y, absf(k.y - T.altura(k.x, k.z)))
 			giro = maxf(giro, absf(v.cam.global_rotation_degrees.y))
-			if v.destino == null:
+			if v.destino == null and v._meta_final == null:
 				break
 		var k2: Vector3 = v.kael.global_position
 		var falta := Vector2(k2.x - meta.x, k2.z - meta.z).length()
-		_ok(falta < 0.6, "7: Kael llega a %s (a %.2f m)" % [T.BUCLE[i], falta])
+		var por_que := ""
+		if falta >= 0.6:                                  # (para el diagnóstico: el paso siguiente y quién estorba)
+			var sig: Vector3 = k2 + Vector3(meta.x - k2.x, 0.0, meta.z - k2.z).normalized() * 0.15
+			por_que = " en %s; paso siguiente: prohibido %s, suelo %s, altura %s; rodeo: %s %.2f s, sin avance %.2f s, meta %s" % [
+				str(k2), v._prohibido(sig), v._prohibido_suelo(sig), str(v._altura_suelo(sig, k2.y)), v._rodeando, v._t_rodeo,
+				v._t_sin_avance, str(v._meta_final)]
+			if v.vivo != null:
+				for id in v.vivo.vecinos:
+					var q: Vector3 = v.vivo.vecinos[id]["pos"]
+					if Vector2(q.x - sig.x, q.z - sig.z).length() < 1.0:
+						por_que += "; %s en %s" % [id, str(q)]
+		_ok(falta < 0.6, "7: Kael llega a %s (a %.2f m)%s" % [T.BUCLE[i], falta, por_que])
+		if falta >= 0.6:
+			print("   (últimos fotogramas)
+   " + "
+   ".join(PackedStringArray(traza)))
 		if falta >= 0.6:
 			v._colocar_kael(meta)                         # (para seguir comprobando el resto del bucle)
 	_ok(sectores_vistos.size() >= 6, "7: el bucle pasa por los 6 sectores (%s)" % str(sectores_vistos.keys()))
@@ -467,14 +680,14 @@ func _no_entra() -> void:
 	v.destino = Vector3(-24.0, 0.2, -6.0)                  # dentro del horno
 	for i in 200:
 		await process_frame
-		if v.destino == null:
+		if v.destino == null and v._meta_final == null:
 			break
 	_ok(v.kael.global_position.z > -1.05, "7: no entra en el horno por la fachada (z = %.2f)" % v.kael.global_position.z)
 	v._colocar_kael(T.ancla("n_res_c"))
 	v.destino = Vector3(-25.0, 1.4, -21.0)                 # a los huertos, al sur de la calle
 	for i in 200:
 		await process_frame
-		if v.destino == null:
+		if v.destino == null and v._meta_final == null:
 			break
 	_ok(v.kael.global_position.z < -25.9, "7: no baja a los huertos (z = %.2f)" % v.kael.global_position.z)
 
