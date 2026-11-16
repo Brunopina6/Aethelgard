@@ -205,3 +205,152 @@ static func soltar_caches() -> void  # (vacío en la fase 0)
 - Una línea en `encargos.gd` FUENTES y la nota de `hallazgos.gd` l.53.
 - `pruebas/prueba_barrio_datos.gd`, `prueba_barrio_vivo.gd` y `fotos_barrio_recorrido.gd`.
 - La recompensa está **sin decidir** (Farol del Peregrino o Éter ×2): decide el usuario.
+
+## 6. B: los interiores (agente B, rama `area-barrio-b` desde `a4cbbe8`)
+
+> 16/11/2026. Todo sigue siendo **PROPUESTA [P]** y **solo existe en el banco** (los interiores los construye la región, y
+> fuera del banco la región no se construye). Archivos de B: `zonas3d/barrio/interiores.gd`, `interiores/*.json`,
+> `fuente/crear_interiores.py`, `fuente/crear_utensilios_barrio.py`, `modelos/int_*`, `modelos/utensilios*`,
+> `pruebas/prueba_barrio_interiores.gd` y `pruebas/fotos_barrio_interiores.gd`. No toca `barrio.gd`, `trazado.gd` ni nada de C.
+
+### 6.1 Los tres interiores (distintos en planta, muebles y actividad)
+
+Cada uno es una «casa de muñecas» en su `ORIGEN` (horno −300,0,200; taller −300,0,240; vivienda −300,0,280): sin techo
+ni muro sur a la vista, con un murete bajo al sur (su cara de fuera, oscura, se lee como el corte) y su puerta.
+
+| Interior | Planta | Qué hay | Actividad (anclas para C) |
+|---|---|---|---|
+| **Horno de Maela** (10 × 7 × 3,4) | **En L**: el obrador (oeste) y la tienda (sur). Tras la **cortina** (tabique con paso, `cortina_horno`, siempre abierto), la zona de Maela (noreste). Baldosa de barro (con harina junto a la artesa y ceniza ante la boca); tablas en la zona de Maela | La **bóveda de ladrillo con la boca hundida y las brasas** (luz de fuego horneada), campana tiznada, pala, hurgón y leña; **la artesa** con la masa y un saco abierto; **dos estantes de enfriar** llenos de hogazas y barras; sacos de harina (dos abiertos); **el mostrador** a la calle con tres cestas de pan y la balanza. En la zona de Maela: hogar pequeño con su olla, **alacena** azul, mesa con tazón, pan empezado y vela, dos taburetes, la escalera a la alcoba (decorado) y hierbas colgadas | `int_horno_maela` (amasa en la artesa, de cara a la cámara), `_boca`, `_artesa`, `_estante`, `_mostrador`, `_mesa`, `_alacena`, `_cortina` |
+| **Taller de Damián** (nave 9 × 7 × 4,6 + trastienda 4 × 7 × 3,2) | **Nave alta** con el **portón doble** al este (abierto, hojas contra el muro) y ventanas altas al oeste por encima del tejado de la trastienda (el sol de la tarde cruza la nave). La **trastienda** al oeste, tras un tabique con puerta. Tierra apisonada con virutas; tablas en la trastienda | **El potro** con la rueda a medio hacer (8 de 12 radios, 3 pinas); **el torno de pértiga**; **el banco de las gubias** y **la pared de las herramientas con sus siluetas pintadas de almagre: la de la GALGA está vacía, con su clavo** (la pista). Tres ruedas acabadas apoyadas y una colgada, pinas colgadas, haz de radios, barreño de remojar, piedra de afilar, estante con cajas y tarros, cuerda, candil; banco con **cántaro y vaso** junto al portón. **Trastienda**: fresno apilado con separadores, banco de cortar con **pasadores en bruto** y sierra, tajo con hacha, cesto de retales | `int_taller_damian` (al norte del potro, de cara a la cámara), `_potro`, `_clavo`, `_torno`, `_cantaro`, `_paso_trastienda`, `_banco_corte` |
+| **Vivienda de Odila y Nela** (8 × 8 × 3,2) | **En profundidad**: la cocina delante (losas) y, **dos escalones arriba (+0,35, paso `alcoba`)**, la alcoba al fondo (tablas), tras una baranda baja que deja verla | **El hogar con la repisa y la GALGA encima** (copia de `utensilios.glb`, `sitio("galga")`), vela, tarros y la caja de los hilos; olla y fuego; **la mesa de la familia** con bancos, platos, jarra y pan; el **cántaro grande** en su pie; el vasar con platos; **la silla de Odila** junto a la ventana con su cesto de costura. En la alcoba: **la cama grande** (con el sol de la ventana oeste encima), **el arcón** con herrajes, la percha con ropa, candil, **la cama de Nela** con su colcha de retales y **su rincón**: alfombra de tiras, **la rueda de juguete tallada** (eco del taller), muñeca y tacos | `int_vivienda_odila` (en su silla), `_nela` (en la alfombra), `_repisa`, `_mesa`, `_cantaro`, `_arcon`, `_rincon`, `_alcoba` |
+
+**Pista vivienda↔taller:** en el taller, la silueta pintada vacía con su clavo (una galga de 0,36 m con los escalones de
+medir); en la vivienda, esa misma galga tumbada en la repisa (la misma silueta: `galga_2d()` del generador). La rueda de
+juguete une los dos sitios.
+
+### 6.2 Puertas, pasos internos y retorno seguro
+
+- **Destino y retorno**: los hace la región (§2.2). B da `entrada(id)` (dentro), `mira_entrada(id)` (norte en el horno y
+  la vivienda; **oeste** en el taller, en el que se entra por el portón del este) y `salida(id)` (el botón «Salir» de
+  dentro, a 1,4 m de la entrada para que no salga al entrar). Al salir, Kael aparece en `T.PUERTAS[id].fuera`.
+  `guardar_posicion()` dentro guarda esa puerta; CAL vuelve dentro (`barrio_interior`); una posición guardada en un
+  `ORIGEN` no se restaura (`interior_de()`).
+- **Condición**: las tres puertas de fuera están abiertas, con la guardia del prólogo y `Barrio.puerta(id)` de C (por
+  ejemplo, «Llamar a la puerta» la primera vez en la vivienda). Dentro:
+  - `cortina_horno` y `alcoba`: siempre abiertos.
+  - **`trastienda`: cerrada** hasta `Barrio.paso_interno("trastienda")` **o** `estado:enf_taller` (la regla del plan, por
+    si C aún no la tiene). Cerrada, no se pisa (todo x < 4,4 local) y **la hoja de su puerta se ve cerrada, con su
+    tranca**. Al acercarse a la puerta sale el aviso **«Damián guarda ahí la madera buena.»** (una vez por acercamiento).
+    Al abrirse, la hoja gira 90° (0,6 s, sonido `puerta_abre`). `abrir_paso(nombre, abierto)` fuerza cualquier paso (para
+    C o las pruebas).
+- **Estado**: entrar y salir no toca `mazmorras`, `lore_visto` ni nada de C (comprobado); los interiores siguen vivos en la
+  misma escena.
+
+### 6.3 Objetos: examinable, ofrecido, privado (los textos son de C)
+
+`interiores/<id>.json` → `objetos`, y `interiores.objetos(id)` (con la posición): cada ancla lleva su **clase**.
+- **examinable** (se mira; examinar no es coger): `horno_boca`, `horno_artesa`, `horno_estante`, `taller_potro`,
+  `taller_clavo`, `taller_torno`, `vivienda_repisa`, `vivienda_mesa`, `vivienda_rincon`.
+- **ofrecido** (lo da su dueño en el diálogo; no se toma): `horno_mostrador` (el pan, Maela), `taller_cantaro` (el agua,
+  Damián), `vivienda_cantaro` (el agua, Odila).
+- **privado** (tocarlo provoca una reacción o un aviso): `horno_alacena`, `horno_mesa`, `taller_banco_corte`,
+  `taller_paso_trastienda`, `vivienda_arcon`.
+- Todas a ≥ 2,5 m entre sí dentro de cada interior (las más cercanas: 2,57, 2,55 y 2,65 m).
+
+### 6.4 Utensilios (`modelos/utensilios.glb`, `fuente/crear_utensilios_barrio.py`)
+
+- Triángulos: `bandeja` 220, `cesta_pan` 250, `caja` 60, `saco_harina` 113, `cepillo` 36, `cubo` 138, `galga` 52,
+  `pasador` 52, `pasador_roto` 90.
+- Un material opaco (`utensilio`: color del vértice + `utensilios_atlas.png` de 256²: madera, tela, mimbre y metal).
+- **Pivote = punto de agarre**; +Y arriba, −Z hacia delante.
+  - Al pecho (dos manos): `bandeja`, `caja` y `saco_harina`, con el agarre en el borde que toca el cuerpo.
+  - Una mano: `cesta_pan` y `cubo` por el asa (cuelgan debajo); `cepillo` por la correa; `galga` por el agujero de colgar
+    (de canto, los escalones hacia −Z); `pasador` y `pasador_roto` por el medio.
+- `utensilios.json` da los triángulos y la caja de cada uno. Sin luz horneada (se mueven): en la repisa, `calle_vertice`
+  con una luz fija; en la mano, la de C (`barrio_npc.gdshader`).
+
+### 6.5 Cámara, luz y materiales
+
+- **Cámara de interior**: 6,2 m arriba, 7,2 m al sur, 40,73° hacia abajo y 44° de campo (a 9,5 m de Kael, frente a
+  17,8 m fuera). **Nunca gira**; sigue a Kael dentro de los límites de cada sala (json `camara`), suavizada.
+- **Luz horneada** (Cycles, 768 muestras, mapa de **1024**):
+  - el sol de la tarde de la muestra entra **solo por las ventanas y la puerta** (el techo y el muro sur están en el
+    horneado);
+  - el cielo, por los huecos; los fuegos (horno, hogares, candiles, velas); un relleno tenue del techo;
+  - una compresión suave de las luces altas: el fuego y las manchas de sol quedan a ≈ 5 veces el percentil 70 (no se
+    queman);
+  - exposición por sala (`escala`); `BRILLO` en `interiores.gd` para el ajuste fino sin volver a hornear.
+- **Materiales**: los de la muestra **sin cambios** (`calle_estatico` con el mapa de luz, `calle_vertice` para las piezas,
+  `calle_brillo` con su temblor para las brasas y las velas) y sus texturas: **ningún programa nuevo**. Se cargan con
+  `load()`, no con `preload`. La sombra de contacto de Kael funciona dentro (`kael_pos` cada fotograma; sin sombra larga).
+- **Kael dentro**: el sol de la región más débil y cálido y un ambiente cálido (`LUZ_KAEL`), fondo oscuro y sin niebla;
+  todo se devuelve al salir. `sonda(p)`: rejilla de 0,5 m del json (sol por las ventanas; cielo y fuegos como relleno).
+
+### 6.6 Presupuesto (PC, ventana 1600×720, pase 3D sin Kael ni el grupo; igual en bajo, medio y alto)
+
+| Interior | Llamadas 3D | Primitivas | Superficies | Triángulos a la vista |
+|---|---|---|---|---|
+| Horno | 11 | ≈ 6 850 | 11 | 7 022 (+ 5 425 solo para el horneado) |
+| Taller | 13 | ≈ 3 740 | 13 (con la hoja de la trastienda) | 3 749 |
+| Vivienda | 12 | ≈ 2 760 | 11 + la galga | 2 818 |
+
+Límite del plan §9: ≤ 14 llamadas, ≤ 35 000 triángulos y luz de 1024 → **cumple**. Con Kael y el grupo dentro, ≈ 32
+llamadas y ≈ 65 000 primitivas (casi todo, los personajes). **Medido en el PC: el Redmi está sin medir.**
+
+### 6.7 Cómo se rehace y cómo se prueba
+
+- **Interiores**, con el turno de `D:\REBELUM_coordinacion\horneado.lock` (≈ 50 s los tres con la GPU):
+  `blender -b --factory-startup -P zonas3d/barrio/fuente/crear_interiores.py -- <aethelgard/zonas3d/barrio> [--solo horno|taller|vivienda] [--sin-horneado] [--muestras N]`.
+- **Utensilios**: `blender -b --factory-startup -P zonas3d/barrio/fuente/crear_utensilios_barrio.py -- <aethelgard/zonas3d/barrio>`.
+- Después, `--headless --import`. Los `.import` van como los de la muestra: sin tangentes, sin niveles de detalle ni mallas
+  de sombra; los mapas de luz, en VRAM con mipmaps.
+- **`pruebas/prueba_barrio_interiores.gd`** (auto, en `lista_pruebas.txt`): **299 comprobaciones, 0 fallos**.
+  - Datos: anclas del contrato andables y a la altura del suelo, objetos con clase a ≥ 2,5 m, BFS de 0,1 m desde la
+    entrada, pasos, presupuesto, `interior_de` y tres plantas distintas. Utensilios.
+  - En el banco: entrar y salir de los tres, preparar al acercarse, el exterior oculto y solo ese interior activo, la
+    cámara propia sin girar, la puerta de fuera al guardar y al salir, lo examinado sin cambios, la doble pulsación.
+  - La trastienda cerrada (aviso, hoja, no se pisa) y abierta; la alcoba y la cortina, andando.
+  - CAL dentro; un ORIGEN no se restaura; «Guardar y recargar» dentro; el fundido cortado no deja metas y
+    `banco_pruebas.salir()` suelta las cachés.
+- **Capturas** (`pruebas/fotos_barrio_interiores.gd`, manual, APPDATA aislado): en `D:\REBELUM_diagnostico\barrio_oakhaven\b\`,
+  17 por perfil (bajo, medio y alto): cada puerta por fuera, cada interior con su cámara y Kael en varios sitios, y los
+  detalles (la boca del horno, el clavo vacío, la galga en la repisa, el rincón de Nela).
+- `prueba_banco_pruebas`: 0 fallos.
+
+### 6.8 Cambios que pide B (no los hace: no son sus archivos)
+
+- **A, `pruebas/prueba_barrio_trazado.gd`** (en esta rama falla, como se esperaba al llenar `ORIGEN`):
+  - la l.283 espera `v.ancla("int_horno_boca") == Vector3.ZERO` y la l.296, «en obras»; ahora la puerta ENTRA;
+  - propuesta: comprobar «en obras» solo para los id que no estén en `Interiores.ORIGEN` y, para los demás, que la puerta
+    entra (esperar al fundido y `_pasar_fuera()` antes de la siguiente);
+  - el fallo «7: Kael llega a n_com_o» es consecuencia (Kael se queda dentro tras el bloque 6).
+- **A, `barrio.gd`**:
+  - el rótulo de las puertas dice «(en obras)» siempre: quitarlo cuando el id esté en `ORIGEN`;
+  - dentro, `_prohibido` no mira `vivo.ocupa(p)`: Kael atravesaría a Maela, Damián, Odila y Nela;
+  - cuando A haga la luz de Kael con `sonda()`, que dentro use la de los interiores sin pisar lo que pone
+    `interiores.mostrar()` (o que A lo haga todo y B quite `_luz_dentro`).
+- **C**:
+  - las `PIEZAS` de los interiores con las anclas y la clase de §6.3 (texto de examinar; reacción o aviso en lo privado;
+    lo ofrecido, solo por diálogo);
+  - `paso_interno("trastienda")` = `estado:enf_taller` (B ya mira también ese estado);
+  - `puerta("vivienda")` con «Llamar a la puerta»;
+  - si un utensilio de sitio cambia de lugar (la galga al cogerla), ocultar la copia con `interiores.poner_sitio("galga", false)`;
+  - las NPC, en sus anclas (`int_*_maela`, `_damian`, `_odila`, `_nela`).
+- **Integración**:
+  - `prueba_muestra_calle` (bloque 2) exige que nadie fuera de la muestra nombre `muestra_calle`, pero el plan §8 manda
+    reutilizar sus sombreados y texturas (B ya lo hace; A lo hará). Hay que admitir `res://zonas3d/barrio/` en esa lista y
+    **excluir `zonas3d/barrio/*` de las APK sin banco** en `export_presets.cfg` (como `zonas3d/muestra_calle/*`);
+  - precalentado: nada nuevo para los interiores (son los programas de la muestra).
+
+### 6.9 Estado
+
+- **Diseñado**: los tres interiores, sus pasos, los objetos con clase, los utensilios, la cámara y la luz (§6.1-6.5).
+- **Construido**: los generadores de Blender, los tres GLB horneados con su mapa de 1024 y su json, `utensilios.glb`,
+  `interiores.gd` con todo el contrato, la prueba y la herramienta de fotos.
+- **Integrado**: en la región del barrio de esta rama (la región ya llamaba a todo: no hizo falta tocar `barrio.gd`).
+  Sin integrar con A (exterior horneado, luz de Kael) ni con C (NPC, piezas, misión).
+- **Probado en PC**: `prueba_barrio_interiores` (299 · 0), `prueba_banco_pruebas` (0 fallos), capturas en bajo, medio y
+  alto, y la medida de llamadas y primitivas. A la espera de los cambios de §6.8: `prueba_barrio_trazado` y
+  `prueba_muestra_calle`.
+- **Pendiente de móvil**: FPS, PSS y tirones en el Redmi (perfil bajo) al entrar en cada interior. La primera entrada
+  carga el GLB en un hilo al acercarse (a menos de 8 m) y usa los mismos programas que la muestra (ya precalentados).
