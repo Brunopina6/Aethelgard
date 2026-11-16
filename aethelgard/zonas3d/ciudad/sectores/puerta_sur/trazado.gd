@@ -28,6 +28,7 @@ const ID := "puerta_sur"
 const SUELOS := [
 	# cota 0: la Calle Mayor, el soportal, la explanada, el patio de la guardia y el de caravanas
 	["puerta_sur", Rect2(-4.0, 62.0, 8.0, 19.0), "", 0.0, 0.0],          # Calle Mayor, tramo sur (borde z 62, cota 0)
+	["puerta_sur", Rect2(-5.0, 62.0, 1.0, 13.0), "", 0.0, 0.0],          # su acera oeste (sigue la de la plaza, x −5)
 	["puerta_sur", Rect2(4.0, 62.0, 4.0, 19.0), "", 0.0, 0.0],           # soportal de la guardia [C]
 	["puerta_sur", Rect2(-7.0, 81.0, 25.0, 12.0), "", 0.0, 0.0],         # explanada ante la Puerta del Sur
 	["puerta_sur", Rect2(8.0, 76.0, 10.0, 5.0), "", 0.0, 0.0],           # patio de la guardia [C]
@@ -60,8 +61,8 @@ const BLOQUES := [
 	["cano_pilon", "puerta_sur", Rect2(-5.75, 90.05, 0.5, 0.5), 0.8, 1.0, "decor", true],
 	["banco_explanada", "puerta_sur", Rect2(9.0, 92.3, 3.2, 0.6), 0.0, 0.45, "bajo", true],
 	# Calle Mayor, oeste: la casa de la Calle Mayor (puerta a la calle)
-	["casa_mayor_o", "puerta_sur", Rect2(-14.0, 62.0, 10.0, 13.0), 0.0, 7.0, "casa", true],
-	["hoja_casa_mayor", "puerta_sur", Rect2(-4.08, 67.3, 0.08, 1.4), 0.0, 2.4, "puerta", false],
+	["casa_mayor_o", "puerta_sur", Rect2(-14.0, 62.0, 9.0, 13.0), 0.0, 7.0, "casa", true],
+	["hoja_casa_mayor", "puerta_sur", Rect2(-5.08, 67.3, 0.08, 1.4), 0.0, 2.4, "puerta", false],
 	# el cuerpo de guardia [C], su soportal [C] (la planta encima, pilares, el atril del libro) y su patio [C]
 	["cuerpo_guardia", "puerta_sur", Rect2(8.0, 62.0, 10.0, 14.0), 0.0, 6.5, "casa", true],
 	["hoja_guardia", "puerta_sur", Rect2(7.92, 71.3, 0.08, 1.4), 0.0, 2.4, "puerta", false],
@@ -168,7 +169,7 @@ const ANCLAS := {
 	# umbrales
 	"puerta_establo": Vector3(24.0, 0.0, 73.05),
 	"puerta_guardia": Vector3(7.95, 0.0, 72.0),
-	"puerta_casa_mayor": Vector3(-3.95, 0.0, 68.0),
+	"puerta_casa_mayor": Vector3(-4.95, 0.0, 68.0),
 	"puerta_almacen": Vector3(36.6, 1.0, 66.05),
 	"puerta_casa_terraza": Vector3(-26.0, 1.0, 79.05),
 	"puerta_casa_pozo": Vector3(-26.0, 1.0, 65.05),
@@ -201,7 +202,7 @@ const PUERTAS := {
 		"ancla": "puerta_establo", "nombre": "Establo"},
 	"cuerpo_guardia": {"fuera": Vector3(6.6, 0.0, 72.0), "mira": PI / 2.0, "radio": 1.6, "texto": "Entrar en el cuerpo de guardia",
 		"ancla": "puerta_guardia", "nombre": "Cuerpo de guardia"},
-	"casa_mayor": {"fuera": Vector3(-2.6, 0.0, 68.0), "mira": -PI / 2.0, "radio": 1.6, "texto": "Entrar en la casa",
+	"casa_mayor": {"fuera": Vector3(-3.6, 0.0, 68.0), "mira": -PI / 2.0, "radio": 1.6, "texto": "Entrar en la casa",
 		"ancla": "puerta_casa_mayor", "nombre": "Casa"},
 	"almacen_portes": {"fuera": Vector3(36.6, 1.0, 67.4), "mira": PI, "radio": 1.6, "texto": "Entrar en el almacén",
 		"ancla": "puerta_almacen", "nombre": "Almacén de portes"},
