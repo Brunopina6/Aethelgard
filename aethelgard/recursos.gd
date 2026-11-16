@@ -389,6 +389,9 @@ const APAGADOS := {
 	"res://personajes/npc_v12/herrero/calafate.png": "sunken_quilla_v12",
 	"res://personajes/npc_v12/viajero/marinero_1.png": "sunken_quilla_v12",
 	"res://personajes/npc_v12/viajero/marinero_2.png": "sunken_quilla_v12",
+	# V12 (16/11): la ciudad completa de Oakhaven, MAQUETA (solo desde el banco; interruptor de sesión «ciudad_v12», que
+	# pone la propia escena)
+	"res://zonas3d/ciudad/": "ciudad_v12",
 }
 const BRAMAVIDRIO := "res://enemigos/bramavidrio/"
 var _encendidos := {}

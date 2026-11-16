@@ -32,7 +32,8 @@ const METAS_SESION := ["meshy_e01", "banco_caso", "nix_v12", "oakhaven_propuesta
 	"banco_grupo4",                                   # (15/11: el permiso de cuatro activos, grupo.gd max_activos)
 	"calidad_sesion", "banco_proto",                  # (15/11: [calidad] de la sesión rehecha en cada caso; un banco de medida a medias no sigue)
 	"barrio_v12", "barrio_interior", "barrio_reloj",  # (16/11: el barrio experimental: activado, su interior tras CAL y su reloj)
-	"arboleda_flor"]                                 # (16/11: «Llevar una flor de abajo», tramo de la Arboleda)
+	"arboleda_flor",                                 # (16/11: «Llevar una flor de abajo», tramo de la Arboleda)
+	"ciudad_v12"]                                    # (16/11: la ciudad completa de Oakhaven, maqueta: activada)
 # Calidad elegida en la sesión (CAL, el selector «Calidad 3D», los bancos A/B de vista3d): sigue entre los casos de la
 # sesión y se quita SOLO al salir.
 const METAS_CALIDAD := ["calidad_proto", "calidad_extra", "muestra_precalentar",
@@ -115,6 +116,11 @@ const EXPLORAR := {
 	"arboleda": {"titulo": "Arboleda Mítica: la escalera de la Hospedería (en pruebas)", "activos": ["Kael", "Lya", "Garon"],
 		"escena": "res://zonas3d/arboleda_tramo/arboleda_tramo.tscn",
 		"nota": "Escalera → terraza → Hospedería (dormir 20, Yedra). Con «Llevar una flor de abajo», la flor para Lumi."},
+	# 16/11: CIUDAD COMPLETA de Oakhaven, MAQUETA (zonas3d/ciudad/, docs/v12/CIUDAD_OAKHAVEN.md): los 8 sectores en bloques,
+	# cargados por cercanía. SOLO aquí (se activa a sí misma con la meta de sesión «ciudad_v12»); sin interiores ni vecinos.
+	"ciudad": {"titulo": "Ciudad de Oakhaven (maqueta, en pruebas)", "activos": ["Kael", "Lya", "Garon"],
+		"escena": "res://zonas3d/ciudad/ciudad.tscn",
+		"nota": "Bloques provisionales de los 8 sectores, de la Puerta del Sur al Árbol Milenario. Sin interiores ni vecinos."},
 }
 
 var cuerpo: VBoxContainer
