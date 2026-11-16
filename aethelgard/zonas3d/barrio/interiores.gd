@@ -303,6 +303,12 @@ func camara(id: String, k: Vector3) -> Array:
 		return []
 	var c: Dictionary = datos(id).get("camara", {"x": [TAM[id].x * 0.5, TAM[id].x * 0.5], "z": [TAM[id].y * 0.5, TAM[id].y * 0.5]})
 	var l: Vector3 = k - ORIGEN[id]
+	# (16/11, C) una sala que la cámara general no ve (la trastienda del taller, tras el tabique alto de la nave: desde la
+	# x de la nave, su suelo queda tapado y Kael no se veía) lleva sus propios límites («camara_salas»: rect local)
+	for sala in datos(id).get("camara_salas", []):
+		if _en(sala["rect"], l.x, l.z):
+			c = sala
+			break
 	var fx := clampf(l.x, float(c["x"][0]), float(c["x"][1]))
 	var fz := clampf(l.z, float(c["z"][0]), float(c["z"][1]))
 	var meta: Vector3 = ORIGEN[id] + Vector3(fx, CAM_ALTO + l.y * 0.6, fz + CAM_SUR)
