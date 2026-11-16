@@ -402,6 +402,8 @@ func _process(delta: float) -> void:
 	if kael == null or casco == null:
 		return
 	casco.animar(_t)
+	if casco.quilla != null:                                    # (V12, 16/11: la Quilla horneada, EXPERIMENTAL)
+		casco.quilla.cada_fotograma(delta, self)
 	for id in vecinos:
 		if vecinos[id]["chibi"] != null:
 			vecinos[id]["chibi"].avanzar(delta)
@@ -460,6 +462,8 @@ func piezas_al_alcance() -> Array:
 		if id == "tabla" and Sunk.paga_encontrada():
 			texto = "Examinar la tabla"
 		r.append([id, T.pieza(id), d[2], texto])
+	if casco != null and casco.quilla != null:                  # (la cuadrilla de la Quilla horneada, PROPUESTA)
+		r.append_array(casco.quilla.piezas())
 	return r
 
 
@@ -539,6 +543,9 @@ func _accion() -> void:
 			_comentar_luego("lona", 3.8)
 		"proa":
 			_avisar(Sunk.TEXTO_PROA, "examinar", 3.4)
+		_:
+			if casco.quilla != null and casco.quilla.es_obrero(cerca):
+				_avisar(casco.quilla.hablar(cerca, kael.global_position), "", 3.6)
 	_comprobar_cerca()
 
 

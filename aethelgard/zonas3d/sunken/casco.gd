@@ -30,6 +30,10 @@ var faroles: Array = []                # Vector3 de los faroles encendidos (las 
 var agua: MeshInstance3D
 var ms_montar := 0.0
 var _mats := {}
+# V12 (16/11), EXPERIMENTAL: la Quilla horneada (zonas3d/sunken/quilla/quilla.gd), solo con el interruptor de sesión
+# «sunken_quilla_v12» en Auditoría o en el editor. Apagada, null: no se carga nada de esa carpeta y todo sigue igual.
+const QUILLA_GD := "res://zonas3d/sunken/quilla/quilla.gd"
+var quilla = null
 
 
 static func crear(region_: Node3D, mat_: Materiales, perfil_: Dictionary, nombre_: String) -> Node3D:
@@ -45,6 +49,8 @@ static func crear(region_: Node3D, mat_: Materiales, perfil_: Dictionary, nombre
 
 
 func resumen() -> Dictionary:
+	if quilla != null:
+		return quilla.resumen().merged({"faroles": faroles.size(), "choques": choques, "ms": snappedf(ms_montar, 0.1)})
 	return {"kit": KIT_LIGERO if ligero else KIT, "triangulos": triangulos, "mallas": mallas, "choques": choques,
 		"faroles": faroles.size(), "ms": snappedf(ms_montar, 0.1)}
 
@@ -54,12 +60,15 @@ func _montar() -> void:
 	_materiales()
 	_suelos()
 	_laguna()
-	ligero = perfil.get("modelos_ligeros", nombre_perfil != "alto") and ResourceLoader.exists(KIT_LIGERO)
-	var ruta := KIT_LIGERO if ligero else KIT
-	if ResourceLoader.exists(ruta):
-		_kit(ruta)
+	if (bool(Engine.get_meta("sunken_quilla_v12", false)) or "sunken_quilla_v12" in OS.get_cmdline_user_args()) 			and ResourceLoader.exists(QUILLA_GD) and load(QUILLA_GD).activado():
+		quilla = load(QUILLA_GD).montar(self)                     # (en lugar del GLB de siempre)
 	else:
-		push_warning("Sunken City 3D: falta el casco «%s»" % ruta)
+		ligero = perfil.get("modelos_ligeros", nombre_perfil != "alto") and ResourceLoader.exists(KIT_LIGERO)
+		var ruta := KIT_LIGERO if ligero else KIT
+		if ResourceLoader.exists(ruta):
+			_kit(ruta)
+		else:
+			push_warning("Sunken City 3D: falta el casco «%s»" % ruta)
 	_faroles()
 	_mascaron()
 	_gaviotas()
@@ -128,6 +137,9 @@ var encima_de: Array = []              # [{"nombre", "z", "mallas", "apartada"}]
 
 
 func apartar(z_kael: float, z_camara: float, region_: Node) -> void:
+	if quilla != null:                                           # (la Quilla horneada: oculta las coronas)
+		quilla.apartar(z_kael, z_camara, region_)
+		return
 	for e in encima_de:
 		var quiere: bool = e["z"] > z_kael + 0.35 and e["z"] < z_camara + 1.0
 		if quiere == e["apartada"]:
@@ -352,6 +364,8 @@ func _faroles() -> void:
 		halo.position = p
 		add_child(halo)
 		var suelo_y := T.altura(p.x, p.z)
+		if quilla != null:                                       # (la Quilla horneada: su luz ya está en las tablas)
+			continue
 		if nombre != "farol_archivo":
 			var disco := MeshInstance3D.new()
 			var pm := PlaneMesh.new()
