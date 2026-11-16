@@ -19,9 +19,14 @@ extends SceneTree
 #      puerta de fuera, como está diseñado, y la misión sigue en su paso), medir, el pasador (la galga vuelve a su clavo),
 #      poner el pasador, la cesta de Maela, la entrega a Odila dentro y la vuelta a Maela (Éter ×2 una vez y nada al
 #      repetir), el atajo y Avena;
+#      (revisión 16/11) además: Brena al principio (la coz) y, tras examinar a Avena, su disculpa UNA vez y su rumor de
+#      la ronda; Maela, con el pasador cortado, ya no manda al taller; Tobías cuenta el reparto una vez y vuelven sus
+#      caravanas;
 #   B. la galga PRIMERO: en casa de Odila, cogerla sin preguntar no vale (Odila llama la atención); preguntada, se coge y
 #      la misión NO empieza; medir (empieza), «Guardar y recargar» fuera, el pasador, reparar, la cesta, la entrega y el
-#      premio (Éter ×2 una vez).
+#      premio (Éter ×2 una vez); (revisión 16/11) Avena antes de oír a Brena no desmiente nada, y Odila dice lo de
+#      después una vez y vuelve su rumor de los peajes.
+# La puerta de la vivienda, la primera vez, ofrece «Llamar a la puerta» (a propósito): _entrar acepta los dos botones.
 # Uso: lista_pruebas.txt (fotos_barrio_recorrido, ventana): «3d sin_prologo salida={salida}»; mejor con --fixed-fps 30
 # (el tiempo del juego va a 30 por segundo, igual que con el Movie Maker) y, para ver la franja negra, --resolution
 # 1600x720 (o «tam=1600x720»). «solo=normal», solo la misión A (para grabarla: --write-movie x.avi --fixed-fps 30);
@@ -217,7 +222,7 @@ func _se_puede_tocar(pp: Vector2) -> bool:
 # entre los muebles.
 # Si un toque se desvía (cae en un tejado o en alguien del grupo) y Kael se queda fuera de la ruta, se vuelve a calcular
 # desde donde esté (como haría quien juega: tocar otra vez), hasta tres veces.
-func _ir(destino: Vector3, nombre: String, cerca := 0.6) -> void:
+func _ir(destino: Vector3, nombre: String, cerca := 0.6, avisar := true) -> void:
 	var f0 := Engine.get_process_frames()
 	for intento in 3:
 		var pts: Array = []
@@ -234,7 +239,7 @@ func _ir(destino: Vector3, nombre: String, cerca := 0.6) -> void:
 			# (dentro, cada punto intermedio se pisa de verdad: la recta siguiente sale de él y pasa a centímetros de
 			# los muebles; Kael se para a < 15 cm de donde se toca)
 			var tramo := cerca if ultimo else (0.2 if v.interior != "" else 0.5)
-			if not await _andar_a(pts[i], tramo, intento == 2):
+			if not await _andar_a(pts[i], tramo, avisar and intento == 2):
 				_nota("ruta a %s: atasco antes de %s (intento %d)" % [nombre, pts[i], intento + 1])
 				bien = false
 				break
@@ -243,11 +248,12 @@ func _ir(destino: Vector3, nombre: String, cerca := 0.6) -> void:
 			return
 
 
-# Espera a que el botón ofrezca «texto» y pulsa Intro.
-func _accion(texto: String, s := 3.0) -> bool:
+# Espera a que el botón ofrezca «texto» (o uno de varios: un Array) y pulsa Intro.
+func _accion(texto: Variant, s := 3.0) -> bool:
+	var textos: Array = texto if texto is Array else [texto]
 	var f := 0
 	while f < int(s * FPS):
-		if v.boton_accion.visible and v.boton_accion.text == texto:
+		if v.boton_accion.visible and v.boton_accion.text in textos:
 			await _tecla(KEY_ENTER)
 			return true
 		await _frames(2)
@@ -296,7 +302,7 @@ func _entrar(id: String) -> bool:
 	var d: Dictionary = T.PUERTAS[id]
 	await _ir(d["fuera"], "la puerta de " + id, 0.5)
 	for intento in 2:
-		if not await _accion(d["texto"]):
+		if not await _accion([d["texto"], "Llamar a la puerta"]):   # (la vivienda, la primera vez: se llama)
 			return false
 		await _segundos(0.3)
 		if _aviso() == Barrio.LLAMAR and v.interior == "":
@@ -375,7 +381,7 @@ func _hablar_con(id: String, foto: String) -> String:
 			f += maxi(30, Engine.get_process_frames() - f0)
 		elif v.interior != "":
 			var f0 := Engine.get_process_frames()
-			await _ir(junto, id, 0.4)
+			await _ir(junto, id, 0.4, false)        # (se mueve: el bucle vuelve a buscarlo; falla solo si nunca se habla)
 			await _frames(6)
 			f += maxi(30, Engine.get_process_frames() - f0)
 		else:
@@ -384,6 +390,22 @@ func _hablar_con(id: String, foto: String) -> String:
 			f += 20
 	_ok(false, "no se llega a hablar con %s" % id)
 	return ""
+
+
+# Examinar a Avena: junto a ella y del lado contrario a Brena. Brena cepilla y abreva a su lado: si en ese momento está
+# más cerca que Avena, el botón es el suyo; se espera a que se aparte y se vuelve a buscar sitio (como haría quien juega).
+func _examinar_avena() -> String:
+	v.ultimo_aviso = ""
+	for intento in 8:
+		await _andar_a(_junto_a_avena(), 0.3, false)
+		await _segundos(0.4)
+		if v.boton_accion.visible and v.boton_accion.text == "Examinar a Avena":
+			break
+		await _segundos(2.0)
+	await _accion("Examinar a Avena")
+	await _segundos(1.0)
+	_nota("avena: «%s»" % _aviso())
+	return _aviso()
 
 
 # Junto a Avena (a 1,4 m de su ancla), lo más lejos posible de Brena.
@@ -538,12 +560,14 @@ const JUNTO_CARRO := Vector3(-13.5, 0, 2.1)          # (examinar el carro del ho
 const ESTADO_MISION := "bar_enfria"
 
 
+# (el botón del carro dice lo que toca: «Examinar el carro», «Medir el eje con la galga» o «Poner el pasador»,
+# Barrio.boton; «texto» es el de antes de la misión)
 func _al_carro(texto: String, foto: String) -> String:
 	await _a_la_zona("")
 	await _ir(JUNTO_CARRO, "el carro del horno", 0.4)
 	await _segundos(0.4)
 	v.ultimo_aviso = ""
-	if await _accion(texto):
+	if await _accion([texto, Barrio.boton("carro_horno")]):
 		await _segundos(0.8)
 		await _foto(foto)
 	return _aviso()
@@ -584,6 +608,10 @@ func _mision_normal() -> void:
 	_nota("A. ORDEN NORMAL")
 	await _foto("t1_caravanas")
 	_ok(E.estado(mis) == "oculto", "A: la misión sale antes de empezar")
+	# 0. Brena, en el establo: cree que fue Avena (al final se desmiente; revisión 16/11)
+	var rb := await _hablar_con("brena", "A00_brena_coz")
+	_ok(rb.ends_with("bar_brena_coz.dtl") and Barrio.estado("j_cree_culpa_caballo_brena") and E.estado(mis) == "oculto",
+		"A0: Brena no cuenta lo de la coz, o eso empieza la misión (%s)" % rb.get_file())
 	# 1. el carro parado
 	await _ir(T.ancla("n_com_o"), "la calle comercial")
 	await _foto("t2_comercial")
@@ -650,11 +678,18 @@ func _mision_normal() -> void:
 	_ok(v.vivo.galga_clavo != null and v.vivo.galga_clavo.visible, "A6: la galga no vuelve a su clavo")
 	a = await _pieza("clavo_galga", "A16_galga_en_su_clavo")
 	_ok(a == Barrio.PIEZAS["clavo_galga"]["texto_sin"], "A6: el clavo no dice que la galga ha vuelto («%s»)" % a)
+	# con el pasador ya cortado, Maela ya no manda al taller (revisión 16/11)
+	r = await _hablar_con("maela", "A16b_maela_pasador")
+	_ok(r.ends_with("bar_maela_pasador.dtl"), "A6: con el pasador cortado, Maela sigue mandando al taller (%s)" % r.get_file())
 	# 7. reparar
 	a = await _al_carro("Examinar el carro", "A17_reparado")
 	_ok(Barrio.estado("enf_reparado"), "A7: el carro no se arregla («%s»)" % a)
 	await _segundos(3.0)
 	await _foto("A18_reparto")
+	# Tobías cuenta lo del reparto UNA vez y después vuelve su rumor de las caravanas (revisión 16/11)
+	r = await _hablar_con("tobias", "A18b_tobias_reparto")
+	_ok(r.ends_with("bar_tobias_reparto.dtl") and Barrio.estado("dicho_tobias_reparto"), "A7: Tobías no cuenta lo del reparto (%s)" % r.get_file())
+	await _hasta_el_rumor("tobias", "bar_tobias_caravanas.dtl", "A7")
 	# 8. la cesta
 	r = await _hablar_con("maela", "A19_maela_cesta")
 	_ok(r.ends_with("bar_maela_cesta.dtl") and Barrio.estado("enf_cesta"), "A8: Maela no da la cesta (%s)" % r.get_file())
@@ -680,11 +715,24 @@ func _mision_normal() -> void:
 	await _foto("t6_atajo")
 	await _ir(T.ancla("n_establo"), "el establo")
 	await _foto("A24_establo_avena")
-	await _andar_a(_junto_a_avena(), 0.3)                  # (del lado contrario a Brena, para que el botón sea el de Avena)
-	await _segundos(0.4)
-	await _accion("Examinar a Avena")
-	await _segundos(1.0)
-	_ok(Barrio.estado("j_sabe_no_culpa_caballo"), "A: examinar a Avena no apunta nada")
+	var av := await _examinar_avena()
+	_ok(Barrio.estado("j_sabe_no_culpa_caballo") and av.begins_with(Barrio.PIEZAS["avena"]["texto"]),
+		"A: examinar a Avena (tras oír a Brena) no la desmiente («%s»)" % av)
+	# Brena se disculpa UNA vez (lo dijo ella al principio) y después vuelve su rumor de la ronda (revisión 16/11)
+	r = await _hablar_con("brena", "A25_brena_avena")
+	_ok(r.ends_with("bar_brena_avena.dtl") and Barrio.estado("dicho_brena_avena"), "A: Brena no se disculpa (%s)" % r.get_file())
+	await _hasta_el_rumor("brena", "bar_brena_caminos.dtl", "A")
+
+
+# Tras lo de «una vez», el rumor vuelve: se habla hasta dos veces más y tiene que salir.
+func _hasta_el_rumor(id: String, rumor: String, donde: String) -> void:
+	var dichos: Array = []
+	for i in 2:
+		var r := await _hablar_con(id, "")
+		dichos.append(r.get_file())
+		if r.ends_with(rumor):
+			break
+	_ok(rumor in dichos, "%s: el rumor %s de %s no vuelve (%s)" % [donde, rumor, id, dichos])
 
 
 # La trastienda cerrada: no se pisa, sale el aviso de B al acercarse y, si se intenta abrir, Damián contesta (no cambia
@@ -731,6 +779,11 @@ func _mision_galga_primero() -> void:
 	change_scene_to_file(ESCENA)
 	await _cargar_region()
 	var mis: Dictionary = E.de(ESTADO_MISION)
+	# Avena ANTES de oír a Brena: una yegua más; nada se desmiente ni se apunta (revisión 16/11)
+	await _ir(T.ancla("n_establo"), "el establo")
+	var av := await _examinar_avena()
+	_ok(av == Barrio.PIEZAS["avena"]["texto_sin"] and not Barrio.estado("j_sabe_no_culpa_caballo"),
+		"B0: examinar a Avena sin oír a Brena desmiente algo («%s»)" % av)
 	await _ir(T.ancla("n_com_o"), "la calle comercial")
 	await _ir(T.ancla("n_plaza"), "la plaza")
 	await _ir(T.ancla("n_patio_n"), "el patio de talleres")
@@ -755,6 +808,10 @@ func _mision_galga_primero() -> void:
 	_ok(Barrio.estado("enf_cesta"), "B5: Maela no da la cesta (%s)" % r.get_file())
 	r = await _hablar_con("odila", "B08_odila_entrega")
 	_ok(Barrio.estado("enf_entrega"), "B6: Odila no recibe la cesta (%s)" % r.get_file())
+	# Odila dice lo de después UNA vez y después vuelve su rumor de los peajes (revisión 16/11)
+	r = await _hablar_con("odila", "B08b_odila_despues")
+	_ok(r.ends_with("bar_odila_despues.dtl") and Barrio.estado("dicho_odila_despues"), "B6: Odila no dice lo de después (%s)" % r.get_file())
+	await _hasta_el_rumor("odila", "bar_odila_precios.dtl", "B6")
 	var eter0: int = Inv.cantidad("Éter")
 	r = await _hablar_con("maela", "B09_maela_fin")
 	_ok(E.estado(mis) == "hecho" and Inv.cantidad("Éter") == eter0 + 2, "B: la galga primero no acaba con Éter ×2")
