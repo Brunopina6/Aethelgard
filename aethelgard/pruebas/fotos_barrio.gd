@@ -7,6 +7,9 @@ extends SceneTree
 #   perfil=bajo|medio|alto · res=1600x720 · salida=<carpeta> · plano
 #   (fase A, 16/11) blockout: todo en cajas aunque haya tramos horneados (el «antes», con la MISMA cámara) ·
 #   prefijo=<texto>: delante del nombre de cada captura (p. ej. antes_ / despues_)
+#   (16/11, pulido) suelo: en vez de los tramos, el suelo en sombra con CÁMARAS FIJAS (las mismas antes y después del
+#   rehorneado, sin depender de las zonas de cámara): la rampa de los talleres, el atajo y la sombra del muro de
+#   caravanas, de lejos (la cámara del juego de la fase A) y de cerca; todos los sectores dibujados enteros.
 # Uso: --path aethelgard --resolution 1600x720 --script res://pruebas/fotos_barrio.gd -- 3d sin_prologo perfil=bajo
 #      salida=D:/REBELUM_diagnostico/barrio_oakhaven/fase0 plano
 
@@ -22,6 +25,16 @@ const SITIOS := [
 	["6_atajo", Vector2(-42.0, -15.5)],
 ]
 
+# (pulido) [nombre, Kael (x, z), posición de la cámara, inclinación (grados)]: fijas
+const SUELO := [
+	["s1_rampa_talleres", Vector2(0.0, -13.5), Vector3(0.0, 11.37, 0.7), 25.0],
+	["s2_atajo", Vector2(-42.0, -12.0), Vector3(-42.0, 11.08, 3.66), 25.0],
+	["s3_muro_caravanas", Vector2(-46.0, -6.0), Vector3(-46.0, 10.8, 11.13), 25.0],
+	["s4_rampa_cerca", Vector2(0.0, -13.5), Vector3(0.0, 3.55, -11.9), 58.0],
+	["s5_atajo_cerca", Vector2(-42.0, -12.0), Vector3(-42.0, 3.07, -10.4), 58.0],
+	["s6_caravanas_cerca", Vector2(-46.0, -6.0), Vector3(-46.0, 2.6, -4.4), 58.0],
+]
+var suelo := false
 var perfil := "bajo"
 var salida := "D:/REBELUM_diagnostico/barrio_oakhaven/fase0"
 var tam := Vector2i(1600, 720)
@@ -49,6 +62,8 @@ func _initialize() -> void:
 			Engine.set_meta("barrio_solo_blockout", true)
 		elif a.begins_with("prefijo="):
 			prefijo = a.substr(8)
+		elif a == "suelo":
+			suelo = true
 	DirAccess.make_dir_recursive_absolute(salida)
 	DisplayServer.window_set_size(tam)
 	root.size = tam
@@ -87,7 +102,7 @@ func _process(_d: float) -> bool:
 			if current_scene != null and current_scene.scene_file_path == ESCENA and current_scene.get("kael") != null:
 				v = current_scene
 				v.boton_recargar.visible = false
-				_fase(2)
+				_fase(4 if suelo else 2)
 		2:
 			if frames - f_fase == 30:
 				var s: Vector2 = SITIOS[i_sitio][1]
@@ -104,6 +119,8 @@ func _process(_d: float) -> bool:
 					_fase(3)
 				else:
 					return true
+		4:
+			return _paso_suelo()
 		3:
 			if frames - f_fase == 1:
 				v.set_process(false)
@@ -115,6 +132,34 @@ func _process(_d: float) -> bool:
 			elif frames - f_fase == 20:
 				_foto("0_plano")
 				return true
+	return false
+
+
+# (pulido) el suelo con cámaras fijas, todos los sectores enteros
+func _paso_suelo() -> bool:
+	if frames - f_fase == 1:
+		var c: Array = SUELO[i_sitio]
+		v.set_process(true)
+		v._colocar_kael(Vector3(c[1].x, 0.0, c[1].y))
+		if v.grupo != null:
+			v.grupo.colocar(Vector3.BACK)
+	elif frames - f_fase == 40:
+		var c: Array = SUELO[i_sitio]
+		v.set_process(false)
+		v.cam.global_position = c[2]
+		v.cam.global_rotation = Vector3(deg_to_rad(-float(c[3])), 0.0, 0.0)
+		v.cam.fov = 38.0
+		for s in v.sectores:
+			(v.sectores[s] as Node3D).visible = true
+			for mi in v._detalle.get(s, []):
+				(mi as MeshInstance3D).visible = true
+		v.boton_accion.visible = false
+	elif frames - f_fase == 46:
+		_foto(SUELO[i_sitio][0])
+		i_sitio += 1
+		if i_sitio >= SUELO.size():
+			return true
+		_fase(4)
 	return false
 
 
