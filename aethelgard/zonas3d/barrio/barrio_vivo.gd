@@ -120,7 +120,8 @@ const SITIOS := {
 # Maela amasa al norte de la artesa, de cara a ella y a la cámara.
 const MIRA_DENTRO := {"int_horno_maela": Vector3(0, 0, 1)}
 const REJILLA_DENTRO := 0.2      # m: la rejilla del camino más corto dentro de un interior
-const PASO_DENTRO := 0.1         # m entre muestras al comprobar una recta dentro
+const PASO_DENTRO := 0.05        # m entre muestras al comprobar una recta dentro
+const HOLGURA_KAEL := 0.15       # m de holgura con los muebles para quien anda a toques (recta_libre_dentro)
 # La galga colgada otra vez en su clavo (taller, local): el pivote en el agujero, junto al clavo de crear_interiores.py
 # (silueta en x 6,6-6,96, y 1,62-1,71, sobre la pared norte), a lo largo de +x y de canto contra la pared.
 const GALGA_CLAVO := Vector3(6.63, 1.665, 0.03)
@@ -596,30 +597,48 @@ func _interiores():
 	return region.get("interiores") if region != null else null
 
 
-# Una recta que se anda entera DENTRO (cada 0,1 m, lo andable de B: sus bloqueos ya llevan el margen del cuerpo).
-func recta_libre_dentro(a: Vector3, b: Vector3) -> bool:
+# ¿Se pisa p con holgura? (lo andable de B en p y a «m» metros en cruz: los bloqueos de B ya llevan el margen del
+# cuerpo, pero quien anda se para a unos centímetros de cada punto y la recta siguiente no debe rozar una esquina)
+func _libre_dentro(it, p: Vector3, m: float) -> bool:
+	if not it.andable(p):
+		return false
+	if m <= 0.0:
+		return true
+	for d in [Vector3(m, 0, 0), Vector3(-m, 0, 0), Vector3(0, 0, m), Vector3(0, 0, -m)]:
+		if not it.andable(p + d):
+			return false
+	return true
+
+
+# Una recta que se anda entera DENTRO (cada 5 cm). Los vecinos van por la recta exacta (sin holgura: su posición sale
+# del reloj); quien anda a toques (Kael, el recorrido jugado) se para a unos centímetros de cada punto y anda a pasos de
+# 15 cm, y pide holgura «m», salvo en los primeros y últimos 20 cm (los puntos de trabajo están pegados a su mueble).
+func recta_libre_dentro(a: Vector3, b: Vector3, m := 0.0) -> bool:
 	var it = _interiores()
 	if it == null:
 		return true
-	var n := maxi(1, ceili(Vector2(b.x - a.x, b.z - a.z).length() / PASO_DENTRO))
+	var largo := Vector2(b.x - a.x, b.z - a.z).length()
+	var n := maxi(1, ceili(largo / PASO_DENTRO))
 	for i in range(0, n + 1):
-		if not it.andable(a.lerp(b, float(i) / n)):
+		var d := largo * float(i) / n
+		var holgura := m if (d > 0.2 and largo - d > 0.2) else 0.0
+		if not _libre_dentro(it, a.lerp(b, float(i) / n), holgura):
 			return false
 	return true
 
 
 # Dentro de un interior: la recta si no cruza ningún mueble; si no, el camino más corto por una rejilla de 0,2 m (BFS
 # en 8 direcciones sobre lo andable) estirado en tramos rectos que tampoco cruzan nada. Cada punto con la altura del
-# suelo de B (la alcoba está más alta).
-func _ruta_dentro(a: Vector3, b: Vector3, lugar: String, quien: String) -> Array:
+# suelo de B (la alcoba está más alta). Con holgura «m» (quien anda a toques), [] si no hay camino con ella.
+func _ruta_dentro(a: Vector3, b: Vector3, lugar: String, quien: String, m := 0.0) -> Array:
 	var it = _interiores()
 	if it == null or not Barrio.interior_hecho(lugar):
 		return [a, b]
-	var clave := "%s|%s|%s" % [lugar, a, b]
+	var clave := "%s|%s|%s|%s" % [lugar, a, b, m]
 	if _rutas.has(clave):
 		return _rutas[clave]
 	var r: Array = [a, b]
-	if not recta_libre_dentro(a, b):
+	if not recta_libre_dentro(a, b, m):
 		var o: Vector3 = it.ORIGEN[lugar]
 		var tam: Vector2 = it.TAM[lugar]
 		var nx := int(tam.x / REJILLA_DENTRO) + 1
@@ -628,7 +647,7 @@ func _ruta_dentro(a: Vector3, b: Vector3, lugar: String, quien: String) -> Array
 			var q := o + Vector3(i * REJILLA_DENTRO, 0, j * REJILLA_DENTRO)
 			return Vector3(q.x, it.altura(q), q.z)
 		var libre := func(i: int, j: int) -> bool:
-			return i >= 0 and j >= 0 and i < nx and j < nz and it.andable(celda.call(i, j))
+			return i >= 0 and j >= 0 and i < nx and j < nz and _libre_dentro(it, celda.call(i, j), m)
 		var cerca := func(p: Vector3) -> Vector2i:              # la celda libre más cercana a la que se llega en recta
 			var mejor := Vector2i(-1, -1)
 			var dmin := INF
@@ -641,7 +660,7 @@ func _ruta_dentro(a: Vector3, b: Vector3, lugar: String, quien: String) -> Array
 					if libre.call(i, j):
 						var q: Vector3 = celda.call(i, j)
 						var d := Vector2(q.x - p.x, q.z - p.z).length()
-						if d < dmin and recta_libre_dentro(p, q):
+						if d < dmin and recta_libre_dentro(p, q, m):
 							dmin = d
 							mejor = Vector2i(i, j)
 			return mejor
@@ -657,16 +676,18 @@ func _ruta_dentro(a: Vector3, b: Vector3, lugar: String, quien: String) -> Array
 					break
 				for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 1), Vector2i(1, -1),
 						Vector2i(-1, 1), Vector2i(-1, -1)]:
-					var m: Vector2i = c + d
-					if not prev.has(m) and libre.call(m.x, m.y) and (d.x == 0 or d.y == 0 or (libre.call(c.x + d.x, c.y) and libre.call(c.x, c.y + d.y))):
-						prev[m] = c
-						cola.append(m)
+					var s: Vector2i = c + d
+					if not prev.has(s) and libre.call(s.x, s.y) and (d.x == 0 or d.y == 0 or (libre.call(c.x + d.x, c.y) and libre.call(c.x, c.y + d.y))):
+						prev[s] = c
+						cola.append(s)
 			if prev.has(cb):
 				var x: Vector2i = cb
 				while x != ca:
 					camino.push_front(celda.call(x.x, x.y))
 					x = prev[x]
 				camino.push_front(celda.call(ca.x, ca.y))
+		if camino.is_empty() and m > 0.0:
+			return []
 		if camino.is_empty():
 			errores.append("%s: sin camino dentro de %s de %s a %s" % [quien, lugar, a, b])
 		else:
@@ -675,7 +696,7 @@ func _ruta_dentro(a: Vector3, b: Vector3, lugar: String, quien: String) -> Array
 			var i := 0
 			while i < todos.size() - 1:
 				var j := todos.size() - 1
-				while j > i + 1 and not recta_libre_dentro(todos[i], todos[j]):
+				while j > i + 1 and not recta_libre_dentro(todos[i], todos[j], m):
 					j -= 1
 				r.append(todos[j])
 				i = j
