@@ -31,7 +31,8 @@ const METAS_SESION := ["meshy_e01", "banco_caso", "nix_v12", "oakhaven_propuesta
 	"oak_franja", "oak_franja_t", "comentarios_dichos",   # (y la hora de Oakhaven y los comentarios ya dichos: de la sesión)
 	"banco_grupo4",                                   # (15/11: el permiso de cuatro activos, grupo.gd max_activos)
 	"calidad_sesion", "banco_proto",                  # (15/11: [calidad] de la sesión rehecha en cada caso; un banco de medida a medias no sigue)
-	"barrio_v12", "barrio_interior", "barrio_reloj"]  # (16/11: el barrio experimental: activado, su interior tras CAL y su reloj)
+	"barrio_v12", "barrio_interior", "barrio_reloj",  # (16/11: el barrio experimental: activado, su interior tras CAL y su reloj)
+	"arboleda_flor"]                                 # (16/11: «Llevar una flor de abajo», tramo de la Arboleda)
 # Calidad elegida en la sesión (CAL, el selector «Calidad 3D», los bancos A/B de vista3d): sigue entre los casos de la
 # sesión y se quita SOLO al salir.
 const METAS_CALIDAD := ["calidad_proto", "calidad_extra", "muestra_precalentar",
@@ -109,6 +110,11 @@ const EXPLORAR := {
 	"barrio": {"titulo": "Barrio de Oakhaven (en pruebas)", "activos": ["Kael", "Lya", "Garon"],
 		"escena": "res://zonas3d/barrio/barrio.tscn",
 		"nota": "Bloques provisionales: caravanas, calle comercial, plaza, talleres, casas y atajo. Las puertas, en obras."},
+	# 16/11: ARBOLEDA MÍTICA, tramo «La escalera de la Hospedería» (zonas3d/arboleda_tramo/, docs/v12/ARBOLEDA_HOSPEDERIA.md):
+	# la isla 2D pintada con la escalera unida a la terraza, la Hospedería del Peregrino y «Una flor para Lumi». SOLO aquí.
+	"arboleda": {"titulo": "Arboleda Mítica: la escalera de la Hospedería (en pruebas)", "activos": ["Kael", "Lya", "Garon"],
+		"escena": "res://zonas3d/arboleda_tramo/arboleda_tramo.tscn",
+		"nota": "Escalera → terraza → Hospedería (dormir 20, Yedra). Con «Llevar una flor de abajo», la flor para Lumi."},
 }
 
 var cuerpo: VBoxContainer
@@ -281,6 +287,9 @@ func _pintar() -> void:
 	# (16/11) Sunken City 3D con la Quilla horneada (zonas3d/sunken/quilla/, EXPERIMENTAL; docs/v12/SUNKEN_QUILLA.md)
 	_selector("Sunken: Quilla horneada (solo en el banco)", "sunken_quilla", bool(Engine.get_meta("sunken_quilla_v12", false)),
 		[[false, "No"], [true, "Sí"]], func(v): Engine.set_meta("sunken_quilla_v12", v))
+	# (16/11) Arboleda, «Una flor para Lumi» (zonas3d/arboleda_tramo/lumi_flor.gd): llevar la flor de abajo, solo de sesión
+	_selector("Llevar una flor de abajo (Arboleda)", "arboleda_flor", bool(Engine.get_meta("arboleda_flor", false)),
+		[[false, "No"], [true, "Sí"]], func(v): Engine.set_meta("arboleda_flor", v))
 	cuerpo.add_child(_texto("Combates de prueba (al terminar se vuelve aquí)", 24, Estilo.ORO))
 	for k in COMBATES:
 		_caso(k, COMBATES[k], _combate.bind(k))

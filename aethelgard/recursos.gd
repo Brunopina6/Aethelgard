@@ -12,7 +12,7 @@ extends Node
 const EXTENSIONES := ["png", "jpg", "jpeg", "webp", "svg", "fbx", "glb", "gltf", "obj", "tscn", "scn",
 	"mp3", "ogg", "wav", "gdshader", "tres", "res", "ttf", "otf"]
 const EXCLUIR := ["res://addons/", "res://para_meshy/", "res://.godot/", "res://decorado/", "res://texturas/",
-	"res://isla/", "res://carga.tscn",
+	"res://isla/", "res://carga.tscn", "res://zonas3d/arboleda_tramo/",   # (16/11: el tramo de la Arboleda, solo del banco)
 	"res://vegetacion_prueba/", "res://pruebas/"]   # estas dos nunca van en la APK: solo alargaban el arranque del PC
 # FPS: 60 solo en combate; 30 en el mapa, las zonas y los menús (menos calor y batería).
 const FPS_COMBATE := 60
