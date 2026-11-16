@@ -8,11 +8,15 @@ extends SceneTree
 #   C. Las anclas coinciden con el trazado: faroles en las costillas 44 y 32, ninguno en la 38; la tabla en su sitio; las
 #      coronas de las tres costillas. La luz directa de los faroles en las tablas: nada bajo la 38 (quilla_luz.json).
 #   D. La corona de la costilla 44 se OCULTA con Kael en z 40 (la cámara al sur) y vuelve a verse cuando Kael pasa al
-#      sur de ella. Ningún material de la Quilla es transparente en bajo ni en medio y no hay luces omni.
+#      sur de ella (y el halo de su farol con ella). Ningún material de la Quilla es transparente en bajo ni en medio y no
+#      hay luces omni.
 #   E. La cuadrilla: nadie pisa lo andable ni pasa a menos de 1,2 m de las rutas de prueba_sunken3d; los trabajos avanzan
-#      con sus objetos (el fardo apilado, la pieza de la carpintera); hablar los para y luego siguen; frases ≤ 110 letras
-#      y sin los términos vetados (prueba_ciudad_datos.gd); el botón ofrece hablar desde la Quilla.
+#      con sus objetos (el fardo apilado, la pieza de la carpintera); hablar los para y luego siguen donde iban (el fardo
+#      no salta abajo); con un diálogo o la tienda, el que andaba se para en reposo; frases ≤ 110 letras y sin los
+#      términos vetados (prueba_ciudad_datos.gd); el botón ofrece hablar desde la Quilla; Ulla, Brea y la cuadrilla
+#      toman la luz de la sonda de donde están (copia opaca de su material).
 #   F. Lo andable no cambia: suelo a su altura (muestra), los puntos prohibidos de siempre siguen prohibidos.
+#   G. Al salir de Sunken, los atlas de las cuatro personas de la cuadrilla no siguen en memoria (npc_chibi.soltar).
 # Imprime «FALLOS: n».
 
 const REGION := "res://zonas3d/sunken_3d.tscn"
@@ -154,9 +158,19 @@ func _correr() -> void:
 		if c["z"] == 44.0:
 			c44 = c
 	_ok(not c44.is_empty() and not (c44["nodo"] as Node3D).visible, "D: con Kael en z 40, la corona de la 44 se oculta")
+	var halos44: Array = c44.get("halos", [])
+	_ok(halos44.size() == 1 and not (halos44[0] as Node3D).visible, "D: el halo del farol de la 44 se oculta con su corona")
 	v._colocar_kael(T.en_mundo(Vector2(40.0, 47.0)))
 	await _frames(20)
 	_ok(not c44.is_empty() and (c44["nodo"] as Node3D).visible, "D: con Kael al sur de la 44, se vuelve a ver")
+	_ok(halos44.size() == 1 and (halos44[0] as Node3D).visible, "D: y su halo con ella")
+	var halos_mal: Array = []                         # cada farol de costilla, con su corona (44, 32 y las del sector)
+	for c in q.coronas:
+		var z: float = c["z"]
+		var debe := 1 if z == floorf(z) and v.casco.anclas.has("farol_%d" % int(z)) else 0
+		if (c["halos"] as Array).size() != debe:
+			halos_mal.append(z)
+	_ok(halos_mal.is_empty(), "D: cada halo de farol de costilla va con su corona (mal %s)" % [halos_mal])
 	var trans := 0
 	for k in q.materiales:
 		var m: Material = q.materiales[k]
@@ -217,6 +231,80 @@ func _correr() -> void:
 			ofrece[sitio] = v.cerca
 		_ok(ofrece.values().has("carpintera") or ofrece.values().has("calafate"),
 			"E: desde la pasarela se puede hablar con la cuadrilla %s" % [ofrece])
+		# al seguir tras hablar, el paso sigue donde iba: el fardo que sube no salta abajo
+		var m1: Dictionary = {}
+		for o in ob.grupos["marineros"]:
+			if o["persona"] == "marinero_1":
+				m1 = o
+		m1["i"] = 0                                          # «izar»
+		ob._empezar_paso(m1)
+		m1["t"] = 2.0
+		await _frames(2)
+		var y_fardo: float = ob.fardo.global_position.y
+		var t_izar: float = m1["t"]
+		ob.hablar("marineros", Vector3(45.0, 0, 30.0))
+		for o in ob.grupos["marineros"]:
+			o["pausa"] = 0.05
+		await _frames(8)
+		_ok(int(m1["i"]) == 0 and float(m1["t"]) >= t_izar and ob.fardo.global_position.y >= y_fardo - 0.01,
+			"E: tras hablar, el marinero sigue izando donde iba (t %.2f → %.2f, fardo %.2f → %.2f)" % [
+			t_izar, m1["t"], y_fardo, ob.fardo.global_position.y])
+		# con un diálogo o la tienda abiertos, el que iba andando se para con el clip de reposo, y luego sigue andando
+		var car: Dictionary = ob.grupos["carpintera"][0]
+		if car["chibi"] == null:
+			_mal("E: la carpintera no tiene modelo")
+		else:
+			car["nodo"].global_position = car["pasos"][7][1]        # (en el montón de tablones)
+			car["i"] = 1                                         # «ir» al banco
+			ob._empezar_paso(car)
+			await _frames(2)
+			var tapa := Node.new()
+			v.abierto = tapa
+			await _frames(5)
+			var p_ocupado: Vector3 = car["nodo"].global_position
+			await _frames(15)
+			var quieta: bool = car["nodo"].global_position.distance_to(p_ocupado) < 0.001
+			var clip_ocupado: String = car["chibi"].actual
+			v.abierto = null
+			tapa.free()
+			await _frames(4)
+			_ok(quieta and clip_ocupado == "reposo" and car["chibi"].actual == "caminar" and int(car["i"]) == 1
+				and car["nodo"].global_position.distance_to(p_ocupado) > 0.001,
+				"E: con la escena ocupada la carpintera se para en reposo y luego sigue andando (%s → %s)" % [
+				clip_ocupado, car["chibi"].actual])
+		# Ulla, Brea y la cuadrilla: la sonda de donde están oscurece su color (una copia opaca de su material); con la
+		# escena ocupada (la cuadrilla quieta) para que el suavizado llegue a su sitio
+		var tapa2 := Node.new()
+		v.abierto = tapa2
+		await _frames(40)
+		var NpcChibi = load("res://personajes/npc_v12/npc_chibi.gd")
+		var npcs: Array = []
+		for id in v.vecinos:
+			npcs.append([id, v.vecinos[id]["chibi"]])
+		for o in ob.lista:
+			npcs.append([o["persona"], o["chibi"]])
+		var luz_mal: Array = []
+		var luces: Array = []
+		var en_sombra := 0
+		for par in npcs:
+			var c = par[1]
+			if c == null:
+				luz_mal.append("%s sin modelo" % par[0])
+				continue
+			var m = c.malla.material_override
+			var esperado := lerpf(q.SOMBRA_NPC, 1.0, clampf(q.sonda(c.global_position).x, 0.0, 1.0))
+			if not m is StandardMaterial3D or m == NpcChibi._materiales.get(c.persona) \
+					or (m as StandardMaterial3D).transparency != BaseMaterial3D.TRANSPARENCY_DISABLED \
+					or absf((m as StandardMaterial3D).albedo_color.r - esperado) > 0.06:
+				luz_mal.append(par[0])
+			else:
+				luces.append("%s %.2f" % [par[0], (m as StandardMaterial3D).albedo_color.r])
+				if (m as StandardMaterial3D).albedo_color.r < 0.9:
+					en_sombra += 1
+		v.abierto = null
+		tapa2.free()
+		_ok(luz_mal.is_empty() and en_sombra >= 1,
+			"E: vecinos y cuadrilla toman la luz de su sonda, opacos (%s; mal %s)" % [luces, luz_mal])
 
 	# ---------------------------------------------------------------- F. lo andable no cambia
 	var malos := 0
@@ -233,6 +321,16 @@ func _correr() -> void:
 		if not v._prohibido(T.en_mundo(p)):
 			prohibidos_ok = false
 	_ok(prohibidos_ok, "F: las casas, el banco, la repisa y la escotilla siguen sin pisarse")
+
+	# ---------------------------------------------------------------- G. al irse, los atlas de la cuadrilla se sueltan
+	change_scene_to_node(Node.new())
+	await _frames(10)
+	var Chibi = load("res://personajes/npc_v12/npc_chibi.gd")
+	var quedan: Array = []
+	for par in [["herrero", "calafate"], ["campesino", "carpintera"], ["viajero", "marinero_1"], ["viajero", "marinero_2"]]:
+		if Chibi._materiales.has(par[1]) or ResourceLoader.has_cached(Chibi.ATLAS % par):
+			quedan.append(par[1])
+	_ok(quedan.is_empty(), "G: al salir, los atlas de la cuadrilla no siguen en memoria %s" % [quedan])
 	_fin()
 
 
