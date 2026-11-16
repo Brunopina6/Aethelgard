@@ -1,7 +1,7 @@
 extends SceneTree
 # V12 (14/11/2026): el BANCO DE PRUEBAS de Auditoría (banco_pruebas.gd). Sin ventana, con datos aislados.
 #   A. Al entrar: la partida va a su archivo propio, se rehace desde BASE (Kael, Lya y Garon en Oakhaven) y la pantalla
-#      tiene sus 10 selectores (15/11: + «Calidad 3D» y «Muestra: precalentar»; 16/11: + «Sunken: Quilla horneada») (V12, Érebo híbrida: «Érebo: invocación») y sus 10 casos (7 combates y 3
+#      tiene sus 10 selectores (15/11: + «Calidad 3D» y «Muestra: precalentar»; 16/11: + «Sunken: Quilla horneada» y «Llevar una flor de abajo (Arboleda)») (V12, Érebo híbrida: «Érebo: invocación») y sus 10 casos (7 combates y 3
 #      exploraciones; 15/11: + «Grupo de cuatro» y la muestra de la calle; 16/11: + el barrio experimental: 12).
 #   B. Combates: cada caso fija su grupo y sus enemigos; Érebo con la Armonía llena (y solo Lya puede invocar); vida de
 #      los enemigos multiplicada; el Custodio aparece con su interruptor de sesión; Nix entra solo en su caso.
@@ -101,8 +101,8 @@ func _a() -> void:
 			casos += 1
 		elif ":" in k:
 			selectores[k.get_slice(":", 0)] = true
-	_ok(casos == BP.COMBATES.size() + BP.EXPLORAR.size() and casos == 12, "A: %d casos en pantalla" % casos)   # (15/11: + la muestra de la calle; 16/11: + el barrio)
-	_ok(selectores.size() == 10, "A: %d selectores (%s)" % [selectores.size(), str(selectores.keys())])
+	_ok(casos == BP.COMBATES.size() + BP.EXPLORAR.size() and casos == 13, "A: %d casos en pantalla" % casos)   # (15/11: + la muestra de la calle; 16/11: + el barrio y la Arboleda)
+	_ok(selectores.size() == 11, "A: %d selectores (%s)" % [selectores.size(), str(selectores.keys())])
 	b.queue_free()
 	await _esperar(2)
 	hechos.append("A: archivo propio, grupo de partida, 7 selectores y %d casos" % casos)
