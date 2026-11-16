@@ -217,22 +217,29 @@ func _ajustar_destino(p):
 	return ultimo
 
 
-# Tocar el suelo: lo que queda más de 1 m por encima de lo que se pisa (tejados, cubiertas) no cuenta.
+# Tocar el suelo: lo que queda más de 1 m por encima de lo que se pisa (tejados, cubiertas) no cuenta. (Recorrido, 16/11)
+# Lo alto de un bloque bajo que no se pisa (un pretil de 0,9 m, un banco) tampoco, si detrás se ve suelo: en el Paseo del
+# Concejo el pretil del sur se quedaba los toques del metro de paseo que tapa (Kael iba hacia el pretil); si detrás no hay
+# suelo, vale como antes (Kael va hacia él).
 func _punto_suelo(pantalla: Vector2):
 	var desde := cam.project_ray_origin(pantalla)
 	var hasta := desde + cam.project_ray_normal(pantalla) * 500.0
 	var excluir: Array[RID] = []
+	var reserva = null
 	for i in 8:
 		var q := PhysicsRayQueryParameters3D.create(desde, hasta)
 		q.exclude = excluir
 		var r := get_world_3d().direct_space_state.intersect_ray(q)
 		if r.is_empty():
-			return null
+			return reserva
 		var p: Vector3 = r["position"]
 		if p.y < P.altura(p.x, p.z) + 1.0:
-			return p
+			if P.andable(p.x, p.z) or not String((r["collider"] as Node).name).begins_with("Choque_"):
+				return p
+			if reserva == null:
+				reserva = p
 		excluir.append(r["rid"])
-	return null
+	return reserva
 
 
 func suelo_de_pasos(p: Vector3) -> String:
