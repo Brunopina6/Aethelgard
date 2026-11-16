@@ -1,0 +1,12 @@
+{
+ "triangulos": 2612,
+ "vertices": 1368,
+ "huesos": 17,
+ "clips": [
+  "reposo",
+  "beber",
+  "comer",
+  "sacudir"
+ ],
+ "prototipo": true
+}

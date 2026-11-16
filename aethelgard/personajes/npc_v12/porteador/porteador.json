@@ -1,0 +1,14 @@
+{
+ "velocidad": 0.804,
+ "velocidad_correr": 0.0,
+ "triangulos": 5360,
+ "vertices": 2842,
+ "huesos": 22,
+ "personas": [
+  "tobias"
+ ],
+ "tarea": "ajustar",
+ "agarra": "",
+ "nino": false,
+ "alto": 1.54
+}

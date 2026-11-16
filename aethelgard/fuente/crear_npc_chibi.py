@@ -1340,6 +1340,84 @@ oficio("barrendero", figura=Figura(sb=0.98, sx=0.95, st=0.95, sh=1.0, ojo=(0.17,
                                   sombrero=(0.75, 0.62, 0.35))})
 
 
+# ================================================================== barrio experimental de Oakhaven (16/11, agente C)
+# SOLO SE AÑADE: tres oficios nuevos SIN herramienta horneada (los objetos que llevan cambian de sitio y cuelgan de un
+# BoneAttachment3D en Godot: zonas3d/barrio/utensilios.gd), con los clips de llevar y de su trabajo («barrio»: ver
+# clips()), y tres personas nuevas de oficios que ya existen (solo su atlas: el GLB de esos oficios no se rehace; se
+# saca con el 4.º argumento a otra carpeta y se copia solo el .png). PROPUESTA del barrio (ciudades/oakhaven_barrio.gd).
+
+# --- panadera: falda, delantal enharinado, pañuelo en la cabeza, mangas cortas; manos libres --------------------------
+def vestir_panadera(M, F, A, E, P):
+    falda(M, F, "ropa2", hasta=0.22)
+    delantal(M, F, "tela", desde=0.86, hasta=0.28, ancho=0.25, ribete="acento")
+    pelo(M, F, "trenzas")
+    sombrero(M, F, "panuelo", "acento")
+
+
+oficio("panadera", figura=Figura(sb=0.98, sx=1.02, st=1.12, sh=1.0, ojo=(0.17, 0.44, 0.094, 0.116)),
+       cuerpo=dict(manga="corta", color_manga="tela", camisa="tela", botas="zapato"),
+       vestir=vestir_panadera, agarra="", barrio=True,
+       reposo={"brazo.L": (-6, -10, 0), "antebrazo.L": (-24, 0, 0), "brazo.R": (-6, 10, 0), "antebrazo.R": (-24, 0, 0),
+               "cabeza": (0, 0, -3)},
+       tarea="recoger",
+       personas={"maela": P_("clara", (0.55, 0.30, 0.14), "verde", ojos="alegre", boca="sonrisa", pecas=True,
+                             ropa=(0.70, 0.52, 0.36), ropa2=(0.48, 0.30, 0.22), acento=(0.92, 0.86, 0.74),
+                             tela=(0.97, 0.95, 0.91), extra=(0.85, 0.40, 0.30))})
+
+
+# --- porteador: ancho, chaleco, pañuelo al cuello, barba corta y bolsa al cinto; manos libres -------------------------
+def vestir_porteador(M, F, A, E, P):
+    chaleco(M, F, "ropa")
+    pelo(M, F, "corto")
+    barba(M, F)
+    panuelo_cuello(M, F, "extra")
+    bolsa(M, F, 0.14, "cuero")
+
+
+oficio("porteador", figura=Figura(sb=1.03, sx=1.14, st=1.12, sh=0.98, ojo=(0.17, 0.44, 0.088, 0.1)),
+       cuerpo=dict(manga="corta", color_manga="tela", camisa="tela", botas="altas"),
+       vestir=vestir_porteador, agarra="", barrio=True,
+       reposo={"brazo.L": (-4, -8, 0), "antebrazo.L": (-16, 0, 0), "brazo.R": (-4, 8, 0), "antebrazo.R": (-16, 0, 0),
+               "pecho": (-2, 0, 0)},
+       tarea="ajustar",
+       personas={"tobias": P_("morena", (0.18, 0.12, 0.08), "pardo", ojos="normal", boca="media_sonrisa",
+                              ropa=(0.34, 0.40, 0.52), ropa2=(0.40, 0.33, 0.26), acento=(0.70, 0.55, 0.30),
+                              tela=(0.86, 0.80, 0.68), pantalon=(0.36, 0.32, 0.28), extra=(0.75, 0.30, 0.20),
+                              cuero=(0.42, 0.28, 0.16))})
+
+
+# --- encargada del establo: túnica corta, chaleco de cuero, coleta, botas altas; manos libres ---------------------------
+def vestir_encargada(M, F, A, E, P):
+    tunica(M, F, "ropa", hasta=0.40, cinturon="cuero")
+    chaleco(M, F, "ropa2")
+    pelo(M, F, "coleta")
+    panuelo_cuello(M, F, "extra")
+
+
+oficio("encargada_establo", figura=Figura(sb=1.0, sx=1.0, st=1.0, sh=1.0, ojo=(0.17, 0.44, 0.094, 0.114)),
+       cuerpo=dict(manga="larga", color_manga="ropa", camisa="ropa", botas="altas", puno="cuero"),
+       vestir=vestir_encargada, agarra="", barrio=True,
+       reposo={"brazo.L": (-6, -8, 0), "antebrazo.L": (-20, 0, 0), "brazo.R": (-6, 8, 0), "antebrazo.R": (-20, 0, 0),
+               "cadera": (0, 2, -2)},
+       tarea="echar_grano",
+       personas={"brena": P_("media", (0.62, 0.36, 0.16), "ambar", ojos="normal", boca="sonrisa", pecas=True,
+                             ropa=(0.40, 0.52, 0.32), ropa2=(0.46, 0.34, 0.22), acento=(0.85, 0.70, 0.40),
+                             extra=(0.86, 0.70, 0.30), cuero=(0.40, 0.26, 0.16))})
+SOMBRERO.add("panadera")
+
+# Personas nuevas de oficios que ya existen (se añaden al final: la primera de cada oficio, la del GLB, no cambia).
+OFICIOS["herrero"]["personas"]["damian"] = P_("media", (0.30, 0.20, 0.12), "pardo", ojos="normal", boca="media_sonrisa",
+                                              tela=(0.84, 0.78, 0.64), ropa=(0.46, 0.36, 0.24), ropa2=(0.52, 0.40, 0.26),
+                                              acento=(0.80, 0.62, 0.34), pantalon=(0.32, 0.30, 0.26),
+                                              cuero=(0.50, 0.34, 0.20))
+OFICIOS["campesina"]["personas"]["odila"] = P_("media", (0.30, 0.18, 0.12), "pardo", ojos="normal", boca="sonrisa",
+                                               ropa=(0.62, 0.30, 0.36), ropa2=(0.36, 0.32, 0.46), acento=(0.94, 0.88, 0.76),
+                                               tela=(0.94, 0.92, 0.86), extra=(0.70, 0.42, 0.52))
+OFICIOS["nina"]["personas"]["nela"] = P_("media", (0.30, 0.18, 0.10), "pardo", ojos="grande", boca="risa", pecas=True,
+                                         ropa=(0.86, 0.66, 0.30), ropa2=(0.4, 0.3, 0.2), acento=(0.98, 0.95, 0.88),
+                                         extra=(0.40, 0.62, 0.40))
+
+
 # ================================================================== clips
 
 ABIERTOS = {"parpado.L@esc": (1, 0.04, 1), "parpado.R@esc": (1, 0.04, 1)}
@@ -1536,6 +1614,53 @@ def clips(arm, nombre, D):
                         "antebrazo.L": (-50, 0, -10), "pecho": (12, 0, -14), "columna": (6, 0, -6), "cabeza": (10, 0, -6)})
         C.crear_clip(arm, "tarea", [(1, ojos_(R)), (12, ojos_(a)), (26, ojos_(b)), (40, ojos_(a)), (54, ojos_(b)),
                                     (62, ojos_(b, True)), (65, ojos_(b)), (80, ojos_(R))])
+    # --- (16/11) barrio experimental de Oakhaven: llevar con las dos manos y los trabajos del barrio. SOLO los oficios con
+    # «barrio» (los demás no cambian). Todos parten y acaban en una pose fija (bucles cerrados).
+    if D.get("barrio"):
+        sin_brazos = ["brazo", "antebrazo", "mano"]
+        lleva = {"brazo.L": (-48, -4, 0), "antebrazo.L": (-62, 0, -22), "brazo.R": (-48, 4, 0),
+                 "antebrazo.R": (-62, 0, 22), "pecho": (-3, 0, 0), "cabeza": (-3, 0, 0)}
+        quieto = C.sumar(solo(R, sin_brazos), lleva)
+        C.crear_clip(arm, "llevar_quieto", [(1, ojos_(quieto)), (30, ojos_(C.sumar(quieto, resp))),
+                                            (44, ojos_(C.sumar(quieto, resp), True)), (47, ojos_(C.sumar(quieto, resp))),
+                                            (61, ojos_(quieto))])
+        pA, pP = solo(A1, ["brazo", "antebrazo"]), solo(P1, ["brazo", "antebrazo"])
+        andar_l = C.sumar(solo(base_andar, sin_brazos), lleva)
+        C.crear_clip(arm, "caminar_llevar", [(1, ojos_(C.sumar(andar_l, pA))), (8, ojos_(C.sumar(andar_l, pP))),
+                                             (16, ojos_(C.sumar(andar_l, espejo(pA)))),
+                                             (23, ojos_(C.sumar(andar_l, espejo(pP)))), (31, ojos_(C.sumar(andar_l, pA)))])
+        agacha = C.sumar(R, {"columna": (18, 0, 0), "pecho": (16, 0, 0), "cabeza": (8, 0, 0),
+                             "brazo.L": (-60, -4, 0), "antebrazo.L": (-20, 0, -15), "brazo.R": (-60, 4, 0),
+                             "antebrazo.R": (-20, 0, 15), "muslo.L": (-22, 0, 0), "muslo.R": (-22, 0, 0),
+                             "pierna.L": (36, 0, 0), "pierna.R": (36, 0, 0), "pie.L": (-14, 0, 0), "pie.R": (-14, 0, 0),
+                             "raiz@loc": (0, 0, -0.07 * F.sb)})
+        C.crear_clip(arm, "coger", [(1, ojos_(R)), (10, ojos_(agacha)), (14, ojos_(agacha)), (25, ojos_(quieto))])
+        C.crear_clip(arm, "dejar", [(1, ojos_(quieto)), (11, ojos_(agacha)), (15, ojos_(agacha)), (25, ojos_(R))])
+        base_l = solo(R, sin_brazos)
+        recoge = C.sumar(base_l, {"brazo.L": (-55, -4, 0), "antebrazo.L": (-50, 0, -14), "brazo.R": (-55, 4, 0),
+                                  "antebrazo.R": (-50, 0, 14), "pecho": (-2, 0, 0)})
+        empuja = C.sumar(base_l, {"brazo.L": (-82, -4, 0), "antebrazo.L": (-12, 0, -10), "brazo.R": (-82, 4, 0),
+                                  "antebrazo.R": (-12, 0, 10), "pecho": (8, 0, 0), "columna": (6, 0, 0)})
+        C.crear_clip(arm, "hornear", [(1, ojos_(recoge)), (20, ojos_(empuja)), (32, ojos_(empuja)), (48, ojos_(recoge, True)),
+                                      (51, ojos_(recoge)), (61, ojos_(recoge))])
+        presiona = C.sumar(base_l, {"columna": (12, 0, 0), "pecho": (10, 0, 0), "cabeza": (10, 0, 0),
+                                    "brazo.L": (-40, -2, 0), "antebrazo.L": (-40, 0, -18), "mano.L": (20, 0, 0),
+                                    "brazo.R": (-40, 2, 0), "antebrazo.R": (-40, 0, 18), "mano.R": (20, 0, 0)})
+        estira = C.sumar(presiona, {"brazo.L": (-14, 0, 0), "brazo.R": (-14, 0, 0), "antebrazo.L": (24, 0, 0),
+                                    "antebrazo.R": (24, 0, 0), "pecho": (6, 0, 0), "raiz@loc": (0, 0, -0.01)})
+        C.crear_clip(arm, "amasar", [(1, ojos_(presiona)), (12, ojos_(estira)), (20, ojos_(presiona)),
+                                     (28, ojos_(C.sumar(estira, {"cabeza": (0, 0, 6)}), True)), (31, ojos_(estira)),
+                                     (37, ojos_(presiona))])
+        cep = C.sumar(R, {"brazo.R": (-75, 10, 0), "antebrazo.R": (-25, 0, 0), "brazo.L": (-30, -10, 0),
+                          "antebrazo.L": (-40, 0, 0), "pecho": (4, 0, -6), "cabeza": (4, 0, -6)})
+        izq = C.sumar(cep, {"brazo.R": (0, -22, 0), "antebrazo.R": (0, 0, -18), "pecho": (0, 0, 4)})
+        der = C.sumar(cep, {"brazo.R": (6, 18, 0), "antebrazo.R": (0, 0, 14), "pecho": (0, 0, -4)})
+        C.crear_clip(arm, "cepillar", [(1, ojos_(cep)), (8, ojos_(izq)), (16, ojos_(der)), (24, ojos_(izq, True)),
+                                       (27, ojos_(izq)), (31, ojos_(cep))])
+        alza = C.sumar(R, {"brazo.R": (-70, 6, 0), "antebrazo.R": (-30, 0, 10), "brazo.L": (-60, -6, 0),
+                           "antebrazo.L": (-30, 0, -20), "pecho": (6, 0, 0)})
+        vuelca = C.sumar(alza, {"mano.R": (0, 0, 45), "antebrazo.R": (0, 30, 0), "pecho": (6, 0, 0)})
+        C.crear_clip(arm, "verter", [(1, ojos_(alza)), (14, ojos_(vuelca)), (32, ojos_(vuelca)), (46, ojos_(alza))])
     # velocidad al andar (m/s) para que los pies no patinen: lo que avanza el pie apoyado en medio ciclo
     pierna_l = (F.cadera_l - F.tobillo).length + 0.05 * F.sb
     a1, a2 = 26 * marcha, 26 * marcha * 0.75

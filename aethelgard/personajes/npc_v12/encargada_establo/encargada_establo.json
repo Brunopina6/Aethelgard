@@ -1,0 +1,14 @@
+{
+ "velocidad": 0.78,
+ "velocidad_correr": 0.0,
+ "triangulos": 5768,
+ "vertices": 3089,
+ "huesos": 22,
+ "personas": [
+  "brena"
+ ],
+ "tarea": "echar_grano",
+ "agarra": "",
+ "nino": false,
+ "alto": 1.52
+}
