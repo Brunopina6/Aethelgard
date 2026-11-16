@@ -5,6 +5,8 @@ extends SceneTree
 # del banco (su archivo, en user://): lánzalo con APPDATA y LOCALAPPDATA en una carpeta aislada, nunca la real.
 #
 #   perfil=bajo|medio|alto · res=1600x720 · salida=<carpeta> · plano
+#   (fase A, 16/11) blockout: todo en cajas aunque haya tramos horneados (el «antes», con la MISMA cámara) ·
+#   prefijo=<texto>: delante del nombre de cada captura (p. ej. antes_ / despues_)
 # Uso: --path aethelgard --resolution 1600x720 --script res://pruebas/fotos_barrio.gd -- 3d sin_prologo perfil=bajo
 #      salida=D:/REBELUM_diagnostico/barrio_oakhaven/fase0 plano
 
@@ -24,6 +26,7 @@ var perfil := "bajo"
 var salida := "D:/REBELUM_diagnostico/barrio_oakhaven/fase0"
 var tam := Vector2i(1600, 720)
 var plano := false
+var prefijo := ""
 var v
 var frames := 0
 var fase := 0
@@ -42,6 +45,10 @@ func _initialize() -> void:
 			tam = Vector2i(int(p[0]), int(p[1]))
 		elif a == "plano":
 			plano = true
+		elif a == "blockout":
+			Engine.set_meta("barrio_solo_blockout", true)
+		elif a.begins_with("prefijo="):
+			prefijo = a.substr(8)
 	DirAccess.make_dir_recursive_absolute(salida)
 	DisplayServer.window_set_size(tam)
 	root.size = tam
@@ -54,7 +61,7 @@ func _initialize() -> void:
 
 
 func _foto(nombre: String) -> void:
-	var ruta := "%s/barrio_%s_%s_%dx%d.png" % [salida, nombre, perfil, tam.x, tam.y]
+	var ruta := "%s/%sbarrio_%s_%s_%dx%d.png" % [salida, prefijo, nombre, perfil, tam.x, tam.y]
 	var img: Image = root.get_viewport().get_texture().get_image()
 	if img.get_size() != tam:                       # (el proyecto conserva 16:9: franjas a los lados, como en el móvil)
 		img.convert(Image.FORMAT_RGBA8)
@@ -68,8 +75,9 @@ func _foto(nombre: String) -> void:
 	img.save_png(ruta)
 	var dib := RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME)
 	var prim := RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME)
-	print("FOTO %s · %s: llamadas %d · primitivas %d · Kael %s · cámara %s · %s" % [nombre, perfil, dib, prim,
-		str(v.kael.global_position), str(v.cam.global_position), ruta])
+	var vis: Array = v.sectores.keys().filter(func(q): return v.visibles.get(q, true))
+	print("FOTO %s · %s: llamadas %d · primitivas %d · Kael %s · cámara %s · sectores %s · %s" % [nombre, perfil, dib, prim,
+		str(v.kael.global_position), str(v.cam.global_position), str(vis), ruta])
 
 
 func _process(_d: float) -> bool:

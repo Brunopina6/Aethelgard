@@ -16,6 +16,9 @@ extends SceneTree
 #      caravanas), sobre el suelo y sin girar la cámara, y no entra en las casas.
 #   8. Fuera del banco la región no se construye (vuelve a la carga) y el barrio no está activado; al salir del banco no
 #      quedan sus metas.
+#   9. (fase A, 16/11) Los tramos horneados: su GLB sin blockout, un choque por cada caja sólida del trazado, el mapa de
+#      luz de 1024 en el bajo, solo los 4 sombreados de la muestra (sin programas nuevos), sondas con sol y con sombra,
+#      la luz de Kael siguiendo a la sonda y el sector de Kael siempre dibujado (visibilidad por sector).
 # Partida propia del banco (user://banco_pruebas.save, en la carpeta aislada de la pasada). Imprime «FALLOS: n».
 
 const ESCENA := "res://zonas3d/barrio/barrio.tscn"
@@ -271,16 +274,21 @@ func _region() -> void:
 	_ok(Barrio.NOMBRE == "oak_barrio", "6: la mazmorra se llama oak_barrio")
 	var n_sectores := 0
 	for s in T.ORDEN:
-		if v.sectores.has(s) and (v.sectores[s] as Node3D).get_node_or_null("Blockout") != null:
+		var nodo: Node3D = v.sectores.get(s)
+		if nodo != null and (nodo.get_node_or_null("Blockout") != null or nodo.get_node_or_null("Modelo") != null):
 			n_sectores += 1
-	_ok(n_sectores == 6, "6: blockout de los 6 sectores (%d)" % n_sectores)
+	_ok(n_sectores == 6, "6: los 6 sectores, horneados (%s) o en blockout (%d)" % [str(v.acabados), n_sectores])
 	var solidos: int = T.BLOQUES.filter(func(b): return b[6]).size()
-	_ok(v.choques == solidos + T.SUELOS.size() + 1, "6: un cuerpo por caja: %d choques (%d sólidos + %d suelos + el fondo)" % [
-		v.choques, solidos, T.SUELOS.size()])
+	_ok(v.choques == solidos + T.SUELOS.size() + 1, "6: un cuerpo por caja: %d choques (%d sólidos + %d suelos + el fondo; más %d de piezas sueltas)" % [
+		v.choques, solidos, T.SUELOS.size(), v.choques_piezas])
 	_ok(v.interior == "" and v.has_signal("interior_cambiado"), "6: fuera (interior \"\") y con la señal interior_cambiado")
 	for f in ["avisar", "guardar", "ocupado", "sonda", "iniciar_dialogo", "ancla", "guardar_posicion"]:
 		_ok(v.has_method(f), "6: la región tiene %s()" % f)
-	_ok(v.sonda(T.ancla("n_plaza")) == Vector2(1.0, 0.7), "6: sonda provisional (sol 1, cielo 0,7)")
+	if "plaza" in v.acabados:
+		var sp: Vector2 = v.sonda(T.ancla("n_plaza"))
+		_ok(sp.x > 0.5 and sp.y > 0.2 and sp.x <= 1.0 and sp.y <= 1.0, "6: sonda horneada en la plaza (sol %.2f, cielo %.2f)" % [sp.x, sp.y])
+	else:
+		_ok(v.sonda(T.ancla("n_plaza")) == Vector2(1.0, 0.7), "6: sonda provisional (sol 1, cielo 0,7)")
 	var I = load("res://zonas3d/barrio/interiores.gd")
 	_ok(v.ancla("n_plaza") == T.ancla("n_plaza") and (v.ancla("int_horno_boca") != Vector3.ZERO) == I.ORIGEN.has("horno"),
 		"6: ancla() exterior y de interior (con el interior construido, su ancla real)")
@@ -336,6 +344,85 @@ func _region() -> void:
 	_ok(int(Engine.get_meta("pos_3d_lugar", -1)) == 102 and Engine.get_meta("pos_3d_ok", false), "6: guardar pone el lugar 102")
 	_ok(FileAccess.file_exists(BP.ARCHIVO), "6: guardar escribe el archivo del banco")
 	_ok(absf(v.cam.global_rotation_degrees.y) < 0.001, "6: la cámara de la región no gira")
+	await _horneado()
+
+
+# ================================================================= 9 (fase A): los tramos horneados
+
+func _horneado() -> void:
+	if v.acabados.is_empty():
+		print("(9: ningún tramo horneado: no se comprueba)")
+		return
+	var muestra := ["res://zonas3d/muestra_calle/calle_estatico.gdshader", "res://zonas3d/muestra_calle/calle_vertice.gdshader",
+		"res://zonas3d/muestra_calle/calle_hoja.gdshader", "res://zonas3d/muestra_calle/calle_brillo.gdshader"]
+	var ajenos := {}
+	var sin_material := 0
+	for s in v.acabados:
+		var nodo: Node3D = v.sectores[s]
+		var modelo: Node3D = nodo.get_node_or_null("Modelo")
+		_ok(modelo != null and nodo.get_node_or_null("Blockout") == null, "9: %s está horneado (su GLB, sin blockout)" % s)
+		if modelo == null:
+			continue
+		for mi in modelo.find_children("*", "MeshInstance3D", true, false):
+			for i in (mi as MeshInstance3D).mesh.get_surface_count():
+				var m = (mi as MeshInstance3D).get_surface_override_material(i)
+				if not m is ShaderMaterial:
+					sin_material += 1
+				elif not (m as ShaderMaterial).shader.resource_path in muestra:
+					ajenos[(m as ShaderMaterial).shader.resource_path] = true
+		var faltan: Array = []
+		for b in T.BLOQUES:
+			if b[1] == s and b[6] and nodo.get_node_or_null("Choque_" + String(b[0])) == null:
+				faltan.append(b[0])
+		_ok(faltan.is_empty(), "9: %s: un choque por cada caja sólida del trazado (faltan %s)" % [s, str(faltan)])
+		var lm: String = v.tex_luz_usadas.get(s, "")
+		_ok(lm.ends_with("_1024.png"), "9: %s con el mapa de luz de 1024 en el perfil bajo (%s)" % [s, lm])
+		# la sonda: algo de sombra y algo de sol en lo que se pisa del sector
+		var hay_sol := false
+		var hay_sombra := false
+		for suelo in T.SUELOS:
+			if suelo[0] != s:
+				continue
+			var r: Rect2 = suelo[1]
+			for i in 12:
+				for j in 8:
+					var x := r.position.x + r.size.x * (i + 0.5) / 12.0
+					var z := r.position.y + r.size.y * (j + 0.5) / 8.0
+					if T.andable(x, z):
+						var so: Vector2 = v.sonda(Vector3(x, T.altura(x, z), z))
+						hay_sol = hay_sol or so.x > 0.8
+						hay_sombra = hay_sombra or so.x < 0.3
+		_ok(hay_sol, "9: %s: la sonda ve sol en lo que se pisa" % s)
+		if s != "plaza":
+			_ok(hay_sombra, "9: %s: la sonda ve sombra en lo que se pisa" % s)
+	_ok(sin_material == 0 and ajenos.is_empty(), "9: solo los 4 sombreados de la muestra, sin programas nuevos (sin material %d, otros %s)" % [
+		sin_material, str(ajenos.keys())])
+	# la luz de Kael sigue a la sonda: menos sol en la sombra que al sol
+	var s0: String = v.acabados[0]
+	var sol_mas := -1.0
+	var sol_menos := 99.0
+	for suelo in T.SUELOS:
+		if suelo[0] != s0:
+			continue
+		var r: Rect2 = suelo[1]
+		for i in 10:
+			for j in 6:
+				var p := Vector3(r.position.x + r.size.x * (i + 0.5) / 10.0, 0.0, r.position.y + r.size.y * (j + 0.5) / 6.0)
+				if not T.andable(p.x, p.z):
+					continue
+				v._colocar_kael(p)
+				sol_mas = maxf(sol_mas, v.sol.light_energy)
+				sol_menos = minf(sol_menos, v.sol.light_energy)
+	_ok(sol_mas > sol_menos + 0.3, "9: la luz de Kael sigue a la sonda en %s (sol de %.2f a %.2f)" % [s0, sol_menos, sol_mas])
+	# visibilidad por sector: el sector de Kael se dibuja siempre
+	for s in v.acabados:
+		var a: Vector3 = T.ancla({"caravanas": "n_carav", "comercial": "n_horno", "plaza": "n_plaza", "talleres": "n_patio_n",
+			"residencial": "n_res_c", "atajo": "n_atajo_n"}[s])
+		v._colocar_kael(a)
+		_ok(v.visibles.get(s, false) and (v.sectores[s] as Node3D).visible, "9: con Kael en %s, %s se dibuja (%s)" % [
+			s, s, str(v.visibles.keys().filter(func(q): return v.visibles[q]))])
+	v._colocar_kael(T.ancla("inicio"))
+	await _frames(2)
 
 
 func _fundido() -> void:
