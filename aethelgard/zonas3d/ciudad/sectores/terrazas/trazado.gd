@@ -143,10 +143,10 @@ const BLOQUES := [
 	["muralla_norte_o", "terrazas", Rect2(-97.0, -92.0, 67.0, 3.0), 12.0, 8.0, "muro", true],
 ]
 # Lo que la escena aclara cuando tapa a Kael (además de cubiertas y copas): las casas de cada terraza, que quedan al SUR de
-# la calle de la terraza de arriba (la cámara mira desde el sur).
+# la calle de la terraza de arriba (la cámara mira desde el sur). Las que no tienen nada andable al norte no se ponen (cada
+# ocultable es una malla aparte en la escena).
 const OCULTABLES := ["casa_atajo_o", "casa_atajo_e", "vivienda_odila", "casa_t1_c", "casa_glicinia", "casa_t1_e1",
-	"casa_t1_e2", "casa_t2_o", "casa_t2_c", "casa_t2_e", "casa_t2_fin", "casa_t3_o", "casa_puente", "casa_t3_e",
-	"casa_patio_o", "casa_t4_o"]
+	"casa_t1_e2", "casa_t2_c", "casa_t2_e", "casa_t3_o", "casa_puente", "casa_t3_e"]
 
 # ---------------------------------------------------------------------------------------------------- anclas
 # Puntos EN el suelo (la «y» la da altura()). «puerta_*» son umbrales; «n_*», nodos del grafo; el resto, sitios con
