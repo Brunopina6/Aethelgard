@@ -16,6 +16,7 @@ extends SceneTree
 #      no se aparta, se hace a un lado y sigue (nadie espera al otro para siempre).
 #   6. Avena no se mueve; bebe tras el agua y come tras el heno; el agua del abrevadero se ve.
 #   7. Coste: µs de _process de la vida (PC).
+#   9. «Volver al banco» a mitad de un diálogo del barrio lo termina (no sigue en el banco sin nadie que aplique sus señales).
 #   8. DENTRO (los interiores de B): Damián, Odila y Nela en sus anclas, de cara a la cámara; Maela anda dentro del horno
 #      en rectas que no cruzan muebles (cada 5 cm, lo andable de B) y nunca pisa un mueble en todo su ciclo; se le habla
 #      dentro; la bandeja se ve en la solera del horno; se habla con Damián dentro del taller desde el botón (Dialogic);
@@ -63,6 +64,7 @@ func _correr() -> void:
 		await _avena()
 		await _coste()
 		await _dentro()
+		await _volver_con_dialogo()
 	var BP = load("res://banco_pruebas.gd")
 	if current_scene != null:
 		current_scene.queue_free()
@@ -596,3 +598,26 @@ func _dentro() -> void:
 	var mz: Dictionary = Engine.get_meta("mazmorras", {})
 	mz.erase(Barrio.NOMBRE)
 	Engine.set_meta("mazmorras", mz)
+
+
+# ================================================================= 9
+
+# (revisión 16/11) «Volver al banco» a mitad de un diálogo del barrio: la escena se va y el diálogo se termina con ella
+# (antes seguía en el banco, con sus señales «bar:» sin nadie que las aplicara). Va la última: deja la región.
+func _volver_con_dialogo() -> void:
+	var D = root.get_node_or_null("Dialogic")
+	if D == null or r == null:
+		_ok(false, "9: sin Dialogic o sin la región")
+		return
+	_ok(r.iniciar_dialogo(Barrio.ruta_dialogo("bar_brena_coz")), "9: no empieza el diálogo de Brena")
+	await _frames(10)
+	_ok(D.current_timeline != null and r.ocupado(), "9: el diálogo de Brena no está en marcha")
+	var vacia := PackedScene.new()                         # (como «Volver al banco»: otra escena)
+	var n := Node.new()
+	vacia.pack(n)
+	n.free()
+	change_scene_to_packed(vacia)
+	await _frames(30)
+	_ok(D.current_timeline == null, "9: «Volver al banco» a mitad de un diálogo del barrio: el diálogo sigue en el banco")
+	r = null
+	v = null

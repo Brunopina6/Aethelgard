@@ -166,6 +166,12 @@ func _exit_tree() -> void:
 			dg.timeline_ended.disconnect(_al_terminar_dialogo)
 		if dg.signal_event.is_connected(_al_senal):
 			dg.signal_event.disconnect(_al_senal)
+		# (revisión 16/11) «Volver al banco» a mitad de un diálogo del barrio: se termina aquí (si no, seguía en el banco
+		# con sus señales «bar:» sin nadie que las aplique). Lo ya aplicado se queda; lo que faltaba, no (como salir a
+		# mitad: las señales son idempotentes y el diálogo se repite).
+		if dialogo_actual != "" and dg.current_timeline != null:
+			dialogo_actual = ""
+			dg.end_timeline(true)
 	super()
 
 
