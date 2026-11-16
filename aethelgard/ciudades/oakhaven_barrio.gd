@@ -127,15 +127,16 @@ const NPCS := {
 		"frases": ["¡Rueda, rueda!", "¡Papá me hizo una rueda!", "¿Juegas a las carreras de ruedas?"]},
 }
 
-# Dónde trabaja cada uno «por dentro» (las anclas de B) y, mientras el interior no exista, su puesto FUERA, junto a su
-# puerta (fuera de su umbral y de los caminos; la prueba lo comprueba). El caballo no habla: se examina.
+# Dónde trabaja cada uno «por dentro» (las anclas de B) y, mientras el interior no exista, su puesto FUERA, cerca de su
+# puerta pero a 3 m o más de su botón (los dos botones no se pisan), fuera de su umbral y de los caminos (la prueba lo
+# comprueba). El caballo no habla: se examina.
 const PUESTOS := {
 	"damian": {"interior": "taller", "ancla": "int_taller_potro", "tarea": "tarea",
-		"fuera": Vector3(-3.4, 1.4, -21.8), "mira": Vector3(-4.6, 1.4, -20.6)},
+		"fuera": Vector3(-2.0, 1.4, -22.6), "mira": Vector3(-4.6, 1.4, -20.6)},
 	"odila": {"interior": "vivienda", "ancla": "int_vivienda_odila", "tarea": "tarea",
-		"fuera": Vector3(-24.2, 1.4, -29.0), "mira": Vector3(-23.0, 1.4, -27.4)},
+		"fuera": Vector3(-25.0, 1.4, -28.9), "mira": Vector3(-23.0, 1.4, -27.4)},
 	"nela": {"interior": "vivienda", "ancla": "int_vivienda_nela", "tarea": "tarea",
-		"fuera": Vector3(-19.6, 1.4, -27.9), "mira": Vector3(-21.0, 1.4, -27.6)},
+		"fuera": Vector3(-19.0, 1.4, -29.2), "mira": Vector3(-20.4, 1.4, -27.8)},
 }
 
 # ---------------------------------------------------------------------------------------------------- piezas

@@ -283,8 +283,8 @@ func _datos() -> void:
 		_ok(T.andable(f.x, f.z) and T.en_paso(f.x, f.z) == "", "2: el puesto de fuera de %s no es andable o cae en un umbral" % pd)
 		_ok(absf(f.y - T.altura(f.x, f.z)) < 0.05, "2: el puesto de fuera de %s no está a la altura del suelo" % pd)
 		for pu in T.PUERTAS:
-			_ok(Vector2(f.x - T.PUERTAS[pu]["fuera"].x, f.z - T.PUERTAS[pu]["fuera"].z).length() > 1.6,
-				"2: el puesto de fuera de %s tapa la puerta de %s" % [pd, pu])
+			_ok(Vector2(f.x - T.PUERTAS[pu]["fuera"].x, f.z - T.PUERTAS[pu]["fuera"].z).length() >= 3.0,
+				"2: el puesto de fuera de %s está a menos de 3 m de la puerta de %s (los botones se pisan)" % [pd, pu])
 		fuera.append(["puesto " + pd, f])
 	for i in fuera.size():
 		for j in range(i + 1, fuera.size()):

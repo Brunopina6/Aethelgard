@@ -54,6 +54,8 @@ const LOGICA_LEJOS := 4.0        # Hz de la posición de los que se dibujan lejo
 const RADIO_HABLAR := 1.9
 const RADIO_OCUPA := 0.42        # Kael no entra en este círculo (salvo si ya está dentro: así nunca queda atrapado)
 const DIST_PARAR := 0.95         # quien anda espera si Kael está más cerca que esto delante
+const CEDER_TRAS := 0.6          # s esperando a Kael: entonces se aparta a un lado y sigue
+const APARTARSE := 0.9           # m a un lado
 const PAUSA_FRASE := 3.2         # s de pausa con una frase suelta (sin diálogo)
 const ESPERA_MAX := 4.0          # s esperando a que acabe de cruzar o de coger para hablar; si no, se cancela
 const VEL := 0.78                # m/s andando
@@ -65,6 +67,7 @@ const RADIO_AVENA := 0.5         # m alrededor del eje del cuerpo de Avena (nadi
 const LARGO_AVENA := 2.2
 const RUMBO_AVENA := -0.52       # rotation.y: mira al abrevadero (sur-suroeste)
 const ALTO_AGUA := 0.62
+const UMBRALES_PUERTA := ["paso_horno", "paso_taller", "paso_vivienda"]
 
 # Donde se pone cada vecino (fuera): [punto, adonde mira]. La «y» la da el suelo (T.altura).
 const PUNTOS := {
@@ -73,9 +76,9 @@ const PUNTOS := {
 	"pila_horno": [Vector3(-24.0, 0, 0.3), Vector3(-24.0, 0, -0.8)],
 	"mostrador": [Vector3(-19.5, 0, 0.2), Vector3(-19.5, 0, -0.8)],
 	"puesto_plaza": [Vector3(-2.8, 0, 2.9), Vector3(-2.8, 0, 4.0)],
-	"carro_horno": [Vector3(-13.5, 0, 2.9), Vector3(-13.5, 0, 4.2)],
+	"carro_horno": [Vector3(-12.6, 0, 3.0), Vector3(-13.2, 0, 4.2)],      # (a un lado del ancla: Kael examina el carro)
 	"carro_horno_espera": [Vector3(-15.6, 0, 2.7), Vector3(-14.4, 0, 3.9)],
-	"carro_horno_carga": [Vector3(-11.6, 0, 3.4), Vector3(-12.6, 0, 4.2)],
+	"carro_horno_carga": [Vector3(-11.4, 0, 3.9), Vector3(-12.6, 0, 4.3)],
 	"gancho": [Vector3(-45.6, 0, -7.4), Vector3(-45.6, 0, -8.4)],
 	"cubo_establo": [Vector3(-44.6, 0, -7.3), Vector3(-44.6, 0, -8.4)],
 	"cepillar": [Vector3(-47.2, 0, -6.3), Vector3(-48.0, 0, -6.8)],
@@ -251,7 +254,8 @@ func _nuevo_vecino(id: String, prog: String) -> Dictionary:
 	var v := {"id": id, "nodo": n, "chibi": chibi, "agarres": agarres, "programa": prog, "segs": [], "ciclo": 1.0,
 		"retraso": 0.0, "vuelta": 0, "veces": 0, "charla": "", "pausa_desde": 0.0, "fin_charla": -1.0, "espera": 0.0,
 		"con_dialogo": false, "mira_kael": false, "pos": Vector3.ZERO, "lugar": "", "clip": "", "rumbo": 0.0,
-		"ubic": {}, "seg": {}, "visible": false, "t_anim": 0.0, "parado": false, "tau": 0.0}
+		"ubic": {}, "seg": {}, "visible": false, "t_anim": 0.0, "parado": false, "tau": 0.0, "t_parado": 0.0,
+		"desvio": Vector3.ZERO, "desvio_obj": Vector3.ZERO}
 	if prog == "puesto":
 		var q: Dictionary = Barrio.PUESTOS[id]
 		var dentro := Barrio.interior_hecho(q["interior"]) and region != null
@@ -534,8 +538,8 @@ func recta_libre(a: Vector3, b: Vector3) -> bool:
 		var p := a.lerp(b, float(i) / n)
 		if not T.andable(p.x, p.z) or _dist_avena(p) < RADIO_AVENA + 0.25:
 			return false
-		if i > 0 and i < n and T.en_paso(p.x, p.z) != "":
-			return false
+		if i > 0 and i < n and T.en_paso(p.x, p.z) in UMBRALES_PUERTA:
+			return false                                 # (por una puerta solo se cruza al entrar o salir; el arco del atajo, sí)
 	return true
 
 
@@ -710,16 +714,28 @@ func _actualizar(delta: float, forzar: bool) -> void:
 		var dist := Vector2(e["pos"].x - k.x, e["pos"].z - k.z).length()
 		var en_zona: bool = e["lugar"] == zona
 		var dibuja: bool = en_zona and dist < OCULTO and not (e["lugar"] != "" and not Barrio.interior_hecho(e["lugar"]))
-		# Kael delante: quien anda espera (nunca dentro de un umbral)
+		# Kael delante: quien anda espera (nunca dentro de un umbral); si Kael no se aparta en CEDER_TRAS, el vecino se
+		# hace a un lado (un desvío solo de lo que se ve, que vuelve a cero cuando Kael se aleja) y sigue: nadie se queda
+		# esperando al otro para siempre. El reloj y lo que lleva no cambian.
 		var parado := false
-		if dibuja and v["charla"] == "" and e["seg"]["tipo"] == "ir" and dist < 2.0:
+		if dibuja and v["charla"] == "" and e["seg"]["tipo"] == "ir" and dist < 2.0 and v["desvio_obj"] == Vector3.ZERO:
 			var adelante: Vector3 = (e["seg"]["pts"][e["seg"]["pts"].size() - 1] - e["pos"])
 			adelante.y = 0
 			var hacia := Vector3(k.x - e["pos"].x, 0, k.z - e["pos"].z)
 			if dist < DIST_PARAR and adelante.length() > 0.05 and adelante.normalized().dot(hacia.normalized()) > 0.35 \
 					and T.en_paso(e["pos"].x, e["pos"].z) == "":
 				parado = true
+				v["t_parado"] = float(v["t_parado"]) + delta
 				v["retraso"] = float(v["retraso"]) + delta
+				if float(v["t_parado"]) > CEDER_TRAS:
+					v["desvio_obj"] = _lado_libre(e["pos"], adelante, hacia)
+					parado = v["desvio_obj"] == Vector3.ZERO
+		if not parado:
+			v["t_parado"] = 0.0
+		if v["desvio_obj"] != Vector3.ZERO and (dist > 2.2 or e["seg"]["tipo"] != "ir"):
+			v["desvio_obj"] = Vector3.ZERO
+		v["desvio"] = (v["desvio"] as Vector3).move_toward(v["desvio_obj"], 1.6 * delta if not forzar else 10.0)
+		e["pos"] = e["pos"] + v["desvio"]
 		v["parado"] = parado
 		_aplicar_objetos(e["lugar"], e["ubic"])
 		_aplicar_eventos(v, e)
@@ -751,6 +767,19 @@ func _actualizar(delta: float, forzar: bool) -> void:
 			n.rotation.y = quiere if forzar else lerp_angle(n.rotation.y, quiere, 1.0 - exp(-10.0 * delta))
 		_animar(v, e, dist, delta, parado, cam)
 	_actualizar_avena(k, delta)
+
+
+# Hacia qué lado se aparta quien anda para dejar pasar a Kael (el contrario a Kael; si no se puede pisar, el otro).
+func _lado_libre(p: Vector3, adelante: Vector3, hacia: Vector3) -> Vector3:
+	var d := adelante.normalized()
+	var lado := Vector3(-d.z, 0, d.x)
+	if lado.dot(hacia) > 0.0:
+		lado = -lado
+	for l in [lado, -lado]:
+		var q: Vector3 = p + l * APARTARSE
+		if T.andable(q.x, q.z) and T.en_paso(q.x, q.z) == "" and _dist_avena(q) > RADIO_AVENA:
+			return l * APARTARSE
+	return Vector3.ZERO
 
 
 # ¿Lo ve Kael? (en su zona, cerca y en cuadro). Si no, se le puede cambiar de programa sin que se note.

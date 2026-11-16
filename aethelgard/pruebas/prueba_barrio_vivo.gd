@@ -12,7 +12,8 @@ extends SceneTree
 #      También con Dialogic de verdad (hablar desde el botón de la región, el diálogo empieza y al acabar se reanuda).
 #   4. El salto fuera de la vista coincide con lo simulado (andar fotograma a fotograma o saltar el reloj da lo mismo) y
 #      la misión cambia el programa (al momento si no se le ve).
-#   5. Kael no pisa a los vecinos ni a Avena, y nunca queda atrapado; quien anda espera si Kael se le pone delante.
+#   5. Kael no pisa a los vecinos ni a Avena, y nunca queda atrapado; quien anda espera si Kael se le pone delante y, si
+#      no se aparta, se hace a un lado y sigue (nadie espera al otro para siempre).
 #   6. Avena no se mueve; bebe tras el agua y come tras el heno; el agua del abrevadero se ve.
 #   7. Coste: µs de _process de la vida (PC).
 # Imprime «FALLOS: n».
@@ -381,6 +382,11 @@ func _ocupa() -> void:
 	await _frames(15)
 	var e2: Dictionary = v.estado_de("tobias")
 	_ok(e2["pos"].distance_to(e["pos"]) < 0.05 and w["parado"], "5: Tobías no espera con Kael delante (se mueve %.2f m)" % e2["pos"].distance_to(e["pos"]))
+	await _frames(60)                                       # (Kael no se aparta: Tobías se hace a un lado y sigue)
+	var e3: Dictionary = v.estado_de("tobias")
+	_ok(e3["pos"].distance_to(e["pos"]) > 0.3 and (w["desvio"] as Vector3).length() > 0.3,
+		"5: Tobías se queda esperando a Kael para siempre (se mueve %.2f m, desvío %.2f)" % [e3["pos"].distance_to(e["pos"]), (w["desvio"] as Vector3).length()])
+	_ok(T.andable(w["pos"].x, w["pos"].z), "5: al apartarse, Tobías pisa lo que no es andable")
 	r._colocar_kael(T.ancla("n_res_o"))
 	await _frames(15)
 	_ok(v.estado_de("tobias")["pos"].distance_to(e["pos"]) > 0.1, "5: Tobías no sigue cuando Kael se aparta")
