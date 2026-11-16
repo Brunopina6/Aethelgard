@@ -19,6 +19,7 @@ import bpy, bmesh, sys, os, math, json
 from mathutils import Vector
 import numpy as np
 
+sys.dont_write_bytecode = True                                        # (sin __pycache__ en la carpeta)
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import crear_interiores as K                                         # el kit (main() no corre al importar)
 
