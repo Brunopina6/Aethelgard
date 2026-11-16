@@ -998,3 +998,14 @@ Validado: `dc878e9` (`validado/v12/20261115-170245`, 188 · 0). APK v834 instala
   galga, vecinos dentro, recorrido a cualquier resolución con la misión entera); Arboleda Mítica (`area-arboleda-hospederia`).
 - Siguiente acción: integrar el pulido, pasar el recorrido jugado (0 fallos a 1280 y 1600), revisión independiente, batería
   completa, APK de Auditoría y guion; luego la Arboleda.
+
+## RELEVO 16/11, 06:10: noche cerrada en un hito estable (LEER PRIMERO)
+- Entrega completa: `docs/v12/ENTREGA_NOCHE_16_11.md` (qué hay en cada ciudad, separado diseñado / construido / integrado
+  / probado en PC / pendiente de móvil; vídeos, comparaciones, medidas PC, APK, recuperación, decisiones y fallos abiertos).
+- Validado `e8ed88f` (`validado/v12/20261116-055910`, batería 194 · 0 · 114 · 0). APK de Auditoría `e8ed88f`, versionCode
+  931, SHA `6709004b…89df`, NO instalada. Guion: `GUION_REDMI_15_11.md` «PARA EL 16/11, APK e8ed88f».
+- No hay agentes en marcha. Ramas de trabajo (`area-*`) conservadas; todo integrado por cherry-pick en `claude/rebelum-v12`.
+- Siguiente acción: con el Redmi conectado, el guion; con el usuario, las decisiones [D] de la entrega §7. Trabajo
+  siguiente posible sin decisiones: la fase B de Sunken (paso de babor y El Ancla Seca) tras medir la Quilla en el
+  teléfono, y el ejemplo pequeño de Rastreadores (`ACTIVIDADES_FUTURAS.md`).
+- ABIERTOS: cierre 0xC0000005, transparencias en bajo/medio, prueba_audio intermitente.

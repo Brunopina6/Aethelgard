@@ -3,6 +3,27 @@
 > Escrito la noche del 15 al 15/11, sin el teléfono: esta noche NO se ha instalado nada ni se han tocado datos del
 > Redmi. Todo lo de abajo está comprobado SOLO en el PC; nada certifica Android.
 
+## PARA EL 16/11, APK `e8ed88f` (versionCode 931) — la ÚLTIMA; NO instalada (Redmi desconectado)
+
+- **Archivo:** `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261116-e8ed88f-local.apk` (472,4 MB), SHA-256
+  `6709004b8afe905719d585524e4d18560014d47f930b5f914d3b9dafd39d89df`. Contiene TODO lo de abajo (sustituye a la `eb68d54`).
+  Copiar a Descargas por USB, comprobar el SHA en el teléfono, que la instale el usuario. Antes: respaldo byte a byte
+  (`adb exec-out run-as … cat`) y SHA de los 7 archivos de `files/`. Al terminar: mismos SHA SIN restaurar.
+- **Siempre distinguir** «Fija ×0,75» (1200×540), «Regulador normal» y resolución completa (CAL «alto», ×1,0); no
+  declarar calidad completa por medir a ×0,75. Logcat: `[carga]`, `[calidad]`, `[tirones]`.
+- **Qué probar (perfil bajo):**
+  1. Carga: `[carga]` total y fase de sombreadores, 1.º arranque tras instalar y 2.º (con caché).
+  2. Muestra de la calle (lo de la `eb68d54`): 1.ª entrada (el primer dibujo ya no debe tardar 1,26 s), entradas
+     siguientes, recorrido, choques de siempre.
+  3. **Barrio de Oakhaven** (banco → «Barrio de Oakhaven (en pruebas)»): FPS, picos y PSS por tramo andando el bucle
+     entero; entrar y salir de los 3 interiores (tirones al entrar, PSS dentro); los vecinos trabajando; la misión
+     «Antes de que se enfríe» con toques reales (es larga: al menos hasta medir el eje); guardar dentro y cargar.
+  4. **Sunken City** con «Sunken: Quilla horneada» encendido: la Quilla y la cuadrilla (FPS en bajo y medio; la
+     cuadrilla supera un poco el objetivo de llamadas en el PC), y apagado (igual que siempre).
+  5. **Arboleda** (banco → su caso): subir la escalera en diagonal con la cruceta y con toques, la Hospedería (dormir,
+     guardar dentro), Lumi con y sin la flor; FPS y PSS; pausar y reanudar la app dentro.
+  6. Aspecto en la pantalla real: luz horneada (bandas del ETC2), tejados del residencial y del atajo, Yedra y Nívea.
+
 ## PARA MAÑANA (16/11): APK `eb68d54` con las optimizaciones de la muestra — NO instalada (Redmi desconectado)
 
 - **Archivo:** `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261116-eb68d54-local.apk` (432,0 MB, «TODO CORRECTO»),
