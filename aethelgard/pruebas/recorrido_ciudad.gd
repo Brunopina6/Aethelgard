@@ -92,6 +92,7 @@ var _previas := {}
 var _vis_marcha := 0
 var _vis_marcha_txt := ""
 var _diag_toque := ""
+var repetidos := 0                             # pulsaciones de botón repetidas (el primer clic no entró)
 
 
 func _initialize() -> void:
@@ -224,6 +225,11 @@ func _que_hay(q: Vector3) -> String:
 
 func _clic(pos: Vector2) -> void:
 	var w: Vector2 = root.get_final_transform() * pos
+	var m := InputEventMouseMotion.new()           # (el puntero llega antes al sitio, como un dedo o un ratón de verdad)
+	m.position = w
+	m.global_position = w
+	Input.parse_input_event(m)
+	await _frames(1)
 	var e := InputEventMouseButton.new()
 	e.button_index = MOUSE_BUTTON_LEFT
 	e.position = w
@@ -242,6 +248,24 @@ func _clic(pos: Vector2) -> void:
 
 func _clic_boton(b: Control) -> void:
 	await _clic(b.get_global_rect().get_center())
+
+
+# Pulsar un botón hasta que haga lo esperado («hecho»), como quien vuelve a tocar si el toque no entra: hasta 3 veces,
+# esperando «seg» segundos REALES cada vez. (A 1600×720, 2 de unos 200 clics en un botón no entraron en una pasada; lo
+# más probable, el puntero de verdad sobre la ventana entre la pulsación y la suelta.) Cuenta las repeticiones.
+func _pulsar(b: Control, hecho: Callable, seg: float) -> bool:
+	for intento in 3:
+		if intento > 0:
+			repetidos += 1
+		if b == null or not is_instance_valid(b) or not b.is_visible_in_tree():
+			return hecho.call()
+		await _clic_boton(b)
+		var t0 := Time.get_ticks_msec()
+		while Time.get_ticks_msec() - t0 < seg * 1000.0:
+			if hecho.call():
+				return true
+			await process_frame
+	return hecho.call()
 
 
 func _tecla(codigo: Key, pulsada: bool) -> void:
@@ -412,7 +436,7 @@ func _largo(r: PackedVector2Array) -> float:
 # Un tramo recto que Kael anda de un tirón: lo andable cada 0,1 m, sin escalones de más de 0,3 m y sin una caja sólida a
 # la altura de las rodillas 0,35 m por delante (vista3d._altura_suelo: el rayo llega 0,3 m más allá de cada paso de 0,15).
 # «exacta»: con el plano (P.andable y P.altura); si no, con la rejilla (para elegir deprisa).
-func _recta_libre(a: Vector3, b: Vector3, exacta := true) -> bool:
+func _recta_libre(a: Vector3, b: Vector3, exacta := true, rodillas_tambien := true) -> bool:
 	var d := Vector2(b.x - a.x, b.z - a.z)
 	var l := d.length()
 	if l < 0.05:
@@ -431,7 +455,7 @@ func _recta_libre(a: Vector3, b: Vector3, exacta := true) -> bool:
 			y_ant = y
 		elif not _anda_rejilla(q.x, q.y):
 			return false
-		if l * float(i) / n < l - 0.15:
+		if rodillas_tambien and l * float(i) / n < l - 0.15:
 			for adelante in [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45]:   # (todo el rayo: en una esquina lo corta de lado)
 				var r: Vector2 = q + dir * adelante
 				if _rodilla(r.x, r.y):
@@ -853,7 +877,8 @@ func _extremos_rampa(su: Array) -> Variant:
 			continue
 		var m := Vector3(c.x + off, 0, c.y) if eje == "z" else Vector3(c.x, 0, c.y + off)
 		m = _suelo(m)
-		if _recta_libre(a, m) and _recta_libre(m, b):
+		# (solo lo andable y sin escalones: el tramo se anda por la ruta, no hace falta que sea una sola recta de un toque)
+		if _recta_libre(a, m, true, false) and _recta_libre(m, b, true, false):
 			return [a, b, m]
 	return null
 
@@ -981,8 +1006,7 @@ func _puerta(s: String, pid: String) -> void:
 		mal = "el botón no ofrece «%s» (cerca «%s», botón «%s», visible %s)" % [d["texto"], v.cerca, v.boton_accion.text, v.boton_accion.visible]
 	else:
 		v.ultimo_aviso = ""
-		await _clic_boton(v.boton_accion)
-		await _segundos(0.4)
+		await _pulsar(v.boton_accion, func(): return v.ultimo_aviso == v.TEXTO_OBRAS, 1.5)
 		if v.ultimo_aviso != v.TEXTO_OBRAS:
 			mal = "al pulsar «%s» el aviso es «%s»" % [d["texto"], v.ultimo_aviso]
 	var primera := int(cuenta.get("puertas_" + s, 0)) == 0
@@ -997,8 +1021,10 @@ func _recargar(s: String) -> void:
 	var k := _kael()
 	var viejo = v
 	var f0 := Engine.get_process_frames()
-	await _clic_boton(v.boton_recargar)
-	for i in 300:
+	var R0 = root.get_node_or_null("Recursos")
+	await _pulsar(v.boton_recargar, func(): return R0.cambiando or current_scene != viejo, 3.0)
+	var t0 := Time.get_ticks_msec()                # (esperas en tiempo REAL: sin tope de FPS, 300 fotogramas son 2 s)
+	while Time.get_ticks_msec() - t0 < 30000:
 		await process_frame
 		if current_scene != viejo and current_scene != null and current_scene.scene_file_path == ESCENA:
 			break
@@ -1022,14 +1048,18 @@ func _volver_al_banco(y_entrar: bool) -> void:
 	if b == null or not b.is_visible_in_tree():
 		mal = "no se ve «Volver al banco»"
 	else:
-		await _clic_boton(b)
-		for i in 300:
+		var R0 = root.get_node_or_null("Recursos")
+		await _pulsar(b, func(): return R0.cambiando or (current_scene != null and current_scene.scene_file_path == BANCO), 3.0)
+		var t0 := Time.get_ticks_msec()
+		while Time.get_ticks_msec() - t0 < 30000:
 			await process_frame
 			if current_scene != null and current_scene.scene_file_path == BANCO:
 				break
 		await _segundos(1.0)
 		if current_scene == null or current_scene.scene_file_path != BANCO:
-			mal = "«Volver al banco» no lleva al banco"
+			var R = root.get_node_or_null("Recursos")
+			mal = "«Volver al banco» no lleva al banco (escena «%s», cambiando %s)" % [
+				current_scene.scene_file_path if current_scene != null else "", R.cambiando if R != null else "?"]
 	var r := {"llega": mal == "", "segundos": (Engine.get_process_frames() - f0) / FPS}
 	v = null
 	if mal == "":
@@ -1050,7 +1080,8 @@ func _entrar_desde_el_banco() -> String:
 		return "el banco no tiene el caso «%s»" % titulo
 	current_scene.marco.ensure_control_visible(b)
 	await _frames(6)
-	await _clic_boton(b)
+	var R0 = root.get_node_or_null("Recursos")
+	await _pulsar(b, func(): return R0.cambiando or (current_scene != null and current_scene.scene_file_path == ESCENA), 3.0)
 	if not await _cargar_ciudad():
 		return "el caso de la ciudad no la abre"
 	if _plana(_kael(), P.ancla("inicio")) > 0.5:
@@ -1060,7 +1091,8 @@ func _entrar_desde_el_banco() -> String:
 
 func _cargar_ciudad() -> bool:
 	v = null
-	for i in 900:
+	var t0 := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - t0 < 60000:
 		await process_frame
 		var c = current_scene
 		if c != null and c.scene_file_path == ESCENA and c.get("kael") != null and c.get("cargador") != null:
@@ -1086,8 +1118,7 @@ func _puerta_del_sur() -> void:
 		mal = "el botón de la Puerta del Sur no sale (cerca «%s»)" % v.cerca
 	else:
 		v.ultimo_aviso = ""
-		await _clic_boton(v.boton_accion)
-		await _segundos(0.5)
+		await _pulsar(v.boton_accion, func(): return v.ultimo_aviso == v.TEXTO_SALIDA, 1.5)
 		if v.ultimo_aviso != v.TEXTO_SALIDA or current_scene != v:
 			mal = "la Puerta del Sur: «%s»" % v.ultimo_aviso
 	if await _cerrar_tramo("puerta_sur", "puerta_sur", "Puerta del Sur (junto a la muralla)", r, true, mal):
@@ -1103,7 +1134,8 @@ func _jugar() -> void:
 	_preparar_rejilla()
 	Engine.set_meta("calidad_proto", perfil)
 	change_scene_to_file(BANCO)
-	for i in 300:
+	var t0 := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - t0 < 30000:
 		await process_frame
 		if current_scene != null and current_scene.scene_file_path == BANCO and current_scene.get("marco") != null:
 			break
@@ -1159,6 +1191,7 @@ func _terminar() -> void:
 		int(cuenta.get("cubierta_sin_suelo", 0)), int(cuenta.get("puertas", 0)), int(cuenta.get("sin_salida", 0)),
 		int(cuenta.get("atajos", 0)), int(cuenta.get("recargas", 0)), int(cuenta.get("volver_al_banco", 0)),
 		int(cuenta.get("puerta_del_sur", 0)), int(cuenta.get("teclas", 0))])
+	_nota("botones pulsados otra vez porque el primer clic no entró: %d" % repetidos)
 	_nota("RECORRIDO: %d tramos, %d fallos" % [tramos, fallos])
 	if video:
 		_nota("vídeo: %d fotogramas en %s" % [n_video, salida.path_join("video")])
