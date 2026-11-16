@@ -238,6 +238,7 @@ func _datos() -> void:
 	for id in B.NPCS:
 		for d in B.NPCS[id]["dialogos"]:
 			conds.append([d.get("si", ""), "%s/%s" % [id, d["dialogo"]]])
+			conds.append([d.get("prioridad_si", ""), "%s/%s prioridad_si" % [id, d["dialogo"]]])
 	for pid in B.PIEZAS:
 		conds.append([B.PIEZAS[pid].get("si", ""), "pieza " + pid])
 	for s in B.SABER:
@@ -440,9 +441,23 @@ func _conocimiento() -> void:
 		"4: Tobías no lo ha oído de Maela")
 	_ok(B.modo_de("damian", "pasador_roto") == "oido" and B.fuente_de("damian", "pasador_roto") == "rumor",
 		"4: Damián no lo ha oído por la rampa")
-	B.aplicar("bar:no_culpa")
+	# (revisión 16/11) examinar a Avena ANTES de oír a Brena: texto neutro, nada se apunta y Brena no se disculpa de nada
+	var av: Dictionary = B.accion("avena")
+	_ok(av["texto"] == B.PIEZAS["avena"]["texto_sin"] and not B.estado("j_sabe_no_culpa_caballo"),
+		"4: examinar a Avena sin haber oído a Brena desmiente algo («%s»)" % av["texto"])
+	_ok(B.dialogo_de("brena").ends_with("bar_brena_coz.dtl"), "4: sin oírla, Brena no cuenta lo de la coz (%s)" % B.dialogo_de("brena"))
+	B.aplicar("bar:cree:culpa_caballo:brena")
+	av = B.accion("avena")
+	_ok(av["texto"].begins_with(B.PIEZAS["avena"]["texto"]) and B.estado("j_sabe_no_culpa_caballo"),
+		"4: tras oír a Brena, examinar a Avena no la desmiente («%s»)" % av["texto"])
 	_ok(B.modo_de("brena", "culpa_caballo") == "", "4: tras ver los cascos, Brena sigue creyéndolo")
 	_ok(B.dialogo_de("brena").ends_with("bar_brena_avena.dtl"), "4: Brena no cambia de frase al saber que no fue Avena")
+	# la disculpa, con prioridad UNA vez; después se turna y vuelve el rumor de la ronda
+	B.aplicar("bar:dicho:brena_avena")
+	var de_brena := [B.dialogo_de("brena", 0).get_file(), B.dialogo_de("brena", 1).get_file()]
+	_ok("bar_brena_caminos.dtl" in de_brena and "bar_brena_avena.dtl" in de_brena,
+		"4: tras disculparse una vez, Brena no vuelve a la ronda (%s)" % [de_brena])
+	_ok(B.aplicar("bar:dicho:no_existe") == "" and not B.estado("dicho_no_existe"), "4: una señal de «ya dicho» desconocida apunta algo")
 	P.poner_estado(B.NOMBRE, "enf_medida")
 	_ok(B.modo_de("damian", "pasador_roto") == "sabe", "4: con la medida, Damián no lo sabe")
 	P.poner_estado(B.NOMBRE, "enf_reparado")
@@ -562,10 +577,18 @@ func _mision() -> void:
 	_ok(B.dialogo_de("damian").ends_with("bar_damian_pasador.dtl"), "5N: Damián no corta el pasador")
 	_ok(B.accion("carro_horno")["texto"] == B.CARRO["medido"], "5N: el carro se mide dos veces")
 	_hacer("bar:sabe:pasador_roto:damian", "N Damián lo sabe")
+	_ok(B.dialogo_de("maela").ends_with("bar_maela_pendiente.dtl"), "5N: sin el pasador, Maela no manda al taller")
 	_hacer("bar:pasador", "N pasador")
 	_ok(_paso(e) == "reparar" and B.boton("carro_horno") == "Poner el pasador", "5N: tras el pasador, paso %s" % _paso(e))
+	_ok(B.dialogo_de("maela").ends_with("bar_maela_pasador.dtl"), "5N: con el pasador cortado, Maela sigue mandando al taller (%s)" %
+		B.dialogo_de("maela").get_file())
 	t = _hacer("carro_horno", "N reparar")
 	_ok(t.begins_with(B.CARRO["poner"]) and B.estado("enf_reparado") and _paso(e) == "entrega", "5N: reparar no va (%s)" % _paso(e))
+	# (revisión 16/11) lo de «después», con prioridad solo la primera vez: luego vuelven los rumores
+	_ok(B.dialogo_de("tobias").ends_with("bar_tobias_reparto.dtl"), "5N: Tobías no cuenta lo del reparto")
+	_hacer("bar:dicho:tobias_reparto", "N Tobías ya lo ha dicho")
+	var de_tobias := [B.dialogo_de("tobias", 0).get_file(), B.dialogo_de("tobias", 1).get_file()]
+	_ok("bar_tobias_caravanas.dtl" in de_tobias, "5N: tras el reparto, el rumor de las caravanas no vuelve (%s)" % [de_tobias])
 	_ok(B.programa("maela") == "reparto" and B.programa("tobias") == "reparto", "5N: sin reparto tras reparar")
 	_ok(B.dialogo_de("maela").ends_with("bar_maela_cesta.dtl"), "5N: Maela no da la cesta")
 	_ok(not B.dialogo_de("odila").ends_with("bar_odila_entrega.dtl"), "5N: Odila recibe la cesta antes de tenerla")
@@ -575,6 +598,10 @@ func _mision() -> void:
 	_ok(B.aplicar("bar:fin") == "" and _eter() == eter0, "5N: el premio antes de la entrega")
 	_hacer("bar:entrega", "N entrega")
 	_ok(_paso(e) == "volver" and B.dialogo_de("maela").ends_with("bar_maela_fin.dtl"), "5N: tras la entrega, paso %s" % _paso(e))
+	_ok(B.dialogo_de("odila").ends_with("bar_odila_despues.dtl"), "5N: Odila no dice lo de después")
+	_hacer("bar:dicho:odila_despues", "N Odila ya lo ha dicho")
+	var de_odila := [B.dialogo_de("odila", 0).get_file(), B.dialogo_de("odila", 1).get_file()]
+	_ok("bar_odila_precios.dtl" in de_odila, "5N: tras lo de después, el rumor de los peajes no vuelve (%s)" % [de_odila])
 	t = _hacer("bar:fin", "N fin")
 	_ok(t.contains("2 Éter") and _eter() == eter0 + 2, "5N: el premio no es Éter ×2 («%s», %d → %d)" % [t, eter0, _eter()])
 	_ok(B.aplicar("bar:fin") == "" and _eter() == eter0 + 2, "5N: el premio se da dos veces")
@@ -583,7 +610,7 @@ func _mision() -> void:
 	_ok(E.estado(e) == "hecho" and _eter() == eter0 + 2, "5N: tras cargar al final, la misión o el premio cambian")
 	_ok(B.dialogo_de("maela").ends_with("bar_maela_despues.dtl"), "5N: Maela no dice lo de después")
 	for k in B.ESTADOS:
-		if k in ["j_visto_clavo", "j_sabe_no_culpa_caballo"] or (k == "viv_llamado" and not B.interior_hecho("vivienda")):
+		if k in ["j_visto_clavo", "j_sabe_no_culpa_caballo", "dicho_brena_avena"] or (k == "viv_llamado" and not B.interior_hecho("vivienda")):
 			continue
 		_ok(B.estado(k), "5N: al final falta «%s»" % k)
 

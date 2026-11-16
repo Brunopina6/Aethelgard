@@ -1,3 +1,4 @@
 tobias: ¡Pasador nuevo! Lo vi encajar con mis propios ojos. Ahora sí, a cargar.
 tobias: Cestas de pan a la plaza y al patio de caravanas. Hoy nadie se queda sin hogaza.
 [signal arg="bar:sabe:pasador_roto:tobias"]
+[signal arg="bar:dicho:tobias_reparto"]

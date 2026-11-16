@@ -74,6 +74,7 @@ directories/dtl_directory={
 "bar_maela_despues": "res://dialogos/oakhaven/barrio/bar_maela_despues.dtl",
 "bar_maela_espera": "res://dialogos/oakhaven/barrio/bar_maela_espera.dtl",
 "bar_maela_fin": "res://dialogos/oakhaven/barrio/bar_maela_fin.dtl",
+"bar_maela_pasador": "res://dialogos/oakhaven/barrio/bar_maela_pasador.dtl",
 "bar_maela_pendiente": "res://dialogos/oakhaven/barrio/bar_maela_pendiente.dtl",
 "bar_nela": "res://dialogos/oakhaven/barrio/bar_nela.dtl",
 "bar_odila_despues": "res://dialogos/oakhaven/barrio/bar_odila_despues.dtl",

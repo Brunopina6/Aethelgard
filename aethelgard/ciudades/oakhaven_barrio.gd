@@ -62,12 +62,16 @@ const PERSONAJES := {
 
 # Las claves de la misión (todas bool en mazmorras["oak_barrio"]).
 const ESTADOS := ["enf_carro_visto", "enf_taller", "enf_galga", "enf_medida", "enf_pasador", "enf_reparado", "enf_cesta",
-	"enf_entrega", "enf_fin", "viv_llamado", "j_visto_carro", "j_visto_clavo", "j_sabe_no_culpa_caballo"]
+	"enf_entrega", "enf_fin", "viv_llamado", "j_visto_carro", "j_visto_clavo", "j_sabe_no_culpa_caballo",
+	"dicho_brena_avena", "dicho_tobias_reparto", "dicho_odila_despues"]
+# «dicho_<diálogo>»: ese diálogo ya se ha dicho entero una vez (su señal «bar:dicho:<diálogo>», al final). Con ella, su
+# «prioridad_si» deja de cumplirse: la primera vez gana; después se turna con los demás (así vuelven los rumores).
 
 # ---------------------------------------------------------------------------------------------------- vecinos
 # «chibi»: [oficio, persona] de personajes/npc_v12 (fuente/crear_npc_chibi.py; sin el modelo, una cápsula de su «tinte»).
 # «oficio»: lo que hace, para su perspectiva. «dialogos»: {dialogo, si, prioridad, dice}: la primera con prioridad que se
-# cumple gana; las demás se turnan con «veces». «frases»: lo que dice al pasar o sin diálogo (≤ 48 letras).
+# cumple gana (si lleva «prioridad_si», solo mientras esa condición se cumpla; si no, se turna); las demás se turnan con
+# «veces». «frases»: lo que dice al pasar o sin diálogo (≤ 48 letras).
 const NPCS := {
 	"maela": {"nombre": "Maela", "corto": "Maela", "oficio": "panadera", "boton": "Hablar con Maela",
 		"chibi": ["panadera", "maela"], "tinte": Color(0.86, 0.62, 0.42),
@@ -77,21 +81,25 @@ const NPCS := {
 			{"dialogo": "bar_maela_espera", "si": ["estado:enf_cesta", "!estado:enf_entrega"], "prioridad": true, "dice": {}},
 			{"dialogo": "bar_maela_carro", "si": ["!estado:enf_carro_visto", "!estado:enf_fin"], "prioridad": true,
 				"dice": {"pasador_roto": "sabe"}},
-			{"dialogo": "bar_maela_pendiente", "si": ["estado:enf_carro_visto", "!estado:enf_reparado"], "prioridad": true,
-				"dice": {"pasador_roto": "sabe"}},
+			{"dialogo": "bar_maela_pendiente", "si": ["estado:enf_carro_visto", "!estado:enf_pasador", "!estado:enf_reparado"],
+				"prioridad": true, "dice": {"pasador_roto": "sabe"}},
+			{"dialogo": "bar_maela_pasador", "si": ["estado:enf_pasador", "!estado:enf_reparado"], "prioridad": true,
+				"dice": {}},
 			{"dialogo": "bar_maela_despues", "si": "estado:enf_fin", "dice": {}}],
 		"frases": ["El pan no espera a nadie.", "Masa, horno, mostrador. Y otra vez.", "¡Hogazas recién hechas!"]},
 	"tobias": {"nombre": "Tobías", "corto": "Tobías", "oficio": "porteador", "boton": "Hablar con Tobías",
 		"chibi": ["porteador", "tobias"], "tinte": Color(0.46, 0.52, 0.66),
 		"dialogos": [
-			{"dialogo": "bar_tobias_reparto", "si": "estado:enf_reparado", "prioridad": true, "dice": {"pasador_roto": "sabe"}},
+			{"dialogo": "bar_tobias_reparto", "si": "estado:enf_reparado", "prioridad": true,
+				"prioridad_si": "!estado:dicho_tobias_reparto", "dice": {"pasador_roto": "sabe"}},
 			{"dialogo": "bar_tobias_rumor", "si": "!estado:enf_reparado", "dice": {"pasador_roto": "oido"}},
 			{"dialogo": "bar_tobias_caravanas", "si": "", "dice": {"caravana_retraso": "sabe"}}],
 		"frases": ["Esta caja pesa como un buey.", "Del carro al patio y del patio al carro.", "Paso, que llevo carga."]},
 	"brena": {"nombre": "Brena", "corto": "Brena", "oficio": "encargada del establo", "boton": "Hablar con Brena",
 		"chibi": ["encargada_establo", "brena"], "tinte": Color(0.42, 0.58, 0.36),
 		"dialogos": [
-			{"dialogo": "bar_brena_avena", "si": "estado:j_sabe_no_culpa_caballo", "prioridad": true, "dice": {}},
+			{"dialogo": "bar_brena_avena", "si": ["estado:j_sabe_no_culpa_caballo", "estado:j_cree_culpa_caballo_brena"],
+				"prioridad": true, "prioridad_si": "!estado:dicho_brena_avena", "dice": {}},
 			{"dialogo": "bar_brena_coz", "si": ["!estado:j_sabe_no_culpa_caballo", "!estado:enf_reparado"],
 				"dice": {"culpa_caballo": "cree"}},
 			{"dialogo": "bar_brena_caminos", "si": "", "dice": {"ronda_doble": "oido"}}],
@@ -119,7 +127,8 @@ const NPCS := {
 				"prioridad": true, "dice": {"galga_en_casa": "sabe"}},
 			{"dialogo": "bar_odila_galga", "si": ["!estado:enf_galga", "!estado:enf_medida", "!cond:vivienda_cerrada"],
 				"prioridad": true, "dice": {"galga_en_casa": "sabe"}},
-			{"dialogo": "bar_odila_despues", "si": "estado:enf_entrega", "prioridad": true, "dice": {}},
+			{"dialogo": "bar_odila_despues", "si": "estado:enf_entrega", "prioridad": true,
+				"prioridad_si": "!estado:dicho_odila_despues", "dice": {}},
 			{"dialogo": "bar_odila_precios", "si": "", "dice": {"peaje_sube": "oido"}}],
 		"frases": ["Puntada a puntada.", "Nela, no te alejes de la puerta.", "Este hilo ha costado un ojo."]},
 	"nela": {"nombre": "Nela", "corto": "Nela", "oficio": "hija de Damián y Odila", "boton": "Hablar con Nela",
@@ -156,8 +165,11 @@ const PIEZAS := {
 	"carro_horno": {"ancla": "carro_horno", "radio": 1.5, "boton": "Examinar el carro", "si": "", "senal": "",
 		"texto": "Al eje le falta el pasador: partido en dos, gastado, no roto de un golpe.",
 		"texto_sin": ""},
-	"avena": {"ancla": "establo_caballo", "radio": 1.9, "boton": "Examinar a Avena", "si": "", "senal": "bar:no_culpa",
-		"texto": "Avena tiene los cascos limpios y las herraduras enteras. No ha dado ninguna coz.", "texto_sin": ""},
+	# (solo desmiente lo que Brena te ha dicho: sin eso, Avena es una yegua más y nada se apunta)
+	"avena": {"ancla": "establo_caballo", "radio": 1.9, "boton": "Examinar a Avena", "si": "estado:j_cree_culpa_caballo_brena",
+		"senal": "bar:no_culpa",
+		"texto": "Avena tiene los cascos limpios y las herraduras enteras. No ha dado ninguna coz.",
+		"texto_sin": "Avena, la yegua del establo, mordisquea heno. Te mira de reojo y sigue a lo suyo."},
 	# --- el horno de Maela
 	"boca_horno": {"ancla": "int_horno_boca", "clase": "examinable", "radio": 1.3, "boton": "Examinar el horno", "si": "",
 		"senal": "", "texto": "La boca del horno, con las brasas al rojo. De aquí sale el pan de todo el barrio.",
@@ -445,7 +457,7 @@ static func dialogo_de(id: String, veces := 0) -> String:
 	for d in n["dialogos"]:
 		if not cumple(d.get("si", "")):
 			continue
-		if d.get("prioridad", false):
+		if d.get("prioridad", false) and cumple(d.get("prioridad_si", "")):
 			return ruta_dialogo(d["dialogo"])
 		normales.append(d["dialogo"])
 	if normales.is_empty():
@@ -623,6 +635,12 @@ static func aplicar(senal: Variant) -> String:
 	var antes := _cond("enf_empieza")
 	var t := ""
 	var partes := k.split(":")
+	if partes.size() == 2 and partes[0] == "dicho":       # «bar:dicho:<diálogo>»: ya dicho una vez (no cambia la misión)
+		if not ("dicho_" + partes[1]) in ESTADOS:
+			push_warning("Barrio: señal de «ya dicho» desconocida «%s»" % s)
+			return ""
+		poner("dicho_" + partes[1])
+		return ""
 	if partes.size() == 3 and partes[0] in MODOS:
 		t = _apuntar(partes[0], partes[1], partes[2])
 	else:
