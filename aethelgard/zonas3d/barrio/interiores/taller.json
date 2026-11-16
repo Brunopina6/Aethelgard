@@ -222,17 +222,17 @@
   ]
  },
  "tris": {
-  "fijo": 2613,
-  "piezas": 1040,
+  "fijo": 2605,
+  "piezas": 1036,
   "extra": 108,
   "oculto": 4896
  },
  "horneado": true,
  "muestras": 768,
- "escala_mapa": 0.5223353498989773,
- "mediana": 0.15523278713226318,
- "k_exposicion": 5.797744256393283,
- "escala": 3.0283667747879717,
+ "escala_mapa": 0.5223103405274067,
+ "mediana": 0.15522947907447815,
+ "k_exposicion": 5.797867810715164,
+ "escala": 3.0282863105475273,
  "escala_vertice": 3.0,
  "sondas": {
   "origen": [

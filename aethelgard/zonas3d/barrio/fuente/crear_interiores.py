@@ -527,8 +527,14 @@ def tarro(M, c, alto=0.2, r=0.08, col=(0.78, 0.66, 0.50)):
              jit(col, 0.06))
 
 
-def saco(M, c, r=0.24, alto=0.62, col=SACO, yaw=0.0):
+def saco(M, c, r=0.24, alto=0.62, col=SACO, yaw=0.0, abierto=False):
     c = Vector(c)
+    if abierto:                                          # la boca doblada hacia fuera y la harina a la vista
+        cilindro(M, c, [(0.0, r * 0.85), (0.08, r), (alto * 0.6, r * 1.05), (alto * 0.85, r * 0.95), (alto * 0.88, r * 1.12),
+                        (alto * 0.8, r * 1.16)], 9, "tela", jit(col, 0.05), fase=yaw, tapa_arriba=False)
+        cilindro(M, c + Vector((0, alto * 0.78, 0)), [(0, r * 0.96), (0.05, r * 0.7), (0.08, 0.0)], 9, "tela", HARINA,
+                 tapa_arriba=False)
+        return
     cilindro(M, c, [(0.0, r * 0.85), (0.08, r), (alto * 0.55, r * 1.04), (alto * 0.82, r * 0.78), (alto * 0.9, r * 0.25),
                     (alto, r * 0.33)], 9, "tela", jit(col, 0.05), fase=yaw)
     cilindro(M, c + Vector((0, alto * 0.86, 0)), [(0, r * 0.3), (0.04, r * 0.3)], 8, "tela", (0.52, 0.40, 0.26), tapa_arriba=False)
@@ -754,7 +760,7 @@ def horno():
     S.objeto("estante", "examinable", "los estantes de enfriar, con el pan de la tarde")
     # --- los sacos de harina (rincón noreste del obrador)
     for k, (x, z) in enumerate(((4.65, 0.4), (5.15, 0.38), (5.55, 0.45), (4.9, 0.85), (5.4, 0.9))):
-        saco(S.P, (x, 0.0, z), 0.23, 0.6 if k < 3 else 0.52, jit(SACO, 0.04), yaw=RND.random())
+        saco(S.P, (x, 0.0, z), 0.23, 0.6 if k < 3 else 0.52, jit(SACO, 0.04), yaw=RND.random(), abierto=k in (3, 4))
     saco(S.P, (5.0, 0.6, 0.6), 0.22, 0.42, jit(SACO, 0.04))
     S.bloqueo(4.4, 0.1, 5.8, 1.15)
     # --- LA TIENDA: el mostrador al sur (da a la calle), cestas con pan, la balanza; estante en el murete
@@ -946,7 +952,6 @@ def taller():
     compas = [(0.0, 0.3), (0.02, 0.3), (0.12, 0.0), (0.1, 0.0), (0.03, 0.22), (-0.04, 0.0), (-0.06, 0.0), (0.0, 0.3)]
     herramienta_colgada(S, 6.25, 1.72, 0.0, compas, HIERRO)
     herramienta_colgada(S, 6.6, 1.62, 0.0, galga_2d(), MADERA_CLARA, presente=False, mat="madera")     # LA PISTA
-    caja(S.M, (6.79, 1.86, 0.03), (0.06, 0.06, 0.03), "hierro", (0.30, 0.22, 0.16))               # un poco de óxido
     S.bloqueo(4.6, 0.0, 7.45, 0.9)
     S.ancla("clavo", 6.8, 0.0, 1.3)
     S.objeto("clavo", "examinable", "un clavo vacío con la silueta pintada de una galga")

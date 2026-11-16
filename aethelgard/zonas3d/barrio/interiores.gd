@@ -33,11 +33,14 @@ extends Node3D
 
 const Barrio := preload("res://ciudades/oakhaven_barrio.gd")
 const Progreso := preload("res://progreso.gd")
-const SH_ESTATICO := preload("res://zonas3d/muestra_calle/calle_estatico.gdshader")
-const SH_VERTICE := preload("res://zonas3d/muestra_calle/calle_vertice.gdshader")
-const SH_BRILLO := preload("res://zonas3d/muestra_calle/calle_brillo.gdshader")
+# Los sombreados y las texturas de la muestra de la calle, SIN CAMBIOS (plan §8): se cargan al construir (no con preload:
+# una exportación sin la muestra no rompe la compilación de este archivo).
+const MUESTRA := "res://zonas3d/muestra_calle/"
+const SH_ESTATICO := MUESTRA + "calle_estatico.gdshader"
+const SH_VERTICE := MUESTRA + "calle_vertice.gdshader"
+const SH_BRILLO := MUESTRA + "calle_brillo.gdshader"
 const RAIZ := "res://zonas3d/barrio/"
-const TEXTURAS := "res://zonas3d/muestra_calle/texturas/"
+const TEXTURAS := MUESTRA + "texturas/"
 const TEXTURA_DE := {"piedra": "piedra", "tierra": "tierra", "revoque": "revoque", "madera": "madera", "sillar": "sillar",
 	"tela": "tela", "barro": "revoque", "hierro": "piedra"}
 const UTENSILIOS := RAIZ + "modelos/utensilios.glb"
@@ -499,7 +502,7 @@ func _material(nombre: String, vertice: bool, tex_luz: Texture2D, escala: float)
 			tex = load(ruta)
 	if nombre == "brillo":
 		var b := ShaderMaterial.new()
-		b.shader = SH_BRILLO
+		b.shader = load(SH_BRILLO)
 		b.set_shader_parameter("energia", 1.35)
 		b.set_shader_parameter("temblor", 0.16)
 		return b
@@ -511,7 +514,7 @@ func _material(nombre: String, vertice: bool, tex_luz: Texture2D, escala: float)
 		s.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
 		return s
 	var m := ShaderMaterial.new()
-	m.shader = SH_VERTICE if vertice else SH_ESTATICO
+	m.shader = load(SH_VERTICE if vertice else SH_ESTATICO)
 	m.set_shader_parameter("textura", tex)
 	m.set_shader_parameter("luz_escala", escala)
 	if not vertice:
@@ -554,7 +557,7 @@ func _poner_sitios(id: String, raiz: Node3D, d: Dictionary) -> void:
 		for mi in ([nodo] + nodo.find_children("*", "MeshInstance3D", true, false)):
 			if mi is MeshInstance3D:
 				var m := ShaderMaterial.new()
-				m.shader = SH_VERTICE
+				m.shader = load(SH_VERTICE)
 				var ruta_atlas := RAIZ + "modelos/utensilios_atlas.png"
 				m.set_shader_parameter("textura", load(ruta_atlas) if ResourceLoader.exists(ruta_atlas) else null)
 				m.set_shader_parameter("luz_escala", luz)

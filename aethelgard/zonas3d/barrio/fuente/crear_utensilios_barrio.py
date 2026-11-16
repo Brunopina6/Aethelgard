@@ -44,7 +44,7 @@ def atlas(carpeta):
     img[n:, 0:n] = mimbre
     img[n:, n:] = metal
     px = np.ones((LADO, LADO, 4), np.float32)
-    px[..., 0] = px[..., 1] = px[..., 2] = np.clip(img[::-1], 0, 1)          # (Blender guarda de abajo arriba)
+    px[..., 0] = px[..., 1] = px[..., 2] = np.clip(img, 0, 1)    # (fila 0 = abajo = v 0: madera y tela; mimbre y metal arriba)
     im = bpy.data.images.new("utensilios_atlas", LADO, LADO, alpha=False)
     im.pixels.foreach_set(px.ravel())
     im.filepath_raw = os.path.join(carpeta, "utensilios_atlas.png")

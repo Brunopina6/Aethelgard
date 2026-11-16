@@ -239,10 +239,10 @@
  },
  "horneado": true,
  "muestras": 768,
- "escala_mapa": 0.7425143546664837,
- "mediana": 0.18443186581134796,
- "k_exposicion": 4.608748039611819,
- "escala": 3.422061576452792,
+ "escala_mapa": 0.7425064278632095,
+ "mediana": 0.1844300776720047,
+ "k_exposicion": 4.6087927236665935,
+ "escala": 3.4220582220116347,
  "escala_vertice": 3.0,
  "sondas": {
   "origen": [

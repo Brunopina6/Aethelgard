@@ -238,16 +238,16 @@
  },
  "tris": {
   "fijo": 4036,
-  "piezas": 2962,
+  "piezas": 2986,
   "extra": 0,
-  "oculto": 5423
+  "oculto": 5425
  },
  "horneado": true,
  "muestras": 768,
- "escala_mapa": 1.2436066706155993,
- "mediana": 0.25226470828056335,
- "k_exposicion": 3.7658854719520676,
- "escala": 4.683280293693966,
+ "escala_mapa": 1.243185628320753,
+ "mediana": 0.25217849016189575,
+ "k_exposicion": 3.767173002701819,
+ "escala": 4.683295336356839,
  "escala_vertice": 3.0,
  "sondas": {
   "origen": [
