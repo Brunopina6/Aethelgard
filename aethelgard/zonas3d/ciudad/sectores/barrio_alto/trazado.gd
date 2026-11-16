@@ -17,7 +17,7 @@ extends RefCounted
 #   - RAMPA DE LAS RAÍCES (12 → 16), dos tramos con un rellano, y el PÓRTICO DE PIEDRA ENTRE LAS RAÍCES [P] arriba (en
 #     lugar del templo de vidrieras de la imagen, que NO se hace; sin función narrativa).
 #   - TERRAZA DE LAS RAÍCES (16): el ÁRBOL MILENARIO [C] gigante con sus raíces, que se anda ALREDEDOR (por delante, por
-#     los dos lados y por detrás, bajo una raíz en arco); Doña Encina [C según el plan], guarda del Árbol, junto al pórtico;
+#     los dos lados y por detrás, bajo una raíz en arco); Doña Encina [C pendiente], guarda del Árbol, junto al pórtico;
 #     el MIRADOR DE LAS RAÍCES al oeste (sin salida, con la vista de la ciudad).
 # La puerta del crematorio no es de este sector (la Colina la dibuja «oficios») y aquí no se construye nada bajo ella.
 # Cómo se lee cada lista: zonas3d/ciudad/trazado_comun.gd (formatos del barrio).
@@ -129,33 +129,44 @@ const BLOQUES := [
 	["seto_plaza_o", "barrio_alto", Rect2(-16.4, -60.0, 0.4, 9.0), 12.0, 0.9, "bajo", true],
 	["pretil_plaza_so", "barrio_alto", Rect2(-16.0, -51.0, 11.0, 0.4), 12.0, 0.9, "bajo", true],
 	["pretil_plaza_se", "barrio_alto", Rect2(5.0, -51.0, 11.0, 0.4), 12.0, 0.9, "bajo", true],
-	["casa_paso_n", "barrio_alto", Rect2(-30.0, -72.0, 14.0, 8.0), 12.0, 6.0, "casa", true],
+	["casa_paso_n", "barrio_alto", Rect2(-30.0, -72.0, 14.0, 8.0), 12.0, 4.0, "casa", true],   # baja: deja ver desde el mirador
 	# --- bandas entre la plaza y la terraza de las Raíces
 	["banda_raices_o", "barrio_alto", Rect2(-16.0, -79.0, 10.0, 9.0), 12.0, 4.0, "terreno", true],
 	["banda_raices_o2", "barrio_alto", Rect2(-6.0, -79.0, 2.0, 6.0), 14.0, 2.0, "terreno", true],
 	["banda_raices_e2", "barrio_alto", Rect2(4.0, -79.0, 2.0, 6.0), 14.0, 2.0, "terreno", true],
 	["banda_raices_e", "barrio_alto", Rect2(6.0, -79.0, 12.0, 9.0), 12.0, 4.0, "terreno", true],
-	["poniente_raices", "barrio_alto", Rect2(-30.0, -79.0, 14.0, 7.0), 12.0, 4.0, "terreno", true],
-	["poniente_alto", "barrio_alto", Rect2(-30.0, -92.0, 12.0, 13.0), 12.0, 4.5, "terreno", true],
+	# al oeste de la terraza, el terreno baja a 14: el Mirador de las Raíces asoma 2 m sobre él, con su pretil-muro
+	["poniente_raices", "barrio_alto", Rect2(-30.0, -79.0, 14.0, 7.0), 12.0, 2.0, "terreno", true],
+	["poniente_alto", "barrio_alto", Rect2(-30.0, -92.0, 12.0, 13.0), 12.0, 2.0, "terreno", true],
+	["pretil_mirador_raices", "barrio_alto", Rect2(-18.4, -92.0, 0.4, 13.0), 14.0, 2.9, "bajo", true],
 	["levante_raices", "barrio_alto", Rect2(18.0, -82.0, 42.0, 18.0), 12.0, 4.0, "terreno", true],
 	["levante_alto", "barrio_alto", Rect2(28.0, -92.0, 32.0, 10.0), 12.0, 4.0, "terreno", true],
 	["levante_rincon", "barrio_alto", Rect2(18.0, -92.0, 10.0, 2.0), 12.0, 4.0, "terreno", true],
 	["casa_raices_e", "barrio_alto", Rect2(18.0, -90.0, 10.0, 8.0), 16.0, 5.0, "casa", true],
+	# la meseta de levante, poblada (no andable): casas del barrio alto, huertos y el jardín de detrás del Concejo [P];
+	# pretiles donde la terraza de las Raíces queda a ras de ella
+	["pretil_levante_1", "barrio_alto", Rect2(18.0, -82.0, 0.4, 3.0), 16.0, 0.9, "bajo", true],
+	["pretil_levante_2", "barrio_alto", Rect2(18.0, -92.0, 0.4, 2.0), 16.0, 0.9, "bajo", true],
+	["casa_levante_1", "barrio_alto", Rect2(22.0, -80.0, 9.0, 7.0), 16.0, 5.5, "casa", true],
+	["casa_levante_2", "barrio_alto", Rect2(34.0, -79.0, 8.0, 9.0), 16.0, 7.0, "casa", true],
+	["casa_levante_3", "barrio_alto", Rect2(46.0, -80.0, 10.0, 8.0), 16.0, 6.0, "casa", true],
+	["huerto_levante", "barrio_alto", Rect2(30.0, -90.0, 26.0, 6.0), 16.0, 0.8, "terreno", true],
+	["jardin_concejo_n", "barrio_alto", Rect2(26.0, -70.0, 18.0, 5.0), 16.0, 0.6, "terreno", true],
 	# --- el Árbol Milenario [C], sus raíces, el pórtico de piedra entre ellas [P], el mirador de las Raíces
 	["arbol_tronco", "barrio_alto", Rect2(-4.5, -89.5, 9.0, 6.0), 16.0, 18.0, "arbol", true],
 	["arbol_copa", "barrio_alto", Rect2(-26.0, -112.0, 52.0, 46.0), 30.0, 20.0, "copa", false],
 	["raiz_o", "barrio_alto", Rect2(-12.0, -87.5, 7.5, 1.2), 16.0, 0.9, "arbol", true],
-	["raiz_so", "barrio_alto", Rect2(-10.0, -83.2, 4.0, 1.0), 16.0, 0.7, "arbol", true],
+	["raiz_so", "barrio_alto", Rect2(-10.0, -83.2, 3.4, 1.0), 16.0, 0.7, "arbol", true],   # 2,1 m libres hasta el tronco
 	["raiz_e", "barrio_alto", Rect2(4.5, -86.5, 8.0, 1.2), 16.0, 0.9, "arbol", true],
-	["raiz_se", "barrio_alto", Rect2(6.0, -83.2, 4.0, 1.0), 16.0, 0.7, "arbol", true],
+	["raiz_se", "barrio_alto", Rect2(6.6, -83.2, 3.4, 1.0), 16.0, 0.7, "arbol", true],
 	["raiz_arco", "barrio_alto", Rect2(1.5, -92.0, 1.5, 2.5), 18.4, 1.0, "cubierta", false],
 	["portico_pilar_o", "barrio_alto", Rect2(-5.5, -80.5, 1.0, 1.0), 16.0, 4.5, "muro", true],
 	["portico_pilar_e", "barrio_alto", Rect2(4.5, -80.5, 1.0, 1.0), 16.0, 4.5, "muro", true],
 	["portico_dintel", "barrio_alto", Rect2(-5.5, -80.5, 11.0, 1.0), 20.5, 1.0, "cubierta", false],
 	["pretil_raices_o", "barrio_alto", Rect2(-18.0, -79.4, 12.5, 0.4), 16.0, 0.9, "bajo", true],
 	["pretil_raices_e", "barrio_alto", Rect2(5.5, -79.4, 12.5, 0.4), 16.0, 0.9, "bajo", true],
-	["banco_mirador_raices", "barrio_alto", Rect2(-17.5, -83.0, 0.5, 2.4), 16.0, 0.45, "bajo", true],
-	["banco_encina", "barrio_alto", Rect2(-9.0, -80.9, 2.4, 0.5), 16.0, 0.45, "bajo", true],
+	["banco_mirador_raices", "barrio_alto", Rect2(-18.0, -83.0, 0.5, 2.4), 16.0, 0.45, "bajo", true],
+	["banco_encina", "barrio_alto", Rect2(-9.0, -79.9, 2.4, 0.5), 16.0, 0.45, "bajo", true],   # contra el pretil
 	["muralla_norte", "barrio_alto", Rect2(-30.0, -96.0, 90.0, 4.0), 12.0, 10.0, "muro", true],
 ]
 # Lo que la escena aclara cuando tapa a Kael (además de cubiertas y copas): las dos casas de la Calle del Árbol que quedan
@@ -169,7 +180,7 @@ const OCULTABLES := ["casa_calle_o", "casa_calle_e", "casa_bajada", "arbol_tronc
 const ANCLAS := {
 	"referencia": Vector3(0.0, 16.0, -83.0),        # al pie del Árbol Milenario [C] (= ref_barrio_alto)
 	"rotulo": Vector3(0.0, 16.0, -81.0),
-	"encina": Vector3(-8.0, 16.0, -81.6),           # Doña Encina [C según el plan], guarda del Árbol, junto al pórtico
+	"encina": Vector3(-8.0, 16.0, -81.6),           # Doña Encina [C pendiente], guarda del Árbol, junto al pórtico
 	"mirador_raices": Vector3(-16.0, 16.0, -81.0),  # sin salida: la vista de la ciudad
 	"tras_arbol": Vector3(0.0, 16.0, -91.0),        # detrás del tronco, bajo la raíz en arco
 	"mirador_concejo": Vector3(56.0, 10.0, -42.0),  # sin salida: la vista del valle
