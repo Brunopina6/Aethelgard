@@ -77,9 +77,10 @@ func _entrada_del_banco() -> void:
 func _sin_usos_fuera() -> void:
 	var usos: Array = []
 	_buscar("res://", usos)
-	# (16/11) el barrio experimental (zonas3d/barrio/, también solo del banco) reutiliza sus sombreados
-	var fuera := usos.filter(func(u): return not String(u).begins_with("res://zonas3d/barrio/"))
-	_ok(fuera == ["res://banco_pruebas.gd", "res://carga.gd"], "2: fuera del banco nadie nombra la muestra, salvo el precalentado de la carga y el barrio (%s)" % str(usos))
+	# (16/11) el barrio experimental (zonas3d/barrio/) y la Quilla horneada de Sunken (zonas3d/sunken/quilla/), los dos
+	# solo del banco / con su interruptor, reutilizan sus sombreados por la ruta (sin copiarlos: sin programas nuevos)
+	var fuera := usos.filter(func(u): return not String(u).begins_with("res://zonas3d/barrio/") and not String(u).begins_with("res://zonas3d/sunken/quilla/"))
+	_ok(fuera == ["res://banco_pruebas.gd", "res://carga.gd"], "2: fuera del banco nadie nombra la muestra, salvo el precalentado de la carga, el barrio y la Quilla (%s)" % str(usos))
 	# (15/11) carga.gd la precalienta SOLO si el banco está permitido (Auditoría/editor): la línea que la nombra lo exige
 	var lineas_carga := Array(FileAccess.get_file_as_string("res://carga.gd").split("
 ")).filter(
