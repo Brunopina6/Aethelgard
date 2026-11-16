@@ -105,7 +105,7 @@ el mismo punto y la misma cámara; las tomó `medir_isla.gd`):
 | `igualar_piezas_v2_nitidas_arriba_final_abajo.png` | La primera versión del atrezo (más nítida y saturada que el fondo) frente a la igualada. |
 | `interior_hospederia.png` e `interior_render_completo_1536x795.png` | El interior en el juego y el render entero. |
 
-**Vídeo**: `video/tramo_hospederia.avi` (Movie Maker de Godot, MJPEG, 1280 × 720, 30 FPS, ≈ 30 s): Kael lleva la flor a
+**Vídeo**: `video/tramo_hospederia.avi` (Movie Maker de Godot, MJPEG, 1280 × 720, 30 FPS, 776 fotogramas = 25,9 s): Kael lleva la flor a
 Lumi, sube la escalera de piedra, cruza el paso, sube la escalera de madera, entra, mira el dibujo y duerme. (No hay
 `ffmpeg` en el PC para pasarlo a MP4.)
 
