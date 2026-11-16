@@ -713,7 +713,7 @@ def casa_barco(M, x0, x1, z0, z1, alto, hacia, semilla, techo="vela", piso=False
         def color(i, j):
             if (i, j) in rem:
                 return jit(REMIENDO if (i + j) % 2 else REMIENDO2, 0.04)
-            return jit(mezcla(LONA, (0.78, 0.74, 0.66), 0.25 * (j % 2)), 0.03)
+            return jit(mezcla(LONA, (0.78, 0.74, 0.66), 0.07 * (j % 2)), 0.03)
         P = lona_curva(M, (xa, alto_fondo, z0 - 0.25), (xv, top - 0.05, z0 - 0.25),
                        (xa, alto_fondo, z1 + 0.25), (xv, top - 0.05, z1 + 0.25), 5, 3, 0.12, color)
         # el dobladillo del borde bajo y los cabos que la atan a los listones
@@ -844,8 +844,8 @@ def kit_quilla(M):
     tubo(M, (46.4, 0.55, 29.6), (46.4, 0.55, 30.4), 0.12, 0.12, 8, "tablazon", TABLA[0])          # el torno
     for zz in (29.55, 30.45):
         caja(M, (46.4, 0.42, zz), (0.1, 0.26, 0.05), "tablazon", TABLA[1])
-    caja_mm(M, (42.4, 0.18, 31.68), (47.5, 0.3, 32.3), "tablazon", jit(TABLA[1], 0.05))            # la repisa del sur
-    pilotes(M, 42.4, 31.68, 47.5, 32.3, 0.3, 1.7)
+    caja_mm(M, (42.4, 0.18, 31.55), (47.5, 0.3, 32.3), "tablazon", jit(TABLA[1], 0.05))            # la repisa del sur
+    pilotes(M, 42.4, 31.55, 47.5, 32.3, 0.3, 1.7)
     ancla("fardos", (42.85, 0.3, 31.98))                                                           # el montón
     # la barca de abajo (amarrada a los pilotes del descansillo)
     bx, bz = 48.6, 30.2
@@ -861,14 +861,18 @@ def kit_quilla(M):
     cabo(M, (bx, NIVEL_AGUA + 0.5, bz - 1.4), (47.4, 0.2, 29.2), r=0.018, comba=0.2, n=4)
     ancla("barca", (bx, NIVEL_AGUA + 0.2, bz))
     # el banco de la carpintera junto a la costilla 32 (al oeste de la pasarela, fuera de lo andable)
-    caja_mm(M, (36.7, 0.18, 31.62), (38.2, 0.3, 32.9), "tablazon", TABLA[2])
-    pilotes(M, 36.7, 31.62, 38.2, 32.9, 0.3, 1.2)
-    for xx in (36.95, 37.95):                                                                       # caballetes
-        for zz in (31.85, 32.65):
-            viga(M, (xx, 0.3, zz), (xx + (0.12 if xx < 37.4 else -0.12), 1.0, zz), 0.07, 0.07, "tablazon", TABLA[0])
-    caja_mm(M, (36.85, 1.0, 31.75), (38.05, 1.08, 32.75), "tablazon", jit(TABLA[2], 0.04))
-    ancla("banco_carpintera", (37.45, 0.3, 32.2))
-    ancla("tablones", (37.0, 0.3, 32.6))
+    # (la plataforma: x 35,2-38,2 y z 31,65-32,75, entre la choza de la rampa y la casa del oeste; la costilla pasa a 8 m)
+    caja_mm(M, (35.2, 0.18, 31.65), (38.2, 0.3, 32.75), "tablazon", TABLA[2])
+    pilotes(M, 35.2, 31.65, 38.2, 32.75, 0.3, 1.5)
+    for xx in (36.15, 37.15):                                                                       # caballetes
+        for zz in (31.95, 32.3):
+            viga(M, (xx, 0.3, zz), (xx + (0.1 if xx < 36.6 else -0.1), 0.78, zz), 0.06, 0.06, "tablazon", TABLA[0])
+        caja_mm(M, (xx - 0.08, 0.72, 31.9), (xx + 0.08, 0.79, 32.35), "tablazon", TABLA[1])
+    caja(M, (35.3, 0.8, 31.75), (0.08, 1.0, 0.08), "tablazon", TABLA[0])                         # el poste de las herramientas
+    caja(M, (35.3, 1.1, 31.8), (0.28, 0.06, 0.06), "hierro", OXIDO)
+    ancla("banco_carpintera", (36.65, 0.3, 32.12))
+    ancla("tablones", (35.5, 0.3, 32.2))
+    ancla("entrega_carpintera", (37.85, 0.3, 32.2))
     # tendederos de lado a lado de la Quilla, entre los pisos altos: camisas, sábanas y una vela pequeña
     for z, ya, yb in ((35.2, 4.6, 4.4), (41.0, 4.5, 4.7)):
         a, b = Vector((37.4, ya, z)), Vector((42.6, yb, z + 0.25))
@@ -930,7 +934,7 @@ def atrezo_quilla(M):
     ancla("costura", (43.0, 0.3, 40.2))
     # tablones de la carpintera
     for k in range(4):
-        caja(M, (37.0, 0.36 + 0.07 * k, 32.6), (0.28, 0.06, 1.7 - 0.15 * k), "tablazon",
+        caja(M, (35.5 + 0.02 * (k % 2), 0.33 + 0.065 * k, 32.2), (0.26, 0.06, 0.95 - 0.08 * k), "tablazon",
              jit(mezcla(TABLA[2], BLANQUEADA[0], 0.4), 0.05))
     # redes secándose en las barandillas de las pasarelas y un salabardo
     for (x, z) in ((37.9, 34.2), (42.1, 42.3)):
@@ -1240,11 +1244,11 @@ def escena_horneado(anclas):
         if not (k.startswith("farol_") and k != "farol_38") and k != "farol_archivo":
             continue
         ld = bpy.data.lights.new(k, 'POINT')
-        ld.energy = 55.0 if k in ("farol_44", "farol_32") else (25.0 if k == "farol_archivo" else 40.0)
+        ld.energy = 140.0 if k in ("farol_44", "farol_32") else (30.0 if k == "farol_archivo" else 70.0)
         ld.color = LUZ_FAROL
         ld.shadow_soft_size = 0.1
         lo = bpy.data.objects.new(k + "_luz", ld)
-        lo.location = (p[0], -p[2], p[1] - 0.05)
+        lo.location = (p[0], -p[2], p[1] - 0.45)            # (bajo la base del farol: dentro, el cristal la tapaba)
         bpy.context.scene.collection.objects.link(lo)
         luces += 1
     nota("escena de horneado: laguna y %d faroles (sin el de la costilla 38)" % luces)
@@ -1430,6 +1434,30 @@ def sondas(bvh):
     return {"origen": [x0, z0], "paso": paso, "nx": nx, "nz": nz, "altura": 1.0, "sol": sol, "cielo": cielo}
 
 
+def faroles_suelo(bvh, anclas):
+    """La luz DIRECTA de los faroles en las tablas, bajo cada costilla de la Quilla (para la prueba: la 38 no alumbra).
+    Irradiancia relativa (potencia / distancia² × coseno, con su sombra), igual que la ponen las luces del horneado."""
+    r = {}
+    for z in COSTILLAS_QUILLA:
+        p = Vector((40.0, 0.02, z))
+        total = 0.0
+        for k, a in anclas.items():
+            if not k.startswith("farol_") or k == "farol_38":
+                continue
+            d = Vector(a) - Vector((0, 0.45, 0)) - p
+            dist = d.length
+            if dist > 12.0:
+                continue
+            pb, db = Vector((p.x, -p.z, p.y)), Vector((d.x, -d.z, d.y)).normalized()
+            hit = bvh.ray_cast(pb + db * 0.02, db, dist - 0.05)
+            if hit[0] is not None:
+                continue
+            total += (140.0 if k in ("farol_44", "farol_32") else 70.0) * max(0.0, d.normalized().y) / (dist * dist)
+        r["%d" % int(z)] = round(total, 3)
+    nota("luz directa de los faroles en las tablas: %s" % r)
+    return r
+
+
 def vacios(choques, anclas, padres):
     objs = []
     for k, (dest, x, y0, z, w, d, h) in enumerate(choques):
@@ -1500,6 +1528,21 @@ def main():
             fijo.append(cara)
         else:
             piezas.append(cara)
+    # (optimización) menos superficies = menos llamadas de dibujo: lo pequeño de hierro y de cabo va con el grano «liso»
+    # (a esta distancia no se distingue su dibujo; el color lo pone el tinte); en lo grande, el cabo (redes) también
+    if NIVEL >= 4:
+        for c in piezas:
+            if c[1] in ("hierro", "cabo"):
+                c[1] = "liso"
+        for c in fijo:
+            if c[1] == "cabo":
+                c[1] = "liso"
+        for k, lista in otros.items():               # coronas: madera (y el cristal del farol); fantasmas: uno solo
+            for c in lista:
+                if k.startswith("corona_") and c[1] != "brillo":
+                    c[1] = "blanqueada"
+                elif k in FANTASMAS:
+                    c[1] = "liso"
     imgs = texturas(carpeta_tex) if TEXTURAS else None
     img_luz = bpy.data.images.new("quilla_luz", RES, RES, alpha=False, float_buffer=True) if HORNEAR else None
     mats = materiales(imgs, img_luz)
@@ -1528,7 +1571,8 @@ def main():
             ps.extend([[b + i for i in p.vertices] for p in m.polygons])
         bvh = BVHTree.FromPolygons(vs, ps)
         datos.update({"escala": escala, "res": [RES, RES // 2], "hacia_sol": [HACIA_SOL.x, HACIA_SOL.y, HACIA_SOL.z],
-                      "calibracion": cal, "muestras": MUESTRAS, "sondas": sondas(bvh)})
+                      "calibracion": cal, "muestras": MUESTRAS, "sondas": sondas(bvh),
+                      "faroles_suelo": faroles_suelo(bvh, anclas)})
         nota("sondas: %d × %d" % (datos["sondas"]["nx"], datos["sondas"]["nz"]))
         bpy.data.objects.remove(agua)
     elif carpeta_luz:

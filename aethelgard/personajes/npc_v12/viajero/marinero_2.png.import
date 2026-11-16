@@ -2,7 +2,18 @@
 
 importer="texture"
 type="CompressedTexture2D"
+uid="uid://bsdqsdw7q1sco"
+path.s3tc="res://.godot/imported/marinero_2.png-30c86a0d2d4c2a5c820acd22b871c80f.s3tc.ctex"
+path.etc2="res://.godot/imported/marinero_2.png-30c86a0d2d4c2a5c820acd22b871c80f.etc2.ctex"
+metadata={
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
+}
 
+[deps]
+
+source_file="res://personajes/npc_v12/viajero/marinero_2.png"
+dest_files=["res://.godot/imported/marinero_2.png-30c86a0d2d4c2a5c820acd22b871c80f.s3tc.ctex", "res://.godot/imported/marinero_2.png-30c86a0d2d4c2a5c820acd22b871c80f.etc2.ctex"]
 
 [params]
 
