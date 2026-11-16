@@ -29,7 +29,8 @@ extends RefCounted
 # misión oculta). El premio va al inventario («Éter»).
 #
 # CONTRATO con la región (zonas3d/barrio/barrio.gd, dueño A):
-#   - PIEZAS: id → {"ancla", "radio", "boton", "si", "senal", "texto", "texto_sin"}. La región enseña las de la zona de
+#   - PIEZAS: id → {"ancla", "radio", "boton", "si", "senal", "texto", "texto_sin"} y, dentro, «clase» y «de» (ver
+#     PIEZAS). La región enseña las de la zona de
 #     Kael («int_<id>_…» solo dentro de ese interior) y, al pulsar, llama a accion(pid) → {texto, efecto, dialogo, guardar}.
 #     El botón es FIJO (la región lee «boton»): el carro hace lo que toca según el estado (examinar, medir o poner el
 #     pasador) y el aviso lo dice. PETICIÓN DE CONTRATO a A: si existe Barrio.boton(pid), usarlo (el texto cambiaría a
@@ -131,7 +132,7 @@ const NPCS := {
 # puerta pero a 3 m o más de su botón (los dos botones no se pisan), fuera de su umbral y de los caminos (la prueba lo
 # comprueba). El caballo no habla: se examina.
 const PUESTOS := {
-	"damian": {"interior": "taller", "ancla": "int_taller_potro", "tarea": "tarea",
+	"damian": {"interior": "taller", "ancla": "int_taller_damian", "tarea": "tarea",
 		"fuera": Vector3(-2.0, 1.4, -22.6), "mira": Vector3(-4.6, 1.4, -20.6)},
 	"odila": {"interior": "vivienda", "ancla": "int_vivienda_odila", "tarea": "tarea",
 		"fuera": Vector3(-25.0, 1.4, -28.9), "mira": Vector3(-23.0, 1.4, -27.4)},
@@ -142,22 +143,86 @@ const PUESTOS := {
 # ---------------------------------------------------------------------------------------------------- piezas
 # Lo que se examina. «ancla» del contrato (exterior de trazado.gd o «int_*» de los interiores de B). «si»: si no se
 # cumple, se enseña «texto_sin». «senal»: la que se aplica al usarla (además de lo que haga accion()).
+# Las de DENTRO llevan la «clase» de B (interiores/<id>.json, «objetos»; la prueba exige la misma) y, si son de alguien,
+# su dueño («de»):
+#   «examinable»: se mira. Examinar NO es coger: nada cambia (salvo la pista que apunta su señal).
+#   «ofrecido»: lo da su dueño, no se toma. Con el dueño en la sala, «texto» es lo que dice y hace al pedírselo (se para y
+#     se gira: Barrio.reaccion); sin él, «texto_solo» (no te sirves tú).
+#   «privado»: es de alguien; no se saquea. Con el dueño en la sala, su reacción («texto»); sin él, el aviso («texto_solo»).
+#     Ni lo uno ni lo otro cambia la partida.
+# La galga es examinable pero se COGE (la misión): solo si Odila o Damián te han dicho que está ahí (cond:galga_permitida);
+# si no, Odila llama la atención («texto_ajeno»).
 const PIEZAS := {
 	"carro_horno": {"ancla": "carro_horno", "radio": 1.5, "boton": "Examinar el carro", "si": "", "senal": "",
 		"texto": "Al eje le falta el pasador: partido en dos, gastado, no roto de un golpe.",
 		"texto_sin": ""},
 	"avena": {"ancla": "establo_caballo", "radio": 1.9, "boton": "Examinar a Avena", "si": "", "senal": "bar:no_culpa",
 		"texto": "Avena tiene los cascos limpios y las herraduras enteras. No ha dado ninguna coz.", "texto_sin": ""},
-	"clavo_galga": {"ancla": "int_taller_clavo", "radio": 1.3, "boton": "Examinar el clavo", "si": "", "senal": "bar:clavo",
-		"texto": "Un clavo con la silueta de una galga pintada alrededor. Vacío.", "texto_sin": ""},
-	"galga": {"ancla": "int_vivienda_repisa", "radio": 1.3, "boton": "Coger la galga", "si": "!estado:enf_galga",
-		"senal": "bar:galga", "texto": "En la repisa, junto al cántaro: una tablilla con muescas. La galga del carretero.",
+	# --- el horno de Maela
+	"boca_horno": {"ancla": "int_horno_boca", "clase": "examinable", "radio": 1.3, "boton": "Examinar el horno", "si": "",
+		"senal": "", "texto": "La boca del horno, con las brasas al rojo. De aquí sale el pan de todo el barrio.",
+		"texto_sin": ""},
+	"artesa": {"ancla": "int_horno_artesa", "clase": "examinable", "radio": 1.3, "boton": "Examinar la artesa", "si": "",
+		"senal": "", "texto": "La masa reposa en la artesa, bajo un paño enharinado. Será la hornada de mañana.",
+		"texto_sin": ""},
+	"estante_horno": {"ancla": "int_horno_estante", "clase": "examinable", "radio": 1.3, "boton": "Examinar el estante",
+		"si": "", "senal": "", "texto": "Hogazas enfriándose en fila. Huele a corteza recién hecha.", "texto_sin": ""},
+	"mostrador_pan": {"ancla": "int_horno_mostrador", "clase": "ofrecido", "de": "maela", "radio": 1.3, "boton": "Pedir pan",
+		"si": "", "senal": "", "texto": "Maela: «Toma un pellizco de la corteza. El resto es para vender.»",
+		"texto_solo": "El pan del mostrador es de Maela. Sin ella aquí, no se toca.", "texto_sin": ""},
+	"alacena": {"ancla": "int_horno_alacena", "clase": "privado", "de": "maela", "radio": 1.3, "boton": "Abrir la alacena",
+		"si": "", "senal": "", "texto": "Maela: «¡Eh, eso es mío! Si quieres algo, me lo pides.»",
+		"texto_solo": "La alacena de Maela. No es tuya: mejor no abrirla.", "texto_sin": ""},
+	"mesa_maela": {"ancla": "int_horno_mesa", "clase": "privado", "de": "maela", "radio": 1.3, "boton": "Tocar la mesa",
+		"si": "", "senal": "", "texto": "Maela: «Esa es mi mesa, y ese mi tazón. La tienda está delante.»",
+		"texto_solo": "La mesa de Maela, con su tazón y el pan empezado. No es tuya.", "texto_sin": ""},
+	# --- el taller de Damián
+	"potro": {"ancla": "int_taller_potro", "clase": "examinable", "radio": 1.3, "boton": "Examinar el potro", "si": "",
+		"senal": "", "texto": "Una rueda a medio hacer en el potro: ocho radios de doce, y tres pinas puestas.",
+		"texto_sin": ""},
+	"clavo_galga": {"ancla": "int_taller_clavo", "clase": "examinable", "radio": 1.3, "boton": "Examinar el clavo",
+		"si": "!estado:enf_pasador", "senal": "bar:clavo",
+		"texto": "Un clavo con la silueta de una galga pintada alrededor. Vacío.",
+		"texto_sin": "La galga, otra vez en su clavo, dentro de su silueta pintada."},
+	"torno": {"ancla": "int_taller_torno", "clase": "examinable", "radio": 1.3, "boton": "Examinar el torno", "si": "",
+		"senal": "", "texto": "Un torno de pértiga: la vara del techo hace de muelle y el pie, de motor.", "texto_sin": ""},
+	"cantaro_taller": {"ancla": "int_taller_cantaro", "clase": "ofrecido", "de": "damian", "radio": 1.3,
+		"boton": "Pedir agua", "si": "", "senal": "", "texto": "Damián: «Bebe, bebe, que el serrín da sed.» Bebes un trago.",
+		"texto_solo": "El cántaro es de Damián. Sin él aquí, no te sirves tú.", "texto_sin": ""},
+	"banco_corte": {"ancla": "int_taller_banco_corte", "clase": "privado", "de": "damian", "radio": 1.3,
+		"boton": "Tocar los pasadores", "si": "", "senal": "",
+		"texto": "Damián: «Esos están en bruto. El tuyo lo corto yo, a medida.»",
+		"texto_solo": "Pasadores en bruto, de Damián. No son tuyos ni están a medida.", "texto_sin": ""},
+	"trastienda": {"ancla": "int_taller_paso_trastienda", "clase": "privado", "de": "damian", "radio": 1.1,
+		"boton": "Abrir la trastienda", "si": "!cond:trastienda_abierta", "senal": "",
+		"texto": "Damián: «Ahí guardo la madera buena. Pasa cuando yo te lo diga.»",
+		"texto_solo": "La puerta de la trastienda, atrancada. Es de Damián.",
+		"texto_sin": "La trastienda, abierta: fresno apilado y el banco de cortar."},
+	# --- la vivienda de Odila y Nela
+	"galga": {"ancla": "int_vivienda_repisa", "clase": "examinable", "radio": 1.3, "boton": "Coger la galga",
+		"si": "!estado:enf_galga", "senal": "bar:galga", "de": "odila",
+		"texto": "En la repisa, junto al cántaro: una tablilla con muescas. La galga del carretero.",
+		"texto_ajeno": "Odila: «Eso es de Damián. Pregunta antes de coger, ¿eh?»",
+		"texto_solo": "La galga del carretero. No es tuya: mejor preguntar antes a Odila.",
 		"texto_sin": "La repisa, junto al cántaro. Ahí estaba la galga."},
-	"rueda_nela": {"ancla": "int_vivienda_rincon", "radio": 1.2, "boton": "Examinar la rueda", "si": "", "senal": "",
+	"mesa_familia": {"ancla": "int_vivienda_mesa", "clase": "examinable", "radio": 1.3, "boton": "Examinar la mesa",
+		"si": "", "senal": "", "texto": "La mesa de la familia: tres platos, una jarra y medio pan.", "texto_sin": ""},
+	"cantaro_casa": {"ancla": "int_vivienda_cantaro", "clase": "ofrecido", "de": "odila", "radio": 1.3,
+		"boton": "Pedir agua", "si": "", "senal": "", "texto": "Odila: «Sírvete, que vienes de la calle.» Bebes un trago.",
+		"texto_solo": "El cántaro es de Odila. Sin ella aquí, no te sirves tú.", "texto_sin": ""},
+	"arcon": {"ancla": "int_vivienda_arcon", "clase": "privado", "de": "odila", "radio": 1.3, "boton": "Abrir el arcón",
+		"si": "", "senal": "", "texto": "Odila: «¡El arcón no! Ahí van las sábanas buenas.»",
+		"texto_solo": "El arcón de Odila, con sus herrajes. No es tuyo para abrirlo.", "texto_sin": ""},
+	"rueda_nela": {"ancla": "int_vivienda_rincon", "clase": "examinable", "radio": 1.2, "boton": "Examinar la rueda",
+		"si": "", "senal": "",
 		"texto": "Una rueda de juguete, tallada con mimo. Sus radios llevan las muescas del taller.", "texto_sin": ""},
-	"estante_horno": {"ancla": "int_horno_estante", "radio": 1.3, "boton": "Examinar el estante", "si": "", "senal": "",
-		"texto": "Hogazas enfriándose en fila. Huele a corteza recién hecha.", "texto_sin": ""},
 }
+const CLASES := ["examinable", "ofrecido", "privado"]
+
+# Quién está ahora en la sala de Kael (lo pone barrio_vivo.gd; vacío fuera del barrio) y el dueño que tiene que
+# reaccionar a lo último que Kael ha tocado (barrio_vivo.gd lo atiende y lo vacía).
+static var presentes := {}
+static var reaccion := ""
 
 # Los textos del carro según el estado (accion("carro_horno")).
 const CARRO := {
@@ -240,7 +305,8 @@ const SABER := [
 
 # Condiciones con nombre (cond:…), para error_condicion().
 const CONDICIONES := ["enf_empieza", "enf_terminada", "enf_taller_o_mas", "enf_galga_o_mas", "enf_galga_saltada",
-	"enf_medida_o_mas", "enf_pasador_o_mas", "enf_reparado_o_mas", "vivienda_cerrada", "taller_cerrado", "mision_activa"]
+	"enf_medida_o_mas", "enf_pasador_o_mas", "enf_reparado_o_mas", "vivienda_cerrada", "taller_cerrado", "mision_activa",
+	"galga_permitida", "trastienda_abierta"]
 const TIPOS_CONDICION := ["estado", "cond", "hito", "estado_de"]
 
 
@@ -319,6 +385,10 @@ static func _cond(n: String) -> bool:
 			return not interior_hecho("vivienda")
 		"taller_cerrado":
 			return not interior_hecho("taller")
+		"galga_permitida":                            # Odila o Damián te han dicho dónde está (y que la lleves)
+			return estado("j_sabe_galga_en_casa_odila") or estado("j_sabe_galga_en_casa_damian")
+		"trastienda_abierta":
+			return paso_interno("trastienda")
 	push_warning("Barrio: condición desconocida «%s»" % n)
 	return false
 
@@ -464,6 +534,16 @@ static func paso_interno(nombre: String) -> bool:
 	return false
 
 
+# Dónde está la galga (una sola ubicación): «repisa» (vivienda, la copia de B), «kael» (no se ve) o «clavo» (en el
+# taller, otra vez dentro de su silueta, cuando Damián corta el pasador con la medida).
+static func donde_galga() -> String:
+	if estado("enf_pasador"):
+		return "clavo"
+	if estado("enf_galga") or estado("enf_medida"):
+		return "kael"
+	return "repisa"
+
+
 # El texto del botón de una pieza según el estado (PETICIÓN DE CONTRATO: la región aún usa PIEZAS[pid]["boton"]).
 static func boton(pid: String) -> String:
 	if pid == "carro_horno" and activado() and puede_pasar():
@@ -471,6 +551,8 @@ static func boton(pid: String) -> String:
 			return "Poner el pasador"
 		if estado("enf_galga") and not estado("enf_medida"):
 			return "Medir el eje con la galga"
+	if pid == "galga" and donde_galga() != "repisa":
+		return "Examinar la repisa"
 	return str(PIEZAS.get(pid, {}).get("boton", "Examinar"))
 
 
@@ -486,6 +568,20 @@ static func accion(pid: String) -> Dictionary:
 		return _usar_carro()
 	if not cumple(d.get("si", "")):
 		return {"texto": str(d["texto_sin"]), "efecto": "", "dialogo": "", "guardar": false}
+	var duenio := str(d.get("de", ""))
+	var esta := duenio != "" and presentes.has(duenio)
+	if str(d.get("clase", "")) in ["privado", "ofrecido"]:
+		# lo de otro: se pide o se respeta. Con el dueño delante, contesta (y se gira: barrio_vivo); sin él, el aviso.
+		# Nada cambia en la partida (no se saquea ni se toma).
+		if esta:
+			reaccion = duenio
+		return {"texto": str(d["texto"]) if esta else str(d.get("texto_solo", d["texto"])), "efecto": "", "dialogo": "",
+			"guardar": false}
+	if pid == "galga" and not _cond("galga_permitida"):
+		if esta:
+			reaccion = duenio
+		return {"texto": str(d["texto_ajeno"]) if esta else str(d["texto_solo"]), "efecto": "", "dialogo": "",
+			"guardar": false}
 	var t := str(d["texto"])
 	var cambia := false
 	if str(d.get("senal", "")) != "":

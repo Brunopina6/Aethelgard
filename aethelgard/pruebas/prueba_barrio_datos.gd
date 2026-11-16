@@ -20,6 +20,7 @@ extends SceneTree
 
 const B := preload("res://ciudades/oakhaven_barrio.gd")
 const T := preload("res://zonas3d/barrio/trazado.gd")
+const I := preload("res://zonas3d/barrio/interiores.gd")
 const ARCHIVO := "user://prueba_barrio_datos.save"
 const CARPETA := "res://dialogos/oakhaven/barrio/"
 const CARPETA_PJ := "res://dialogos/personajes/oakhaven/barrio/"
@@ -260,13 +261,17 @@ func _datos() -> void:
 	for e in E.todos():
 		_ok(not ids.has(e["m"]["id"]), "2: id de misión repetido «%s»" % e["m"]["id"])
 		ids[e["m"]["id"]] = true
-	# anclas de las piezas: del contrato (exteriores en el trazado; las de dentro con el prefijo de B)
-	var interiores_anclas := ["int_horno_entrada", "int_horno_salida", "int_horno_boca", "int_horno_artesa",
-		"int_horno_estante", "int_horno_mesa", "int_horno_maela", "int_taller_entrada", "int_taller_salida", "int_taller_clavo",
-		"int_taller_potro", "int_taller_banco_corte", "int_taller_paso_trastienda", "int_taller_damian",
-		"int_vivienda_entrada", "int_vivienda_salida", "int_vivienda_repisa", "int_vivienda_mesa", "int_vivienda_rincon",
-		"int_vivienda_odila", "int_vivienda_nela"]
+	# anclas de las piezas: del contrato (exteriores en el trazado; las de dentro, las de B: interiores/<id>.json)
+	var interiores_anclas: Array = []
+	var clase_de := {}                                        # ancla de B → su clase (examinable, ofrecido, privado)
+	for id in I.IDS:
+		interiores_anclas.append_array((I.datos(id).get("anclas", {}) as Dictionary).keys())
+		for o in I.datos(id).get("objetos", []):
+			clase_de[str(o["ancla"])] = str(o["clase"])
+	_ok(interiores_anclas.size() >= 25 and clase_de.size() == 17, "2: los interiores de B no traen sus anclas y objetos (%d, %d)" % [
+		interiores_anclas.size(), clase_de.size()])
 	var fuera: Array = []
+	var con_pieza := {}
 	for pid in B.PIEZAS:
 		var a: String = B.PIEZAS[pid]["ancla"]
 		if _ancla_exterior(a):
@@ -274,8 +279,17 @@ func _datos() -> void:
 			fuera.append([pid, T.ancla(a)])
 		else:
 			_ok(a in interiores_anclas, "2: la pieza %s usa «%s», que no es del contrato de los interiores" % [pid, a])
+			# la clase de B, la misma; lo que es de alguien dice de quién y qué pasa sin él
+			_ok(str(B.PIEZAS[pid].get("clase", "")) == str(clase_de.get(a, "?")), "2: la pieza %s es «%s» y B dice «%s»" % [
+				pid, B.PIEZAS[pid].get("clase", ""), clase_de.get(a, "?")])
+			con_pieza[a] = true
+			if str(B.PIEZAS[pid].get("clase", "")) in ["ofrecido", "privado"]:
+				_ok(B.NPCS.has(str(B.PIEZAS[pid].get("de", ""))) and B.PIEZAS[pid].has("texto_solo"),
+					"2: la pieza %s (%s) no dice de quién es o qué pasa sin su dueño" % [pid, B.PIEZAS[pid]["clase"]])
 		for k in ["radio", "boton", "si", "senal", "texto", "texto_sin"]:
 			_ok(B.PIEZAS[pid].has(k), "2: a la pieza %s le falta «%s»" % [pid, k])
+	for a in clase_de:
+		_ok(con_pieza.has(a), "2: el objeto «%s» de B (%s) no tiene pieza" % [a, clase_de[a]])
 	for pd in B.PUESTOS:
 		var q: Dictionary = B.PUESTOS[pd]
 		_ok(q["ancla"] in interiores_anclas, "2: el puesto de %s usa «%s», fuera del contrato" % [pd, q["ancla"]])
@@ -320,8 +334,9 @@ func _textos() -> void:
 			_revisar(f, "frase de " + id, MAX_FRASE)
 		_revisar(B.NPCS[id]["nombre"], "nombre de " + id)
 	for pid in B.PIEZAS:
-		for k in ["texto", "texto_sin", "boton"]:
-			_revisar(str(B.PIEZAS[pid][k]), "%s de la pieza %s" % [k, pid])
+		for k in ["texto", "texto_sin", "boton", "texto_solo", "texto_ajeno"]:
+			if B.PIEZAS[pid].has(k):
+				_revisar(str(B.PIEZAS[pid][k]), "%s de la pieza %s" % [k, pid])
 	for k in B.CARRO:
 		_revisar(B.CARRO[k], "texto del carro (%s)" % k)
 	_revisar(B.LLAMAR, "llamar a la puerta")
@@ -359,11 +374,13 @@ func _textos() -> void:
 			"bar:taller", "bar:clavo", "bar:galga", "bar:medida", "bar:pasador", "bar:reparado", "bar:cesta", "bar:entrega", "bar:fin"]:
 		avisos.append(B.aplicar(s))
 	_encender()
+	B.aplicar("bar:sabe:galga_en_casa:odila")
 	for pid in ["carro_horno", "avena", "galga", "carro_horno", "carro_horno"]:
 		avisos.append(str(B.accion(pid).get("texto", "")))
 	B.aplicar("bar:pasador")
 	avisos.append(str(B.accion("carro_horno").get("texto", "")))
 	_encender()                                               # (la galga primero: medir empieza la misión)
+	B.aplicar("bar:sabe:galga_en_casa:odila")                # (Odila dice dónde está: se puede coger)
 	for pid in ["galga", "carro_horno", "clavo_galga"]:
 		avisos.append(str(B.accion(pid).get("texto", "")))
 	for a in avisos:
@@ -572,6 +589,7 @@ func _mision() -> void:
 
 	# --- la galga PRIMERO (antes de empezar): se guarda y NO empieza; su pista sale al empezar
 	_encender()
+	_hacer("bar:sabe:galga_en_casa:odila", "G Odila dice dónde está la galga")
 	t = _hacer("galga", "G galga")
 	_ok(B.estado("enf_galga") and E.estado(e) == "oculto" and not t.contains("Misión"), "5G: la galga suelta empieza la misión")
 	_ok(not t.contains("Diario"), "5G: la galga suelta habla del Diario («%s»)" % t)
@@ -602,6 +620,7 @@ func _mision() -> void:
 	_diario_sin_adelantar(e, "T1")
 	_ok(B.aplicar("bar:pasador") == "" and not B.estado("enf_pasador"), "5T: el pasador sin la medida")
 	_ok(B.aplicar("bar:medida") == "", "5T: medir sin la galga")
+	_hacer("bar:sabe:galga_en_casa:odila", "T Odila")
 	_hacer("galga", "T galga")
 	_hacer("carro_horno", "T medir")
 	_ok(_paso(e) == "pasador", "5T: tras medir, paso %s" % _paso(e))
@@ -615,6 +634,7 @@ func _mision() -> void:
 
 	# --- MEDIR antes del taller con la galga y sin hablar con Maela; y repetir señales sin efecto
 	_encender()
+	_hacer("bar:sabe:galga_en_casa:odila", "M Odila")
 	_hacer("galga", "M galga")
 	_hacer("carro_horno", "M medir")
 	_ok(E.estado(e) == "activo" and B.cumple("cond:enf_galga_o_mas") and B.cumple("cond:enf_medida_o_mas"), "5M: medir primero")
@@ -627,7 +647,68 @@ func _mision() -> void:
 		for k in ahora:
 			_ok(antes.get(k, false) == ahora[k] or k.begins_with("j_"), "5M: repetir %s cambia «%s»" % [s, k])
 	_ok(not B.cumple("cond:enf_galga_saltada"), "5M: la galga saltada sin motivo")
+	_privado()
 	_limpiar()
+
+
+# Lo de dentro: examinar no es coger; lo privado y lo ofrecido no se toman (su dueño contesta si está, o un aviso);
+# la galga solo se coge si Odila o Damián han dicho dónde está; y está en un solo sitio.
+func _privado() -> void:
+	_encender()
+	_hacer("bar:sabe:pasador_roto:maela", "P empieza")
+	for pid in B.PIEZAS:
+		var d: Dictionary = B.PIEZAS[pid]
+		var clase := str(d.get("clase", ""))
+		if clase == "" or pid == "galga":
+			continue
+		for dentro in [false, true]:
+			B.presentes = {str(d.get("de", "")): true} if dentro else {}
+			B.reaccion = ""
+			var antes: Dictionary = Engine.get_meta("mazmorras", {}).get(B.NOMBRE, {}).duplicate()
+			var inv_antes: Dictionary = Engine.get_meta("inventario", {}).duplicate(true)
+			var r: Dictionary = B.accion(pid)
+			var ahora: Dictionary = Engine.get_meta("mazmorras", {}).get(B.NOMBRE, {})
+			for k in ahora:
+				_ok(antes.get(k, false) == ahora[k] or k in ["j_visto_clavo"], "5P: %s (%s) cambia «%s»" % [pid, clase, k])
+			_ok(Engine.get_meta("inventario", {}) == inv_antes, "5P: %s (%s) cambia el inventario" % [pid, clase])
+			_ok(not r.get("guardar", false) or clase == "examinable", "5P: %s (%s) guarda la partida" % [pid, clase])
+			if clase in ["privado", "ofrecido"] and B.cumple(d.get("si", "")):
+				var duenio: String = d["de"]
+				var quien: String = B.NPCS[duenio]["corto"]
+				if dentro:
+					_ok(str(r["texto"]).begins_with(quien + ":") and B.reaccion == duenio,
+						"5P: %s con %s delante: no contesta ni reacciona («%s», «%s»)" % [pid, quien, r["texto"], B.reaccion])
+				else:
+					_ok(str(r["texto"]) == str(d["texto_solo"]) and B.reaccion == "", "5P: %s sin %s: «%s»" % [pid, quien, r["texto"]])
+			elif clase == "examinable":
+				_ok(B.reaccion == "", "5P: examinar %s hace reaccionar a alguien" % pid)
+	# la trastienda: privada y cerrada antes del taller; abierta después (otro texto, nadie se enfada)
+	B.presentes = {"damian": true}
+	_ok(str(B.accion("trastienda")["texto"]).begins_with("Damián:"), "5P: la trastienda cerrada no hace contestar a Damián")
+	_hacer("bar:taller", "P taller")
+	B.reaccion = ""
+	_ok(B.accion("trastienda")["texto"] == B.PIEZAS["trastienda"]["texto_sin"] and B.reaccion == "",
+		"5P: con el taller, la trastienda sigue cerrada")
+	# la galga: sin que nadie diga dónde está, no se coge (Odila llama la atención); dicho, sí; y luego ya no está
+	_encender()
+	B.presentes = {"odila": true}
+	B.reaccion = ""
+	var r: Dictionary = B.accion("galga")
+	_ok(not B.estado("enf_galga") and r["texto"] == B.PIEZAS["galga"]["texto_ajeno"] and B.reaccion == "odila",
+		"5P: la galga se coge sin preguntar («%s»)" % r["texto"])
+	_ok(B.donde_galga() == "repisa", "5P: la galga no está en la repisa al empezar")
+	B.presentes = {}
+	_ok(B.accion("galga")["texto"] == B.PIEZAS["galga"]["texto_solo"] and not B.estado("enf_galga"), "5P: la galga, sin Odila")
+	B.aplicar("bar:sabe:galga_en_casa:odila")
+	r = B.accion("galga")
+	_ok(B.estado("enf_galga") and B.donde_galga() == "kael", "5P: dicho dónde está, la galga no se coge («%s»)" % r["texto"])
+	_ok(B.boton("galga") == "Examinar la repisa", "5P: la repisa vacía sigue ofreciendo «Coger la galga»")
+	B.aplicar("bar:medida")
+	B.aplicar("bar:pasador")
+	_ok(B.donde_galga() == "clavo" and B.accion("clavo_galga")["texto"] == B.PIEZAS["clavo_galga"]["texto_sin"],
+		"5P: con el pasador, la galga no vuelve a su clavo")
+	B.presentes = {}
+	B.reaccion = ""
 
 
 # ================================================================= 6

@@ -16,6 +16,11 @@ extends SceneTree
 #      no se aparta, se hace a un lado y sigue (nadie espera al otro para siempre).
 #   6. Avena no se mueve; bebe tras el agua y come tras el heno; el agua del abrevadero se ve.
 #   7. Coste: µs de _process de la vida (PC).
+#   8. DENTRO (los interiores de B): Damián, Odila y Nela en sus anclas, de cara a la cámara; Maela anda dentro del horno
+#      en rectas que no cruzan muebles (cada 5 cm, lo andable de B) y nunca pisa un mueble en todo su ciclo; se le habla
+#      dentro; la bandeja se ve en la solera del horno; se habla con Damián dentro del taller desde el botón (Dialogic);
+#      tocar lo privado hace que su dueño se pare y mire a Kael; la galga de la repisa se oculta al cogerla y vuelve a su
+#      clavo con el pasador; los utensilios son los del GLB de B (no cajas).
 # Imprime «FALLOS: n».
 
 const ESCENA := "res://zonas3d/barrio/barrio.tscn"
@@ -57,6 +62,7 @@ func _correr() -> void:
 		await _ocupa()
 		await _avena()
 		await _coste()
+		await _dentro()
 	var BP = load("res://banco_pruebas.gd")
 	if current_scene != null:
 		current_scene.queue_free()
@@ -422,3 +428,161 @@ func _coste() -> void:
 	await _frames(120)
 	_nota("us_proceso de la vida: %.0f µs" % v.us_proceso)
 	_ok(v.us_proceso < 1500.0, "7: la vida tarda %.0f µs por fotograma (> 1,5 ms)" % v.us_proceso)
+
+
+# ================================================================= 8
+
+func _recta_sin_muebles(a: Vector3, b: Vector3) -> bool:
+	var n := maxi(1, ceili(Vector2(b.x - a.x, b.z - a.z).length() / 0.05))
+	for i in range(0, n + 1):
+		if not r.interiores.andable(a.lerp(b, float(i) / n)):
+			return false
+	return true
+
+
+func _entrar(id: String) -> void:
+	r._pasar_dentro(id)
+	await _frames(5)
+
+
+func _salir() -> void:
+	r._pasar_fuera()
+	await _frames(5)
+
+
+func _dentro() -> void:
+	var U = load("res://zonas3d/barrio/utensilios.gd")
+	for o in U.NOMBRES:
+		_ok(U.del_modelo(o), "8: el utensilio %s no sale del GLB de B (caja de reserva)" % o)
+	var I = r.interiores
+	# los de su puesto, dentro, en el ancla de B y de cara a la cámara (al sur)
+	for par in [["damian", "taller", "int_taller_damian"], ["odila", "vivienda", "int_vivienda_odila"],
+			["nela", "vivienda", "int_vivienda_nela"]]:
+		var w: Dictionary = v.vecinos[par[0]]
+		var e: Dictionary = v.estado_de(par[0])
+		_ok(e["lugar"] == par[1] and e["pos"].distance_to(I.ancla(par[2])) < 0.01, "8: %s no está en %s (%s, %s)" % [
+			par[0], par[2], e["lugar"], e["pos"]])
+		_ok(I.andable(e["pos"]), "8: %s está sobre un mueble" % par[0])
+		await _entrar(par[1])
+		_ok((w["nodo"] as Node3D).visible and absf(angle_difference((w["nodo"] as Node3D).rotation.y, 0.0)) < 0.2,
+			"8: %s no se ve dentro o no mira a la cámara (%.2f)" % [par[0], (w["nodo"] as Node3D).rotation.y])
+		await _salir()
+	# Maela dentro: tramos rectos sin muebles; en todo el ciclo, lo que pisa dentro es andable
+	for prog in ["normal", "carro_parado", "reparto"]:
+		v.errores.clear()
+		var c: Dictionary = v.compilar("maela", prog)
+		_ok(v.errores.is_empty(), "8: maela/%s: %s" % [prog, v.errores])
+		var tramos := 0
+		for s in c["segs"]:
+			if s["tipo"] == "ir" and s["lugar"] == "horno":
+				for i in range(1, s["pts"].size()):
+					tramos += 1
+					_ok(_recta_sin_muebles(s["pts"][i - 1], s["pts"][i]), "8: maela/%s: el tramo %s → %s cruza un mueble" % [
+						prog, s["pts"][i - 1], s["pts"][i]])
+		var w := {"segs": c["segs"], "ciclo": c["ciclo"]}
+		var tau := 0.0
+		var malos := 0
+		while tau < c["ciclo"]:
+			var e: Dictionary = v.estado_en(w, tau)
+			if e["lugar"] == "horno" and not I.andable(e["pos"]):
+				malos += 1
+			tau += 0.1
+		_ok(malos == 0 and tramos >= 3, "8: maela/%s: %d instantes dentro sobre un mueble (%d tramos rectos)" % [prog, malos, tramos])
+		_nota("maela/%s: %d tramos rectos dentro del horno" % [prog, tramos])
+	# hablar con Maela dentro del horno (en su artesa, en la boca) y ver la bandeja en la solera
+	Engine.set_meta("prologo_visto", false)                 # (la frase suelta)
+	await _entrar("horno")
+	var m: Dictionary = v.vecinos["maela"]
+	var hablados := 0
+	for s in m["segs"]:
+		if s["lugar"] != "horno" or s["tipo"] == "evento":
+			continue
+		m["retraso"] = v.t - (float(s["t0"]) + float(s["dur"]) * 0.5)
+		v.avanzar_reloj(0.0)
+		var e: Dictionary = v.estado_de("maela")
+		if e["lugar"] != "horno":
+			continue
+		for d in [Vector3(0, 0, 1.2), Vector3(1.2, 0, 0), Vector3(-1.2, 0, 0), Vector3(0, 0, -1.2), Vector3(0.9, 0, 0.9)]:
+			if I.andable(e["pos"] + d):
+				r._colocar_kael(e["pos"] + d)
+				break
+		v.avanzar_reloj(0.0)
+		r._bloqueo = 0.0
+		r._comprobar_cerca()
+		if r.cerca != "maela":
+			continue
+		v.hablar("maela")
+		var f := 0
+		while m["charla"] == "pendiente" and f < 200:
+			await process_frame
+			f += 1
+		if m["charla"] == "hablando":
+			hablados += 1
+			var n: Node3D = m["nodo"]
+			var hacia: Vector3 = r.kael.global_position - n.global_position
+			_ok(n.visible and absf(angle_difference(n.rotation.y, atan2(hacia.x, hacia.z))) < 0.35, "8: Maela no mira a Kael dentro")
+		v.reanudar_todos()
+		await _frames(3)
+	_ok(hablados >= 3, "8: dentro del horno solo se ha podido hablar con Maela %d veces" % hablados)
+	_nota("hablar con Maela dentro del horno: %d pasos" % hablados)
+	for s in m["segs"]:                                      # (amasando: la bandeja está en la boca)
+		if s["tipo"] == "tarea" and s["clip"] == "amasar":
+			m["retraso"] = v.t - (float(s["t0"]) + 1.0)
+	v.avanzar_reloj(0.0)
+	var boca: Node3D = v.objetos["bandeja"]["sitios"]["boca"]
+	_ok(boca.visible and boca.global_position.y > I.ORIGEN["horno"].y + 0.9, "8: la bandeja no se ve en la solera del horno (%s)" % boca.global_position)
+	await _salir()
+	Engine.set_meta("prologo_visto", true)
+	# Damián dentro del taller, desde el botón de la región (Dialogic)
+	var D = root.get_node_or_null("Dialogic")
+	await _entrar("taller")
+	r._colocar_kael(I.ancla("int_taller_damian") + Vector3(1.2, 0, 0.3))
+	await _frames(5)
+	r._bloqueo = 0.0
+	r._comprobar_cerca()
+	_ok(r.cerca == "damian" and r.boton_accion.text == "Hablar con Damián", "8: dentro del taller el botón no ofrece hablar con Damián (%s)" % r.cerca)
+	r._accion()
+	await _frames(5)
+	_ok(D != null and D.current_timeline != null and v.vecinos["damian"]["charla"] == "hablando", "8: hablar con Damián dentro no empieza su diálogo")
+	if D != null and D.current_timeline != null:
+		D.end_timeline(true)
+	await _frames(10)
+	_ok(v.vecinos["damian"]["charla"] == "", "8: Damián sigue parado tras el diálogo")
+	# lo privado: Damián contesta y mira a Kael (la trastienda, cerrada); no cambia nada
+	var antes: Dictionary = Engine.get_meta("mazmorras", {}).get(Barrio.NOMBRE, {}).duplicate()
+	r._colocar_kael(I.ancla("int_taller_paso_trastienda") + Vector3(0.3, 0, 0))
+	await _frames(5)
+	r._bloqueo = 0.0
+	r._comprobar_cerca()
+	_ok(r.cerca == "trastienda" or Barrio.paso_interno("trastienda"), "8: junto a la trastienda el botón no la ofrece (%s)" % r.cerca)
+	_ok(Barrio.presentes.has("damian"), "8: Damián no cuenta como presente en el taller")
+	r._accion_barrio("banco_corte")
+	await _frames(3)
+	var dm: Dictionary = v.vecinos["damian"]
+	var hacia: Vector3 = r.kael.global_position - (dm["nodo"] as Node3D).global_position
+	_ok(dm["charla"] == "hablando" and absf(angle_difference((dm["nodo"] as Node3D).rotation.y, atan2(hacia.x, hacia.z))) < 0.35,
+		"8: tocar lo de Damián no le hace contestar ni mirar (%s)" % dm["charla"])
+	_ok(r.ultimo_aviso.begins_with("Damián:"), "8: el aviso de lo privado no es de Damián («%s»)" % r.ultimo_aviso)
+	_ok(Engine.get_meta("mazmorras", {}).get(Barrio.NOMBRE, {}) == antes, "8: tocar lo privado cambia la partida")
+	await _frames(int(v.PAUSA_FRASE * 60) + 20)
+	_ok(dm["charla"] == "", "8: Damián no vuelve a lo suyo tras contestar")
+	await _salir()
+	# la galga: en la repisa hasta cogerla; luego no; con el pasador, en su clavo del taller
+	await _entrar("vivienda")
+	var sitio: Node3D = I.sitio("galga")
+	_ok(sitio != null and sitio.visible, "8: la galga no está en la repisa")
+	var P = load("res://progreso.gd")
+	P.poner_estado(Barrio.NOMBRE, "enf_galga")
+	v.avanzar_reloj(0.0)
+	_ok(sitio != null and not sitio.visible, "8: la repisa sigue enseñando la galga ya cogida")
+	await _salir()
+	P.poner_estado(Barrio.NOMBRE, "enf_medida")
+	P.poner_estado(Barrio.NOMBRE, "enf_pasador")
+	await _entrar("taller")
+	_ok(v.galga_clavo != null and v.galga_clavo.visible and v.galga_clavo.global_position.distance_to(
+		I.ORIGEN["taller"] + v.GALGA_CLAVO) < 0.01, "8: con el pasador, la galga no vuelve a su clavo")
+	await _salir()
+	_ok(v.galga_clavo == null or not v.galga_clavo.visible, "8: la galga del clavo se ve fuera del taller")
+	var mz: Dictionary = Engine.get_meta("mazmorras", {})
+	mz.erase(Barrio.NOMBRE)
+	Engine.set_meta("mazmorras", mz)

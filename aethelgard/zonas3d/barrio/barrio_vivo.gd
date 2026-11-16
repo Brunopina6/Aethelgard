@@ -13,7 +13,14 @@ extends Node3D
 #     el pozo, lo vierte en el abrevadero (Avena bebe), deja el cubo, echa heno (Avena come) y devuelve el cubo.
 #   - Avena, la yegua: atada ante el establo, NO anda (solo clips sin desplazamiento); se examina, no habla.
 #   - Damián (carretero), Odila (costurera) y Nela (su hija): en su puesto con su tarea. Dentro de su interior si B lo
-#     ha construido (Interiores.ORIGEN); mientras no, junto a su puerta, fuera de umbrales y caminos.
+#     ha construido (Interiores.ORIGEN: Damián junto al potro, Odila en su silla y Nela en su alfombra, en las anclas de
+#     B y de cara a la cámara); mientras no, junto a su puerta, fuera de umbrales y caminos.
+#   - Dentro de un interior se anda en RECTAS que no cruzan muebles (lo andable de B, con su margen): la recta si se
+#     puede; si no, una rejilla de 0,2 m y el camino más corto, estirado en tramos rectos (_ruta_dentro).
+#   - La GALGA tiene una sola ubicación (Barrio.donde_galga): en la repisa de la vivienda (la copia de B), con Kael (no
+#     se ve) o, cuando Damián corta el pasador, otra vez en su clavo del taller, dentro de su silueta pintada.
+#   - Tocar lo PRIVADO o pedir lo OFRECIDO (Barrio.accion) hace que su dueño, si está en la sala, se pare, se gire hacia
+#     Kael y conteste (Barrio.reaccion; el texto lo enseña la región). Barrio.presentes dice quién está en la sala.
 #
 # CÓMO (barato en el móvil, O(1) por vecino):
 #   - Cada rutina es un PROGRAMA (lista de pasos: ir, tarea, coger, dejar, entrar/salir de un interior) que se compila
@@ -106,13 +113,22 @@ const SITIOS := {
 	"gancho": {"lugar": "", "pos": Vector3(-45.6, 1.35, -7.92)},
 	"cubo_establo": {"lugar": "", "pos": Vector3(-44.6, 0.0, -7.8)},
 	"abrevadero": {"lugar": "", "pos": Vector3(-48.9, 0.0, -2.6)},
-	"boca": {"lugar": "horno", "ancla": "int_horno_boca", "alto": 1.0},
+	# la bandeja, sobre la solera de piedra de la boca del horno (crear_interiores.py: y 0,88-0,97, z 1,8-2,08)
+	"boca": {"lugar": "horno", "ancla": "int_horno_boca", "desp": Vector3(0.0, 0.97, -0.5)},
 }
+# Hacia dónde mira cada vecino en un ancla de dentro (por defecto, al norte: al fondo de la sala, donde está el mueble).
+# Maela amasa al norte de la artesa, de cara a ella y a la cámara.
+const MIRA_DENTRO := {"int_horno_maela": Vector3(0, 0, 1)}
+const REJILLA_DENTRO := 0.2      # m: la rejilla del camino más corto dentro de un interior
+const PASO_DENTRO := 0.1         # m entre muestras al comprobar una recta dentro
+# La galga colgada otra vez en su clavo (taller, local): el pivote en el agujero, junto al clavo de crear_interiores.py
+# (silueta en x 6,6-6,96, y 1,62-1,71, sobre la pared norte), a lo largo de +x y de canto contra la pared.
+const GALGA_CLAVO := Vector3(6.63, 1.665, 0.03)
 
 # Los programas. Pasos: ["ir", punto] · ["tarea", clip, s] · ["coger", obj, sitio] · ["dejar", obj, sitio] ·
 # ["entrar", interior] · ["salir", interior] · ["evento", nombre]. Los puntos «i:<ancla>» son de dentro (B).
 const PROGRAMAS := {
-	"maela": {"oficio": "panadera", "base": "i:int_horno_artesa", "lugar": "horno", "desfase": 40.0,
+	"maela": {"oficio": "panadera", "base": "i:int_horno_maela", "lugar": "horno", "desfase": 40.0,
 		"inicial": {"bandeja": "boca", "cesta_pan": "mostrador_cesta"},
 		"normal": [["tarea", "amasar", 16.0], ["ir", "i:int_horno_boca"], ["tarea", "hornear", 10.0],
 			["coger", "bandeja", "boca"], ["salir", "horno"], ["ir", "mostrador"], ["dejar", "bandeja", "mostrador"],
@@ -120,19 +136,19 @@ const PROGRAMAS := {
 			["dejar", "cesta_pan", "puesto_plaza"], ["tarea", "tarea", 9.0], ["evento", "pan_en_puesto"],
 			["coger", "cesta_pan", "puesto_plaza"], ["ir", "mostrador"], ["dejar", "cesta_pan", "mostrador_cesta"],
 			["coger", "bandeja", "mostrador"], ["entrar", "horno"], ["ir", "i:int_horno_boca"],
-			["dejar", "bandeja", "boca"], ["ir", "i:int_horno_artesa"]],
+			["dejar", "bandeja", "boca"], ["ir", "i:int_horno_maela"]],
 		"carro_parado": [["tarea", "amasar", 16.0], ["ir", "i:int_horno_boca"], ["tarea", "hornear", 10.0],
 			["coger", "bandeja", "boca"], ["salir", "horno"], ["ir", "mostrador"], ["dejar", "bandeja", "mostrador"],
 			["ir", "carro_horno"], ["tarea", "reposo", 16.0], ["evento", "mira_la_rueda"], ["ir", "mostrador"],
 			["coger", "bandeja", "mostrador"], ["entrar", "horno"], ["ir", "i:int_horno_boca"],
-			["dejar", "bandeja", "boca"], ["ir", "i:int_horno_artesa"]],
+			["dejar", "bandeja", "boca"], ["ir", "i:int_horno_maela"]],
 		"reparto": [["tarea", "amasar", 16.0], ["ir", "i:int_horno_boca"], ["tarea", "hornear", 10.0],
 			["coger", "bandeja", "boca"], ["salir", "horno"], ["ir", "carro_horno"], ["dejar", "bandeja", "carro_horno"],
 			["tarea", "tarea", 4.0], ["evento", "pan_al_carro"], ["ir", "mostrador"],
 			["coger", "cesta_pan", "mostrador_cesta"], ["ir", "puesto_plaza"], ["dejar", "cesta_pan", "puesto_plaza"],
 			["tarea", "tarea", 8.0], ["coger", "cesta_pan", "puesto_plaza"], ["ir", "mostrador"],
 			["dejar", "cesta_pan", "mostrador_cesta"], ["ir", "carro_horno"], ["coger", "bandeja", "carro_horno"],
-			["entrar", "horno"], ["ir", "i:int_horno_boca"], ["dejar", "bandeja", "boca"], ["ir", "i:int_horno_artesa"]]},
+			["entrar", "horno"], ["ir", "i:int_horno_boca"], ["dejar", "bandeja", "boca"], ["ir", "i:int_horno_maela"]]},
 	"tobias": {"oficio": "porteador", "base": "carro_caravana", "lugar": "", "desfase": 0.0,
 		"inicial": {"caja": "carro_caravana", "saco_harina": "carro_caravana_saco"},
 		"normal": [["tarea", "tarea", 3.0], ["coger", "caja", "carro_caravana"], ["ir", "pila_patio"],
@@ -171,6 +187,7 @@ var errores: Array = []          # lo que la compilación de los programas encue
 var _rutas := {}                 # caché de rutas de fuera: "a|b" → Array[Vector3]
 var _t_logica := 0.0
 var _montado := false
+var galga_clavo: Node3D = null   # la galga otra vez en su clavo del taller (Barrio.donde_galga() == "clavo")
 
 
 # ================================================================= montar
@@ -204,12 +221,16 @@ func montar(r) -> void:
 		var v := _nuevo_vecino(id, "puesto")
 		v["veces"] = int(guardados.get(id, {}).get("veces", 0))
 	_crear_avena()
+	_crear_galga_clavo()
+	Barrio.reaccion = ""
 	_montado = true
 	_actualizar(0.0, true)
 
 
 func _exit_tree() -> void:
 	guardar_reloj()
+	Barrio.presentes = {}
+	Barrio.reaccion = ""
 
 
 # El reloj y los retrasos, a la meta de SESIÓN (los quita banco_pruebas.salir()).
@@ -304,15 +325,16 @@ func _objeto(obj: String, npc: String, sitio: String, cont: Node3D) -> void:
 		var ag: Node3D = v["agarres"][U.agarre(obj)]
 		ag.add_child(mano)
 		mano.visible = false
-		if v["chibi"] != null and U.agarre(obj) == "pecho":
-			# delante del pecho en la pose de reposo, derecho (sin heredar el giro del hueso)
-			var hueso: Transform3D = v["chibi"].reposo_hueso("pecho")
-			var quiero := Transform3D(Basis.IDENTITY, hueso.origin + Vector3(0, -0.10, 0.26))
-			mano.transform = hueso.affine_inverse() * quiero
-		elif v["chibi"] != null:
-			var hueso: Transform3D = v["chibi"].reposo_hueso("mano.R")
-			var quiero := Transform3D(Basis.IDENTITY, hueso.origin + Vector3(0, -0.12, 0.02))
-			mano.transform = hueso.affine_inverse() * quiero
+		# El punto de agarre (delante del pecho, en el borde que toca el cuerpo, o la palma de la mano derecha) en la pose
+		# de reposo, derecho (sin heredar el giro del hueso); el pivote del utensilio va ahí (U.en_mano).
+		var em: Array = U.en_mano(obj)
+		if v["chibi"] != null:
+			var hueso_n := "pecho" if U.agarre(obj) == "pecho" else "mano.R"
+			var hueso: Transform3D = v["chibi"].reposo_hueso(hueso_n)
+			var punto: Vector3 = hueso.origin + (Vector3(0, -0.10, 0.12) if hueso_n == "pecho" else Vector3(0, -0.05, 0.02))
+			mano.transform = hueso.affine_inverse() * Transform3D(em[0], punto + em[1])
+		else:
+			mano.transform = Transform3D(em[0], em[1])
 		objetos[obj] = {"npc": npc, "sitios": {}, "mano": mano}
 	var o: Dictionary = objetos[obj]
 	if o["sitios"].has(sitio):
@@ -326,9 +348,9 @@ func _objeto(obj: String, npc: String, sitio: String, cont: Node3D) -> void:
 		errores.append("sitio desconocido «%s» (%s)" % [sitio, obj])
 	elif str(s["lugar"]) == "":
 		var p: Vector3 = s["pos"]
-		n.position = Vector3(p.x, T.altura(p.x, p.z) + p.y, p.z)
+		n.position = Vector3(p.x, T.altura(p.x, p.z) + p.y, p.z) + U.sobre_base(obj)
 	else:
-		n.position = _ancla(s["ancla"]) + Vector3(0, float(s.get("alto", 1.0)), 0)
+		n.position = _ancla(s["ancla"]) + s.get("desp", Vector3(0, 1.0, 0)) + U.sobre_base(obj)
 	o["sitios"][sitio] = n
 
 
@@ -428,7 +450,7 @@ func _punto(nombre: String) -> Array:
 	if nombre.begins_with("i:"):
 		var a := nombre.trim_prefix("i:")
 		var p := _ancla(a)
-		return [p, _interior_de_ancla(a), p + Vector3(0, 0, -1)]
+		return [p, _interior_de_ancla(a), p + MIRA_DENTRO.get(a, Vector3(0, 0, -1))]
 	if PUNTOS.has(nombre):
 		return [_suelo(PUNTOS[nombre][0]), "", _suelo(PUNTOS[nombre][1])]
 	errores.append("punto desconocido «%s»" % nombre)
@@ -502,9 +524,10 @@ func compilar(id: String, prog: String) -> Dictionary:
 			"salir":
 				var pu: Array = PUERTAS_NPC[paso[1]]
 				var dentro := _ancla("int_%s_salida" % paso[1])
-				var d1 := _duracion([pos, dentro], lugar, vel)
-				segs.append({"t0": t0, "dur": d1, "tipo": "ir", "clip": "caminar_llevar" if lleva else "caminar", "pts": [pos, dentro],
-					"lugar": lugar, "mira": dentro, "vel": vel, "ubic": ubic.duplicate(), "ubic_fin": ubic.duplicate()})
+				var pts_d: Array = _ruta(pos, dentro, lugar, "%s/%s" % [id, prog])
+				var d1 := _duracion(pts_d, lugar, vel)
+				segs.append({"t0": t0, "dur": d1, "tipo": "ir", "clip": "caminar_llevar" if lleva else "caminar", "pts": pts_d,
+					"lugar": lugar, "mira": dentro + Vector3(0, 0, 1), "vel": vel, "ubic": ubic.duplicate(), "ubic_fin": ubic.duplicate()})
 				t0 += d1
 				lugar = ""
 				var umbral := _suelo(pu[1])
@@ -543,10 +566,10 @@ func recta_libre(a: Vector3, b: Vector3) -> bool:
 	return true
 
 
-# Fuera: la recta si se puede; si no, por el GRAFO del trazado (BFS). Dentro: recta (lo andable es de B).
+# Fuera: la recta si se puede; si no, por el GRAFO del trazado (BFS). Dentro: _ruta_dentro (lo andable es de B).
 func _ruta(a: Vector3, b: Vector3, lugar: String, quien: String) -> Array:
 	if lugar != "":
-		return [a, b]
+		return _ruta_dentro(a, b, lugar, quien)
 	var clave := "%s|%s" % [a, b]
 	if _rutas.has(clave):
 		return _rutas[clave]
@@ -564,6 +587,98 @@ func _ruta(a: Vector3, b: Vector3, lugar: String, quien: String) -> Array:
 			for n in _bfs(na, nb):
 				r.append(T.ancla(n))
 			r.append(b)
+	_rutas[clave] = r
+	return r
+
+
+# Los interiores de B (la región los tiene; sin región, las pruebas de datos: nada).
+func _interiores():
+	return region.get("interiores") if region != null else null
+
+
+# Una recta que se anda entera DENTRO (cada 0,1 m, lo andable de B: sus bloqueos ya llevan el margen del cuerpo).
+func recta_libre_dentro(a: Vector3, b: Vector3) -> bool:
+	var it = _interiores()
+	if it == null:
+		return true
+	var n := maxi(1, ceili(Vector2(b.x - a.x, b.z - a.z).length() / PASO_DENTRO))
+	for i in range(0, n + 1):
+		if not it.andable(a.lerp(b, float(i) / n)):
+			return false
+	return true
+
+
+# Dentro de un interior: la recta si no cruza ningún mueble; si no, el camino más corto por una rejilla de 0,2 m (BFS
+# en 8 direcciones sobre lo andable) estirado en tramos rectos que tampoco cruzan nada. Cada punto con la altura del
+# suelo de B (la alcoba está más alta).
+func _ruta_dentro(a: Vector3, b: Vector3, lugar: String, quien: String) -> Array:
+	var it = _interiores()
+	if it == null or not Barrio.interior_hecho(lugar):
+		return [a, b]
+	var clave := "%s|%s|%s" % [lugar, a, b]
+	if _rutas.has(clave):
+		return _rutas[clave]
+	var r: Array = [a, b]
+	if not recta_libre_dentro(a, b):
+		var o: Vector3 = it.ORIGEN[lugar]
+		var tam: Vector2 = it.TAM[lugar]
+		var nx := int(tam.x / REJILLA_DENTRO) + 1
+		var nz := int(tam.y / REJILLA_DENTRO) + 1
+		var celda := func(i: int, j: int) -> Vector3:
+			var q := o + Vector3(i * REJILLA_DENTRO, 0, j * REJILLA_DENTRO)
+			return Vector3(q.x, it.altura(q), q.z)
+		var libre := func(i: int, j: int) -> bool:
+			return i >= 0 and j >= 0 and i < nx and j < nz and it.andable(celda.call(i, j))
+		var cerca := func(p: Vector3) -> Vector2i:              # la celda libre más cercana a la que se llega en recta
+			var mejor := Vector2i(-1, -1)
+			var dmin := INF
+			var ci := int(round((p.x - o.x) / REJILLA_DENTRO))
+			var cj := int(round((p.z - o.z) / REJILLA_DENTRO))
+			for di in range(-4, 5):
+				for dj in range(-4, 5):
+					var i := ci + di
+					var j := cj + dj
+					if libre.call(i, j):
+						var q: Vector3 = celda.call(i, j)
+						var d := Vector2(q.x - p.x, q.z - p.z).length()
+						if d < dmin and recta_libre_dentro(p, q):
+							dmin = d
+							mejor = Vector2i(i, j)
+			return mejor
+		var ca: Vector2i = cerca.call(a)
+		var cb: Vector2i = cerca.call(b)
+		var camino: Array = []
+		if ca.x >= 0 and cb.x >= 0:
+			var prev := {ca: ca}
+			var cola: Array = [ca]
+			while not cola.is_empty():
+				var c: Vector2i = cola.pop_front()
+				if c == cb:
+					break
+				for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 1), Vector2i(1, -1),
+						Vector2i(-1, 1), Vector2i(-1, -1)]:
+					var m: Vector2i = c + d
+					if not prev.has(m) and libre.call(m.x, m.y) and (d.x == 0 or d.y == 0 or (libre.call(c.x + d.x, c.y) and libre.call(c.x, c.y + d.y))):
+						prev[m] = c
+						cola.append(m)
+			if prev.has(cb):
+				var x: Vector2i = cb
+				while x != ca:
+					camino.push_front(celda.call(x.x, x.y))
+					x = prev[x]
+				camino.push_front(celda.call(ca.x, ca.y))
+		if camino.is_empty():
+			errores.append("%s: sin camino dentro de %s de %s a %s" % [quien, lugar, a, b])
+		else:
+			var todos: Array = [a] + camino + [b]
+			r = [a]                                              # estirar: de cada punto, al más lejano que se ve en recta
+			var i := 0
+			while i < todos.size() - 1:
+				var j := todos.size() - 1
+				while j > i + 1 and not recta_libre_dentro(todos[i], todos[j]):
+					j -= 1
+				r.append(todos[j])
+				i = j
 	_rutas[clave] = r
 	return r
 
@@ -767,6 +882,72 @@ func _actualizar(delta: float, forzar: bool) -> void:
 			n.rotation.y = quiere if forzar else lerp_angle(n.rotation.y, quiere, 1.0 - exp(-10.0 * delta))
 		_animar(v, e, dist, delta, parado, cam)
 	_actualizar_avena(k, delta)
+	if logica:
+		_presentes()
+		_galga()
+	_reaccion_pendiente(k)
+
+
+# Quién está ahora en la sala de Kael (o fuera, cerca): lo mira Barrio.accion para lo privado y lo ofrecido.
+func _presentes() -> void:
+	var p := {}
+	for id in vecinos:
+		var v: Dictionary = vecinos[id]
+		if v["visible"] and v["lugar"] == zona and zona != "":
+			p[id] = true
+	Barrio.presentes = p
+
+
+# La galga, en un solo sitio: la copia de la repisa (de B) se oculta en cuanto Kael la coge; vuelve a su clavo del
+# taller cuando Damián corta el pasador.
+func _galga() -> void:
+	var donde := Barrio.donde_galga()
+	var it = _interiores()
+	if it != null and it.has_method("poner_sitio"):
+		it.poner_sitio("galga", donde == "repisa")
+	if galga_clavo != null:
+		galga_clavo.visible = donde == "clavo" and zona == "taller"
+
+
+func _crear_galga_clavo() -> void:
+	var it = _interiores()
+	if it == null or not Barrio.interior_hecho("taller"):
+		return
+	galga_clavo = U.crear("galga")
+	galga_clavo.name = "Galga_en_el_clavo"
+	add_child(galga_clavo)
+	galga_clavo.transform = Transform3D(Basis(Vector3.UP, -PI / 2.0), it.ORIGEN["taller"] + GALGA_CLAVO)
+	galga_clavo.visible = false
+	var sh := "res://zonas3d/muestra_calle/calle_vertice.gdshader"         # (como la de la repisa, de B: luz fija)
+	if U.del_modelo_cache("galga") and ResourceLoader.exists(sh):
+		var m := ShaderMaterial.new()
+		m.shader = load(sh)
+		m.set_shader_parameter("textura", load(U.RUTA_ATLAS) if ResourceLoader.exists(U.RUTA_ATLAS) else null)
+		m.set_shader_parameter("luz_escala", 0.85)
+		m.set_shader_parameter("sombra_fuerza", 0.0)
+		m.set_shader_parameter("contacto_fuerza", 0.0)
+		for mi in ([galga_clavo] + galga_clavo.find_children("*", "MeshInstance3D", true, false)):
+			if mi is MeshInstance3D:
+				(mi as MeshInstance3D).material_override = m
+
+
+# Lo privado tocado o lo ofrecido pedido (Barrio.accion pone Barrio.reaccion): su dueño, si está en la sala, se para,
+# se gira hacia Kael y contesta (el texto ya lo enseña la región); luego sigue con lo suyo, como tras una frase.
+func _reaccion_pendiente(k: Vector3) -> void:
+	if Barrio.reaccion == "":
+		return
+	var id := Barrio.reaccion
+	Barrio.reaccion = ""
+	var v: Dictionary = vecinos.get(id, {})
+	if v.is_empty() or v["charla"] != "" or not v["visible"] or v["lugar"] != zona or not _puede_parar(v):
+		return
+	v["charla"] = "hablando"
+	v["pausa_desde"] = t
+	v["fin_charla"] = t + PAUSA_FRASE
+	v["con_dialogo"] = false
+	var n: Node3D = v["nodo"]
+	if k.x != INF:
+		n.rotation.y = atan2(k.x - n.global_position.x, k.z - n.global_position.z)
 
 
 # Hacia qué lado se aparta quien anda para dejar pasar a Kael (el contrario a Kael; si no se puede pisar, el otro).
