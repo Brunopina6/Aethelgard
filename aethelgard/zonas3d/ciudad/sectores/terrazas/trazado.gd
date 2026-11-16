@@ -78,10 +78,10 @@ const BLOQUES := [
 	["banda_1_e", "terrazas", Rect2(-55.0, -20.0, 25.0, 8.0), 3.0, 2.0, "terreno", true],
 	["jardinera_glicinia_o", "terrazas", Rect2(-65.0, -20.0, 3.0, 5.0), 4.5, 1.5, "terreno", true],
 	["jardinera_glicinia_e", "terrazas", Rect2(-58.0, -20.0, 3.0, 5.0), 4.5, 1.5, "terreno", true],
-	["glicinia_o", "terrazas", Rect2(-65.5, -20.5, 4.0, 5.5), 7.0, 1.6, "copa", false],
-	["glicinia_e", "terrazas", Rect2(-58.5, -20.5, 4.0, 5.5), 7.0, 1.6, "copa", false],
+	["glicinia_o", "terrazas", Rect2(-65.5, -20.0, 3.5, 5.0), 7.0, 1.6, "copa", false],   # ceñidas a sus jardineras
+	["glicinia_e", "terrazas", Rect2(-58.0, -20.0, 3.5, 5.0), 7.0, 1.6, "copa", false],
 	["pergola_glicinias", "terrazas", Rect2(-65.0, -15.0, 10.0, 3.0), 7.2, 0.5, "cubierta", false],
-	["banco_rellano", "terrazas", Rect2(-64.8, -14.6, 0.5, 2.2), 4.5, 0.45, "bajo", true],
+	["banco_rellano", "terrazas", Rect2(-65.0, -14.6, 0.5, 2.2), 4.5, 0.45, "bajo", true],
 	["muralla_oeste_n", "terrazas", Rect2(-100.0, -92.0, 3.0, 87.0), 0.0, 18.0, "muro", true],
 	# --- T1, Calle de las Casas: pretil al sur, casas al norte (OCULTABLES: quedan al sur de T2)
 	["pretil_t1_o", "terrazas", Rect2(-97.0, -20.4, 35.0, 0.4), 6.0, 0.9, "bajo", true],
@@ -93,10 +93,13 @@ const BLOQUES := [
 	["casa_atajo_e", "terrazas", Rect2(-86.0, -35.0, 7.0, 10.0), 6.0, 5.0, "casa", true],
 	["vivienda_odila", "terrazas", Rect2(-78.0, -35.0, 8.0, 7.0), 6.0, 6.5, "casa", true],
 	["hoja_vivienda", "terrazas", Rect2(-74.7, -28.0, 1.4, 0.08), 6.0, 2.4, "puerta", false],
-	["tapia_patio_o", "terrazas", Rect2(-79.0, -35.0, 1.0, 7.0), 6.0, 2.2, "muro", true],
-	["tapia_patio_e", "terrazas", Rect2(-70.0, -35.0, 1.0, 7.0), 6.0, 2.2, "muro", true],
-	["banco_vivienda", "terrazas", Rect2(-78.6, -27.6, 2.2, 0.5), 6.0, 0.45, "bajo", true],
-	["rosal_vivienda", "terrazas", Rect2(-71.0, -27.7, 0.6, 0.6), 6.0, 1.2, "decor", true],
+	# medianeras a los lados de la vivienda y, al frente, las tapias bajas que cierran el patio (4 m de paso ante la puerta)
+	["medianera_patio_o", "terrazas", Rect2(-79.0, -35.0, 1.0, 7.0), 6.0, 2.2, "muro", true],
+	["medianera_patio_e", "terrazas", Rect2(-70.0, -35.0, 1.0, 7.0), 6.0, 2.2, "muro", true],
+	["tapia_patio_o", "terrazas", Rect2(-79.0, -25.4, 3.0, 0.4), 6.0, 1.0, "muro", true],
+	["tapia_patio_e", "terrazas", Rect2(-72.0, -25.4, 3.0, 0.4), 6.0, 1.0, "muro", true],
+	["banco_vivienda", "terrazas", Rect2(-79.0, -28.0, 2.2, 0.5), 6.0, 0.45, "bajo", true],
+	["rosal_vivienda", "terrazas", Rect2(-69.6, -28.0, 0.6, 0.6), 6.0, 1.2, "decor", true],
 	["casa_t1_c", "terrazas", Rect2(-69.0, -35.0, 7.0, 10.0), 6.0, 5.5, "casa", true],
 	["casa_glicinia", "terrazas", Rect2(-62.0, -35.0, 9.0, 10.0), 6.0, 6.5, "casa", true],
 	["glicinia_fachada", "terrazas", Rect2(-62.0, -25.7, 9.0, 0.7), 8.6, 1.4, "copa", false],
@@ -107,7 +110,7 @@ const BLOQUES := [
 	["tendedero_patio", "terrazas", Rect2(-78.0, -26.6, 6.0, 0.1), 8.5, 0.1, "cubierta", false],
 	# --- Atajo de la Hornacina (del barrio): el arco de paso y la hornacina en la pared de la casa del este
 	["arco_atajo", "terrazas", Rect2(-90.0, -30.6, 4.0, 0.6), 9.9, 0.6, "cubierta", false],
-	["hornacina", "terrazas", Rect2(-86.1, -30.25, 0.1, 0.5), 8.0, 1.0, "decor", false],
+	["hornacina", "terrazas", Rect2(-86.0, -30.25, 0.1, 0.5), 8.0, 1.0, "decor", false],   # metida en la pared
 	# --- T2 y la Plazuela de los Juegos: casas al norte (OCULTABLES: al sur de T3), la fuente, la glicinia, el pretil
 	["casa_t2_o", "terrazas", Rect2(-97.0, -49.0, 10.0, 8.0), 8.0, 6.0, "casa", true],
 	["casa_t2_c", "terrazas", Rect2(-87.0, -49.0, 13.0, 8.0), 8.0, 5.0, "casa", true],
@@ -121,12 +124,13 @@ const BLOQUES := [
 	["fuente_terrazas_cano", "terrazas", Rect2(-66.3, -44.3, 0.6, 0.6), 8.8, 1.4, "decor", true],
 	["glicinia_plazuela_tronco", "terrazas", Rect2(-73.6, -46.6, 0.5, 0.5), 8.0, 2.8, "arbol", true],
 	["glicinia_plazuela", "terrazas", Rect2(-75.0, -48.0, 4.0, 4.0), 10.6, 1.6, "copa", false],
-	["banco_plazuela", "terrazas", Rect2(-61.0, -46.6, 2.4, 0.5), 8.0, 0.45, "bajo", true],
+	["banco_plazuela", "terrazas", Rect2(-61.0, -47.0, 2.4, 0.5), 8.0, 0.45, "bajo", true],
 	["tendedero_t2", "terrazas", Rect2(-96.0, -37.6, 5.0, 0.1), 10.5, 0.1, "cubierta", false],
 	# --- T3: la Casa Puente (paso bajo edificio), el Patio de la Pieza (sin salida), las casas al norte
 	["casa_patio_o", "terrazas", Rect2(-97.0, -58.0, 10.0, 9.0), 10.0, 5.5, "casa", true],
 	["casa_patio_n", "terrazas", Rect2(-97.0, -66.0, 23.0, 8.0), 10.0, 7.0, "casa", true],
-	["peana_pieza", "terrazas", Rect2(-82.0, -57.6, 3.0, 1.0), 10.0, 0.6, "bajo", true],
+	# la peana de la Pieza Huérfana, contra la pared sur del patio y justo detrás del ancla global reserva_piezas_patio
+	["peana_pieza", "terrazas", Rect2(-81.5, -49.8, 3.0, 0.8), 10.0, 0.6, "bajo", true],
 	["casa_t3_o", "terrazas", Rect2(-74.0, -60.0, 8.0, 7.0), 10.0, 6.0, "casa", true],
 	# la Casa Puente, baja (techo 14) para que el lavadero y su palomar se vean detrás; su planta alta cruza la calle
 	# (2,8 m libres) y apoya al sur en dos pilares finos sobre la línea del pretil
@@ -156,7 +160,11 @@ const BLOQUES := [
 	["casa_t4_n1", "terrazas", Rect2(-54.0, -76.0, 10.0, 10.0), 12.0, 6.5, "casa", true],
 	["casa_t4_n2", "terrazas", Rect2(-44.0, -74.0, 8.0, 8.0), 12.0, 5.0, "casa", true],
 	["huerto_t4_e", "terrazas", Rect2(-36.0, -80.0, 6.0, 14.0), 12.0, 0.8, "terreno", true],
-	["banco_t4", "terrazas", Rect2(-38.0, -65.9, 2.4, 0.5), 12.0, 0.45, "bajo", true],
+	# huertos detrás de las casas de T4 (cierran el hueco que se veía desde el Barrio Alto)
+	["huerto_t4_n", "terrazas", Rect2(-54.0, -80.0, 18.0, 4.0), 12.0, 1.5, "terreno", true],
+	["huerto_t4_n2", "terrazas", Rect2(-44.0, -76.0, 8.0, 2.0), 12.0, 1.5, "terreno", true],
+	["relleno_alta_2", "terrazas", Rect2(-85.0, -80.0, 11.0, 1.0), 12.0, 1.5, "terreno", true],
+	["banco_t4", "terrazas", Rect2(-38.0, -66.0, 2.4, 0.5), 12.0, 0.45, "bajo", true],
 	["huertos_altos", "terrazas", Rect2(-97.0, -89.0, 67.0, 9.0), 12.0, 1.5, "terreno", true],
 	["muralla_norte_o", "terrazas", Rect2(-97.0, -92.0, 67.0, 3.0), 12.0, 8.0, "muro", true],
 ]
@@ -184,7 +192,7 @@ const ANCLAS := {
 	"ninos_juego_1": Vector3(-71.0, 8.0, -44.0),     # niños jugando en la plazuela [C mundo vivo, sitio P]
 	"ninos_juego_2": Vector3(-62.0, 8.0, -42.5),
 	"fuente_terrazas": Vector3(-66.0, 8.0, -41.8),   # ante la fuente de la plazuela
-	"vecino_patio": Vector3(-84.0, 10.0, -51.0),     # un vecino barre su patio (el de la Pieza)
+	"vecino_patio": Vector3(-85.0, 10.0, -55.0),     # un vecino barre su patio (el de la Pieza), lejos de la peana
 	"lavandera_1": Vector3(-61.0, 12.0, -67.6),      # lavanderas en el lavadero
 	"lavandera_2": Vector3(-58.0, 12.0, -71.0),
 	"tendedero_lavadero": Vector3(-55.0, 12.0, -68.5),
@@ -197,6 +205,7 @@ const ANCLAS := {
 	"puerta_casa_patio": Vector3(-86.95, 10.0, -53.5),
 	"puerta_casa_t3_e": Vector3(-52.0, 10.0, -53.0),
 	"puerta_casa_t1_e1": Vector3(-51.0, 6.0, -25.0),
+	"puerta_casa_atajo_o": Vector3(-93.5, 6.0, -25.0),   # da razón al fondo oeste de T1
 	"puerta_casa_t4_o": Vector3(-69.95, 12.0, -63.0),
 	"puerta_casa_t4_n1": Vector3(-49.0, 12.0, -66.0),
 	"n_pie": Vector3(-60.0, 3.0, -6.0),
@@ -247,6 +256,8 @@ const PUERTAS := {
 		"ancla": "puerta_casa_t3_e", "nombre": "Casa"},
 	"casa_t1_e1": {"fuera": Vector3(-51.0, 6.0, -23.6), "mira": PI, "radio": 1.6, "texto": "Entrar en la casa",
 		"ancla": "puerta_casa_t1_e1", "nombre": "Casa estrecha"},
+	"casa_atajo_o": {"fuera": Vector3(-93.5, 6.0, -23.6), "mira": PI, "radio": 1.6, "texto": "Entrar en la casa",
+		"ancla": "puerta_casa_atajo_o", "nombre": "Casa del fondo"},
 	"casa_t4_o": {"fuera": Vector3(-68.6, 12.0, -63.0), "mira": -PI / 2.0, "radio": 1.6, "texto": "Entrar en la casa",
 		"ancla": "puerta_casa_t4_o", "nombre": "Casa"},
 	"casa_t4_n1": {"fuera": Vector3(-49.0, 12.0, -64.6), "mira": PI, "radio": 1.6, "texto": "Entrar en la casa",
