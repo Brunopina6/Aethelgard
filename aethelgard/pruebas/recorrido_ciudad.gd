@@ -225,6 +225,12 @@ func _que_hay(q: Vector3) -> String:
 # ================================================================= controles
 
 func _clic(pos: Vector2) -> void:
+	# (16/11, optimización) si la ventana está minimizada, se restaura antes del clic: en las medidas del PC alguien la
+	# minimizaba y el clic caía en otro sitio (el botón de calidad).
+	if DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_MINIMIZED:
+		print("(la ventana estaba minimizada: se restaura)")
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+		await _frames(10)
 	var w: Vector2 = root.get_final_transform() * pos
 	var m := InputEventMouseMotion.new()           # (el puntero llega antes al sitio, como un dedo o un ratón de verdad)
 	m.position = w
@@ -636,7 +642,6 @@ func _visibilidad() -> String:
 			return "fuera del cuadro (%s en %s)" % [_txt(q), str(cam.unproject_position(q))]
 	var desde := cam.global_position
 	var mal: Array = []
-	var claro: Material = Blockout.material(true)
 	for s in P.ORDEN:
 		var t = P.trazado(s)
 		var montado = v.cargador.montados.get(s)
@@ -644,8 +649,7 @@ func _visibilidad() -> String:
 			var id: String = x[0]
 			if montado != null:
 				if x[1]:
-					var mi = montado.get_node_or_null("Ocultable_" + id)
-					if mi == null or mi.material_override != claro:
+					if not montado.aclarado(id):
 						mal.append("%s/%s sin aclarar" % [s, id])
 				else:
 					mal.append("%s/%s (no ocultable)" % [s, id])
@@ -666,13 +670,11 @@ func _visibilidad() -> String:
 # Lo ocultable de los sectores montados que corta el rayo desde → p sin estar aclarado.
 func _sin_aclarar(desde: Vector3, p: Vector3) -> Array:
 	var r: Array = []
-	var claro: Material = Blockout.material(true)
 	for s in v.cargador.montados:
 		var t = P.trazado(s)
 		for x in Comun.tapan(t.BLOQUES, t.OCULTABLES, desde, p):
 			if x[1]:
-				var mi = v.cargador.montados[s].get_node_or_null("Ocultable_" + String(x[0]))
-				if mi == null or mi.material_override != claro:
+				if not v.cargador.montados[s].aclarado(String(x[0])):
 					r.append("%s/%s" % [s, x[0]])
 	return r
 

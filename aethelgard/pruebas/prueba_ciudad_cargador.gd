@@ -31,26 +31,25 @@ func _initialize() -> void:
 # (16/11, arreglos del recorrido: docs/v12/ciudad_sectores/RECORRIDO.md §7) el aclarado por varios puntos (cintura y pies
 # de Kael y el grupo), su sostén de SOSTEN s y el toque que cae en el plano cuando los choques no dan suelo.
 func _arreglos_recorrido(ps: Node3D) -> void:
-	var claro: Material = load("res://zonas3d/ciudad/blockout.gd").material(true)
 	var sec := ps as Node
-	var casa := ps.get_node("Ocultable_casa_sur_e") as MeshInstance3D
+	var casa := "casa_sur_e"
 	var caja: AABB = sec.ocultables.filter(func(o): return o[0] == casa)[0][1][0]
 	var desde := Vector3(caja.get_center().x, caja.end.y + 8.0, caja.end.z + 10.0)      # al sur y por encima de la casa
 	var detras := Vector3(caja.get_center().x, caja.position.y + 0.3, caja.position.z - 1.0)   # al norte, a ras de suelo
 	var arriba := Vector3(caja.get_center().x, caja.end.y + 30.0, caja.position.z - 1.0)       # (este no la cruza)
 	sec.olvidar_aclarados()
 	sec.aclarar(desde, [arriba], 10.0)
-	_ok(casa.material_override != claro, "C: un rayo que no cruza la casa no la aclara")
+	_ok(not sec.aclarado(casa), "C: un rayo que no cruza la casa no la aclara")
 	sec.aclarar(desde, [arriba, detras], 10.0)
-	_ok(casa.material_override == claro, "C: con varios puntos, basta uno tapado (los pies) para aclararla")
+	_ok(sec.aclarado(casa), "C: con varios puntos, basta uno tapado (los pies) para aclararla")
 	sec.aclarar(desde, [arriba], 10.0 + sec.SOSTEN * 0.5)
-	_ok(casa.material_override == claro, "C: sigue aclarada %.2f s después de dejar de tapar (sin parpadeo)" % (sec.SOSTEN * 0.5))
+	_ok(sec.aclarado(casa), "C: sigue aclarada %.2f s después de dejar de tapar (sin parpadeo)" % (sec.SOSTEN * 0.5))
 	sec.aclarar(desde, [arriba], 10.0 + sec.SOSTEN + 0.05)
-	_ok(casa.material_override != claro, "C: y vuelve a opaca pasado el sostén (%.2f s)" % sec.SOSTEN)
+	_ok(not sec.aclarado(casa), "C: y vuelve a opaca pasado el sostén (%.2f s)" % sec.SOSTEN)
 	sec.aclarar(desde, [detras], 20.0)
 	sec.olvidar_aclarados()
 	sec.aclarar(desde, [arriba], 20.01)
-	_ok(casa.material_override != claro, "C: al colocar a Kael de golpe, lo aclarado antes no se sostiene")
+	_ok(not sec.aclarado(casa), "C: al colocar a Kael de golpe, lo aclarado antes no se sostiene")
 	sec.olvidar_aclarados()                     # (los tiempos de arriba van por delante del reloj de la escena)
 	# el toque contra el plano (lo que se ve de un sector sin montar no tiene choques)
 	var n := 0
@@ -186,7 +185,8 @@ func _histeresis() -> void:
 	c.actualizar(Vector3(5.0, 2.0, z))                    # a 35 m: precarga
 	_ok(c.estado["cuervo"] in ["cargando", "cargado"] and not c.montados.has("cuervo"),
 		"B: a 35 m, pedido en hilo (%s) y sin montar" % c.estado["cuervo"])
-	for i in 60:
+	var t_carga := Time.get_ticks_msec()             # (16/11: «cargado» = la escena Y sus mallas preparadas en otro hilo;
+	while Time.get_ticks_msec() - t_carga < 3000:    # antes, 60 fotogramas sin ventana: pocos ms con el PC ocupado)
 		await process_frame
 		c.actualizar(Vector3(5.0, 2.0, z))
 		if c.estado["cuervo"] == "cargado":
@@ -283,13 +283,26 @@ func _escena() -> void:
 	v._colocar_kael(Vector3(15.0, 2.0, 29.6))
 	await _frames(3)
 	var ps: Node3D = c.montados.get("plaza_tapiz")
-	var aclarada: bool = ps != null and ps.get_node_or_null("Ocultable_casa_sur_e") != null \
-		and (ps.get_node("Ocultable_casa_sur_e") as MeshInstance3D).material_override == load("res://zonas3d/ciudad/blockout.gd").material(true)
+	var aclarada: bool = ps != null and ps.aclarado("casa_sur_e")
 	_ok(aclarada and v.aclarados >= 1, "C: la casa del sur de la plaza baja se aclara con Kael delante (%d aclaradas)" % v.aclarados)
+	# (16/11, optimización) el blockout del sector es UNA malla (ocultables incluidos) y lo aclarado se dibuja en «Aclarados»,
+	# que solo se ve con algo aclarado; en el bajo, los rótulos solo cerca de Kael
+	var aclarados_vis: bool = ps != null and ps.get_node_or_null("Aclarados") != null and (ps.get_node("Aclarados") as Node3D).visible
+	_ok(ps != null and ps.find_children("Ocultable_*", "", false, false).is_empty() and aclarados_vis
+		and ps.find_children("*", "MeshInstance3D", false, false).size() == 2,
+		"C: el sector es una malla «Blockout» y otra «Aclarados» (visible con algo aclarado), sin mallas sueltas")
+	var lejos: Array = []
+	for s in c.montados:
+		for x in (c.montados[s] as Node).find_children("Rotulo_*", "Label3D", false, false):
+			var l := x as Label3D
+			var plana := Vector2(l.global_position.x - v.kael.global_position.x, l.global_position.z - v.kael.global_position.z).length()
+			if l.visible and (l.name == "Rotulo_sector" and s != c.actual or l.name != "Rotulo_sector" and plana > 10.01):
+				lejos.append("%s/%s" % [s, l.name])
+	_ok(lejos.is_empty(), "C: bajo: solo el rótulo del sector de Kael y los «(en obras)» a menos de 10 m %s" % str(lejos))
 	v._colocar_kael(Vector3(0.0, 2.0, 20.0))
 	await _frames(3)
-	_ok(ps != null and (ps.get_node("Ocultable_casa_sur_e") as MeshInstance3D).material_override == load("res://zonas3d/ciudad/blockout.gd").material(false),
-		"C: y vuelve a opaca al apartarse")
+	_ok(ps != null and not ps.aclarado("casa_sur_e") and (ps.get_node("Aclarados") as Node3D).visible == (ps.aclarados > 0),
+		"C: y vuelve a opaca al apartarse («Aclarados» se ve solo con algo aclarado en el sector: %d)" % (ps.aclarados if ps != null else -1))
 	await _arreglos_recorrido(ps)
 	await _conexiones_andadas()
 	# vuelta al inicio: los mismos sectores y los mismos nodos que la vez anterior que se llegó igual (inicio → Árbol →

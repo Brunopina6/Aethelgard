@@ -16,7 +16,6 @@ extends "res://pruebas/recorrido_ciudad.gd"
 func _tapados(p: Vector3) -> Array:
 	var desde: Vector3 = v.cam.global_position
 	var r: Array = []
-	var claro: Material = Blockout.material(true)
 	for s in P.ORDEN:
 		var t = P.trazado(s)
 		var montado = v.cargador.montados.get(s)
@@ -24,8 +23,7 @@ func _tapados(p: Vector3) -> Array:
 			if montado == null:
 				continue
 			if x[1]:
-				var mi = montado.get_node_or_null("Ocultable_" + String(x[0]))
-				if mi == null or mi.material_override != claro:
+				if not montado.aclarado(String(x[0])):
 					r.append("%s/%s (ocultable sin aclarar)" % [s, x[0]])
 			else:
 				r.append("%s/%s" % [s, x[0]])

@@ -104,7 +104,8 @@ El MISMO que `zonas3d/barrio/trazado.gd`, en coordenadas de ciudad, con estas co
 
 **Visibilidad de Kael** (la cámara está siempre al SUR): lo que corte el rayo de la cámara a su cabeza (1,5 m) tiene que
 ser ocultable: las `cubierta` y `copa` siempre lo son; una casa o muro al sur de lo andable hay que ponerlo en
-`OCULTABLES` (la escena lo dibuja aparte y lo aclara, copia medio transparente, mientras tapa; también lo que quede a
+`OCULTABLES` (la escena lo aclara pieza a pieza, medio transparente, mientras tapa; desde el 16/11 va fundido en la malla
+del sector con su índice por vértice: ciudad_sectores/MEDIDAS_PC.md §6; también lo que quede a
 menos de 6 m de la cámara: junto a la muralla sur la cámara queda encima de la puerta y sus torres). Los bloques finos (≤ 0,6 m
 por los dos lados: pilares, postes) no cuentan. Ningún SUELO más alto puede quedar al sur de Kael. Para que no haga falta
 aclarar demasiado: lo alto, al norte de cada calle; en las terrazas, la banda entre dos niveles es `terreno` con la tapa a
@@ -134,7 +135,8 @@ cota, sus bordes, algunos bloques de referencia (la Taberna del Cuervo [C], la f
 ## 5. El cargador (`cargador.gd`) y los presupuestos
 
 - Distancia en planta de Kael a la CAJA de cada sector: < **40 m** se pide su `sector.tscn` en un hilo
-  (`ResourceLoader.load_threaded_request`); < **25 m** se monta; > **60 m** se desmonta y se suelta (histéresis de 35 m).
+  (`ResourceLoader.load_threaded_request`) y, a la vez, sus mallas y sus choques se preparan en otro hilo
+  (`WorkerThreadPool`, desde el 16/11); < **25 m** se monta; > **60 m** se desmonta y se suelta (histéresis de 35 m).
   El sector de Kael se monta siempre (si su carga no ha terminado, se espera: en las pruebas, la primera entrada y, según
   el hilo, alguna vez más cuando Kael se teletransporta; andando, la precarga llega antes).
 - Límite por perfil: **bajo 3** (el actual y los más cercanos), **medio 5**, **alto 8**. Si sobran, quedan el actual y los

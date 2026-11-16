@@ -1,5 +1,8 @@
 # Ciudad de Oakhaven (maqueta M0): medidas en el PC
 
+> **16/11, tarde: se aplicaron las propuestas 1, 2 y 5 de §4.** Las cifras de §2-§3 son las de ANTES; las de después,
+> en **§6 «Optimización del 16/11»**.
+
 > **Medido en el PC. El Redmi está SIN MEDIR.** Ninguna cifra de este documento vale para Android: los ms del PC no dicen
 > nada del Mali-G57, y las llamadas y primitivas solo dicen cuánto se le pedirá. El presupuesto del plan (§5) es para el
 > Redmi y solo se cumple o no **midiendo en el Redmi**.
@@ -208,7 +211,7 @@ Maqueta lejana: 8 mallas, 7 450 triángulos en total (en las vistas medidas, 0 l
 - **Medio y alto** no tienen cifra de presupuesto en el plan («más sectores visibles a la vez»): en medio, 57-127
   llamadas y hasta 144 mil primitivas; en alto, 69-189 llamadas y hasta 207 mil (más de 160 mil en todas las vistas).
 
-## 4. Propuestas para bajarlo (NO aplicadas)
+## 4. Propuestas para bajarlo (16/11, tarde: 1, 2 y 5 aplicadas, 1c y 3 descartadas; ver §6)
 
 Por orden de lo que ahorran en el bajo (cifras del experimento §2.7):
 
@@ -247,4 +250,148 @@ límite de sectores.
 - Medir las dos conexiones que el recorrido no anda (Calle del Cuervo, Subida de la Colina).
 - Repetir estas medidas cuando los sectores tengan modelo horneado (las primitivas cambiarán mucho; las llamadas, según
   cómo se fundan).
-- Decidir (usuario/coordinador) qué propuesta de §4 se aplica; ninguna está aplicada.
+- (Hecho el 16/11 por la tarde: §6.) Medir en el Redmi lo que §6 deja en el PC (llamadas 33-44 en el bajo; montar un
+  sector 2-3 ms de proceso en el PC).
+
+## 6. Optimización del 16/11
+
+> **Medido en el PC. El Redmi está SIN MEDIR.** Las llamadas y primitivas dicen cuánto se le pedirá al Mali-G57; los ms
+> son del PC y no valen para Android.
+
+- **Fecha**: 16/11/2026, de 13:23 a 16:30 (rama `area-ciudad-optimiza`, desde `2afc6ed`). Mismo PC y Godot que §1.
+- **Ventana 1600×720** (dibujo 1280×720 con franjas). Perfil fijado con `calidad_proto` (**regulador NO activo**):
+  **bajo 0,75 fija** (960×540), **bajo a resolución completa 1,0 fija** (1280×720), **medio 0,8 fija**, **alto 1,0 fija
+  con MSAA 2×**. Las cifras «bajo 0,75» **no son calidad completa**; la de resolución completa es la pasada «bajo 1,0».
+- `tasklist` sin otro Godot ni Blender antes de cada pasada (el lanzador esperaba si los había).
+- Textos completos fuera del repositorio: `D:\REBELUM_diagnostico\ciudad_oakhaven\optimizacion\area-ciudad-optimiza\`
+  (`antes\`, `paso1\`, `paso2\`, `paso3\`, `paso3b\`, `despues\`, `ab_alto\`, `final\`; capturas en `antes\fotos\` y
+  `despues\fotos\`, diferencias en `despues\comparacion_<perfil>\`).
+
+### 6.1 Qué se aplicó (en este orden, midiendo tras cada paso)
+
+1. **Ocultables fundidos, con el aclarado por pieza** (`sector.gd`, `blockout_opaco.gdshader`, `blockout_claro.gdshader`):
+   todo el blockout de un sector, ocultables incluidos, es **una malla** («Blockout»). Cada vértice de una pieza ocultable
+   lleva su índice en UV2.x; el uniforme `aclarado[64]` dice qué piezas están aclaradas. En «Blockout» lo aclarado se
+   quita (sus vértices van a un punto: ni se dibuja ni da sombra, igual que antes el material transparente) y se dibuja
+   en una segunda malla, «Aclarados», con las mismas piezas a alfa 0,28 (el mismo material transparente de antes, escrito
+   a mano). «Aclarados» está oculta mientras no hay nada aclarado. Resultado: **1 llamada por sector (2 con algo
+   aclarado)** en vez de 10-31; en medio y alto, lo mismo en cada pasada de sombra. Las reglas del aclarado no cambian
+   (mismos rayos, `CERCA_CAMARA`, `SOSTEN`); `sector.aclarado(id)` dice el estado de cada pieza (las herramientas y la
+   prueba lo usan en vez del material de cada malla). Se eligieron dos mallas y no el tramado en el pase opaco porque
+   el tramado se ve distinto (rejilla de puntos a 960×540); con dos mallas el aspecto es el mismo (§6.4).
+2. **Rótulos en el bajo** (`sector.gd`, `rotulos_cerca`; `cargador.gd`, `ROTULOS_CERCA`): el nombre del sector solo en
+   el sector de Kael; cada «(en obras)», solo con Kael a menos de 10 m en planta, con fundido en los 2 últimos metros; y
+   cada rótulo se crea la primera vez que hace falta. Medio y alto, como antes (todos).
+3. **Montaje sin tirón** (`cargador.gd`, `sector.gd`): las mallas (en arrays) y la lista de choques de un sector se
+   calculan en un hilo (`WorkerThreadPool`, `sector.preparar_datos`) **a la vez** que se pide su escena; el sector cuenta
+   como «cargado» cuando están las dos cosas. En el fotograma del montaje solo se crean los nodos, y los **choques** de
+   un sector que no es el de Kael se reparten (30 por fotograma; el de Kael, todos ya, también si pasa a serlo). Lo que
+   se pisa sigue saliendo del plano: un sector a 25 m con los choques a medias no cambia nada para Kael.
+4. **No hizo falta** `MAXIMO["bajo"] = 2` ni un radio de montaje menor: con 1-3 el bajo queda en 33-44 llamadas.
+
+### 6.2 Antes y después por perfil (llamadas con la interfaz 2D incluida, 20-22)
+
+| | Antes | Después |
+|---|---|---|
+| **Bajo 0,75** · referencias de los 8 sectores | 53 · 46 · 45 · 42 · **79** · 65 · 37 · 45 | 41 · 34 · 39 · 36 · 37 · 38 · 33 · 38 |
+| Bajo 0,75 · 4 vistas más cargadas del barrido | **95 · 89 · 68 · 78** (Pasajes, Caravanas) | 44 · 44 · 42 · 41 (las nuevas más cargadas) |
+| Bajo 0,75 · andando (175 s, 10 conexiones): mediana · **p95** · máx | 52 · **79** · 98 | 36 · **41** · 44 |
+| Bajo 0,75 · vistas del barrido (184) con más de 65 | 32 | **0** |
+| Bajo 0,75 · primitivas máx (andando) | 71 682 | 72 470 (≤ 160 mil) |
+| Bajo 0,75 · sin tope: real / proceso / dibujo CPU / GPU (medias de los 12 puntos) | 3,82 / 1,19 / 1,15 / 0,61 ms | 3,31 / 1,01 / 0,91 / 0,53 ms |
+| **Bajo 1,0** (resolución completa) · llamadas | iguales al bajo 0,75 | iguales al bajo 0,75 (33-44; andando p95 41, máx 44; 0 de 184 por encima) |
+| Bajo 1,0 · sin tope: real / GPU (medias) | 5,02 / 0,79 ms (pasada con el PC ocupado) | 3,39 / 0,51 ms |
+| **Medio** · referencias | 73 · 63 · 69 · 63 · 107 · 84 · 57 · 64 | 55 · 54 · 55 · 54 · 67 · 61 · 46 · 55 |
+| Medio · vistas más cargadas | 127 · 119 · 112 · 126 | 78 · 75 · 75 · 70 |
+| Medio · andando: mediana · p95 · máx · primitivas máx | 75 · 116 · 138 · 144 462 | 56 · 73 · 82 · 150 866 |
+| Medio · vistas con más de 65 | 114 de 184 | 29 de 184 |
+| **Alto** · referencias | 96 · 77 · 97 · 75 · 145 · 113 · 69 · 86 | 64 · 63 · 64 · 62 · 78 · 70 · 55 · 64 |
+| Alto · vistas más cargadas | 179 · 175 · 173 · 154 (§2.3) | 88 · 85 · 84 · 81 |
+| Alto · andando: mediana · p95 · máx · primitivas máx | 106 · 168 · 187 · 207 388 | 66 · 83 · 91 · 213 820 |
+| Alto · vistas con más de 65 | 175 de 184 | 81 de 184 |
+
+- **El bajo cumple el presupuesto del plan en el PC**: ≤ 65 llamadas en todas las vistas del barrido, andando (p95 41,
+  máx 44) y en las referencias; primitivas 64-72 mil (≤ 160 mil). Quedan ≈ 20 llamadas de margen para los modelos.
+- Las **primitivas suben un poco** (+1 a +6 mil): la malla fundida se dibuja entera (las piezas quitadas cuentan como
+  triángulos sin área) y «Aclarados» lleva todas las piezas ocultables del sector. Es geometría de bloques: no pesa.
+- Paso a paso en el bajo 0,75 (andando mediana · p95 · máx): antes 52 · 79 · 98 → (1) fundir 42 · 55 · 66 → (2) rótulos
+  36 · 41 · 44 → (3) montaje: igual (no toca llamadas).
+- **Memoria** (bajo 0,75, al entrar): estática 167,7 → 166,9 MB; nodos 520 → 455; vídeo 60,8 → 60,0 MB.
+- Las cifras de medio, alto y bajo 1,0 son de la versión del paso 3 que preparaba los datos al terminar la carga (§6.6);
+  el cambio a prepararlos a la vez no toca llamadas ni primitivas. El bajo 0,75 se volvió a medir con el código final
+  (`final\bajo075`): las mismas llamadas (33-44; andando 36 · 41 · 44; 0 de 184 por encima de 65).
+
+### 6.3 Montar un sector (bajo 0,75, recorrido andando; proceso del juego en el fotograma del montaje)
+
+| | Antes | (3) datos en hilo | (3) + choques repartidos y rótulos al hacer falta (final) |
+|---|---|---|---|
+| Proceso en el fotograma del montaje (14 montajes) | **5,6-8,3 ms** | 2,6-4,0 ms | **2,1-3,5 ms** |
+| Los 5 fotogramas siguientes (proceso máx) | — | — | 1,4-2,3 ms |
+| Fotograma real con el tope de 30 | 37-41 ms | 34-37 ms | 34-36 ms |
+| Proceso máximo andando (175 s) | 8,3 ms | 4,0 ms | 3,5 ms |
+| Esperas del cargador | 0 | 0 | 0 |
+
+- En el fotograma de un montaje suele haber también un desmontaje (en el bajo, el límite de 3): esos 2-3 ms son la suma.
+- Lo que se fue al hilo: `preparar_datos` = **1,7-3,0 ms por sector** (las mallas vértice a vértice en GDScript). Lo que
+  queda en el fotograma: crear los nodos (1,1-1,8 ms fuera del árbol en el PC, choques incluidos) y meterlos en el árbol.
+- **Choques repartidos y rótulos al hacer falta**: en la pasada con ventana el PC estaba ocupado y la diferencia no se
+  distinguía del ruido; en un banco controlado (12 repeticiones por sector, sin ventana) montar pasó de 2,1-2,8 a
+  1,7-2,4 ms y desmontar de 0,9-1,4 a 0,7-1,1 ms; las pasadas finales limpias dan 2,1-3,0 ms (`despues\bajo075_2`) y
+  2,1-3,5 ms (`final\bajo075`, con el código final). Se conserva.
+- **Choques en un solo cuerpo compuesto**: NO se probó: en la muestra no mejoró y aquí los choques ya no van todos en el
+  fotograma del montaje.
+- Medio 2,1-4,0 ms y alto 2,0-3,0 ms en el fotograma del montaje (antes, máx 8,1 y 8,8).
+- **Redmi SIN MEDIR**: con una CPU varias veces más lenta, 2-3 ms del PC pueden ser 10-20 ms; hay que medirlo allí.
+
+### 6.4 Lo que se ve (capturas con la misma cámara, antes y después)
+
+`pruebas/fotos_ciudad_optimiza.gd` (herramienta, no prueba) coloca a Kael en 7 sitios (el grupo detrás) y guarda la
+captura, las llamadas y las piezas aclaradas; con `comparar=` compara píxel a píxel. Sitios: 1 Terrazas, **bajo el alero**
+del tejadillo del lavadero · 2 Terrazas, **paso bajo la casa-puente** · 3 Plaza, casa del sur aclarada · 4 Pasajes junto
+al Arco · 5 Caravanas (la vista con más llamadas antes) · 6 Paso Cubierto de la Botica · 7 Plaza bajo el toldo de las flores.
+
+- **Mismas piezas aclaradas** en los 7 sitios y en los 3 perfiles (p. ej. sitio 6: `casa_bajo_e`,
+  `cubierta_escalerilla`, `tapia_escalerilla_e`).
+- Píxeles que cambian más de 8/255: **0,0-0,9 %** en todos los sitios y perfiles. En las imágenes de diferencias son
+  **Lya, Garon y Kael** (la animación de reposo no está en la misma fase) y sus sombras en medio y alto. **La ciudad, el
+  aclarado y las sombras de los bloques salen idénticos** (el paso 1 comparado solo: igual).
+- Dos cambios a la vista, los dos de los rótulos en el bajo: los «(en obras)» lejanos ya no se ven (paso 2, a propósito);
+  y un rótulo cercano detrás de una pieza aclarada se ve por delante de ella (ahora «Aclarados» se ordena como una sola
+  malla del sector): el texto se lee mejor y la pieza queda igual de clara.
+
+### 6.5 Que todo sigue funcionando (con el código final)
+
+- `recorrido_ciudad.gd` (bajo, `--fixed-fps 30`, `video=0`; pasada `final\`): **1600×720, 430 tramos, 0 fallos**;
+  **1280×720, 430 tramos, 0 fallos**.
+- `diag_ciudad_visibilidad.gd` (1600×720): 438 tramos, 0 fallos, **0 casos** (sin parpadeos de aclarado, cámara sin
+  saltos, Kael siempre en el cuadro).
+- Pruebas `ejecutar_pruebas.ps1 -Solo prueba_ciudad_plano,prueba_ciudad_cargador,prueba_banco_pruebas`: **3 superadas**
+  (dos pasadas seguidas); partida real y carpeta real sin cambios.
+- `prueba_ciudad_cargador` comprueba además: una malla «Blockout» y otra «Aclarados» por sector, sin mallas sueltas;
+  «Aclarados» visible solo con algo aclarado; en el bajo, solo el rótulo del sector de Kael y los «(en obras)» a menos de
+  10 m. La espera de la prueba B («la carga en hilo termina») pasa de 60 fotogramas a 3 s (con el PC ocupado, 60
+  fotogramas sin ventana son pocos ms).
+
+### 6.6 Descartado y por qué
+
+- **Tramado en el pase opaco** para el aclarado: cambia el aspecto (puntos); las dos mallas dan el mismo.
+- **En medio y alto, ocultables pequeños sin sombra**: con la fusión ya no hay piezas sueltas; separarlas para quitarles
+  la sombra añadiría llamadas. La fusión ya quita casi todas las de sombra (alto, vistas cargadas 154-179 → 81-88).
+- **Preparar los datos al terminar la carga de la escena** (primera versión del paso 3): con el PC ocupado, la prueba A
+  contó 4 esperas (máx 3). Se cambió a prepararlos a la vez que se pide la escena (no la necesitan): 1 espera, como antes.
+- **Cuerpo de choque compuesto**, **MAXIMO bajo = 2** y **radio de montaje menor**: no hicieron falta (§6.3, §6.2).
+
+### 6.7 Avisos de la medida
+
+- **La ventana de la medida se minimizaba** varias veces por pasada (no se sabe quién; pasó en casi todas). Godot no
+  dibuja minimizado y las llamadas se quedaban congeladas; una vez el clic del recorrido cayó en el botón de calidad.
+  `medir_ciudad.gd` ahora cuenta los fotogramas dibujados (AVISO «esta medida NO VALE»), restaura la ventana antes de
+  cada medida y de cada clic y repite las vistas del barrido que no se dibujaron; `recorrido_ciudad.gd` restaura la
+  ventana antes de cada clic y `fotos_ciudad_optimiza.gd` avisa si una captura no se dibujó. Las pasadas de las tablas están sin avisos (o se repitieron).
+- **Alto con tope**: en las pasadas finales el fotograma con el tope de 60 salía a 26-27 ms (antes 16,7). Con el código
+  de ANTES en la misma situación (`ab_alto\viejo`) también 27 ms; sin tope, 3,4-3,6 ms en los dos. Es el PC (sincronía
+  vertical), no el cambio: del alto solo se comparan llamadas, primitivas y ms sin tope.
+- El ruido del PC entre pasadas es de ±30 % en los ms (proceso, CPU y GPU suben a la vez): una pasada final del bajo 0,75
+  (`despues\bajo075`) salió más lenta en todo y se repitió (`despues\bajo075_2` y `final\bajo075`, las de las tablas).
+- `prueba_banco_pruebas` salió una vez con el código de salida −1073741819 (cierre) tras «FALLOS: 0»; no carga la ciudad
+  y en las 4 pasadas siguientes fue superada: se anota como cierre inestable ajeno a este cambio.

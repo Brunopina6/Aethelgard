@@ -77,7 +77,7 @@ class Muestreo extends Node:
 				"llv": RS.viewport_get_render_info(vp, RS.VIEWPORT_RENDER_INFO_TYPE_VISIBLE, RS.VIEWPORT_RENDER_INFO_DRAW_CALLS_IN_FRAME),
 				"lls": RS.viewport_get_render_info(vp, RS.VIEWPORT_RENDER_INFO_TYPE_SHADOW, RS.VIEWPORT_RENDER_INFO_DRAW_CALLS_IN_FRAME),
 				"llc": RS.viewport_get_render_info(vp, RS.VIEWPORT_RENDER_INFO_TYPE_CANVAS, RS.VIEWPORT_RENDER_INFO_DRAW_CALLS_IN_FRAME),
-				"t": ahora}
+				"t": ahora, "fd": Engine.get_frames_drawn()}
 			if escena != null and is_instance_valid(escena) and escena.get("cargador") != null:
 				m["sec"] = escena.cargador.actual
 				m["mont"] = escena.cargador.montados.size()
@@ -149,6 +149,26 @@ func _mem() -> String:
 		Performance.get_monitor(Performance.RENDER_TEXTURE_MEM_USED) / 1048576.0,
 		Performance.get_monitor(Performance.RENDER_BUFFER_MEM_USED) / 1048576.0,
 		int(Performance.get_monitor(Performance.OBJECT_COUNT)), int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))]
+
+
+# (16/11, optimización) Si la ventana no dibuja (minimizada u oculta: pasó dos veces en el PC), las llamadas y primitivas
+# son las del último fotograma dibujado y los ms no valen: se avisa en la línea de la medida.
+func _sin_dibujar(ms: Array) -> String:
+	if ms.size() < 2:
+		return ""
+	var dib: int = int(ms[-1].get("fd", 0)) - int(ms[0].get("fd", 0))
+	if dib < (ms.size() - 1) * 0.9:
+		return " · AVISO: la ventana dibujó %d de %d fotogramas (modo de ventana %d): esta medida NO VALE" % [dib, ms.size() - 1,
+			DisplayServer.window_get_mode()]
+	return ""
+
+
+# Antes de cada medida: si la ventana de la medida está minimizada (Godot no dibuja), se restaura y se anota.
+func _ventana() -> void:
+	if DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_MINIMIZED:
+		_nota("[%s] (la ventana de la medida estaba minimizada: se restaura)" % perfil)
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+		await _frames(10)
 
 
 func _valores(ms: Array, clave: String, positivos := false) -> Array:
@@ -232,6 +252,7 @@ func _donde(p: Vector3) -> String:
 # ================================================================= controles (como recorrido_ciudad.gd)
 
 func _clic(pos: Vector2) -> void:
+	await _ventana()                           # (minimizada, el clic caía en otro sitio: en el botón de calidad)
 	var w: Vector2 = root.get_final_transform() * pos
 	var m := InputEventMouseMotion.new()
 	m.position = w
@@ -602,6 +623,7 @@ func _al_desmontar(id: String) -> void:
 
 
 func _recorrido() -> void:
+	await _ventana()
 	v.cargador.sector_montado.connect(_al_montar)
 	v.cargador.sector_desmontado.connect(_al_desmontar)
 	_sin_tope(false)
@@ -630,9 +652,9 @@ func _recorrido() -> void:
 	_nota("[%s] RECORRIDO andando con clics (tope %d FPS, presupuesto %.1f ms): %.0f s, %d fotogramas · real %s ms · proceso %s ms · herramienta máx %.1f ms · dibujo CPU %s ms · GPU %s ms" % [
 		perfil, int(v.perfil.get("fps", 30)), presupuesto, seg, ms.size(), _txt_est(ms, "real"), _txt_est(ms, "proc", false, 2),
 		_est(ms, "herr")["max"], _txt_est(ms, "cpu", false, 2), _txt_est(ms, "gpu", true, 2)])
-	_nota("[%s]   llamadas %s · primitivas %s · sectores montados máx %d · esperas del cargador (carga en hilo sin terminar al montar) %d · tramos sin llegar %s" % [
+	_nota("[%s]   llamadas %s · primitivas %s · sectores montados máx %d · esperas del cargador (carga en hilo sin terminar al montar) %d · tramos sin llegar %s%s" % [
 		perfil, _txt_est(ms, "ll", false, 0), _txt_est(ms, "pr", false, 0), int(_est(ms, "mont")["max"]),
-		v.cargador.esperas - esperas0, str(tramos_mal)])
+		v.cargador.esperas - esperas0, str(tramos_mal), _sin_dibujar(ms)])
 	var sobre := ms.filter(func(m): return float(m["real"]) - float(m["herr"]) > presupuesto * 1.5)
 	_nota("[%s]   fotogramas de más de %.0f ms (1,5 × presupuesto, sin lo de la herramienta): %d" % [perfil, presupuesto * 1.5, sobre.size()])
 	# el peor fotograma por la vista: dónde
@@ -655,8 +677,11 @@ func _recorrido() -> void:
 		if i < ms.size():
 			var m: Dictionary = ms[i]
 			por_mont.append(float(m["proc"]))
-			_nota("[%s]   %s: fotograma real %.1f ms (herramienta %.1f) · proceso %.1f ms · dibujo CPU %.2f · en %s" % [
-				perfil, e[1], m["real"], m["herr"], m["proc"], m["cpu"], _txt(m.get("pos", Vector3.ZERO))])
+			var sig := 0.0                       # (16/11) los 5 fotogramas siguientes (los choques repartidos: sector.gd)
+			for j in range(i + 1, mini(ms.size(), i + 6)):
+				sig = maxf(sig, float(ms[j]["proc"]))
+			_nota("[%s]   %s: fotograma real %.1f ms (herramienta %.1f) · proceso %.1f ms · dibujo CPU %.2f · en %s · los 5 siguientes: proceso máx %.1f ms" % [
+				perfil, e[1], m["real"], m["herr"], m["proc"], m["cpu"], _txt(m.get("pos", Vector3.ZERO)), sig])
 	# cada cruce de sector: el peor fotograma ±0,5 s
 	var cruces := 0
 	var peor_cruce := 0.0
@@ -704,6 +729,7 @@ func _asentar(max_seg := 2.0) -> void:
 
 
 func _barrido() -> Array:
+	await _ventana()
 	_sin_tope(true)
 	var puntos: Array = []
 	var cada := int(round(paso / C))
@@ -715,9 +741,16 @@ func _barrido() -> Array:
 					puntos.append(Vector3(c.x, P.altura(c.x, c.y), c.y))
 	var t0 := Time.get_ticks_msec()
 	var r: Array = []
+	var sin_dibujar := 0                     # (16/11) vistas tomadas con la ventana sin dibujar: se repiten
 	for p in puntos:
+		await _ventana()
 		_colocar(p)
+		var fd := Engine.get_frames_drawn()
 		await _asentar()
+		if Engine.get_frames_drawn() - fd < 3:
+			sin_dibujar += 1
+			await _ventana()
+			await _asentar()
 		var ll := RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME)
 		var pr := RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME)
 		r.append({"p": p, "ll": ll, "pr": pr, "mont": v.cargador.montados.size(), "sec": v.cargador.actual,
@@ -732,8 +765,9 @@ func _barrido() -> Array:
 		por_sec[s][2] = maxi(por_sec[s][2], x["pr"])
 		por_sec[s][3] = mini(por_sec[s][3], x["ll"])
 		por_sec[s][4] = maxi(por_sec[s][4], x["mont"])
-	_nota("[%s] BARRIDO (sin tope, Kael colocado cada %.0f m de lo andable, con Lya y Garon): %d vistas en %.0f s" % [
-		perfil, paso, r.size(), (Time.get_ticks_msec() - t0) / 1000.0])
+	_nota("[%s] BARRIDO (sin tope, Kael colocado cada %.0f m de lo andable, con Lya y Garon): %d vistas en %.0f s%s" % [
+		perfil, paso, r.size(), (Time.get_ticks_msec() - t0) / 1000.0,
+		(" · %d vistas repetidas porque la ventana no dibujaba" % sin_dibujar) if sin_dibujar > 0 else ""])
 	for s in P.ORDEN:
 		if por_sec.has(s):
 			var q: Array = por_sec[s]
@@ -764,6 +798,7 @@ func _mas_cargadas(r: Array) -> Array:
 
 
 func _medir_punto(nombre: String, p: Vector3) -> void:
+	await _ventana()
 	_colocar(p)
 	await _asentar(3.0)
 	await _esperar(1.0)
@@ -785,14 +820,15 @@ func _medir_punto(nombre: String, p: Vector3) -> void:
 	_nota("[%s]   con tope (%d FPS): real %s ms · SIN tope ni vsync: real %s ms · proceso %s ms · dibujo CPU mediana %.2f ms · GPU %s ms" % [
 		perfil, int(v.perfil.get("fps", 30)), _txt_est(con, "real"), _txt_est(sin, "real", false, 2), _txt_est(sin, "proc", false, 2),
 		_est(sin, "cpu")["med"], _txt_est(sin, "gpu", true, 2)])
-	_nota("[%s]   llamadas %d (máx %d; visibles %d, sombras %d, 2D %d) · primitivas %d (máx %d)" % [perfil, _est(sin, "ll")["med"],
+	_nota("[%s]   llamadas %d (máx %d; visibles %d, sombras %d, 2D %d) · primitivas %d (máx %d)%s" % [perfil, _est(sin, "ll")["med"],
 		_est(sin, "ll")["max"], _est(sin, "llv")["med"], _est(sin, "lls")["med"], _est(sin, "llc")["med"], _est(sin, "pr")["med"],
-		_est(sin, "pr")["max"]])
+		_est(sin, "pr")["max"], _sin_dibujar(con) + _sin_dibujar(sin)])
 
 
 # EXPERIMENTO (solo medida; el juego no cambia): en una vista, las llamadas y primitivas de lo que hay, y sin cada cosa
-# (ocultando nodos un momento): los rótulos (Label3D), los ocultables (cuánto ahorraría fundirlos: luego habría que sumar
-# las mallas fundidas), la maqueta lejana, el grupo (Lya y Garon) y la interfaz 2D.
+# (ocultando nodos un momento): los rótulos (Label3D), las mallas de los sectores montados (desde la optimización del
+# 16/11, «Blockout» con los ocultables fundidos y «Aclarados»; antes, una malla por ocultable), la maqueta lejana, el grupo
+# (Lya y Garon) y la interfaz 2D.
 func _llamadas() -> Array:
 	await _frames(4)
 	return [RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME),
@@ -804,12 +840,11 @@ func _experimento(nombre: String, p: Vector3) -> void:
 	await _asentar(3.0)
 	await _esperar(0.5)
 	var base: Array = await _llamadas()
-	var partes := {"rótulos": [], "ocultables": [], "lejana": [], "grupo": [], "interfaz 2D": []}
+	var partes := {"rótulos": [], "mallas de los sectores": [], "lejana": [], "grupo": [], "interfaz 2D": []}
 	for id in v.cargador.montados:
 		var s: Node = v.cargador.montados[id]
 		partes["rótulos"].append_array(s.find_children("*", "Label3D", true, false))
-		for o in s.ocultables:
-			partes["ocultables"].append(o[0])
+		partes["mallas de los sectores"].append_array(s.find_children("*", "MeshInstance3D", false, false))
 	for id in v.cargador.lejanas:
 		if (v.cargador.lejanas[id] as Node3D).visible:
 			partes["lejana"].append(v.cargador.lejanas[id])
@@ -840,6 +875,18 @@ func _coste_sectores() -> void:
 		var s: Node3D = ps.instantiate()
 		s.construir()
 		var t1 := (Time.get_ticks_usec() - t0) / 1000.0
+		var t_datos := -1.0                         # (16/11, optimización) lo que el cargador hace en un hilo…
+		var t_nodos := -1.0                         # … y lo que queda en el fotograma del montaje (fuera del árbol)
+		if s.has_method("preparar_datos"):
+			var ta := Time.get_ticks_usec()
+			var d: Dictionary = s.preparar_datos(id)
+			t_datos = (Time.get_ticks_usec() - ta) / 1000.0
+			var s2: Node3D = ps.instantiate()
+			s2.datos = d
+			ta = Time.get_ticks_usec()
+			s2.construir()
+			t_nodos = (Time.get_ticks_usec() - ta) / 1000.0
+			s2.free()
 		var mallas := 0
 		var sup := 0
 		var tri := 0
@@ -851,8 +898,8 @@ func _coste_sectores() -> void:
 				var n: int = m.surface_get_array_index_len(i)
 				tri += (n if n > 0 else m.surface_get_array_len(i)) / 3
 		var rot := s.find_children("*", "Label3D", true, false).size()
-		_nota("[%s] sector %s: construir() fuera del árbol %.1f ms · %d mallas (%d ocultables) · %d superficies · %d triángulos · %d rótulos · %d choques" % [
-			perfil, id, t1, mallas, s.ocultables.size(), sup, tri, rot, s.choques])
+		_nota("[%s] sector %s: construir() fuera del árbol %.1f ms (preparar_datos, en hilo en el juego: %.1f ms · solo los nodos: %.1f ms) · %d mallas (%d ocultables) · %d superficies · %d triángulos · %d rótulos · %d choques" % [
+			perfil, id, t1, t_datos, t_nodos, mallas, s.ocultables.size(), sup, tri, rot, s.choques])
 		tot_ll += sup + rot
 		s.free()
 	var tri_l := 0

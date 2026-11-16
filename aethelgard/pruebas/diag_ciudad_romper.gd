@@ -119,15 +119,13 @@ var _vis: Array = []
 # maqueta lejana (≥ ALTO_LEJANA y sin puertas).
 func _cajas_visibles() -> Array:
 	var r: Array = []
-	var claro: Material = Blockout.material(true)
 	for s in P.ORDEN:
 		var t = P.trazado(s)
 		var m = v.cargador.montados.get(s)
 		for b in t.BLOQUES:
 			if m != null:
 				if Comun.ocultable(b, t.OCULTABLES):
-					var mi = m.get_node_or_null("Ocultable_" + String(b[0]))
-					if mi != null and mi.material_override == claro:
+					if m.aclarado(String(b[0])):
 						continue
 			elif float(b[4]) < v.cargador.ALTO_LEJANA or String(b[5]) == "puerta":
 				continue

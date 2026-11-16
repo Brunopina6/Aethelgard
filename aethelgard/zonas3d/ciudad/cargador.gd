@@ -15,10 +15,19 @@ extends Node3D
 # NUNCA carga interiores: solo pide las rutas de sector.tscn (las pruebas lo comprueban en «pedidos»); las puertas son
 # previstas y la escena dice «Aún no se puede entrar (en obras).».
 # Presupuestos del plan (§5, A MEDIR; ninguna cifra de Android sin el Redmi): bajo ≤ 65 llamadas y ≤ 160 mil primitivas.
+# Optimización del 16/11 (docs/v12/ciudad_sectores/MEDIDAS_PC.md §6): a la vez que se pide la escena en hilo, sus mallas
+# y su lista de choques se preparan en otro hilo (WorkerThreadPool, sector.gd preparar_datos); el sector cuenta como
+# «cargado» cuando están las dos cosas; en el fotograma del montaje solo se crean los nodos (y, salvo en el
+# sector de Kael, los choques se reparten en unos fotogramas: sector.gd, inmediato). En el bajo, los rótulos de los
+# sectores montados solo cerca de Kael (sector.gd, rotulos_cerca). (Tarea de prioridad alta: dura 2-4 ms en el PC; con
+# prioridad baja, con el PC ocupado, la prueba B la vio sin terminar en 60 fotogramas.)
 
 const P := preload("res://zonas3d/ciudad/plano.gd")
 const Blockout := preload("res://zonas3d/ciudad/blockout.gd")
 const Comun := preload("res://zonas3d/ciudad/trazado_comun.gd")
+const Sector := preload("res://zonas3d/ciudad/sector.gd")
+const PREPARAR_EN_HILO := true             # (para medir) false: las mallas se hacen en el fotograma del montaje, como antes
+const ROTULOS_CERCA := ["bajo"]            # perfiles con los rótulos solo cerca de Kael
 
 const RADIO_PRECARGA := 40.0
 const RADIO_MONTAJE := 25.0
@@ -42,6 +51,8 @@ var pedidos: Array = []                    # todas las rutas pedidas en hilo o c
 var montajes := 0                          # (para las pruebas) cuántas veces se ha montado y desmontado algo
 var desmontajes := 0
 var esperas := 0                           # cuántas veces hubo que esperar a una carga (el sector de Kael sin terminar)
+var datos := {}                            # id → lo preparado en hilo (sector.gd, preparar_datos), con su escena
+var _tareas := {}                          # id → [tarea de WorkerThreadPool, caja con el resultado]
 
 
 static func ruta_escena(id: String) -> String:
@@ -106,9 +117,15 @@ func actualizar(p: Vector3, _forzar := false) -> void:
 	for id in P.ORDEN:                                  # lo lejos y desmontado suelta su escena
 		if not montados.has(id) and float(distancias[id]) > RADIO_DESCARGA and estado[id] == "cargado":
 			escenas.erase(id)
+			datos.erase(id)
 			estado[id] = "lejos"
 	for id in lejanas:
 		(lejanas[id] as Node3D).visible = not montados.has(id)
+	if montados.has(actual):                            # (el sector de Kael, con todos sus choques ya)
+		(montados[actual] as Node).terminar_choques()
+	if perfil in ROTULOS_CERCA:
+		for id in montados:
+			(montados[id] as Node).rotulos_cerca(p, id == actual)
 
 
 # Los que deben estar montados: el actual y, por cercanía (con ventaja para los ya montados), los ya montados a menos de
@@ -135,29 +152,56 @@ func _pedir(id: String) -> void:
 	if ResourceLoader.load_threaded_request(ruta, "PackedScene") == OK:
 		estado[id] = "cargando"
 		pedidos.append(ruta)
+		# (16/11) a la vez, sus mallas y sus choques en otro hilo: solo necesitan el trazado, no la escena
+		if PREPARAR_EN_HILO and not datos.has(id) and not _tareas.has(id):
+			var caja := [null]
+			_tareas[id] = [WorkerThreadPool.add_task(Sector.preparar_en.bind(caja, id), true, "ciudad: " + id), caja]
 	else:
 		estado[id] = "error"
 		push_warning("Ciudad: no se pudo pedir %s" % ruta)
 
 
+# «cargando» dura hasta tener la escena (carga en hilo) Y sus datos (preparados en otro hilo, a la vez).
 func _sondear() -> void:
 	for id in P.ORDEN:
 		if estado[id] != "cargando":
 			continue
-		var e := ResourceLoader.load_threaded_get_status(ruta_escena(id))
-		if e == ResourceLoader.THREAD_LOAD_LOADED:
-			_recoger(id)
-		elif e == ResourceLoader.THREAD_LOAD_FAILED or e == ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
-			estado[id] = "error"
+		if not escenas.has(id):
+			var e := ResourceLoader.load_threaded_get_status(ruta_escena(id))
+			if e == ResourceLoader.THREAD_LOAD_LOADED:
+				_recoger(id)
+			elif e == ResourceLoader.THREAD_LOAD_FAILED or e == ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
+				_fallo(id)
+			continue
+		_recoger(id)
 
 
-func _recoger(id: String) -> void:
-	var r = ResourceLoader.load_threaded_get(ruta_escena(id))      # (si aún no ha terminado, espera)
-	if r is PackedScene:
+# Recoge la escena (si aún no ha terminado, espera) y sus datos si ya están; con «esperar», espera también a ellos.
+func _recoger(id: String, esperar := false) -> void:
+	if not escenas.has(id):
+		var r = ResourceLoader.load_threaded_get(ruta_escena(id))
+		if not r is PackedScene:
+			_fallo(id)
+			return
 		escenas[id] = r
+	if _tareas.has(id) and (esperar or WorkerThreadPool.is_task_completed(_tareas[id][0])):
+		_terminar_datos(id)
+	if not _tareas.has(id):
 		estado[id] = "cargado"
-	else:
-		estado[id] = "error"
+
+
+func _terminar_datos(id: String) -> void:
+	var t: Array = _tareas[id]
+	_tareas.erase(id)
+	WorkerThreadPool.wait_for_task_completion(t[0])
+	if t[1][0] is Dictionary and not (t[1][0] as Dictionary).is_empty():
+		datos[id] = t[1][0]
+
+
+func _fallo(id: String) -> void:
+	estado[id] = "error"
+	if _tareas.has(id):                              # (toda tarea se espera: WorkerThreadPool)
+		_terminar_datos(id)
 
 
 func _montar(id: String) -> void:
@@ -165,10 +209,13 @@ func _montar(id: String) -> void:
 		_pedir(id)
 	if estado[id] == "cargando":
 		esperas += 1
-		_recoger(id)
+		_recoger(id, true)
 	if not escenas.has(id):
 		return
 	var s: Node3D = (escenas[id] as PackedScene).instantiate()
+	s.datos = datos.get(id)
+	s.solo_cerca = perfil in ROTULOS_CERCA
+	s.inmediato = id == actual                  # (los demás, sus choques repartidos en unos fotogramas: sector.gd)
 	add_child(s)
 	montados[id] = s
 	montajes += 1
@@ -194,16 +241,17 @@ func desmontar_todo() -> void:
 		_desmontar(id)
 	for id in P.ORDEN:
 		if estado.get(id, "") == "cargando":
-			_recoger(id)
+			_recoger(id, true)
 	escenas.clear()
+	datos.clear()
 	for id in P.ORDEN:
 		estado[id] = "lejos"
 
 
 func _exit_tree() -> void:
-	for id in P.ORDEN:                              # (una carga en hilo sin recoger quedaría en el cargador de Godot)
-		if estado.get(id, "") == "cargando":
-			_recoger(id)
+	for id in P.ORDEN:                              # (una carga en hilo sin recoger quedaría en el cargador de Godot; una
+		if estado.get(id, "") == "cargando":        # tarea sin esperar, en WorkerThreadPool)
+			_recoger(id, true)
 
 
 # Los sectores montados (ids), en el orden del plano.

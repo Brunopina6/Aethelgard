@@ -97,7 +97,6 @@ func _sitio() -> String:
 # Lo opaco que corta el rayo de la cámara a «p»: [] si se ve.
 func _tapa(desde: Vector3, p: Vector3) -> Array:
 	var r: Array = []
-	var claro: Material = Blockout.material(true)
 	for s in P.ORDEN:
 		var t = P.trazado(s)
 		var montado = v.cargador.montados.get(s)
@@ -105,8 +104,7 @@ func _tapa(desde: Vector3, p: Vector3) -> Array:
 			var id: String = x[0]
 			if montado != null:
 				if x[1]:
-					var mi = montado.get_node_or_null("Ocultable_" + id)
-					if mi == null or mi.material_override != claro:
+					if not montado.aclarado(id):
 						r.append("%s/%s (ocultable sin aclarar)" % [s, id])
 				else:
 					r.append("%s/%s" % [s, id])
@@ -254,20 +252,18 @@ func _camara() -> void:
 	_foco_prev = f
 
 
-# Parpadeo de los aclarados: cambios de opaco a claro (o al revés) de cada malla ocultable montada.
+# Parpadeo de los aclarados: cambios de opaco a claro (o al revés) de cada pieza ocultable montada (16/11, optimización:
+# las piezas ya no son mallas sueltas; sector.gd, aclarado(id), por pieza y por montaje del sector).
 func _aclarados() -> void:
-	var claro: Material = Blockout.material(true)
 	var fr := Engine.get_process_frames()
 	for s in v.cargador.montados:
 		var nodo: Node = v.cargador.montados[s]
 		for o in nodo.ocultables:
-			var mi: MeshInstance3D = o[0]
-			if not is_instance_valid(mi):
-				continue
-			var idm := mi.get_instance_id()
-			var est := mi.material_override == claro
+			var nombre := String(o[0])
+			var idm := "%d/%s" % [nodo.get_instance_id(), nombre]
+			var est: bool = nodo.aclarado(nombre)
 			if not _mats.has(idm):
-				_mats[idm] = [est, [], "%s/%s" % [s, mi.name.trim_prefix("Ocultable_")]]
+				_mats[idm] = [est, [], "%s/%s" % [s, nombre]]
 				continue
 			var m: Array = _mats[idm]
 			if m[0] != est:
