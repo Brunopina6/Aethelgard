@@ -1,7 +1,7 @@
 extends RefCounted
 # CIUDAD DE OAKHAVEN (V12, 16/11; EXPERIMENTAL): sector 3, CALLE DE LOS OFICIOS. Maqueta del agente B (sectores 3 y 8),
 # sobre el trazado mínimo de M0. Plano: docs/v12/CIUDAD_OAKHAVEN_PLAN.md §2-§4; contrato: docs/v12/CIUDAD_OAKHAVEN.md;
-# lo de este sector, explicado: docs/v12/ciudad_sectores/b.md. Bordes acordados (plano.gd, CONEXIONES, no se cambian
+# lo de este sector, explicado: docs/v12/ciudad_sectores/B.md. Bordes acordados (plano.gd, CONEXIONES, no se cambian
 # aquí): Calle del Mercado (x 45, cota 3), Subida de la Colina (z −15, cota 10) y Escalera del Molino (z 55, cota 3).
 #
 # Coordenadas de CIUDAD (x este, z sur, y arriba). Todo [P] salvo lo marcado [C]. La ladera sube hacia el norte: lo
@@ -10,14 +10,17 @@ extends RefCounted
 #     entrada de la calle], el Callejón del Carbón [P] (sin salida: la carbonera de la forja y su aprendiz), la forja de
 #     Maese Ferro [C, «junto al yunque»] retranqueada tras el Ensanche de la Forja [P] (yunque, pila de temple y poste
 #     de los caballos) y dos casas; al sur, un SOPORTAL [P] con planta encima.
-#   - PASO DEL FUELLE [P]: un paso bajo las casas, del soportal a la Calle del Horno.
+#     Bajo los arcos, el talabartero y el cordelero [P] y un puesto.
+#   - PASO DEL FUELLE [P]: un paso bajo las casas, del soportal a la Calle del Horno, con fuelles viejos y la puerta
+#     lateral de un taller.
 #   - CALLE DEL HORNO [P] (la calle comercial del barrio, plan §4), más baja: el horno de Maela [P, del barrio] y casas;
-#     al sur, un pretil con la VISTA de la Ribera Baja (la torre, la acequia y los almacenes).
+#     al sur, un pretil donde se asoman los vecinos: se les ve desde la Ribera Baja (la cámara mira al norte).
 #   - PATIO DE LOS TALLERES [P] (el patio del barrio, plan §4) al final de la calle, a cota 7: el taller del carretero
-#     Damián [P, del barrio], su carro, el abrevadero y un árbol. Al este de Ferro e Hilda (sin tercera forja).
+#     Damián [P, del barrio], el del tonelero [P], el carro, el abrevadero, ruedas apoyadas y un árbol. Al este de Ferro e
+#     Hilda (sin tercera forja).
 #   - BAJADA AL MOLINO y PLACETA DE LA FUENTE [P] (sitio de juegos de niños) hacia la Escalera del Molino.
 #   - ESCALERILLA DE LA COLINA [P]: atajo de la entrada de la calle al Paseo de la Colina (dos tramos al 19 y al 40 % con
-#     rellano y banco).
+#     rellano y banco), con la puerta trasera del taller de Hilda a media subida.
 #   - PASEO DE LA COLINA [P], al pie de la COLINA DEL CREMATORIO [C]: solo POR FUERA. La colina no es andable, la puerta
 #     del crematorio sigue SELLADA (sin entrada prevista) y no se construye nada debajo. Albar [C] tiene allí su sitio.
 # Cómo se lee cada lista: zonas3d/ciudad/trazado_comun.gd (formatos del barrio).
@@ -63,26 +66,33 @@ const SUELOS := [
 # las fachadas este u oeste caen entre dos casillas de 0,25 m (x .92 a .00) y no tapan.
 const BLOQUES := [
 	# --- al norte de la calle: Hilda, el carbón, la forja y dos casas
-	["taller_hilda", "oficios", Rect2(50.0, 9.0, 9.5, 11.0), 3.0, 5.5, "casa", true],
+	# (B-2) el taller de Hilda llega hasta la Escalerilla (x 49) y le abre una puerta trasera a media subida.
+	["taller_hilda", "oficios", Rect2(49.0, 9.0, 10.5, 11.0), 3.0, 5.5, "casa", true],
 	["hoja_hilda", "oficios", Rect2(54.3, 19.92, 1.4, 0.08), 3.5, 2.4, "puerta", false],
+	["hoja_hilda_o", "oficios", Rect2(49.0, 13.0, 0.08, 1.2), 4.2, 2.3, "puerta", false],
 	["carbonera", "oficios", Rect2(59.5, 8.0, 2.5, 5.0), 4.05, 3.0, "casa", true],
 	["monton_carbon", "oficios", Rect2(59.6, 13.0, 2.3, 1.4), 4.05, 1.1, "bajo", true],
-	["forja_ferro", "oficios", Rect2(62.0, 8.0, 12.0, 9.0), 4.2, 6.0, "casa", true],
-	["chimenea_forja", "oficios", Rect2(70.0, 10.0, 1.4, 1.4), 10.2, 3.5, "muro", false],
+	# (B-2) la forja es la casa más reconocible de la calle: más alta que sus vecinas, chimenea que sobresale 5 m y un
+	# tejadillo sobre el Ensanche (la boca de la fragua).
+	["forja_ferro", "oficios", Rect2(62.0, 8.0, 12.0, 9.0), 4.2, 7.5, "casa", true],
+	["chimenea_forja", "oficios", Rect2(70.0, 10.0, 1.4, 1.4), 11.7, 5.0, "muro", false],
 	["hoja_forja", "oficios", Rect2(67.3, 16.92, 1.4, 0.08), 4.8, 2.6, "puerta", false],
+	["tejadillo_forja", "oficios", Rect2(62.0, 17.0, 12.0, 2.2), 7.6, 0.4, "cubierta", false],
 	["yunque", "oficios", Rect2(64.5, 18.2, 1.0, 0.6), 4.45, 0.8, "bajo", true],
-	["pila_temple", "oficios", Rect2(71.0, 17.4, 1.6, 0.9), 5.1, 0.7, "bajo", true],
+	["pila_temple", "oficios", Rect2(71.0, 17.0, 1.6, 0.9), 5.1, 0.7, "bajo", true],
 	["poste_caballos", "oficios", Rect2(73.3, 19.0, 0.3, 0.3), 5.3, 1.3, "muro", true],
-	["casa_ne_1", "oficios", Rect2(74.5, 10.0, 6.0, 10.0), 5.4, 8.0, "casa", true],
+	["casa_ne_1", "oficios", Rect2(74.0, 10.0, 7.0, 10.0), 5.4, 6.0, "casa", true],
 	["hoja_casa_ne_1", "oficios", Rect2(76.9, 19.92, 1.2, 0.08), 5.7, 2.3, "puerta", false],
 	["casa_ne_2", "oficios", Rect2(81.0, 9.0, 7.0, 11.0), 6.1, 6.0, "casa", true],
 	["hoja_casa_ne_2", "oficios", Rect2(83.9, 19.92, 1.2, 0.08), 6.4, 2.3, "puerta", false],
+	["hoja_casa_ne_2_e", "oficios", Rect2(87.92, 13.0, 0.08, 1.6), 7.0, 2.6, "puerta", false],   # el tonelero, al patio
 	["ladera_colina", "oficios", Rect2(49.0, -10.0, 39.0, 18.0), 3.0, 5.5, "terreno", true],
+	["ladera_casas", "oficios", Rect2(74.0, 8.0, 14.0, 2.0), 5.0, 3.5, "terreno", true],   # (B-2) tapa el hueco tras las casas
 	# --- al sur de la calle (entrada): la casa de la esquina, el puesto de Hilda, la casa de la bajada
 	["casa_mercado_e", "oficios", Rect2(45.0, 26.0, 8.0, 12.5), 3.0, 8.0, "casa", true],
 	["hoja_mercado_e", "oficios", Rect2(48.4, 26.0, 1.2, 0.08), 3.0, 2.3, "puerta", false],
 	["puesto_hilda", "oficios", Rect2(51.0, 24.9, 2.4, 1.0), 3.1, 1.2, "bajo", true],
-	["casa_bajada_o", "oficios", Rect2(53.5, 26.0, 6.5, 11.0), 3.35, 6.0, "casa", true],
+	["casa_bajada_o", "oficios", Rect2(53.5, 26.0, 6.5, 13.0), 3.35, 6.0, "casa", true],
 	["hoja_bajada_o", "oficios", Rect2(59.92, 31.0, 0.08, 1.2), 3.9, 2.3, "puerta", false],
 	# --- el soportal: pilares a la calle, la planta encima (cubierta) y las casas de detrás
 	["muro_soportal_o", "oficios", Rect2(63.0, 26.0, 1.0, 3.0), 4.0, 4.4, "muro", true],
@@ -99,11 +109,17 @@ const BLOQUES := [
 	["hoja_sop_1", "oficios", Rect2(66.0, 29.0, 1.2, 0.08), 4.66, 2.3, "puerta", false],
 	["hoja_sop_1_o", "oficios", Rect2(63.0, 32.8, 0.08, 1.2), 3.9, 2.3, "puerta", false],
 	["casa_sop_2", "oficios", Rect2(70.0, 29.0, 7.0, 8.5), 4.6, 6.5, "casa", true],
-	["casa_sop_3", "oficios", Rect2(79.5, 29.0, 8.5, 8.0), 5.0, 7.0, "casa", true],
+	["hoja_sop_2", "oficios", Rect2(73.0, 29.0, 1.2, 0.08), 5.36, 2.3, "puerta", false],   # el talabartero [P]
+	["casa_sop_3", "oficios", Rect2(79.5, 29.0, 8.5, 8.5), 5.0, 7.0, "casa", true],
+	["hoja_sop_3", "oficios", Rect2(83.0, 29.0, 1.2, 0.08), 6.36, 2.3, "puerta", false],   # el cordelero [P]
+	["puesto_soportal", "oficios", Rect2(69.0, 28.2, 2.4, 0.8), 4.9, 1.0, "bajo", true],    # puesto bajo los arcos
 	["casa_esquina", "oficios", Rect2(88.0, 26.0, 2.0, 4.0), 6.8, 6.0, "casa", true],
 	["cubierta_fuelle", "oficios", Rect2(77.0, 30.0, 2.5, 9.0), 8.0, 3.0, "cubierta", false],
+	# (B-2) el Paso del Fuelle: fuelles viejos al pie de la cubierta y la puerta lateral de un taller a media bajada.
+	["fuelles_viejos", "oficios", Rect2(77.0, 39.4, 0.6, 1.6), 4.55, 1.1, "bajo", true],
+	["hoja_fuelle", "oficios", Rect2(79.5, 41.0, 0.08, 1.2), 4.51, 2.3, "puerta", false],
 	# --- la Calle del Horno: casas con la fachada al sur y el horno de Maela
-	["casa_horno_o", "oficios", Rect2(63.0, 38.0, 14.0, 9.0), 3.1, 7.0, "casa", true],
+	["casa_horno_o", "oficios", Rect2(63.0, 37.5, 14.0, 9.5), 3.1, 7.0, "casa", true],
 	["hoja_horno_o", "oficios", Rect2(68.4, 46.92, 1.2, 0.08), 3.4, 2.3, "puerta", false],
 	["casa_horno_e", "oficios", Rect2(79.5, 37.5, 8.5, 9.5), 3.9, 6.0, "casa", true],
 	["hoja_horno_e", "oficios", Rect2(83.4, 46.92, 1.2, 0.08), 4.2, 2.3, "puerta", false],
@@ -111,9 +127,16 @@ const BLOQUES := [
 	["hoja_horno", "oficios", Rect2(90.4, 46.92, 1.2, 0.08), 4.7, 2.3, "puerta", false],
 	["chimenea_horno", "oficios", Rect2(92.0, 33.0, 1.2, 1.2), 10.6, 2.2, "muro", false],
 	["banco_horno", "oficios", Rect2(96.1, 38.0, 0.5, 2.2), 5.8, 0.7, "bajo", true],
-	["pretil_horno_o", "oficios", Rect2(63.5, 53.0, 12.5, 0.4), 3.0, 1.2, "muro", true],
-	["pretil_horno_c", "oficios", Rect2(76.0, 53.0, 12.0, 0.4), 3.85, 1.1, "muro", true],
-	["pretil_horno_e", "oficios", Rect2(88.0, 53.0, 12.0, 0.4), 4.5, 1.2, "muro", true],
+	# (B-2) el pretil, en tramos de 6 m que siguen la calle (cima = la cota más alta del tramo + 0,9 m), sobre un
+	# terraplén que cierra el hueco entre la calle y la Ribera (cima 2,5, por debajo de la calle).
+	["pretil_horno_1", "oficios", Rect2(63.0, 53.0, 6.0, 0.4), 2.5, 1.85, "muro", true],
+	["pretil_horno_2", "oficios", Rect2(69.0, 53.0, 6.0, 0.4), 2.5, 2.19, "muro", true],
+	["pretil_horno_3", "oficios", Rect2(75.0, 53.0, 6.0, 0.4), 2.5, 2.54, "muro", true],
+	["pretil_horno_4", "oficios", Rect2(81.0, 53.0, 6.0, 0.4), 2.5, 2.88, "muro", true],
+	["pretil_horno_5", "oficios", Rect2(87.0, 53.0, 6.0, 0.4), 2.5, 3.23, "muro", true],
+	["pretil_horno_6", "oficios", Rect2(93.0, 53.0, 7.0, 0.4), 2.5, 3.4, "muro", true],
+	["terraplen_horno", "oficios", Rect2(63.5, 53.4, 36.5, 1.6), -2.0, 4.5, "terreno", true],
+	["pretil_remate", "oficios", Rect2(63.0, 53.4, 0.5, 1.6), 2.5, 1.5, "muro", true],   # al este del remate (z 53..55)
 	["terreno_e", "oficios", Rect2(100.0, 30.0, 2.0, 25.0), 5.0, 2.0, "terreno", true],
 	# --- la Placeta de la Fuente
 	["casa_placeta_n", "oficios", Rect2(50.0, 39.0, 10.0, 6.0), 3.15, 7.0, "casa", true],
@@ -122,32 +145,43 @@ const BLOQUES := [
 	["hoja_placeta_o", "oficios", Rect2(49.92, 48.4, 0.08, 1.2), 3.15, 2.3, "puerta", false],
 	["fuente_pilon", "oficios", Rect2(53.5, 48.0, 3.0, 3.0), 3.15, 0.6, "bajo", true],
 	["fuente_cano", "oficios", Rect2(54.7, 49.2, 0.6, 0.6), 3.75, 1.6, "decor", true],
-	["pretil_placeta", "oficios", Rect2(50.0, 53.6, 10.0, 0.4), 3.15, 0.9, "muro", true],
+	["pretil_placeta", "oficios", Rect2(50.0, 53.6, 10.0, 1.4), 3.15, 0.9, "muro", true],   # (B-2) hasta z 55: cierra el remate
 	# --- el Patio de los Talleres
 	["taller_carretero", "oficios", Rect2(88.0, -8.0, 9.0, 12.0), 7.0, 3.6, "casa", true],
 	["porton_carretero", "oficios", Rect2(91.2, 3.92, 1.8, 0.08), 7.0, 2.6, "puerta", false],
+	["talud_carretero", "oficios", Rect2(88.0, -10.0, 9.0, 2.0), 3.0, 6.5, "terreno", true],   # (B-2) el hueco del paseo
 	["carro_damian", "oficios", Rect2(93.5, 9.0, 3.2, 1.8), 7.0, 1.5, "bajo", true],
-	["abrevadero_patio", "oficios", Rect2(100.4, 11.0, 1.2, 3.0), 7.0, 0.7, "bajo", true],
-	["lena_patio", "oficios", Rect2(88.2, 5.0, 1.6, 2.4), 7.0, 1.3, "bajo", true],
+	["abrevadero_patio", "oficios", Rect2(100.8, 11.0, 1.2, 3.0), 7.0, 0.7, "bajo", true],
+	["lena_patio", "oficios", Rect2(88.0, 5.0, 1.6, 2.4), 7.0, 1.3, "bajo", true],
 	["tronco_patio", "oficios", Rect2(96.75, 23.75, 0.5, 0.5), 7.0, 3.0, "arbol", true],
 	["copa_patio", "oficios", Rect2(94.5, 21.5, 5.0, 5.0), 9.5, 3.0, "copa", false],
+	# (B-2) la mitad sur del patio también es taller: ruedas apoyadas en la muralla y un tajo de leña junto al árbol.
+	["ruedas_apoyadas", "oficios", Rect2(101.0, 24.0, 1.0, 3.0), 7.0, 1.4, "bajo", true],
+	["tajo_lena", "oficios", Rect2(92.0, 27.5, 0.8, 0.8), 7.0, 0.6, "bajo", true],
 	["muralla_este", "oficios", Rect2(102.0, -15.0, 3.0, 70.0), 0.0, 14.0, "muro", true],
 	# --- la Escalerilla de la Colina (atajo de la Calle del Mercado al paseo)
 	["muro_escalerilla", "oficios", Rect2(45.0, -10.0, 1.0, 30.0), 3.0, 7.5, "muro", true],
-	["pretil_escalerilla", "oficios", Rect2(49.0, 8.0, 1.0, 12.0), 3.0, 3.5, "muro", true],
+	["pretil_escalerilla", "oficios", Rect2(49.0, 8.0, 1.0, 1.0), 3.0, 5.5, "muro", true],   # (B-2) solo la esquina
 	["banco_escalerilla", "oficios", Rect2(48.4, 0.8, 0.5, 2.0), 6.0, 0.45, "bajo", true],
 	["hornacina_escalerilla", "oficios", Rect2(45.9, 1.2, 0.1, 1.2), 6.6, 1.0, "decor", false],
+	["pretil_mirador_esc", "oficios", Rect2(45.0, -15.0, 5.0, 1.0), 9.0, 2.0, "muro", true],   # (B-2) norte del mirador
 	# --- el Paseo de la Colina y la Colina del Crematorio [C] (solo por fuera; la puerta, SELLADA)
 	["pretil_colina", "oficios", Rect2(54.0, -15.0, 48.0, 1.0), 8.5, 1.5, "muro", true],
-	["banco_paseo_1", "oficios", Rect2(62.0, -10.6, 2.2, 0.5), 9.7, 0.45, "bajo", true],
-	["banco_paseo_2", "oficios", Rect2(84.0, -10.6, 2.2, 0.5), 8.95, 0.45, "bajo", true],
+	# (B-2) antepecho al sur del paseo (sobre la ladera), en tres tramos; un ciprés a media distancia
+	["pretil_paseo_1", "oficios", Rect2(54.0, -10.0, 11.0, 0.4), 8.5, 2.4, "muro", true],
+	["pretil_paseo_2", "oficios", Rect2(65.0, -10.0, 11.0, 0.4), 8.5, 2.0, "muro", true],
+	["pretil_paseo_3", "oficios", Rect2(76.0, -10.0, 12.0, 0.4), 8.5, 1.65, "muro", true],
+	["banco_paseo_1", "oficios", Rect2(65.0, -10.5, 2.2, 0.5), 9.6, 0.45, "bajo", true],
+	["banco_paseo_2", "oficios", Rect2(84.0, -10.5, 2.2, 0.5), 8.95, 0.45, "bajo", true],
+	["tronco_cipres", "oficios", Rect2(71.7, -14.0, 0.6, 0.6), 9.37, 2.0, "arbol", true],
+	["copa_cipres", "oficios", Rect2(71.0, -14.9, 2.0, 2.0), 10.5, 5.0, "copa", false],
 	["colina", "oficios", Rect2(60.0, -60.0, 45.0, 45.0), 8.0, 6.0, "terreno", true],
 	["crematorio", "oficios", Rect2(75.0, -50.0, 16.0, 14.0), 14.0, 8.0, "casa", true],
 	["puerta_sellada", "oficios", Rect2(81.0, -36.1, 4.0, 0.1), 14.0, 3.5, "puerta", false],
 ]
 # Lo que la escena aclara cuando tapa a Kael (además de cubiertas y copas): lo que queda al SUR de lo andable.
 const OCULTABLES := ["casa_mercado_e", "hoja_mercado_e", "casa_bajada_o", "muro_soportal_o", "casa_sop_1", "hoja_sop_1", "casa_sop_2",
-	"casa_sop_3", "casa_esquina", "horno_maela", "chimenea_horno"]
+	"hoja_sop_2", "casa_sop_3", "hoja_sop_3", "casa_esquina", "horno_maela", "chimenea_horno"]
 
 # ---------------------------------------------------------------------------------------------------- anclas
 # Puntos EN el suelo (la «y» la da altura()). «puerta_*» son umbrales; «n_*», nodos del grafo; el resto, sitios de vida
@@ -163,6 +197,11 @@ const ANCLAS := {
 	"puerta_casa_soportal": Vector3(66.6, 4.66, 28.95),
 	"puerta_casa_placeta": Vector3(55.0, 3.15, 45.0),
 	"puerta_casa_bajada": Vector3(60.05, 3.9115, 31.6),
+	"puerta_hilda_trasera": Vector3(48.95, 4.2, 13.6),
+	"puerta_talabartero": Vector3(73.6, 5.36, 28.95),
+	"puerta_cordelero": Vector3(83.6, 6.36, 28.95),
+	"puerta_taller_fuelle": Vector3(79.45, 4.511, 41.6),
+	"puerta_tonelero": Vector3(88.05, 7.0, 13.8),
 	# vida y juego
 	"ferro": Vector3(66.0, 4.6, 19.4),               # [C] «Herrería, junto al yunque»
 	"hilda_puesto": Vector3(52.2, 3.22, 24.2),       # [C] su puesto a la entrada de la calle
@@ -172,11 +211,18 @@ const ANCLAS := {
 	"caballo_carro": Vector3(97.5, 7.0, 10.0),       # el caballo del carro, junto al abrevadero
 	"maela": Vector3(89.5, 4.6258, 48.6),            # [P, del barrio] la panadera, ante el horno
 	"vecina_soportal": Vector3(75.0, 5.5, 27.5),
+	"puesto_soportal": Vector3(70.2, 5.02, 27.6),     # quien atiende el puesto bajo los arcos (otro sitio para la Feria)
+	"fuellero": Vector3(78.6, 4.6487, 40.2),          # un vecino remendando fuelles en el Paso del Fuelle
+	"vecino_ruedas": Vector3(99.8, 7.0, 25.5),        # un vecino con las ruedas apoyadas en la muralla
+	"ninos_arbol": Vector3(95.0, 7.0, 27.5),          # niños jugando alrededor del árbol del patio
 	"fuente_placeta": Vector3(55.0, 3.15, 52.0),
 	"ninos_placeta": Vector3(57.5, 3.15, 52.0),      # niños jugando junto a la fuente
-	"vista_ribera": Vector3(75.0, 3.7909, 52.0),     # el pretil de la Calle del Horno: la vista de la Ribera Baja
+	# (B-2) Vecinos asomados al pretil de la Calle del Horno: se ven DESDE la Ribera (el patio, al sur y abajo). La cámara
+	# mira al norte: desde el pretil no se ve la Ribera, que queda detrás de la cámara.
+	"asomados_horno": Vector3(75.0, 3.7909, 52.0),
 	"pie_crematorio": Vector3(80.0, 9.093, -12.0),   # al pie de la colina (la puerta del crematorio sigue sellada)
 	"albar": Vector3(80.0, 9.093, -13.2),            # [C] Albar, «junto al crematorio»
+	"vecino_paseo": Vector3(73.5, 9.3198, -12.5),    # alguien paseando junto al ciprés
 	"banco_escalerilla": Vector3(47.5, 6.0, 1.8),
 	# nodos del grafo
 	"n_mercado_e": Vector3(46.0, 3.0, 22.5),
@@ -218,6 +264,16 @@ const PUERTAS := {
 		"ancla": "puerta_casa_placeta", "nombre": "Casa"},
 	"casa_bajada": {"fuera": Vector3(61.4, 3.9115, 31.6), "mira": -PI / 2.0, "radio": 1.6, "texto": "Entrar en la casa",
 		"ancla": "puerta_casa_bajada", "nombre": "Casa"},
+	"hilda_trasera": {"fuera": Vector3(47.6, 4.2, 13.6), "mira": PI / 2.0, "radio": 1.6, "texto": "Entrar en el taller",
+		"ancla": "puerta_hilda_trasera", "nombre": "Taller de Hilda (puerta trasera)"},
+	"talabartero": {"fuera": Vector3(73.6, 5.36, 27.6), "mira": 0.0, "radio": 1.6, "texto": "Entrar en el taller",
+		"ancla": "puerta_talabartero", "nombre": "Talabartero"},
+	"cordelero": {"fuera": Vector3(83.6, 6.36, 27.6), "mira": 0.0, "radio": 1.6, "texto": "Entrar en el taller",
+		"ancla": "puerta_cordelero", "nombre": "Cordelero"},
+	"taller_fuelle": {"fuera": Vector3(78.25, 4.511, 41.6), "mira": PI / 2.0, "radio": 1.6, "texto": "Entrar en el taller",
+		"ancla": "puerta_taller_fuelle", "nombre": "Taller del Paso del Fuelle"},
+	"tonelero": {"fuera": Vector3(89.4, 7.0, 13.8), "mira": -PI / 2.0, "radio": 1.6, "texto": "Entrar en el taller",
+		"ancla": "puerta_tonelero", "nombre": "Tonelero"},
 }
 
 # El grafo del sector (tramos RECTOS que se andan enteros). Sus extremos en los bordes (n_mercado_e, n_colina,
