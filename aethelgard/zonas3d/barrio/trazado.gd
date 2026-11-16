@@ -185,12 +185,16 @@ const PASOS := {
 # Puertas a los interiores (agente B). «fuera»: donde aparece Kael al salir (y el centro del botón); «mira»: hacia dónde
 # mira al salir, ángulo de rotation.y de Godot (0 = norte, PI = sur, −PI/2 = este); «radio» del botón; «texto» del
 # botón. Además (no en el plan, para B y C): «ancla» del umbral y «paso» (su umbral en PASOS).
+# (revisión 16/11) «fuera» ya no cae en el umbral ni en la recta por la que cruzan los vecinos (barrio_vivo.PUERTAS_NPC):
+# el horno, a un lado (al oeste, pegado a la fachada: delante pasa Maela al mostrador y a la plaza); el taller, a un lado
+# (al sur del portón); la vivienda, 0,8 m afuera (a los lados, los puestos de Odila y Nela a ≥ 3 m). Las tres a ≤ 1,4 m
+# del centro de su umbral: quien llega a la puerta sigue teniendo el botón.
 const PUERTAS := {
-	"horno": {"fuera": Vector3(-22.0, 0.182, -0.3), "mira": PI, "radio": 1.6, "texto": "Entrar en el horno",
+	"horno": {"fuera": Vector3(-23.0, 0.164, -0.5), "mira": PI, "radio": 1.6, "texto": "Entrar en el horno",
 		"ancla": "puerta_horno", "paso": "paso_horno"},
-	"taller": {"fuera": Vector3(-4.0, 1.4, -19.5), "mira": -PI / 2.0, "radio": 1.6, "texto": "Entrar en el taller",
+	"taller": {"fuera": Vector3(-3.5, 1.4, -18.5), "mira": -PI / 2.0, "radio": 1.6, "texto": "Entrar en el taller",
 		"ancla": "puerta_taller", "paso": "paso_taller"},
-	"vivienda": {"fuera": Vector3(-22.0, 1.4, -29.4), "mira": PI, "radio": 1.6, "texto": "Entrar en la casa",
+	"vivienda": {"fuera": Vector3(-22.0, 1.4, -28.6), "mira": PI, "radio": 1.6, "texto": "Entrar en la casa",
 		"ancla": "puerta_vivienda", "paso": "paso_vivienda"},
 }
 

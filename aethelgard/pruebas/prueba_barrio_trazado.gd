@@ -79,6 +79,25 @@ func _contrato() -> void:
 		if d.has("fuera"):
 			var f: Vector3 = d["fuera"]
 			_ok(T.andable(f.x, f.z) and absf(f.y - T.altura(f.x, f.z)) < 0.02, "1: «fuera» de %s en el suelo (%s)" % [id, str(f)])
+			# (revisión 16/11) Kael no reaparece en el umbral ni en la recta por la que cruzan los vecinos, y el botón
+			# sigue cubriendo la puerta (a ≤ 1,4 m del centro del umbral)
+			var paso: Rect2 = T.PASOS[d["paso"]]
+			var Vivo = load("res://zonas3d/barrio/barrio_vivo.gd")
+			var pu: Array = Vivo.PUERTAS_NPC[id]
+			var a2 := Vector2(pu[0].x, pu[0].z)
+			var b2 := Vector2(pu[1].x, pu[1].z)
+			var f2 := Vector2(f.x, f.z)
+			_ok(T.en_paso(f.x, f.z) == "", "1: «fuera» de %s cae en el umbral %s" % [id, T.en_paso(f.x, f.z)])
+			var cruzan := false                                # (¿algún programa entra o sale por esta puerta?)
+			for quien in Vivo.PROGRAMAS:
+				for prog in Vivo.PROGRAMAS[quien]:
+					if Vivo.PROGRAMAS[quien][prog] is Array:
+						for p in Vivo.PROGRAMAS[quien][prog]:
+							cruzan = cruzan or (p[0] in ["entrar", "salir"] and p[1] == id)
+			_ok(not cruzan or f2.distance_to(Geometry2D.get_closest_point_to_segment(f2, a2, b2)) >= 0.9,
+				"1: «fuera» de %s a menos de 0,9 m de la recta por la que cruzan los vecinos" % id)
+			_ok(f2.distance_to(paso.get_center()) <= 1.4 and f2.distance_to(paso.get_center()) < float(d["radio"]),
+				"1: «fuera» de %s a más de 1,4 m de su umbral (%.2f)" % [id, f2.distance_to(paso.get_center())])
 	_ok(T.SECTORES.size() == 6 and T.ORDEN.size() == 6 and T.COTAS.size() == 6, "1: 6 sectores con su Rect2 y sus cotas")
 	var mal: Array = []
 	for id in T.ANCLAS:
