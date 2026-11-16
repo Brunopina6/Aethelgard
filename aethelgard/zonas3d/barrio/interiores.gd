@@ -357,7 +357,7 @@ func _luz_dentro(id: String) -> void:
 	var sol = region.get("sol")
 	if _luz_fuera.is_empty() and amb is Environment and sol is DirectionalLight3D:
 		_luz_fuera = {"fondo": amb.background_color, "amb_color": amb.ambient_light_color,
-			"amb": amb.ambient_light_energy, "niebla": amb.fog_enabled, "sol": sol.light_energy, "sol_color": sol.light_color}
+			"amb": amb.ambient_light_energy, "bruma": amb.fog_enabled, "sol": sol.light_energy, "sol_color": sol.light_color}
 	var l: Dictionary = LUZ_KAEL.get(id, {})
 	if amb is Environment and not l.is_empty():
 		amb.background_color = FONDO_DENTRO
@@ -378,7 +378,7 @@ func _luz_fuera_otra_vez() -> void:
 		amb.background_color = _luz_fuera["fondo"]
 		amb.ambient_light_color = _luz_fuera["amb_color"]
 		amb.ambient_light_energy = _luz_fuera["amb"]
-		amb.fog_enabled = _luz_fuera["niebla"]
+		amb.fog_enabled = _luz_fuera["bruma"]
 	if sol is DirectionalLight3D:
 		sol.light_energy = _luz_fuera["sol"]
 		sol.light_color = _luz_fuera["sol_color"]
