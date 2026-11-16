@@ -43,6 +43,16 @@ static func crear(oficio_: String, persona_: String) -> Node3D:
 	return n
 
 
+# Suelta de la caché las personas (su material con el atlas) y los oficios (su GLB) dados, para quien los usó solo en un
+# sitio (la cuadrilla de la Quilla, al irse). Lo que siga en pantalla conserva lo suyo hasta que se libere; si vuelven a
+# hacer falta, crear() los carga de nuevo.
+static func soltar(personas_: Array, oficios_: Array = []) -> void:
+	for p in personas_:
+		_materiales.erase(p)
+	for o in oficios_:
+		_escenas.erase(o)
+
+
 static func existe(oficio_: String) -> bool:
 	return ResourceLoader.exists(RUTA % [oficio_, oficio_])
 

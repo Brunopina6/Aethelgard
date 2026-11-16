@@ -101,6 +101,16 @@ func preparar(q_, anclas: Dictionary, mat_) -> void:
 	_crear_atrezo(olla, tablones, banco, entrega, fardos)
 
 
+# Al irse (salir de Sunken o del banco), los atlas de las cuatro personas de la cuadrilla, que solo se usan aquí, salen
+# de la caché de npc_chibi.gd: sin esto seguían en memoria el resto de la sesión. Los modelos de sus oficios (herrero,
+# campesino, viajero) los comparten otros vecinos y se quedan.
+func _exit_tree() -> void:
+	var personas: Array = []
+	for o in lista:
+		personas.append(o["persona"])
+	NpcChibi.soltar(personas)
+
+
 func _obrero(grupo: String, oficio: String, persona: String, sitio: Vector3, pasos: Array) -> Dictionary:
 	var n := Node3D.new()
 	n.name = "Obrero_" + persona
@@ -116,7 +126,7 @@ func _obrero(grupo: String, oficio: String, persona: String, sitio: Vector3, pas
 		n.add_child(chibi)
 		chibi.sombra(false)
 	var o := {"id": grupo, "persona": persona, "nodo": n, "chibi": chibi, "pasos": pasos, "i": 0, "t": 0.0,
-		"pausa": 0.0, "lleva": null, "principal": true}
+		"pausa": 0.0, "lleva": null, "principal": true, "parado": false}
 	lista.append(o)
 	if not grupos.has(grupo):
 		grupos[grupo] = []
@@ -203,8 +213,13 @@ func _poner_cabo() -> void:
 # ================================================================= los trabajos
 
 func _empezar_paso(o: Dictionary) -> void:
-	var p: Array = o["pasos"][o["i"]]
 	o["t"] = 0.0
+	_clip_paso(o)
+
+
+# El clip del paso en curso, sin tocar su tiempo (al seguir tras hablar o tras un diálogo, sigue donde lo dejó).
+func _clip_paso(o: Dictionary) -> void:
+	var p: Array = o["pasos"][o["i"]]
 	var c = o["chibi"]
 	match String(p[0]):
 		"ir":
@@ -347,8 +362,17 @@ func avanzar(delta: float, escena: Node) -> void:
 		if float(o["pausa"]) > 0.0:
 			o["pausa"] = float(o["pausa"]) - delta
 			if float(o["pausa"]) <= 0.0:
-				_empezar_paso(o)
-		elif not ocupado:
+				o["parado"] = false
+				_clip_paso(o)
+		elif ocupado:                              # (un diálogo o la tienda: el que iba andando se queda quieto)
+			if not o["parado"]:
+				o["parado"] = true
+				if o["chibi"] != null and String(o["pasos"][o["i"]][0]) == "ir":
+					o["chibi"].clip("reposo")
+		else:
+			if o["parado"]:
+				o["parado"] = false
+				_clip_paso(o)
 			_paso(o, delta, escena)
 		var c = o["chibi"]
 		if c != null and (cam == null or cam.is_position_in_frustum(n.global_position + Vector3(0, 0.8, 0))):
