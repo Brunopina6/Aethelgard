@@ -996,16 +996,22 @@ def bvh_de(mallas):
 CAM_FOV, CAM_ASPECTO = 38.0, 1600.0 / 720.0
 
 
-def recortar(M, bvh, base_idx, cams, alcance=70.0):
+def recortar(M, bvh, base_idx, cams, alcance=70.0, conservar=None):
     """Separa las caras que ve alguna cámara de las que no (estas solo sirven para el horneado: tapan y rebotan luz).
-    (barrio) bvh: TODO lo que tapa (todos los sectores; las caras de M empiezan en base_idx); cams: [(pos, adelante,
-    arriba, derecha)] de las cámaras posibles (crear_barrio.py, de las zonas de cámara); solo cuentan las que están a
-    menos de «alcance» metros de la cara. Devuelve (vistas, ocultas) y, por cámara, si vio alguna cara."""
+    (barrio) bvh: TODO lo que tapa (todos los sectores; las caras de M empiezan en base_idx; None = M no está en el bvh:
+    la vegetación); cams: [(pos, adelante, arriba, derecha)] de las cámaras posibles (crear_barrio.py, de las zonas de
+    cámara); solo cuentan las que están a menos de «alcance» metros de la cara. conservar(cara) → True: la cara se queda
+    siempre (16/11: la tierra bajo las losas; sus 5 muestras caían bajo las losas y la cara se quitaba, pero por las
+    juntas se veía el agujero: los «trazos blancos» eran el fondo). Devuelve (vistas, ocultas) y, por cámara, si vio
+    alguna cara."""
     tf = math.tan(math.radians(CAM_FOV) * 0.5) * 1.06
     vis, ocu = Malla(), Malla()
     vio = [False] * len(cams)
     for idx0, cara in enumerate(M.caras):
-        idx = base_idx + idx0
+        if conservar is not None and conservar(cara):
+            vis.caras.append(cara)
+            continue
+        idx = base_idx + idx0 if base_idx is not None else -1
         pts = cara[0]
         n = normal_de(pts)
         c = sum(pts, Vector((0, 0, 0))) / len(pts)
@@ -1237,6 +1243,36 @@ def escala_y_guardar(img, carpeta, objs_vertice, escala, prefijo):
     return propia
 
 
+# (16/11, pulido de la región: «el suelo en sombra») Godot 4 (Compatibility) LEE EL COLOR DE LOS VÉRTICES COMO sRGB: antes
+# de llegar al sombreado lo pasa a lineal (medido en el PC: un gris de 0,035 pintado como color de vértice sale casi
+# negro, y como albedo, 0,21 en pantalla). En lo fijo, el color del vértice es solo el tinte y la luz va en el mapa (lineal):
+# la curva solo oscurece el tinte, igual en sol y en sombra. En las piezas y la vegetación el vértice lleva tinte × luz:
+# la curva se comía la luz de la sombra (×0,07 de luz → ×0,005 en pantalla) y las losas a la sombra salían hasta 9 veces
+# más oscuras que la tierra horneada de al lado (al sol, 2,2: el acabado aprobado de la muestra).
+# Arreglo sin cambiar el acabado: A PLENO SOL (luz ≥ LUZ_SOL, la de un suelo llano al sol, medida 1,04) el color es el
+# de antes, exactamente; por debajo, lo que se ve en pantalla baja en proporción LINEAL a la luz, como en el mapa de
+# luz: s2l(nuevo) = s2l(tinte × LUZ_SOL / escala) × luz / LUZ_SOL. Así una losa a la sombra guarda con la tierra de al
+# lado la misma proporción que al sol.
+LUZ_SOL = 1.0
+
+
+def _s2l(x):
+    return np.where(x <= 0.04045, x / 12.92, ((x + 0.055) / 1.055) ** 2.4)
+
+
+def _l2s(x):
+    x = np.maximum(x, 0.0)
+    return np.where(x <= 0.0031308, x * 12.92, 1.055 * x ** (1 / 2.4) - 0.055)
+
+
+def color_vertice(tinte, luz, escala):
+    antes = np.clip(tinte * luz / escala, 0, 1)
+    ref = np.clip(tinte * LUZ_SOL / escala, 0, 1)
+    lam = luz / LUZ_SOL
+    nuevo = np.clip(_l2s(_s2l(ref) * lam), 0, 1)
+    return np.where(lam < 1.0, nuevo, antes)
+
+
 def escala_vertices(objs_vertice, escala):
     """(barrio) La vegetación y las piezas: tinte × luz / escala (la parte de escala_y_guardar de la muestra)."""
     for ob in objs_vertice:
@@ -1277,7 +1313,7 @@ def escala_vertices(objs_vertice, escala):
         l[:, :3] *= f[:, None]
         if mantener.any():
             l[mantener, :3] = escala
-        c[:, :3] = np.clip(c[:, :3] * l[:, :3] / escala, 0, 1)
+        c[:, :3] = color_vertice(c[:, :3], l[:, :3], escala)
         col.data.foreach_set("color", c.ravel())
         vm.color_attributes.remove(luz)
         vm.color_attributes.active_color = vm.color_attributes["Col"]

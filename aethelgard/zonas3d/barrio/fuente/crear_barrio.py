@@ -1964,8 +1964,8 @@ CONSTRUCTOR = {"comercial": s_comercial, "plaza": s_plaza, "caravanas": s_carava
 def _foco_zona(z, kx, kz):
     if z["modo"] == "x":
         return (min(max(kx, z["x"][0]), z["x"][1]), z["z_riel"] + min(0.0, kz - z["z_riel"]) * 0.55)
-    if z["modo"] == "eje":
-        return (z["eje"], min(max(kz, z["z"][0]), z["z"][1]))
+    if z["modo"] == "eje":                                  # (16/11) «atraso»: el foco, tantos metros al sur de Kael
+        return (z["eje"], min(max(kz + z.get("atraso", 0.0), z["z"][0]), z["z"][1]))
     return (min(max(kx, z["x"][0]), z["x"][1]), min(max(kz, z["z"][0]), z["z"][1]))
 
 
@@ -1994,6 +1994,21 @@ def foco_camara(kx, ky, kz):
         f = _foco_zona(z, kx, kz)
         return (f[0], ky * 0.6, f[1])
     return (ax / suma, ky * 0.6, az / suma)
+
+
+def tierra_del_suelo(cara):
+    """(16/11) La tierra bajo lo que se pisa (con 0,6 m de margen) se queda siempre a la vista: las losas la tapan casi
+    toda, pero por sus juntas se ve (sin ella, el fondo: los «trazos blancos»)."""
+    if cara[1] != "tierra":
+        return False
+    pts = cara[0]
+    cx = sum(p.x for p in pts) / len(pts)
+    cz = sum(p.z for p in pts) / len(pts)
+    for s in SUELOS:
+        r = s[1]
+        if r[0] - 0.6 <= cx <= r[0] + r[2] + 0.6 and r[1] - 0.6 <= cz <= r[1] + r[3] + 0.6:
+            return True
+    return False
 
 
 def camaras():
@@ -2102,6 +2117,7 @@ def main():
     # --- recorte de lo que ninguna cámara ve (en los sectores que se exportan) y cobertura de cada sector por cámara
     vis = {s: MALLAS[s] for s in ORDEN + [FONDO]}
     ocultas = {s: Malla() for s in ORDEN + [FONDO]}
+    ocultas_veg = {s: Malla() for s in ORDEN + [FONDO]}
     cams = camaras()
     nota("%d cámaras posibles" % len(cams))
     todas = []
@@ -2116,12 +2132,17 @@ def main():
             if s not in exportar:
                 continue
             M, P, V = MALLAS[s]
-            mv, mo, _v1 = K.recortar(M, bvh, inicio[2 * k], c4)
+            mv, mo, _v1 = K.recortar(M, bvh, inicio[2 * k], c4, conservar=tierra_del_suelo)
             pv, po, _v2 = K.recortar(P, bvh, inicio[2 * k + 1], c4)
+            # (16/11) la vegetación también: las matas, hojas e hiedra que ninguna cámara ve (tras las casas, en los
+            # patios de atrás) no se exportan; no tapan nada en el bvh (no están en él) y su luz no cambia (se hornea igual)
+            vv, vo, _v3 = K.recortar(V, bvh, None, c4)
             mo.caras += po.caras
-            vis[s] = (mv, pv, V)
+            vis[s] = (mv, pv, vv)
             ocultas[s] = mo
-            nota("recorte %s: %d + %d triángulos a la vista, %d que ninguna cámara ve" % (s, mv.tris(), pv.tris(), mo.tris()))
+            ocultas_veg[s] = vo
+            nota("recorte %s: %d + %d + %d (vegetación) triángulos a la vista, %d que ninguna cámara ve (y %d de vegetación)" % (
+                s, mv.tris(), pv.tris(), vv.tris(), mo.tris(), vo.tris()))
     # --- a Blender: un objeto fijo, uno de piezas, uno de vegetación y uno oculto por sector (el fondo: piezas y vegetación)
     luz_img = {}
     if HORNEAR:
@@ -2137,7 +2158,8 @@ def main():
         obs[s] = {"fijo": K.a_blender("fijo_" + s, mv, mats, HORNEAR and s in exportar) if mv.caras else None,
                   "piezas": K.a_blender("piezas_" + s, pv, mats, False),
                   "vegetacion": K.a_blender("vegetacion_" + s, V, mats, False),
-                  "oculto": K.a_blender("oculto_" + s, ocultas[s], mats, False) if ocultas[s].caras else None}
+                  "oculto": K.a_blender("oculto_" + s, ocultas[s], mats, False) if ocultas[s].caras else None,
+                  "oculto_veg": K.a_blender("ocultoveg_" + s, ocultas_veg[s], mats, False) if ocultas_veg[s].caras else None}
     nota("objetos en Blender")
     salida = {"version": 1, "escala": ESCALA, "res": [RES, RES // 2], "sectores": {}}
     ruta_json = os.path.join(carpeta_mod, "barrio_luz.json")

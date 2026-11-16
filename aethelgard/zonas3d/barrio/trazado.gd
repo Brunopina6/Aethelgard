@@ -227,7 +227,16 @@ const MARGEN_CAMARA := 2.5          # metros de fundido (smoothstep) desde el bo
 # Zonas: el foco de cada una y su peso (smoothstep de la distancia al borde de su rectángulo); el foco final es la media
 # pesada, así que es continuo. Modos:
 #   "x"     riel de este a oeste: x = clamp(Kael.x, x), z = z_riel + min(0, Kael.z − z_riel)·0,55 (como la muestra)
-#   "eje"   tramo de norte a sur: x = eje, z = clamp(Kael.z, z)
+#   "eje"   tramo de norte a sur: x = eje, z = clamp(Kael.z + atraso, z)
+#           (16/11, pulido: ajuste LOCAL, como el callejón de la muestra) «atraso»: en el atajo y los talleres el foco va
+#           5 m al sur de Kael. Con el foco en Kael, la cámara (14,2 m al sur, 10,8 arriba, 25°, sin girar) quedaba
+#           encima de los tejados de las casas de la boca: ocupaban hasta un 50 % del cuadro y Kael salía en el tercio de
+#           abajo, en un pasillo estrecho. Con el atraso, Kael sale en el centro del cuadro (52-57 % de alto en vez de
+#           71-77 %) y los tejados bajan en casi todo el tramo (medido en el PC, el mismo sitio de Kael: atajo, en el arco,
+#           50 % → 25 %; z −12, 25 → 15 %; talleres a media rampa (z −20), 36 → 30 %; z −16, 29 → 23 %). Arriba del todo
+#           (la boca del norte de los dos) sube algo (atajo z −26: 43 → 53 %). La altura, la distancia, la inclinación y
+#           el campo son los de la muestra, sin cambios. Con otro atraso hay que volver a hornear (el recorte y la
+#           visibilidad por sector se miden desde estas cámaras).
 #   "libre" plaza: x y z siguen a Kael dentro de sus límites
 # Los rectángulos se salen de lo andable al menos MARGEN_CAMARA (todo lo que se pisa tiene alguna zona con peso) y se
 # solapan entre tramos vecinos (ahí la cámara pasa de una a otra sin saltos).
@@ -235,9 +244,9 @@ const CAMARA_ZONAS := [
 	{"sector": "caravanas", "rect": Rect2(-56.0, -13.0, 27.0, 21.0), "modo": "x", "x": Vector2(-49.0, -36.0), "z_riel": 0.5},
 	{"sector": "comercial", "rect": Rect2(-35.0, -5.0, 27.0, 13.0), "modo": "x", "x": Vector2(-29.0, -13.0), "z_riel": 2.0},
 	{"sector": "plaza", "rect": Rect2(-13.0, -11.0, 26.0, 21.0), "modo": "libre", "x": Vector2(-6.0, 5.0), "z": Vector2(-5.0, 4.0)},
-	{"sector": "talleres", "rect": Rect2(-8.0, -33.0, 16.0, 27.0), "modo": "eje", "eje": 0.0, "z": Vector2(-29.0, -8.0)},
+	{"sector": "talleres", "rect": Rect2(-8.0, -33.0, 16.0, 27.0), "modo": "eje", "eje": 0.0, "z": Vector2(-29.0, -8.0), "atraso": 5.0},
 	{"sector": "residencial", "rect": Rect2(-47.0, -34.0, 44.0, 11.0), "modo": "x", "x": Vector2(-41.0, -8.0), "z_riel": -28.0},
-	{"sector": "atajo", "rect": Rect2(-47.0, -28.0, 10.0, 22.0), "modo": "eje", "eje": -42.0, "z": Vector2(-27.0, -8.0)},
+	{"sector": "atajo", "rect": Rect2(-47.0, -28.0, 10.0, 22.0), "modo": "eje", "eje": -42.0, "z": Vector2(-27.0, -8.0), "atraso": 5.0},
 ]
 
 
@@ -343,7 +352,7 @@ static func _foco_zona(zona: Dictionary, k: Vector3) -> Vector2:
 			return Vector2(clampf(k.x, rx.x, rx.y), zr + minf(0.0, k.z - zr) * 0.55)
 		"eje":
 			var ez: Vector2 = zona["z"]
-			return Vector2(float(zona["eje"]), clampf(k.z, ez.x, ez.y))
+			return Vector2(float(zona["eje"]), clampf(k.z + float(zona.get("atraso", 0.0)), ez.x, ez.y))
 	var lx: Vector2 = zona["x"]
 	var lz: Vector2 = zona["z"]
 	return Vector2(clampf(k.x, lx.x, lx.y), clampf(k.z, lz.x, lz.y))

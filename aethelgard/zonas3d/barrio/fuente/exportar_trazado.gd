@@ -51,7 +51,7 @@ static func datos() -> Dictionary:
 		for k in ["x", "z"]:
 			if z.has(k):
 				o[k] = [z[k].x, z[k].y]
-		for k in ["z_riel", "eje"]:
+		for k in ["z_riel", "eje", "atraso"]:
 			if z.has(k):
 				o[k] = z[k]
 		zonas.append(o)
