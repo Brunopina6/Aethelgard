@@ -676,3 +676,80 @@ Kael anda el bucle entero a 2,2 m/s con el grupo.
 **Pruebas**: `ejecutar_pruebas.ps1 -Solo prueba_barrio_trazado,prueba_banco_pruebas,prueba_banco_pruebas_3d,prueba_muestra_calle`
 → **4 superadas, 0 fallidas** (partida y datos reales sin cambios). `prueba_barrio_trazado` añade la parte 9 (tramos
 horneados, choques, mapa de 1024 en bajo, solo los 4 sombreados, sondas con sol y sombra, luz de Kael, visibilidad).
+
+## 9. Pulido de la región (16/11, rama `area-barrio-pulido-region`, desde `6ad4ad6`)
+
+> Sigue siendo **PROPUESTA [P]**, solo en el banco y apagado fuera de él. Capturas y medidas:
+> `D:\REBELUM_diagnostico\barrio_oakhaven\pulido_region\`. Todo medido en el PC; **el Redmi, sin medir**.
+
+### 9.1 Qué cambia
+
+| # | Qué | Cómo |
+|---|---|---|
+| 1 | Rótulos «(en obras)» | Ya salían solo sin `Interiores.ORIGEN` (los tres interiores existen: ningún rótulo). La prueba lo comprueba. Queda en `banco_pruebas.gd` (no es de A) la nota «Las puertas, en obras.» del caso del barrio. |
+| 2 | Vecinos dentro | `_prohibido` = lo fijo (`_prohibido_suelo`: trazado o `interiores.andable`) **o** `vivo.ocupa(p)`, también dentro. |
+| 3 | Luz de Kael | **Una sola autoridad: la región.** Fuera, la sonda del sector; dentro, `interiores.sonda(p)` con el tono de `Interiores.LUZ_KAEL` (sol × (1 + 1,2·sol de la sonda); ambiente × 0,95-1,35 según el relleno), fondo `FONDO_DENTRO` y sin bruma. B sigue escribiendo en `interiores.mostrar()`, pero la región escribe después en el mismo fotograma (`_pasar_dentro`/`_pasar_fuera` → `_colocar_kael` → `_luz_kael`), con la pantalla en negro. **Petición a B:** quitar `_luz_dentro`/`_luz_fuera_otra_vez` de `interiores.gd` (ya no hacen falta; hoy quedan tapadas). |
+| 4a | Botón del carro | `piezas_al_alcance()` usa `Barrio.boton(pid)`. |
+| 4b | Aviso y globo | `iniciar_dialogo` oculta el aviso. |
+| 4c | Tocar el suelo con un vecino en medio | `_ajustar_destino` solo corta por lo fijo; cada fotograma, si la recta roza a un vecino (o a Avena: su eje), Kael va a la tangente del círculo (+0,22 m) por el lado más corto y lo bordea; si lo tocado cae encima de un vecino, se queda delante (y sigue si el vecino se va). Se rinde si en 1,5 s no se acerca (o a los 8 s rodeando). Nunca lo atraviesa. |
+| 5 | NaN en (−32; 0; 2) | Las losas de choque del suelo se tocaban justo en la costura: el rayo de `_altura_suelo` caía en la arista y devolvía la normal del extremo. Ahora se solapan 5 cm. Además, fuera, `_altura_suelo` no sube a lo que no es la cota del trazado (tapas de bloques o piezas en la arista de lo andable). |
+| 6 | Suelo en sombra | Ver 9.2. Rehorneado. |
+| 7 | Cámara del atajo y los talleres | «atraso» de 5 m en sus zonas (`trazado.gd`): el foco va 5 m al sur de Kael. Mismo offset, inclinación y campo, sin girar. Kael sale en el centro (52-57 % de alto en vez de 71-77 %); tejados: atajo en el arco 50 → 25 %, z −12 25 → 15 %; talleres z −20 36 → 30 %, z −16 29 → 23 %. En lo alto de los dos (la boca del norte) sube algo (atajo z −26: 43 → 53 %). |
+| 8 | Precalentado | `barrio.precalentar_en(vp)` (los vecinos de C y Avena) en el SubViewport del de la muestra, en `carga.gd`, solo con `banco_pruebas.permitido()`. Caché vacía: la entrada compilaba 2 programas; ahora 0 (tramos, interiores y utensilios ya eran los de la muestra). Coste en la carga: +5 ms de montaje y +0,1 s de fase de sombreadores (811-824 → 906-952 ms); memoria igual. `-- sin_precalentar_barrio` lo quita (medida A/B). |
+| 9 | Residencial | 64,7 k → **50,6 k** triángulos (la vegetación que ninguna cámara ve no se exporta; sigue en el horneado). |
+
+### 9.2 El suelo en sombra: la causa aislada
+
+- **Las losas oscuras**: Godot 4.7 (Compatibility) **lee el color de los vértices como sRGB** y lo pasa a lineal antes
+  del sombreado (medido: un gris de 0,035 como color de vértice sale casi negro; como albedo, 0,21 en pantalla; la malla
+  importada guarda los mismos valores que el GLB). En lo fijo el vértice lleva solo el tinte (la luz va en el mapa,
+  lineal): la curva oscurece el tinte igual al sol y a la sombra. En las piezas y la vegetación el vértice lleva
+  tinte × luz: la curva se comía la luz de la sombra (las losas a la sombra salían hasta 9 veces más oscuras que la tierra
+  de al lado; al sol, 2,2, que es el acabado aprobado de la muestra). Descartado con datos: el horneado a vértices de
+  Cycles da la misma luz que a imagen (experimento con el propio kit: tapa de losa 1,04 / 0,28 frente a tierra 1,04 / 0,30
+  al sol / a la sombra) y en el barrio las losas y la tierra a la sombra tienen la misma irradiancia (talleres 0,19).
+  **Arreglo** (`kit_barrio.color_vertice`): a pleno sol el color es exactamente el de antes; por debajo, lo que se ve
+  baja en proporción lineal a la luz, como el mapa. La losa a la sombra guarda con la tierra la misma proporción que al sol.
+- **Los trazos blancos**: eran **agujeros**. El recorte quitaba las caras de tierra que las cámaras no veían en sus 5
+  muestras (todas bajo las losas), pero por las juntas se veía el fondo (crema). Ahora la tierra de lo que se pisa
+  (+0,6 m) se queda siempre.
+- Descartado también: UV2 solapadas o fuera de [0, 1] (ninguna; 16,7 téxeles/m), el mapa importado frente al PNG
+  (diferencia máxima 0,075), normales.
+- Capturas con la MISMA cámara fija (`fotos_barrio.gd … suelo`): `antes_barrio_s*` / `despues_barrio_s*` y
+  `comparar_s*_antes_arriba_despues_abajo.png` (rampa de los talleres, atajo, muro de caravanas, de lejos y de cerca),
+  en bajo y medio. Diagnóstico por pasadas (solo luz, solo lo fijo, color crudo) en `diag_suelo\`. Cámara: `diag_camara\`
+  (`antes_*` / `despues_*`).
+- **Decisión para el usuario**: las losas al sol siguen 2,2 veces más oscuras que la tierra (como en la muestra
+  aprobada). Si se quiere que casen del todo, es un cambio de una línea en `color_vertice` y otro horneado (y la muestra
+  tendría el mismo defecto).
+
+### 9.3 Medidas (PC, 1600×720, `medir_barrio.gd`; `pulido_region\medidas\`)
+
+| Tramo | Llamadas | Primitivas | ms sin límite (mediana / p95), bajo | medio |
+|---|---|---|---|---|
+| caravanas | 66 | 126 580 | 3,8 / 5,4 | 3,7 / 5,3 |
+| comercial | 42 | 109 251 | 3,5 / 4,3 | 3,4 / 4,1 |
+| plaza | 63 | 152 727 | 3,6 / 4,4 | 3,5 / 4,3 |
+| talleres | 55 | 133 902 | 3,5 / 4,3 | 3,4 / 4,3 |
+| residencial | 40 | 118 293 | 3,4 / 4,1 | 3,3 / 4,1 |
+| atajo | 57 | 109 733 | 3,6 / 4,4 | 3,5 / 4,2 |
+
+Con el límite, 33,3 ms (30 FPS) en todos. Entrada: 1,33 s (bajo) y 1,24 s (medio) hasta el control (ya con B y C).
+
+### 9.4 Pruebas
+
+`ejecutar_pruebas.ps1 -Solo prueba_barrio_trazado,prueba_barrio_interiores,prueba_barrio_vivo,prueba_barrio_datos,
+prueba_banco_pruebas,prueba_muestra_calle,prueba_precarga,prueba_precalentado,prueba_banco_pruebas_3d` → **9 superadas,
+0 fallidas** (datos reales y proyecto sin cambios). `prueba_barrio_trazado` añade la parte 10: rótulos, botón, aviso,
+la luz al entrar y salir del horno fotograma a fotograma (sin un fotograma con la del otro lado), vecinos dentro, rodeo y
+tocar encima, y **ninguna casilla andable con NaN** (33 609 puntos: esquinas y centros de la rejilla de 0,25 m). El bucle
+anda ahora con toques (`_ajustar_destino`), así que rodea a quien se cruce.
+
+### 9.5 Pendiente
+
+- **Redmi** (perfil bajo): FPS, PSS y tirones por tramo y al entrar; el precalentado en la carga del móvil.
+- La boca norte del atajo y de los talleres sigue con mucho tejado (≈ 50 %): o un atraso que se apague arriba (y otro
+  horneado), o tocar la arquitectura (decisión del usuario: no se ha cambiado).
+- `fotos_barrio_recorrido.gd` (de C) sigue con los clics sin la transformación ventana → viewport y escrito antes de los
+  interiores (no es de A).
+- Petición a B (9.1, n.º 3) y a quien lleve `banco_pruebas.gd` (n.º 1).
