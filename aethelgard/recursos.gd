@@ -373,6 +373,20 @@ const APAGADOS := {
 	"res://audio/musica/pastos/pastoral_pulse.ogg": "musica_pastos",
 	# V12 (16/11): la Quilla horneada de Sunken City (EXPERIMENTAL, interruptor de sesión del banco; ≈ 9 MB)
 	"res://zonas3d/sunken/quilla/": "sunken_quilla_v12",
+	# V12 (16/11, revisión): el barrio experimental de Oakhaven (≈ 56 MB; solo desde el banco, interruptor de sesión
+	# «barrio_v12», que pone la propia región) y los modelos y atlas de NPC que solo usan el barrio y la Quilla
+	"res://zonas3d/barrio/": "barrio_v12",
+	"res://personajes/npc_v12/panadera/": "barrio_v12",
+	"res://personajes/npc_v12/porteador/": "barrio_v12",
+	"res://personajes/npc_v12/encargada_establo/": "barrio_v12",
+	"res://personajes/npc_v12/caballo/": "barrio_v12",
+	"res://personajes/npc_v12/campesina/odila.png": "barrio_v12",
+	"res://personajes/npc_v12/herrero/damian.png": "barrio_v12",
+	"res://personajes/npc_v12/nina/nela.png": "barrio_v12",
+	"res://personajes/npc_v12/campesino/carpintera.png": "sunken_quilla_v12",
+	"res://personajes/npc_v12/herrero/calafate.png": "sunken_quilla_v12",
+	"res://personajes/npc_v12/viajero/marinero_1.png": "sunken_quilla_v12",
+	"res://personajes/npc_v12/viajero/marinero_2.png": "sunken_quilla_v12",
 }
 const BRAMAVIDRIO := "res://enemigos/bramavidrio/"
 var _encendidos := {}
