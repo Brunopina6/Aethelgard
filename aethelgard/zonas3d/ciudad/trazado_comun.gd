@@ -172,7 +172,9 @@ static func distancia_planta(r: Rect2, p: Vector2) -> float:
 # que al andar pegado a una pared, un pilar o una jardinera alta media figura quedaba DENTRO del bloque y, desde la cámara,
 # tapada de lado (Rampa de las Raíces, pórtico de las Raíces; RADIO_CUERPO es media figura). La distancia en planta de (x, z) al bloque
 # sólido más cercano que suba más de ALTO_PARED por encima de «y» (lo que se pisa ahí), hasta «radio» como mucho. Los
-# bloques bajos (bancos, parterres, el pilón) no cuentan: delante de las piernas es lo normal.
+# bloques bajos (bancos, parterres, el pilón) no cuentan: delante de las piernas es lo normal. Los finos (pilares de
+# ≤ 0,6 m) tampoco: se aclaran (fino_alto) y su franja cerraba los pasos estrechos de los soportales (el del Cuervo,
+# entre el pilar y el puesto del tonelero: recorrido, 17/11).
 const RADIO_CUERPO := 0.3
 # (por encima de la cintura: el pilón de la fuente, 0,7, un pretil de 0,9 o el puesto del tonelero, 0,85 sobre el
 # soportal del Cuervo, no; con 0,8 el puesto cerraba el soportal, que deja 0,6 m entre él y los pilares: recorrido)
@@ -183,6 +185,6 @@ static func holgura(bloques: Array, x: float, z: float, y: float, radio := RADIO
 	var p := Vector2(x, z)
 	var h := radio
 	for b in bloques:
-		if b[6] and float(b[3]) + float(b[4]) > y + ALTO_PARED:
+		if b[6] and float(b[3]) + float(b[4]) > y + ALTO_PARED and not fino(b):
 			h = minf(h, distancia_planta(b[2], p))
 	return h

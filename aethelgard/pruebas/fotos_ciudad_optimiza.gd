@@ -30,7 +30,28 @@ const SITIOS := [
 	["9_plaza_toldo_puesto", -10.8, 15.6],
 ]
 
+# (17/11, rama area-ciudad-redmi; con «sitios=redmi») los sitios de lo visto en el Redmi el 16/11
+# (docs/v12/REDMI_16_11.md): [nombre, x, z] como arriba o [nombre, x, z, x2, z2]: Kael colocado en (x, z) y luego ANDA
+# hacia (x2, z2) como tras un toque ahí (destino = _ajustar_destino del punto; la foto, ya parado).
+const SITIOS_REDMI := [
+	["r01_lonja_pilar_fino_t07", 8.25, 22.0],
+	["r02_lonja_pilar_fino_cerca", 8.25, 25.6],
+	["r03_soportal_pilar_fino", 4.2, 36.6],
+	["r04_rampa_raices_jardinera_t10", 0.0, -64.5, -4.1, -66.0],
+	["r05_portico_pilar_t13", 4.2, -82.0],
+	["r06_portico_grupo_antes_recarga", 3.4, -82.8],
+	["r07_portico_pegado_al_pilar", 0.0, -82.0, 4.4, -80.0],
+	["r08_rotulo_pie_calle_arbol", 0.0, -16.0],
+	["r09_rotulo_pie_escalinata_plaza", 0.0, 11.0],
+	["r10_rotulo_rellano_1", 0.0, -28.0],
+	["r11_rotulo_plaza_del_arbol", 0.0, -56.0],
+	["r12_rotulo_terraza_raices", -8.0, -81.0],
+	["r13_fuente_calle_mayor_a_calle_arbol", 0.0, 28.0, 0.0, -13.5],
+	["r14_fuente_desde_el_este", 9.0, 0.0, -9.0, 0.0],
+]
+
 var perfil := "bajo"
+var sitios := "optimiza"
 var salida := ""
 var escala := -1.0
 var comparar := ""
@@ -48,6 +69,8 @@ func _initialize() -> void:
 			escala = float(a.trim_prefix("escala="))
 		elif a.begins_with("comparar="):
 			comparar = a.trim_prefix("comparar=")
+		elif a.begins_with("sitios="):
+			sitios = a.trim_prefix("sitios=")
 	if comparar != "":
 		_comparar.call_deferred()
 		return
@@ -106,7 +129,8 @@ func _fotos() -> void:
 	DirAccess.make_dir_recursive_absolute(salida)
 	_nota("FOTOS perfil %s · escala %.2f · ventana %s · %s" % [perfil, root.scaling_3d_scale, str(DisplayServer.window_get_size()),
 		Time.get_datetime_string_from_system()])
-	for s in SITIOS:
+	_nota("Kael: caja visible %s (ancho en x %.2f m)" % [str(_caja_kael()), _caja_kael().size.x])
+	for s in (SITIOS_REDMI if sitios == "redmi" else SITIOS):
 		var p := Vector3(s[1], 0.0, s[2])
 		if not P.andable(p.x, p.z):
 			var mejor := p
@@ -124,6 +148,18 @@ func _fotos() -> void:
 		v._colocar_kael(p)
 		if v.grupo != null:
 			v.grupo.colocar(Vector3.BACK)
+		var andar := ""
+		if s.size() >= 5:                               # (sitios=redmi) andar hasta (x2, z2) como tras un toque ahí
+			await _esperar(0.5)
+			var meta := Vector3(s[3], 0.0, s[4])
+			meta.y = P.altura(meta.x, meta.z)
+			v.destino = v._ajustar_destino(meta)
+			var t0 := Time.get_ticks_msec()
+			while Time.get_ticks_msec() - t0 < 12000 and v.destino != null:
+				await process_frame
+			var k: Vector3 = v.kael.global_position
+			andar = " · anda hacia %s y se para en (%.2f, %.2f, %.2f), a %.2f m" % [str(meta), k.x, k.y, k.z,
+				Vector2(k.x - meta.x, k.z - meta.z).length()]
 		var fd0 := Engine.get_frames_drawn()
 		var fp0 := Engine.get_process_frames()
 		await _esperar(1.5)
@@ -137,9 +173,43 @@ func _fotos() -> void:
 		var pr := RS.get_rendering_info(RS.RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME)
 		var img := root.get_texture().get_image()
 		img.save_png(salida.path_join(String(s[0]) + ".png"))
-		_nota("%s · Kael %s · %d montados %s · %d llamadas · %d primitivas · aclaradas %d %s" % [s[0], str(v.kael.global_position),
-			v.cargador.montados.size(), str(v.cargador.ids_montados()), ll, pr, v.aclarados, str(_aclaradas())])
+		_nota("%s · Kael %s · %d montados %s · %d llamadas · %d primitivas · aclaradas %d %s%s%s" % [s[0], str(v.kael.global_position),
+			v.cargador.montados.size(), str(v.cargador.ids_montados()), ll, pr, v.aclarados, str(_aclaradas()), andar, _rotulos()])
 	_terminar()
+
+
+# La caja de lo que se ve de Kael (sus mallas), relativa a sus pies.
+func _caja_kael() -> AABB:
+	var r := AABB()
+	var hay := false
+	for m in v.kael.find_children("*", "VisualInstance3D", true, false):
+		var c: AABB = (m as VisualInstance3D).global_transform * (m as VisualInstance3D).get_aabb()
+		r = c if not hay else r.merge(c)
+		hay = true
+	r.position -= v.kael.global_position
+	return r
+
+
+# Los rótulos 3D que se dibujan (visibles y más allá de su visibility_range_begin): texto, distancia a la cámara y ancho
+# en pantalla (fracción del ancho del cuadro).
+func _rotulos() -> String:
+	var r: Array = []
+	var cam: Camera3D = v.cam
+	for l in v.find_children("Rotulo_*", "Label3D", true, false):
+		var lb := l as Label3D
+		if not lb.is_visible_in_tree():
+			continue
+		var d := cam.global_position.distance_to(lb.global_position)
+		if d < lb.visibility_range_begin - lb.visibility_range_begin_margin or cam.is_position_behind(lb.global_position):
+			continue
+		var c := lb.get_aabb()
+		var a := cam.unproject_position(lb.global_position - cam.global_basis.x * c.size.x * 0.5)
+		var b := cam.unproject_position(lb.global_position + cam.global_basis.x * c.size.x * 0.5)
+		var vista := root.get_visible_rect().size
+		if maxf(a.x, b.x) < 0.0 or minf(a.x, b.x) > vista.x or a.y < 0.0 or a.y > vista.y:
+			continue
+		r.append("«%s» a %.1f m, %.0f %% del ancho" % [lb.text, d, 100.0 * absf(b.x - a.x) / vista.x])
+	return (" · rótulos: " + ", ".join(r)) if not r.is_empty() else ""
 
 
 func _comparar() -> void:

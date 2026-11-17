@@ -339,6 +339,21 @@ func _preparar_rejilla() -> void:
 				for i in range(g[0], g[1] + 1):
 					if caja.has_point(_centro(i, j)):
 						anda[j * W + i] = 0
+	# (17/11) el CUERPO de Kael: la franja de Comun.RADIO_CUERPO junto a paredes, pilares y jardineras altas no se pisa
+	# (ciudad._altura_suelo, plano.holgado)
+	var franja := 0
+	for s3 in P.ORDEN:
+		for b in P.trazado(s3).BLOQUES:
+			if not b[6] or Comun.fino(b):              # (los finos no tienen franja: Comun.holgura)
+				continue
+			var g: Array = _rango((b[2] as Rect2).grow(Comun.RADIO_CUERPO))
+			for j in range(g[2], g[3] + 1):
+				for i in range(g[0], g[1] + 1):
+					if anda[j * W + i] == 1:
+						var q := _centro(i, j)
+						if Comun.distancia_planta(b[2], q) < Comun.RADIO_CUERPO and float(b[3]) + float(b[4]) > P.altura(q.x, q.y) + Comun.ALTO_PARED:
+							anda[j * W + i] = 0
+							franja += 1
 	for s2 in P.ORDEN:                               # (exactas, no en la rejilla: el rayo roza las esquinas)
 		for b in P.trazado(s2).BLOQUES:
 			if b[6] and float(b[4]) > 0.6:
@@ -384,7 +399,8 @@ func _preparar_rejilla() -> void:
 					astar.set_point_weight_scale(Vector2i(i, j), 4.0)
 				elif cerca2[k] == 1:
 					astar.set_point_weight_scale(Vector2i(i, j), 2.0)
-	_nota("rejilla: %d casillas andables (%.0f m²) en %.1f s" % [n, n * C * C, (Time.get_ticks_msec() - t0) / 1000.0])
+	_nota("rejilla: %d casillas andables (%.0f m²; %d en la franja del cuerpo, fuera) en %.1f s" % [n, n * C * C, franja,
+		(Time.get_ticks_msec() - t0) / 1000.0])
 
 
 func _anda_rejilla(x: float, z: float) -> bool:
@@ -451,6 +467,7 @@ func _recta_libre(a: Vector3, b: Vector3, exacta := true, rodillas_tambien := tr
 	var dir := d / l
 	var n := int(ceil(l / 0.1))
 	var y_ant := P.altura(a.x, a.z) if exacta else 0.0
+	var h_ant := P.holgura(a.x, a.z) if exacta else 0.0
 	for i in range(1, n + 1):
 		var q := Vector2(a.x, a.z) + d * (float(i) / n)
 		if exacta:
@@ -460,6 +477,10 @@ func _recta_libre(a: Vector3, b: Vector3, exacta := true, rodillas_tambien := tr
 			if absf(y - y_ant) > 0.3:
 				return false
 			y_ant = y
+			var h := P.holgura(q.x, q.y)                 # (17/11) en la franja del cuerpo no se entra (ciudad._altura_suelo)
+			if rodillas_tambien and h < Comun.RADIO_CUERPO - 0.001 and h < h_ant - 0.001:
+				return false
+			h_ant = h
 		elif not _anda_rejilla(q.x, q.y):
 			return false
 		if rodillas_tambien and l * float(i) / n < l - 0.15:
@@ -544,6 +565,8 @@ func _freno(k: Vector3, hacia: Vector3) -> String:
 		return "no andable delante (%s)" % _que_hay(sig)
 	if absf(P.altura(sig.x, sig.z) - k.y) > 0.5:
 		return "escalón de %.2f m" % (P.altura(sig.x, sig.z) - k.y)
+	if P.holgura(sig.x, sig.z) < Comun.RADIO_CUERPO - 0.001 and P.holgura(sig.x, sig.z) < P.holgura(k.x, k.z) - 0.001:
+		return "la franja del cuerpo junto a una pared (holgura %.2f m)" % P.holgura(sig.x, sig.z)
 	var desde := Vector3(k.x, k.y + 0.6, k.z)
 	var r: Dictionary = v.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(desde, desde + dir * 0.45))
 	if not r.is_empty():
@@ -689,9 +712,11 @@ func _grupo_visible() -> String:
 		var g: Vector3 = (n as Node3D).global_position
 		if _plana(g, _kael()) >= 8.0:
 			continue
-		for h in [1.4, 0.8]:
-			for x in _sin_aclarar(desde, g + Vector3(0.0, h, 0.0)):
-				mal.append("%s: %s sin aclarar a %.1f m" % [n.name, x, h])
+		# (17/11, Redmi) y sus dos lados (±0,25 m a 0,8 y 1,4): un pilar del pórtico tapaba media Lya
+		for d in [Vector3(0.0, 1.4, 0.0), Vector3(0.0, 0.8, 0.0), Vector3(-0.25, 0.8, 0.0), Vector3(0.25, 0.8, 0.0),
+				Vector3(-0.25, 1.4, 0.0), Vector3(0.25, 1.4, 0.0)]:
+			for x in _sin_aclarar(desde, g + d):
+				mal.append("%s: %s sin aclarar en %s" % [n.name, x, str(d)])
 	return ", ".join(mal)
 
 
@@ -926,10 +951,24 @@ func _extremos_rampa(su: Array) -> Variant:
 
 # Un punto andable bajo una cubierta (lo más cerca de su centro), con la cubierta por encima de la cabeza.
 func _bajo_cubierta(s: String, b: Array) -> Variant:
+	# (17/11) donde Kael CABE (plano.holgado: fuera de la franja del cuerpo junto a paredes y mostradores): primero dentro
+	# a 0,3 m del borde y, si ahí no cabe (el toldo de la fruta: 0,6 m entre su borde y el mostrador), en toda la cubierta;
+	# si en ninguna, como antes (lo andable)
+	for intento in [[true, true], [false, true], [true, false]]:
+		var p: Variant = _bajo_cubierta_en(s, b, intento[0], intento[1])
+		if p != null:
+			return p
+	return null
+
+
+func _bajo_cubierta_en(s: String, b: Array, dentro: bool, holgado: bool) -> Variant:
 	var r: Rect2 = b[2]
 	# (dentro, a 0,3 m del borde; una cuerda de tendedero de 0,1 m, en una franja de 0,6 m bajo ella)
 	var mx := -0.3 if r.size.x > 1.0 else maxf(0.0, (0.6 - r.size.x) * 0.5)
 	var mz := -0.3 if r.size.y > 1.0 else maxf(0.0, (0.6 - r.size.y) * 0.5)
+	if not dentro:
+		mx = maxf(mx, 0.0)
+		mz = maxf(mz, 0.0)
 	r = r.grow_individual(mx, mz, mx, mz)
 	var mejor = null
 	var dmin := INF
@@ -938,7 +977,7 @@ func _bajo_cubierta(s: String, b: Array) -> Variant:
 	while x < r.end.x:
 		var z := r.position.y + 0.125
 		while z < r.end.y:
-			if P.andable(x, z) and P.sector_en_caja(x, z) == s and float(b[3]) > P.altura(x, z) + 1.6:
+			if P.andable(x, z) and (not holgado or P.holgado(x, z)) and P.sector_en_caja(x, z) == s and float(b[3]) > P.altura(x, z) + 1.6:
 				# lo más lejos posible de lo que no se pisa (hasta 0,75 m: Kael se para 0,3 m antes de una caja) y, a
 				# igual holgura, lo más cerca del centro
 				var d := Vector2(x, z).distance_to(c) - _holgura(x, z) * 100.0
@@ -1057,13 +1096,31 @@ func _puerta(s: String, pid: String) -> void:
 
 
 # «Guardar y recargar» (clic en su botón): Kael reaparece donde estaba, en el mismo sector, con el grupo.
+# (17/11) «Donde estaba» = al TOCAR el botón (button_down): si Kael aún anda (las recargas «andando» y en el borde de una
+# conexión de diag_ciudad_romper), sigue unos fotogramas entre que se lee su sitio y el toque; la escena lo para al
+# tocarlo y guarda ahí. Antes se comparaba con el sitio de antes de mover el puntero (3 fallos desde 2afc6ed).
+var k_al_tocar = null
+
+
+func _al_tocar_recargar() -> void:
+	if _vivo():
+		k_al_tocar = _kael()
+
+
 func _recargar(s: String) -> void:
 	_empezar_tramo()
 	var k := _kael()
 	var viejo = v
 	var f0 := Engine.get_process_frames()
 	var R0 = root.get_node_or_null("Recursos")
+	k_al_tocar = null
+	v.boton_recargar.button_down.connect(_al_tocar_recargar)
 	await _pulsar(v.boton_recargar, func(): return R0.cambiando or current_scene != viejo, 3.0)
+	if k_al_tocar != null:
+		if _plana(k_al_tocar, k) > 0.01:
+			_nota("  (Kael aún andaba: de %s a %s hasta tocar el botón)" % [_txt(k), _txt(k_al_tocar)])
+		k = k_al_tocar
+		s = P.sector_de(k.x, k.z)
 	var t0 := Time.get_ticks_msec()                # (esperas en tiempo REAL: sin tope de FPS, 300 fotogramas son 2 s)
 	while Time.get_ticks_msec() - t0 < 30000:
 		await process_frame

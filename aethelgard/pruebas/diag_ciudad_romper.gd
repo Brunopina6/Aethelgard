@@ -417,8 +417,13 @@ func _teclas_pared(s: String, donde: Vector3, contra: Array, diagonal: Array, ej
 func _recargar_aqui(nombre: String) -> void:
 	var k := _kael()
 	var s := P.sector_de(k.x, k.z)
-	_nota("recarga: %s en %s [%s]" % [nombre, _txt(k), s])
+	_nota("recarga: %s en %s [%s]%s" % [nombre, _txt(k), s, (" con destino %s" % _txt(v.destino)) if v.destino != null else ""])
 	await _recargar(s)
+	if k_al_tocar != null:                          # (17/11) donde estaba al TOCAR el botón (recorrido_ciudad._recargar)
+		k = k_al_tocar
+	if _vivo():
+		_nota("  guardado %s · reaparece %s [%s] (a %.2f m de donde estaba al tocar el botón)" % [
+			_txt(Engine.get_meta("pos_3d", Vector3.ZERO)), _txt(_kael()), P.sector_de(_kael().x, _kael().z), _plana(k, _kael())])
 	if _vivo() and absf(_kael().y - k.y) > 0.05:
 		_hallazgo("recarga", "%s: Kael vuelve a otra altura (%.2f → %.2f)" % [nombre, k.y, _kael().y])
 	if _vivo() and not v.cargador.montados.has(v.cargador.actual):
@@ -551,6 +556,10 @@ func _jugar() -> void:
 		return
 	if "extra" in OS.get_cmdline_user_args():
 		await _extra()
+		_fin()
+		return
+	if "recargas" in OS.get_cmdline_user_args():          # (17/11) solo las recargas difíciles, para reproducirlas
+		await _recargas()
 		_fin()
 		return
 	await _salidas()
