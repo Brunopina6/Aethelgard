@@ -2,7 +2,8 @@
 
 Rama `area-ciudad-recorrido` (desde `b5cafa7`). Herramienta: `aethelgard/pruebas/recorrido_ciudad.gd` (con ventana).
 **Arreglos** de lo que encontraron este recorrido y dos verificaciones independientes: rama `area-ciudad-recorrido-2`
-(desde `1a38acf`, la punta de `area-ciudad-recorrido`), §7.
+(desde `1a38acf`, la punta de `area-ciudad-recorrido`), §7. **Arreglos tras el Redmi (17/11)**: rama `area-ciudad-redmi`
+(desde `70b5f82`), §8.
 Plano y contrato: `docs/v12/CIUDAD_OAKHAVEN_PLAN.md`, `docs/v12/CIUDAD_OAKHAVEN.md`; sectores: `A.md`-`D.md` de esta
 carpeta. No se ha medido rendimiento (encargo): la herramienta quita el tope de FPS de la escena para ir más deprisa y el
 tiempo del juego lo fija `--fixed-fps 30`.
@@ -236,3 +237,79 @@ toque en los Pasajes sin montar); `sosten_0_6\`, las pasadas con el sostén de 0
 
 No se ha medido rendimiento (encargo). El aclarado hace ahora hasta 13 segmentos por ocultable montado en cada
 fotograma, con un descarte por caja; `_punto_plano` solo corre en un toque que los choques no resuelven.
+
+## 8. Arreglos tras el Redmi, 17/11 (rama `area-ciudad-redmi`, desde `70b5f82`)
+
+Lo que se vio en la pantalla real el 16/11 con la APK `2afc6ed` (`docs/v12/REDMI_16_11.md`, «Lo que se ve en la pantalla
+real») y los fallos de «Guardar y recargar» de `diag_ciudad_romper.gd`. El Redmi NO estaba conectado: todo se ha
+reproducido y comprobado en el PC (ventana 1600×720, la del Redmi con sus franjas, `--fixed-fps 30`, datos aislados). No
+se ha medido rendimiento (encargo; otra ventana de Godot podía estar abierta) ni se declara nada de Android. El
+renderizador (Compatibility) no cambia.
+
+Herramientas: `fotos_ciudad_optimiza.gd` con `sitios=redmi` (14 sitios con la MISMA cámara antes y después: Kael colocado,
+o colocado y andando hacia un punto como tras un toque; anota las piezas aclaradas, dónde se para Kael y los rótulos
+que se dibujan con su ancho en pantalla); `diag_ciudad_silueta.gd` (nueva, sin ventana: en toda la rejilla andable,
+cuánto del torso y la cabeza de Kael, 5 × 3 puntos, tapa lo que la escena NO aclara); `diag_ciudad_romper.gd` con
+`recargas` (solo las recargas difíciles); `recorrido_ciudad.gd` y `diag_ciudad_visibilidad.gd` enteros.
+
+| # | Lo visto en el Redmi | Reproducido en el PC | Causa | Arreglo | Estado |
+|---|---|---|---|---|---|
+| 1 | Un pilar fino de la lonja delante de Kael lo tapa casi entero (`t07_norte.png`) | sí: `r01_lonja_pilar_fino_t07` (Kael 2,5 m al norte de `lonja_p4`: solo asoma la espada) | la regla «lo de ≤ 0,6 m no tapa» (`trazado_comun.fino`): los pilares no eran ocultables y ni la escena ni las pruebas los miraban; Kael mide unos 0,5 m de ancho en pantalla y un pilar más cerca de la cámara se ve más ancho | `trazado_comun`: los finos que llegan al pecho (`fino_alto`: pilares, postes, troncos y lo pequeño colgado, faroles y tablillas) son ocultables: la escena los aclara cuando cortan un rayo a Kael o al grupo, cerca o lejos; `tapan()` (plano y recorrido) cuenta los finos a menos de `FINO_CERCA` = 2 m de Kael. Ocultables por sector: como mucho 59 de 64 (plaza) | **arreglado**: el pilar se aclara (`r01`, `r03` soportal) |
+| 2 | Medio Kael tapado de lado por el canto de un parterre/pretil del Barrio Alto (`t10_escalinata.png`) y por un pilar del pórtico (`t13_alto_norte.png`, `antes_recarga.png`: media Lya) | sí: Kael pegado a la jardinera de la Rampa de las Raíces (`r04`) y al pilar del pórtico (`r07`); media Lya tras el pilar (`r06`). `diag_ciudad_silueta`: en **4 442** de 189 019 casillas andables la escena dejaba tapado ≥ 40 % del torso | Kael choca como un PUNTO: pegado a una pared, media figura queda dentro del bloque (y de lado, desde la cámara, tapada); el grupo solo tenía rayos al centro | Kael tiene CUERPO: `Comun.RADIO_CUERPO` = 0,3 m junto a lo sólido que sube más de 1 m sobre su suelo (`ALTO_PARED`) y no es fino (`plano.holgura/holgado`; `ciudad._altura_suelo` no deja meterse en esa franja, sí salir de ella; `_ajustar_destino` lleva el toque al último punto de la recta donde cabe). Lo bajo (bancos, parterres, el pilón, pretiles de 0,9, el puesto del tonelero) y los finos (se aclaran) no tienen franja; desde la Puerta del Sur, con su cuerpo, Kael sigue llegando junto a todas las anclas, puertas y conexiones (prueba_ciudad_plano 8d: 93,4 % de las casillas andables tienen sitio para él, todas conectadas). El grupo, rayos también a sus lados (±0,25 m a 0,8 y 1,4) | **arreglado**: `diag_ciudad_silueta` después, **35** de 176 611 casillas donde Kael cabe (carros de 1,5 m justo delante, la columna de la fuente [C], un caño y el tablón: tapan como cualquier cosa delante); la Lya del pórtico se ve (`r06`) |
+| 3 | El rótulo del sector enorme y cortado en el Barrio Alto y al pie de la escalinata, en bajo y en alto | sí: «Barrio Alto de las Raíces (maqueta)» a 13,6-16,9 m de la cámara con el 36-42 % del ancho de la pantalla (`r05`, `r06`, `r07`, `r12`); el de la plaza, 30-35 % (`r13`, `r14`) | ocultarlos a menos de 10 m de la cámara no basta: la cámara está a unos 18 m de Kael (10,8 arriba y 14,2 al sur), así que con Kael cerca del ancla el rótulo (6,5 m sobre ella) queda a 13-17 m y mide 7-8 m de ancho | `sector._rotulo`: cada rótulo (de sector y de puerta) se dibuja solo desde la distancia a la que su ancho ocupa como mucho `ROTULO_PANTALLA` = 1/4 del ancho del cuadro (cámara de la ciudad, 38° en 16:9; ancho con la fuente del rótulo), nunca a menos de 10 m: el del Barrio Alto, desde ≈ 29-31 m; el de la plaza, ≈ 34-36 m; los «(en obras)» cortos, como antes (10 m). El título de la pantalla ya dice el sector | **arreglado**: en los 14 sitios, bajo y alto, ningún rótulo de sector a menos de ≈ 29 m; los «(en obras)» que se ven, ≤ 15 % del ancho |
+| 4 | La fuente corta el camino directo de la Calle Mayor a la escalinata y con toques Kael se queda pegado al pilón | sí: de (0, 28) tocando la Calle del Árbol, Kael se para ante el pilón a 16,8 m (`r13`); de este a oeste, a 12,3 m (`r14`) | `_ajustar_destino` cortaba el toque en lo primero que no se pisa (el pilón) y `vista3d` no rodea | la solución menos invasiva, sin tocar el trazado ni la fuente [C] en el centro: con TOQUES Kael RODEA lo que corta el paso. `_ajustar_destino` deja el destino detrás de un obstáculo bajo (≤ 1,5 m y ≤ 8 m de largo) o pequeño (≤ 2 × 2 m) si detrás hay suelo a la misma cota; `ciudad._bordear`: si `vista3d` no avanza y lo que frena es un bloque, Kael anda a lo largo de su cara (apartándose hasta 0,5 m de ella) hacia la esquina por la que se llega antes y conserva el destino; como mucho 4 s por destino (no busca caminos: tras una pared larga, o tocando dentro de una casa, se para como antes) | **arreglado**: llega a 0,02 y 0,11 m (`r13`, `r14`) |
+| 5 | `diag_ciudad_romper.gd`: 3 fallos de «Guardar y recargar» (también en `2afc6ed`) | sí, los 3 (`romper_recargas_antes\`): en el borde del Paso de la Botica y de la Calle del Cuervo, Kael «reaparece» 0,3-0,4 m al otro lado de la linde, y recargando andando, 1,0 m más allá | Kael seguía andando: el guardado era al SOLTAR el botón y Kael seguía hacia su destino entre el toque y la suelta (y, ya guardado, bajo el negro de la carga); la herramienta comparaba con su sitio de antes de mover el puntero. Lo guardado y lo que reaparecía eran iguales (0,00 m) | la escena para a Kael al TOCAR el botón (`button_down` → `_parar_kael`) y no lo mueve más hasta que se va (`_recargando`); `recorrido_ciudad._recargar` compara con el sitio de Kael al tocar el botón | **arreglado**: `romper_recargas_despues\`, 5 recargas y 0 fallos (reaparece a 0,00 m de donde se tocó) |
+
+Lo que se encontró por el camino y se arregló (ninguno estaba en `2afc6ed`: salieron de los propios arreglos y los cazó
+el recorrido en tres pasadas intermedias, `recorrido_1600x720_pasada1..3\`):
+
+- con el rodeo, al doblar la esquina de un banco bajo, un tramo de 0,15 m podía cortarla (Kael «pisaba» el banco del
+  mirador del pretil): `_altura_suelo` mira ahora el tramo entero cada 5 cm;
+- tocando JUNTO al pilón (el pie de la escalinata), el rodeo movía a Kael de lado hasta 4 s: solo rodea si el destino
+  está DETRÁS de la cara que lo frena;
+- con la franja en lo que sube 0,8 m y en los pilares finos, el puesto del tonelero (0,85 m) y el pilar 4 cerraban el
+  soportal del Cuervo (deja 0,6 m entre ellos): la franja es para lo que sube más de 1 m y no para los finos (se aclaran);
+- la herramienta: buscaba sitios «bajo la cubierta» dentro de la franja del cuerpo (`_bajo_cubierta` busca primero
+  donde Kael cabe: con 0,6 m entre el borde del toldo de la fruta y su mostrador, Lya acababa dentro del puesto mientras
+  Kael lo intentaba 52 veces), su rejilla A* quita la franja y su recta mira la holgura solo en lo que se anda de un toque.
+
+### Comprobaciones
+
+Pasadas finales (perfil bajo, 1600×720, `--fixed-fps 30`, con ventana, en el PC, cada una con su carpeta de datos; las
+tres a la vez, con el código de la rama):
+
+| Comprobación | Antes (`70b5f82`) | Después |
+|---|---|---|
+| `recorrido_ciudad.gd` | 430 tramos, 0 fallos (§7) | **430 tramos, 0 fallos**; lo mismo cubierto (8/8 sectores, 24/24 sentidos, 50 + 50 pendientes, 44 cubiertas, 85 puertas, 13 sin salida, 9 atajos, 8 recargas); 0 botones repetidos; 4 avisos de 1-3 fotogramas del grupo rozando una esquina o un borde (antes 2; §5, problema 3) |
+| `diag_ciudad_visibilidad.gd` | 438 tramos, 0 casos | **438 tramos, 0 fallos, 0 eventos**; cámara sin saltos (el mayor, 0,36 m); Kael siempre en el cuadro |
+| `diag_ciudad_romper.gd` (entero) | 3 fallos de «Guardar y recargar» (4 con `2afc6ed`) | **94 tramos, 0 fallos, 0 hallazgos**: rejillas de toques sin toques perdidos, salidas, clics rápidos, arrastre, teclas, recargas difíciles, 4 ciclos banco/ciudad y CAL sin fugas (huérfanos 0), vigía del cargador sin errores |
+| `diag_ciudad_romper.gd recargas` | 5 recargas, **3 fallos** | 5 recargas, **0 fallos** (reaparece a 0,00 m de donde se tocó el botón) |
+| `diag_ciudad_silueta.gd` (sin ventana) | 4 442 casillas con ≥ 40 % del torso tapado | **35** (carros, columna de la fuente, caño y tablón) |
+| `fotos_ciudad_optimiza.gd sitios=redmi` (bajo y alto) | pilar de la lonja sin aclarar, media Lya tras el pilar, rótulos del 30-42 % del ancho, la fuente para a Kael a 16,8 y 12,3 m | pilares aclarados, Lya entera, ningún rótulo de sector cerca (los «(en obras)», ≤ 15 %), la fuente se rodea (llega a 0,02 y 0,11 m) |
+| Pruebas (`-Solo prueba_ciudad_plano,prueba_ciudad_cargador`) | plano 64 OK, cargador 106 OK | **SUPERADAS 2 · FALLIDAS 0** (`D:\REBELUM_diagnostico\pruebas\2026-11-18_005621`; plano 68 OK con 8b-8d, cargador 115 OK con las 9 del Redmi; partida real, carpeta real y proyecto sin cambios) |
+
+No se ha pasado a 1280×720 (en §3 y §7 daba las mismas líneas que a 1600×720) ni en los perfiles medio y alto (solo
+las capturas de los 14 sitios en alto).
+
+### Capturas
+
+Fuera del repositorio, en `D:\REBELUM_diagnostico\pendientes_17_11\ciudad_redmi\`: `fotos_antes_bajo\`, `fotos_antes_alto\`
+(con `70b5f82`), `fotos_despues_bajo\`, `fotos_despues_alto\` (los 14 sitios, misma cámara) y `antes_y_despues\`
+(28 láminas, izquierda antes y derecha después); `silueta_antes\` y `silueta_despues\`; `romper_recargas_antes\` y
+`romper_recargas_despues\`; `recorrido_1600x720\`, `visibilidad_1600x720\` y `romper_1600x720\` (las pasadas finales,
+sin vídeo) y las intermedias `*_pasada1..3\` (con los fallos que llevaron a los arreglos de arriba).
+
+### Pendiente
+
+- Probarlo en el Redmi con el dedo (sin teléfono hoy): el rodeo de la fuente, el cuerpo junto a pilares y jardineras,
+  los rótulos y «Guardar y recargar» andando.
+- Los carros de 1,5 m, la columna de la fuente [C], el caño del pilón de caravanas y el tablón del Gremio siguen tapando
+  el torso de Kael si se pone justo detrás (como cualquier cosa delante): si molesta en el teléfono, ponerlos en
+  OCULTABLES de su trazado (agentes A y B).
+- El rodeo no busca caminos (4 s como mucho, una cara tras otra): tras una pared larga o un recodo cerrado, Kael se para
+  como antes. Con teclas, `_deslizar` sigue igual.
+- El grupo (`grupo_3d.gd`, compartido, sin tocar) sigue rozando esquinas 1-3 fotogramas (4 avisos por pasada) y, si
+  Kael da muchas vueltas pegado a un mostrador, Lya pudo acabar dentro de él (pasada intermedia 1, ya no se repite con
+  la herramienta arreglada): mirarlo si se ve en el teléfono.
+- Rendimiento sin medir: el aclarado mira ahora hasta 21 puntos (Kael y dos del grupo) y hasta 59 ocultables por sector
+  (plaza), con el descarte por caja; `_altura_suelo` consulta la holgura (los bloques de 1-2 sectores) en cada tramo.
