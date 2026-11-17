@@ -236,6 +236,28 @@ const OPACIDAD_CONTORNO := 0.85
 # def: [nombre, texto, tamaño, posición]. Cerca de la cámara (Kael unos 14 m al norte del ancla del sector, o en el
 # lavadero bajo él) salía enorme y cortado, o por delante del grupo (recorrido, 16/11): no se dibuja a menos de
 # ROTULO_CERCA (el título de la pantalla ya dice el sector).
+# (17/11, Redmi) Con 10 m no bastaba: la cámara está a unos 18 m de Kael, así que el nombre del sector (7-8 m de ancho)
+# se veía a 13-17 m de ella, con el 35-42 % del ancho de la pantalla, en el Barrio Alto y al pie de las escalinatas (bajo y
+# alto). Ahora cada rótulo se dibuja solo desde la distancia a la que su ancho ocupa como mucho ROTULO_PANTALLA del ancho
+# del cuadro (con la cámara de la ciudad, plano.gd: CAMPO vertical en 16:9), y nunca a menos de ROTULO_CERCA.
+const ROTULO_PANTALLA := 0.25
+
+
+static func distancia_rotulo(ancho: float) -> float:
+	var ancho_por_metro := 2.0 * tan(deg_to_rad(P.CAMPO) * 0.5) * 16.0 / 9.0   # (ancho del cuadro a 1 m de la cámara)
+	return maxf(ROTULO_CERCA, ancho / (ancho_por_metro * ROTULO_PANTALLA))
+
+
+# El ancho en metros del texto (con pixel_size 0,01), con la fuente que usa un Label3D sin fuente propia: la del tema del
+# proyecto si la tiene; si no, la de Godot.
+static func ancho_rotulo(texto: String, tamano: int) -> float:
+	var f: Font = ThemeDB.fallback_font
+	var tema := ThemeDB.get_project_theme()
+	if tema != null and tema.has_default_font():
+		f = tema.default_font
+	return f.get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, tamano).x * 0.01
+
+
 func _rotulo(def: Array) -> Label3D:
 	var l := Label3D.new()
 	l.name = def[0]
@@ -247,7 +269,7 @@ func _rotulo(def: Array) -> Label3D:
 	l.outline_modulate = Color(0.30, 0.14, 0.08, OPACIDAD_CONTORNO)
 	l.pixel_size = 0.01
 	l.position = def[3]
-	l.visibility_range_begin = ROTULO_CERCA
+	l.visibility_range_begin = distancia_rotulo(ancho_rotulo(def[1], def[2])) + 2.0   # (+ el margen del fundido)
 	l.visibility_range_begin_margin = 2.0
 	l.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
 	add_child(l)

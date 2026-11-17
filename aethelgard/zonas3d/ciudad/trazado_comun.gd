@@ -117,14 +117,20 @@ static func cajas_bloque(b: Array) -> Array:
 	return r_cajas
 
 
-# ¿Se aclara este bloque cuando tapa a Kael? Las cubiertas y las copas, siempre; el resto, si su trazado lo pone en
-# OCULTABLES.
+# ¿Se aclara este bloque cuando tapa a Kael? Las cubiertas y las copas, siempre; los pilares, postes y troncos finos y
+# altos (fino_alto), también (17/11, Redmi); el resto, si su trazado lo pone en OCULTABLES.
 static func ocultable(b: Array, ocultables: Array) -> bool:
-	return String(b[5]) in TIPOS_OCULTABLES or String(b[0]) in ocultables
+	return String(b[5]) in TIPOS_OCULTABLES or String(b[0]) in ocultables or fino_alto(b)
 
 
-# Un pilar, poste o pie de farol (≤ FINO por los dos lados) es más estrecho que Kael: no lo tapa (se le ve a los lados).
+# Un pilar, poste o pie de farol (≤ FINO por los dos lados) es más estrecho que Kael: de LEJOS no lo tapa (se le ve a los
+# lados). De CERCA sí: en el Redmi (16/11, lonja de la plaza) un pilar de 0,5 m justo delante de Kael lo tapaba casi entero
+# (su figura mide unos 0,5 m de ancho en pantalla). Por eso un fino a menos de FINO_CERCA de Kael (en planta) cuenta como
+# los demás (tapan), y los finos que llegan a la altura del pecho (fino_alto: ALTO_FINO) son ocultables: la escena los
+# aclara cuando cortan un rayo a Kael, cerca o lejos (sector.gd, aclarar).
 const FINO := 0.6
+const FINO_CERCA := 2.0
+const ALTO_FINO := 1.2
 
 
 static func fino(b: Array) -> bool:
@@ -132,16 +138,51 @@ static func fino(b: Array) -> bool:
 	return r.size.x <= FINO + 0.001 and r.size.y <= FINO + 0.001   # (margen: Rect2 guarda float32; 0,6 queda en 0,6000000238)
 
 
-# Los bloques que cortan el segmento desde → hasta: [[id, ocultable]] (sin los finos). Filtra antes por la planta.
+# Un fino que tapa el pecho o la cabeza: un pilar, un poste o un tronco, o algo pequeño COLGADO (un farol, una tablilla
+# de los caminos: decor sin choque); no una caja baja en el suelo.
+static func fino_alto(b: Array) -> bool:
+	return fino(b) and String(b[5]) != "puerta" and (float(b[4]) >= ALTO_FINO or (String(b[5]) == "decor" and not b[6]))
+
+
+# Los bloques que cortan el segmento desde → hasta: [[id, ocultable]] (sin los finos a más de FINO_CERCA de «hasta»).
+# Filtra antes por la planta.
 static func tapan(bloques: Array, ocultables: Array, desde: Vector3, hasta: Vector3) -> Array:
 	var r: Array = []
 	var planta := Rect2(Vector2(minf(desde.x, hasta.x), minf(desde.z, hasta.z)), Vector2.ZERO).expand(Vector2(
 		maxf(desde.x, hasta.x), maxf(desde.z, hasta.z))).grow(VUELO_TEJADO + 0.01)
+	var h := Vector2(hasta.x, hasta.z)
 	for b in bloques:
-		if fino(b) or not (b[2] as Rect2).intersects(planta, true):
+		if not (b[2] as Rect2).intersects(planta, true):
+			continue
+		if fino(b) and distancia_planta(b[2], h) > FINO_CERCA:
 			continue
 		for c in cajas_bloque(b):
 			if (c as AABB).intersects_segment(desde, hasta):
 				r.append([b[0], ocultable(b, ocultables)])
 				break
 	return r
+
+
+# Distancia en planta de p a un rectángulo (0 dentro).
+static func distancia_planta(r: Rect2, p: Vector2) -> float:
+	return Vector2(clampf(p.x, r.position.x, r.end.x), clampf(p.y, r.position.y, r.end.y)).distance_to(p)
+
+
+# CUERPO de Kael (17/11, Redmi): Kael choca como un PUNTO (lo andable del plano y el rayo de las rodillas por delante), así
+# que al andar pegado a una pared, un pilar o una jardinera alta media figura quedaba DENTRO del bloque y, desde la cámara,
+# tapada de lado (Rampa de las Raíces, pórtico de las Raíces; RADIO_CUERPO es media figura). La distancia en planta de (x, z) al bloque
+# sólido más cercano que suba más de ALTO_PARED por encima de «y» (lo que se pisa ahí), hasta «radio» como mucho. Los
+# bloques bajos (bancos, parterres, el pilón) no cuentan: delante de las piernas es lo normal.
+const RADIO_CUERPO := 0.3
+# (por encima de la cintura: el pilón de la fuente, 0,7, un pretil de 0,9 o el puesto del tonelero, 0,85 sobre el
+# soportal del Cuervo, no; con 0,8 el puesto cerraba el soportal, que deja 0,6 m entre él y los pilares: recorrido)
+const ALTO_PARED := 1.0
+
+
+static func holgura(bloques: Array, x: float, z: float, y: float, radio := RADIO_CUERPO) -> float:
+	var p := Vector2(x, z)
+	var h := radio
+	for b in bloques:
+		if b[6] and float(b[3]) + float(b[4]) > y + ALTO_PARED:
+			h = minf(h, distancia_planta(b[2], p))
+	return h

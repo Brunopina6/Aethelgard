@@ -12,6 +12,8 @@ extends "res://prototipos/vista3d.gd"
 # pies y lados) o el grupo cercano, y sigue aclarado un momento (sin parpadeo). Con teclas o mando, Kael se desliza a lo
 # largo de una pared si va en diagonal contra ella; un toque en un sector sin montar (maqueta lejana, sin choques) cae
 # en el plano. (Arreglos del recorrido, 16/11: docs/v12/ciudad_sectores/RECORRIDO.md §7.)
+# (Arreglos tras el Redmi, 17/11, RECORRIDO.md §8: Kael con cuerpo, rodear obstáculos bajos o pequeños con toques, los
+# lados del grupo y «Guardar y recargar» que para a Kael al tocarlo.)
 # Puertas solo previstas: «Aún no se puede entrar (en obras).». Nunca se cargan interiores.
 #
 # API de región (la del barrio): kael, cam, perfil · avisar(texto, efecto, seg) · guardar() · guardar_posicion() ·
@@ -183,9 +185,12 @@ func _colocar_camara(peso: float) -> void:
 # grupo se quedaba detrás de lo que nadie aclaraba (recorrido y verificación, 16/11). Ahora, rayos de la cámara a la
 # cabeza, la cintura, los pies y los dos lados de Kael, y a la cabeza, la cintura y los pies de quien del grupo esté a
 # menos de GRUPO_CERCA (a los pies: al entrar, la hoja de la Puerta del Sur cortaba las piernas de Lya y Garon).
+# (17/11, Redmi) Y los dos lados del grupo cercano (a 0,8 y 1,4 m): junto al pórtico de las Raíces un pilar tapaba media
+# Lya sin aclararse (antes_recarga.png).
 const PUNTOS_KAEL := [Vector3(0.0, Comun.ALTO_CABEZA, 0.0), Vector3(0.0, 0.8, 0.0), Vector3(0.0, 0.25, 0.0),
 	Vector3(-0.25, 0.8, 0.0), Vector3(0.25, 0.8, 0.0), Vector3(-0.25, 1.4, 0.0), Vector3(0.25, 1.4, 0.0)]
-const PUNTOS_GRUPO := [Vector3(0.0, 1.4, 0.0), Vector3(0.0, 0.8, 0.0), Vector3(0.0, 0.25, 0.0)]
+const PUNTOS_GRUPO := [Vector3(0.0, 1.4, 0.0), Vector3(0.0, 0.8, 0.0), Vector3(0.0, 0.25, 0.0),
+	Vector3(-0.25, 0.8, 0.0), Vector3(0.25, 0.8, 0.0), Vector3(-0.25, 1.4, 0.0), Vector3(0.25, 1.4, 0.0)]
 const GRUPO_CERCA := 8.0
 var _t_juego := 0.0                        # segundos de juego (el sostén de los aclarados, sector.gd)
 
@@ -212,12 +217,25 @@ func _prohibido(p: Vector3) -> bool:
 
 # Lo que se pisa y su cota salen del PLANO (no de los choques): funciona igual con el sector de al lado aún sin montar. Los
 # choques montados siguen parando a Kael ante lo sólido (el rayo a la altura de las rodillas de vista3d).
+# (17/11, Redmi) Y Kael tiene CUERPO: no se mete en la franja de Comun.RADIO_CUERPO junto a una pared, un pilar o una
+# jardinera alta (plano.holgura): pegado a ellas, media figura quedaba dentro del bloque y tapada de lado desde la cámara
+# (Rampa de las Raíces, pórtico). Si ya está dentro (colocado o cargado ahí), puede salir y andar a lo largo, no meterse más.
 func _altura_suelo(p: Vector3, y_actual: float) -> float:
 	if _prohibido(p):
 		return NAN
 	var h := P.altura(p.x, p.z)
 	if absf(h - y_actual) > SUBE_MAX:
 		return NAN
+	var holgura := P.holgura(p.x, p.z)
+	if holgura < Comun.RADIO_CUERPO - 0.001 and holgura < P.holgura(kael.global_position.x, kael.global_position.z) - 0.001:
+		return NAN
+	# (17/11) y el tramo entero, cada 5 cm: al doblar la esquina de algo bajo (un banco de 0,45 m, que no corta el rayo de
+	# las rodillas) un tramo de 0,15 m podía cortar su esquina (recorrido: el banco del mirador del pretil)
+	var k := kael.global_position
+	var n := int(ceil(Vector2(p.x - k.x, p.z - k.z).length() / 0.05))
+	for i in range(1, n):
+		if _prohibido(k.lerp(p, float(i) / n)):
+			return NAN
 	var desde := Vector3(kael.global_position.x, y_actual + SUBE_MAX + 0.1, kael.global_position.z)
 	var hacia := Vector3(p.x, y_actual + SUBE_MAX + 0.1, p.z)
 	if hacia.distance_to(desde) > 0.001:
@@ -228,6 +246,16 @@ func _altura_suelo(p: Vector3, y_actual: float) -> float:
 
 
 # Si se toca un sitio que no se pisa, Kael va al último punto andable de la recta.
+# (17/11, Redmi) Salvo que lo que corta la recta sea un obstáculo BAJO o PEQUEÑO (_rodeable: el pilón de la fuente, un
+# puesto, un banco, un pilar) con suelo detrás a la misma cota: entonces el destino es el punto tocado detrás de él y
+# Kael lo rodea al llegar (_bordear). Con toques, la fuente cortaba el camino de la Calle Mayor a la escalinata y Kael se
+# quedaba pegado al pilón. Y el destino no queda en la franja del cuerpo junto a una pared (plano.holgura): se acerca al
+# último punto de la recta donde Kael cabe.
+const ALTO_RODEABLE := 1.5                 # un obstáculo más bajo que esto (y no más largo que LARGO_RODEABLE) se rodea…
+const LARGO_RODEABLE := 8.0
+const ANCHO_RODEABLE := 2.0                # … y uno más estrecho que esto por los dos lados, aunque sea alto (un pilar)
+
+
 func _ajustar_destino(p):
 	if p == null or kael == null:
 		return null
@@ -235,12 +263,47 @@ func _ajustar_destino(p):
 	var hacia: Vector3 = p
 	var n := int(Vector2(hacia.x - desde.x, hacia.z - desde.z).length() / 0.1)
 	var ultimo = null
+	var ultimo_holgado = null
+	var y_ant := desde.y
+	var cruzando := false
 	for i in n + 1:
 		var q := desde.lerp(hacia, float(i) / maxf(n, 1))
 		if _prohibido(q):
+			if i > 0 and not _bloque_rodeable(q).is_empty():
+				cruzando = true
+				continue
 			break
-		ultimo = Vector3(q.x, P.altura(q.x, q.z), q.z)
+		var y := P.altura(q.x, q.z)
+		if cruzando and absf(y - y_ant) > SUBE_MAX:  # (detrás de él, otro nivel: no se llega rodeándolo)
+			break
+		cruzando = false
+		y_ant = y
+		ultimo = Vector3(q.x, y, q.z)
+		if P.holgado(q.x, q.z):
+			ultimo_holgado = ultimo
+	if cruzando:                                   # (la recta acaba dentro del obstáculo)
+		return ultimo_holgado if ultimo_holgado != null else ultimo
+	if ultimo != null and ultimo_holgado != null and not P.holgado(ultimo.x, ultimo.z):
+		return ultimo_holgado
 	return ultimo
+
+
+# El bloque sólido que se puede rodear en q (lo bajo o pequeño, ver arriba), o [].
+func _bloque_rodeable(q: Vector3) -> Array:
+	var s := P.sector_en_caja(q.x, q.z)
+	if s == "":
+		return []
+	var id: String = P.trazado(s).bloque_en(q.x, q.z)
+	if id == "":
+		return []
+	for b in P.trazado(s).BLOQUES:
+		if b[0] == id:
+			var r: Rect2 = b[2]
+			if (float(b[4]) <= ALTO_RODEABLE and maxf(r.size.x, r.size.y) <= LARGO_RODEABLE) \
+					or (r.size.x <= ANCHO_RODEABLE and r.size.y <= ANCHO_RODEABLE):
+				return b
+			return []
+	return []
 
 
 # Tocar el suelo: lo que queda más de 1 m por encima de lo que se pisa (tejados, cubiertas) no cuenta. (Recorrido, 16/11)
@@ -412,9 +475,18 @@ func volver_al_banco() -> void:
 
 
 # «Guardar y recargar»: guarda, lee el archivo del banco, lo restaura y vuelve a ESTA escena.
+# (17/11) Kael se para al TOCAR el botón (button_down: _parar_kael) y ya no se mueve hasta que la escena se va
+# (_recargando): antes seguía andando hacia su destino entre el toque y la suelta del botón y, ya guardado, bajo el negro
+# de la carga, y reaparecía donde estaba al soltar, no al tocar (hasta 1 m más allá andando, y al otro lado de la linde
+# del Paso de la Botica o de la Calle del Cuervo: diag_ciudad_romper, 3 fallos desde 2afc6ed).
+var _recargando := false
+
+
 func guardar_y_recargar() -> void:
 	if ocupado() or not en_banco_pruebas() or not has_node("/root/Recursos") or Recursos.cambiando:
 		return
+	_parar_kael()
+	_recargando = true
 	guardar()
 	var d = Progreso.leer(Progreso.archivo())
 	if d is Dictionary:
@@ -425,7 +497,7 @@ func guardar_y_recargar() -> void:
 # ================================================================= cada fotograma
 
 func _process(delta: float) -> void:
-	if kael == null or fuera_del_banco:
+	if kael == null or fuera_del_banco or _recargando:
 		return
 	_bloqueo = maxf(0.0, _bloqueo - delta)
 	if ocupado():
@@ -435,8 +507,10 @@ func _process(delta: float) -> void:
 		return
 	_t_juego += delta
 	var k0 := kael.global_position
+	var d0 = destino
 	super(delta)
 	_deslizar(delta, k0)
+	_bordear(delta, k0, d0)
 	cargador.actualizar(kael.global_position)
 	_comprobar_cerca()
 	_t_titulo -= delta
@@ -489,6 +563,127 @@ func _deslizar(delta: float, k0: Vector3) -> void:
 		else:
 			kael.reposo()
 	_deslizando = desliza
+
+
+# (17/11, Redmi) Con TOQUES, rodear lo que corta el paso: si vista3d no avanza hacia el destino (el rayo de las rodillas
+# da en algo, o el paso entraría en la franja del cuerpo junto a una pared: _altura_suelo) y lo que frena es un BLOQUE (no
+# el borde del suelo), Kael anda a lo largo de su cara, hacia la esquina por la que se llega antes al destino, y el
+# destino se mantiene; en cuanto la recta queda libre, vista3d sigue derecho. Así se rodea el pilón de la fuente al tocar
+# detrás de él (Redmi, 16/11: Kael se quedaba pegado), un puesto o un pilar, y una esquina rozada no para a Kael. Como
+# mucho BORDEO_MAX segundos por destino (no busca caminos: tras una pared larga se para como antes).
+const BORDEO_MAX := 4.0
+const HOLGURA_RODEO := 0.5
+var _bordeo_destino = null                 # el destino que se está rodeando
+var _bordeo_t := 0.0
+var _bordeo_signo := {}                    # id del bloque → +1/−1 (el lado elegido, para no cambiar a medio rodeo)
+var _bordeando := false
+
+
+func _bordear(delta: float, k0: Vector3, d0) -> void:
+	var bordea := false
+	if d0 != null and destino == null and direccion_teclas.length() <= 0.1 and kael.global_position.is_equal_approx(k0) \
+			and not ocupado() and Vector2(d0.x - k0.x, d0.z - k0.z).length() >= 0.15:
+		if _bordeo_destino == null or not (d0 as Vector3).is_equal_approx(_bordeo_destino):
+			_bordeo_destino = d0
+			_bordeo_t = 0.0
+			_bordeo_signo.clear()
+		_bordeo_t += delta
+		if _bordeo_t <= BORDEO_MAX:
+			bordea = _rodear(delta, d0)
+			if bordea:
+				destino = d0                         # (vista3d lo soltó al no avanzar)
+	if _bordeando and not bordea and movimiento == "" and destino == null:
+		if kael.has_method("parar_marcha"):
+			kael.parar_marcha()
+		else:
+			kael.reposo()
+	_bordeando = bordea
+
+
+# Un paso a lo largo de la cara del bloque que frena a Kael yendo hacia «meta». true si avanza.
+func _rodear(delta: float, meta: Vector3) -> bool:
+	var k := kael.global_position
+	var falta := Vector2(meta.x - k.x, meta.z - k.z)
+	var dir := falta.normalized()
+	var sonda := Vector2(k.x, k.z) + dir * 0.35
+	var b := _bloque_que_frena(sonda)
+	if b.is_empty():
+		return false                                 # (el borde del suelo o una cuesta: se para como antes)
+	var r: Rect2 = b[2]
+	var c := Vector2(clampf(k.x, r.position.x, r.end.x), clampf(k.z, r.position.y, r.end.y))
+	var n := Vector2(k.x, k.z) - c
+	if n.length() < 0.001:
+		n = -dir
+	var normal := Vector2(signf(n.x), 0.0) if absf(n.x) >= absf(n.y) else Vector2(0.0, signf(n.y))
+	# (si el destino no está DETRÁS de esa cara, ya se ha llegado a lo más cerca: tocando junto al pilón, Kael se movía de
+	# lado hasta 4 s; recorrido, 17/11)
+	if (Vector2(meta.x, meta.z) - c).dot(normal) > -0.1:
+		return false
+	var t := Vector2(-normal.y, normal.x)
+	var id := String(b[0])
+	var signo: float = _bordeo_signo.get(id, 0.0)
+	if signo == 0.0:
+		var avance := t.dot(falta)
+		if absf(avance) > 0.25 * falta.length():
+			signo = signf(avance)
+		else:                                        # de frente: por el lado que antes deja atrás el bloque
+			var mas := -INF
+			var menos := -INF
+			for e in [r.position, Vector2(r.end.x, r.position.y), Vector2(r.position.x, r.end.y), r.end]:
+				mas = maxf(mas, t.dot(e - Vector2(k.x, k.z)))
+				menos = maxf(menos, -t.dot(e - Vector2(k.x, k.z)))
+			signo = 1.0 if mas <= menos else -1.0
+		_bordeo_signo[id] = signo
+	# a lo largo de la cara y, si está a menos de HOLGURA_RODEO de ella, apartándose un poco (rodeo más abierto: el grupo,
+	# que sigue el rastro de Kael, no roza las esquinas); si apartarse no se puede, solo a lo largo
+	var total := VELOCIDAD * (1.8 if falta.length() > CORRER_DESDE else 1.0) * delta
+	var tramos := maxi(1, ceili(total / TRAMO_MAX))
+	var andado := 0.0
+	var paso := Vector3(t.x * signo, 0.0, t.y * signo)
+	for intento in 2:
+		if intento == 0:
+			if Comun.distancia_planta(r, Vector2(k.x, k.z)) >= HOLGURA_RODEO:
+				continue
+			paso = Vector3(t.x * signo + normal.x * 0.6, 0.0, t.y * signo + normal.y * 0.6).normalized()
+		else:
+			paso = Vector3(t.x * signo, 0.0, t.y * signo)
+		for i in tramos:
+			var siguiente: Vector3 = kael.global_position + paso * (total / tramos)
+			var y := _altura_suelo(siguiente, kael.global_position.y)
+			if is_nan(y):
+				break
+			kael.global_position = Vector3(siguiente.x, y, siguiente.z)
+			andado += total / tramos
+		if andado > 0.0:
+			break
+	if andado <= 0.0:
+		return false
+	kael.mirar(paso, 0.12)
+	if kael.has_method("marcha"):
+		kael.marcha(andado / maxf(delta, 0.0001))
+	elif not _bordeando:
+		kael.andar()
+	return true
+
+
+# El bloque sólido que frena a Kael ante «sonda» (0,35 m por delante): el de ese punto o, si allí se pisa (lo frenó el
+# rayo de las rodillas o la franja del cuerpo), el sólido más cercano a menos de 0,8 m. [] si es el borde del suelo.
+func _bloque_que_frena(sonda: Vector2) -> Array:
+	var mejor: Array = []
+	var dmin := 0.8
+	for s in P.ORDEN:
+		if P.distancia_a_sector(s, sonda) > dmin:
+			continue
+		for b in P.trazado(s).BLOQUES:
+			if not b[6]:
+				continue
+			var d := Comun.distancia_planta(b[2], sonda)
+			if d < dmin:
+				dmin = d
+				mejor = b
+	if mejor.is_empty() and not P.andable(sonda.x, sonda.y):
+		return []
+	return mejor
 
 
 # [id, posición, radio, texto] de lo que se usa cerca: las puertas previstas y la Puerta del Sur.
@@ -571,6 +766,7 @@ func _crear_interfaz() -> void:
 	boton_recargar.custom_minimum_size = Vector2(210, 48)
 	boton_recargar.add_theme_font_size_override("font_size", 19)
 	boton_recargar.focus_mode = Control.FOCUS_NONE
+	boton_recargar.button_down.connect(_parar_kael)
 	boton_recargar.pressed.connect(guardar_y_recargar)
 	capa_ui.add_child(boton_recargar)
 	aviso = Label.new()

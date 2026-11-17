@@ -17,7 +17,10 @@ extends SceneTree
 #   8. Kael visible: en una muestra de lo andable (cada metro, y además TODAS las casillas del borde de lo andable, junto a
 #      bloques y huecos, donde la muestra de cada metro no veía casas ni carros: revisión del 16/11), el rayo de la cámara a su cabeza no corta ningún bloque que
 #      la escena no aclare (se imprimen cuántas casillas necesitan aclarar algo) ni ningún suelo de otro nivel. Los
-#      bloques finos (pilares ≤ 0,6 m) no cuentan: son más estrechos que Kael.
+#      bloques finos (pilares ≤ 0,6 m) no cuentan a más de 2 m de Kael (Comun.FINO_CERCA, 17/11).
+#   8b-8d (17/11, lo visto en el Redmi): los pilares, postes y troncos finos son ocultables y uno de la lonja delante de
+#      la cabeza de Kael cuenta; donde Kael cabe (plano.holgado), lo que la escena no aclara no tapa más del 70 % de su
+#      torso (diag_ciudad_silueta.gd); con su cuerpo (RADIO_CUERPO) se llega junto a todas las anclas, puertas y conexiones.
 #   9. Sin huecos junto a lo andable (16/11, revisiones de la maqueta): ninguna casilla andable tiene una vecina sin suelo de
 #      ningún sector ni bloque (salvo cubierta, copa o puerta) encima: eso es una zanja o una pared invisible.
 # Imprime «FALLOS: n».
@@ -53,6 +56,7 @@ func _correr() -> void:
 	_grafos()
 	_camara()
 	_visible()
+	_redmi()
 	_huecos()
 	print("(%.1f s)" % ((Time.get_ticks_msec() - t0) / 1000.0))
 	print("FALLOS: %d" % fallos)
@@ -422,6 +426,122 @@ func _visible() -> void:
 		muestras, con_aclarado])
 	_ok(por_bloque.is_empty() and muestras > 1000, "8: Kael visible desde la cámara en toda la muestra (bloques que tapan: %s; ej. %s)" % [
 		str(por_bloque), str(tapados)])
+
+
+# ================================================================= 8b-8d (17/11, lo visto en el Redmi)
+
+func _redmi() -> void:
+	# 8b. Los finos: todo pilar, poste o tronco fino que llega al pecho es ocultable, y a menos de FINO_CERCA de Kael cuenta
+	# (antes, «lo fino no tapa»: en la lonja un pilar de 0,5 m justo delante tapaba a Kael casi entero)
+	var no_ocultables: Array = []
+	for s in IDS:
+		var t = P.TRAZADOS[s]
+		for b in t.BLOQUES:
+			if Comun.fino(b) and float(b[4]) >= Comun.ALTO_FINO and String(b[5]) != "puerta" and not Comun.ocultable(b, t.OCULTABLES):
+				no_ocultables.append("%s/%s" % [s, b[0]])
+	_ok(no_ocultables.is_empty(), "8b: los pilares, postes y troncos finos son ocultables %s" % str(no_ocultables))
+	var casos := 0
+	var bien := 0
+	var mal: Array = []
+	for b in P.TRAZADOS["plaza_tapiz"].BLOQUES:
+		if not String(b[0]).begins_with("lonja_p"):
+			continue
+		var c: Vector2 = (b[2] as Rect2).get_center()
+		for dz in [0.6, 1.0, 1.5, 1.9]:                    # Kael al norte del pilar (la cámara está al sur)
+			var k := Vector3(c.x, 0.0, c.y - dz)
+			if not P.andable(k.x, k.z):
+				continue
+			k.y = P.altura(k.x, k.z)
+			var cabeza := k + Vector3(0.0, Comun.ALTO_CABEZA, 0.0)
+			var corta := false
+			for caja in Comun.cajas_bloque(b):
+				corta = corta or (caja as AABB).intersects_segment(P.posicion_camara(k), cabeza)
+			if not corta:
+				continue
+			casos += 1
+			var dice := false
+			for x in P.tapan_a_kael(k):
+				dice = dice or (x[1] == b[0] and x[2])
+			if dice:
+				bien += 1
+			else:
+				mal.append("%s con Kael en %s" % [b[0], str(Vector2(k.x, k.z))])
+	_ok(casos > 0 and bien == casos, "8b: un pilar de la lonja delante de la cabeza de Kael (a menos de %.0f m) cuenta y se aclara (%d de %d casos) %s" % [
+		Comun.FINO_CERCA, bien, casos, str(mal)])
+	# 8c. La SILUETA (el torso y la cabeza, 5 × 3 puntos): donde Kael cabe (plano.holgado), lo que la escena no aclara no
+	# tapa más de SILUETA_MAX (antes, pegado a un pilar o a una jardinera alta, media figura de lado: Barrio Alto)
+	var D = load("res://pruebas/diag_ciudad_silueta.gd")
+	var silueta: Array = []
+	for i in 5:
+		for j in 3:
+			silueta.append(Vector3(-0.25 + i * 0.125, 0.85 + j * 0.3, 0.0))
+	var muestras := 0
+	var peor := 0.0
+	var donde := ""
+	var mitad := 0
+	for k in celdas:
+		if (posmod(k.x, 4) != 0 or posmod(k.y, 4) != 0) and not _borde(k):
+			continue
+		var p := Vector3((k.x + 0.5) * PASO, celdas[k][0], (k.y + 0.5) * PASO)
+		if not P.holgado(p.x, p.z):
+			continue
+		muestras += 1
+		var x: Array = D.tapado(p, silueta)
+		if float(x[0]) >= 0.4:
+			mitad += 1
+		if float(x[0]) > peor:
+			peor = x[0]
+			donde = "%s en %s" % [str(x[1]), str(Vector2(p.x, p.z))]
+	print("SILUETA: %d casillas de muestra donde Kael cabe; en %d la escena deja tapado ≥ 40 %% del torso (lo bajo y ancho delante: carros, la columna de la fuente)" % [
+		muestras, mitad])
+	_ok(muestras > 1000 and peor < SILUETA_MAX, "8c: lo que la escena no aclara no tapa más del %.0f %% del torso de Kael (peor %.0f %%: %s)" % [
+		SILUETA_MAX * 100.0, peor * 100.0, donde])
+	# 8d. El CUERPO de Kael (Comun.RADIO_CUERPO junto a paredes, pilares y jardineras altas) no cierra ningún paso: desde la
+	# Puerta del Sur, por las casillas donde cabe, se llega junto a cada ancla, cada puerta y cada conexión
+	var holgadas := {}
+	for k in celdas:
+		var p := Vector2((k.x + 0.5) * PASO, (k.y + 0.5) * PASO)
+		if P.holgado(p.x, p.y):
+			holgadas[k] = true
+	var inicio := _celda(P.ancla("puerta_sur"))
+	var visto := {inicio: true}
+	var cola: Array = [inicio]
+	while not cola.is_empty():
+		var c0: Vector2i = cola.pop_back()
+		for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			var q: Vector2i = c0 + d
+			if holgadas.has(q) and not visto.has(q) and absf(float(celdas[q][0]) - float(celdas[c0][0])) <= P.SALTO_MAX:
+				visto[q] = true
+				cola.append(q)
+	var sitios: Array = []
+	for id in P.ANCLAS:
+		sitios.append([id, P.ancla(id)])
+	for s in IDS:
+		var t = P.TRAZADOS[s]
+		for id in t.ANCLAS:
+			sitios.append(["%s/%s" % [s, id], t.ancla(id)])
+		for pid in t.PUERTAS:
+			sitios.append(["%s/puerta %s" % [s, pid], t.PUERTAS[pid]["fuera"]])
+	for con in P.CONEXIONES:
+		for lado in ["a", "b"]:
+			sitios.append(["conexión %s (%s)" % [con["id"], lado], P.punto_conexion(con, lado, 1.0)])
+	var lejos: Array = []
+	for x in sitios:
+		var w: Vector3 = x[1]
+		var c1 := _celda(w)
+		var cerca := false
+		for dx in range(-2, 3):
+			for dz in range(-2, 3):
+				cerca = cerca or visto.has(c1 + Vector2i(dx, dz))
+		if not cerca:
+			lejos.append("%s %s" % [x[0], str(Vector2(w.x, w.z))])
+	print("CUERPO: %d de %d casillas andables con sitio para Kael (%.1f %%); %d alcanzables desde la Puerta del Sur" % [
+		holgadas.size(), celdas.size(), 100.0 * holgadas.size() / celdas.size(), visto.size()])
+	_ok(lejos.is_empty() and visto.size() > holgadas.size() * 0.97, "8d: con su cuerpo, Kael llega junto a todas las anclas, puertas y conexiones (%d sitios; sin llegar: %s)" % [
+		sitios.size(), str(lejos)])
+
+
+const SILUETA_MAX := 0.7
 
 
 func _borde(k: Vector2i) -> bool:

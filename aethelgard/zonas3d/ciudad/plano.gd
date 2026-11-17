@@ -166,6 +166,25 @@ static func andable(x: float, z: float) -> bool:
 	return s != "" and TRAZADOS[s].andable(x, z)
 
 
+# (17/11, Redmi) El CUERPO de Kael: cuánto sitio hay en (x, z) hasta la pared, pilar o jardinera alta más cercana
+# (trazado_comun.holgura), de su sector o del de al lado, hasta Comun.RADIO_CUERPO; 0 si no es andable. «holgado»: cabe
+# entero. La escena no deja que Kael se META en la franja (ciudad.gd, _altura_suelo); lo andable del plano no cambia.
+static func holgura(x: float, z: float) -> float:
+	if not andable(x, z):
+		return 0.0
+	var y := altura(x, z)
+	var p := Vector2(x, z)
+	var h := Comun.RADIO_CUERPO
+	for s in ORDEN:
+		if distancia_a_sector(s, p) < Comun.RADIO_CUERPO:
+			h = minf(h, Comun.holgura(TRAZADOS[s].BLOQUES, x, z, y))
+	return h
+
+
+static func holgado(x: float, z: float) -> bool:
+	return holgura(x, z) >= Comun.RADIO_CUERPO - 0.001
+
+
 # La cota de lo que se pisa en (x, z) (fuera de lo andable, la del suelo más cercano de su sector; fuera de la ciudad, 0).
 static func altura(x: float, z: float) -> float:
 	var s := sector_en_caja(x, z)

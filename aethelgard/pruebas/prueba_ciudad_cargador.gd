@@ -14,6 +14,10 @@ extends SceneTree
 #      los dos sentidos, sobre el suelo del plano; lo ocultable que tapa a Kael se aclara («Aclarados» de lejos a cerca,
 #      con la caja de lo aclarado); al volver al inicio, los mismos
 #      sectores montados y los mismos nodos (sin fugas).
+#      (17/11, lo visto en el Redmi) el pilar fino de la lonja se aclara con Kael detrás; tocando pegado al pilar del
+#      pórtico, Kael se para a RADIO_CUERPO de él; tocar detrás de la fuente lleva al otro lado (rodea el pilón) y tocar
+#      dentro de una casa sigue parando ante ella; el rótulo del sector, como mucho 1/4 del ancho de la pantalla; tocar
+#      «Guardar y recargar» para a Kael y, con la recarga en marcha, no se mueve.
 #   D. Fuera del banco la escena no se construye ni se activa; al salir del banco no queda «ciudad_v12»; la carpeta está
 #      APAGADA en recursos.gd y fuera de las APK sin banco.
 # Imprime «FALLOS: n».
@@ -382,6 +386,7 @@ func _escena() -> void:
 	_ok(ps != null and not ps.aclarado("casa_sur_e") and (ps.get_node("Aclarados") as Node3D).visible == (ps.aclarados > 0),
 		"C: y vuelve a opaca al apartarse («Aclarados» se ve solo con algo aclarado en el sector: %d)" % (ps.aclarados if ps != null else -1))
 	await _arreglos_recorrido(ps)
+	await _arreglos_redmi()
 	await _conexiones_andadas()
 	# vuelta al inicio: los mismos sectores y los mismos nodos que la vez anterior que se llegó igual (inicio → Árbol →
 	# inicio, dos veces: la primera deja lo que la histéresis guarde de antes)
@@ -400,6 +405,91 @@ func _escena() -> void:
 	await _frames(6)
 	_ok(c.ids_montados() == montados0 and _nodos() == nodos0, "C: de vuelta al inicio, los mismos sectores (%s) y nodos (%d → %d)" % [
 		str(c.ids_montados()), nodos0, _nodos()])
+
+
+# (17/11, lo visto en el Redmi: docs/v12/REDMI_16_11.md y RECORRIDO.md §8) el pilar fino de la lonja se aclara, Kael no
+# se mete pegado a un pilar, rodea la fuente al tocar detrás de ella, el rótulo del sector no ocupa más de la cuarta
+# parte del ancho de la pantalla y «Guardar y recargar» para a Kael al tocarlo.
+func _andar(desde: Vector3, hasta: Vector3, max_frames := 600) -> Vector3:
+	v._colocar_kael(desde)
+	await _frames(3)
+	v.destino = v._ajustar_destino(hasta)
+	for f in max_frames:
+		await process_frame
+		if v.destino == null:
+			break
+	await _frames(2)
+	return v.kael.global_position
+
+
+func _arreglos_redmi() -> void:
+	var c = v.cargador
+	# 1. la lonja: Kael justo detrás (al norte) del pilar lonja_p4 (0,5 × 0,5 m): el pilar se aclara
+	v._colocar_kael(Vector3(8.25, 2.0, 22.0))
+	await _frames(3)
+	var ps = c.montados.get("plaza_tapiz")
+	_ok(ps != null and ps.aclarado("lonja_p4"), "C: Redmi: el pilar fino de la lonja delante de Kael se aclara")
+	# 2. el cuerpo: tocando junto al pilar del pórtico de las Raíces, Kael se para a RADIO_CUERPO de él (no se mete dentro)
+	var k := await _andar(Vector3(0.0, 16.0, -82.0), Vector3(4.4, 16.0, -80.0))
+	var pilar := Rect2(4.5, -80.5, 1.0, 1.0)
+	var d := Comun.distancia_planta(pilar, Vector2(k.x, k.z))
+	_ok(d >= Comun.RADIO_CUERPO - 0.02 and Vector2(k.x - 0.0, k.z + 82.0).length() > 3.0,
+		"C: Redmi: tocando pegado al pilar del pórtico, Kael anda y se para a %.2f m de él (≥ %.2f)" % [d, Comun.RADIO_CUERPO])
+	# 3. la fuente: de la plaza baja (Calle Mayor) a la Calle del Árbol tocando detrás del pilón: lo rodea y llega
+	var meta := Vector3(0.0, 4.0, -13.5)
+	var destino = null
+	v._colocar_kael(Vector3(0.0, 2.0, 28.0))
+	await _frames(3)
+	destino = v._ajustar_destino(meta)
+	_ok(destino != null and Vector2(destino.x - meta.x, destino.z - meta.z).length() < 0.2,
+		"C: Redmi: tocar detrás de la fuente pone el destino detrás de ella (%s), no ante el pilón" % str(destino))
+	k = await _andar(Vector3(0.0, 2.0, 28.0), meta, 900)
+	_ok(Vector2(k.x - meta.x, k.z - meta.z).length() < 0.6, "C: Redmi: y Kael rodea el pilón y llega (a %.2f m)" % Vector2(k.x - meta.x, k.z - meta.z).length())
+	k = await _andar(Vector3(9.0, 4.0, 0.0), Vector3(-9.0, 4.0, 0.0), 900)
+	_ok(Vector2(k.x + 9.0, k.z).length() < 0.6, "C: Redmi: también de este a oeste (a %.2f m)" % Vector2(k.x + 9.0, k.z).length())
+	# tras una pared larga (un toque que no se puede rodear), se para como antes, sin dar vueltas
+	v._colocar_kael(Vector3(0.0, 2.0, 20.0))
+	await _frames(3)
+	destino = v._ajustar_destino(Vector3(15.0, 2.0, 35.0))          # dentro de la casa del sur de la plaza baja
+	var tras = null
+	if destino != null:
+		tras = (destino as Vector3) + Vector3(15.0, 0.0, 15.0).normalized() * 0.8
+	_ok(destino != null and P.andable(destino.x, destino.z) and P.trazado("plaza_tapiz").bloque_en(tras.x, tras.z) == "casa_sur_e",
+		"C: Redmi: tocar dentro de una casa sigue dando el último punto andable de la recta, ante ella (%s)" % str(destino))
+	# 4. el rótulo del sector: dibujado, como mucho la cuarta parte del ancho del cuadro (con su ancho de verdad)
+	v._colocar_kael(P.ancla("ref_barrio_alto"))
+	await _frames(4)
+	var S = load("res://zonas3d/ciudad/sector.gd")
+	var ancho_por_metro := 2.0 * tan(deg_to_rad(P.CAMPO) * 0.5) * 16.0 / 9.0
+	var mal: Array = []
+	var vistos := 0
+	for s in c.montados:
+		var l := (c.montados[s] as Node).get_node_or_null("Rotulo_sector") as Label3D
+		if l == null:
+			continue
+		vistos += 1
+		var ancho := l.get_aabb().size.x
+		var desde_d := l.visibility_range_begin - l.visibility_range_begin_margin
+		var parte := ancho / (ancho_por_metro * desde_d)
+		if parte > 0.26 or ancho > S.ancho_rotulo(l.text, l.font_size) + 0.05:
+			mal.append("%s: %.2f m de ancho (calculado %.2f), desde %.1f m: %.0f %%" % [s, ancho, S.ancho_rotulo(l.text, l.font_size), desde_d, parte * 100.0])
+	_ok(vistos > 0 and mal.is_empty(), "C: Redmi: el rótulo del sector se dibuja solo desde donde ocupa ≤ 25 %% del ancho (%d vistos) %s" % [vistos, str(mal)])
+	# 5. «Guardar y recargar»: tocar el botón para a Kael; con la recarga en marcha, Kael no se mueve
+	v._colocar_kael(Vector3(0.0, 2.0, 28.0))
+	await _frames(3)
+	v.destino = v._ajustar_destino(Vector3(0.0, 2.0, 12.0))
+	await _frames(4)
+	v.boton_recargar.button_down.emit()
+	var k1: Vector3 = v.kael.global_position
+	await _frames(4)
+	_ok(v.destino == null and v.kael.global_position.distance_to(k1) < 0.001,
+		"C: Redmi: al tocar «Guardar y recargar», Kael se para donde está (para guardar ahí)")
+	v.destino = v._ajustar_destino(Vector3(0.0, 2.0, 12.0))
+	v._recargando = true
+	await _frames(4)
+	_ok(v.kael.global_position.distance_to(k1) < 0.001, "C: Redmi: y con la recarga en marcha no se mueve")
+	v._recargando = false
+	v.destino = null
 
 
 # Cada conexión, andada con «destino» (como un toque) de 3 m a un lado a 3 m al otro, y de vuelta.
