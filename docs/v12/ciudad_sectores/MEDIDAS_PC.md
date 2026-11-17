@@ -298,7 +298,7 @@ límite de sectores.
 | Bajo 0,75 · andando (175 s, 10 conexiones): mediana · **p95** · máx | 52 · **79** · 98 | 36 · **41** · 44 |
 | Bajo 0,75 · vistas del barrido (184) con más de 65 | 32 | **0** |
 | Bajo 0,75 · primitivas máx (andando) | 71 682 | 72 470 (≤ 160 mil) |
-| Bajo 0,75 · sin tope: real / proceso / dibujo CPU / GPU (medias de los 12 puntos) | 3,82 / 1,19 / 1,15 / 0,61 ms | 3,31 / 1,01 / 0,91 / 0,53 ms |
+| Bajo 0,75 · sin tope: real / proceso / dibujo CPU / GPU (medias de los 12 puntos; **repetido el 16/11 a las 18:00 con el PC sin carga**, §6.8) | 3,60 / 1,16 / 1,07 / 0,53 ms | 3,29 / 1,02 / 0,91 / 0,52 ms |
 | **Bajo 1,0** (resolución completa) · llamadas | iguales al bajo 0,75 | iguales al bajo 0,75 (33-44; andando p95 41, máx 44; 0 de 184 por encima) |
 | Bajo 1,0 · sin tope: real / GPU (medias) | 5,02 / 0,79 ms (pasada con el PC ocupado) | 3,39 / 0,51 ms |
 | **Medio** · referencias | 73 · 63 · 69 · 63 · 107 · 84 · 57 · 64 | 55 · 54 · 55 · 54 · 67 · 61 · 46 · 55 |
@@ -310,6 +310,10 @@ límite de sectores.
 | Alto · andando: mediana · p95 · máx · primitivas máx | 106 · 168 · 187 · 207 388 | 66 · 83 · 91 · 213 820 |
 | Alto · vistas con más de 65 | 175 de 184 | 81 de 184 |
 
+- **Los ms del PC apenas cambian**: sin tope, el fotograma real baja un 6-9 % (3,49-3,60 → 3,29-3,31 ms según la pasada),
+  casi todo de CPU (proceso y dibujo CPU); la **GPU del PC no mejora** (0,50-0,53 → 0,52). La primera línea base de esta
+  tabla (3,82 / 1,19 / 1,15 / 0,61) se midió con el PC ocupado y exageraba la mejora (13 %); se sustituyó (§6.8). Lo que
+  importa para el Mali son las llamadas, y esas sí bajan a la mitad.
 - **El bajo cumple el presupuesto del plan en el PC**: ≤ 65 llamadas en todas las vistas del barrido, andando (p95 41,
   máx 44) y en las referencias; primitivas 64-72 mil (≤ 160 mil). Quedan ≈ 20 llamadas de margen para los modelos.
 - Las **primitivas suben un poco** (+1 a +6 mil): la malla fundida se dibuja entera (las piezas quitadas cuentan como
@@ -325,11 +329,15 @@ límite de sectores.
 
 | | Antes | (3) datos en hilo | (3) + choques repartidos y rótulos al hacer falta (final) |
 |---|---|---|---|
-| Proceso en el fotograma del montaje (14 montajes) | **5,6-8,3 ms** | 2,6-4,0 ms | **2,1-3,5 ms** |
-| Los 5 fotogramas siguientes (proceso máx) | — | — | 1,4-2,3 ms |
+| Proceso en el fotograma del montaje (14 montajes) | **5,5-8,3 ms** | 2,6-4,0 ms | **2,1-4,3 ms** (según la pasada) |
+| Los 5 fotogramas siguientes (proceso máx) | 1,2-2,3 ms | — | 1,3-2,8 ms |
 | Fotograma real con el tope de 30 | 37-41 ms | 34-37 ms | 34-36 ms |
-| Proceso máximo andando (175 s) | 8,3 ms | 4,0 ms | 3,5 ms |
+| Proceso máximo andando (175 s) | 8,2-8,3 ms | 4,0 ms | 3,5-5,2 ms |
 | Esperas del cargador | 0 | 0 | 0 |
+
+- Rangos de **varias pasadas** del bajo 0,75 (autor, revisión y ajustes, §6.8): el montaje dio 2,1-3,5, 2,1-4,3 (revisión:
+  oficios 4,3) y 2,2-2,8 ms; el bajo 1,0, 2,0-3,7. El proceso máximo andando (3,5-5,2 ms) no cae en un montaje ni en un
+  cruce (sus fotogramas dan como mucho 2,8-2,9): es ruido del PC. Antes, el máximo era el de un montaje (8,2).
 
 - En el fotograma de un montaje suele haber también un desmontaje (en el bajo, el límite de 3): esos 2-3 ms son la suma.
 - Lo que se fue al hilo: `preparar_datos` = **1,7-3,0 ms por sector** (las mallas vértice a vértice en GDScript). Lo que
@@ -338,6 +346,9 @@ límite de sectores.
   distinguía del ruido; en un banco controlado (12 repeticiones por sector, sin ventana) montar pasó de 2,1-2,8 a
   1,7-2,4 ms y desmontar de 0,9-1,4 a 0,7-1,1 ms; las pasadas finales limpias dan 2,1-3,0 ms (`despues\bajo075_2`) y
   2,1-3,5 ms (`final\bajo075`, con el código final). Se conserva.
+- **Revisión**: el reparto dejaba sin cuerpo, 1-4 fotogramas, las paredes de un vecino que se monta con Kael pegado a él
+  (cruce del bajo, o Kael colocado junto a un borde). Desde `area-ciudad-optimiza-2`, un sector montado a menos de
+  `RADIO_INMEDIATO` (6 m) recibe todos sus choques ya (§6.8); los que se montan de lejos siguen repartidos.
 - **Choques en un solo cuerpo compuesto**: NO se probó: en la muestra no mejoró y aquí los choques ya no van todos en el
   fotograma del montaje.
 - Medio 2,1-4,0 ms y alto 2,0-3,0 ms en el fotograma del montaje (antes, máx 8,1 y 8,8).
@@ -353,8 +364,12 @@ al Arco · 5 Caravanas (la vista con más llamadas antes) · 6 Paso Cubierto de 
 - **Mismas piezas aclaradas** en los 7 sitios y en los 3 perfiles (p. ej. sitio 6: `casa_bajo_e`,
   `cubierta_escalerilla`, `tapia_escalerilla_e`).
 - Píxeles que cambian más de 8/255: **0,0-0,9 %** en todos los sitios y perfiles. En las imágenes de diferencias son
-  **Lya, Garon y Kael** (la animación de reposo no está en la misma fase) y sus sombras en medio y alto. **La ciudad, el
-  aclarado y las sombras de los bloques salen idénticos** (el paso 1 comparado solo: igual).
+  **Lya, Garon y Kael** (la animación de reposo no está en la misma fase) y sus sombras en medio y alto. ~~La ciudad, el
+  aclarado y las sombras de los bloques salen idénticos~~ **Corregido en la revisión (§6.8)**: los sitios 1, 3 y 7 no
+  eran andables y ninguna captura caía en un **solape de dos piezas aclaradas**; donde lo hay (la Plaza con la casa del
+  sur y la hoja de la Lonja; la Rampa de los Carros con 5 aclaradas) «Aclarados», al ser una malla, las pintaba en el
+  orden de BLOQUES y no de lejos a cerca: la hoja salía más oscura y opaca (1,3 % de los píxeles en medio y alto).
+  Arreglado en `area-ciudad-optimiza-2` (§6.8): ahora sí salen iguales.
 - Dos cambios a la vista, los dos de los rótulos en el bajo: los «(en obras)» lejanos ya no se ven (paso 2, a propósito);
   y un rótulo cercano detrás de una pieza aclarada se ve por delante de ella (ahora «Aclarados» se ordena como una sola
   malla del sector): el texto se lee mejor y la pieza queda igual de clara.
@@ -395,3 +410,67 @@ al Arco · 5 Caravanas (la vista con más llamadas antes) · 6 Paso Cubierto de 
   (`despues\bajo075`) salió más lenta en todo y se repitió (`despues\bajo075_2` y `final\bajo075`, las de las tablas).
 - `prueba_banco_pruebas` salió una vez con el código de salida −1073741819 (cierre) tras «FALLOS: 0»; no carga la ciudad
   y en las 4 pasadas siguientes fue superada: se anota como cierre inestable ajeno a este cambio.
+
+### 6.8 Ajustes tras la revisión independiente (rama `area-ciudad-optimiza-2`, desde `945c321`)
+
+> **Medido en el PC. El Redmi está SIN MEDIR.** Mismo PC, Godot y ventana que §6.1; perfil fijado con `calidad_proto`
+> (**regulador NO activo**): bajo **0,75 fija**, bajo **1,0 fija** (resolución completa), medio 0,8 fija, alto 1,0 fija
+> con MSAA 2×. Las cifras del bajo 0,75 no son calidad completa.
+
+- **Fecha**: 16/11/2026, de 17:40 a 19:40 (capturas, medidas, recorridos); 17/11, de 22:40 a 23:00 (repetición de
+  visibilidad y «romper», y «romper» con `945c321` y con `2afc6ed`; pruebas). Antes de cada lanzamiento, `tasklist` sin otro Godot ni Blender (el lanzador
+  espera si los hay). Textos y capturas: `D:\REBELUM_diagnostico\ciudad_oakhaven\optimizacion\area-ciudad-optimiza-2\`
+  (`medir\`, `fotos\`, `recorrido_*`, `visibilidad\`, `romper\`). «Antes» = `sector.gd` y `cargador.gd` de `2afc6ed`
+  (una malla por ocultable) con las mismas herramientas; «sin orden» = `945c321`.
+
+| Problema de la revisión | Qué se hizo | Estado |
+|---|---|---|
+| Choques repartidos en un vecino que se monta con Kael pegado a él (1-4 fotogramas sin cuerpo en la linde) | **Reproducido** con la prueba nueva (bajo, Kael colocado en cada una de las 12 conexiones: 6+ vecinos a 0,0 m sin sus choques; andando, `plaza_tapiz` a 0,4 y 0,9 m). `cargador.gd`: `RADIO_INMEDIATO` = 6 m; un sector montado a menos de eso recibe todos sus choques al montarse o en cuanto se acerca. Los montados de lejos siguen repartidos. | **Arreglado** (prueba: 0 casos; montaje 2,2-2,8 ms, igual que antes del arreglo) |
+| «Aclarados» no se pintaba de lejos a cerca (Plaza: hoja de la Lonja tras la casa del sur; Rampa de los Carros) | **Reproducido** en capturas (sitio 3, Plaza: 1,33 % de píxeles cambian frente a antes en medio y alto, la hoja más oscura y opaca; sitio 8, Rampa: una franja). Dos arreglos, los dos sin coste al jugar: (1) `sector.gd`, `preparar_datos`: las piezas de «Aclarados» se meten de mayor a menor profundidad por la cámara fija (`MIRA_CAMARA`, 25° sin giro), sin tocar su índice en UV2; (2) `_caja_claros`: la caja de «Aclarados» (`custom_aabb`) es la de lo aclarado, porque Godot ordena entre sectores por el centro de esa caja (la Rampa mezcla Puerta del Sur y Ribera). | **Arreglado** (ver tabla de capturas) |
+| Los ms «sin tope» del antes no se reproducían (3,82 → 3,31 ms, 13 %) | Repetida la línea base con el PC sin carga y el mismo `medir_ciudad.gd`: antes 3,60 / 1,16 / 1,07 / 0,53 → después 3,29 / 1,02 / 0,91 / 0,52 ms (real / proceso / dibujo CPU / GPU, medias de 12 puntos). Mejora del 9 % (la revisión midió 6 %), casi toda de CPU; GPU del PC igual. §6.2 corregida. | **Corregido** (documentación) |
+| Tirones del montaje algo peores que lo declarado en el bajo 0,75 | Esta pasada: montaje 2,2-2,8 ms, 5 siguientes 1,3-2,0, proceso máx andando 5,2 ms (no es un montaje ni un cruce). §6.3 da ya los rangos de varias pasadas (2,1-4,3 ms). | **Documentado** |
+| Sitios 1, 3 y 7 de `fotos_ciudad_optimiza.gd` no andables | Corregidos a lo andable más cercano (0,8 / 2,75 / 0,8 m: (−60; −70,3), (15; 26,85), (9,7; −3,8)); la herramienta avisa y recoloca si un sitio no lo es. Añadidos el 8 (Rampa de los Carros, 5 aclaradas) y el 9 (toldo del puesto de la Plaza). | **Arreglado** (herramienta) |
+| Las herramientas comprueban `aclarado(id)` y no lo que se dibuja | Se mantienen las capturas antes/después como parte de la verificación (esta sección). `prueba_ciudad_cargador` comprueba además el orden de «Aclarados» y su caja. | **Anotado** |
+
+**Capturas** (9 sitios, 1600×720, mismas cámaras; píxeles que cambian más de 8/255 frente a «antes»):
+
+| Sitio | Bajo 0,75: sin orden → final | Medio: sin orden → final | Alto: sin orden → final |
+|---|---|---|---|
+| 3 Plaza, casa del sur y hoja de la Lonja aclaradas | 0,45 → 0,29 % | **1,33 → 0,18 %** | **1,32 → 0,00 %** |
+| 8 Rampa de los Carros (5 aclaradas, 2 sectores) | 1,33 → 0,92 % | **1,33 → 0,44 %** | **1,33 → 0,72 %** |
+| Los otros 7 | 0,02-0,56 → 0,02-0,64 % | 0,00-0,83 → 0,00-0,62 % | 0,03-0,69 → 0,03-0,76 % |
+
+- En las imágenes de diferencias del final solo quedan **Lya, Garon y Kael** (la fase de la animación de reposo) y sus
+  sombras, y en el bajo los rótulos (los «(en obras)» lejanos ocultos a propósito, §6.1). La hoja de la Plaza y la franja
+  de la Rampa desaparecen. Con solo el paso (1) la Plaza bajaba a 0,26 % (medio) y 0,33 % (alto) y en la Rampa quedaba
+  una cuña fina: el paso (2) la quita. Las mismas piezas aclaradas en los 9 sitios y los 3 perfiles, y las mismas
+  llamadas que en §6.2 (p. ej. sitio 5 bajo: 90 → 33).
+- Queda una diferencia que no es de orden: un rótulo cercano detrás de una pieza aclarada se ve por delante de ella en
+  algunos sitios (§6.4, ya anotado).
+
+**Medidas finales** (código final, mismas pasadas que §6.2):
+
+| | Bajo 0,75 | Bajo 1,0 | Medio | Alto |
+|---|---|---|---|---|
+| Referencias de los 8 sectores (llamadas) | 41 · 34 · 39 · 36 · 37 · 38 · 32 · 38 | iguales | 55 · 54 · 55 · 54 · 67 · 61 · 45 · 55 | 64 · 63 · 64 · 62 · 78 · 70 · 54 · 64 |
+| 4 vistas más cargadas | 44 · 43 · 41 · 41 | iguales | 78 · 75 · 72 · 70 | 88 · 84 · 82 · 81 |
+| Andando: mediana · p95 · máx · primitivas máx | 36 · 41 · 44 · 72 470 | iguales | 56 · 72 · 81 · 150 866 | 66 · 83 · 90 · 213 820 |
+| Vistas del barrido con más de 65 | 0 de 184 | 0 | 29 | 80 |
+| Sin tope: real / proceso / CPU / GPU (ms) | 3,29 / 1,02 / 0,91 / 0,52 | 3,31 / 1,02 / 0,90 / 0,49 | 3,46 / 0,99 / 1,08 / 0,67 | 3,35 / 0,93 / 1,07 / 0,84 |
+| Montaje (proceso en su fotograma) · 5 siguientes | 2,2-2,8 · 1,3-2,0 ms | 2,0-3,7 · 1,3-2,4 | 2,2-3,1 · 1,3-2,0 | 2,3-3,0 · 1,2-1,6 |
+| Esperas del cargador | 0 | 0 | 0 | 0 |
+| Memoria en la ciudad (estática · vídeo) | 166,9 · 60,0 MB | 166,9 · 63,1 | — | — |
+
+- Sin ningún AVISO de ventana sin dibujar en las 5 pasadas. Alto con tope: el fotograma con el tope de 60 sigue saliendo a
+  27 ms (§6.7: es el PC); sin tope, 3,35 ms.
+
+**Que todo sigue funcionando** (código final; perfil bajo 0,75, `--fixed-fps 30`, con ventana; `tasklist` limpio antes
+de cada una):
+
+| Comprobación | Resultado |
+|---|---|
+| `recorrido_ciudad.gd` 1600×720 | **430 tramos, 0 fallos** (los 2 roces del grupo de siempre, RECORRIDO.md §7 problema 11) |
+| `recorrido_ciudad.gd` 1280×720 | **430 tramos, 0 fallos** (igual) |
+| `diag_ciudad_visibilidad.gd` 1600×720 | **438 tramos, 0 fallos, 0 casos** (ninguna clave, 0 parpadeos, cámara sin saltos) — `visibilidad_2\`. La primera pasada (`visibilidad\`, 16/11) dio 0 casos pero 3 «no llega» con la ventana minimizada a mitad («la ventana estaba minimizada: se restaura», atasco de 1 s); repetida sin tocar la ventana, 0 |
+| `diag_ciudad_romper.gd` 1600×720 | Teclas contra paredes y en escaleras, clics rápidos, arrastre, salidas, ciclos banco/CAL/recarga: **sin fallos**; vigía del cargador: el sector de Kael siempre montado, nunca más de 3, sin errores. Quedan **3 fallos de «Guardar y recargar» que NO son de este cambio**: salen iguales con `945c321` (`romper_autor\`, 3) y con `2afc6ed` (`romper_antes\`, 4): al recargar, Kael reaparece 0,3-0,4 m al otro lado de la linde del Paso de la Botica o de la Calle del Cuervo (cuenta como otro sector) y, recargando andando, 1,0 m más allá. Pendiente aparte (guardado/colocación, no el cargador) |
+| Pruebas (`-Solo prueba_ciudad_plano,prueba_ciudad_cargador,prueba_banco_pruebas`) | **SUPERADAS 3 · FALLIDAS 0** (`D:\REBELUM_diagnostico\pruebas\2026-11-17_225529`; plano 64 OK, cargador 106 OK con las nuevas: choques a menos de 6 m en A y en las 12 conexiones, orden y caja de «Aclarados»; partida real, carpeta real y proyecto sin cambios) |
