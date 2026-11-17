@@ -64,6 +64,13 @@ func _preparar_cara() -> void:
 		if k != "reflejo":
 			mat_cara_v3.set_shader_parameter(k, LUZ[nombre_heroe][k])
 	mat_cara_v3.set_shader_parameter("brillo_ojos", BRILLO_OJOS.get(nombre_heroe, 0.18))
+	# (17/11, docs/v12/MATERIAL_NULL_17_11.md) El ayudante v2 de antes de cambiar_ayudante no encontró «cara_v2» y le
+	# puso a la cara v3 un material por superficie (heroe_v2_ayudante._materiales) que no se ve: lo tapa el
+	# material_override. Con los dos a la vez, Godot 4.7.2 (godotengine/godot#85817) no apunta el de superficie y, al
+	# liberar al héroe, ese material muere antes que la instancia de render: 4 errores «Parameter "material" is null»
+	# por héroe (los 12 del Redmi al acabar la fase de sombreadores de la carga). Se quita: lo que se ve no cambia.
+	for s in cara.get_surface_override_material_count():
+		cara.set_surface_override_material(s, null)
 	cara.material_override = mat_cara_v3
 	cara.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	for i in 3:
