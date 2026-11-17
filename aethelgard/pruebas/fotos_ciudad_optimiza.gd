@@ -14,15 +14,20 @@ extends SceneTree
 const ESCENA := "res://zonas3d/ciudad/ciudad.tscn"
 const P := preload("res://zonas3d/ciudad/plano.gd")
 const Blockout := preload("res://zonas3d/ciudad/blockout.gd")
-# [nombre, x, z]: Kael en el suelo del plano en (x, z).
+# [nombre, x, z]: Kael en el suelo del plano en (x, z), que ha de ser ANDABLE (P.andable; si no, se avisa y se le pone en
+# lo andable más cercano). (Revisión del 16/11: 1, 3 y 7 no lo eran; corregidos a lo andable más cercano, 0,8-2,75 m. El 3
+# es el solape de dos aclaradas de la Plaza y el 8, la Rampa de los Carros con 5 aclaradas: comprueban el orden de lejos
+# a cerca de «Aclarados», sector.gd.)
 const SITIOS := [
-	["1_terrazas_bajo_alero_tejadillo_lavadero", -60.0, -69.5],
+	["1_terrazas_bajo_alero_tejadillo_lavadero", -60.0, -70.3],
 	["2_terrazas_paso_bajo_casa_puente", -63.0, -51.0],
-	["3_plaza_casa_sur_aclarada", 15.0, 29.6],
+	["3_plaza_casa_sur_aclarada", 15.0, 26.85],
 	["4_pasajes_junto_al_arco", -39.9, 80.1],
 	["5_caravanas_terraza_mas_llamadas", -25.3, 83.5],
 	["6_pasajes_paso_de_la_botica", -31.9, 56.1],
-	["7_plaza_bajo_toldo_flores", 9.7, -3.0],
+	["7_plaza_bajo_toldo_flores", 9.7, -3.8],
+	["8_rampa_de_los_carros", 44.0, 79.0],
+	["9_plaza_toldo_puesto", -10.8, 15.6],
 ]
 
 var perfil := "bajo"
@@ -103,6 +108,17 @@ func _fotos() -> void:
 		Time.get_datetime_string_from_system()])
 	for s in SITIOS:
 		var p := Vector3(s[1], 0.0, s[2])
+		if not P.andable(p.x, p.z):
+			var mejor := p
+			var dm := INF
+			for ix in range(-12, 13):
+				for iz in range(-12, 13):
+					var q := p + Vector3(ix * 0.25, 0.0, iz * 0.25)
+					if P.andable(q.x, q.z) and p.distance_to(q) < dm:
+						dm = p.distance_to(q)
+						mejor = q
+			_nota("AVISO: %s no es andable; Kael en %s (corrige SITIOS)" % [s[0], str(mejor)])
+			p = mejor
 		p.y = P.altura(p.x, p.z)
 		v.destino = null
 		v._colocar_kael(p)

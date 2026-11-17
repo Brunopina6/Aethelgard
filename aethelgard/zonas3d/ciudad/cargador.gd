@@ -18,7 +18,8 @@ extends Node3D
 # Optimización del 16/11 (docs/v12/ciudad_sectores/MEDIDAS_PC.md §6): a la vez que se pide la escena en hilo, sus mallas
 # y su lista de choques se preparan en otro hilo (WorkerThreadPool, sector.gd preparar_datos); el sector cuenta como
 # «cargado» cuando están las dos cosas; en el fotograma del montaje solo se crean los nodos (y, salvo en el
-# sector de Kael, los choques se reparten en unos fotogramas: sector.gd, inmediato). En el bajo, los rótulos de los
+# sector de Kael y en los que están a menos de RADIO_INMEDIATO de él, los choques se reparten en unos fotogramas:
+# sector.gd, inmediato). En el bajo, los rótulos de los
 # sectores montados solo cerca de Kael (sector.gd, rotulos_cerca). (Tarea de prioridad alta: dura 2-4 ms en el PC; con
 # prioridad baja, con el PC ocupado, la prueba B la vio sin terminar en 60 fotogramas.)
 
@@ -33,6 +34,11 @@ const RADIO_PRECARGA := 40.0
 const RADIO_MONTAJE := 25.0
 const RADIO_DESCARGA := 60.0
 const MARGEN_CAMBIO := 5.0
+# (16/11, revisión) un sector montado a menos de esto de Kael recibe TODOS sus choques en el montaje (y, si se acerca,
+# en cuanto lo está), no repartidos: en un cruce del bajo, o con Kael colocado junto a un borde, el vecino entraba con
+# Kael a menos de 1 m y sus paredes de la linde pasaban 1-4 fotogramas sin cuerpo (se podían cruzar y un toque las
+# atravesaba). Los que se montan de lejos (lo normal, a RADIO_MONTAJE) siguen repartidos.
+const RADIO_INMEDIATO := 6.0
 const MAXIMO := {"bajo": 3, "medio": 5, "alto": 8}
 const ALTO_LEJANA := 1.5                   # en la maqueta lejana, solo los bloques de al menos este alto (y los suelos)
 const RUTA := "res://zonas3d/ciudad/sectores/%s/sector.tscn"
@@ -121,8 +127,9 @@ func actualizar(p: Vector3, _forzar := false) -> void:
 			estado[id] = "lejos"
 	for id in lejanas:
 		(lejanas[id] as Node3D).visible = not montados.has(id)
-	if montados.has(actual):                            # (el sector de Kael, con todos sus choques ya)
-		(montados[actual] as Node).terminar_choques()
+	for id in montados:                                 # (el sector de Kael y los que tiene pegados: todos sus choques ya)
+		if id == actual or float(distancias[id]) < RADIO_INMEDIATO:
+			(montados[id] as Node).terminar_choques()
 	if perfil in ROTULOS_CERCA:
 		for id in montados:
 			(montados[id] as Node).rotulos_cerca(p, id == actual)
@@ -215,7 +222,7 @@ func _montar(id: String) -> void:
 	var s: Node3D = (escenas[id] as PackedScene).instantiate()
 	s.datos = datos.get(id)
 	s.solo_cerca = perfil in ROTULOS_CERCA
-	s.inmediato = id == actual                  # (los demás, sus choques repartidos en unos fotogramas: sector.gd)
+	s.inmediato = id == actual or float(distancias.get(id, INF)) < RADIO_INMEDIATO   # (los demás: repartidos, sector.gd)
 	add_child(s)
 	montados[id] = s
 	montajes += 1

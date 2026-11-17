@@ -6,11 +6,13 @@ extends SceneTree
 #      desmonta a menos de RADIO_DESCARGA salvo por el límite; solo se piden rutas sectores/<id>/sector.tscn (nunca
 #      interiores); al final, todo desmontado y el número de nodos vuelve al de antes (sin fugas).
 #   B. Histéresis (alto): precarga en hilo a 40 m sin montar; monta a 25; sigue montado a 45; se desmonta a 65 y suelta su
-#      escena. Límite: en el bajo, nunca más de 3, también en la plaza (5 vecinos).
+#      escena. Límite: en el bajo, nunca más de 3, también en la plaza (5 vecinos). Con Kael colocado en cada conexión
+#      (bajo), los sectores montados a menos de RADIO_INMEDIATO tienen todos sus choques al montarse (también en A).
 #   C. La escena en el banco: se activa (ciudad_v12), Kael en la Puerta del Sur con su sector montado (blockout y choques),
 #      la maqueta lejana de los no montados, API de región, guardar en el lugar 103; las puertas dicen «en obras» y la
 #      Puerta del Sur no saca de la ciudad; cada CONEXIÓN se anda con los controles normales («destino», como un toque) en
-#      los dos sentidos, sobre el suelo del plano; lo ocultable que tapa a Kael se aclara; al volver al inicio, los mismos
+#      los dos sentidos, sobre el suelo del plano; lo ocultable que tapa a Kael se aclara («Aclarados» de lejos a cerca,
+#      con la caja de lo aclarado); al volver al inicio, los mismos
 #      sectores montados y los mismos nodos (sin fugas).
 #   D. Fuera del banco la escena no se construye ni se activa; al salir del banco no queda «ciudad_v12»; la carpeta está
 #      APAGADA en recursos.gd y fuera de las APK sin banco.
@@ -86,6 +88,36 @@ func _frames(n: int) -> void:
 		await process_frame
 
 
+# Las piezas de la malla «Aclarados» de un sector (UV2.x = índice + 1, en el orden de sus vértices) van de mayor a menor
+# profundidad según la cámara (sector.gd, MIRA_CAMARA).
+func _orden_aclarados(id: String) -> bool:
+	var S = load("res://zonas3d/ciudad/sector.gd")
+	var d: Dictionary = S.preparar_datos(id)
+	var uv2: PackedVector2Array = (d["claro"] as Array)[Mesh.ARRAY_TEX_UV2]
+	var prof := INF
+	var ultimo := -1
+	var vistos := 0
+	for q in uv2:
+		var i := int(q.x + 0.5) - 1
+		if i == ultimo:
+			continue
+		ultimo = i
+		vistos += 1
+		var cajas: Array = d["ocultables"][i][1]
+		var todo: AABB = cajas[0]
+		for c in cajas:
+			todo = todo.merge(c)
+		var p: float = todo.get_center().dot(S.MIRA_CAMARA)
+		if p > prof + 0.0001:
+			return false
+		prof = p
+	return vistos == (d["ocultables"] as Array).size()
+
+
+func _radio_inmediato() -> float:
+	return float((Cargador as GDScript).get_script_constant_map().get("RADIO_INMEDIATO", 6.0))
+
+
 func _nodos() -> int:
 	return int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
 
@@ -132,6 +164,7 @@ func _recorrido_solo(perfil: String) -> void:
 	var vistos := {}
 	var max_montados := 0
 	var cerca_desmontados: Array = []              # (los que se desmontan a menos de RADIO_DESCARGA en esta actualización)
+	var sin_choques: Array = []
 	var desmontado := func(id: String):
 		if float(c.distancias[id]) <= Cargador.RADIO_DESCARGA:
 			cerca_desmontados.append("%s a %.1f m" % [id, c.distancias[id]])
@@ -141,6 +174,9 @@ func _recorrido_solo(perfil: String) -> void:
 		c.actualizar(p)
 		if not cerca_desmontados.is_empty() and c.montados.size() < maximo:   # (solo vale si era para dejar sitio)
 			desmontes_malos.append("%s con %d montados" % [str(cerca_desmontados), c.montados.size()])
+		for id in c.montados:                          # (lo que Kael tiene pegado, con todos sus choques ya)
+			if float(c.distancias[id]) < _radio_inmediato() and not (c.montados[id] as Node).choques_completos():
+				sin_choques.append("%s a %.1f m" % [id, c.distancias[id]])
 		await process_frame
 		max_montados = maxi(max_montados, c.montados.size())
 		for id in c.montados:
@@ -156,6 +192,8 @@ func _recorrido_solo(perfil: String) -> void:
 		perfil, maximo, Cargador.RADIO_DESCARGA, str(mal.slice(0, 6))])
 	_ok(desmontes_malos.is_empty(), "A (%s): nada se desmonta a menos de %.0f m salvo por el límite %s" % [
 		perfil, Cargador.RADIO_DESCARGA, str(desmontes_malos.slice(0, 6))])
+	_ok(sin_choques.is_empty(), "A (%s): los sectores montados a menos de %.0f m de Kael tienen todos sus choques %s" % [
+		perfil, _radio_inmediato(), str(sin_choques.slice(0, 6))])
 	_ok(vistos.size() == 8, "A (%s): la ruta monta los 8 sectores (%s); como mucho %d a la vez" % [perfil, str(vistos.keys()), max_montados])
 	if perfil == "alto":
 		_ok(max_montados >= 4, "A (alto): con el perfil alto llega a haber %d montados a la vez" % max_montados)
@@ -215,6 +253,39 @@ func _histeresis() -> void:
 	_ok(peor <= 3, "B: en el bajo, por toda la plaza, como mucho %d montados (máx. 3) y siempre el de Kael" % peor)
 	b.desmontar_todo()
 	b.free()
+	await _frames(3)
+	await _choques_en_la_linde()
+
+
+# (16/11, revisión) los choques de un sector montado con Kael pegado a él no se reparten: con Kael colocado en cada
+# conexión (la linde de dos sectores), en el bajo, cada sector montado a menos de RADIO_INMEDIATO tiene todos sus
+# choques en cuanto se monta (antes, solo el de Kael: el vecino pasaba 1-4 fotogramas con sus paredes sin cuerpo).
+func _choques_en_la_linde() -> void:
+	var radio := _radio_inmediato()
+	var mal: Array = []
+	var vistos := 0
+	for cx in P.CONEXIONES:
+		var p := P.nodo("c_" + String(cx["id"]))
+		var c: Cargador = Cargador.new()
+		root.add_child(c)
+		c.preparar("bajo", false)
+		var t0 := Time.get_ticks_msec()
+		while Time.get_ticks_msec() - t0 < 3000:
+			c.actualizar(p)
+			for id in c.montados:
+				if float(c.distancias[id]) < radio:
+					vistos += 1
+					if not (c.montados[id] as Node).choques_completos():
+						mal.append("%s junto a %s (a %.1f m)" % [cx["id"], id, c.distancias[id]])
+			if c.montados.has(cx["a"]) and c.montados.has(cx["b"]):
+				break
+			await process_frame
+		if not (c.montados.has(cx["a"]) and c.montados.has(cx["b"])):
+			mal.append("%s: no se montan %s y %s" % [cx["id"], cx["a"], cx["b"]])
+		c.desmontar_todo()
+		c.free()
+	_ok(mal.is_empty() and vistos > 0, "B: bajo, Kael colocado en cada una de las %d conexiones: los sectores a menos de %.0f m, con todos sus choques al montarse %s" % [
+		P.CONEXIONES.size(), radio, str(mal.slice(0, 6))])
 	await _frames(3)
 
 
@@ -291,6 +362,13 @@ func _escena() -> void:
 	_ok(ps != null and ps.find_children("Ocultable_*", "", false, false).is_empty() and aclarados_vis
 		and ps.find_children("*", "MeshInstance3D", false, false).size() == 2,
 		"C: el sector es una malla «Blockout» y otra «Aclarados» (visible con algo aclarado), sin mallas sueltas")
+	# (revisión del 16/11) «Aclarados» se pinta de lejos a cerca (sus piezas, ordenadas por la cámara fija) y su caja es la
+	# de lo aclarado (Godot ordena por ella las mallas transparentes de sectores distintos)
+	_ok(_orden_aclarados("plaza_tapiz") and _orden_aclarados("puerta_sur"), "C: las piezas de «Aclarados» van de lejos a cerca de la cámara")
+	if ps != null:
+		var casa: AABB = ps.ocultables.filter(func(o): return o[0] == "casa_sur_e")[0][1][0]
+		var caja: AABB = (ps.get_node("Aclarados") as MeshInstance3D).custom_aabb
+		_ok(caja.encloses(casa) and caja.size.x < 40.0, "C: la caja de «Aclarados» es la de lo aclarado (%s)" % str(caja))
 	var lejos: Array = []
 	for s in c.montados:
 		for x in (c.montados[s] as Node).find_children("Rotulo_*", "Label3D", false, false):

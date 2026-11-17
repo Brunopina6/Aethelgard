@@ -11,6 +11,8 @@ extends Node3D
 #     de cada pieza ocultable en UV2.x; lo aclarado se quita de ella y se dibuja en «Aclarados» (blockout_claro.gdshader,
 #     alfa 0,28, oculta si no hay nada aclarado). Antes, una malla por ocultable: 1 llamada (2 con algo aclarado) por
 #     sector en vez de 10-31. Mismo aspecto y mismo aclarado (mismas reglas, por pieza): aclarado(id) lo dice por pieza.
+#     Las piezas de «Aclarados» van de lejos a cerca según la cámara (fija: MIRA_CAMARA) y su caja es la de lo aclarado
+#     (_caja_claros): así se pintan en el orden en que Godot las ordenaba cuando cada una era su malla (revisión).
 #   - Las mallas y la lista de choques se calculan con preparar_datos(), que el cargador llama EN UN HILO a la vez que
 #     pide la escena (datos); en el fotograma del montaje solo se crean los nodos, y los choques de un sector que no es
 #     el de Kael se reparten (CHOQUES_POR_FOTOGRAMA; el de Kael, todos ya: inmediato, terminar_choques).
@@ -23,6 +25,9 @@ const P := preload("res://zonas3d/ciudad/plano.gd")
 const SH_OPACO := preload("res://zonas3d/ciudad/blockout_opaco.gdshader")
 const SH_CLARO := preload("res://zonas3d/ciudad/blockout_claro.gdshader")
 const MAX_OCULTABLES := 64                 # (el tamaño del uniforme «aclarado» de los dos sombreados; hoy, como mucho 30)
+# Hacia dónde mira la cámara de la ciudad (plano.gd, poner_camara: inclinada INCLINACION grados, sin girar): para pintar
+# las piezas aclaradas de lejos a cerca (preparar_datos).
+static var MIRA_CAMARA := Vector3(0.0, -sin(deg_to_rad(P.INCLINACION)), -cos(deg_to_rad(P.INCLINACION)))
 
 @export var id := ""
 
@@ -59,25 +64,37 @@ static func preparar_datos(id_sector: String) -> Dictionary:
 	var sc := Blockout.nueva()
 	var color: Color = Blockout.COLOR_SUELO.get(id_sector, Blockout.COLOR_FONDO)
 	var ocult: Array = []
+	var para_claro: Array = []             # [profundidad, bloque, marca]: la malla «Aclarados», de lejos a cerca (abajo)
 	var choq: Array = []                   # ["Suelo", puntos] o ["Choque_<id>", AABB]
 	for s in t.SUELOS:
 		Blockout.suelo(st, s, color)
 		choq.append(["Suelo", PackedVector3Array(Blockout.esquinas_suelo(s, Blockout.SOLAPE_SUELO))])
 	for b in t.BLOQUES:
 		if Comun.ocultable(b, t.OCULTABLES) and ocult.size() < MAX_OCULTABLES:
-			ocult.append([String(b[0]), Comun.cajas_bloque(b)])
+			var cajas: Array = Comun.cajas_bloque(b)
+			ocult.append([String(b[0]), cajas])
 			var marca := Vector2(float(ocult.size()), 0.0)
 			st.set_uv2(marca)
 			Blockout.bloque(st, b)
 			st.set_uv2(Vector2.ZERO)
-			sc.set_uv2(marca)
-			Blockout.bloque(sc, b)
+			var todo: AABB = cajas[0]
+			for c in cajas:
+				todo = todo.merge(c)
+			para_claro.append([todo.get_center().dot(MIRA_CAMARA), b, marca])
 		else:
 			if Comun.ocultable(b, t.OCULTABLES):
 				push_warning("Ciudad: el sector «%s» tiene más de %d ocultables; «%s» no se aclara" % [id_sector, MAX_OCULTABLES, b[0]])
 			Blockout.bloque(st, b)
 		if b[6]:
 			choq.append(["Choque_" + String(b[0]), Comun.cajas_bloque(b)[0]])
+	# «Aclarados» es UNA malla: sus piezas se pintan en el orden de sus triángulos, no ordenadas por Godot como cuando cada
+	# una era su malla. La cámara de la ciudad no gira, así que el orden de lejos a cerca es fijo: de mayor a menor
+	# profundidad por su eje (la del centro de su caja, como ordena Godot lo transparente). Sin esto, dos aclaradas que se
+	# solapan (la Plaza: la hoja de la Lonja tras la casa del sur) salían en el orden de BLOQUES (revisión del 16/11).
+	para_claro.sort_custom(func(a, b2): return a[0] > b2[0])
+	for x in para_claro:
+		sc.set_uv2(x[2])
+		Blockout.bloque(sc, x[1])
 	return {"opaco": st.commit_to_arrays(), "claro": sc.commit_to_arrays() if not ocult.is_empty() else [],
 		"ocultables": ocult, "choques": choq}
 
@@ -318,9 +335,27 @@ func aclarar(desde: Vector3, puntos, ahora := 0.0) -> int:
 	if cambia:
 		_mat_opaco.set_shader_parameter("aclarado", _estado)
 		_mat_claro.set_shader_parameter("aclarado", _estado)
+		_caja_claros()
 	if _claros != null and _claros.visible != (aclarados > 0):
 		_claros.visible = aclarados > 0
 	return aclarados
+
+
+# La caja de «Aclarados» = la de las piezas aclaradas ahora. Godot ordena lo transparente por el centro de la caja de cada
+# malla: con la caja de TODAS las ocultables del sector, las aclaradas de dos sectores que se solapan en pantalla (la
+# Rampa de los Carros: Puerta del Sur y Ribera) salían en un orden que no era el de sus piezas (revisión del 16/11).
+func _caja_claros() -> void:
+	if _claros == null:
+		return
+	var caja := AABB()
+	var hay := false
+	for i in ocultables.size():
+		if _estado[i] < 0.5:
+			continue
+		for c in ocultables[i][1]:
+			caja = (c as AABB) if not hay else caja.merge(c)
+			hay = true
+	_claros.custom_aabb = caja if hay else AABB()
 
 
 # ¿Está aclarada ahora la pieza ocultable «bloque» (id del bloque)? (Lo que no es ocultable, nunca.)
