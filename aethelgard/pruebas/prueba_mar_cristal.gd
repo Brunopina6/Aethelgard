@@ -31,6 +31,7 @@ var oro0 := 0
 var datos_t := {}
 var tramos: Array = []
 var i_tramo := 0
+var t_inicio := 0
 var t_combate := 0                     # ms: el combate carga en un hilo, a su ritmo (no al de --fixed-fps)
 
 
@@ -94,7 +95,9 @@ func _hito(h: String) -> bool:
 
 func _process(_dt: float) -> bool:
 	frames += 1
-	if frames > 30 * 400:
+	if t_inicio == 0:
+		t_inicio = Time.get_ticks_msec()
+	if Time.get_ticks_msec() - t_inicio > 360000:
 		_mal("se pasa de tiempo en la fase «%s»" % fase)
 		return _fin()
 	match fase:

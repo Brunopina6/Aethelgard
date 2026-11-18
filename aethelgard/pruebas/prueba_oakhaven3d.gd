@@ -27,6 +27,8 @@ var ruta: Array = []
 var i_ruta := 0
 var oro_antes := 0
 var atascos := 0
+var t_salida := 0
+var t_inicio := 0
 
 
 func _initialize() -> void:
@@ -212,14 +214,17 @@ func _process(_d: float) -> bool:
 				v.salida["armada"] = true
 				_ir(Vector3(40, 0, 55.9))
 				_fase("salida")
+				t_salida = Time.get_ticks_msec()
 		"salida":
-			if current_scene != null and current_scene.scene_file_path == P.MAPA:
+			if current_scene != null and current_scene.scene_file_path == P.MAPA and not root.get_node("Recursos").cambiando:
 				print("OK 5c: sale al mapa por la Puerta del Sur")
 				return _terminar()
-			if frames - f_fase > 300:
+			if Time.get_ticks_msec() - t_salida > 60000:
 				_mal("no sale al mapa por la Puerta del Sur")
 				return _terminar()
-	if frames > 8000:
+	if t_inicio == 0:
+		t_inicio = Time.get_ticks_msec()
+	if Time.get_ticks_msec() - t_inicio > 240000:
 		_mal("la prueba no terminó (fase «%s»)" % fase)
 		return _terminar()
 	return false
