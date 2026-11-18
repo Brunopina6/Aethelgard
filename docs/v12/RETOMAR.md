@@ -1072,6 +1072,8 @@ Validado: `dc878e9` (`validado/v12/20261115-170245`, 188 · 0). APK v834 instala
   usuario listadas en el relevo anterior. Ramas locales `revisa-ciudad` y similares de revisores, sin commits propios.
 
 ## RELEVO 18/11, 11:00: VALIDADO `2dde14b` (196 · 0 · 116 · 0) (LEER PRIMERO)
+- **12:06: VALIDADO `6f1ea9c` (197 · 0 · 116 · 0)**, etiqueta `validado/v12/20261118-120616`;
+  incluye prueba_grupo_despejado y los topes de medir_*. Batería en la carpeta pruebas/2026-11-18_113538.
 - Etiqueta local `validado/v12/20261118-105316`. Batería `D:\REBELUM_diagnostico\pruebas\2026-11-18_102249`; partida real,
   carpeta real y proyecto sin cambios. Después, `e88813e` añade `prueba_grupo_despejado` (pasa; contraprueba sin el
   arreglo: 2 fallos), sin validar en batería completa.
