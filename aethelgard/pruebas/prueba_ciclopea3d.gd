@@ -245,10 +245,16 @@ func _correr() -> void:
 	v._colocar_kael(T.en_mundo(Vector2(40.0, 52.0)))
 	v.salida["armada"] = true
 	await _frames(3)
-	for i in 300:
-		if current_scene != v:
+	# (18/11) por RELOJ: la salida pide el mapa con Recursos.cambiar_escena (carga en hilo, tiempo real) y la región
+	# sigue montada mientras carga. Contando 300 fotogramas (medio segundo sin ventana) fallaba con la carga retrasada
+	# 5 s (docs/v12/PRUEBAS_CARRERAS_18_11.md). Andar hacia la salida solo mientras no se ha pedido el cambio.
+	var R = root.get_node("Recursos")
+	var t0 := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - t0 < 60000:
+		if current_scene != v and current_scene != null and not R.cambiando:
 			break
-		v.destino = v._salida()
+		if current_scene == v and not R.cambiando:
+			v.destino = v._salida()
 		await _frames(1)
 	await _frames(30)
 	if current_scene == null or current_scene.scene_file_path != P.MAPA:

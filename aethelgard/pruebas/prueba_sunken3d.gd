@@ -396,7 +396,14 @@ func _correr() -> void:
 	v.salida["armada"] = true
 	await _frames(3)
 	v.destino = T.en_mundo(T.SALIDA)
-	await _hasta(func(): return current_scene != null and current_scene.scene_file_path == P.MAPA, 400)
+	# (18/11) por RELOJ: el final del muelle pide el mapa con Recursos.cambiar_escena (carga en hilo, tiempo real).
+	# Contando 400 fotogramas fallaba con la carga retrasada 5 s (docs/v12/PRUEBAS_CARRERAS_18_11.md).
+	var R = root.get_node("Recursos")
+	var t0 := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - t0 < 60000:
+		if current_scene != null and current_scene.scene_file_path == P.MAPA and not R.cambiando:
+			break
+		await process_frame
 	if current_scene == null or current_scene.scene_file_path != P.MAPA:
 		_mal("8: el final del muelle no lleva al mapa")
 	else:
