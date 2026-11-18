@@ -1111,3 +1111,26 @@ Validado: `dc878e9` (`validado/v12/20261115-170245`, 188 · 0). APK v834 instala
   en la biblioteca de clips, sin hacer (prototipos opcionales; decisión del usuario sobre los v3).
 - Siguientes candidatos sin decisión del usuario: atascos de Kael en esquinas y rodeo sin búsqueda de caminos
   (`vista3d.gd`), los 5 clips del Custodio, y la cabeza de Kael original en su derrota.
+
+## RELEVO 18/11, 22:30: VALIDADO `9d1baef` (200 · 0 · 116 · 0) y en GitHub; Redmi probado (LEER PRIMERO)
+- Etiqueta local `validado/v12/20261118-222238`. Publicado SIN force en `claude/rebelum-v12-validado-20261118`
+  (`3ff3c7b..9d1baef`, avance normal). `claude/rebelum-v12` remota (`a4db536`) y `main` (`d4b2d16`) sin tocar.
+- Redmi (19:19-20:02), APK de Auditoría del validado `3ff3c7b` instalada por el usuario desde Descargas (`adb install`
+  lo bloquea el control de seguridad): informe `REDMI_18_11.md` (`dabf551`), capturas y hojas en
+  `D:\REBELUM_diagnostico\redmi_18_11`. Índice del plano 140 ms dentro de la primera carga (sin tirón aparte); ciudad a
+  30 FPS en bajo/medio y el regulador; alto 33 FPS y 998 MB; memoria sin fuga en ciclos; 0 «material is null»; Nix,
+  Érebo en vídeo y la victoria del Custodio bien; derrotas sin ver. Partida y ajustes del teléfono iguales al respaldo
+  `D:\REBELUM_respaldos\2026-11-18_redmi_auditoria_antes_validado_3ff3c7b`.
+- Arreglos después (workflow `arreglos-tras-redmi-18-11`, 3 implementadores en serie y 3 revisores):
+  - `af3e1f9` fachada de lado que tapaba a Kael (ensanche MARGEN_LADO y 4 ocultables) y rótulos «(en obras)» cercanos
+    encima de todo (RECORRIDO.md §10);
+  - `69e85b9` casos del banco «Derrotas…» (héroes a 1 PV; originales, v2, v3, Naira y Nix); Érebo nunca ejecuta
+    `morir()`;
+  - `9d1baef` esquinas con toques en diagonal en la ciudad (`_esquina_cortada`, §11; prueba 14 → 0 fallos) y pruebas de
+    regresión del aclarado y los rótulos (`prueba_ciudad_fachadas`, `prueba_ciudad_cargador`).
+  - Pasadas: recorrido_ciudad 430 tramos 0 fallos; diag_ciudad_visibilidad 438 tramos 0 eventos en 1280 bajo y 1600 medio.
+- **Siguiente:** APK `D:\REBELUM_compilaciones\Aethelgard_androidauditora-20261118-9d1baef-local.apk` (v1026, SHA
+  `6bdf79a8…6738db60`) lista; el Redmi se desconectó al compilar. Guion `GUION_REDMI_19_11.md` (esquinas, fachada,
+  rótulos y derrotas). Nada de esto validado en Android.
+- Pendientes sin decisión: 92 bloques no ocultables que aún tapan a Kael pegado a ellos (§10), la memoria tras muchas
+  escenas (1 045 MB con el Custodio), el perfil alto, los 5 clips del Custodio y la derrota de los v2/v3 (decisión v3).
