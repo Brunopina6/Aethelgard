@@ -513,7 +513,8 @@ func morir() -> void:
 		_tw_caida.kill()
 	_tw_caida = create_tween().set_parallel(true)
 	_tw_caida.tween_property(caida, "rotation_degrees:z", -84.0, 0.55).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	_tw_caida.tween_property(caida, "position", Vector3(-0.88, 0.1, 0.0), 0.55)
+	# (18/11) a 0,3 m (antes 0,1): con 0,1 el lado izquierdo quedaba 0,21-0,26 m bajo el suelo (DERROTA_SUELO_18_11.md)
+	_tw_caida.tween_property(caida, "position", Vector3(-0.88, 0.3, 0.0), 0.55)
 
 
 func revivir() -> void:

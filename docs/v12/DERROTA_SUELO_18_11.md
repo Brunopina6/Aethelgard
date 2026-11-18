@@ -48,3 +48,12 @@ Por hueso, en el último instante de la derrota (metros bajo los pies; negativo 
 Capturas (sin suelo, solo la pose): `D:\REBELUM_diagnostico\derrota_suelo_18_11\antes\` (16_kael_combate_ko,
 45_lya_combate_ko). Para decidir hace falta verlo en el combate con su terreno: a 12° desde arriba, lo que queda bajo el
 suelo se recorta. Siguiente paso: capturas en el combate real antes y después de cada corrección.
+
+## Hecho: Lya original apoyada en el suelo (18/11)
+
+`maga_3d.gd.morir()`: el destino del desplome pasa de y 0,1 a **0,3** (un solo número). Medido (`diag_derrota_suelo`,
+`solo=lya`): lo más bajo pasa de −0,26 a **−0,07 m** (borde de `Bone_005`, falda o pelo); muslo izquierdo de −0,21 a −0,01.
+En el combate real (`fotos_derrota_combate.gd`, nueva, 1600×720): antes, el borde de abajo del cuerpo salía cortado en
+recto contra la hierba (medio enterrada); después se ve entera, tumbada encima. Capturas: `D:\REBELUM_diagnostico\derrota_suelo_18_11\antes_combate`
+y `D:\REBELUM_diagnostico\derrota_suelo_18_11\despues_combate_0.3` (hoja_derrota_lya_originales.png). `revivir()` vuelve a la posición 0 como antes.
+Kael original (la cabeza, −0,13 m) no se ha tocado: en esta cámara cae detrás de Garon y no se distingue.
