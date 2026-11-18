@@ -33,3 +33,18 @@ reconstruirlo entrarían también esos cambios.
 
 **En los originales** (los que se ven por defecto) los clips son de captura (Meshy): Kael mete la cabeza 0,13 m y Lya el
 hueso `Bone_005` 0,27 m. Corregirlos exigiría tocar esos clips o subir el modelo en Godot durante la derrota; queda anotado.
+
+## Detalle de los originales (por defecto en el juego)
+
+Por hueso, en el último instante de la derrota (metros bajo los pies; negativo = bajo el suelo):
+- **Kael** (clip de captura «Death», `kael_3d.gd`): solo la cabeza, −0,13; lo demás, de +0,03 a +0,07 (piernas, brazos).
+  Subir el cuerpo entero lo dejaría flotando unos 10 cm: lo que hace falta es levantar la cabeza (un gesto en el hueso
+  `Head` mientras está muerto, como los gestos que ya usa `maga_3d.gd`).
+- **Lya** (sin clip: `maga_3d.gd.morir()` la desploma entera con un tween, −84° en z y posición (−0,88, 0,1, 0)): se hunde
+  todo el lado izquierdo: `Bone_005` −0,26, `Bone_018` −0,23 (falda o pelo), muslo izquierdo −0,21, pierna −0,15, pie
+  −0,10. Subir el destino del tween unos 0,2 m la apoyaría; habría que mirar que el resto no flote.
+- **Garon**: −0,02, no se ve.
+
+Capturas (sin suelo, solo la pose): `D:\REBELUM_diagnostico\derrota_suelo_18_11\antes\` (16_kael_combate_ko,
+45_lya_combate_ko). Para decidir hace falta verlo en el combate con su terreno: a 12° desde arriba, lo que queda bajo el
+suelo se recorta. Siguiente paso: capturas en el combate real antes y después de cada corrección.

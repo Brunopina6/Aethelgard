@@ -27,6 +27,8 @@ var final_bajo := INF
 var de_pie := INF
 var hueso_bajo := ""
 var _hb := ""
+var por_hueso := {}
+var ultimo := false
 
 
 func _initialize() -> void:
@@ -46,6 +48,12 @@ func _siguiente() -> void:
 	if g != null:
 		print("%-6s %-10s de pie %+.3f m · cuerpo más bajo %+.3f m (a los %.1f s) · al final %+.3f m · hundido bajo los pies %.3f m · cadera más baja %+.3f m · lo más bajo, del hueso %s" % [
 			casos[ci][0], casos[ci][1], de_pie, bajo, bajo_t, final_bajo, maxf(0.0, de_pie - final_bajo), cadera_min, hueso_bajo])
+		var hs := por_hueso.keys()
+		hs.sort_custom(func(a, b2): return float(por_hueso[a]) < float(por_hueso[b2]))
+		var txt := []
+		for h in hs.slice(0, 8):
+			txt.append("%s %+.2f" % [h, float(por_hueso[h]) - de_pie])
+		print("    bajo los pies, por hueso: ", ", ".join(txt))
 		g.queue_free()
 		g = null
 	ci += 1
@@ -79,6 +87,9 @@ func _process(_dt: float) -> bool:
 	elif f > ESPERA and f % 5 == 0:
 		var sk: Skeleton3D = _esqueleto()
 		if sk != null:
+			ultimo = f >= ESPERA + DURA - 5
+			if ultimo:
+				por_hueso = {}
 			var b := _bajo(sk)
 			if b < bajo:
 				bajo = b
@@ -140,6 +151,9 @@ func _bajo(sk: Skeleton3D) -> float:
 						if w > wmax:
 							wmax = w
 							kmax = int(B[v * por + j])
+				if ultimo:
+					var nb := String(skin.get_bind_name(kmax)) if kmax < skin.get_bind_count() else "?"
+					por_hueso[nb] = minf(float(por_hueso.get(nb, INF)), p.y - g.global_position.y)
 				if p.y - g.global_position.y < b:
 					b = p.y - g.global_position.y
 					_hb = String(skin.get_bind_name(kmax)) if kmax < skin.get_bind_count() else "?"
