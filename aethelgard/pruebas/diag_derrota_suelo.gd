@@ -12,6 +12,8 @@ const SCRIPTS := {
 		"v3": "res://personajes/heroes_v3/lya_v3_3d.gd"},
 	"garon": {"originales": "res://garon_3d.gd", "v2": "res://personajes/heroes_v2/garon_v2_3d.gd",
 		"v3": "res://personajes/heroes_v3/garon_v3_3d.gd"},
+	"naira": {"originales": "res://personajes/naira/naira_3d.gd"},     # (heredan el desplome de maga_3d.gd)
+	"nix": {"originales": "res://personajes/nix/nix_3d.gd"},
 }
 const ESPERA := 20           # fotogramas antes de morir()
 const DURA := 180            # fotogramas tras morir() (6 s a 30)
@@ -40,7 +42,8 @@ func _initialize() -> void:
 		if solo != "" and h != solo:
 			continue
 		for v in ["originales", "v2", "v3"]:
-			casos.append([h, v])
+			if SCRIPTS[h].has(v):
+				casos.append([h, v])
 	_siguiente()
 
 

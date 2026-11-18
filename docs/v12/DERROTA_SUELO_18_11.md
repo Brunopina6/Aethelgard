@@ -57,3 +57,8 @@ En el combate real (`fotos_derrota_combate.gd`, nueva, 1600×720): antes, el bor
 recto contra la hierba (medio enterrada); después se ve entera, tumbada encima. Capturas: `D:\REBELUM_diagnostico\derrota_suelo_18_11\antes_combate`
 y `D:\REBELUM_diagnostico\derrota_suelo_18_11\despues_combate_0.3` (hoja_derrota_lya_originales.png). `revivir()` vuelve a la posición 0 como antes.
 Kael original (la cabeza, −0,13 m) no se ha tocado: en esta cámara cae detrás de Garon y no se distingue.
+
+**También heredan este desplome** (no tienen `morir()` propio): Naira, Nix y Érebo. Medido con 0,3: Naira, lo más bajo
+−0,11 m (cadera y astrolabio; con 0,1 serían unos −0,31); Nix, +0,03 m (prácticamente apoyada; con 0,1, unos −0,17).
+El cambio mejora a los tres; Naira sigue algo hundida y queda anotado. Érebo no se ha medido (su derrota es la de su
+combate propio).
