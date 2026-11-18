@@ -1095,3 +1095,19 @@ Validado: `dc878e9` (`validado/v12/20261115-170245`, 188 · 0). APK v834 instala
 - Sigue igual: Redmi sin probar con lo nuevo (APK que instala el usuario estando presente) y las decisiones del usuario
   del relevo de las 02:33. Ramas de agentes y revisores (`area-ciudad-*-18`, `area-pruebas-carreras-18`, `revisa-*-18`)
   conservadas.
+
+## RELEVO 18/11, 13:52: VALIDADO `3ff3c7b` (197 · 0 · 116 · 0) y en GitHub (LEER PRIMERO)
+- Etiqueta local `validado/v12/20261118-135250`. Publicado SIN force en la rama NUEVA del remoto
+  `claude/rebelum-v12-validado-20261118` (`6f1ea9c` y después `3ff3c7b`, avance rápido). La rama remota
+  `claude/rebelum-v12` está en `a4db536`, el mismo cambio que el local `5c045b7` con otro hash (historias divergentes):
+  no se toca; `main` sigue en `d4b2d16`.
+- Fallo intermitente de Tobías (A7 de `fotos_barrio_recorrido`): era la PRUEBA. Pulsaba Intro a 1,91 m con Tobías
+  alejándose (radio 1,9) y la pulsación se perdía. Ahora la repite como quien juega; con el mismo retraso, el caso se da y
+  la pasada termina con 0 fallos (`PRUEBAS_CARRERAS_18_11.md`).
+- Redmi SIN conectar: APK de Auditoría `65e6f58` lista (con la línea `[ciudad] índice del plano` para logcat) y guion
+  `GUION_REDMI_18_11.md`. Nada validado en Android.
+- Derrota bajo el suelo (`DERROTA_SUELO_18_11.md`, `diag_derrota_suelo.gd`, `fotos_derrota_combate.gd`): Lya original
+  apoyada (0,26 → 0,07 m; también mejoran Naira y Nix). Los v2 y v3 meten la cabeza (Garon v3 0,56 m): arreglo propuesto
+  en la biblioteca de clips, sin hacer (prototipos opcionales; decisión del usuario sobre los v3).
+- Siguientes candidatos sin decisión del usuario: atascos de Kael en esquinas y rodeo sin búsqueda de caminos
+  (`vista3d.gd`), los 5 clips del Custodio, y la cabeza de Kael original en su derrota.
