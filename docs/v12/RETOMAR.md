@@ -1085,7 +1085,9 @@ Validado: `dc878e9` (`validado/v12/20261115-170245`, 188 · 0). APK v834 instala
   - Carreras de espera: 8 pruebas pasan a esperar por reloj (arboleda_tramo, isla, barrio_interiores, sunken3d,
     ciclopea3d, naira_mision, oakhaven3d, mar_cristal). `docs/v12/PRUEBAS_CARRERAS_18_11.md`. La lista NO es completa:
     cerrarla exige pasar la batería con el retraso de carga (parche en `D:\REBELUM_diagnostico\pendientes_18_11\revisa_carreras\`).
-- Pendiente técnico: barrido completo con retraso de carga; `fotos_barrio_recorrido` (fallo intermitente de Tobías en A7,
+- 11:35: barrido completo con 5 s de retraso en cada carga (parche local, quitado): 197 · 0 · 116; 28 pruebas con cargas
+  retrasadas. La carrera ya no queda en ninguna prueba automática (PRUEBAS_CARRERAS_18_11.md). `6a554c5` pone topes a medir_*.
+- Pendiente técnico: `fotos_barrio_recorrido` (fallo intermitente de Tobías en A7,
   sin investigar); topes por reloj en `medir_mapamundi3d` y `medir_sunken3d`; índice del plano en hilo si el tirón de
   ~38 ms molesta en el Redmi.
 - Sigue igual: Redmi sin probar con lo nuevo (APK que instala el usuario estando presente) y las decisiones del usuario

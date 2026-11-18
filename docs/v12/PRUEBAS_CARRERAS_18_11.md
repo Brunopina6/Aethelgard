@@ -185,6 +185,16 @@ nunca. No se han tocado (no cuentan fotogramas y no se pueden comprobar sin medi
 - No se ha probado nada en Android: este documento habla solo de las pruebas del PC.
 - El retraso de `recursos.gd` no está en ningún commit y ya no está en la copia.
 
+## Barrido completo con retraso (18/11, 11:35)
+
+Batería entera (sobre `6a554c5`, con los 8 arreglos y prueba_grupo_despejado) con el parche de retraso aplicado solo en
+la copia de trabajo, sin commit y quitado al terminar (`recursos.gd` limpio), y `REBELUM_RETRASO_CARGA_MS=5000`:
+**197 superadas, 0 fallidas, 116 manuales**; partida real, carpeta real y proyecto sin cambios. 28 pruebas pasaron por
+al menos una carga retrasada (85 cargas en total, «[contraprueba] retraso» en sus registros); las demás no usan la carga
+en hilo. Con 5 s por carga ya no queda ninguna prueba automática con esta carrera. Siguen sin cubrir las pruebas con
+ventana (MANUALES) y, para las que agotan topes globales en fotogramas según el ritmo (caso naira), un retraso mayor.
+Registros: `D:\REBELUM_diagnostico\pruebas\2026-11-18_105737_CONTRAPRUEBA_retraso_5s`.
+
 ## Pendiente
 
 - `medir_mapamundi3d` y `medir_sunken3d`: tope por reloj en sus dos esperas sin límite.
