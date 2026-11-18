@@ -20,9 +20,10 @@ por USB a Descargas (SHA comprobado en el teléfono) e instalada por el usuario 
   instalar). No se imprimió el total de la carga en el registro capturado.
 - **12 errores `Parameter "material" is null`** (`material_casts_shadows`, `material_is_animated`,
   `material_get_instance_shader_parameters`, `material_update_dependency`) justo al acabar la fase de sombreadores, una
-  sola vez. Sin efecto visible; NO aparecen en los registros del 15/11. Sospecha (sin comprobar): algo del precalentado
-  de la carga (muestra + barrio, o la ciudad que ahora va en la APK) se suelta mientras una instancia aún lo usa.
-  PENDIENTE de reproducir en el PC.
+  sola vez. Sin efecto visible. (El 15/11 no se puede comparar: ningún registro de ese día tiene el arranque.)
+  **Diagnosticado y arreglado en el PC el 17/11** (`docs/v12/MATERIAL_NULL_17_11.md`): salen solo con los «Protagonistas v3»
+  (la cara v3 llevaba override y un material por superficie sobrante; fallo abierto de Godot #85817); el precalentado de
+  muestra y barrio NO era la causa. Falta comprobarlo en el Redmi con una APK nueva.
 
 ## Ciudad de Oakhaven (maqueta), perfil BAJO, escala FIJA ×0,75 (1200×540) salvo donde se dice
 | Tramo | Fotogramas | FPS | Histograma (ms=nº) | PSS |

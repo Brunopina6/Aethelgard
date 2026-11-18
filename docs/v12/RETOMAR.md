@@ -1035,3 +1035,26 @@ Validado: `dc878e9` (`validado/v12/20261115-170245`, 188 · 0). APK v834 instala
 - **Paralelo del usuario**: ChatGPT prepara otra ciudad sobre el ZIP `D:\REBELUM_compartir\aethelgard_chatgpt_20261116.zip`
   (no toca este repositorio); el usuario está creando NPC por su cuenta: NO tocar ni mover sus archivos nuevos sin
   preguntar.
+
+## RELEVO 18/11, 02:33: pendientes del Redmi arreglados en el PC; batería 195 · 1 (LEER PRIMERO)
+- **Integrado** en `claude/rebelum-v12` (cherry-pick de agentes en worktrees, cada uno con revisor independiente):
+  - optimización del perfil bajo de la ciudad (`d09a6c7`, `c581109`, `70b5f82`; `MEDIDAS_PC.md` §6);
+  - 12 «material is null» de la carga: causa = cara de los Protagonistas v3 con override + material sobrante (Godot
+    #85817); arreglo en `heroe_v3_ayudante._preparar_cara`; prueba `prueba_material_null` (ventana). `MATERIAL_NULL_17_11.md`;
+  - ciudad tras el Redmi: pilares finos que se aclaran, cuerpo de 0,3 m para Kael, rodeo de la fuente con toques,
+    rótulo del sector por ancho en pantalla, «Guardar y recargar» (los 3 fallos eran de la herramienta). `RECORRIDO.md` §8;
+  - corrección de la revisión (`3f37c9a`): los rótulos «(en obras)» vuelven a 10 m (19 de 85 dejaban de verse) y la
+    prueba del plano vigila el tope de 64 ocultables por sector (plaza: 59);
+  - memoria del banco entre escenas medida en el PC: SIN fuga (llenado único por escena; plano desde el 2.º ciclo).
+    `MEMORIA_ESCENAS_17_11.md` y `pruebas/medir_memoria_escenas.gd`.
+- **Batería completa de `3f37c9a`** (`D:\REBELUM_diagnostico\pruebas\2026-11-18_015954`): 195 superadas, **1 fallida**
+  (`prueba_bosque_pastos`, paso 8 «la región no vuelve a cargarse», agotó 60 s de reloj; sola pasa 3 de 3 en 10 s).
+  NO validado. En marcha un agente (rama `area-bosque-recarga`, desde `3f37c9a`) para diagnosticar si la recarga de la
+  región se cuelga de verdad, con revisor. No darlo por resuelto por pasadas limpias.
+- **Redmi, sin probar** (necesita APK nueva; la instala el usuario y solo estando presente): material null con v3 (mirar
+  qué Protagonistas tiene elegido), visibilidad y rodeo de la fuente con el dedo, 5 sectores sin andar, Quilla por
+  dentro, interiores del barrio, Arboleda, regulador normal, memoria en dos ciclos con `dumpsys meminfo` completo.
+- **Decisiones del usuario**: nombres [P], fuente dorada, hora del día, Doña Encina [C pendiente], presupuesto de
+  medio/alto, si el kit sustituye a los constructores del barrio, P1 de la memoria (soltar la caché del barrio a cambio
+  del tirón), si carros, caño y tablón pasan a ocultables.
+- La rama local `revisa-ciudad` (revisor, sin commits propios) la puede borrar el usuario si quiere (el gancho no deja).
