@@ -569,13 +569,21 @@ func _suelo(p: Vector3, y_ref: float) -> float:
 	return y
 
 
-# Nada a la altura de las rodillas entre «a» y «b»: pared, pretil, tronco o estatua.
+# Nada a la altura de las rodillas entre «a» y «b»: pared, pretil, tronco o estatua. (18/11) Ni nada que la región
+# prohíba por el camino (_prohibido cada 0,1 m, sin contar «a»): el rayo de las rodillas no ve lo bajo (una jardinera de
+# 0,6 m), ni la caja en la que ya se está (rozando un pilar, el rayo sale de dentro) ni un borde sin choque; con esto
+# daba el rastro por sobrante o iba recto al de delante cortando la esquina (ciudad: RECORRIDO.md §9).
 func _despejado(a: Vector3, b: Vector3) -> bool:
 	var h := maxf(a.y, b.y) + RODILLAS
 	var desde := Vector3(a.x, h, a.z)
 	var hasta := Vector3(b.x, h, b.z)
 	if desde.distance_to(hasta) < 0.01:
 		return true
+	if escena.has_method("_prohibido"):
+		var n := ceili(_plana(a, b) / 0.1)
+		for i in range(1, n + 1):
+			if escena._prohibido(a.lerp(b, float(i) / n)):
+				return false
 	return escena.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(desde, hasta)).is_empty()
 
 
