@@ -198,6 +198,7 @@ static var _celdas := {}
 
 static func _indice() -> Dictionary:
 	if _celdas.is_empty():
+		var t0 := Time.get_ticks_usec()   # (18/11) el tirón de crearlo, legible en el móvil (logcat): una vez por proceso
 		for s in ORDEN:
 			var t = TRAZADOS[s]
 			for su in t.SUELOS:
@@ -215,6 +216,7 @@ static func _indice() -> Dictionary:
 						if not c.has("holgura"):
 							c["holgura"] = []
 						c["holgura"].append([s, b[2], techo])
+		print("[ciudad] índice del plano: %d casillas en %.1f ms" % [_celdas.size(), (Time.get_ticks_usec() - t0) / 1000.0])
 	return _celdas
 
 
