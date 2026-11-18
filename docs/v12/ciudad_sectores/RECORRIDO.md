@@ -368,9 +368,10 @@ tolera.
 
 ### El arreglo (mínimo, en el archivo compartido)
 
-`grupo_3d._despejado` pide además que ningún punto del camino, cada 0,1 m (sin contar el de partida, para no quedarse
-clavado si ya roza), sea `_prohibido` de la región (en la ciudad, lo no andable del plano). Seis líneas; el resto del
-seguimiento no cambia. Donde `_prohibido` ya coincidía con lo que ve el rayo, todo sigue igual (Pastos, abajo).
+`grupo_3d._despejado` pide además que ningún punto del camino, cada 0,1 m (sin contar el de partida), sea `_prohibido` de la región (en la ciudad, lo no andable del plano). Seis líneas; el resto del
+seguimiento no cambia. (Revisión del 18/11: descontar el punto de partida solo evita el bloqueo si quien sigue está
+menos de 0,1 m dentro de lo prohibido; si está más hondo, no va recto y sigue el rastro, o espera a que el de delante
+se mueva, hasta salir.) Donde `_prohibido` ya coincidía con lo que ve el rayo, todo sigue igual (Pastos, abajo).
 
 | Comprobación | Antes | Después |
 |---|---|---|
