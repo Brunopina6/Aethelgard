@@ -8,7 +8,9 @@ extends SceneTree
 #      trampilla (mural y Oren); la recompensa una sola vez (150 monedas, buscador de nivel 2 y la Aguja de Resonancia).
 #   C. Recarga: al volver a entrar con la partida volcada, las ruinas siguen destapadas, Oren está en el campamento,
 #      el buscador sigue siendo de Kael y lo único no vuelve a salir.
-#   D. Andar: de la entrada al campamento y a los restos sin atascarse; el estanque y las rocas no se pisan.
+#   D. Andar: de la entrada al campamento y a los restos sin atascarse; el estanque y las rocas no se pisan. D1 (19/11,
+#      C-2): el agua que se VE del oasis (rayo a la malla y disco) no se pisa en ningún rumbo, la orilla seca sí, y Kael,
+#      andando hacia el centro desde tres lados, se para en la orilla seca; una posición guardada en el agua sale fuera.
 #   E. Bramavidrio: en la arena que tiembla avisa (surco); si Kael sale, se va; si se queda, emerge y pide su combate
 #      fijo (grupo 13, «mc_bramavidrio»).
 # Uso: --headless --path aethelgard --script res://pruebas/prueba_mar_cristal.gd --fixed-fps 30 -- 3d mardecristal sin_prologo
@@ -81,6 +83,68 @@ func _poner(x: float, z: float) -> void:
 
 
 # Corta el diálogo abierto (si hay): Dialogic avisa del final y la misión aplica su efecto.
+# D1. La orilla del oasis, medida en la escena (la malla de choque y el disco del agua de verdad, no el trazado).
+# Al agua se baja por el oeste y el sur; al este y al norte la hondonada es demasiado empinada para Kael (ya lo era).
+const ORILLA_DESDE := [["oeste", Vector2(63.0, 72.0)], ["suroeste", Vector2(66.0, 79.0)], ["sur", Vector2(74.0, 82.0)]]
+var agua_y := 0.0
+var orilla_medida: Dictionary = {}               # rumbo en grados -> hasta dónde se ve el agua
+
+
+func _suelo_y(x: float, z: float, desde := 0.4) -> float:
+	var q := PhysicsRayQueryParameters3D.create(Vector3(x, desde, z), Vector3(x, -5.0, z))
+	var r: Dictionary = v.get_world_3d().direct_space_state.intersect_ray(q)
+	return NAN if r.is_empty() else float(r["position"].y)
+
+
+func _orilla_r(o: Vector2) -> float:
+	return float(orilla_medida.get(posmod(int(round(rad_to_deg(o.angle()) / 2.0)) * 2, 360), 0.0))
+
+
+# Todo el agua que se ve (bajo la cara de arriba del disco y dentro de él) no se pisa, ni a 0,25 m de ella; la orilla
+# seca a 0,8 m sí (no se cierra el paso alrededor); y las constantes del trazado son las de terreno.gd.
+func _orilla_agua() -> void:
+	var est: MeshInstance3D = v.terreno.raiz.get_node("Estanque")
+	var disco: CylinderMesh = est.mesh
+	agua_y = est.global_position.y + disco.height * 0.5
+	_ok(absf(agua_y - T.NIVEL_AGUA) < 0.001 and absf(disco.top_radius - T.RADIO_AGUA) < 0.001 and v.terreno.PASO == T.PASO_MALLA,
+		"D1: el agua o la malla de terreno.gd no son las de trazado.gd (nivel %.3f, radio %.2f, paso %.2f)" % [agua_y, disco.top_radius, v.terreno.PASO])
+	# 1. Lo que se notó en el Redmi y en las capturas: la orilla oeste.
+	var oeste := Vector2(T.OASIS.x - 5.6, T.OASIS.y)
+	_ok(_suelo_y(oeste.x, oeste.y) < agua_y, "D1: (%.1f, %.1f) ya no queda bajo el agua: revisar la prueba" % [oeste.x, oeste.y])
+	_ok(v.get("_prohibido").call(Vector3(oeste.x, 0, oeste.y)), "D1: [%s] en la orilla oeste se pisa el agua (%.1f, %.1f)" % [PERFILES[ip], oeste.x, oeste.y])
+	# 2. Toda la orilla, cada 2°.
+	var malos := []
+	var abiertos := []
+	orilla_medida.clear()
+	for g in range(0, 360, 2):
+		var dir := Vector2.from_angle(deg_to_rad(g))
+		var borde := 0.0
+		var r := 3.0
+		while r < disco.top_radius:
+			var p := T.OASIS + dir * r
+			if _suelo_y(p.x, p.y) < agua_y:
+				borde = r
+			r += 0.05
+		orilla_medida[g] = borde
+		for rr in [borde - 0.1, borde + 0.25]:
+			var p: Vector2 = T.OASIS + dir * rr
+			if not v.get("_prohibido").call(Vector3(p.x, 0, p.y)):
+				malos.append("%d° a %.2f m" % [g, rr])
+		var seco: Vector2 = T.OASIS + dir * (borde + 0.8)
+		if v.get("_prohibido").call(Vector3(seco.x, 0, seco.y)):
+			abiertos.append("%d° a %.2f m" % [g, borde + 0.8])
+	_ok(malos.is_empty(), "D1: [%s] se pisa el agua del oasis (o a menos de 0,25 m) en %d sitios: %s" % [PERFILES[ip], malos.size(), str(malos.slice(0, 8))])
+	_ok(abiertos.is_empty(), "D1: [%s] la orilla seca (a 0,8 m del agua) no se pisa en %d sitios: %s" % [PERFILES[ip], abiertos.size(), str(abiertos.slice(0, 8))])
+	print("D1: [%s] el agua del oasis llega de %.2f a %.2f m del centro" % [PERFILES[ip], orilla_medida.values().min(), orilla_medida.values().max()])
+
+
+func _orilla_andar() -> void:
+	var desde: Vector2 = ORILLA_DESDE[i_tramo][1]
+	_poner(desde.x, desde.y)
+	v.destino = v._ajustar_destino(Vector3(T.OASIS.x, 0, T.OASIS.y))
+	_fase("orilla2")
+
+
 func _cortar() -> bool:
 	var dg = root.get_node_or_null("Dialogic")
 	if dg != null and dg.current_timeline != null:
@@ -269,6 +333,31 @@ func _process(_dt: float) -> bool:
 				else:
 					_ok(v.get("_prohibido").call(Vector3(T.OASIS.x, 0, T.OASIS.y)) and v.get("_prohibido").call(Vector3(6, 0, 24)),
 						"D: el estanque o una roca se pueden pisar")
+					_fase("orilla")
+		# ---------------------------------------------------------------- D1. la orilla del oasis (19/11, C-2 / PC-14)
+		"orilla":
+			_orilla_agua()
+			i_tramo = 0
+			_orilla_andar()
+		"orilla2":
+			if v.destino == null or _en(30 * 12):
+				var k: Vector3 = v.kael.global_position
+				var lado: String = ORILLA_DESDE[i_tramo][0]
+				var d: float = Vector2(k.x, k.z).distance_to(T.OASIS)
+				_ok(_suelo_y(k.x, k.z, k.y + 0.5) >= agua_y - 0.01,
+					"D1: [%s] andando desde el %s hacia el estanque, Kael acaba en el agua (%s, a %.2f m del centro; suelo %.3f, agua %.3f)" % [
+					PERFILES[ip], lado, k, d, _suelo_y(k.x, k.z, k.y + 0.5), agua_y])
+				var orilla_r := _orilla_r(Vector2(k.x, k.z) - T.OASIS)
+				_ok(d <= orilla_r + 1.0, "D1: [%s] desde el %s, Kael se para lejos del agua (a %.2f m del centro; el agua llega a %.2f)" % [
+					PERFILES[ip], lado, d, orilla_r])
+				i_tramo += 1
+				if i_tramo < ORILLA_DESDE.size():
+					_orilla_andar()
+				else:
+					_poner(T.OASIS.x - 5.5, T.OASIS.y)                 # una partida guardada en el agua de antes del arreglo
+					var g: Vector3 = v.kael.global_position
+					_ok(not v.get("_prohibido").call(g) and _suelo_y(g.x, g.z, g.y + 0.5) >= agua_y - 0.01,
+						"D1: [%s] una posición guardada en el agua no se saca a la orilla (%s)" % [PERFILES[ip], g])
 					if PERFILES[ip] == "bajo":
 						_fase("salida")
 					else:

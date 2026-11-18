@@ -196,6 +196,7 @@ func _crear_escenario() -> void:
 	terreno = Terreno.new(self, perfil)
 	terreno.construir()
 	terreno.efectos_arte()
+	T.radio_orilla(Vector2.ZERO)                     # 19/11 (C-2): mide la orilla del oasis ahora, no al llegar al agua
 
 
 func _prohibido(p: Vector3) -> bool:
@@ -213,6 +214,12 @@ func suelo_de_pasos(p: Vector3) -> String:
 # ================================================================= Kael, cámara y grupo
 
 func _colocar_kael(p: Vector3) -> void:
+	var o := Vector2(p.x, p.z) - T.OASIS          # 19/11 (C-2): una partida guardada dentro del agua (antes se podía
+	if o.length() < T.RADIO_OASIS and T.prohibido(p.x, p.z):  # pisar): sale a la orilla seca, en su mismo rumbo
+		var dir := o.normalized() if o.length() > 0.01 else Vector2(0, 1)
+		while o.length() < T.RADIO_OASIS and T.prohibido(T.OASIS.x + o.x, T.OASIS.y + o.y):
+			o = dir * (o.length() + 0.1)
+		p = Vector3(T.OASIS.x + o.x, 0, T.OASIS.y + o.y)
 	p.y = T.altura(p.x, p.z)
 	kael.global_position = p
 	seguro = p

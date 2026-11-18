@@ -14,7 +14,18 @@ const TIENDAS := [Vector2(30.0, 89.0), Vector2(41.0, 88.0)]
 const CARAVANA := Vector2(50.0, 60.0)
 const OASIS := Vector2(74.0, 72.0)
 const RADIO_OASIS := 9.0
-const RADIO_ESTANQUE := 4.6                      # el agua: no se pisa
+const RADIO_ESTANQUE := 4.6                      # el centro del agua (y el decorado de la orilla: terreno.gd, paisaje.gd)
+# 19/11 (C-2 / PC-14): el agua que se VE llega más lejos que RADIO_ESTANQUE. El disco de terreno.gd (RADIO_AGUA, su
+# cara de arriba a NIVEL_AGUA) asoma donde la arena de la malla (triángulos de PASO_MALLA) queda por debajo: de 5,3 m
+# al nordeste a 6 m al oeste. Con 4,6 m, Kael y el grupo se metían hasta 1,4 m en el agua (con los pies 30 cm debajo).
+# Ahora no se pisa el agua visible ni a PIE de ella. Las tres primeras deben ser las de terreno.gd (lo comprueba
+# prueba_mar_cristal).
+const RADIO_AGUA := 6.0
+const NIVEL_AGUA := -0.595                       # -0,62 + 0,05 / 2
+const PASO_MALLA := 1.5
+const PIE := 0.3
+const RUMBOS := 72                               # la orilla, medida una vez cada 5°
+static var _orilla := PackedFloat32Array()
 const RUINAS := Vector2(45.0, 18.0)
 const TRAMPILLA := Vector2(45.0, 23.0)
 const COBIJO := Vector2(14.0, 48.0)              # bajo la roca saliente: refugio de la tormenta
@@ -92,12 +103,50 @@ static func en_cobijo(x: float, z: float) -> bool:
 static func prohibido(x: float, z: float) -> bool:
 	if x < 2.0 or x > TAM.x - 2.0 or z < 2.0 or z > TAM.y - 1.0:
 		return true
-	if Vector2(x, z).distance_to(OASIS) < RADIO_ESTANQUE:
+	var o := Vector2(x, z) - OASIS
+	if o.length() < RADIO_AGUA + PIE and o.length() < radio_orilla(o) + PIE:
 		return true
 	for r in ROCAS:
 		if Vector2(x, z).distance_to(Vector2(r[0], r[1])) < float(r[2]) * 0.82:
 			return true
 	return false
+
+
+# La arena tal como la dibuja (y la choca) terreno.gd: triángulos [0,1,2] y [0,2,3] de cada celda de PASO_MALLA.
+static func altura_malla(x: float, z: float) -> float:
+	var ix := floorf(x / PASO_MALLA)
+	var iz := floorf(z / PASO_MALLA)
+	var fx := x / PASO_MALLA - ix
+	var fz := z / PASO_MALLA - iz
+	var x0 := ix * PASO_MALLA
+	var z0 := iz * PASO_MALLA
+	var h00 := altura(x0, z0)
+	var h11 := altura(x0 + PASO_MALLA, z0 + PASO_MALLA)
+	if fx >= fz:
+		var h10 := altura(x0 + PASO_MALLA, z0)
+		return h00 + (h10 - h00) * fx + (h11 - h10) * fz
+	var h01 := altura(x0, z0 + PASO_MALLA)
+	return h00 + (h11 - h01) * fx + (h01 - h00) * fz
+
+
+# Hasta dónde se ve el agua en el rumbo de o (desde el centro del oasis): lo más lejos en su tramo de 5°. La primera vez
+# (la región lo pide al cargar) mide cada tramo en 5 rumbos, de fuera adentro cada 5 cm: lo último bajo NIVEL_AGUA.
+static func radio_orilla(o: Vector2) -> float:
+	if _orilla.is_empty():
+		_orilla.resize(RUMBOS)
+		for i in RUMBOS:
+			var lejos := RADIO_ESTANQUE
+			for k in 5:
+				var dir := Vector2.from_angle(TAU * (i + k / 4.0) / RUMBOS)
+				var r := RADIO_AGUA
+				while r > lejos:
+					var p := OASIS + dir * r
+					if altura_malla(p.x, p.y) < NIVEL_AGUA:
+						break
+					r -= 0.05
+				lejos = maxf(lejos, r)
+			_orilla[i] = lejos
+	return _orilla[int(fposmod(o.angle() / TAU * RUMBOS, float(RUMBOS))) % RUMBOS]
 
 
 # Cuántos encuentros: ninguno en el campamento, las ruinas, el cobijo ni el oasis; normal en las dunas; algo más en la
