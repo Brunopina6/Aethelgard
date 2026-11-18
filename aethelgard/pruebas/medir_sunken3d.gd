@@ -119,7 +119,12 @@ func _medir() -> void:
 			await _sitios()
 		var R = root.get_node("Recursos")
 		R.cambiar_escena("res://mapa.tscn")
+		var t_mapa := Time.get_ticks_msec()
 		while R.cambiando or current_scene == null or current_scene.scene_file_path != "res://mapa.tscn":
+			if Time.get_ticks_msec() - t_mapa > 120000:   # (18/11) tope por reloj: nada de esperas sin límite
+				print("FALLO: no vuelve al mapa en 120 s tras la entrada %d" % n)
+				quit(1)
+				return
 			await process_frame
 		await _frames(30)
 		_nota("[%s · %s] de vuelta al mapa tras la entrada %d: %s" % [perfil, etiqueta, n, _mem()])

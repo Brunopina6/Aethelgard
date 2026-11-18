@@ -51,6 +51,10 @@ func _cargar() -> int:
 	var t0 := Time.get_ticks_msec()
 	R.cambiar_escena(MM)
 	while _esc() != MM or R.cambiando:
+		if Time.get_ticks_msec() - t0 > 120000:   # (18/11) tope por reloj: nada de esperas sin límite
+			print("FALLO: el mapamundi 3D no termina de cargarse en 120 s")
+			quit(1)
+			return -1
 		await process_frame
 	var t := Time.get_ticks_msec() - t0
 	v = current_scene
