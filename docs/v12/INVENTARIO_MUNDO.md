@@ -83,7 +83,7 @@ Checklist del usuario, una fila por lugar. **Sí** = existe y está enganchado; 
 | Misiones | «La caravana perdida» (8 hitos `mc_*`) |
 | Cofres | el del espejismo (una vez); el resto son excavaciones |
 | Música | contextos `mar_cristal` y `tormenta_arena` |
-| Entradas/salidas, navegación, colisiones | salida señalada, borde del mundo; dunas lejanas sin choque; **Kael pisa el agua en el borde oeste** [I] |
+| Entradas/salidas, navegación, colisiones | salida señalada, borde del mundo; dunas lejanas sin choque; ~~Kael pisa el agua en el borde oeste~~ arreglado el 19/11 (`4e1f492`, `MAR_CRISTAL_ORILLA_OASIS.md`; falta el Redmi) [I] |
 | Guardado | al entrar, hitos, pausa; misión rehecha si se recarga a medias |
 | Mapamundi | lugar 4, solo con `mardecristal`; sin él, la zona 2D genérica |
 | **Falta** | salir de «en pruebas» (validación en el Redmi del perfil bajo); los **demás sectores** de Calid (la máquina enterrada `calid_maquina` y su Tomo del Alba, las ruinas sepultadas, el Lente del Sol del texto del mapa); fauna; figuras definitivas de Ismena y Oren |

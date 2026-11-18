@@ -146,9 +146,10 @@ static func _corte(c, o: Dictionary, obj: Dictionary, golpe: Callable) -> void:
 	if o["hp"] > 0:
 		p.mirar(-ida, 0.2)
 		p.correr()
-	var t3: Tween = c.create_tween()
-	t3.tween_property(rig, "position", base, 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	await t3.finished
+	if o["hp"] > 0:                                  # (revisión 19/11) si cae en el corte (la Réplica), cae donde está:
+		var t3: Tween = c.create_tween()             # sin deslizar el clip de derrota de vuelta a su sitio
+		t3.tween_property(rig, "position", base, 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		await t3.finished
 	if o["hp"] > 0:
 		p.mirar_frente(0.25)
 		p.reposo()

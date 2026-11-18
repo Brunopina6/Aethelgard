@@ -1,6 +1,6 @@
 extends SceneTree
 # Capturas de la orilla del oasis del Mar de Cristal (V12, 19/11, C-2 / PC-14: en la orilla oeste se pisaba el agua).
-# Kael llega andando hacia el centro del estanque desde el oeste y desde el sur (con el grupo detrás) y se le fotografía
+# Kael llega andando hacia el centro del estanque desde el oeste, el suroeste y el sur (con el grupo detrás) y se le fotografía
 # donde se para, en los perfiles bajo y alto, de lejos y de cerca. Con ventana; una persona revisa las capturas.
 # Imprime «ORILLA <perfil> <toma>: Kael a d m del centro, suelo y, agua y» para el informe.
 # Uso: --path aethelgard --script res://pruebas/fotos_mc_oasis.gd --fixed-fps 30 -- <carpeta> 3d mardecristal sin_prologo
@@ -96,6 +96,10 @@ func _perfil() -> void:
 		await _hasta(func(): return r.destino == null, 12.0)
 		await _esperar(75)                                  # que el grupo llegue y la cámara se asiente
 		var k: Vector3 = r.kael.global_position
+		var suelo: float = _suelo_y(r, k.x, k.z, k.y + 0.5)
 		print("ORILLA %s %s: Kael a %.2f m del centro, suelo %.3f, agua %.3f" % [perfil, t[0],
-			Vector2(k.x, k.z).distance_to(T.OASIS), _suelo_y(r, k.x, k.z, k.y + 0.5), agua_y])
+			Vector2(k.x, k.z).distance_to(T.OASIS), suelo, agua_y])
+		if suelo < agua_y - 0.01:                           # (revisión 19/11) que la captura también lo cuente
+			fallos += 1
+			print("FALLO: %s %s: Kael acaba en el agua" % [perfil, t[0]])
 		_foto(t[0])

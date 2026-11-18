@@ -105,13 +105,18 @@ const COMBATES := {
 	# 19/11: Velaria (bestiario T-097, combate_velaria.gd), APAGADA fuera de aquí: su interruptor «velaria_v12» solo en
 	# este caso. Modelo de Meshy con licencia sin confirmar: solo APK de prueba privadas (D-075).
 	"velaria": {"titulo": "Velaria: destello de velo y corte de ala (prueba)", "grupo": 30,
-		"activos": ["Kael", "Lya", "Garon"], "vida": 1.0, "armonia": false, "velaria": true,
-		"nota": "Avisa el destello un turno antes (alas replegadas, «⚠»): Defender lo deja a la mitad. Cifras PROPUESTAS."},
+		"activos": ["Kael", "Lya", "Garon"], "vida": 5.0, "armonia": false, "velaria": true,
+		"nota": "Avisa el destello un turno antes (alas replegadas, «⚠»): Defender lo deja a la mitad. Vida ×5 para VER aviso, destello y recomponerse (no sirve para juzgar el equilibrio). Cifras PROPUESTAS."},
 	# 19/11: el Cencerrante (bestiario T-097, combate_cencerrante.gd), APAGADO fuera de aquí: su interruptor
 	# «cencerrante_v12» solo en este caso. Con un Zarzalín (GRUPOS[31]): al caer el Zarzalín se queda solo.
 	"cencerrante": {"titulo": "Cencerrante: toque de alarma y campanada (prueba)", "grupo": 31,
 		"activos": ["Kael", "Lya", "Garon"], "vida": 1.0, "armonia": false, "cencerrante": true,
-		"nota": "Su toque (una vez) refuerza el siguiente golpe del Zarzalín («▲»); solo, prepara su campanada («⚠»). Cifras PROPUESTAS."},
+		"nota": "Su toque (una vez) refuerza el siguiente golpe del Zarzalín («▲»). Cifras PROPUESTAS."},
+	# 19/11 (revisión): con aliado el toque sale en su primer turno y ya no prepara su campanada al quedarse solo; para VER
+	# la campanada preparada («⚠») hace falta el Cencerrante solo (GRUPOS[32]). Vida ×4: aguanta hasta prepararla (0,4).
+	"cencerrante_solo": {"titulo": "Cencerrante solo: prepara su campanada (prueba)", "grupo": 32,
+		"activos": ["Kael", "Lya", "Garon"], "vida": 4.0, "armonia": false, "cencerrante": true,
+		"nota": "Solo, prepara su campanada («⚠ Cargando») y la suelta al turno siguiente: Defender la deja a la mitad. Vida ×4 para VERLA. Cifras PROPUESTAS."},
 }
 const EXPLORAR := {
 	"oakhaven": {"titulo": "Oakhaven con Kael, Lya y Garon", "activos": ["Kael", "Lya", "Garon"],

@@ -392,7 +392,7 @@ const MODELOS := {
 		"centro_y": 0.8, "barra_y": 40.0, "centro_3d": 0.75, "respaldo": "slime"},
 	# V12, Cencerrante (19/11; enemigos/cencerrante/, cencerrante_3d.gd). Mide 1,52 m: el encuadre de su propuesta de
 	# animaciones, 2,0 m de alto de vista mirando a 0,8 m (280 px/m, como Grimfang), con sitio para la carga hacia delante
-	# y la caída de espaldas; números y efectos en la campana (0,95 m). «caida»: su derrota dura 1,2 s. Encuadre PROPUESTO,
+	# y la caída de espaldas; números y efectos en la campana (0,95 m). «caida» 1,3: su derrota (1,2 s) y un margen. Encuadre PROPUESTO,
 	# sin ver en el Redmi.
 	"cencerrante": {
 		"tipo": "3d", "esc": 0.6, "script": "res://enemigos/cencerrante/cencerrante_3d.gd", "gestos": "res://gestos_3d.gd",

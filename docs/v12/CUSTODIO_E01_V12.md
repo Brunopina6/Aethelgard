@@ -142,7 +142,7 @@ Estados: pendiente · parcial · verificado · bloqueado.
 | Diseño (ficha e01, e01_a1) | parcial | e01_a1 adaptado al ATB y documentado; a2 y a3 sin hacer |
 | Modelo (escala, orientación, materiales) | verificado (PC) | `p1_inspeccion`, `p6_godot\estudio_*` junto a Kael y Garon |
 | Rig y pesos | verificado (PC) | `p2_rig\hoja_pesos.png`, `hoja_estres_{arriba,abajo,paso}.png`; prueba M |
-| Clips presentes / esperados | 3 / 12 (parcial; **12 / 12 desde el 18/11, §11**) | idle, walk, attack_01 (Prensa); faltan alert, turn_l, turn_r, guard, hit_front, stagger, death, attack_02, attack_03 |
+| Clips presentes / esperados | **12 / 12 desde el 18/11 (§11)**; el 14/11 eran 3 / 12 | los 12 de la lista; antes del 18/11 faltaban alert, turn_l, turn_r, guard y stagger (histórico) |
 | Especiales probados | 1 / 3 | Prensa del Umbral (prueba A-D) |
 | Integración Godot | verificado (PC, apagada) | GLB reimportado, nodo, alias, ganchos; prueba_meshy_e01 |
 | Combate | verificado (PC, piloto) | prueba_meshy_e01 A-D y regresiones |
@@ -477,7 +477,11 @@ MEDIDA e01__turn_r (igual que turn_l)
 - La malla no baja del suelo (≤ 0,1 mm); todos empiezan y acaban en la pose del reposo (0,000°); el bucle de la guardia
   cierra (0,000°).
 - `pie_desliz_max_m` del tambaleo (0,207 m) y de los giros (0,080 m) es el pie que SE LEVANTA a propósito (paso atrás y
-  pasos en el sitio), no un deslizamiento en apoyo; en la alerta y la guardia, 0,4 y 0,1 mm.
+  pasos en el sitio), no un deslizamiento en apoyo **dentro de Blender**; en la alerta y la guardia, 0,4 y 0,1 mm.
+  - (Revisión del 19/11) En Godot el giro lo hace el nodo entero durante el clip (`mirar` con la duración del clip),
+    así que el pie apoyado SÍ barre el suelo con el modelo mientras gira (p. ej. 149° en 1 s al volver de la Prensa).
+    Esa medida no puede verlo. Limitación conocida, sin medir en pantalla: mirarla en el Redmi. Arreglos posibles:
+    llevar el giro a la raíz en Blender y compensarlo en `mirar`, o girar el nodo solo en las ventanas de paso.
 - Avisos de IK: los 25 de siempre (24 de la Prensa, documentados en §3, y 1 del Avance); **ninguno en los clips nuevos**.
 - GLB nuevo: 1 333 708 bytes (antes 1 210 912), md5 `93f040ec…`.
 

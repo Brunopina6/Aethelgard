@@ -34,7 +34,6 @@ const ALIAS := {"reposo": "e01__idle", "caminar": "e01__walk", "correr": "e01__w
 	"derrota": "e01__death", "entrada": "e01__alert", "guardia": "e01__guard", "tambaleo": "e01__stagger",
 	"girar_izq": "e01__turn_l", "girar_der": "e01__turn_r"}
 const GIRO_MIN_GRADOS := 60.0            # (18/11) giros menores: el de siempre, sin pasos
-const PESADO := 0.12                     # (18/11) golpe fuerte = ≥ 12 % de su vida (como el Peón y el Gólem); solo presentación
 const QUIETO := ["reposo", "guardia", "caminar", "correr", ""]
 
 var golpe_pesado := false                # (18/11) lo pone el combate (combate_meshy_e01.vigilar) antes de herida()
@@ -173,7 +172,7 @@ func reposo() -> void:
 	super.reposo()
 
 
-# Un golpe fuerte (≥ PESADO de su vida) o una ruptura (Quiebra): el tambaleo; si no, el golpe de siempre. No corta un
+# Un golpe fuerte (≥ combate_meshy_e01.GOLPE_PESADO de su vida) o una ruptura (Quiebra): el tambaleo; si no, el golpe de siempre. No corta un
 # ataque, la entrada ni la derrota (como recibir_golpe de la base). NO cambia reglas: el combate decide igual.
 func recibir_golpe() -> void:
 	var fuerte := golpe_pesado and tiene("tambaleo")
@@ -216,7 +215,8 @@ func _cortar_giro() -> void:
 # Giros grandes (≥ GIRO_MIN_GRADOS) estando quieto o al llegar andando: «girar_izq»/«girar_der» (en dos pasos) y el
 # nodo gira durante el clip (su duración en vez de la pedida). Los pequeños, el de siempre. Positivo = a su izquierda.
 func mirar(dir: Vector3, dur := 0.2) -> void:
-	if pivote == null or dur <= 0.0 or _muerta or anim == null or _atacando or _entrando or _rendido 			or not _clip in QUIETO:
+	if pivote == null or dur <= 0.0 or _muerta or anim == null or _atacando or _entrando or _rendido \
+			or not _clip in QUIETO:
 		super.mirar(dir, dur)
 		return
 	var delta := wrapf(atan2(dir.x, dir.z) - _yaw0 - pivote.rotation.y, -PI, PI)

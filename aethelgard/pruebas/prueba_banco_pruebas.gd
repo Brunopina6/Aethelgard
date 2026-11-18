@@ -101,7 +101,7 @@ func _a() -> void:
 			casos += 1
 		elif ":" in k:
 			selectores[k.get_slice(":", 0)] = true
-	_ok(casos == BP.COMBATES.size() + BP.EXPLORAR.size() and casos == 18, "A: %d casos en pantalla" % casos)   # (15/11: + la muestra de la calle; 16/11: + el barrio, la Arboleda y la ciudad; 18/11: + las 2 derrotas; 19/11: + Velaria y el Cencerrante)
+	_ok(casos == BP.COMBATES.size() + BP.EXPLORAR.size() and casos == 19, "A: %d casos en pantalla" % casos)   # (15/11: + la muestra de la calle; 16/11: + el barrio, la Arboleda y la ciudad; 18/11: + las 2 derrotas; 19/11: + Velaria y el Cencerrante, solo y con el Zarzalín)
 	_ok(selectores.size() == 11, "A: %d selectores (%s)" % [selectores.size(), str(selectores.keys())])
 	b.queue_free()
 	await _esperar(2)
@@ -223,6 +223,14 @@ func _b() -> void:
 	await _cerrar(c)
 	BP.preparar_partida()
 	_ok(not Engine.has_meta("cencerrante_v12"), "B: el interruptor del Cencerrante pasa al caso siguiente")
+	# 19/11 (revisión): el Cencerrante solo (GRUPOS[32]), para ver su campanada preparada
+	c = await _combate("cencerrante_solo")
+	_ok(c.enemigos.size() == 1 and c.enemigos[0]["clave"] == "cencerrante"
+		and load("res://combate_cencerrante.gd").es(c.enemigos[0]) and c._p3d(c.enemigos[0]) != null,
+		"B: el caso del Cencerrante solo no lo trae solo, con su personalidad y su modelo 3D")
+	await _cerrar(c)
+	BP.preparar_partida()
+	_ok(not Engine.has_meta("cencerrante_v12"), "B: el interruptor del Cencerrante (solo) pasa al caso siguiente")
 
 	c = await _combate("nix")
 	var nombres: Array = c.heroes.map(func(h): return h["nombre"])
