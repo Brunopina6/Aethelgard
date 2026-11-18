@@ -609,4 +609,15 @@ apenas cuesta:
 - **El Redmi, sin medir**: cuánto cuestan allí el aclarado (13 → 21 rayos) y el resto. En el PC el aclarado pasa de ~104 a
   ~133 µs por fotograma; si en el Redmi se nota, la opción sería filtrar los puntos por la caja de cada ocultable antes de
   los rayos (`sector.aclarar`), con capturas antes y después.
-- El índice se crea en la primera llamada a `andable` u `holgura` (al entrar en la ciudad); no se midió aparte.
+- El índice se crea en la primera llamada a `andable` u `holgura` (al entrar en la ciudad), en el hilo principal. **Revisión
+  del 18/11:** cuesta unos 38 ms en el PC (38,4 y 37,6 ms; 9 689 casillas y 27 156 entradas), una vez por proceso, dentro de
+  la carga en frío: el peor fotograma de la entrada en frío pasa de 360-393 ms a 409-436 ms. En caliente no cambia. En el
+  Redmi el tirón será mayor (sin medir). Si molesta: crearlo en un WorkerThreadPool desde `cargador.preparar()` y esperar a
+  que acabe antes de la primera consulta, o en la pantalla de carga del banco; lo que se ve no cambia.
+- (Revisión del 18/11) «La misma ruta» en §7.1-7.2 es la misma lista de tramos y toques (21 de 21), no el mismo camino al
+  fotograma: «antes» da 5 259-5 278 fotogramas por pasada y «después»/«con índice» 5 236-5 250, porque el cuerpo de Kael
+  cambia un poco por dónde anda. Por eso conviene leer también los µs por llamada, no solo por fotograma.
+- (Revisión del 18/11) En `lanzamiento.txt` la columna de commit es el HEAD de la herramienta, no la versión del juego
+  medida (esa es la palabra antes/despues/opt de la carpeta). `16ffb9c` (rama area-ciudad-coste-18) lleva el código del
+  juego de 70b5f82 por error: no usarlo para medir ni para bisecar. En claude/rebelum-v12 se integró junto con `4affdb9`
+  en un solo commit de herramientas, y el instrumentador se niega a trabajar si hay algo preparado para commit.

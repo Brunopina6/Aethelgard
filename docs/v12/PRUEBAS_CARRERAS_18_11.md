@@ -29,8 +29,10 @@ carga de …»). Alarga el tramo con `R.cambiando = true` y no cambia nada más.
 `ejecutar_pruebas.ps1` (datos aislados) desde un lanzador propio con tope de 1200 s, de una en una; en todas, la
 partida real y la carpeta real de datos quedaron sin cambios y no había otro Godot abierto.
 
-Con el retraso, toda prueba que espere una carga en hilo contando fotogramas falla siempre, en vez de una vez de cada
-muchas con el PC cargado: sirve para encontrar las que faltaban, no solo para comprobar las ya sospechosas.
+Con el retraso, casi toda prueba que espere una carga en hilo contando fotogramas falla siempre, en vez de una vez de
+cada muchas con el PC cargado (revisión del 18/11: no siempre; `prueba_naira_mision` sin arreglo pasó con 5 s por carga,
+porque agotar sus 27000 fotogramas depende del ritmo sin ventana; su arreglo es correcto, pero esa fila no lo demuestra:
+haría falta un retraso de 15-20 s por carga): sirve para encontrar las que faltaban, no solo para comprobar las ya sospechosas.
 
 | Pasada | Prueba | Retraso | Resultado |
 |---|---|---|---|
@@ -99,6 +101,13 @@ carrera (esperas en fotogramas); no lo he cambiado: entra bien así y la salida 
 `prueba_bosque_pastos` (ya el 18/11, confirmado ahora con 08-09), `prueba_arboleda_tramo`, `prueba_isla`,
 `prueba_barrio_interiores`; y, sin nombrar «cambiando», `prueba_sunken3d`, `prueba_ciclopea3d` y
 `prueba_naira_mision` (tabla de arriba).
+
+**Añadidas tras la revisión (18/11):** `prueba_oakhaven3d` (la salida al mapa esperaba 300 fotogramas, y tope global de
+8000) y `prueba_mar_cristal` (tope global de 12000 fotogramas, que se comen las cargas del mapa y del combate). No nombran
+«cambiando», y la búsqueda por palabras no las vio; el revisor las encontró pasando la batería con el retraso: con 5 s
+fallaban siempre y con su arreglo (esperas y topes por reloj, commit propio en claude/rebelum-v12) pasan con y sin retraso.
+La lista, por tanto, no es completa: cerrarla exige pasar la batería entera sin ventana con el retraso (parche por argumento
+en D:\REBELUM_diagnostico\pendientes_18_11evisa_carrerasetraso_contraprueba_con_argumento.diff).
 
 ### Con la misma forma, sin cambiar
 
