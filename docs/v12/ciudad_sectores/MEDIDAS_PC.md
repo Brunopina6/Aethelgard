@@ -2,6 +2,8 @@
 
 > **16/11, tarde: se aplicaron las propuestas 1, 2 y 5 de §4.** Las cifras de §2-§3 son las de ANTES; las de después,
 > en **§6 «Optimización del 16/11»**.
+> **18/11: §7** mide en el PC el coste en el hilo principal de los arreglos tras el Redmi (+16 % de proceso andando) y lo
+> devuelve a lo de antes con un índice en `plano.gd` (mismo resultado).
 
 > **Medido en el PC. El Redmi está SIN MEDIR.** Ninguna cifra de este documento vale para Android: los ms del PC no dicen
 > nada del Mali-G57, y las llamadas y primitivas solo dicen cuánto se le pedirá. El presupuesto del plan (§5) es para el
@@ -474,3 +476,137 @@ de cada una):
 | `diag_ciudad_visibilidad.gd` 1600×720 | **438 tramos, 0 fallos, 0 casos** (ninguna clave, 0 parpadeos, cámara sin saltos) — `visibilidad_2\`. La primera pasada (`visibilidad\`, 16/11) dio 0 casos pero 3 «no llega» con la ventana minimizada a mitad («la ventana estaba minimizada: se restaura», atasco de 1 s); repetida sin tocar la ventana, 0 |
 | `diag_ciudad_romper.gd` 1600×720 | Teclas contra paredes y en escaleras, clics rápidos, arrastre, salidas, ciclos banco/CAL/recarga: **sin fallos**; vigía del cargador: el sector de Kael siempre montado, nunca más de 3, sin errores. Quedan **3 fallos de «Guardar y recargar» que NO son de este cambio**: salen iguales con `945c321` (`romper_autor\`, 3) y con `2afc6ed` (`romper_antes\`, 4): al recargar, Kael reaparece 0,3-0,4 m al otro lado de la linde del Paso de la Botica o de la Calle del Cuervo (cuenta como otro sector) y, recargando andando, 1,0 m más allá. Pendiente aparte (guardado/colocación, no el cargador) |
 | Pruebas (`-Solo prueba_ciudad_plano,prueba_ciudad_cargador,prueba_banco_pruebas`) | **SUPERADAS 3 · FALLIDAS 0** (`D:\REBELUM_diagnostico\pruebas\2026-11-17_225529`; plano 64 OK, cargador 106 OK con las nuevas: choques a menos de 6 m en A y en las 12 conexiones, orden y caja de «Aclarados»; partida real, carpeta real y proyecto sin cambios) |
+
+## 7. Coste en el hilo principal de los arreglos tras el Redmi (18/11)
+
+> **Medido en el PC. El Redmi está SIN MEDIR.** Son ms de la CPU del PC (Ryzen 7 4800H); en el Redmi la CPU es varias
+> veces más lenta y nada de esto dice cuánto cuesta allí. Ninguna cifra de esta sección vale para Android.
+
+- **Fecha**: 18/11/2026, de 07:44 a 08:50 (rama `area-ciudad-coste-18`, desde `area-ciudad-recorrido-18`, `f0ebab4`).
+  Mismo PC y Godot que §1. **Perfil bajo fijado con `calidad_proto` (regulador NO activo), escala 3D 0,75 FIJA**
+  (960×540; NO es resolución completa), ventana 1600×720 (dibujo 1280×720 con franjas), tope de 30 FPS. Nada pesado
+  abierto; `tasklist` sin otro Godot ni Blender antes de cada pasada (el lanzador espera o aborta); APPDATA y LOCALAPPDATA
+  nuevos y aislados en cada pasada.
+- **Qué se compara** (los archivos del juego se ponen en la copia de trabajo antes de cada pasada y se devuelven después;
+  las herramientas son las de esta rama en las tres):
+  - **antes** = `70b5f82` (antes de los arreglos del Redmi);
+  - **después** = `f0ebab4` (aclarado de los finos y de los lados del grupo, cuerpo de 0,3 m de Kael con el tramo cada
+    5 cm, rodeo con toques, rótulos, «Guardar y recargar», y `grupo_3d._despejado` con `_prohibido`, `4e0acbb`);
+  - **con índice** = `c2296d0` (después + el arreglo de §7.3).
+- **Cómo**: `medir_ciudad.gd perfil=bajo solo_recorrido=1` (la entrada y el **recorrido andando con clics** de §1: 21
+  tramos, 10 conexiones, ~175 s, unos 5 240 fotogramas). «Proceso» = del primer `_process` al último del fotograma (§1):
+  el juego, sin la herramienta ni la entrada (los toques se procesan antes, fuera de esa marca). Dos clases de pasada:
+  - **sin instrumentar**: los ms por fotograma «limpios» (2 pasadas por versión);
+  - **instrumentadas** (`pruebas/instrumentar_coste_ciudad.py`, temporal, nunca en un commit): envuelve
+    `ciudad._oclusion` (el aclarado entero: rayos de la cámara a Kael y al grupo contra los ocultables montados),
+    `ciudad._altura_suelo` (cada tramo de 0,15 m del paso de Kael), `ciudad._ajustar_destino` (cada toque),
+    `ciudad._bordear` (el rodeo), `grupo_3d._despejado` y el `_process` del grupo con un reloj de µs; la envoltura cuesta
+    ~1 µs por llamada, igual en todas las versiones.
+- **Cambio en la herramienta**: la ruta de `medir_ciudad.gd` (A* y rectas) no conocía el cuerpo de Kael: con el código de
+  después, Kael se quedaba en 5 de los 21 tramos (278 s en vez de 175; `c_despues_i1`). Ahora la rejilla y las rectas
+  dejan fuera la franja de 0,3 m (como `recorrido_ciudad.gd`, con las constantes copiadas para que sirva igual con el
+  código de antes): **la misma ruta en las tres versiones, 21 de 21 tramos, 0 esperas del cargador** en todas las pasadas
+  que cuentan.
+- Textos: `D:\REBELUM_diagnostico\pendientes_18_11\ciudad_coste_18\` (`c_*` ciudad, `g_*` Pastos, `v_*` contrapruebas;
+  `c_antes_i1` y `c_despues_i1` son de la ruta vieja y no cuentan; `c_INVALIDO_*`, ver §7.6).
+
+### 7.1 La ciudad, fotograma entero (proceso en ms: mediana · p95 · máx)
+
+| Pasada | Antes (`70b5f82`) | Después (`f0ebab4`) | Con índice (`c2296d0`) |
+|---|---|---|---|
+| 1, sin instrumentar | 1,03 · 1,44 · 4,12 | 1,20 · 1,63 · 3,38 | 1,08 · 1,45 · 3,06 |
+| 2, sin instrumentar | 1,05 · 1,40 · 2,93 | 1,22 · 1,68 · 3,59 | 1,09 · 1,45 · 4,23 |
+| 3, instrumentada | 1,07 · 1,43 · 3,20 | 1,21 · 1,66 · 4,79 | 1,07 · 1,43 · 3,65 |
+| Proceso en el fotograma de un montaje (máx) | 2,9-3,2 | 3,1-3,2 | 3,1-3,7 |
+
+- **Los arreglos costaban +0,17 ms de mediana (+16 %) y +0,2-0,25 ms de p95 (+15 %)** por fotograma andando, en el mismo
+  sentido en las 3 pasadas de cada versión (más que el ruido entre pasadas de una misma versión: ±0,02 ms en la mediana).
+  **Con el índice, +0,03-0,05 ms de mediana y +0,01-0,05 de p95 sobre antes** (casi todo, el aclarado: §7.2).
+- El máximo (2,9-4,8 ms) salta de una pasada a otra en las tres versiones y no cae en un montaje: ruido del PC, como en §6.3.
+- Dibujo CPU y GPU, llamadas (36 · 41-43 · 44) y primitivas: iguales en las tres.
+
+### 7.2 La ciudad, por función (pasadas instrumentadas, misma ruta)
+
+µs por llamada · µs por fotograma (mediana · p95 · máx):
+
+| Función | Antes | Después | Con índice |
+|---|---|---|---|
+| `_altura_suelo` (1-2 por fotograma andando; ~6 920 llamadas) | 55 · 73 · 116 · 250 | **158** · 199 · 364 · 595 | 58 · 77 · 129 · 330 |
+| `_oclusion` (el aclarado; 1 por fotograma) | 104 · 102 · 143 · 351 | **132** · 128 · 185 · 360 | 135 · 132 · 188 · 405 |
+| `grupo_3d._despejado` (0-2 por fotograma; ~610 llamadas) | 8,6 · 0 · 9 · 53 | **209** · 0 · 228 · 675 | 55 · 0 · 59 · 257 |
+| `_process` del grupo (con `_despejado`) | 82 · 64 · 190 · 572 | 102 · 61 · 375 · 931 | 83 · 61 · 221 · 545 |
+| `_ajustar_destino` (cada toque; µs por llamada) | 514 | **2 325** | 504 |
+| `_bordear` (el rodeo; no existía antes) | — | 2,7 · 2 · 3 · 341 | 2,6 · 2 · 3 · 235 |
+
+- **Dónde estaba el coste**: el cuerpo de Kael (`plano.holgura`, una o dos por tramo), el tramo comprobado cada 5 cm
+  (`_prohibido` = `plano.andable`, 3 por tramo), `_ajustar_destino` (andable y `plano.holgado` cada 0,1 m de la recta del
+  toque) y `_despejado` del grupo (andable cada 0,1 m) llaman muchas veces a `plano.andable` y `plano.holgura`, y **las
+  dos recorrían todos los bloques del sector** en cada llamada (`Comun.bloque_en`, `Comun.holgura`; cientos de bloques en
+  la Plaza). El aclarado sube por los rayos de más (de 13 a 21 puntos con Lya y Garon a menos de 8 m: los lados del
+  grupo) y por los finos que ahora cuentan: +28-31 µs por fotograma en el PC.
+- `_ajustar_destino` lo llama también la herramienta para elegir cada toque (1 150-1 235 llamadas por pasada; esos µs no
+  están en «proceso»); al jugar, una por toque. Con los arreglos, un toque costaba 2,3 ms de media (una sola recta larga,
+  decenas de ms); con el índice, 0,5 ms, como antes.
+
+### 7.3 Lo que se cambió (cambio mínimo; lo que se ve no cambia)
+
+**`plano.gd`: un índice por casillas de 2 m**, hecho una vez (en la primera llamada), con los suelos y los bloques sólidos
+de cada sector que tocan cada casilla, y los sólidos que cuentan para el cuerpo (no finos) crecidos 0,31 m. `andable(x, z)`
+y `holgura(x, z)` miran solo lo de la casilla de (x, z). Mismas `Rect2`, mismo `has_point`, misma `distancia_planta`,
+mismas reglas (bloque sólido; techo por encima de lo que se pisa + `ALTO_PARED`; sector a menos de `RADIO_CUERPO`): **el
+mismo resultado**, y lo comprueba `prueba_ciudad_plano` (punto 10 nuevo: 50 256 puntos, 30 000 al azar con semilla fija y
+las esquinas de cada suelo y bloque justo en el borde, a 1 mm y a 0,3 m; 18 532 andables; 0 diferencias, comparación
+exacta). No se tocaron `ciudad.gd`, `sector.gd`, `trazado_comun.gd` ni `grupo_3d.gd`.
+
+- No se optimizó el **aclarado** (+30 µs por fotograma en el PC): es el coste de los rayos añadidos a propósito (los lados
+  del grupo), y cambiar `sector.aclarar` arriesga lo que se ve. Queda anotado (§7.7).
+- Hizo falta un solo intento: el índice mejoró a la primera, de forma clara y repetida (§7.1, §7.2).
+
+### 7.4 Fuera de la ciudad: el grupo en Pastos Verdes 3D (`medir_coste_grupo.gd`)
+
+`pruebas/medir_coste_grupo.gd` (medida, no prueba) anda las rutas de `prueba_grupo3d_rutas.gd` (3 series con semilla
+fija, 23 destinos, 181 m, 934 fotogramas) con `--fixed-fps 30` (el mismo camino en todas las pasadas), perfil bajo,
+1600×720. En Pastos, `_prohibido` es barato (`sendero_puente.gd`: unos `if`), así que `_despejado` con `_prohibido`
+apenas cuesta:
+
+| | Antes | Después | Con índice |
+|---|---|---|---|
+| Proceso, sin instrumentar (ms; mediana · p95 · máx; 2 / 2 / 1 pasadas) | 0,790 · 1,085 · 3,98 y 0,790 · 1,072 · 3,67 | 0,796 · 1,090 · 3,88 y 0,788 · 1,058 · 2,92 | 0,791 · 1,083 · 3,54 |
+| `_despejado`: µs por llamada (3 / 3 / 1 pasadas) | 5,5 · 5,9 · 6,1 | 13,5 · 13,8 · 14,1 | 14,2 |
+| `_despejado`: µs por fotograma, p95 · máx | 8 · 19-44 | 19-20 · 39-113 | 21 · 44 |
+| `_process` del grupo: µs por llamada | 88-89 | 91-94 | 96 |
+| Rutas | 0 fallos y las mismas cifras en todas (Lya ≤ 3,45 m, Garon ≤ 1,97 m, atraviesan 0, juntos 2) | igual | igual |
+
+- **+8 µs por llamada y como mucho 3 llamadas por fotograma (+0,01-0,07 ms en el peor fotograma); el fotograma no
+  cambia** (las diferencias de proceso están dentro del ruido). En Pastos no se cambia nada. Lo nota la región con un
+  `_prohibido` caro (la ciudad), que ya va con el índice.
+
+### 7.5 Que todo sigue igual (contraprueba, con `c2296d0`)
+
+| Comprobación | Resultado |
+|---|---|
+| `prueba_ciudad_plano` (sin ventana) | **FALLOS: 0** (todo lo de antes + el punto 10 nuevo; 12,5 s) |
+| `diag_ciudad_silueta` (sin ventana) | **Igual línea a línea** que la de `area-ciudad-recorrido-18` (`ciudad_recorrido_18\silueta\`): las mismas casillas y porcentajes por bloque |
+| `diag_ciudad_visibilidad` 1600×720, bajo 0,75, `--fixed-fps 30`, `video=0` (anda el mismo recorrido que `recorrido_ciudad`) | **438 tramos, 0 fallos, 0 eventos, ninguna clave**; cámara sin saltos de más de 0,6 m (el mayor 0,36 m). Las 438 líneas de tramo, **idénticas** (incluidos los segundos, los clics, lo que falta, el grupo y los aclarados) a las de `f0ebab4` en `ciudad_recorrido_18\despues_visibilidad_1280x720_bajo\` (`v_visibilidad_1600x720_bajo\`). `recorrido_ciudad.gd` aparte no se repitió (por tiempo): esta pasada anda sus mismos tramos |
+| Rutas de la medida | 21 de 21 tramos, 27 montajes y desmontajes, 10 cruces, 0 esperas, las mismas llamadas (§7.1) |
+
+### 7.6 Avisos de la medida
+
+- **Un commit hecho a mitad de una pasada se llevó los archivos del juego de `70b5f82`**: el lanzador los pone en la copia
+  de trabajo con un checkout de ese commit (que también los deja preparados para el commit) y el commit de las
+  herramientas, `16ffb9c`, los incluyó. `4affdb9` devuelve los de `f0ebab4` sin reescribir la historia (entre `f0ebab4` y
+  `4affdb9` solo cambian las herramientas). La pasada que corrió con ese código creyéndose «después» se guardó como
+  `c_INVALIDO_codigo_de_antes_i2b` (sus cifras son de antes: 53 µs por `_altura_suelo`) y la que se cortó, como
+  `c_INVALIDO_cortado` (se paró solo ese Godot); las dos se repitieron (`c_despues_i2`, `c_despues_n2`). Desde entonces
+  el lanzador fija cada versión por su commit y no se hacen commits durante una pasada.
+- «Real» con el tope de 30 da 33,3 ms de mediana en todas; su p95 (41-45 ms) incluye la herramienta (las rutas A* y, con
+  la ruta nueva, su propia holgura: hasta 230-290 ms en algún fotograma de elegir toque). No es el juego.
+- Los µs de una función instrumentada incluyen ~1 µs de la envoltura por llamada; las anidadas cuentan en las dos (el
+  rodeo llama a `_altura_suelo`; el `_process` del grupo incluye `_despejado`).
+
+### 7.7 Pendiente
+
+- **El Redmi, sin medir**: cuánto cuestan allí el aclarado (13 → 21 rayos) y el resto. En el PC el aclarado pasa de ~104 a
+  ~133 µs por fotograma; si en el Redmi se nota, la opción sería filtrar los puntos por la caja de cada ocultable antes de
+  los rayos (`sector.aclarar`), con capturas antes y después.
+- El índice se crea en la primera llamada a `andable` u `holgura` (al entrar en la ciudad); no se midió aparte.
