@@ -381,6 +381,24 @@ func _escena() -> void:
 			if l.visible and (l.name == "Rotulo_sector" and s != c.actual or l.name != "Rotulo_sector" and plana > 10.01):
 				lejos.append("%s/%s" % [s, l.name])
 	_ok(lejos.is_empty(), "C: bajo: solo el rótulo del sector de Kael y los «(en obras)» a menos de 10 m %s" % str(lejos))
+	# (18/11, Redmi: «(en obras)» cortados por lo que tienen delante; RECORRIDO.md §10) los de puerta cercanos se dibujan
+	# encima de todo (no_depth_test, después de lo transparente); en medio y alto, rotulos_delante solo los cercanos.
+	var puertas: Array = []
+	for s in c.montados:
+		for x in (c.montados[s] as Node).find_children("Rotulo_*", "Label3D", false, false):
+			if (x as Label3D).name != "Rotulo_sector":
+				puertas.append([c.montados[s], x])
+	var detras: Array = puertas.filter(func(e): return (e[1] as Label3D).visible and not ((e[1] as Label3D).no_depth_test
+		and (e[1] as Label3D).render_priority == load("res://zonas3d/ciudad/sector.gd").PRIORIDAD_ROTULO))
+	_ok(not puertas.is_empty() and detras.is_empty(), "C: bajo: los «(en obras)» creados (%d) se dibujan encima de lo que tienen delante %s" % [
+		puertas.size(), str(detras.map(func(e): return (e[1] as Label3D).name))])
+	if not puertas.is_empty():
+		var sec_r: Node = puertas[0][0]
+		var l: Label3D = puertas[0][1]
+		sec_r.rotulos_delante(l.global_position + Vector3(40.0, 0.0, 40.0))        # (como en medio y alto, con Kael lejos)
+		var lejos_tapa := not l.no_depth_test
+		sec_r.rotulos_delante(l.global_position)                                   # (Kael junto a la puerta)
+		_ok(lejos_tapa and l.no_depth_test, "C: medio y alto: rotulos_delante pone encima de todo solo el «(en obras)» cercano (%s)" % l.name)
 	v._colocar_kael(Vector3(0.0, 2.0, 20.0))
 	await _frames(3)
 	_ok(ps != null and not ps.aclarado("casa_sur_e") and (ps.get_node("Aclarados") as Node3D).visible == (ps.aclarados > 0),

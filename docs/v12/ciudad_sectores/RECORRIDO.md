@@ -150,7 +150,7 @@ Las capturas se llaman `NNN_<sector>_<tipo>_<nombre>.jpg`. Las de los sitios cr�
 | # | Problema | Dónde | Gravedad | Estado |
 |---|---|---|---|---|
 | 1 | **Un pretil se quedaba los toques del suelo que tapa.** `_punto_suelo` ignoraba lo que está a más de 1 m sobre el suelo (tejados), pero lo alto de un pretil de 0,9 m sí contaba como «suelo»: en el Paseo del Concejo (Barrio Alto, cota 10) el pretil del sur recogía los toques del metro de paseo que hay detrás de él, y Kael iba hacia el pretil y se paraba. Lo encontró el recorrido (todos los toques en esa franja «caían» en `Choque_pretil_colina_1` o `Choque_pretil_paseo_o`). | `zonas3d/ciudad/ciudad.gd`, `_punto_suelo` | media (afecta al toque en cualquier sitio con un pretil o banco delante) | **Arreglado**: lo alto de un bloque que no se pisa queda solo de reserva; si el rayo encuentra suelo andable detrás, vale ese suelo. Comprobado aparte (Kael en dos puntos del paseo, 30 toques en la franja de 1 m tras el pretil cada uno): antes **27 de 60** caían donde se tocaba, ahora **60 de 60**. Sin cambio de comportamiento donde no hay pretil (si detrás no hay suelo, vale como antes). |
-| 2 | **Kael se para en las esquinas** al ir en diagonal: el rayo de las rodillas de `vista3d` (0,3 m más allá de cada paso) corta de lado la esquina de una caja y Kael no se desliza. Visto saliendo del Callejón de los Fardos hacia el patio (esquina del `almacen_so`) y saliendo del cobertizo de carros (el `carro_cobertizo`). Quien juega tiene que tocar otra vez, más recto. | `prototipos/vista3d.gd` (compartido por todas las regiones 3D) | baja | **Pendiente** con clics (no es local a la ciudad). La herramienta lo evita como lo haría una persona: no toca en diagonal pegado a una esquina. Con teclas o mando, arreglado en la ciudad (§7, problema 9: Kael se desliza a lo largo de la pared). |
+| 2 | **Kael se para en las esquinas** al ir en diagonal: el rayo de las rodillas de `vista3d` (0,3 m más allá de cada paso) corta de lado la esquina de una caja y Kael no se desliza. Visto saliendo del Callejón de los Fardos hacia el patio (esquina del `almacen_so`) y saliendo del cobertizo de carros (el `carro_cobertizo`). Quien juega tiene que tocar otra vez, más recto. | `prototipos/vista3d.gd` (compartido por todas las regiones 3D) | baja | **Arreglado en la ciudad el 18/11 (§11)**; en las demás regiones sigue pendiente con clics (no es local a la ciudad). La herramienta lo evita como lo haría una persona: no toca en diagonal pegado a una esquina. Con teclas o mando, arreglado en la ciudad (§7, problema 9: Kael se desliza a lo largo de la pared). |
 | 3 | **El grupo roza las esquinas** de las cajas sólidas unos centímetros (Lya en la esquina del puesto de flores, 8 cm, quieta 8 s mientras Kael esperaba bajo el toldo; Garon 7 cm dentro del muro de la grieta; Lya en un bancal del huerto): siguen el rastro de Kael (un punto cada 0,2 m) y la cuerda entre dos puntos, al doblar, corta la esquina. Por eso la tolerancia de 0,12 m; quedan 3 avisos de 1-6 fotogramas por pasada. | `zonas3d/grupo_3d.gd` (compartido) | baja (no se ve: el cuerpo es más ancho que el roce) | **Pendiente**, descrito. Nunca se quedan atrás (0 reapariciones) ni a más de 3,6 m al pararse. |
 | 4 | **Clics de botón que no entraban** a 1600×720 (2 de unos 200 en una pasada: una puerta «en obras» y el último «Volver al banco»; a 1280×720, ninguno): lo más probable, el puntero real del PC sobre la ventana, que mueve el ratón entre la pulsación y la suelta del clic simulado (el botón deja de contar la pulsación). | entorno de la prueba | — | **Arreglado en la herramienta**: el puntero se mueve antes al botón y, si el clic no hace nada, se vuelve a pulsar (hasta 3 veces, como quien vuelve a tocar); las repeticiones se cuentan («botones pulsados otra vez»). No es del juego. |
 | 5 | **Sin ventana no se puede**: con `--headless` la ventana es de 64×64, y con `--fixed-fps 30` la PRIMERA carga en hilo de una escena con guiones (`Recursos.cambiar_escena`) falla con «Parse Error: Failed» (también el barrio y la muestra de la calle desde el banco; con ventana, o sin `--fixed-fps`, carga bien). | entorno de pruebas (`recursos.gd`/cargas en hilo + `--headless --fixed-fps`) | baja (solo pruebas) | **Pendiente**, descrito; por eso la prueba va como «ventana». |
@@ -200,7 +200,7 @@ de ventana, flechas), con dos herramientas de diagnóstico (no son pruebas de la
 | 7 | Rótulos 3D de sector enormes y cortados cerca de la cámara, o encima del grupo (baja) | sí: el de la plaza a 5,8 m y el del Barrio Alto a 6,7 m de la cámara, dibujados | `sector._rotulos`: `visibility_range_begin` = 10 m (margen 2, fundido propio) en los rótulos de sector y de puerta. El título de la pantalla ya nombra el sector | **arreglado**: ninguno a menos de 10 m; `antes_y_despues\08` (Barrio Alto) |
 | 8 | Un sector que se ve pero no está montado pierde los toques: ante el Paso de la Botica viniendo de la Calle Mayor (bajo: puerta_sur, plaza_tapiz y cuervo montados), el suelo de los Pasajes a 4-10 m no se podía tocar (media) | sí: 3 de 3 toques perdidos, `_punto_suelo` da null y Kael no se mueve | `ciudad._punto_suelo`: si los choques no dan suelo, `_punto_plano` recorre el mismo rayo contra el plano (pasos de 0,25 m hasta 120 m, afinado a 2,5 cm) y devuelve el primer punto andable con el rayo a su cota; `_ajustar_destino` sigue cortando en lo no andable. Sin cambio cuando los choques dan suelo o reserva. El cargador no cambia | **arreglado**: 0 de 3 perdidos (Kael anda 6,6 m hacia el pasaje y el cargador monta los Pasajes) |
 | 9 | Con teclas o mando, Kael no se desliza a lo largo de una pared en diagonal (baja) | sí: ↑+→ 1,5 s pegado a la pared norte del Paso de la Botica, 0,20 m | `ciudad._deslizar` (tras `vista3d._process`): si el paso entero no pasa, prueba solo en x y solo en z con el mismo `_altura_suelo` (escalón, rodillas, lo no andable), el más alineado primero, y anima la marcha. `vista3d.gd` NO cambia (las otras regiones siguen igual). Con clics, no (el toque va a un punto) | **arreglado** en la ciudad: 4,45 m (libre, unos 4,5); al soltar, Kael no sigue andando en el sitio |
-| 10 | Kael se para en las esquinas con CLICS en diagonal (rayo de las rodillas de `vista3d`) (baja) | no se repite aparte (la herramienta lo evita) | ninguno: `vista3d.gd` es compartido | **pendiente** (§5, problema 2) |
+| 10 | Kael se para en las esquinas con CLICS en diagonal (rayo de las rodillas de `vista3d`) (baja) | la herramienta lo evita; sí en el Redmi (18/11, `REDMI_18_11.md`, «t02_diag»), y con `prueba_ciudad_esquinas`: 14 de 14 esquinas paradas a ~3 m del toque | `ciudad._ajustar_destino` ya no corta el destino ante la ESQUINA de una casa: `_esquina_cortada` (la recta sale de lo no andable en ≤ 3 m, a la misma cota, hay camino en L andable por fuera y cabe el cuerpo 0,3 m más allá del codo); al llegar, `_bordear` la rodea. `vista3d.gd` NO cambia | **arreglado** en la ciudad (§11) con toques; falta el Redmi |
 | 11 | El grupo roza las esquinas de cajas sólidas unos centímetros (baja) | sí: 2 avisos de 1-2 fotogramas por pasada (pilar del soportal 1, jardín de la plaza del Árbol) | ninguno: `grupo_3d.gd` es compartido | **pendiente** (§5, problema 3) |
 | 12 | Sin ventana no se puede pasar (64×64; carga en hilo con `--fixed-fps`) (baja) | no se repite (descrito en §5) | ninguno: entorno de pruebas | **pendiente**; la prueba sigue como «ventana» |
 | 13 | Rótulos «… (en obras)» por delante de Kael junto a la puerta (baja) | visto en las capturas | ninguno (son de la maqueta); a menos de 10 m de la cámara ya no se dibujan (problema 7), pero este caso está a unos 16 m | **sin cambiar** (descartado: maqueta) |
@@ -552,5 +552,40 @@ arreglo.
 
 - Probarlo en el Redmi con el dedo: el soportal sur y el rellano 1 tocando la casa, y los rótulos en la plaza alta.
 - Los 92 bloques del barrido (arriba).
-- `diag_ciudad_visibilidad` no se ha pasado: anda el recorrido entero con ventana y el encargo pedía solo las pruebas
-  afectadas.
+- (Revisión, 18/11, 21:17-21:48) `diag_ciudad_visibilidad` pasado después, con el ensanche y las esquinas (§11): **438 tramos,
+  0 fallos, 0 eventos** (ni parpadeos ni aclarados que no llegan) en 1280×720 bajo y en 1600×720 medio, como antes del
+  ensanche. Registros: `D:\REBELUM_diagnostico\visibilidad_18_11\pasadas_2105\vis_*`. Y dos pruebas de regresión que
+  fallarían sin el arreglo: `prueba_ciudad_fachadas` (nueva: las 4 piezas ocultables, MARGEN_LADO y los dos sitios del
+  Redmi, 0 % tapado con el ensanche y 22 % / 11 % sin él) y, en `prueba_ciudad_cargador`, los «(en obras)» cercanos encima
+  de todo en bajo y `rotulos_delante` en medio y alto.
+
+## 11. Esquinas con toques en diagonal, tras el Redmi del 18/11 (18/11)
+
+En el Redmi (`docs/v12/REDMI_18_11.md`, `t02_diag_1/2`) Kael se quedaba parado contra la esquina de una casa al tocar en
+diagonal (§5 problema 2, §7 problema 10). Causa: la recta del toque corta la ESQUINA de un bloque alto y grande (no
+«rodeable», `_bloque_rodeable`) y `_ajustar_destino` dejaba el destino ante ella; Kael llegaba, se paraba y `_bordear`
+no tenía nada que rodear.
+
+**Arreglo, solo en la ciudad** (`zonas3d/ciudad/ciudad.gd`, `_esquina_cortada` y `_tramo_andable`; `prototipos/vista3d.gd`
+sin cambios): cuando la recta entra en lo no andable, si sale de ello en menos de 3 m (`ESQUINA_MAX`), a la misma cota
+(±`SUBE_MAX`), y se puede ir de un lado al otro por FUERA de la esquina en L (primero en z y luego en x o al revés, todo
+andable cada 0,1 m y sin escalones), el destino es el punto tocado y Kael la rodea al llegar con `_bordear`. Cruzar una
+casa de cara a cara no es una esquina (la L la atraviesa): se para ante ella como antes. Tras la revisión: además tiene
+que caber el cuerpo, holgado un punto 0,3 m (`RADIO_CUERPO`) más allá del codo alejándose de lo cortado; en un pasillo
+más estrecho que el cuerpo no se rodea y Kael se para limpio (sin ello, `_bordear` lo haría andar de lado hasta 4 s).
+
+**Prueba nueva** `prueba_ciudad_esquinas` (auto, en la lista): 14 esquinas de verdad de los 8 sectores (casas y muros no
+rodeables), Kael a 0,6 m de una cara y el toque a 0,6 m de la cara de al lado.
+- **Sin el arreglo** (ciudad.gd de `69e85b9`, pasada `2026-11-18_210012`): **FALLOS: 14**, las 14 esquinas:
+  en todas, «destino cortado … Kael acaba a 3,11 m del toque» (2,97-3,39 m).
+- **Con el arreglo** (pasada `2026-11-18_210139`): **FALLOS: 0**. Los casos «rozando» (13) y «a través» son guardas de
+  regresión: pasaban también sin el arreglo.
+- Un primer intento de la holgura (holgado en el codo mismo) rechazaba 12 de las 14 esquinas (el codo sale del último
+  punto andable, pegado a la cara; pasada `2026-11-18_210030`, FALLOS: 12): descartado.
+
+Con el arreglo, `-Solo` (pasada `2026-11-18_210030` y `…_210139`): `prueba_ciudad_cargador`, `prueba_ciudad_plano`,
+`prueba_grupo_despejado` y `prueba_barrio_trazado` SUPERADAS. `recorrido_ciudad` (pasada `2026-11-18_210239`, -Manual,
+889 s): **430 tramos, 0 fallos**. `diag_ciudad_visibilidad` en 1280×720 bajo y 1600×720 medio: 438 tramos, 0 fallos, 0
+eventos (§10).
+
+Sin probar: en el Redmi con el dedo (Barrio Alto, rellano 1). En las demás regiones 3D el problema sigue (`vista3d.gd`).

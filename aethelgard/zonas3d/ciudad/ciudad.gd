@@ -266,12 +266,18 @@ func _ajustar_destino(p):
 	var ultimo_holgado = null
 	var y_ant := desde.y
 	var cruzando := false
+	var esquina_hasta := -1
 	for i in n + 1:
 		var q := desde.lerp(hacia, float(i) / maxf(n, 1))
 		if _prohibido(q):
-			if i > 0 and not _bloque_rodeable(q).is_empty():
+			if i > 0 and (i <= esquina_hasta or not _bloque_rodeable(q).is_empty()):
 				cruzando = true
 				continue
+			if i > 0 and ultimo != null:                # (también tras algo rodeable: el banco y el pretil del atrio)
+				esquina_hasta = _esquina_cortada(ultimo, desde, hacia, i, n)
+				if esquina_hasta >= i:
+					cruzando = true
+					continue
 			break
 		var y := P.altura(q.x, q.z)
 		if cruzando and absf(y - y_ant) > SUBE_MAX:  # (detrás de él, otro nivel: no se llega rodeándolo)
@@ -286,6 +292,57 @@ func _ajustar_destino(p):
 	if ultimo != null and ultimo_holgado != null and not P.holgado(ultimo.x, ultimo.z):
 		return ultimo_holgado
 	return ultimo
+
+
+# (18/11, Redmi: REDMI_18_11.md, RECORRIDO.md §5 problema 2) Con TOQUES en DIAGONAL junto a una casa, la recta corta su
+# ESQUINA: lo que no se pisa es una casa (no rodeable) y el destino se quedaba ante la esquina, Kael se paraba contra ella
+# (Barrio Alto, «t02_diag»; prueba_ciudad_esquinas: 14 de 14 esquinas paradas a 3 m del toque). Si la recta sale de lo
+# no andable a menos de ESQUINA_MAX y a la misma cota, y se puede ir de un lado al otro por FUERA de la esquina (en L:
+# primero en z y luego en x, o al revés, todo andable), el destino es el punto tocado y Kael la rodea al llegar
+# (_bordear, a lo largo de la cara). Cruzar una casa de cara a cara opuesta no es una esquina (la L la atraviesa): se
+# para ante ella como antes. Devuelve el último índice de la recta dentro de lo no andable, o -1 si no es una esquina.
+const ESQUINA_MAX := 3.0
+
+
+func _esquina_cortada(a: Vector3, desde: Vector3, hacia: Vector3, i: int, n: int) -> int:
+	var paso := Vector2(hacia.x - desde.x, hacia.z - desde.z).length() / maxf(n, 1)
+	var j := i
+	while j <= n and _prohibido(desde.lerp(hacia, float(j) / maxf(n, 1))):
+		j += 1
+		if (j - i) * paso > ESQUINA_MAX:
+			return -1
+	if j > n:
+		return -1                                    # (la recta acaba dentro de lo no andable)
+	var b := desde.lerp(hacia, float(j) / maxf(n, 1))
+	if absf(P.altura(b.x, b.z) - a.y) > SUBE_MAX:
+		return -1
+	var dentro := desde.lerp(hacia, (float(i) + float(j - 1)) * 0.5 / maxf(n, 1))   # lo cortado de la esquina
+	for codo in [Vector2(a.x, b.z), Vector2(b.x, a.z)]:
+		# (revisión, 18/11) por fuera de la esquina tiene que caber el cuerpo de Kael: holgado un punto RADIO_CUERPO más
+		# allá del codo, alejándose de lo cortado (el codo mismo sale de «a», pegado a la cara, y nunca es holgado). En
+		# un pasillo más estrecho que el cuerpo ese punto cae en la otra pared y no se rodea: se para limpio, como antes
+		# (si no, _bordear lo haría andar de lado hasta BORDEO_MAX).
+		var fuera: Vector2 = codo + (codo - Vector2(dentro.x, dentro.z)).normalized() * Comun.RADIO_CUERPO
+		if not P.holgado(fuera.x, fuera.y):
+			continue
+		if _tramo_andable(Vector2(a.x, a.z), codo, a.y) and _tramo_andable(codo, Vector2(b.x, b.z), a.y):
+			return j - 1
+	return -1
+
+
+# Lo andable de a a b cada 0,1 m, sin escalones de más de SUBE_MAX desde la cota y0.
+func _tramo_andable(a: Vector2, b: Vector2, y0: float) -> bool:
+	var n := maxi(1, int(ceil(a.distance_to(b) / 0.1)))
+	var y := y0
+	for k in n + 1:
+		var q := a.lerp(b, float(k) / n)
+		if not P.andable(q.x, q.y):
+			return false
+		var h := P.altura(q.x, q.y)
+		if absf(h - y) > SUBE_MAX:
+			return false
+		y = h
+	return true
 
 
 # El bloque sólido que se puede rodear en q (lo bajo o pequeño, ver arriba), o [].
@@ -522,8 +579,8 @@ func _process(delta: float) -> void:
 # Con teclas o mando, en DIAGONAL contra una pared: si el paso entero no pasa (vista3d.gd lo descarta), Kael se desliza a
 # lo largo de ella con la parte del paso que sí pasa (solo en x o solo en z), con las mismas reglas (_altura_suelo:
 # escalón, rodillas y lo que no se pisa). Pegado a la pared norte del Paso de la Botica, ↑+→ avanzaba 0,10 m en 1,5 s
-# (verificación, 16/11). Solo en la ciudad: vista3d.gd es de todas las regiones 3D y no cambia. Con clics, no (el toque
-# lleva a un punto: si una esquina lo frena, se vuelve a tocar).
+# (verificación, 16/11). Solo en la ciudad: vista3d.gd es de todas las regiones 3D y no cambia. Con clics, la esquina la
+# rodea _bordear (y _ajustar_destino ya no corta el destino ante ella: _esquina_cortada, 18/11).
 var _deslizando := false
 
 
