@@ -33,7 +33,8 @@ const METAS_SESION := ["meshy_e01", "banco_caso", "nix_v12", "oakhaven_propuesta
 	"calidad_sesion", "banco_proto",                  # (15/11: [calidad] de la sesión rehecha en cada caso; un banco de medida a medias no sigue)
 	"barrio_v12", "barrio_interior", "barrio_reloj",  # (16/11: el barrio experimental: activado, su interior tras CAL y su reloj)
 	"arboleda_flor",                                 # (16/11: «Llevar una flor de abajo», tramo de la Arboleda)
-	"ciudad_v12"]                                    # (16/11: la ciudad completa de Oakhaven, maqueta: activada)
+	"ciudad_v12",                                    # (16/11: la ciudad completa de Oakhaven, maqueta: activada)
+	"naira_v12"]                                     # (18/11: Naira, solo en el caso de las derrotas de Naira y Nix)
 # Calidad elegida en la sesión (CAL, el selector «Calidad 3D», los bancos A/B de vista3d): sigue entre los casos de la
 # sesión y se quita SOLO al salir.
 const METAS_CALIDAD := ["calidad_proto", "calidad_extra", "muestra_precalentar",
@@ -88,6 +89,17 @@ const COMBATES := {
 	"grupo4": {"titulo": "Grupo de cuatro: Kael, Lya, Garon y Nix (prueba)", "grupo": 1,
 		"activos": ["Kael", "Lya", "Garon", "Nix"], "vida": 6.0, "armonia": false,
 		"nota": "SOLO en el banco: el juego sigue con tres. Para ver sitios, barras, menús y turnos con cuatro."},
+	# 18/11 (Redmi, REDMI_18_11.md): para VER las derrotas de los héroes en el teléfono. Los héroes empiezan con 1 PV y los
+	# enemigos con su barra de turno casi llena: los tres slimes golpean antes de que se abra ningún menú y cada golpe
+	# derriba a uno (morir(), su animación de derrota). Frostfang no cuenta: Kael no llega a atacar (D-017 intacta).
+	# Al caer todos, la derrota de siempre («Derrota...») y se vuelve aquí con la vida llena (en la partida del banco).
+	# «casi_sin_vida» solo lo lee preparar_combate (abajo); las fórmulas y reglas del combate no cambian.
+	"derrotas": {"titulo": "Derrotas: los héroes empiezan casi sin vida", "grupo": 1, "activos": ["Kael", "Lya", "Garon"],
+		"vida": 1.0, "armonia": false, "casi_sin_vida": true,
+		"nota": "No toques nada: los slimes atacan primero y cada golpe derriba a un héroe. Compara arriba «Protagonistas» Originales, v2 y v3."},
+	"derrotas_reclutas": {"titulo": "Derrotas de Naira y Nix (casi sin vida)", "grupo": 1,
+		"activos": ["Kael", "Naira", "Nix"], "vida": 1.0, "armonia": false, "casi_sin_vida": true,
+		"nota": "Naira y Nix (prototipos, solo aquí) con Kael, a 1 PV: se ven caer los tres. Sin tocar nada."},
 }
 const EXPLORAR := {
 	"oakhaven": {"titulo": "Oakhaven con Kael, Lya y Garon", "activos": ["Kael", "Lya", "Garon"],
@@ -162,6 +174,9 @@ static func poner_grupo(activos: Array, nivel := 0) -> void:
 	if "Nix" in activos:
 		Engine.set_meta("nix_v12", true)
 		G.unir("Nix")
+	if "Naira" in activos:                         # (18/11) como Nix: su interruptor, solo de la sesión del banco
+		Engine.set_meta("naira_v12", true)
+		G.unir("Naira")
 	if activos.size() > G.MAX_ACTIVOS:
 		Engine.set_meta(G.META_GRUPO4, true)
 	elif Engine.has_meta(G.META_GRUPO4):
@@ -188,6 +203,13 @@ static func preparar_combate(c) -> void:
 			e["hp"] = e["hp_max"]
 	if caso.get("armonia", false):
 		c.armonia = 1.0
+	if caso.get("casi_sin_vida", false):           # (18/11) el caso de las derrotas: 1 PV y los enemigos actúan primero
+		for h in c.heroes:                         # (y los héroes casi sin velocidad: el Slime a veces se encoge un turno
+			h["hp"] = 1                            # antes de su Rebote, y sin esto se abría el menú de un héroe; así
+			h["atb"] = 0.0                         # caen todos sin tocar nada: su barra tardaría 100 s en llenarse)
+			h["vel"] = 1.0
+		for e in c.enemigos:
+			e["atb"] = 99.0                        # (ATB_MAX = 100 en combate.gd: actúan en el primer instante)
 
 
 # Sale del banco: quita la partida de la sesión, los interruptores que puso y el archivo de prueba. Lo siguiente que

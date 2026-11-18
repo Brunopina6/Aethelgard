@@ -62,3 +62,46 @@ Kael original (la cabeza, −0,13 m) no se ha tocado: en esta cámara cae detrá
 −0,11 m (cadera y astrolabio; con 0,1 serían unos −0,31); Nix, +0,03 m (prácticamente apoyada; con 0,1, unos −0,17).
 El cambio mejora a los tres; Naira sigue algo hundida y queda anotado. Érebo no se ha medido (su derrota es la de su
 combate propio).
+
+## Érebo: no se mide, porque nunca cae (18/11, tarde)
+
+Comprobado en el código antes de medir nada: **Érebo nunca ejecuta `morir()` en el juego.**
+- Solo se crea en la invocación de Lya: `invocacion_erebo.gd` (`_preparar`, `load("res://erebo_3d.gd").new()`), y la
+  híbrida crea el suyo (`invocacion_erebo_hibrida.gd`). Ninguna invocación (`invocacion_base.gd`, `invocacion_erebo*.gd`,
+  `vfx/erebo_cabeza_firme.gd`, `erebo_orbe_v12.gd`) llama a `morir()` sobre él. Al acabar, sale con su clip y se libera.
+- No es un combatiente: no está en `heroes` ni en `enemigos` de `combate.gd`, ni en `MODELOS`, ni en ningún grupo de
+  enemigos. Por eso no tiene vida que pueda llegar a 0. No existe un «combate propio» de Érebo (lo que se decía arriba
+  era incorrecto).
+- El único `morir()` dentro de la invocación (`combate.gd`, `_resultado_erebo`, `doble.morir()`) es el del **doble del
+  enemigo** que recibe el golpe, no el de Érebo.
+
+Que herede el desplome de `maga_3d.gd` no tiene efecto visible: **no se mide** con `diag_derrota_suelo.gd`.
+
+## Cómo ver las derrotas en el teléfono (18/11, tarde)
+
+Desde hoy, el banco de pruebas tiene dos casos nuevos. Solo existen en la APK de Auditoría y en el editor.
+- «Derrotas: los héroes empiezan casi sin vida» (Kael, Lya y Garon).
+- «Derrotas de Naira y Nix (casi sin vida)» (Kael, Naira y Nix).
+
+Cómo funcionan (`banco_pruebas.gd`, `preparar_combate`, clave `casi_sin_vida`):
+- Los héroes entran con 1 PV y casi sin velocidad.
+- Los tres slimes empiezan con la barra de turno llena, así que golpean antes de que se abra ningún menú.
+- Cada golpe derriba a un héroe y se ve su `morir()`. Frostfang no cuenta porque Kael no llega a atacar: D-017 sigue igual.
+- Al caer todos llega la derrota de siempre («Derrota...») y se vuelve solo al banco. Todo queda en la partida del banco.
+
+Para comparar versiones se usa el selector «Protagonistas». Pasos en `GUION_REDMI_19_11.md`.
+
+Comprobado en el PC con `prueba_banco_derrotas` (sin ventana). Clip que suena en el instante de `morir()`:
+
+| Versión | Kael | Lya | Garon |
+|---|---|---|---|
+| Originales | `dying_backwards` | desplome con tween, sin clip | `Morir` |
+| v2 | `derribo` | `derribo` | `derribo` |
+| v3 | `derribo` | `derribo` | `derribo` |
+
+En el caso de Naira y Nix: Kael `dying_backwards`, Naira `derrota` y Nix `derribo`.
+
+**Ojo con lo de arriba:** en el combate, Naira y Nix ejecutan su **propio** `morir()`, que reproduce sus clips
+(`personajes/naira/naira_3d.gd` y `personajes/nix/nix_3d.gd`). No usan el desplome de `maga_3d.gd`. Por tanto, la frase
+«heredan este desplome» y sus cifras (con 0,3 frente a 0,1) quedan en duda. No se ha vuelto a medir: hay que revisarlo
+con `diag_derrota_suelo` (`solo=naira` y `solo=nix`) antes de tomar decisiones con esas cifras.
