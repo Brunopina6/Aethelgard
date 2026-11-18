@@ -265,14 +265,23 @@ func _probar() -> void:
 	# 8. el desenlace, al volver (la región recargada, como tras el combate)
 	_t0_8 = Time.get_ticks_msec()
 	_f0_8 = Engine.get_process_frames()
+	# (no capturar «r»: se libera al recargar y la condición daría «Lambda capture… was freed»). El id se toma AQUÍ, con
+	# la región viva: tras el combate «r» ya está liberada y get_instance_id() daba 0 (la comprobación no comparaba nada).
+	var id_vieja := r.get_instance_id()
 	await _hasta(func(): return R.cambiando, 3.0)
-	await _hasta(func(): return not R.cambiando, 30.0)
+	# (18/11) el combate se monta en segundo plano: se espera por RELOJ a que acabe. Contando fotogramas (30 s de juego =
+	# 900 fotogramas, que con --fixed-fps pasan en unos 2 s reales), en un PC cargado se pedía la región con el cambio
+	# al combate aún en curso; Recursos.cambiar_escena ignora lo que se le pide mientras cambia, el combate se montaba
+	# después y la región no llegaba nunca: «8: la región no vuelve a cargarse» (docs/v12/BOSQUE_RECARGA_18_11.md).
+	await _hasta_reloj(func(): return not R.cambiando, 60.0)
 	B.apuntar("purificado")
 	P.poner_hito("bq_resuelto")
 	P.poner_hito("bq_purificado")
 	Engine.set_meta("pos_3d_ok", false)
-	var id_vieja := r.get_instance_id()   # (no capturar «r»: se libera al recargar y la condición daría «Lambda capture… was freed»)
 	var al_pedir := _estado_8("al pedir la región", id_vieja)
+	if R.cambiando:
+		_fallo("8: el cambio al combate sigue en curso tras 60 s: la región se pediría y se ignoraría")
+		print(al_pedir)
 	R.cambiar_escena(REGION)
 	if not await _hasta_reloj(func(): return _region_lista() and current_scene.get_instance_id() != id_vieja and current_scene.has_method("texto_objetivo"), 60.0):
 		_fallo("8: la región no vuelve a cargarse")
