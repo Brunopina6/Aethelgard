@@ -18,7 +18,12 @@
   "attack_02": "e01__attack_porton",
   "attack_03": "e01__attack_sello",
   "hit_front": "e01__hit",
-  "death": "e01__death"
+  "death": "e01__death",
+  "alert": "e01__alert",
+  "guard": "e01__guard",
+  "stagger": "e01__stagger",
+  "turn_l": "e01__turn_l",
+  "turn_r": "e01__turn_r"
  },
  "mapa_juego": {
   "reposo": "e01__idle",
@@ -28,7 +33,12 @@
   "porton": "e01__attack_porton",
   "sello": "e01__attack_sello",
   "recibir_golpe": "e01__hit",
-  "derrota": "e01__death"
+  "derrota": "e01__death",
+  "entrada": "e01__alert",
+  "guardia": "e01__guard",
+  "tambaleo": "e01__stagger",
+  "girar_izq": "e01__turn_l",
+  "girar_der": "e01__turn_r"
  },
  "velocidad_andar_m_s": 0.867,
  "clips": {
@@ -89,6 +99,48 @@
     "impacto": 1.3,
     "fin_activo": 1.5,
     "recupera": 1.5
+   }
+  },
+  "e01__alert": {
+   "duracion": 1.6,
+   "bucle": false,
+   "eventos": {
+    "alerta": 0.22,
+    "listo": 0.6
+   }
+  },
+  "e01__guard": {
+   "duracion": 2.0,
+   "bucle": true,
+   "eventos": {}
+  },
+  "e01__stagger": {
+   "duracion": 1.2,
+   "bucle": false,
+   "eventos": {
+    "sacudida": 0.1,
+    "paso_atras": 0.36,
+    "recompone": 0.7
+   }
+  },
+  "e01__turn_l": {
+   "duracion": 1.0,
+   "bucle": false,
+   "eventos": {
+    "paso_1": 0.05,
+    "apoyo_1": 0.42,
+    "paso_2": 0.45,
+    "apoyo_2": 0.85
+   }
+  },
+  "e01__turn_r": {
+   "duracion": 1.0,
+   "bucle": false,
+   "eventos": {
+    "paso_1": 0.05,
+    "apoyo_1": 0.42,
+    "paso_2": 0.45,
+    "apoyo_2": 0.85
    }
   }
  },
@@ -166,6 +218,55 @@
    "pie_desliz_max_m": 0.0,
    "pie_z_apoyo_max_m": 0.0,
    "cadera_baja_pct_altura": 1.4,
+   "fin_vs_reposo_grados": 0.0,
+   "inicio_vs_reposo_grados": 0.0
+  },
+  "e01__alert": {
+   "min_z_malla": -0.0,
+   "min_z_manos": 0.5495,
+   "cadera_baja_max_m": 0.1,
+   "pie_desliz_max_m": 0.0004,
+   "pie_z_apoyo_max_m": 0.0,
+   "cadera_baja_pct_altura": 5.4,
+   "fin_vs_reposo_grados": 0.0,
+   "inicio_vs_reposo_grados": 0.0
+  },
+  "e01__guard": {
+   "min_z_malla": -0.0,
+   "min_z_manos": 1.1831,
+   "cadera_baja_max_m": 0.1,
+   "pie_desliz_max_m": 0.0001,
+   "pie_z_apoyo_max_m": 0.0,
+   "cadera_baja_pct_altura": 5.4,
+   "salto_bucle_grados": 0.0
+  },
+  "e01__stagger": {
+   "min_z_malla": -0.0001,
+   "min_z_manos": 0.5495,
+   "cadera_baja_max_m": 0.1299,
+   "pie_desliz_max_m": 0.2073,
+   "pie_z_apoyo_max_m": 0.0,
+   "cadera_baja_pct_altura": 7.0,
+   "fin_vs_reposo_grados": 0.0,
+   "inicio_vs_reposo_grados": 0.0
+  },
+  "e01__turn_l": {
+   "min_z_malla": -0.0,
+   "min_z_manos": 0.5495,
+   "cadera_baja_max_m": 0.045,
+   "pie_desliz_max_m": 0.0799,
+   "pie_z_apoyo_max_m": 0.0,
+   "cadera_baja_pct_altura": 2.4,
+   "fin_vs_reposo_grados": 0.0,
+   "inicio_vs_reposo_grados": 0.0
+  },
+  "e01__turn_r": {
+   "min_z_malla": -0.0,
+   "min_z_manos": 0.5495,
+   "cadera_baja_max_m": 0.045,
+   "pie_desliz_max_m": 0.0799,
+   "pie_z_apoyo_max_m": 0.0,
+   "cadera_baja_pct_altura": 2.4,
    "fin_vs_reposo_grados": 0.0,
    "inicio_vs_reposo_grados": 0.0
   }

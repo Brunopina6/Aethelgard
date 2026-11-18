@@ -142,7 +142,7 @@ Estados: pendiente · parcial · verificado · bloqueado.
 | Diseño (ficha e01, e01_a1) | parcial | e01_a1 adaptado al ATB y documentado; a2 y a3 sin hacer |
 | Modelo (escala, orientación, materiales) | verificado (PC) | `p1_inspeccion`, `p6_godot\estudio_*` junto a Kael y Garon |
 | Rig y pesos | verificado (PC) | `p2_rig\hoja_pesos.png`, `hoja_estres_{arriba,abajo,paso}.png`; prueba M |
-| Clips presentes / esperados | 3 / 12 (parcial) | idle, walk, attack_01 (Prensa); faltan alert, turn_l, turn_r, guard, hit_front, stagger, death, attack_02, attack_03 |
+| Clips presentes / esperados | 3 / 12 (parcial; **12 / 12 desde el 18/11, §11**) | idle, walk, attack_01 (Prensa); faltan alert, turn_l, turn_r, guard, hit_front, stagger, death, attack_02, attack_03 |
 | Especiales probados | 1 / 3 | Prensa del Umbral (prueba A-D) |
 | Integración Godot | verificado (PC, apagada) | GLB reimportado, nodo, alias, ganchos; prueba_meshy_e01 |
 | Combate | verificado (PC, piloto) | prueba_meshy_e01 A-D y regresiones |
@@ -157,7 +157,7 @@ Estados: pendiente · parcial · verificado · bloqueado.
 - **Acceso de prueba (14/11):** en la APK de Auditoría, pantalla de carga → «Banco de pruebas (Auditoría)» →
   «Custodio de Porcelana (meshy_e01)». Usa su interruptor solo durante esa sesión y con una partida aislada.
 
-- **Clips que faltan (6 de 12):** alert, turn_l, turn_r, guard (hoy la guardia usa el reposo y el tinte de defensa),
+- (18/11: hechos los cinco que quedaban, §11.) **Clips que faltan (6 de 12):** alert, turn_l, turn_r, guard (hoy la guardia usa el reposo y el tinte de defensa),
   stagger y attack_03 «Sello de Clausura» con su ataque (a3). Hechos el 14/11 por la noche: attack_02, hit_front y
   death (sección 8).
 - **Sonido propio** (golpe pétreo grave, astillas): necesita claves nuevas en `sonido.gd` y derivados con procedencia;
@@ -432,3 +432,147 @@ y `nombre_largo()`:
   teléfono (en el PC caben; el panel de abajo a la derecha se cortaba ya antes por el borde de la pantalla).
 - Para ver el Sello en el caso ×8: unos 7 turnos suyos (≈ 2,5-3 min a ritmo de menú). Si el menú se queda abierto, él no
   actúa.
+
+
+## 11. 18/11, noche: los cinco clips que faltaban (alert, turn_l, turn_r, guard y stagger)
+
+Rama `claude/rebelum-v12` (desde `ca8f96b`), copia `D:\Aethelgard_v12`. Comprobado ejecutando en el PC el 18/11 con datos
+aislados; la partida real y la carpeta real de datos, sin cambios en todas las pasadas. **Sigue APAGADO** (interruptor
+`meshy_e01`, grupos 28 y 29): los ganchos nuevos solo actúan sobre el nodo del Custodio.
+
+### 11.1 Fuente y método
+
+- Lista del paquete (`ataques_propuestos.json`, `enemies[e01].clips` y el PDF, «Lista explícita de clips propuestos»):
+  `idle, alert, walk, turn_l, turn_r, guard, hit_front, stagger, death, attack_01-03`. El paquete no da tiempos ni poses
+  para estos cinco; solo la ficha de movimiento: «paso pesado con apoyo de toda la planta, contrapeso corto de hombros
+  y giros en dos pasos. No deslizar los pies ni doblar el casco», y que los impactos y recuperaciones no son bucles.
+- `fuente/p2_clips.py`, el mismo método (funciones del tiempo con IK de autoría, horneado a 30 fps, 24 huesos). Los cinco
+  van AL FINAL de `CLIPS`; los siete anteriores no se tocan.
+- Se trabajó sobre una COPIA: `D:\REBELUM_diagnostico\custodio_clips_18_11\trabajo\e01_rig.blend` (copiado de
+  `D:\REBELUM_entrada_13_11\custodio_trabajo\e01_rig.blend`, md5 `7a59c4bf…`, el mismo que usaron §8 y §9). El guion
+  escribe al lado `e01_autoria.blend` y `e01_exportar.blend` (en esa carpeta; los originales del usuario, intactos).
+- **Determinismo antes de tocar nada:** el guion sin cambios reprodujo el GLB del repositorio byte a byte (md5
+  `89db157f…` = `89db157f…`, 1 210 912 bytes; `glb_antes\`).
+
+| Clip | Duración | Bucle | Qué hace | Eventos |
+|---|---|---|---|---|
+| `e01__alert` | 1,6 s | no | ve a los héroes: se yergue con la cabeza alta (0,22), baja el peso y alza las manos delante (0,60), aguanta y vuelve al reposo (1,60). Pies plantados | `alerta` 0,22 · `listo` 0,60 |
+| `e01__guard` | 2,0 s | sí | antebrazos alzados delante del pecho, muñecas hacia el centro sin tocarse (a la altura de la barbilla para que se vean los ojos), peso bajo; respira 1,5 cm | — |
+| `e01__stagger` | 1,2 s | no | sacudida atrás con los brazos abiertos (0,10), un paso atrás con el pie derecho [0,06, 0,36] (0,20 m, en arco), se recompone (0,70), vuelve el pie [0,72, 1,05] y el reposo (1,20) | `sacudida` 0,10 · `paso_atras` 0,36 · `recompone` 0,70 |
+| `e01__turn_l` / `e01__turn_r` | 1,0 s | no | giro en DOS PASOS en el sitio: cabeza y pecho se adelantan hacia el lado; el pie de ese lado se levanta [0,05, 0,42] con el peso en el otro, luego el otro [0,45, 0,85]; cada pie se posa donde estaba. La raíz no gira: gira el nodo (ver 11.3). Son espejo exacto | `paso_1` 0,05 · `apoyo_1` 0,42 · `paso_2` 0,45 · `apoyo_2` 0,85 |
+
+Segundo intento (uno): en la primera pasada la guardia tapaba los ojos con las manos (`hoja_guard.png` de la v1, rehecha);
+se bajaron las muñecas 10 cm (`blender_p2_v2.log`).
+
+### 11.2 Medidas (Blender, lo horneado; `blender_p2_v2.log`, literal)
+
+```
+MEDIDA e01__alert {"min_z_malla": -0.0, "min_z_manos": 0.5495, "cadera_baja_max_m": 0.1, "pie_desliz_max_m": 0.0004, "pie_z_apoyo_max_m": 0.0, "cadera_baja_pct_altura": 5.4, "fin_vs_reposo_grados": 0.0, "inicio_vs_reposo_grados": 0.0}
+MEDIDA e01__guard {"min_z_malla": -0.0, "min_z_manos": 1.1831, "cadera_baja_max_m": 0.1, "pie_desliz_max_m": 0.0001, "pie_z_apoyo_max_m": 0.0, "cadera_baja_pct_altura": 5.4, "salto_bucle_grados": 0.0}
+MEDIDA e01__stagger {"min_z_malla": -0.0001, "min_z_manos": 0.5495, "cadera_baja_max_m": 0.1299, "pie_desliz_max_m": 0.2073, "pie_z_apoyo_max_m": 0.0, "cadera_baja_pct_altura": 7.0, "fin_vs_reposo_grados": 0.0, "inicio_vs_reposo_grados": 0.0}
+MEDIDA e01__turn_l {"min_z_malla": -0.0, "min_z_manos": 0.5495, "cadera_baja_max_m": 0.045, "pie_desliz_max_m": 0.0799, "pie_z_apoyo_max_m": 0.0, "cadera_baja_pct_altura": 2.4, "fin_vs_reposo_grados": 0.0, "inicio_vs_reposo_grados": 0.0}
+MEDIDA e01__turn_r (igual que turn_l)
+```
+
+- La malla no baja del suelo (≤ 0,1 mm); todos empiezan y acaban en la pose del reposo (0,000°); el bucle de la guardia
+  cierra (0,000°).
+- `pie_desliz_max_m` del tambaleo (0,207 m) y de los giros (0,080 m) es el pie que SE LEVANTA a propósito (paso atrás y
+  pasos en el sitio), no un deslizamiento en apoyo; en la alerta y la guardia, 0,4 y 0,1 mm.
+- Avisos de IK: los 25 de siempre (24 de la Prensa, documentados en §3, y 1 del Avance); **ninguno en los clips nuevos**.
+- GLB nuevo: 1 333 708 bytes (antes 1 210 912), md5 `93f040ec…`.
+
+### 11.3 Los siete clips anteriores, idénticos (comprobado)
+
+`fuente/comparar_glb.py` (nuevo: compara dos GLB canal a canal sin Blender ni Godot). Salida literal
+(`D:\REBELUM_diagnostico\custodio_clips_18_11\comparar_pistas.txt`):
+
+```
+e01__attack_porton     2.7000 s -> 2.7000 s  pistas 72/72 iguales IGUAL
+e01__attack_prensa     2.4000 s -> 2.4000 s  pistas 72/72 iguales IGUAL
+e01__attack_sello      2.8000 s -> 2.8000 s  pistas 72/72 iguales IGUAL
+e01__death             1.9000 s -> 1.9000 s  pistas 72/72 iguales IGUAL
+e01__hit               0.6000 s -> 0.6000 s  pistas 72/72 iguales IGUAL
+e01__idle              2.4000 s -> 2.4000 s  pistas 72/72 iguales IGUAL
+e01__walk              1.2000 s -> 1.2000 s  pistas 72/72 iguales IGUAL
+NUEVO  e01__alert             1.6000 s  72 pistas
+NUEVO  e01__guard             2.0000 s  72 pistas
+NUEVO  e01__stagger           1.2000 s  72 pistas
+NUEVO  e01__turn_l            1.0000 s  72 pistas
+NUEVO  e01__turn_r            1.0000 s  72 pistas
+MALLA IGUAL · PIEL IGUAL
+RESULTADO IGUALES (los clips anteriores, la malla y la piel)
+```
+
+**Para volver atrás:** `enemigos/meshy_e01/anterior_18_11/` (con `.gdignore`, como `personajes/nix/fbx/anterior_14_11b/`)
+guarda el GLB y el JSON anteriores (md5 `89db157f…`). Copiarlos encima de los de `meshy_e01/` y reimportar; el código
+nuevo funciona igual sin los clips (cae en el reposo y el golpe de siempre).
+
+### 11.4 Ganchos (solo presentación; `combate.gd` sin tocar)
+
+- **alert → entrada:** alias `entrada` = `e01__alert`. `combate.gd` ya llama a `pe.entrada()` al empezar el combate; la
+  base lo reproduce y vuelve al reposo. Sin sonido propio (`meshy_e01_entrada` sigue sin existir).
+- **guard → Guardia:** `combate_meshy_e01._guardia()` llama a `_pose_guardia(c, f, true)` → `meshy_e01_3d.guardia(true)`: mientras
+  dure, `reposo()` pone el clip `guardia` (bucle) en vez del reposo; el tinte y `defendiendo` los sigue poniendo el combate
+  como antes. Al empezar su turno siguiente (`turno()`, donde ya se quitaba la guardia) → `guardia(false)`.
+- **stagger → golpe fuerte o ruptura:** `combate_meshy_e01.vigilar()` (lo llama `_vigilar_carga` con cada golpe) pone
+  `golpe_pesado` en el nodo si el golpe es ≥ 12 % de su vida (`GOLPE_PESADO`, el umbral del Peón y del Gólem) o si es la
+  Quiebra (`golpe_ruptura`). `recibir_golpe()` pone entonces `tambaleo`; si no, el golpe de siempre. No corta un ataque,
+  la entrada ni la derrota; tras el tambaleo vuelve a la guardia si la tenía.
+- **turn_l / turn_r → giros:** sí hay giros. El Custodio se gira con `mirar()` (un Tween del pivote) en sus idas y
+  vueltas: hacia el blanco (≈ 31°, pequeño), media vuelta tras el ataque (180°) y de vuelta al frente al llegar (≈ 149°).
+  `meshy_e01_3d.mirar()`: si el giro es ≥ 60° y está quieto o andando (`reposo`, `guardia`, `caminar`, `correr`), pone
+  `girar_izq` (positivo, a su izquierda) o `girar_der` y el nodo gira DURANTE el clip (1,0 s en vez de 0,3 s; es solo el
+  Tween del modelo, el combate no lo espera). `andar()`/`correr()` lo cortan (el nodo acaba su giro al ritmo pedido), así
+  que la media vuelta antes de volver andando sigue como antes; **el giro en pasos se ve al llegar y volverse al frente**
+  (el `reposo()` que pide el combate espera al final del giro).
+- Ni fórmulas, ni turnos, ni recargas, ni daño cambian (lo comprueba la prueba N y lo confirman la medida y la traza de
+  abajo, con las mismas cifras que el 15/11).
+
+### 11.5 Pruebas (salidas literales)
+
+| Prueba | Resultado | Resumen |
+|---|---|---|
+| `prueba_meshy_e01` (ampliada: M con 12 clips y sección N nueva) | SUPERADA (10,9 s), `FALLOS: 0` | `D:\REBELUM_diagnostico\pruebas\2026-11-18_235530\resumen.md` |
+| `prueba_enemigos_v12` | SUPERADA (9,1 s) | `2026-11-18_235606` |
+| `prueba_banco_pruebas` | SUPERADA (21,1 s) | `2026-11-18_235606` |
+| `medir_custodio_rotacion` (medida) | SUPERADA (5,1 s): `CICLO: 10 turnos suyos, daño 56 = 9.9 % de los PV del grupo ({ "prensa": 18, "porton": 14, "sello": 24 }); marcas a la vez como mucho: 1` (= §9.4) | `2026-11-18_235606` |
+| `trazar_custodio_contador` (traza) | SUPERADA (6,6 s): `FIN TRAZA: 11 turnos suyos, contador { "prensa": 2, "retroceso": 3, "guardia": 7, "porton": 1, "sello": 1, "lentitud": 2, "lentitud_fin": 2 }, PV 700/1272, 140.4 s de juego` | `2026-11-18_235653` |
+| `fotos_meshy_e01 clips1811 solo_estudio` (ventana) | MANUAL, «terminó sin errores; 73 captura(s)», revisadas a ojo | `2026-11-18_235748`; copia en `D:\REBELUM_diagnostico\custodio_clips_18_11\godot\` |
+
+Una primera pasada de `prueba_meshy_e01` (`2026-11-18_235516`) FALLÓ por un error de tipos de la propia prueba
+(`Cannot infer the type of "meta"`); corregido en la prueba, no en el juego.
+
+Salida literal de la sección N:
+`N: 12 clips; entrada 1.60 s, guardia 2.00 s (bucle), tambaleo 1.20 s, girar_izq 1.00 s, girar_der 1.00 s; alerta -> reposo; guardia en lugar del reposo y fuera al acabar; tambaleo con golpe fuerte (>= 12 %) o Quiebra y de vuelta a la guardia; giros >= 60° en pasos (girar_izq/der; el nodo gira durante el clip; andar lo corta); en combate: alerta al empezar, guardia en su turno de guardia y fuera en el siguiente, vuelta de la Prensa con guardia/caminar/ataque/girar_izq; vigilar no toca vida, recarga, ATB ni guardia`
+
+Avisos al salir de Godot («N resources still in use», «ObjectDB instances were leaked»): ya salían antes en esta prueba
+(p. ej. `2026-11-18_132217`: 20 y 6); no son de este cambio.
+
+Capturas (revisadas a ojo):
+- Blender, lo horneado: `D:\REBELUM_diagnostico\custodio_clips_18_11\hoja_{alert,guard,stagger,turn_l,turn_r}.png`
+  (frente, perfil, tres cuartos y espalda; renders sueltos en `render\`).
+- Godot (GLB importado, Compatibility, junto a Kael y Garon): `godot\estudio_{entrada,guardia,tambaleo,girar_izq,girar_der}_<t>_<vista>.png`
+  y la hoja `godot\hoja_godot_clips_nuevos.png`.
+
+### 11.6 Matriz (actualizada)
+
+| Puerta | Estado |
+|---|---|
+| Clips presentes / esperados | **12 / 12** (verificado en el PC: nombres y duraciones en Godot, prueba M y N) |
+| Integración Godot | verificado (PC, APAGADA) |
+| Android (Redmi) | pendiente: implementado y apagado, sin ver en el teléfono |
+
+### 11.7 Lo que queda y lo que necesita decisión
+
+- **Redmi:** ver los cinco clips en el teléfono (caso «Custodio» del banco de Auditoría): la alerta al empezar, la guardia
+  durante sus turnos de guardia, el giro en pasos al volver a su sitio y el tambaleo con un golpe fuerte (Quiebra). GLB
+  +123 KB; sin medir el rendimiento.
+- **Decisión (usuario/coordinador):** la ficha del paquete dice «Stagger en anticipación cancela el especial y borra
+  marcas». Aquí el tambaleo es SOLO la animación: no corta la Prensa, el Avance ni el Sello (la regla de §4, «la Prensa no
+  se corta con daño», sigue). Cambiarlo es una regla de combate nueva.
+- **Giros:** el nodo gira mientras los pies dan los dos pasos; el pie apoyado gira con el nodo (no se puede evitar sin
+  raíz que gire en el clip). Se lee como dos pasos, pero no es un apoyo perfecto. La media vuelta antes de volver andando
+  sigue sin pasos (el combate pone a andar en el mismo fotograma).
+- **Guardia:** al recibir un golpe pequeño en guardia pone el golpe de siempre y vuelve a la guardia (no hay clip de
+  «bloqueo»; el paquete no lo pide).
+- Sonido propio de la alerta y del tambaleo: sin claves (como en §7).

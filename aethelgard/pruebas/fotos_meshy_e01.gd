@@ -9,6 +9,10 @@ extends SceneTree
 
 const CLIPS := {"reposo": [0.0], "caminar": [0.0, 0.3], "ataque": [0.25, 0.65, 0.9, 1.65]}
 const CLIPS_SELLO := {"sello": [0.45, 0.95, 1.3]}             # 15/11, con «sello»: también el Sello en el estudio
+# 18/11, con «clips1811»: también los cinco clips nuevos en el estudio (alerta, guardia, tambaleo y los dos giros);
+# con «solo_estudio», sin el combate real.
+const CLIPS_1811 := {"entrada": [0.0, 0.22, 0.6, 1.05], "guardia": [0.0, 1.0], "tambaleo": [0.1, 0.22, 0.36, 0.7, 1.05],
+	"girar_izq": [0.23, 0.42, 0.65], "girar_der": [0.23, 0.42, 0.65]}
 # («sello» además juega su Sello de Clausura en el combate real; «porton», el Avance; «derrota», su clip de derrota)
 var fotos := ""
 var C
@@ -46,7 +50,8 @@ func _esperar(n: int) -> void:
 func _probar() -> void:
 	await _esperar(10)
 	await _estudio()
-	await _combate()
+	if not "solo_estudio" in OS.get_cmdline_user_args():
+		await _combate()
 	var f := FileAccess.open(fotos.path_join("indice.txt"), FileAccess.WRITE)
 	f.store_string("\n".join(indice) + "\n")
 	Engine.remove_meta("archivo_partida_prueba")
@@ -111,6 +116,8 @@ func _estudio() -> void:
 	var clips: Dictionary = CLIPS.duplicate()
 	if "sello" in OS.get_cmdline_user_args():
 		clips.merge(CLIPS_SELLO)
+	if "clips1811" in OS.get_cmdline_user_args():
+		clips.merge(CLIPS_1811)
 	for vista in [["frente", 0.0], ["perfil", 90.0], ["espalda", 180.0]]:
 		for clip in clips:
 			for t in clips[clip]:

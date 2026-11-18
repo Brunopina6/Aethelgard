@@ -26,6 +26,13 @@ extends SceneTree
 #   K. Los textos de cada recarga, y el caso del banco «custodio_rotacion» con el ATB de verdad y Kael congelándolo con
 #      Frostfang: la rotación entera (los tres especiales) y, en cada turno, el contador que se veía antes (etiqueta y
 #      panel) dice cuántos turnos suyos faltaban de verdad para el especial que llegó.
+# 18/11: los cinco clips que faltaban (alert, guard, stagger, turn_l, turn_r) y sus ganchos (solo presentación):
+#   N. 12 clips; los alias entrada/guardia/tambaleo/girar_izq/girar_der con su duración y bucle (solo la guardia);
+#      alert como ENTRADA y vuelta al reposo; en Guardia el reposo es «guardia» hasta que se acaba; golpe fuerte o
+#      ruptura -> «tambaleo» (y vuelve a la guardia si la tenía), golpe pequeño -> el de siempre; giros >= 60° quieto ->
+#      girar_izq/der en dos pasos (andar lo corta; un reposo pedido espera al final), giros pequeños sin clip. En combate:
+#      empieza con la alerta, su turno de guardia pone «guardia» y su turno siguiente la quita, vuelve de la Prensa con
+#      un giro en pasos, y vigilar() marca el golpe fuerte y la Quiebra sin tocar vida, recarga, ATB ni guardia.
 # Azar (15/11): la semilla, DESPUÉS de root.add_child (combate._ready hace randomize()).
 
 const ARCHIVO := "user://prueba_meshy_e01.save"
@@ -86,6 +93,7 @@ func _probar() -> void:
 	await _e()
 	await _r()
 	await _k()
+	await _n()
 	_limpiar()
 	Engine.remove_meta("archivo_partida_prueba")
 	print("OK: ", "\n    ".join(hechos))
@@ -143,8 +151,8 @@ func _m() -> void:
 		return
 	var propios: PackedStringArray = p.clips_propios()
 	propios.sort()
-	_ok(propios == PackedStringArray(["e01__attack_porton", "e01__attack_prensa", "e01__attack_sello", "e01__death", "e01__hit",
-		"e01__idle", "e01__walk"]), "M: clips %s" % [propios])
+	_ok(propios == PackedStringArray(["e01__alert", "e01__attack_porton", "e01__attack_prensa", "e01__attack_sello", "e01__death",
+		"e01__guard", "e01__hit", "e01__idle", "e01__stagger", "e01__turn_l", "e01__turn_r", "e01__walk"]), "M: clips %s" % [propios])
 	_ok(p.tiene("recibir_golpe") and p.tiene("derrota") and p.tiene("porton") and p.tiene("sello"),
 		"M: faltan los alias del golpe, la derrota, el Avance o el Sello")
 	for clip in ["sello", "e01__attack_sello"]:
@@ -847,3 +855,111 @@ func _k() -> void:
 	await _esperar(30)
 	BP.salir()
 	Engine.set_meta("archivo_partida_prueba", ARCHIVO)
+
+
+# ================================================================= N (18/11): alert, guard, stagger y giros
+
+func _esperar_s(seg: float) -> void:
+	await create_timer(seg).timeout
+
+
+func _n() -> void:
+	var p = load("res://enemigos/meshy_e01/meshy_e01_3d.gd").new()
+	root.add_child(p)
+	await _esperar(2)
+	if p.anim == null:
+		_ok(false, "N: sin AnimationPlayer")
+		p.queue_free()
+		return
+	var esperado := {"entrada": [1.6, false], "guardia": [2.0, true], "tambaleo": [1.2, false], "girar_izq": [1.0, false],
+		"girar_der": [1.0, false]}
+	var duraciones: Array = []
+	for n in esperado:
+		var a: Animation = p.anim.get_animation(n) if p.tiene(n) else null
+		_ok(a != null and absf(a.length - float(esperado[n][0])) <= 1.0 / 30.0 + 0.001
+			and (a.loop_mode == Animation.LOOP_LINEAR) == bool(esperado[n][1]),
+			"N: «%s» dura %s o su bucle no es %s" % [n, a.length if a != null else -1.0, esperado[n][1]])
+		if a != null:
+			duraciones.append("%s %.2f s%s" % [n, a.length, " (bucle)" if a.loop_mode == Animation.LOOP_LINEAR else ""])
+	# alert como entrada
+	p.entrada()
+	_ok(p.clip_actual() == "entrada", "N: la entrada no pone el clip de alerta (%s)" % p.clip_actual())
+	await _esperar_s(1.9)
+	_ok(p.clip_actual() == "reposo", "N: tras la alerta no vuelve al reposo (%s)" % p.clip_actual())
+	# guardia
+	p.guardia(true)
+	_ok(p.clip_actual() == "guardia", "N: en guardia el clip es %s" % p.clip_actual())
+	await _esperar(3)
+	p.reposo()
+	_ok(p.clip_actual() == "guardia", "N: en guardia, reposo() pone %s" % p.clip_actual())
+	# tambaleo (fuerte) en guardia: vuelve a la guardia
+	p.golpe_pesado = true
+	p.recibir_golpe()
+	_ok(p.clip_actual() == "tambaleo" and not p.golpe_pesado, "N: un golpe fuerte pone %s" % p.clip_actual())
+	await _esperar_s(1.45)
+	_ok(p.clip_actual() == "guardia", "N: tras el tambaleo en guardia queda %s" % p.clip_actual())
+	p.guardia(false)
+	_ok(p.clip_actual() == "reposo", "N: al acabar la guardia queda %s" % p.clip_actual())
+	p.recibir_golpe()
+	_ok(p.clip_actual() == "recibir_golpe", "N: un golpe pequeño pone %s (el de siempre)" % p.clip_actual())
+	await _esperar_s(0.8)
+	# giros
+	p.mirar(Vector3(1, 0, 0.1), 0.25)                    # 31°: sin pasos
+	_ok(p.clip_actual() == "reposo" and p.girando() == "", "N: un giro pequeño pone %s" % p.clip_actual())
+	await _esperar_s(0.35)
+	p.mirar(Vector3(-1, 0, -0.1), 0.3)                   # 180° (media vuelta, como al volver de la Prensa)
+	_ok(p.clip_actual() in ["girar_izq", "girar_der"] and p.girando() == p.clip_actual(), "N: media vuelta pone %s" % p.clip_actual())
+	p.andar()
+	_ok(p.clip_actual() == "caminar" and p.girando() == "", "N: andar no corta el giro (%s)" % p.clip_actual())
+	await _esperar_s(0.45)
+	var yaw_atras: float = p.pivote.rotation.y
+	p.mirar_frente(0.3)                                  # +149° (a su izquierda: +Y), al volver andando
+	_ok(p.clip_actual() == "girar_izq", "N: volverse al frente pone %s" % p.clip_actual())
+	p.reposo()
+	_ok(p.clip_actual() == "girar_izq", "N: el reposo no espera al final del giro (%s)" % p.clip_actual())
+	await _esperar_s(0.5)
+	var yaw_medio: float = p.pivote.rotation.y
+	await _esperar_s(0.75)
+	var yaw_fin: float = p.pivote.rotation.y
+	var meta: float = atan2(p.FRENTE_ENEMIGO.x, p.FRENTE_ENEMIGO.z) - p._yaw0
+	_ok(p.clip_actual() == "reposo" and absf(wrapf(yaw_fin - meta, -PI, PI)) < 0.02, "N: tras el giro %s, yaw %.2f (meta %.2f)" % [
+		p.clip_actual(), yaw_fin, meta])
+	_ok(absf(wrapf(yaw_medio - yaw_atras, -PI, PI)) > 0.3 and absf(wrapf(yaw_fin - yaw_medio, -PI, PI)) > 0.3,
+		"N: el nodo no gira DURANTE el clip (%.2f -> %.2f -> %.2f)" % [yaw_atras, yaw_medio, yaw_fin])
+	p.queue_free()
+	await _esperar(3)
+	# en combate
+	await _combate(true)
+	if custodio.is_empty():
+		return
+	var q = c._p3d(custodio)
+	_ok(q.clip_actual() == "entrada", "N: el combate no empieza con la alerta (%s)" % q.clip_actual())
+	custodio["e01_cd"] = 1                               # su próximo turno: guardia
+	var r := await _turno()
+	_ok(r["que"] == "guardia" and q.en_guardia and q.clip_actual() == "guardia",
+		"N: turno de guardia: %s, en_guardia %s, clip %s" % [r["que"], q.en_guardia, q.clip_actual()])
+	var vistos := {}
+	var r2 := await _turno(Callable(), func(): vistos[q.clip_actual()] = true)
+	await _esperar_s(1.2)
+	_ok(r2["que"] == "prensa" and not q.en_guardia and not custodio.get("e01_guardia", false),
+		"N: tras la guardia, %s y en_guardia %s" % [r2["que"], q.en_guardia])
+	_ok(vistos.has("girar_der") or vistos.has("girar_izq"), "N: al volver de la Prensa no gira en pasos (clips %s)" % [vistos.keys()])
+	_ok(q.clip_actual() == "reposo", "N: tras volver queda %s" % q.clip_actual())
+	var antes := [int(custodio["hp"]), int(custodio.get("e01_cd", 0)), float(custodio.get("atb", 0.0)), custodio.get("e01_guardia", false)]
+	PE.vigilar(c, custodio, 1)
+	_ok(not q.golpe_pesado, "N: un golpe de 1 marca golpe fuerte")
+	PE.vigilar(c, custodio, ceili(custodio["hp_max"] * PE.GOLPE_PESADO))
+	_ok(q.golpe_pesado, "N: un golpe del 12 % no marca golpe fuerte")
+	q.herida()
+	_ok(q.clip_actual() == "tambaleo", "N: en combate, el golpe fuerte pone %s" % q.clip_actual())
+	await _esperar_s(1.4)
+	c.golpe_ruptura = true
+	PE.vigilar(c, custodio, 1)
+	c.golpe_ruptura = false
+	_ok(q.golpe_pesado, "N: la Quiebra (golpe_ruptura) no marca golpe fuerte")
+	q.golpe_pesado = false
+	var despues := [int(custodio["hp"]), int(custodio.get("e01_cd", 0)), float(custodio.get("atb", 0.0)), custodio.get("e01_guardia", false)]
+	_ok(antes == despues, "N: vigilar() cambia vida, recarga, ATB o guardia (%s -> %s)" % [antes, despues])
+	await _cerrar()
+	hechos.append("N: 12 clips; %s; alerta -> reposo; guardia en lugar del reposo y fuera al acabar; tambaleo con golpe fuerte (>= 12 %%) o Quiebra y de vuelta a la guardia; giros >= 60° en pasos (girar_izq/der; el nodo gira durante el clip; andar lo corta); en combate: alerta al empezar, guardia en su turno de guardia y fuera en el siguiente, vuelta de la Prensa con %s; vigilar no toca vida, recarga, ATB ni guardia" % [
+		", ".join(duraciones), "/".join(vistos.keys())])

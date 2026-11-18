@@ -1,5 +1,6 @@
 # meshy_e01 · pasos 3 y 4: clips e01__idle, e01__walk, e01__attack_prensa, (14/11, noche) e01__attack_porton,
-# e01__hit y e01__death y (15/11) e01__attack_sello (horneados a 30 fps), medidas, renders y GLB.
+# e01__hit y e01__death, (15/11) e01__attack_sello y (18/11) e01__alert, e01__guard, e01__stagger, e01__turn_l y
+# e01__turn_r (horneados a 30 fps), medidas, renders y GLB.
 #   blender -b --factory-startup -P p2_clips.py -- <blend con rig (p1)> <carpeta salida GLB> <carpeta render> [sin_render]
 #
 # Autoría: cada clip es una FUNCIÓN del tiempo que coloca la cadera, la columna, el pecho, el cuello, la cabeza, las
@@ -322,6 +323,114 @@ def c_sello(t):
     return por_claves(SELLO, t)
 
 
+# ------------------------------------------------------------------ 18/11: alert, guard, stagger, turn_l y turn_r
+# Los cinco clips que faltaban de la lista del paquete («idle, alert, walk, turn_l, turn_r, guard, hit_front, stagger,
+# death, attack_01-03»). Ficha de movimiento (ataques_propuestos.json, e01.movement): «paso pesado con apoyo de toda la
+# planta, contrapeso corto de hombros y giros en dos pasos. No deslizar los pies ni doblar el casco».
+# Rest medido del rig: muñeca (objetivo ik_mano) en (±0,502, 0,043, 0,838); hombro en (±0,37, 0,088, 1,441).
+
+def _pie_por_claves(claves, t, alto=0.07):
+    """claves: [(t, (x, y), giro_z)] del pie; entre dos claves distintas el pie se levanta en arco (si no, quieto)."""
+    for k in range(len(claves) - 1):
+        t0, (xa, ya), ga = claves[k]
+        t1, (xb, yb), gb = claves[k + 1]
+        if t <= t1 or k == len(claves) - 2:
+            u = max(0.0, min(1.0, (t - t0) / (t1 - t0))) if t1 > t0 else 1.0
+            f = suave(u)
+            mueve = abs(xb - xa) + abs(yb - ya) > 0.005 or abs(gb - ga) > 0.5
+            z = alto * math.sin(math.pi * u) if mueve else 0.0
+            rx = 10 * math.sin(math.pi * u) if mueve else 0.0        # la punta baja al despegar y al posar
+            return (xa + (xb - xa) * f, ya + (yb - ya) * f, z), (rx, 0.0, ga + (gb - ga) * f)
+    t0, (x, y), g = claves[-1]
+    return (x, y, 0.0), (0.0, 0.0, g)
+
+
+# alert (1,6 s, no bucle): ve a los héroes. Se yergue con la cabeza alta (0,22), baja el peso y sube las manos delante
+# (0,60, «listo»), aguanta y vuelve al reposo (1,60). Pies plantados.
+AL_SOBRESALTO = simetrica(cadera_loc=(0, 0.01, -0.015), cadera_rot=(-2, 0, 0), columna=(-2, 0, 0), pecho=(-5, 0, 0),
+                          cuello=(3, 0, 0), cabeza=(7, 0, 6), mano_L=((0.04, -0.03, 0.10), (-14, 0, -14)),
+                          clav_L=(0, -3, 0), hombrera_L=(0, -5, 0))
+AL_LISTO = simetrica(cadera_loc=(0, 0.04, -0.09), cadera_rot=(5, 0, 0), columna=(3, 0, 0), pecho=(4, 0, 0),
+                     cuello=(-3, 0, 0), cabeza=(-8, 0, -3), mano_L=((-0.14, -0.30, 0.31), (-75, 0, -18)),
+                     clav_L=(0, 4, -2), hombrera_L=(0, 5, 0))
+AL_LISTO2 = simetrica(cadera_loc=(0, 0.04, -0.10), cadera_rot=(6, 0, 0), columna=(3, 0, 0), pecho=(5, 0, 0),
+                      cuello=(-3, 0, 0), cabeza=(-9, 0, 0), mano_L=((-0.15, -0.32, 0.30), (-77, 0, -18)),
+                      clav_L=(0, 4, -2), hombrera_L=(0, 6, 0))
+ALERTA = [(0.0, REPOSO_A, sale), (0.22, AL_SOBRESALTO, suave), (0.60, AL_LISTO, suave), (1.05, AL_LISTO2, suave),
+          (1.60, REPOSO_A, suave)]
+T_ALERTA = 1.6
+
+
+def c_alert(t):
+    return por_claves(ALERTA, t)
+
+
+# guard (2,0 s, BUCLE): «cruza los brazos de porcelana y aguanta». Antebrazos alzados delante del pecho (las muñecas a la
+# altura de la barbilla, para que se vean los ojos), hacia el centro sin tocarse, el peso bajo; respira (la cadera baja 1,5 cm y vuelve). Pies plantados.
+G_A = simetrica(cadera_loc=(0, 0.03, -0.085), cadera_rot=(3, 0, 0), columna=(2, 0, 0), pecho=(2, 0, 0), cuello=(-2, 0, 0),
+                cabeza=(-7, 0, 0), mano_L=((-0.31, -0.36, 0.42), (-104, 0, -30)), clav_L=(0, -4, 0),
+                hombrera_L=(0, -6, 0))
+G_B = simetrica(cadera_loc=(0, 0.03, -0.10), cadera_rot=(4, 0, 0), columna=(2.5, 0, 0), pecho=(3.5, 0, 0),
+                cuello=(-2, 0, 0), cabeza=(-8, 0, 0), mano_L=((-0.31, -0.37, 0.40), (-102, 0, -30)), clav_L=(0, -3, 0),
+                hombrera_L=(0, -5, 0))
+T_GUARDIA = 2.0
+
+
+def c_guard(t):
+    return por_claves([(0.0, G_A, suave), (1.0, G_B, suave), (T_GUARDIA, G_A, suave)], t % T_GUARDIA if t < T_GUARDIA else T_GUARDIA)
+
+
+# stagger (1,2 s, no bucle): un golpe fuerte o una ruptura. Sacudida hacia atrás con los brazos abiertos (0,10), un
+# paso atrás con el pie derecho [0,06, 0,36] para no caer, se recompone (0,70) y vuelve el pie y el reposo (1,20).
+ST_SACUDIDA = simetrica(cadera_loc=(0, 0.07, -0.04), cadera_rot=(-9, 2, 4), columna=(-7, 2, 5), pecho=(-12, 3, 6),
+                        cuello=(5, 0, 0), cabeza=(14, 0, 6), mano_L=((0.10, 0.10, 0.24), (24, 0, -30)),
+                        clav_L=(0, -7, 0), hombrera_L=(0, -9, 0))
+ST_TRASTABILLA = simetrica(cadera_loc=(0, 0.11, -0.13), cadera_rot=(4, 2, 6), columna=(6, 2, 4), pecho=(8, 2, 4),
+                           cuello=(-2, 0, 0), cabeza=(-4, 0, 4), mano_L=((0.06, -0.12, 0.20), (-30, 0, -24)),
+                           clav_L=(0, 3, 0), hombrera_L=(0, 4, 0))
+ST_RECOMPONE = simetrica(cadera_loc=(0, 0.08, -0.08), cadera_rot=(3, 0, 2), columna=(2, 0, 1), pecho=(3, 0, 1),
+                         cabeza=(-4, 0, 0), mano_L=((-0.06, -0.14, 0.12), (-28, 0, -12)), clav_L=(0, 2, 0))
+TAMBALEO = [(0.0, REPOSO_A, sale), (0.10, ST_SACUDIDA, suave), (0.36, ST_TRASTABILLA, suave),
+            (0.70, ST_RECOMPONE, suave), (1.20, REPOSO_A, suave)]
+T_TAMBALEO = 1.2
+PIE_R_TAMBALEO = [(0.0, (0.0, 0.0), 0.0), (0.06, (0.0, 0.0), 0.0), (0.36, (-0.02, 0.20), -6.0), (0.72, (-0.02, 0.20), -6.0),
+                  (1.05, (0.0, 0.0), 0.0), (1.20, (0.0, 0.0), 0.0)]
+
+
+def c_stagger(t):
+    p = por_claves(TAMBALEO, t)
+    p["pie.R"] = _pie_por_claves(PIE_R_TAMBALEO, t, 0.08)
+    return p
+
+
+# turn_l / turn_r (1,0 s, no bucle): giro EN DOS PASOS. La raíz no gira: el combate gira el nodo (mirar) durante el
+# clip. Cabeza y pecho se adelantan hacia el lado del giro; primero se levanta el pie de ese lado [0,05, 0,42] con el
+# peso en el otro, y después el otro [0,45, 0,85]; cada pie se posa donde estaba (en el sitio). s = +1 izquierda (+Z).
+def c_turn(t, s):
+    lado1, lado2 = ("L", "R") if s > 0 else ("R", "L")
+    T1 = simetrica(cadera_loc=(-0.035 * s, 0.0, -0.045), cadera_rot=(1, -1.5 * s, 4 * s), columna=(1, 0, 4 * s),
+                   pecho=(2, -1 * s, 9 * s), cuello=(0, 0, 6 * s), cabeza=(-2, 0, 20 * s),
+                   mano_L=((-0.025, -0.05, 0.03), (-8, 0, -6)), clav_L=(0, 2, 0))
+    T2 = simetrica(cadera_loc=(0.035 * s, 0.0, -0.045), cadera_rot=(1, 1.5 * s, 3 * s), columna=(1, 0, 3 * s),
+                   pecho=(2, 1 * s, 6 * s), cuello=(0, 0, 3 * s), cabeza=(-2, 0, 9 * s),
+                   mano_L=((-0.025, -0.05, 0.03), (-8, 0, -6)), clav_L=(0, 2, 0))
+    p = por_claves([(0.0, REPOSO_A, suave), (0.22, T1, suave), (0.62, T2, suave), (1.0, REPOSO_A, suave)], t)
+    p["pie." + lado1] = _paso_en_sitio(t, 0.05, 0.42, (0.03 * s, -0.03), 14.0 * s)
+    p["pie." + lado2] = _paso_en_sitio(t, 0.45, 0.85, (0.03 * s, 0.03), 12.0 * s)
+    return p
+
+
+def _paso_en_sitio(t, a, b, desv, giro, alto=0.07):
+    """El pie se levanta en [a, b] (arco), se abre un poco hacia el giro y se posa donde estaba."""
+    if t <= a or t >= b:
+        return (0.0, 0.0, 0.0), (0.0, 0.0, 0.0)
+    w = math.sin(math.pi * (t - a) / (b - a))
+    return (desv[0] * w, desv[1] * w, alto * w), (10 * w, 0.0, giro * w)
+
+
+T_GIRO = 1.0
+
+
 CLIPS = [
     {"nombre": "e01__idle", "dur": 2.4, "bucle": True, "f": c_idle, "eventos": {}},
     {"nombre": "e01__walk", "dur": T_ANDAR, "bucle": True, "f": c_walk,
@@ -336,6 +445,15 @@ CLIPS = [
     # 15/11: la marca de cerradura desde 0,20 («aviso»), su centro fijo a 0,80 («fija_direccion»), IMPACTO a 1,30
     {"nombre": "e01__attack_sello", "dur": T_SELLO, "bucle": False, "f": c_sello,
      "eventos": {"aviso": 0.20, "fija_direccion": 0.80, "impacto": 1.30, "fin_activo": 1.50, "recupera": 1.50}},
+    # 18/11: los cinco que faltaban (al final de la lista: los siete anteriores se hornean igual)
+    {"nombre": "e01__alert", "dur": T_ALERTA, "bucle": False, "f": c_alert, "eventos": {"alerta": 0.22, "listo": 0.60}},
+    {"nombre": "e01__guard", "dur": T_GUARDIA, "bucle": True, "f": c_guard, "eventos": {}},
+    {"nombre": "e01__stagger", "dur": T_TAMBALEO, "bucle": False, "f": c_stagger,
+     "eventos": {"sacudida": 0.10, "paso_atras": 0.36, "recompone": 0.70}},
+    {"nombre": "e01__turn_l", "dur": T_GIRO, "bucle": False, "f": lambda t: c_turn(t, 1),
+     "eventos": {"paso_1": 0.05, "apoyo_1": 0.42, "paso_2": 0.45, "apoyo_2": 0.85}},
+    {"nombre": "e01__turn_r", "dur": T_GIRO, "bucle": False, "f": lambda t: c_turn(t, -1),
+     "eventos": {"paso_1": 0.05, "apoyo_1": 0.42, "paso_2": 0.45, "apoyo_2": 0.85}},
 ]
 
 
@@ -494,7 +612,7 @@ for c in CLIPS:
             m["muñecas_y_en_impacto"] = round(sum(cos[i].y for i in vert_mano) / len(vert_mano), 4)
         if nm == "e01__death" and f == n:
             m["cadera_z_final_m"] = round(cz, 4)
-        if not c["bucle"] or nm == "e01__idle":
+        if nm != "e01__walk":                     # (18/11: el guard, bucle en el sitio, como el idle)
             if pie0 is None:
                 pie0 = pies
             for s in ("L", "R"):
@@ -539,7 +657,10 @@ if not SIN_RENDER:
              "e01__attack_prensa": [0.0, 0.25, 0.65, 0.80, 0.90, 1.10, 1.65, 2.40],
              "e01__attack_porton": [0.0, 0.25, 0.50, 1.00, 1.15, 1.30, 1.45, 1.90, 2.70],
              "e01__hit": [0.0, 0.12, 0.6], "e01__death": [0.25, 0.85, 1.30, 1.90],
-             "e01__attack_sello": [0.0, 0.20, 0.45, 0.80, 0.95, 1.30, 1.50, 2.05, 2.80]}
+             "e01__attack_sello": [0.0, 0.20, 0.45, 0.80, 0.95, 1.30, 1.50, 2.05, 2.80],
+             "e01__alert": [0.0, 0.22, 0.60, 1.05, 1.60], "e01__guard": [0.0, 1.0],
+             "e01__stagger": [0.0, 0.10, 0.22, 0.36, 0.70, 1.05, 1.20],
+             "e01__turn_l": [0.0, 0.23, 0.42, 0.65, 1.0], "e01__turn_r": [0.0, 0.23, 0.42, 0.65, 1.0]}
     SOLO_TOMAS = [x for x in argv if x.startswith("tomas=")]
     if SOLO_TOMAS:                                  # (para revisar solo los clips nuevos: tomas=a,b)
         quiero = SOLO_TOMAS[0][6:].split(",")
@@ -589,10 +710,12 @@ json.dump({"id": "meshy_e01", "nombre": "Custodio de Porcelana (nombre de diseñ
            "fps": FPS, "textura": "%d px (color, normal, metálico-rugosidad; WebP dentro del GLB)" % RES_TEX,
            "mapa_diseno": {"idle": "e01__idle", "walk": "e01__walk", "attack_01": "e01__attack_prensa",
                            "attack_02": "e01__attack_porton", "attack_03": "e01__attack_sello", "hit_front": "e01__hit",
-                           "death": "e01__death"},
+                           "death": "e01__death", "alert": "e01__alert", "guard": "e01__guard",
+                           "stagger": "e01__stagger", "turn_l": "e01__turn_l", "turn_r": "e01__turn_r"},
            "mapa_juego": {"reposo": "e01__idle", "caminar": "e01__walk", "correr": "e01__walk", "ataque": "e01__attack_prensa",
                           "porton": "e01__attack_porton", "sello": "e01__attack_sello", "recibir_golpe": "e01__hit",
-                          "derrota": "e01__death"},
+                          "derrota": "e01__death", "entrada": "e01__alert", "guardia": "e01__guard",
+                          "tambaleo": "e01__stagger", "girar_izq": "e01__turn_l", "girar_der": "e01__turn_r"},
            "velocidad_andar_m_s": round(VEL_ANDAR, 3),
            "clips": {c["nombre"]: {"duracion": c["dur"], "bucle": c["bucle"], "eventos": c["eventos"]} for c in CLIPS},
            "medidas": medidas, "generador": "enemigos/meshy_e01/fuente/p1_rig.py + p2_clips.py (Blender %s)" % bpy.app.version_string},

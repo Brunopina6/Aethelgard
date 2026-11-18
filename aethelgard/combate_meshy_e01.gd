@@ -210,6 +210,7 @@ static func turno(c, f: Dictionary, vivos: Array, mult: float) -> void:
 	if f.get("e01_guardia", false):                     # la guardia dura hasta su turno siguiente
 		f["e01_guardia"] = false
 		f["defendiendo"] = false
+		_pose_guardia(c, f, false)                      # (18/11) el clip «guardia» se acaba con ella
 	vivos = vivos.filter(func(h): return h["hp"] > 0)
 	if vivos.is_empty():
 		return
@@ -241,11 +242,21 @@ static func _guardia(c, f: Dictionary) -> void:
 	_contar(f, "guardia")
 	c.registro.text = "%s cruza los brazos de porcelana y aguanta" % f["nombre"]
 	c._numero_flotante(f, "Guardia", Color(0.85, 0.88, 0.95), 30)
-	var p = c._p3d(f)
-	if p != null:
-		p.reposo()
+	_pose_guardia(c, f, true)                           # (18/11) el clip «guardia» en lugar del reposo (con su tinte)
 	c._actualizar()
 	await c.get_tree().create_timer(0.8).timeout
+
+
+# 18/11 (solo presentación): la pose de su Guardia. Con el clip e01__guard, el modelo se queda en ella hasta que la
+# guardia acaba; sin él (un GLB antiguo o un modelo sin el método), el reposo de siempre.
+static func _pose_guardia(c, f: Dictionary, si: bool) -> void:
+	var p = c._p3d(f)
+	if p == null:
+		return
+	if p.has_method("guardia"):
+		p.guardia(si)
+	elif si:
+		p.reposo()
 
 
 # El vecino en la fila: el siguiente héroe vivo de la formación (si no hay, el anterior). Como el del Peón.
@@ -742,7 +753,15 @@ static func _quitar_marca(f: Dictionary) -> void:
 
 # combate.gd _vigilar_carga: un golpe recibido. La Prensa no se corta con daño (su aviso es parte del clip, no un turno),
 # pero si cae, la marca se va (y el clip no golpea: está muerto).
-static func vigilar(_c, f: Dictionary, _d: int) -> void:
+# 18/11: un golpe fuerte (≥ GOLPE_PESADO de su vida) o una ruptura (Quiebra) le ponen el TAMBALEO (e01__stagger) en
+# vez del golpe de siempre. Solo presentación: no corta especiales ni cambia turnos ni daño (eso, decisión aparte).
+const GOLPE_PESADO := 0.12                            # (el del Peón y el Gólem)
+
+
+static func vigilar(c, f: Dictionary, d: int) -> void:
+	var p = c._p3d(f) if c != null and c.has_method("_p3d") else null
+	if p != null and "golpe_pesado" in p:
+		p.golpe_pesado = bool(c.get("golpe_ruptura")) or d >= ceili(f["hp_max"] * GOLPE_PESADO)
 	if f["hp"] <= 0:
 		_quitar_marca(f)
 		if f.get("e01_guardia", false):
