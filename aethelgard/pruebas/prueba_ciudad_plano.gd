@@ -440,6 +440,21 @@ func _redmi() -> void:
 			if Comun.fino(b) and float(b[4]) >= Comun.ALTO_FINO and String(b[5]) != "puerta" and not Comun.ocultable(b, t.OCULTABLES):
 				no_ocultables.append("%s/%s" % [s, b[0]])
 	_ok(no_ocultables.is_empty(), "8b: los pilares, postes y troncos finos son ocultables %s" % str(no_ocultables))
+	# 8b'. (revisión, 18/11) Cada sector cabe en el uniforme «aclarado» (sector.MAX_OCULTABLES): si se pasa, las piezas
+	# de más dejan de aclararse sin que nada falle (solo un aviso)
+	var tope: int = load("res://zonas3d/ciudad/sector.gd").MAX_OCULTABLES
+	var cuentas := {}
+	var pasados: Array = []
+	for s in IDS:
+		var t = P.TRAZADOS[s]
+		var n := 0
+		for b in t.BLOQUES:
+			if Comun.ocultable(b, t.OCULTABLES):
+				n += 1
+		cuentas[s] = n
+		if n > tope:
+			pasados.append(s)
+	_ok(pasados.is_empty(), "8b': cada sector tiene como mucho %d ocultables %s %s" % [tope, str(cuentas), str(pasados)])
 	var casos := 0
 	var bien := 0
 	var mal: Array = []

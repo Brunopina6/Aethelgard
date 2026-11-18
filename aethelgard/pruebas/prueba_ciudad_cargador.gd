@@ -474,6 +474,16 @@ func _arreglos_redmi() -> void:
 		if parte > 0.26 or ancho > S.ancho_rotulo(l.text, l.font_size) + 0.05:
 			mal.append("%s: %.2f m de ancho (calculado %.2f), desde %.1f m: %.0f %%" % [s, ancho, S.ancho_rotulo(l.text, l.font_size), desde_d, parte * 100.0])
 	_ok(vistos > 0 and mal.is_empty(), "C: Redmi: el rótulo del sector se dibuja solo desde donde ocupa ≤ 25 %% del ancho (%d vistos) %s" % [vistos, str(mal)])
+	# (revisión, 18/11) los «(en obras)» siguen con ROTULO_CERCA: con la cámara a 16-17 m de la puerta, los largos se ven
+	var puertas := 0
+	var lejos: Array = []
+	for s in c.montados:
+		for x in (c.montados[s] as Node)._rotulos_puerta:
+			puertas += 1
+			var desde_p: float = S.inicio_rotulo(x[1]) - 2.0
+			if desde_p > S.ROTULO_CERCA + 0.01:
+				lejos.append("%s: %.1f m" % [x[1][0], desde_p])
+	_ok(puertas > 0 and lejos.is_empty(), "C: Redmi: los rótulos de puerta se dibujan desde %.0f m, como antes (%d) %s" % [S.ROTULO_CERCA, puertas, str(lejos)])
 	# 5. «Guardar y recargar»: tocar el botón para a Kael; con la recarga en marcha, Kael no se mueve
 	v._colocar_kael(Vector3(0.0, 2.0, 28.0))
 	await _frames(3)

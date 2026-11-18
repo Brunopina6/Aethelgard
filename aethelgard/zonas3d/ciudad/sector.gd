@@ -24,7 +24,7 @@ const Comun := preload("res://zonas3d/ciudad/trazado_comun.gd")
 const P := preload("res://zonas3d/ciudad/plano.gd")
 const SH_OPACO := preload("res://zonas3d/ciudad/blockout_opaco.gdshader")
 const SH_CLARO := preload("res://zonas3d/ciudad/blockout_claro.gdshader")
-const MAX_OCULTABLES := 64                 # (el tamaño del uniforme «aclarado» de los dos sombreados; hoy, como mucho 30)
+const MAX_OCULTABLES := 64                 # (el tamaño del uniforme «aclarado» de los dos sombreados; 18/11: la plaza tiene 59; lo vigila prueba_ciudad_plano)
 # Hacia dónde mira la cámara de la ciudad (plano.gd, poner_camara: inclinada INCLINACION grados, sin girar): para pintar
 # las piezas aclaradas de lejos a cerca (preparar_datos).
 static var MIRA_CAMARA := Vector3(0.0, -sin(deg_to_rad(P.INCLINACION)), -cos(deg_to_rad(P.INCLINACION)))
@@ -238,7 +238,7 @@ const OPACIDAD_CONTORNO := 0.85
 # ROTULO_CERCA (el título de la pantalla ya dice el sector).
 # (17/11, Redmi) Con 10 m no bastaba: la cámara está a unos 18 m de Kael, así que el nombre del sector (7-8 m de ancho)
 # se veía a 13-17 m de ella, con el 35-42 % del ancho de la pantalla, en el Barrio Alto y al pie de las escalinatas (bajo y
-# alto). Ahora cada rótulo se dibuja solo desde la distancia a la que su ancho ocupa como mucho ROTULO_PANTALLA del ancho
+# alto). Ahora el rótulo del sector se dibuja solo desde la distancia a la que su ancho ocupa como mucho ROTULO_PANTALLA del ancho
 # del cuadro (con la cámara de la ciudad, plano.gd: CAMPO vertical en 16:9), y nunca a menos de ROTULO_CERCA.
 const ROTULO_PANTALLA := 0.25
 
@@ -258,6 +258,15 @@ static func ancho_rotulo(texto: String, tamano: int) -> float:
 	return f.get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, tamano).x * 0.01
 
 
+# Desde qué distancia de la cámara se dibuja un rótulo (+ el margen del fundido). La regla de ROTULO_PANTALLA es solo para
+# el del sector: un «(en obras)» largo (taberna, botica, concejo…) quedaba oculto justo ante su puerta, con la cámara a
+# 16-17 m (revisión, 18/11); los de puerta siguen con ROTULO_CERCA, como antes.
+static func inicio_rotulo(def: Array) -> float:
+	if def[0] == "Rotulo_sector":
+		return distancia_rotulo(ancho_rotulo(def[1], def[2])) + 2.0
+	return ROTULO_CERCA + 2.0
+
+
 func _rotulo(def: Array) -> Label3D:
 	var l := Label3D.new()
 	l.name = def[0]
@@ -269,7 +278,7 @@ func _rotulo(def: Array) -> Label3D:
 	l.outline_modulate = Color(0.30, 0.14, 0.08, OPACIDAD_CONTORNO)
 	l.pixel_size = 0.01
 	l.position = def[3]
-	l.visibility_range_begin = distancia_rotulo(ancho_rotulo(def[1], def[2])) + 2.0   # (+ el margen del fundido)
+	l.visibility_range_begin = inicio_rotulo(def)
 	l.visibility_range_begin_margin = 2.0
 	l.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
 	add_child(l)
