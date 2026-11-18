@@ -263,16 +263,21 @@ func _probar() -> void:
 		if not P.hito("bq_guardian_visto"):
 			_fallo("7: falta bq_guardian_visto")
 	# 8. el desenlace, al volver (la región recargada, como tras el combate)
+	_t0_8 = Time.get_ticks_msec()
+	_f0_8 = Engine.get_process_frames()
 	await _hasta(func(): return R.cambiando, 3.0)
 	await _hasta(func(): return not R.cambiando, 30.0)
 	B.apuntar("purificado")
 	P.poner_hito("bq_resuelto")
 	P.poner_hito("bq_purificado")
 	Engine.set_meta("pos_3d_ok", false)
-	R.cambiar_escena(REGION)
 	var id_vieja := r.get_instance_id()   # (no capturar «r»: se libera al recargar y la condición daría «Lambda capture… was freed»)
+	var al_pedir := _estado_8("al pedir la región", id_vieja)
+	R.cambiar_escena(REGION)
 	if not await _hasta_reloj(func(): return _region_lista() and current_scene.get_instance_id() != id_vieja and current_scene.has_method("texto_objetivo"), 60.0):
 		_fallo("8: la región no vuelve a cargarse")
+		print(al_pedir)
+		print(_estado_8("tras la espera", id_vieja))
 	else:
 		r = current_scene
 		await _hasta(func(): return r.bosque.puntos.size() > 0, 5.0)
@@ -292,6 +297,33 @@ func _probar() -> void:
 			_fallo("8: las pistas siguen tras resolverlo")
 	print("FALLOS: %d" % fallos)
 	quit(1 if fallos > 0 else 0)
+
+
+# (18/11) Volcado del paso 8, para que un fallo de la recarga se explique solo (docs/v12/BOSQUE_RECARGA_18_11.md): el
+# cambio de escena en curso, la escena actual (ruta e id), lo que cuelga de root, las cargas en hilo y el tiempo real y
+# los fotogramas desde que empieza el combate del Guardián.
+var _t0_8 := 0
+var _f0_8 := 0
+
+
+func _estado_8(momento: String, id_vieja: int) -> String:
+	var esc := current_scene
+	var hilo := []
+	for ruta in R._en_hilo.keys():
+		hilo.append("%s=%d" % [ruta, ResourceLoader.load_threaded_get_status(ruta)])
+	var escenas := []
+	for n in root.get_children():
+		if n.scene_file_path != "":
+			escenas.append("%s#%d" % [n.scene_file_path, n.get_instance_id()])
+	return ("VOLCADO 8 (%s): %d ms reales y %d fotogramas desde el combate del Guardián · R.cambiando=%s · " \
+		+ "texto_carga=«%s» · negro=%s · escena=%s#%d (vieja #%d, texto_objetivo=%s) · en root: %s · " \
+		+ "hilo (0 nada, 1 cargando, 2 fallo, 3 cargado): región=%d combate=%d · precargas: %s · combate_fijo=%s") % [
+		momento, Time.get_ticks_msec() - _t0_8, Engine.get_process_frames() - _f0_8, R.cambiando, R.texto_carga,
+		R.negro.visible, esc.scene_file_path if esc != null else "(ninguna)",
+		esc.get_instance_id() if esc != null else 0, id_vieja,
+		esc != null and esc.has_method("texto_objetivo"), escenas,
+		ResourceLoader.load_threaded_get_status(REGION), ResourceLoader.load_threaded_get_status(R.ESCENA_COMBATE),
+		hilo, Engine.get_meta("combate_fijo", "")]
 
 
 func _pos(r, id: String) -> Vector3:
