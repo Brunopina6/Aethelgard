@@ -69,7 +69,7 @@ quedaba corta era la de **antes**, la del combate.
 
 - se espera **por reloj** (`_hasta_reloj`, 60 s) a que termine el cambio al combate antes de pedir la región;
 - si a los 60 s el cambio sigue en curso, falla con un mensaje propio («el cambio al combate sigue en curso tras 60 s:
-  la región se pediría y se ignoraría») y el volcado, en vez de esperar otro minuto a ciegas;
+  la región se pediría y se ignoraría») y el volcado, y termina ahí, en vez de esperar otro minuto a ciegas (la primera versión seguía y esperaba otros 60 s: lo vio el revisor con 65 s de retraso; corregido el 18/11);
 - `id_vieja` se toma con la región viva;
 - volcado `_estado_8` (commit aparte): si la recarga falla, imprime el estado al pedir la región y tras la espera
   (`R.cambiando`, aviso de carga, negro, escena actual con ruta e id, lo que cuelga de `root`, estado de las cargas en

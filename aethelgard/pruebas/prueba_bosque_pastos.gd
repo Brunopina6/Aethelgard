@@ -282,6 +282,9 @@ func _probar() -> void:
 	if R.cambiando:
 		_fallo("8: el cambio al combate sigue en curso tras 60 s: la región se pediría y se ignoraría")
 		print(al_pedir)
+		print("FALLOS: %d" % fallos)   # (revisión, 18/11) terminar aquí, sin esperar otro minuto a una petición ignorada
+		quit(1)
+		return
 	R.cambiar_escena(REGION)
 	if not await _hasta_reloj(func(): return _region_lista() and current_scene.get_instance_id() != id_vieja and current_scene.has_method("texto_objetivo"), 60.0):
 		_fallo("8: la región no vuelve a cargarse")
