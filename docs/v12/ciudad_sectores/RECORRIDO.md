@@ -3,7 +3,8 @@
 Rama `area-ciudad-recorrido` (desde `b5cafa7`). Herramienta: `aethelgard/pruebas/recorrido_ciudad.gd` (con ventana).
 **Arreglos** de lo que encontraron este recorrido y dos verificaciones independientes: rama `area-ciudad-recorrido-2`
 (desde `1a38acf`, la punta de `area-ciudad-recorrido`), §7. **Arreglos tras el Redmi (17/11)**: rama `area-ciudad-redmi`
-(desde `70b5f82`), §8.
+(desde `70b5f82`), §8. **Pasadas en 1280×720 bajo y 1600×720 medio y alto, y los roces del grupo (18/11)**: rama
+`area-ciudad-recorrido-18` (desde `4dc8179`), §9.
 Plano y contrato: `docs/v12/CIUDAD_OAKHAVEN_PLAN.md`, `docs/v12/CIUDAD_OAKHAVEN.md`; sectores: `A.md`-`D.md` de esta
 carpeta. No se ha medido rendimiento (encargo): la herramienta quita el tope de FPS de la escena para ir más deprisa y el
 tiempo del juego lo fija `--fixed-fps 30`.
@@ -313,3 +314,102 @@ sin vídeo) y las intermedias `*_pasada1..3\` (con los fallos que llevaron a los
   la herramienta arreglada): mirarlo si se ve en el teléfono.
 - Rendimiento sin medir: el aclarado mira ahora hasta 21 puntos (Kael y dos del grupo) y hasta 59 ocultables por sector
   (plaza), con el descarte por caja; `_altura_suelo` consulta la holgura (los bloques de 1-2 sectores) en cada tramo.
+
+## 9. Recorrido completo en 1280×720 bajo y 1600×720 medio y alto; roces del grupo (18/11, rama `area-ciudad-recorrido-18`)
+
+Desde `4dc8179` (con los arreglos del Redmi de §8). Encargo: pasar el recorrido entero (`recorrido_ciudad.gd` con clics
+reales, `diag_ciudad_visibilidad.gd` y `diag_ciudad_silueta.gd`) a 1280×720 en bajo y a 1600×720 en medio y alto (tras
+§8 solo se había pasado 1600×720 en bajo) y revisar los roces del grupo con las esquinas (2 avisos por pasada en §7, 4
+en §8). Todo en el PC (RTX 3050, Compatibility), con ventana, `--fixed-fps 30`, cada pasada con sus propias carpetas de
+datos (APPDATA, LOCALAPPDATA y TEMP aisladas) y una sola ventana de Godot a la vez. No se mide rendimiento ni se declara
+nada de Android.
+
+**Escala del 3D en estas pasadas**: la herramienta FIJA el perfil (`Engine.set_meta("calidad_proto")`), así que el
+regulador no actúa (la línea `[calidad]` del registro dice «fija»): bajo, escala fija 0,75; medio, escala fija 0,80;
+alto, resolución completa (1,00). La interfaz va siempre a resolución completa y los clics, en coordenadas de la ventana
+(a 1600×720, con franjas de 160 px a cada lado).
+
+### Resultados antes del arreglo (código de `4dc8179`)
+
+| Pasada | Resultado | Avisos |
+|---|---|---|
+| `recorrido_ciudad` 1280×720 bajo | **430 tramos, 0 fallos**; las MISMAS 430 líneas (sin los nombres de las capturas) que 1600×720 bajo del 17/11; 1 585 clics en el suelo, 0 botones repetidos; 303 paradas con algo aclarado; el grupo, a ≤ 3,6 m al pararse; lo mismo cubierto (8/8 sectores, 24/24 sentidos, 50 + 50 pendientes, 44 cubiertas, 85 puertas, 13 sin salida, 9 atajos, 8 recargas, 2 «Volver al banco», 2 Puerta del Sur, teclas) | 4 roces del grupo |
+| `recorrido_ciudad` 1600×720 medio (con el observador `diag_grupo_roce.gd`, que solo mira) | **430 tramos, 0 fallos**; las mismas 430 líneas | los mismos 4 |
+| `recorrido_ciudad` 1600×720 alto (ídem) | **430 tramos, 0 fallos**; las mismas 430 líneas | los mismos 4 |
+| `diag_ciudad_visibilidad` 1280×720 bajo | **438 tramos, 0 fallos, 0 eventos** (ni Kael ni el grupo tapados, ningún parpadeo); cámara sin saltos (el mayor, 0,36 m); Kael siempre en el cuadro (pies a 0,73-0,87 del alto) | los 4 y uno más en la ronda extra («pie del Árbol»: Garon 2 fotogramas en `muro_escalera_torre`, Ribera) |
+| `diag_ciudad_silueta` (sin ventana; no depende del perfil ni de la resolución: solo de los trazados) | **35** de 176 611 casillas con ≥ 40 % del torso tapado, lo mismo que en §8 (carros de Damián y del almacén, 13 + 13; caño del pilón, 4; columna de la fuente, 4; tablón del Gremio, 1) | — |
+
+El perfil cambia lo que se dibuja (sombras, escala, sectores montados: hasta 3, 5 y 8), pero no por dónde va Kael ni lo
+que se aclara en las paradas: los tres perfiles y las dos resoluciones dan los mismos tramos, tiempos, clics y aclarados.
+
+### Los roces del grupo: qué pasaba
+
+`aethelgard/pruebas/diag_grupo_roce.gd` (nueva, diagnóstico, no está en la lista): el mismo recorrido y, cuando alguien
+del grupo sale de lo andable más que la tolerancia del recorrido (0,12 m), vuelca los últimos fotogramas (posiciones,
+rastro de cada uno, velocidad), cuánto se mete, una captura y un plano visto desde arriba; con `marcas=` hace lo mismo
+en un fotograma dado de un tramo (para el «después»). Los cuatro roces de cada pasada:
+
+| Tramo | Quién | Dónde | Dentro |
+|---|---|---|---|
+| 121 [oficios] escalera «suelo 4 x 4.4→6.8 ida» | Garon | `pilar_sop_1` (pilar de 0,4 × 0,4 m del soportal) | 0,19 m |
+| 163 [ribera] puerta «molino» | Garon | borde de un suelo de la Ribera (sin suelo ni choque) | 0,15 m |
+| 399 [barrio_alto] puerta «casa_plaza_e» | Lya | `jardin_plaza_e` (jardinera de 0,6 m) | 0,14 m |
+| 401 [barrio_alto] «al pie de suelo 5» | Garon | `jardin_plaza_e` | 0,14 m |
+
+Causa, la misma en los cuatro (`zonas3d/grupo_3d.gd`, `_despejado`): quien sigue mira si hay algo en medio hasta el de
+delante con un solo rayo a la altura de las rodillas (0,6 m sobre su suelo). Ese rayo no ve una jardinera de 0,6 m (pasa
+rozando por encima), ni el borde de un suelo sin choque, ni el pilar en el que ya está metido unos centímetros (el rayo
+empieza dentro de la caja y no la cuenta). Con «despejado», el seguidor da su rastro por sobrante (`_quieto` lo borra)
+y, sin rastro, anda RECTO hacia el de delante: Lya, quieta a 1,8 m al suroeste de la jardinera, iba derecha a Kael (que
+subía por el este) cortando la esquina; Garon, metido 0,1 m en la esquina del pilar por la cuerda del rastro, lo cruzaba
+en diagonal. No eran las cuerdas del rastro solas: a 30 FPS sus puntos quedan a 0,27 m de media (corriendo, uno por
+fotograma; hasta 0,39 en Lya y 0,47 en Garon) y una cuerda así se mete en una esquina unos 0,1 m, lo que el recorrido
+tolera.
+
+### El arreglo (mínimo, en el archivo compartido)
+
+`grupo_3d._despejado` pide además que ningún punto del camino, cada 0,1 m (sin contar el de partida, para no quedarse
+clavado si ya roza), sea `_prohibido` de la región (en la ciudad, lo no andable del plano). Seis líneas; el resto del
+seguimiento no cambia. Donde `_prohibido` ya coincidía con lo que ve el rayo, todo sigue igual (Pastos, abajo).
+
+| Comprobación | Antes | Después |
+|---|---|---|
+| `diag_grupo_roce` 1600×720 bajo | 4 roces, el más hondo 0,19 m | **0 roces**; 430 tramos, 0 fallos; solo cambian las 4 líneas de los avisos (y en la 399 el grupo para a 3,1 m en vez de 3,2); Kael hace exactamente lo mismo |
+| `recorrido_ciudad` 1280×720 bajo | 430 tramos, 0 fallos, 4 avisos | **430 tramos, 0 fallos, 0 avisos**; las mismas 430 líneas que 1600×720 bajo con el arreglo; 1 585 clics, 0 botones repetidos, 303 paradas con aclarado, grupo a ≤ 3,6 m; lo mismo cubierto |
+| `recorrido_ciudad` 1600×720 medio (escala fija 0,80) | 430 tramos, 0 fallos, 4 avisos | **430 tramos, 0 fallos, 0 avisos**; las mismas líneas que 1280×720 bajo con el arreglo; 0 botones repetidos |
+| `recorrido_ciudad` 1600×720 alto (resolución completa) | 430 tramos, 0 fallos, 4 avisos | **430 tramos, 0 fallos, 0 avisos**; las mismas líneas; 0 botones repetidos |
+| `diag_ciudad_visibilidad` 1280×720 bajo | 438 tramos, 0 fallos, 0 eventos, 5 avisos de roce | **438 tramos, 0 fallos, 0 eventos, 0 avisos**; cámara: el mayor salto 0,36 m; pies de Kael a 0,73-0,87 del alto del cuadro en los 8 sectores |
+| `diag_ciudad_visibilidad` 1600×720 medio | — (sin pasada previa) | **438 tramos, 0 fallos, 0 eventos, 0 avisos**; lo mismo |
+| `diag_ciudad_visibilidad` 1600×720 alto | — (sin pasada previa) | **438 tramos, 0 fallos, 0 eventos, 0 avisos**; lo mismo |
+| `diag_ciudad_silueta` | 35 casillas | 35 (no depende del grupo ni del perfil) |
+| `prueba_grupo3d`, `prueba_grupo3d_rutas`, `prueba_anim_pies` (Pastos Verdes) | superadas | **superadas con las MISMAS cifras** (rutas: 934 fotogramas, 181 m, Lya-Kael hasta 3,45 m, Garon-Lya hasta 1,97 m, pisan 0, fuera del suelo 0, atraviesan 0, juntos 2, reapariciones 0; las rapideces de los pies, iguales) |
+| Ejecutor, `-Solo` 18 pruebas de regiones y ciudad (zona3d, grupo3d, grupo3d_rutas, anim_pies, garganta3d, garganta3d_tramo, mar_cristal, oakhaven3d_completo, gran_bosque3d, grupo_reserva, ciclopea3d, npc_paso, sunken3d, mapamundi3d, muestra_calle, barrio_trazado, ciudad_plano, ciudad_cargador) | — | **SUPERADAS 18 · FALLIDAS 0** (`D:\REBELUM_diagnostico\pruebas\2026-11-18_052357`; partida real, carpeta real y proyecto sin cambios) |
+
+Queda, dentro de la tolerancia: la cuerda del rastro aún puede rozar una esquina unos 0,1 m (en el plano del tramo 121,
+después, Garon pasa 0,1 m por el canto del pilar). No se ve (el cuerpo es más ancho) y el recorrido lo tolera. Quitarlo
+del todo pediría que el rastro guarde cada fotograma del de delante y, para Garon, los puntos por los que pasa Lya: más
+cambio en el archivo compartido sin un aviso que lo pida; no se ha hecho.
+
+### Capturas antes y después
+
+En `D:\REBELUM_diagnostico\pendientes_18_11\ciudad_recorrido_18\roce_despues_1600x720_bajo\antes_y_despues\`
+(izquierda antes, derecha después; el mismo fotograma del mismo tramo, el tiempo del juego es fijo):
+
+- `marca_121_15.jpg` y `plano_121_15.jpg`: Garon en el pilar del soportal de los Oficios.
+- `marca_163_156.jpg` y `plano_163_156.jpg`: Garon en el borde de la Ribera, ante el molino.
+- `marca_399_287.jpg` y `plano_399_287.jpg`: Lya cortando la esquina de la jardinera del Barrio Alto.
+- `marca_401_47.jpg` y `plano_401_47.jpg`: Garon con los pies en la esquina de la misma jardinera (antes) y en la calle
+  (después).
+
+Los planos: 5 × 5 m vistos desde arriba, 80 px/m, claro lo andable y oscuro lo que no; Kael azul, Lya verde y Garon rojo
+durante 1,5 s, el último punto más grande. Cada pasada, con su `recorrido.txt`, `out.log` y capturas, en
+`D:\REBELUM_diagnostico\pendientes_18_11\ciudad_recorrido_18\`: `recorrido_1280x720_bajo\`, `recorrido_1600x720_medio\`,
+`recorrido_1600x720_alto\`, `visibilidad_1280x720_bajo\`, `silueta\`, `roce_antes_1600x720_bajo\` (las cuatro con
+`grupo_roce.txt` donde se usó el observador) y las `despues_*\`.
+
+### Pendiente
+
+- Probarlo en el Redmi con el dedo (sin teléfono hoy).
+- La cuerda del rastro (≤ 0,12 m, arriba) y el rodeo de Kael sin búsqueda de caminos (§8) siguen igual.
+- Rendimiento sin medir (encargo): `_despejado` hace ahora hasta 10 consultas de `_prohibido` por metro de recta; se
+  llama con alguien del grupo parado y con rastro, o yendo recto, por cada uno del grupo.
