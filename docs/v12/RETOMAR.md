@@ -1060,7 +1060,7 @@ Validado: `dc878e9` (`validado/v12/20261115-170245`, 188 · 0). APK v834 instala
 - La rama local `revisa-ciudad` (revisor, sin commits propios) la puede borrar el usuario si quiere (el gancho no deja).
 
 ## RELEVO 18/11, 03:47: VALIDADO `3d354b5` (196 · 0 · 116 · 0) (LEER PRIMERO)
-- Etiqueta local `validado/v12/20261118-034537`. Batería `D:\REBELUM_diagnostico\pruebas6-11-18_031513`. Todo lo del
+- Etiqueta local `validado/v12/20261118-034537`. Batería `D:\REBELUM_diagnostico\pruebas\2026-11-18_031513`. Todo lo del
   relevo de las 02:33 queda validado.
 - El fallo de `prueba_bosque_pastos` (paso 8) era de la PRUEBA, no del juego: esperaba al combate contando fotogramas y,
   con el PC cargado, pedía la región durante el cambio, que `Recursos.cambiar_escena` ignora a propósito. Arreglo: espera
@@ -1072,7 +1072,7 @@ Validado: `dc878e9` (`validado/v12/20261115-170245`, 188 · 0). APK v834 instala
   usuario listadas en el relevo anterior. Ramas locales `revisa-ciudad` y similares de revisores, sin commits propios.
 
 ## RELEVO 18/11, 11:00: VALIDADO `2dde14b` (196 · 0 · 116 · 0) (LEER PRIMERO)
-- Etiqueta local `validado/v12/20261118-105316`. Batería `D:\REBELUM_diagnostico\pruebas6-11-18_102249`; partida real,
+- Etiqueta local `validado/v12/20261118-105316`. Batería `D:\REBELUM_diagnostico\pruebas\2026-11-18_102249`; partida real,
   carpeta real y proyecto sin cambios. Después, `e88813e` añade `prueba_grupo_despejado` (pasa; contraprueba sin el
   arreglo: 2 fallos), sin validar en batería completa.
 - Flujo «ciudad-tras-validar» (3 tareas con revisor, en serie, un Godot a la vez, con topes de tiempo): todo integrado.
@@ -1084,8 +1084,7 @@ Validado: `dc878e9` (`validado/v12/20261115-170245`, 188 · 0). APK v834 instala
     vez, al entrar en frío. Aclarado sin optimizar (+30 µs, 21 rayos). `MEDIDAS_PC.md` §7. Nada medido en el Redmi.
   - Carreras de espera: 8 pruebas pasan a esperar por reloj (arboleda_tramo, isla, barrio_interiores, sunken3d,
     ciclopea3d, naira_mision, oakhaven3d, mar_cristal). `docs/v12/PRUEBAS_CARRERAS_18_11.md`. La lista NO es completa:
-    cerrarla exige pasar la batería con el retraso de carga (parche en `D:\REBELUM_diagnostico\pendientes_18_11
-evisa_carreras\`).
+    cerrarla exige pasar la batería con el retraso de carga (parche en `D:\REBELUM_diagnostico\pendientes_18_11\revisa_carreras\`).
 - Pendiente técnico: barrido completo con retraso de carga; `fotos_barrio_recorrido` (fallo intermitente de Tobías en A7,
   sin investigar); topes por reloj en `medir_mapamundi3d` y `medir_sunken3d`; índice del plano en hilo si el tirón de
   ~38 ms molesta en el Redmi.

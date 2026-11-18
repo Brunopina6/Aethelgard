@@ -107,7 +107,7 @@ carrera (esperas en fotogramas); no lo he cambiado: entra bien así y la salida 
 «cambiando», y la búsqueda por palabras no las vio; el revisor las encontró pasando la batería con el retraso: con 5 s
 fallaban siempre y con su arreglo (esperas y topes por reloj, commit propio en claude/rebelum-v12) pasan con y sin retraso.
 La lista, por tanto, no es completa: cerrarla exige pasar la batería entera sin ventana con el retraso (parche por argumento
-en D:\REBELUM_diagnostico\pendientes_18_11evisa_carrerasetraso_contraprueba_con_argumento.diff).
+en D:\REBELUM_diagnostico\pendientes_18_11\revisa_carreras\retraso_contraprueba_con_argumento.diff).
 
 ### Con la misma forma, sin cambiar
 
