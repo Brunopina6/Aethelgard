@@ -28,7 +28,7 @@ extends SceneTree
 #      maqueta lejana; memoria al final.
 # Uso (APPDATA y LOCALAPPDATA en una carpeta aislada; la partida es la del banco, en user://):
 #   Godot --path aethelgard --resolution 1600x720 --script res://pruebas/medir_ciudad.gd -- perfil=bajo|medio|alto
-#     salida=<carpeta fuera del proyecto> [escala=1.0] [recorrido=0] [paso=8] [experimento=1]
+#     salida=<carpeta fuera del proyecto> [escala=1.0] [recorrido=0] [paso=8] [experimento=1] [solo_recorrido=1]
 # «experimento=1» (con recorrido=0): tras el barrido, solo las vistas más cargadas, y en cada una lo que pesan los rótulos,
 # los ocultables, la maqueta lejana, el grupo y la interfaz 2D (se ocultan un momento; el juego no cambia).
 
@@ -67,6 +67,7 @@ class Muestreo extends Node:
 
 	func _process(_d: float) -> void:
 		var ahora := Time.get_ticks_usec()
+		var coste := _coste()
 		if grabando and ultimo > 0:
 			var RS := RenderingServer
 			var m := {"real": (ahora - ultimo) / 1000.0, "proc": (ahora - inicio.t) / 1000.0, "herr": herr,
@@ -82,9 +83,29 @@ class Muestreo extends Node:
 				m["sec"] = escena.cargador.actual
 				m["mont"] = escena.cargador.montados.size()
 				m["pos"] = escena.kael.global_position
+			m.merge(coste)
 			muestras.append(m)
 		herr = 0.0
 		ultimo = ahora
+
+	# (18/11, coste de los arreglos del Redmi) Si la escena o su grupo llevan la INSTRUMENTACIÓN temporal
+	# (pruebas/instrumentar_coste_ciudad.py: «_coste_x» = {función: [µs, llamadas]} de este fotograma), se recoge y se vacía.
+	# Sin instrumentar no hay nada que recoger y la medida es la de siempre.
+	func _coste() -> Dictionary:
+		var r := {}
+		if escena == null or not is_instance_valid(escena):
+			return r
+		var fuentes: Array = [escena.get("_coste_x")]
+		var g = escena.get("grupo")
+		if g != null and is_instance_valid(g):
+			fuentes.append(g.get("_coste_x"))
+		for cx in fuentes:
+			if cx is Dictionary:
+				for k in cx:
+					r["us_" + k] = float(cx[k][0])
+					r["n_" + k] = float(cx[k][1])
+				cx.clear()
+		return r
 
 
 var perfil := "bajo"
@@ -93,6 +114,7 @@ var escala := -1.0
 var con_recorrido := true
 var paso := 8.0
 var experimento := false                       # «experimento=1»: solo las vistas cargadas, quitando cosas para ver cuánto pesan
+var solo_recorrido := false                    # «solo_recorrido=1» (18/11): entrada y recorrido andando, sin barrido ni puntos
 var lineas: PackedStringArray = []
 var v = null
 var mu: Muestreo
@@ -117,6 +139,8 @@ func _initialize() -> void:
 			paso = float(a.trim_prefix("paso="))
 		elif a == "experimento=1":
 			experimento = true
+		elif a == "solo_recorrido=1":
+			solo_recorrido = true
 	Engine.set_meta("calidad_proto", perfil)
 	if escala > 0.0:
 		Engine.set_meta("calidad_extra", {"escala_3d": escala})
@@ -341,6 +365,20 @@ func _preparar_rejilla() -> void:
 				for i in range(g[0], g[1] + 1):
 					if caja.has_point(_centro(i, j)):
 						anda[j * W + i] = 0
+	# (18/11) el CUERPO de Kael (desde 17/11, ciudad._altura_suelo y plano.holgura): la franja de RADIO_CUERPO junto a
+	# paredes, pilares gruesos y jardineras altas no se pisa, como en recorrido_ciudad.gd. Con las constantes copiadas aquí
+	# (no las de trazado_comun.gd) para que la MISMA ruta sirva también con el código de antes (70b5f82) y se comparen ms.
+	for s3 in P.ORDEN:
+		for b in P.trazado(s3).BLOQUES:
+			if not b[6] or _fino(b):
+				continue
+			var g: Array = _rango((b[2] as Rect2).grow(RADIO_CUERPO))
+			for j in range(g[2], g[3] + 1):
+				for i in range(g[0], g[1] + 1):
+					if anda[j * W + i] == 1:
+						var q := _centro(i, j)
+						if _dist_planta(b[2], q) < RADIO_CUERPO and float(b[3]) + float(b[4]) > P.altura(q.x, q.y) + ALTO_PARED:
+							anda[j * W + i] = 0
 	for s2 in P.ORDEN:
 		for b in P.trazado(s2).BLOQUES:
 			if b[6] and float(b[4]) > 0.6:
@@ -422,6 +460,35 @@ func _ruta(a: Vector3, b: Vector3) -> PackedVector2Array:
 	return r
 
 
+# (18/11) Copias de trazado_comun.gd (17/11: RADIO_CUERPO, ALTO_PARED, fino, distancia_planta, holgura) para la ruta.
+const RADIO_CUERPO := 0.3
+const ALTO_PARED := 1.0
+
+
+func _fino(b: Array) -> bool:
+	var r: Rect2 = b[2]
+	return r.size.x <= 0.6 + 0.001 and r.size.y <= 0.6 + 0.001
+
+
+func _dist_planta(r: Rect2, p: Vector2) -> float:
+	return Vector2(clampf(p.x, r.position.x, r.end.x), clampf(p.y, r.position.y, r.end.y)).distance_to(p)
+
+
+func _holgura(x: float, z: float) -> float:
+	if not P.andable(x, z):
+		return 0.0
+	var y := P.altura(x, z)
+	var p := Vector2(x, z)
+	var h := RADIO_CUERPO
+	for s in P.ORDEN:
+		if not (P.SECTORES[s]["caja"] as Rect2).grow(RADIO_CUERPO + 0.5).has_point(p):
+			continue
+		for b in P.trazado(s).BLOQUES:
+			if b[6] and float(b[3]) + float(b[4]) > y + ALTO_PARED and not _fino(b):
+				h = minf(h, _dist_planta(b[2], p))
+	return h
+
+
 func _recta_libre(a: Vector3, b: Vector3, exacta := true) -> bool:
 	var d := Vector2(b.x - a.x, b.z - a.z)
 	var l := d.length()
@@ -430,6 +497,7 @@ func _recta_libre(a: Vector3, b: Vector3, exacta := true) -> bool:
 	var dir := d / l
 	var n := int(ceil(l / 0.1))
 	var y_ant := P.altura(a.x, a.z) if exacta else 0.0
+	var h_ant := _holgura(a.x, a.z) if exacta else 0.0
 	for i in range(1, n + 1):
 		var q := Vector2(a.x, a.z) + d * (float(i) / n)
 		if exacta:
@@ -439,6 +507,10 @@ func _recta_libre(a: Vector3, b: Vector3, exacta := true) -> bool:
 			if absf(y - y_ant) > 0.3:
 				return false
 			y_ant = y
+			var h := _holgura(q.x, q.y)                 # (18/11) en la franja del cuerpo no se entra
+			if h < RADIO_CUERPO - 0.001 and h < h_ant - 0.001:
+				return false
+			h_ant = h
 		elif not _anda_rejilla(q.x, q.y):
 			return false
 		if l * float(i) / n < l - 0.15:
@@ -655,6 +727,7 @@ func _recorrido() -> void:
 	_nota("[%s]   llamadas %s · primitivas %s · sectores montados máx %d · esperas del cargador (carga en hilo sin terminar al montar) %d · tramos sin llegar %s%s" % [
 		perfil, _txt_est(ms, "ll", false, 0), _txt_est(ms, "pr", false, 0), int(_est(ms, "mont")["max"]),
 		v.cargador.esperas - esperas0, str(tramos_mal), _sin_dibujar(ms)])
+	_coste_funciones(ms)
 	var sobre := ms.filter(func(m): return float(m["real"]) - float(m["herr"]) > presupuesto * 1.5)
 	_nota("[%s]   fotogramas de más de %.0f ms (1,5 × presupuesto, sin lo de la herramienta): %d" % [perfil, presupuesto * 1.5, sobre.size()])
 	# el peor fotograma por la vista: dónde
@@ -703,6 +776,26 @@ func _recorrido() -> void:
 	_nota("[%s]   RESUMEN cargador: %d montajes/desmontajes, proceso en su fotograma máx %.1f ms; %d cruces, peor fotograma ±0,5 s %.1f ms, proceso máx %.1f ms" % [
 		perfil, eventos.size(), por_mont.max() if not por_mont.is_empty() else -1.0, cruces, peor_cruce, peor_cruce_proc])
 	_nota("[%s]   memoria tras el recorrido: %s" % [perfil, _mem()])
+
+
+# (18/11) Con la instrumentación temporal: por función, µs por fotograma (todos los fotogramas del recorrido, 0 si no se
+# llamó) y llamadas por fotograma, y µs por llamada. Las anidadas se cuentan en las dos (el rodeo llama a _altura_suelo).
+func _coste_funciones(ms: Array) -> void:
+	var claves: Array = []
+	for m in ms:
+		for k in m:
+			if String(k).begins_with("us_") and not (String(k) in claves):
+				claves.append(String(k))
+	claves.sort()
+	for k in claves:
+		var nombre: String = k.trim_prefix("us_")
+		var tot := 0.0
+		var llam := 0.0
+		for m in ms:
+			tot += float(m.get(k, 0.0))
+			llam += float(m.get("n_" + nombre, 0.0))
+		_nota("[%s]   COSTE %s: µs por fotograma %s · llamadas por fotograma %s · %.2f µs por llamada · %.0f llamadas en %d fotogramas" % [
+			perfil, nombre, _txt_est(ms, k, false, 0), _txt_est(ms, "n_" + nombre, false, 0), tot / maxf(1.0, llam), llam, ms.size()])
 
 
 # ================================================================= barrido y puntos
@@ -951,6 +1044,9 @@ func _medir() -> void:
 	_nota("[%s] escala real del viewport: %.2f · MSAA %d · tope %d FPS" % [perfil, root.scaling_3d_scale, root.msaa_3d, v.perfil_fps])
 	if con_recorrido:
 		await _recorrido()
+	if solo_recorrido:
+		_terminar()
+		return
 	var r: Array = await _barrido()
 	var mas: Array = _mas_cargadas(r)
 	if experimento:
