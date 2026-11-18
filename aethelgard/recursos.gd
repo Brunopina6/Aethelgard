@@ -361,6 +361,8 @@ const APAGADOS := {
 	"res://enemigos/bestiario_comun/": "enemigos_v12",
 	# V12, Custodio (14/11, piloto): meshy_e01, el Custodio de Porcelana (combate_meshy_e01.gd), solo con su interruptor
 	"res://enemigos/meshy_e01/": "meshy_e01",
+	# V12 (19/11): Velaria (combate_velaria.gd), solo con su interruptor (≈ 18 MB entre el GLB y sus tres texturas)
+	"res://enemigos/velaria/": "velaria_v12",
 	"res://audio/efectos/centinela/": "enemigos_v12",
 	"res://audio/efectos/golem/": "enemigos_v12",
 	"res://audio/efectos/gorthor/": "enemigos_v12",

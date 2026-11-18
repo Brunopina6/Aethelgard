@@ -101,7 +101,7 @@ func _a() -> void:
 			casos += 1
 		elif ":" in k:
 			selectores[k.get_slice(":", 0)] = true
-	_ok(casos == BP.COMBATES.size() + BP.EXPLORAR.size() and casos == 16, "A: %d casos en pantalla" % casos)   # (15/11: + la muestra de la calle; 16/11: + el barrio, la Arboleda y la ciudad; 18/11: + las 2 derrotas)
+	_ok(casos == BP.COMBATES.size() + BP.EXPLORAR.size() and casos == 17, "A: %d casos en pantalla" % casos)   # (15/11: + la muestra de la calle; 16/11: + el barrio, la Arboleda y la ciudad; 18/11: + las 2 derrotas; 19/11: + Velaria)
 	_ok(selectores.size() == 11, "A: %d selectores (%s)" % [selectores.size(), str(selectores.keys())])
 	b.queue_free()
 	await _esperar(2)
@@ -125,6 +125,8 @@ func _combate(caso: String) -> Node:
 	Engine.set_meta("banco_caso", caso)
 	if d.get("custodio", false):
 		Engine.set_meta("meshy_e01", true)
+	if d.get("velaria", false):                       # (19/11) como banco_pruebas.gd _combate
+		Engine.set_meta("velaria_v12", true)
 	Engine.set_meta("zona", "llanura")
 	Engine.set_meta("tipo_combate", "normal")
 	Engine.set_meta("grupo_combate", int(d["grupo"]))
@@ -200,6 +202,15 @@ func _b() -> void:
 			vida_cus8 = int(e["hp_max"])
 	_ok(vida_cus1 > 0 and vida_cus8 == int(round(vida_cus1 * 8.0)), "B: la vida del Custodio normal %d y la de la rotación %d (esperado ×8)" % [vida_cus1, vida_cus8])
 	await _cerrar(c)
+
+	# 19/11: Velaria, con su personalidad y su modelo 3D solo en su caso (su interruptor, de la sesión)
+	c = await _combate("velaria")
+	var vel: Array = c.enemigos.filter(func(e): return e["clave"] == "velaria")
+	_ok(vel.size() == 1 and load("res://combate_velaria.gd").es(vel[0]) and c._p3d(vel[0]) != null,
+		"B: el combate de Velaria no la trae con su personalidad y su modelo 3D")
+	await _cerrar(c)
+	BP.preparar_partida()
+	_ok(not Engine.has_meta("velaria_v12"), "B: el interruptor de Velaria pasa al caso siguiente")
 
 	c = await _combate("nix")
 	var nombres: Array = c.heroes.map(func(h): return h["nombre"])
@@ -330,11 +341,12 @@ func _e() -> void:
 	BP.preparar_partida()
 	P.guardar(BP.ESCENA)
 	Engine.set_meta("meshy_e01", true)
+	Engine.set_meta("velaria_v12", true)
 	Engine.set_meta(G.META_GRUPO4, true)
 	BP.salir()
 	_ok(not BP.en_banco() and P.archivo() != BP.ARCHIVO, "E: al salir, la partida sigue yendo al banco")
 	_ok(not FileAccess.file_exists(BP.ARCHIVO), "E: al salir queda el archivo del banco")
-	for k in ["meshy_e01", "banco_caso", "nix_v12", "oakhaven_propuestas_v12", "oak_franja", "grupo", "inventario", "partida_lista", "archivo_partida_prueba", G.META_GRUPO4,
+	for k in ["meshy_e01", "velaria_v12", "banco_caso", "nix_v12", "oakhaven_propuestas_v12", "oak_franja", "grupo", "inventario", "partida_lista", "archivo_partida_prueba", G.META_GRUPO4,
 			"calidad_sesion", "calidad_proto", "calidad_extra", "banco_proto"]:
 		_ok(not Engine.has_meta(k), "E: al salir queda «%s» en la sesión" % k)
 	hechos.append("E: salir deja la sesión sin partida, sin interruptores y sin el archivo del banco")

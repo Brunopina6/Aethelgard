@@ -34,7 +34,8 @@ const METAS_SESION := ["meshy_e01", "banco_caso", "nix_v12", "oakhaven_propuesta
 	"barrio_v12", "barrio_interior", "barrio_reloj",  # (16/11: el barrio experimental: activado, su interior tras CAL y su reloj)
 	"arboleda_flor",                                 # (16/11: «Llevar una flor de abajo», tramo de la Arboleda)
 	"ciudad_v12",                                    # (16/11: la ciudad completa de Oakhaven, maqueta: activada)
-	"naira_v12"]                                     # (18/11: Naira, solo en el caso de las derrotas de Naira y Nix)
+	"naira_v12",                                     # (18/11: Naira, solo en el caso de las derrotas de Naira y Nix)
+	"velaria_v12"]                                   # (19/11: Velaria, la polilla del bestiario, solo en su caso)
 # Calidad elegida en la sesión (CAL, el selector «Calidad 3D», los bancos A/B de vista3d): sigue entre los casos de la
 # sesión y se quita SOLO al salir.
 const METAS_CALIDAD := ["calidad_proto", "calidad_extra", "muestra_precalentar",
@@ -100,6 +101,11 @@ const COMBATES := {
 	"derrotas_reclutas": {"titulo": "Derrotas de Naira y Nix (casi sin vida)", "grupo": 1,
 		"activos": ["Kael", "Naira", "Nix"], "vida": 1.0, "armonia": false, "casi_sin_vida": true,
 		"nota": "Naira y Nix (prototipos, solo aquí) con Kael, a 1 PV: se ven caer los tres. Sin tocar nada."},
+	# 19/11: Velaria (bestiario T-097, combate_velaria.gd), APAGADA fuera de aquí: su interruptor «velaria_v12» solo en
+	# este caso. Modelo de Meshy con licencia sin confirmar: solo APK de prueba privadas (D-075).
+	"velaria": {"titulo": "Velaria: destello de velo y corte de ala (prueba)", "grupo": 30,
+		"activos": ["Kael", "Lya", "Garon"], "vida": 1.0, "armonia": false, "velaria": true,
+		"nota": "Avisa el destello un turno antes (alas replegadas, «⚠»): Defender lo deja a la mitad. Cifras PROPUESTAS."},
 }
 const EXPLORAR := {
 	"oakhaven": {"titulo": "Oakhaven con Kael, Lya y Garon", "activos": ["Kael", "Lya", "Garon"],
@@ -376,6 +382,8 @@ func _combate(clave: String) -> void:
 	Engine.set_meta("banco_caso", clave)
 	if d.get("custodio", false):
 		Engine.set_meta("meshy_e01", true)
+	if d.get("velaria", false):                    # (19/11) Velaria, solo en su caso
+		Engine.set_meta("velaria_v12", true)
 	Engine.set_meta("zona", "llanura")
 	Engine.set_meta("tipo_combate", "normal")
 	Engine.set_meta("grupo_combate", int(d["grupo"]))

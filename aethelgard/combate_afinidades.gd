@@ -52,6 +52,10 @@ const TABLA := {
 	"meshy_e01": {"debil": [], "resiste": [], "inmune": [],
 		"estados_resiste": [], "estados_inmune": [],
 		"por_que": "Porcelana animada: sus afinidades están por decidir (el paquete no las trae)."},
+	# V12 (19/11), Velaria (bestiario T-097, APAGADA): su ficha no trae afinidades; fila NEUTRA hasta que el usuario decida.
+	"velaria": {"debil": [], "resiste": [], "inmune": [],
+		"estados_resiste": [], "estados_inmune": [],
+		"por_que": "Polilla de farol: sus afinidades están por decidir (la ficha no las trae)."},
 	"gorthor": {"debil": ["Hielo"], "resiste": ["Fuego"], "inmune": [],
 		"estados_resiste": ["lento", "atk_baja"], "estados_inmune": ["prision"],
 		"por_que": "Bestia de la Garganta, hecha al calor de la roca: el frío le entumece."},

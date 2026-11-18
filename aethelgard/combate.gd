@@ -93,6 +93,10 @@ const Velador := preload("res://combate_velador.gd")
 # Umbral en fila con aviso dentro del clip, recarga de 2 turnos propios en guardia). APAGADO: solo con su interruptor
 # «meshy_e01» y en sus combates de prueba (GRUPOS[28] y [29]); nunca al azar. Los ganchos llevan «V12, Custodio».
 const Custodio := preload("res://combate_meshy_e01.gd")
+# V12 (19/11): Velaria, la polilla del bestiario (T-097; combate_velaria.gd: destello de velo avisado un turno y corte de
+# ala). APAGADA: solo con su interruptor «velaria_v12» (el caso «velaria» del banco de Auditoría) y en su combate de
+# prueba GRUPOS[30]; nunca al azar. Los ganchos llevan «V12, Velaria».
+const Velaria := preload("res://combate_velaria.gd")
 # Menú de combate minimalista (menu_combate.gd). Ocupa el 40 % derecho de la pantalla, por eso los
 # héroes van más a la izquierda y los enemigos se juntan a la izquierda: x = x * ENEMIGOS_X.x + ENEMIGOS_X.y
 const ENEMIGOS_X := Vector2(0.75, -190.0)
@@ -374,6 +378,13 @@ const MODELOS := {
 		"rutas": ["res://enemigos/meshy_e01/meshy_e01.glb"],
 		"vp": Vector2i(700, 840), "alto_vista": 3.0, "centro_y": 1.0, "barra_y": 80.0, "centro_3d": 1.05, "caida": 1.6,
 		"respaldo": "guardian"},   # (14/11: «caida» 1,6 s: su clip de derrota, de rodillas y en el suelo a 1,3 s)
+	# V12, Velaria (19/11; enemigos/velaria/, de la copia de animaciones; combate_velaria.gd). Vuela a 0,23 m y mide 1,38 m
+	# hasta la punta de las alas: 2,0 m de alto de vista mirando a 0,8 m (el encuadre de prueba_velaria_modelo.gd), con los
+	# mismos 350 px por metro de ventana que el Zarzalín. Encuadre PROPUESTO, sin ver en el Redmi.
+	"velaria": {
+		"tipo": "3d", "esc": 0.6, "script": "res://enemigos/velaria/velaria_3d.gd", "gestos": "res://gestos_3d.gd",
+		"rutas": ["res://enemigos/velaria/velaria_completo.glb"], "vp": Vector2i(900, 700), "alto_vista": 2.0,
+		"centro_y": 0.8, "barra_y": 40.0, "centro_3d": 0.75, "respaldo": "slime"},
 }
 
 # Enemigos disponibles y grupos que pueden aparecer en un encuentro (se elige uno al azar).
@@ -427,6 +438,10 @@ const ENEMIGOS := {
 	# solo con «meshy_e01» y en GRUPOS[28]/[29]). PV dentro de los 110-150 de su ficha; más lento que el Velador.
 	"meshy_e01": {"nombre": "Custodio de Porcelana", "modelo": "meshy_e01", "hp": 130, "atk": 13, "vel": 10.0,
 		"exp": 36, "oro": 24, "personalidad": "agresivo"},
+	# V12 (19/11): Velaria, hostigadora de ruinas húmedas (T-097; combate_velaria.gd; APAGADA: solo con «velaria_v12» y en
+	# GRUPOS[30]). Ágil y frágil, como el Peón de Linde. Cifras PROPUESTAS, sin equilibrar.
+	"velaria": {"nombre": "Velaria", "modelo": "velaria", "hp": 70, "atk": 11, "vel": 16.0, "exp": 22, "oro": 14,
+		"personalidad": "agresivo"},
 }
 const GRUPOS := [
 	[["grimfang", Vector2(230, 150)], ["grimfang", Vector2(410, 115)]],
@@ -469,6 +484,8 @@ const GRUPOS := [
 	# V12, Custodio: combates de prueba del Custodio de Porcelana (combate_meshy_e01.gd; con «meshy_e01»); no salen al azar
 	[["meshy_e01", Vector2(230, 120)]],                                     # 28: solo
 	[["meshy_e01", Vector2(150, 110)], ["slime", Vector2(420, 125)]],       # 29: con un Slime
+	# V12, Velaria: su combate de prueba (combate_velaria.gd; con «velaria_v12», el caso del banco); no sale al azar
+	[["velaria", Vector2(250, 120)]],                                       # 30: sola
 ]
 const GRUPOS_AL_AZAR := 5           # solo los primeros salen en encuentros aleatorios (con el grupo de tres)
 # Encuentros al azar según cuántos héroes hay ahora en el grupo (grupo.gd, activos). Kael solo no tiene cura ni a
@@ -518,6 +535,7 @@ const ANIM := {
 	"peon_linde": {"distancia": 200.0},         # V12, Peón: las estacas llegan 1 m por delante en la estocada
 	"velador_corteza": {"distancia": 230.0},    # V12, Velador: la maza de poda
 	"meshy_e01": {"distancia": 210.0},          # V12, Custodio: los puños caen 0,6 m por delante
+	"velaria": {"distancia": 150.0},            # V12, Velaria (su corte lo coloca combate_velaria.gd)
 	"gorthor_v12": {"distancia": 220.0},        # V12, fase C: la cuchilla
 	"guardian_bosque2d": {"distancia": 170.0},     # fase 3: el Guardián del Bosque (respaldo 2D)
 	"guardian_bosque": {"distancia": 170.0},       # fase 3: ataca desde su sitio (_anim_guardian)
@@ -819,6 +837,7 @@ func _elegir_enemigos() -> void:
 		Peon.preparar(e)                              # V12, Peón: con «enemigos_v12», su personalidad (si no, nada)
 		Velador.preparar(e)                           # V12, Velador: con «enemigos_v12», su personalidad y su guardia
 		Custodio.preparar(e)                          # V12, Custodio: con «meshy_e01», su personalidad (si no, nada)
+		Velaria.preparar(e)                           # V12, Velaria: con «velaria_v12», su personalidad (si no, nada)
 		var mod: Dictionary = MODELOS[e["modelo"]]
 		if mod.get("tipo", "") == "3d" and _ruta_3d(mod) == "" and mod.has("respaldo"):   # falta el 3D: su dibujo 2D
 			push_warning("Falta el modelo 3D de %s: se usa su respaldo 2D" % e["nombre"])
@@ -2070,6 +2089,10 @@ func _turno_enemigo(f: Dictionary) -> void:
 		return
 	if p == Velador.PERSONALIDAD:                    # V12, Velador: el Velador de Corteza (combate_velador.gd)
 		await Velador.turno(self, f, vivos, mult)
+		_fin_turno_enemigo(f)
+		return
+	if p == Velaria.PERSONALIDAD:                    # V12, Velaria: destello avisado y corte de ala (combate_velaria.gd)
+		await Velaria.turno(self, f, vivos, mult)
 		_fin_turno_enemigo(f)
 		return
 	if p == "embiste":                               # Zarzalín: aviso, embestida y recuperación (T-097)
@@ -5854,6 +5877,8 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 		await Velador.animar_golpe(self, origen, objetivo, impacto)
 	elif Custodio.es(origen):                                                 # V12, Custodio: la Prensa del Umbral
 		await Custodio.animar_golpe(self, origen, objetivo, impacto)
+	elif Velaria.de_ella(self, origen):                                       # V12, Velaria: corte de ala o destello
+		await Velaria.animar_golpe(self, origen, objetivo, impacto)
 	elif _p3d(origen) != null and _p3d(origen).has_method("avisar"):           # Zarzalín (T-097)
 		await _anim_zarzalin(origen, objetivo, impacto, str(origen.get("ataque_3d", "colmillo_lateral")))
 	elif _p3d(origen) != null and _p3d(origen).has_method("despertar"):        # Guardián del Bosque (fase 3): desde su sitio
