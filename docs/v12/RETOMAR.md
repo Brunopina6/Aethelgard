@@ -1070,3 +1070,24 @@ Validado: `dc878e9` (`validado/v12/20261115-170245`, 188 · 0). APK v834 instala
   aparece la misma firma («60 s de más / la escena no llega»).
 - Sigue igual: Redmi sin probar con lo nuevo (APK nueva que instala el usuario estando presente) y las decisiones del
   usuario listadas en el relevo anterior. Ramas locales `revisa-ciudad` y similares de revisores, sin commits propios.
+
+## RELEVO 18/11, 11:00: VALIDADO `2dde14b` (196 · 0 · 116 · 0) (LEER PRIMERO)
+- Etiqueta local `validado/v12/20261118-105316`. Batería `D:\REBELUM_diagnostico\pruebas6-11-18_102249`; partida real,
+  carpeta real y proyecto sin cambios. Después, `e88813e` añade `prueba_grupo_despejado` (pasa; contraprueba sin el
+  arreglo: 2 fallos), sin validar en batería completa.
+- Flujo «ciudad-tras-validar» (3 tareas con revisor, en serie, un Godot a la vez, con topes de tiempo): todo integrado.
+  - Recorrido de la ciudad a 1280×720 bajo y 1600×720 medio y alto: 430 tramos · 0 fallos y visibilidad 438 · 0 en los
+    tres. Arreglo: `grupo_3d._despejado` mira también lo prohibido cada 0,1 m (los 4 roces del grupo en esquinas → 0).
+    `RECORRIDO.md` §9.
+  - Coste en el PC de los arreglos del Redmi: +16 % de proceso andando (+0,17 ms de mediana); con el índice por casillas
+    de `plano.gd` (mismo resultado, 50 256 + 197 849 puntos comparados) queda en +0,03-0,05 ms. Crear el índice: ~38 ms una
+    vez, al entrar en frío. Aclarado sin optimizar (+30 µs, 21 rayos). `MEDIDAS_PC.md` §7. Nada medido en el Redmi.
+  - Carreras de espera: 8 pruebas pasan a esperar por reloj (arboleda_tramo, isla, barrio_interiores, sunken3d,
+    ciclopea3d, naira_mision, oakhaven3d, mar_cristal). `docs/v12/PRUEBAS_CARRERAS_18_11.md`. La lista NO es completa:
+    cerrarla exige pasar la batería con el retraso de carga (parche en `D:\REBELUM_diagnostico\pendientes_18_11evisa_carreras\`).
+- Pendiente técnico: barrido completo con retraso de carga; `fotos_barrio_recorrido` (fallo intermitente de Tobías en A7,
+  sin investigar); topes por reloj en `medir_mapamundi3d` y `medir_sunken3d`; índice del plano en hilo si el tirón de
+  ~38 ms molesta en el Redmi.
+- Sigue igual: Redmi sin probar con lo nuevo (APK que instala el usuario estando presente) y las decisiones del usuario
+  del relevo de las 02:33. Ramas de agentes y revisores (`area-ciudad-*-18`, `area-pruebas-carreras-18`, `revisa-*-18`)
+  conservadas.
