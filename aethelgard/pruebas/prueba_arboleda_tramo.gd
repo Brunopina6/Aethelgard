@@ -62,13 +62,22 @@ func _foto(n: String) -> void:
 	root.get_viewport().get_texture().get_image().save_png("%s/%s.png" % [salida, n])
 
 
-func _esperar_escena(ruta: String) -> Node:
-	var t := 0
+# (18/11) espera por RELOJ: la escena llega con Recursos.cambiar_escena, que carga en segundo plano y tarda en tiempo
+# real. Antes contaba 1200 fotogramas, que con --fixed-fps y una pantalla de 144 Hz o más son 4-8 s reales; si la carga
+# tardaba más, la prueba seguía y pedía la escena siguiente con el cambio aún en curso, y Recursos.cambiar_escena la
+# ignoraba (la misma carrera que prueba_bosque_pastos, docs/v12/PRUEBAS_CARRERAS_18_11.md). Si a los 60 s no ha
+# terminado, falla con un mensaje propio y termina ahí, sin pedir nada más.
+func _esperar_escena(ruta: String, segundos := 60.0) -> Node:
+	var t0 := Time.get_ticks_msec()
 	while R.cambiando or current_scene == null or current_scene.scene_file_path != ruta:
-		await process_frame
-		t += 1
-		if t > 1200:
+		if Time.get_ticks_msec() - t0 > int(segundos * 1000.0):
+			_ok(false, "%s no termina de cargarse en %d s (R.cambiando=%s, escena=%s): no se pide nada más" % [ruta,
+				int(segundos), R.cambiando, current_scene.scene_file_path if current_scene != null else "(ninguna)"])
+			print("FALLOS: %d" % fallos)
+			quit(1)
+			await process_frame                    # no vuelve: el proceso termina en este fotograma
 			return null
+		await process_frame
 	await _frames(3)
 	return current_scene
 
