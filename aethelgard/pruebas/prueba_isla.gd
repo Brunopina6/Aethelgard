@@ -6,6 +6,7 @@ var frames := 0
 var salida := ""
 var R
 var fase := 0
+var t_fase := 0                                  # (18/11) reloj de la espera de cada escena
 
 
 func _initialize() -> void:
@@ -29,6 +30,7 @@ func _process(_d: float) -> bool:
 		_foto("1_mapa")
 		esc._entrar()
 		fase = 1
+		t_fase = Time.get_ticks_msec()
 	elif fase == 1 and esc != null and esc.scene_file_path == "res://isla.tscn" and not R.cambiando:
 		fase = 2
 		set_meta("f", frames)
@@ -58,7 +60,16 @@ func _process(_d: float) -> bool:
 		_foto("4_portal")
 		esc._accion()
 		fase = 3
+		t_fase = Time.get_ticks_msec()
 	elif fase == 3 and esc != null and esc.scene_file_path == "res://mapa.tscn" and not R.cambiando:
 		print("de vuelta en el mapa en ", esc.jugador.position, " (portal en ", esc.LUGARES[9]["pos"], ")  zona liberada: ", R.grupos["zona"].size())
 		return true
-	return frames > 1500
+	# (18/11) la isla y la vuelta al mapa llegan con Recursos.cambiar_escena (carga en segundo plano, en tiempo REAL).
+	# Antes todo acababa a los 1500 fotogramas, que con --fixed-fps y una pantalla de 144 Hz o más son 5-10 s, y en
+	# silencio (salida 0, sin FALLO). Ahora cada escena se espera 60 s de reloj y, si no llega, se dice
+	# (docs/v12/PRUEBAS_CARRERAS_18_11.md).
+	if fase in [1, 3] and Time.get_ticks_msec() - t_fase > 60000:
+		print("FALLO: fase %d: la escena no termina de cargarse en 60 s (R.cambiando=%s, escena=%s)" % [fase, R.cambiando,
+			esc.scene_file_path if esc != null else "(ninguna)"])
+		quit(1)
+	return false
