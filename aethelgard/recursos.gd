@@ -343,7 +343,7 @@ func _textura_sin_uso(ruta: String) -> bool:
 #   - Lo que va detrás de un interruptor APAGADO (carpeta → interruptor; se mira con su propia función, así que al encenderlo
 #     en las pruebas o en Ajustes se vuelve a precargar). Naira también sale con su hito de la partida, que al arrancar aún
 #     no se ha leído: entonces se carga al entrar en el combate o la región.
-#   - Los prototipos que no engancha nadie (Cencerrante, Vidracrán y Tolvanera).
+#   - Los prototipos que no engancha nadie (Vidracrán y Tolvanera).
 #   - De Bramavidrio, solo la versión en uso (bramavidrio_version.gd) y, de ella, solo el modelo y la piel del perfil
 #     gráfico (alto: sin sufijo; medio: _medio; bajo: _bajo), igual que elige bramavidrio*_3d.gd.
 const APAGADOS := {
@@ -363,12 +363,13 @@ const APAGADOS := {
 	"res://enemigos/meshy_e01/": "meshy_e01",
 	# V12 (19/11): Velaria (combate_velaria.gd), solo con su interruptor (≈ 18 MB entre el GLB y sus tres texturas)
 	"res://enemigos/velaria/": "velaria_v12",
+	# V12 (19/11): el Cencerrante (combate_cencerrante.gd), solo con su interruptor (antes, prototipo sin enganchar: "")
+	"res://enemigos/cencerrante/": "cencerrante_v12",
 	"res://audio/efectos/centinela/": "enemigos_v12",
 	"res://audio/efectos/golem/": "enemigos_v12",
 	"res://audio/efectos/gorthor/": "enemigos_v12",
 	"res://audio/efectos/peon/": "enemigos_v12",
 	"res://audio/efectos/velador/": "enemigos_v12",
-	"res://enemigos/cencerrante/": "",
 	"res://enemigos/vidracran/": "",
 	"res://enemigos/tolvanera/": "",
 	# rend2 (12/11): Humbaba (APAGADO, combate_humbaba.gd activo()) y «Pastoral Pulse» (solo si se eligió en Ajustes,

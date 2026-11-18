@@ -56,6 +56,10 @@ const TABLA := {
 	"velaria": {"debil": [], "resiste": [], "inmune": [],
 		"estados_resiste": [], "estados_inmune": [],
 		"por_que": "Polilla de farol: sus afinidades están por decidir (la ficha no las trae)."},
+	# V12 (19/11), Cencerrante (bestiario T-097, APAGADO): su ficha no trae afinidades; fila NEUTRA hasta que el usuario decida.
+	"cencerrante": {"debil": [], "resiste": [], "inmune": [],
+		"estados_resiste": [], "estados_inmune": [],
+		"por_que": "Campana de pastor: sus afinidades están por decidir (la ficha no las trae)."},
 	"gorthor": {"debil": ["Hielo"], "resiste": ["Fuego"], "inmune": [],
 		"estados_resiste": ["lento", "atk_baja"], "estados_inmune": ["prision"],
 		"por_que": "Bestia de la Garganta, hecha al calor de la roca: el frío le entumece."},

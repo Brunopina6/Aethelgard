@@ -97,6 +97,11 @@ const Custodio := preload("res://combate_meshy_e01.gd")
 # ala). APAGADA: solo con su interruptor «velaria_v12» (el caso «velaria» del banco de Auditoría) y en su combate de
 # prueba GRUPOS[30]; nunca al azar. Los ganchos llevan «V12, Velaria».
 const Velaria := preload("res://combate_velaria.gd")
+# V12 (19/11): Cencerrante, la campana de pastor del bestiario (T-097; combate_cencerrante.gd: toque de alarma con una
+# sola activación, que refuerza el siguiente golpe de un aliado o, solo, prepara su campanada; y campanada baja). APAGADO:
+# solo con su interruptor «cencerrante_v12» (el caso «cencerrante» del banco de Auditoría) y en sus combates de prueba
+# GRUPOS[31] y [32]; nunca al azar. Los ganchos llevan «V12, Cencerrante».
+const Cencerrante := preload("res://combate_cencerrante.gd")
 # Menú de combate minimalista (menu_combate.gd). Ocupa el 40 % derecho de la pantalla, por eso los
 # héroes van más a la izquierda y los enemigos se juntan a la izquierda: x = x * ENEMIGOS_X.x + ENEMIGOS_X.y
 const ENEMIGOS_X := Vector2(0.75, -190.0)
@@ -385,6 +390,14 @@ const MODELOS := {
 		"tipo": "3d", "esc": 0.6, "script": "res://enemigos/velaria/velaria_3d.gd", "gestos": "res://gestos_3d.gd",
 		"rutas": ["res://enemigos/velaria/velaria_completo.glb"], "vp": Vector2i(900, 700), "alto_vista": 2.0,
 		"centro_y": 0.8, "barra_y": 40.0, "centro_3d": 0.75, "respaldo": "slime"},
+	# V12, Cencerrante (19/11; enemigos/cencerrante/, cencerrante_3d.gd). Mide 1,52 m: el encuadre de su propuesta de
+	# animaciones, 2,0 m de alto de vista mirando a 0,8 m (280 px/m, como Grimfang), con sitio para la carga hacia delante
+	# y la caída de espaldas; números y efectos en la campana (0,95 m). «caida»: su derrota dura 1,2 s. Encuadre PROPUESTO,
+	# sin ver en el Redmi.
+	"cencerrante": {
+		"tipo": "3d", "esc": 0.6, "script": "res://enemigos/cencerrante/cencerrante_3d.gd", "gestos": "res://gestos_3d.gd",
+		"rutas": ["res://enemigos/cencerrante/cencerrante_completo.glb"], "vp": Vector2i(840, 560), "alto_vista": 2.0,
+		"centro_y": 0.8, "barra_y": 60.0, "centro_3d": 0.95, "caida": 1.3, "respaldo": "slime"},
 }
 
 # Enemigos disponibles y grupos que pueden aparecer en un encuentro (se elige uno al azar).
@@ -442,6 +455,10 @@ const ENEMIGOS := {
 	# GRUPOS[30]). Ágil y frágil, como el Peón de Linde. Cifras PROPUESTAS, sin equilibrar.
 	"velaria": {"nombre": "Velaria", "modelo": "velaria", "hp": 70, "atk": 11, "vel": 16.0, "exp": 22, "oro": 14,
 		"personalidad": "agresivo"},
+	# V12 (19/11): Cencerrante, apoyo en un camino abandonado (T-097; combate_cencerrante.gd; APAGADO: solo con
+	# «cencerrante_v12» y en GRUPOS[31]/[32]). De apoyo: menos ataque y más lento que el Zarzalín. Cifras PROPUESTAS.
+	"cencerrante": {"nombre": "Cencerrante", "modelo": "cencerrante", "hp": 70, "atk": 10, "vel": 12.0, "exp": 18,
+		"oro": 14, "personalidad": "agresivo"},
 }
 const GRUPOS := [
 	[["grimfang", Vector2(230, 150)], ["grimfang", Vector2(410, 115)]],
@@ -486,6 +503,10 @@ const GRUPOS := [
 	[["meshy_e01", Vector2(150, 110)], ["slime", Vector2(420, 125)]],       # 29: con un Slime
 	# V12, Velaria: su combate de prueba (combate_velaria.gd; con «velaria_v12», el caso del banco); no sale al azar
 	[["velaria", Vector2(250, 120)]],                                       # 30: sola
+	# V12, Cencerrante: sus combates de prueba (combate_cencerrante.gd; con «cencerrante_v12», el caso del banco); no
+	# salen al azar
+	[["cencerrante", Vector2(150, 105)], ["zarzalin", Vector2(410, 130)]],  # 31: con un Zarzalín (el refuerzo)
+	[["cencerrante", Vector2(250, 120)]],                                   # 32: solo (prepara su propia campanada)
 ]
 const GRUPOS_AL_AZAR := 5           # solo los primeros salen en encuentros aleatorios (con el grupo de tres)
 # Encuentros al azar según cuántos héroes hay ahora en el grupo (grupo.gd, activos). Kael solo no tiene cura ni a
@@ -536,6 +557,7 @@ const ANIM := {
 	"velador_corteza": {"distancia": 230.0},    # V12, Velador: la maza de poda
 	"meshy_e01": {"distancia": 210.0},          # V12, Custodio: los puños caen 0,6 m por delante
 	"velaria": {"distancia": 150.0},            # V12, Velaria (su corte lo coloca combate_velaria.gd)
+	"cencerrante": {"distancia": 150.0},        # V12, Cencerrante (su campanada la coloca combate_cencerrante.gd)
 	"gorthor_v12": {"distancia": 220.0},        # V12, fase C: la cuchilla
 	"guardian_bosque2d": {"distancia": 170.0},     # fase 3: el Guardián del Bosque (respaldo 2D)
 	"guardian_bosque": {"distancia": 170.0},       # fase 3: ataca desde su sitio (_anim_guardian)
@@ -838,6 +860,7 @@ func _elegir_enemigos() -> void:
 		Velador.preparar(e)                           # V12, Velador: con «enemigos_v12», su personalidad y su guardia
 		Custodio.preparar(e)                          # V12, Custodio: con «meshy_e01», su personalidad (si no, nada)
 		Velaria.preparar(e)                           # V12, Velaria: con «velaria_v12», su personalidad (si no, nada)
+		Cencerrante.preparar(e)                       # V12, Cencerrante: con «cencerrante_v12», su personalidad (si no, nada)
 		var mod: Dictionary = MODELOS[e["modelo"]]
 		if mod.get("tipo", "") == "3d" and _ruta_3d(mod) == "" and mod.has("respaldo"):   # falta el 3D: su dibujo 2D
 			push_warning("Falta el modelo 3D de %s: se usa su respaldo 2D" % e["nombre"])
@@ -2093,6 +2116,10 @@ func _turno_enemigo(f: Dictionary) -> void:
 		return
 	if p == Velaria.PERSONALIDAD:                    # V12, Velaria: destello avisado y corte de ala (combate_velaria.gd)
 		await Velaria.turno(self, f, vivos, mult)
+		_fin_turno_enemigo(f)
+		return
+	if p == Cencerrante.PERSONALIDAD:                # V12, Cencerrante: toque de alarma (una vez) y campanada baja
+		await Cencerrante.turno(self, f, vivos, mult)
 		_fin_turno_enemigo(f)
 		return
 	if p == "embiste":                               # Zarzalín: aviso, embestida y recuperación (T-097)
@@ -5785,6 +5812,7 @@ func _espera_invocacion(seg: float) -> void:
 # ================================================================= animaciones
 
 func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: String) -> void:
+	dano = Cencerrante.reforzar(self, origen, dano)   # V12, Cencerrante: el golpe reforzado por su toque (sin la marca, igual)
 	var critico: bool = magia == "" and randf() < Extra.prob_critico(PROB_CRITICO, origen.get("efectos", {}))   # Diente: la misma tirada
 	if origen.get("filo_arcano", false):
 		# V11: Filo Arcano no hace crítico. La mitad de su daño es el Fuego de Lya, y la magia nunca es crítica; con
@@ -5879,6 +5907,8 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 		await Custodio.animar_golpe(self, origen, objetivo, impacto)
 	elif Velaria.de_ella(self, origen):                                       # V12, Velaria: corte de ala o destello
 		await Velaria.animar_golpe(self, origen, objetivo, impacto)
+	elif Cencerrante.de_el(self, origen):                                     # V12, Cencerrante: la campanada baja
+		await Cencerrante.animar_golpe(self, origen, objetivo, impacto)
 	elif _p3d(origen) != null and _p3d(origen).has_method("avisar"):           # Zarzalín (T-097)
 		await _anim_zarzalin(origen, objetivo, impacto, str(origen.get("ataque_3d", "colmillo_lateral")))
 	elif _p3d(origen) != null and _p3d(origen).has_method("despertar"):        # Guardián del Bosque (fase 3): desde su sitio
@@ -6151,7 +6181,10 @@ func _anim_ataque_3d(o: Dictionary, obj: Dictionary, impacto: Callable, metodo: 
 # daño, junto al Sonido.golpe de siempre). Su voz de herido o caída la da Sonido.recibe por su «clave».
 func _sonidos_bestia(e: Dictionary, p) -> void:
 	var clave := str(e.get("clave", ""))
-	if p.has_signal("aviso"):
+	var repique := Cencerrante.sonido_aviso(e)       # V12, Cencerrante: su «aviso» es el repique del toque
+	if p.has_signal("aviso") and repique != "":
+		p.aviso.connect(func(_a: String): _sonar(repique))
+	elif p.has_signal("aviso"):
 		p.aviso.connect(func(a: String): _sonar("%s_aviso_%s" % [clave, a.get_slice("_", 0)]))
 	if p.has_signal("pezuna"):
 		p.pezuna.connect(func(_n: int): _sonar(clave + "_pezuna"))
@@ -7491,6 +7524,8 @@ func _actualizar() -> void:
 				estados.append("⚠ Cargando")
 			if e.get("furia", false):
 				estados.append("Furia")
+			if vivo:                                    # V12, Cencerrante: «▲ Reforzado» en el aliado que tocó (sin la marca, nada)
+				estados.append_array(Cencerrante.estados(e))
 			if Coloso.es_coloso(e):                     # V9: piel de piedra, coraza rúnica, expuesto, runas leídas
 				estados.append_array(Coloso.estados(e))
 			if Brama.es(e):                             # V12, Bramavidrio: «⚠ Fractura» o «⚠ Aliento: córtalo n/m»
