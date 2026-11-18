@@ -195,6 +195,29 @@ en hilo. Con 5 s por carga ya no queda ninguna prueba automática con esta carre
 ventana (MANUALES) y, para las que agotan topes globales en fotogramas según el ritmo (caso naira), un retraso mayor.
 Registros: `D:\REBELUM_diagnostico\pruebas\2026-11-18_105737_CONTRAPRUEBA_retraso_5s`.
 
+## El fallo intermitente de Tobías en A7 (`fotos_barrio_recorrido`): causa y arreglo (18/11, 13:05)
+
+**No era esta carrera de cargas ni un fallo del juego.** Con un volcado del estado de Tobías en el momento del fallo
+(pasada con 5 s de retraso, `D:\REBELUM_diagnostico\pruebas\2026-11-18_124909`):
+- al pulsar: reloj del barrio 244,16 s, charla vacía, tramo «ir» (andando hacia el carro), en ningún paso, a **1,91 m** de
+  Kael;
+- 2 s después: charla vacía, a 3,23 m; 8 s más: el diálogo NO empieza, a 8,17 m.
+
+El radio para hablar es 1,9 m (`barrio_vivo.RADIO_HABLAR`). La prueba vio el botón «Hablar con Tobías» justo en el borde
+mientras él se alejaba; Intro se procesa 1-2 fotogramas después, cuando ya estaba fuera: el botón se había ocultado y la
+pulsación no llegó a nadie (`barrio._unhandled_input` exige el botón visible). La hipótesis previa, «charla pendiente
+por coger o dejar», quedó **refutada** por el volcado (la charla nunca pasó a «pendiente»). Es intermitente porque
+depende del punto del paseo de Tobías en que llega Kael, y los retrasos de carga desplazan ese momento.
+
+Para quien juega es lo mismo que pulsar cuando el vecino ya se ha ido: no pasa nada, se acerca y vuelve a pulsar. Así
+lo hace ahora la prueba: si tras Intro no hay diálogo y la charla del vecino sigue vacía, anota «pulsación perdida» y
+vuelve a acercarse, dentro de su tope de 180 s. El volcado se queda para cualquier otro fallo de «no empieza ningún
+diálogo».
+
+Comprobación con el arreglo y el mismo retraso (`D:\REBELUM_diagnostico\pruebas\2026-11-18_125636`): se da el mismo caso (244,12 s, 1,91 m),
+la prueba lo detecta, se acerca, Tobías cuenta lo del reparto y la pasada termina con 0 fallos (49 capturas, MANUAL).
+Antes, con el mismo retraso: 2 de 3 pasadas fallaban (pasadas 16 y 17 de este documento, y la de las 12:49).
+
 ## Pendiente
 
 - `medir_mapamundi3d` y `medir_sunken3d`: tope por reloj en sus dos esperas sin límite.

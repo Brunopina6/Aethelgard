@@ -363,8 +363,26 @@ func _hablar_con(id: String, foto: String) -> String:
 			f += maxi(30, Engine.get_process_frames() - f0)
 			continue
 		if v.boton_accion.visible and v.boton_accion.text == boton:
+			var antes := _estado_charla(id)
 			await _tecla(KEY_ENTER)
+			# (18/11) si el vecino anda y se aleja, al borde del radio (1,9 m) el botón se oculta antes de que llegue
+			# Intro y la pulsación se pierde: ni diálogo ni charla (el fallo intermitente de Tobías en A7: pulsó a 1,91 m
+			# mientras iba hacia el carro). Como haría quien juega, se vuelve a acercar y a pulsar (dentro del tope).
+			if root.get_node("Dialogic").current_timeline == null and v.vivo.vecinos[id]["charla"] == "":
+				_nota("  (pulsación perdida con %s: %s; se acerca otra vez)" % [id, antes])
+				f += 30
+				continue
 			var r := await _dialogo(foto)
+			if r == "":                                  # (18/11) volcado: por qué no empezó (fallo intermitente de Tobías)
+				print("  (al pulsar: %s)" % antes)
+				print("  (tras 60 fotogramas: %s)" % _estado_charla(id))
+				var dg = root.get_node_or_null("Dialogic")
+				var f1 := 0
+				while dg != null and dg.current_timeline == null and f1 < int(8 * FPS):
+					await _frames(2)
+					f1 += 2
+				print("  (el diálogo %s a los %.1f s más: %s)" % ["empieza" if dg != null and dg.current_timeline != null else "NO empieza",
+					f1 / FPS, _estado_charla(id)])
 			await _apartarse(v.vivo.estado_de(id)["pos"])
 			return r
 		var p: Vector3 = e["pos"]
@@ -390,6 +408,17 @@ func _hablar_con(id: String, foto: String) -> String:
 			f += 20
 	_ok(false, "no se llega a hablar con %s" % id)
 	return ""
+
+
+# (18/11) Estado de la charla de un vecino, para el volcado: charla, espera, paso de su programa y si cruza un paso.
+func _estado_charla(id: String) -> String:
+	var vv: Dictionary = v.vivo.vecinos.get(id, {})
+	if vv.is_empty():
+		return "sin vecino"
+	var e: Dictionary = v.vivo.estado_en(vv, v.vivo.tau_de(vv))
+	return "t %.2f, charla «%s», espera %.2f, tramo «%s», en paso «%s», a %.2f m de Kael" % [v.vivo.t, vv["charla"],
+		float(vv.get("espera", 0.0)), e["seg"]["tipo"], v.vivo.T.en_paso(e["pos"].x, e["pos"].z),
+		_plana(_kael(), e["pos"])]
 
 
 # Examinar a Avena: junto a ella y del lado contrario a Brena. Brena cepilla y abreva a su lado: si en ese momento está
