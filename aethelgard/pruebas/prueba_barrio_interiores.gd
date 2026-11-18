@@ -458,8 +458,20 @@ func _guardar_y_recargar() -> void:
 	await _entrar("vivienda")
 	v._colocar_kael(v.interiores.ancla("int_vivienda_repisa"))
 	await _frames(2)
+	var viejo = v
 	v.guardar_y_recargar()
-	await _frames(2)
+	# (18/11) la recarga va por Recursos.cambiar_escena (carga en hilo, tiempo real) a la MISMA escena: _cargar() se
+	# conformaba con la región vieja, aún montada, si la carga tardaba más de un par de fotogramas (con 5 s de retraso:
+	# «vuelve fuera» y Kael lejos de la puerta). Se espera por RELOJ a la región NUEVA y al final del cambio; si no
+	# llega en 60 s, falla y no sigue (docs/v12/PRUEBAS_CARRERAS_18_11.md).
+	var R = root.get_node("Recursos")
+	var t0 := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - t0 < 60000 and (R.cambiando or current_scene == null or current_scene == viejo):
+		await process_frame
+	if R.cambiando or current_scene == null or current_scene == viejo:
+		_ok(false, "5: «Guardar y recargar»: la recarga no termina en 60 s (R.cambiando=%s)" % R.cambiando)
+		v = null
+		return
 	await _cargar()
 	_ok(v != null and v.interior == "", "5: «Guardar y recargar» dentro: vuelve fuera")
 	if v == null:
