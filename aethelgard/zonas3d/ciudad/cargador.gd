@@ -133,6 +133,9 @@ func actualizar(p: Vector3, _forzar := false) -> void:
 	if perfil in ROTULOS_CERCA:
 		for id in montados:
 			(montados[id] as Node).rotulos_cerca(p, id == actual)
+	else:                                               # (18/11) medio y alto: los «(en obras)» cercanos, encima (sector.gd)
+		for id in montados:
+			(montados[id] as Node).rotulos_delante(p)
 
 
 # Los que deben estar montados: el actual y, por cercanía (con ventaja para los ya montados), los ya montados a menos de

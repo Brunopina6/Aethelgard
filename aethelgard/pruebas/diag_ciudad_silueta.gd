@@ -81,8 +81,10 @@ static func tapado(k: Vector3, silueta: Array) -> Array:
 			var aclara := false
 			if Comun.ocultable(b, t.OCULTABLES):
 				for c in cajas:
+					var cc := AABB((c as AABB).position - Vector3(Comun.MARGEN_LADO, 0.0, 0.0),
+						(c as AABB).size + Vector3(2.0 * Comun.MARGEN_LADO, 0.0, 0.0))   # (18/11: como sector.gd, aclarar)
 					for p in rayos:
-						if (c as AABB).intersects_segment(cam, p):
+						if cc.intersects_segment(cam, p):
 							aclara = true
 							break
 					if aclara:

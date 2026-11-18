@@ -20,6 +20,13 @@ const GRUESO_TEJADO := 0.45
 const TIPOS := ["casa", "muro", "bajo", "puerta", "decor", "terreno", "arbol", "cubierta", "copa"]
 const TIPOS_ARRIBA := ["cubierta", "copa", "puerta"]   # se dibujan desde su base (no se hunden 0,5 m en el suelo)
 const TIPOS_OCULTABLES := ["cubierta", "copa"]          # siempre se aclaran si tapan a Kael
+# (18/11, Redmi: REDMI_18_11.md, «un muro tapa media figura de Kael») La escena tira rayos a los lados de Kael a ±0,25 m
+# (ciudad.gd, PUNTOS_KAEL), pero su figura es más ancha (caja visible de −0,52 a +0,95 m en x con la espada;
+# fotos_ciudad_optimiza) y su cuerpo para a RADIO_CUERPO (0,3 m) de una pared: pegado a la fachada que tiene a su LADO,
+# lo que sobresale de ±0,25 m queda dentro de la casa y la casa lo tapa sin que ningún rayo la toque. Por eso, al mirar
+# si un ocultable tapa a Kael, su caja se ensancha MARGEN_LADO en x (la cámara no gira: el ancho de Kael va en x)
+# (sector.gd, aclarar; diag_ciudad_silueta.gd y diag_ciudad_fachadas.gd hacen lo mismo).
+const MARGEN_LADO := 0.2
 
 
 # El índice del SUELO que hay en (x, z), o −1.

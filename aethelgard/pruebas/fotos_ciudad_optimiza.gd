@@ -50,6 +50,17 @@ const SITIOS_REDMI := [
 	["r14_fuente_desde_el_este", 9.0, 0.0, -9.0, 0.0],
 ]
 
+# (18/11, con «sitios=v18») lo visto en el Redmi el 18/11 (docs/v12/REDMI_18_11.md, visibilidad): Kael pegado a la
+# fachada de su lado tras tocar el edificio ante una puerta (t04_este_5: soportal de la Calle Mayor, casa_e_baja; t02_diag:
+# rellano 1 del Barrio Alto, casa_rellano_e) y los rótulos «(en obras)» cortados por lo que tienen delante (la copa del
+# árbol de la plaza alta en hoja_perfiles, su propia fachada en los dos de antes, su casa en la Calle del Mercado).
+const SITIOS_V18 := [
+	["v01_soportal_pegado_casa_e_baja", 6.0, 50.5, 9.5, 50.5],
+	["v02_rellano_pegado_casa_rellano_e", 0.0, -28.0, 9.5, -27.0],
+	["v03_plaza_rotulo_tras_la_copa", 9.0, -10.0],
+	["v04_mercado_rotulo_tras_su_casa", 33.0, 22.5],
+]
+
 var perfil := "bajo"
 var sitios := "optimiza"
 var salida := ""
@@ -130,7 +141,7 @@ func _fotos() -> void:
 	_nota("FOTOS perfil %s · escala %.2f · ventana %s · %s" % [perfil, root.scaling_3d_scale, str(DisplayServer.window_get_size()),
 		Time.get_datetime_string_from_system()])
 	_nota("Kael: caja visible %s (ancho en x %.2f m)" % [str(_caja_kael()), _caja_kael().size.x])
-	for s in (SITIOS_REDMI if sitios == "redmi" else SITIOS):
+	for s in (SITIOS_REDMI if sitios == "redmi" else SITIOS_V18 if sitios == "v18" else SITIOS):
 		var p := Vector3(s[1], 0.0, s[2])
 		if not P.andable(p.x, p.z):
 			var mejor := p
@@ -208,8 +219,38 @@ func _rotulos() -> String:
 		var vista := root.get_visible_rect().size
 		if maxf(a.x, b.x) < 0.0 or minf(a.x, b.x) > vista.x or a.y < 0.0 or a.y > vista.y:
 			continue
-		r.append("«%s» a %.1f m, %.0f %% del ancho" % [lb.text, d, 100.0 * absf(b.x - a.x) / vista.x])
+		r.append("«%s» a %.1f m, %.0f %% del ancho%s" % [lb.text, d, 100.0 * absf(b.x - a.x) / vista.x, _tapa_rotulo(lb, c.size.x)])
 	return (" · rótulos: " + ", ".join(r)) if not r.is_empty() else ""
+
+
+# (18/11) Cuánto del rótulo tapan los bloques opacos (las cajas de los trazados de los sectores montados, sin lo aclarado):
+# 9 puntos a lo ancho de su línea central, rayo de la cámara a cada uno. Con no_depth_test, nada («encima»).
+func _tapa_rotulo(lb: Label3D, ancho: float) -> String:
+	if lb.no_depth_test:
+		return " (encima de todo)"
+	var cam: Camera3D = v.cam
+	var tapados := 0
+	var quien := {}
+	for i in 9:
+		var q := lb.global_position + cam.global_basis.x * ancho * (float(i) / 8.0 - 0.5)
+		for id in v.cargador.ids_montados():
+			var s: Node = v.cargador.montados[id]
+			var t = P.trazado(id)
+			var hay := false
+			for bl in t.BLOQUES:
+				if s.aclarado(String(bl[0])):
+					continue
+				for c in P.Comun.cajas_bloque(bl):
+					if (c as AABB).intersects_segment(cam.global_position, q):
+						hay = true
+						quien[bl[0]] = true
+						break
+				if hay:
+					break
+			if hay:
+				tapados += 1
+				break
+	return " (tapado %d de 9 %s)" % [tapados, str(quien.keys())] if tapados > 0 else " (sin tapar)"
 
 
 func _comparar() -> void:

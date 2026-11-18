@@ -24,7 +24,7 @@ const Comun := preload("res://zonas3d/ciudad/trazado_comun.gd")
 const P := preload("res://zonas3d/ciudad/plano.gd")
 const SH_OPACO := preload("res://zonas3d/ciudad/blockout_opaco.gdshader")
 const SH_CLARO := preload("res://zonas3d/ciudad/blockout_claro.gdshader")
-const MAX_OCULTABLES := 64                 # (el tamaño del uniforme «aclarado» de los dos sombreados; 18/11: la plaza tiene 59; lo vigila prueba_ciudad_plano)
+const MAX_OCULTABLES := 64                 # (el tamaño del uniforme «aclarado» de los dos sombreados; 18/11: la plaza tiene 61; lo vigila prueba_ciudad_plano)
 # Hacia dónde mira la cámara de la ciudad (plano.gd, poner_camara: inclinada INCLINACION grados, sin girar): para pintar
 # las piezas aclaradas de lejos a cerca (preparar_datos).
 static var MIRA_CAMARA := Vector3(0.0, -sin(deg_to_rad(P.INCLINACION)), -cos(deg_to_rad(P.INCLINACION)))
@@ -281,12 +281,40 @@ func _rotulo(def: Array) -> Label3D:
 	l.visibility_range_begin = inicio_rotulo(def)
 	l.visibility_range_begin_margin = 2.0
 	l.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
+	if def[0] != "Rotulo_sector":                  # (18/11) los «(en obras)», encima de lo que tienen delante (ver arriba)
+		l.render_priority = PRIORIDAD_ROTULO
+		l.outline_render_priority = PRIORIDAD_ROTULO - 1
+		l.no_depth_test = solo_cerca
 	add_child(l)
 	return l
 
 
+# (18/11, Redmi: REDMI_18_11.md) Un «(en obras)» queda 0,9 m delante de su puerta y 3 m sobre ella, y mide 1,5-3 m de
+# ancho: con la puerta en una fachada de LADO media palabra entraba en su propia casa («Casa (en obras» en t04_este_5 y
+# «…sa (en obras)» en el Barrio Alto) y en la plaza alta la copa del árbol de delante le cortaba la mitad (hoja_perfiles,
+# en los tres perfiles). Ahora los de puerta CERCA de Kael (a menos de ROTULO_PUERTA en planta) se dibujan sin prueba de
+# profundidad (no_depth_test) y después de lo transparente (render_priority: los aclarados no los velan): en el bajo ya
+# solo se ven así (rotulos_cerca); en medio y alto, donde se ven todos, solo los cercanos (rotulos_delante): los lejanos
+# siguen tapados por lo que tienen delante, como antes, y no se ven a través de toda la ciudad.
+const PRIORIDAD_ROTULO := 2
+
+
+# (Medio y alto) cada fotograma, desde el cargador: los «(en obras)» a menos de ROTULO_PUERTA de Kael, encima de todo;
+# los demás, como siempre.
+func rotulos_delante(kael: Vector3) -> void:
+	for x in _rotulos_puerta:
+		var l = x[0]
+		if l == null:
+			continue
+		var q: Vector3 = x[1][3]
+		var cerca := Vector2(q.x - kael.x, q.z - kael.z).length() < ROTULO_PUERTA
+		if l.no_depth_test != cerca:
+			l.no_depth_test = cerca
+
+
 # (Bajo) cada fotograma, desde el cargador: el nombre del sector, solo en el sector de Kael; cada «(en obras)», solo con
-# Kael a menos de ROTULO_PUERTA (con fundido). En medio y alto (solo_cerca falso) no se llama: se ven todos, como antes.
+# Kael a menos de ROTULO_PUERTA (con fundido). En medio y alto (solo_cerca falso) no se llama: se ven todos, como antes
+# (y rotulos_delante pone encima de todo los cercanos, 18/11).
 func rotulos_cerca(kael: Vector3, es_actual: bool) -> void:
 	if es_actual and _rotulo_sector == null and not _def_sector.is_empty():
 		_rotulo_sector = _rotulo(_def_sector)
@@ -345,7 +373,8 @@ func aclarar(desde: Vector3, puntos, ahora := 0.0) -> int:
 			if cerca.distance_to(desde) < CERCA_CAMARA:
 				tapa = true
 				break
-			if not caja.intersects(zona):
+			caja = AABB(caja.position - Vector3(Comun.MARGEN_LADO, 0.0, 0.0), caja.size + Vector3(2.0 * Comun.MARGEN_LADO, 0.0, 0.0))
+			if not caja.intersects(zona):                # (18/11: ensanchada en x, Comun.MARGEN_LADO: Kael es más ancho que sus rayos)
 				continue
 			for p in puntos:
 				if caja.intersects_segment(desde, p):

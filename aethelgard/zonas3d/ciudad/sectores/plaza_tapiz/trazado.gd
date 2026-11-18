@@ -160,7 +160,11 @@ const BLOQUES := [
 # andable (la cámara mira desde el sur). (A) Y las hojas de las puertas en sus fachadas norte (se aclaran con su casa); la
 # casa al sur de la Plazuela de la Botica. Y los mostradores de los puestos del mercado (1,1-1,3 m): bajo su toldo, Kael
 # queda al norte del mostrador y solo asomaban su cabeza y su espada (recorrido, 16/11).
+# (18/11, Redmi t04_este_5) Y la casa del este del soportal sur con la hoja de su puerta: al tocarla, Kael se queda pegado
+# a su fachada oeste ante «Entrar en la casa» y la casa le tapaba media figura (lo de él que sobresale de su cuerpo;
+# trazado_comun.gd, MARGEN_LADO). La del soportal norte (casa_sur_e) ya lo era.
 const OCULTABLES := ["casa_cuervo_s", "casa_paso_s", "botica", "casa_sur_e", "casa_mercado_s", "casa_mayor_so",
+	"casa_e_baja", "hoja_casa_soportal_s",
 	"hoja_casa_cuervo", "hoja_casa_mercado", "hoja_casa_lonja", "hoja_casa_paso",
 	"puesto_1", "puesto_2", "puesto_3", "puesto_fruta", "puesto_lonja_1", "puesto_lonja_2", "puesto_flores"]
 

@@ -414,3 +414,143 @@ durante 1,5 s, el último punto más grande. Cada pasada, con su `recorrido.txt`
 - La cuerda del rastro (≤ 0,12 m, arriba) y el rodeo de Kael sin búsqueda de caminos (§8) siguen igual.
 - Rendimiento sin medir (encargo): `_despejado` hace ahora hasta 10 consultas de `_prohibido` por metro de recta; se
   llama con alguien del grupo parado y con rastro, o yendo recto, por cada uno del grupo.
+
+## 10. Visibilidad tras el Redmi del 18/11: Kael pegado a una fachada y rótulos «(en obras)» cortados (18/11)
+
+Encargo: `REDMI_18_11.md`, «Visibilidad», problemas nuevos 1 y 2. Solo en la ciudad. Todo lo de esta sección está
+medido en el PC; en el Redmi no se ha vuelto a probar.
+
+### A. «Un muro tapa media figura de Kael»
+
+**Dónde era de verdad.** No era la Calle del Mercado (x≈45, z 20-26). Las capturas del tramo (`hoja_t04.png`) bajan por
+la Calle Mayor y el botón dice «Entrar en la casa»: Kael está en el **soportal sur de la Calle Mayor** (x 4..8,
+z 44..62), pegado a la fachada oeste de `plaza_tapiz/casa_e_baja` (la casa de tejado rojo de la derecha), ante la puerta
+`casa_soportal_s`. El soportal translúcido de delante es `cubierta_soportal_s`. En `t02_diag_1.png` (Barrio Alto) pasa lo
+mismo en el rellano 1, pegado a `barrio_alto/casa_rellano_e`.
+
+**Por qué.** Con el PC (`fotos_ciudad_optimiza.gd -- sitios=v18`, 1280×720, Kael anda hacia la casa como tras un toque):
+
+- Kael se para a 0,32 m de la fachada (su cuerpo, `RADIO_CUERPO` 0,3 m), pero su figura es más ancha: la caja visible
+  de sus mallas va de −0,52 a +0,95 m en x (con la espada). Lo que sobresale queda **dentro** de la casa y la casa lo
+  tapa.
+- La escena tira los rayos de los lados de Kael a ±0,25 m (`ciudad.gd`, `PUNTOS_KAEL`). **Ninguno toca la casa** de su
+  lado, y además `casa_e_baja` y `casa_rellano_e` no estaban en OCULTABLES. Así que no se aclaraban.
+- Diagnóstico (`diag_ciudad_fachadas.gd`, figura de ±0,5 m, torso y cabeza):
+  - En (7,68; 50,5) la escena dejaba tapado el 22 % de la figura (`casa_e_baja`).
+  - En (7,69; −27,19), otro 22 % (`casa_rellano_e`).
+  - Haciéndolas ocultables pero **sin** ensanchar la caja, seguía el 22 %: ningún rayo llega a la casa.
+
+**Arreglo (dos cambios pequeños):**
+
+1. `trazado_comun.gd`: `MARGEN_LADO = 0,2`. `sector.gd`, `aclarar`: al mirar si un ocultable corta un rayo de Kael, su
+   caja se ensancha 0,2 m en x. La cámara no gira, así que el ancho de Kael en pantalla va en x. Los rayos laterales
+   llegan así hasta ±0,45 m. `diag_ciudad_silueta.gd` hace lo mismo, para seguir copiando a la escena.
+2. OCULTABLES:
+   - `plaza_tapiz`: `casa_e_baja` y `hoja_casa_soportal_s` (la plaza pasa de 59 a 61 de 64).
+   - `barrio_alto`: `casa_rellano_e` y `casa_rellano_o` (simétrica; de 6 a 8).
+
+**Después:**
+
+- En los dos sitios queda tapado el **0 %**.
+- Capturas: Kael se ve entero y la casa de su lado está aclarada (aclaradas: `casa_e_baja` y `hoja_casa_soportal_s`;
+  `casa_rellano_e`).
+
+**Barrido de sitios iguales** (`diag_ciudad_fachadas.gd -- altos=2.0 umbral=0.1 ancho=0.5 pegado=0.15`):
+
+- Qué casillas mira: las de lo andable (0,25 m) donde Kael cabe y tiene una pared a menos de 0,45 m a un lado.
+- Qué cuenta: los bloques altos (≥ 2 m sobre su suelo) que la escena no aclara y le tapan ≥ 1/9 de la figura de
+  ±0,5 m.
+
+| | Casillas pegadas con algo tapado (de 7 310) | Bloques |
+|---|---|---|
+| Antes (rayos ±0,25 y OCULTABLES de antes) | 4 819 | 144 |
+| Solo con `MARGEN_LADO` | 2 540 | 96 |
+| Con `MARGEN_LADO` y las 4 piezas nuevas | **2 442** | **92** |
+
+- **Quedan 92 bloques NO ocultables.** Son murallas y muros a lo largo de calles (`oficios/muralla_este` 149 casillas,
+  `ribera/muro_ronda` 138, `oficios/muro_escalerilla` 105) y casas con la calle a su lado:
+  - `puerta_sur/casa_mayor_o` 87, `oficios/taller_hilda` 79, `plaza_tapiz/tienda` 77, `puerta_sur/cuerpo_guardia` 73,
+    `pasajes/casa_velas_o` 73, etc.
+  - Lista completa en `D:\REBELUM_diagnostico\visibilidad_18_11\despues\diag_fachadas.txt`.
+- En casi todas el peor caso es el 22 % de la figura (33 % en 8 bloques). Es lo que sobresale del cuerpo, no media
+  figura. **No se han hecho ocultables:**
+  - Una muralla aclarada a cada paso por la ronda se vería peor que el canto que tapa.
+  - No caben: la plaza ya tiene 61 de 64 (el tamaño del uniforme de los dos sombreados).
+  - El arreglo general sería otro: un cuerpo más ancho solo contra paredes del lado (`RADIO_CUERPO` en x), que cambia
+    por dónde se anda y los pasos estrechos.
+- Siguiente candidato, si el Redmi lo pide: las **puertas en fachadas de lado**, donde un toque deja a Kael pegado.
+  Son unas 33 (`"mira": ±PI / 2`) en los 8 sectores; las de `barrio_alto/casa_plaza_e` y `casa_raices_e` salen en el
+  barrido (39 casillas cada una).
+
+### B. Los rótulos «(en obras)» cortados
+
+**Por qué.** Cada «(en obras)» está 0,9 m delante de su puerta y 3 m por encima, y mide 1,5-3 m de ancho. Con la
+puerta en una fachada de lado, media palabra entra en su propia casa («Casa (en obras» en `t04_este_5`; «…sa (en
+obras)» en el Barrio Alto). En la plaza alta, la copa del árbol de delante le corta la mitad (`hoja_perfiles`, en los
+tres perfiles). Medido en el PC (9 puntos a lo ancho del rótulo, rayo desde la cámara), antes:
+
+| Sitio | Rótulo | Antes (bajo, medio y alto) |
+|---|---|---|
+| v01 soportal sur | «Casa (en obras)», 15 m | tapado 1 de 9 (`casa_e_baja`) |
+| v02 rellano 1 del Barrio Alto | «Casa (en obras)», 16,9 m | tapado 1 de 9 (`casa_rellano_e`) |
+| v03 plaza alta, árbol | «Casa (en obras)», 17,2 m | tapado 3 de 9 (`copa_plaza_ne`) |
+| v03 plaza alta | «Tienda (en obras)», 14 m | tapado 2 de 9 (`tienda`) |
+
+**Arreglo** (`sector.gd`, `_rotulo` y `rotulos_delante`; `cargador.gd`): los de puerta **cerca de Kael** (a menos de
+`ROTULO_PUERTA`, 10 m en planta) se dibujan con `no_depth_test`. También llevan `render_priority` 2 (contorno 1): van
+después de lo transparente y los aclarados no los velan.
+
+- **Bajo:** ya solo se ven así (`rotulos_cerca`), así que nacen con `no_depth_test`.
+- **Medio y alto:** se siguen viendo todos, como antes. Cada fotograma, `rotulos_delante` pone encima de todo solo los
+  cercanos.
+- **Los lejanos no cambian:** siguen tapados por lo que tienen delante, como antes, y no se ven a través de la ciudad.
+  En medio y alto siguen «tapado 9 de 9» los de 27-54 m detrás de casas.
+
+**Después:** los 4 rótulos de la tabla, «encima de todo», en bajo, medio y alto. En las capturas se leen enteros.
+
+**Lo que puede notarse:**
+
+- Un «(en obras)» a menos de 10 m de Kael, con la puerta al otro lado de una casa, se ve por encima de esa casa.
+- En medio y alto, al cruzar los 10 m pasa de tapado a encima de golpe (sin fundido).
+- Puede tapar la cabeza de alguien del grupo si se cruza con él en pantalla.
+- `no_depth_test` es otra variante del material del Label3D. En el Redmi la primera vez puede costar compilarla: no se ha
+  medido (encargo: nada de medir rendimiento).
+
+### Capturas y registros
+
+En `D:\REBELUM_diagnostico\visibilidad_18_11\`:
+
+- `antes\` y `despues\`, cada una con `bajo\`, `medio\` y `alto\`: capturas 1280×720 de v01-v04 y `salida.txt` (Kael,
+  aclaradas y rótulos con lo que los tapa).
+- `diag_fachadas.txt` en las dos: el barrido.
+- Uso:
+  - `Godot --path aethelgard --resolution 1280x720 --script res://pruebas/fotos_ciudad_optimiza.gd -- perfil=bajo sitios=v18 salida=<carpeta>`
+  - `Godot --path aethelgard --headless --script res://pruebas/diag_ciudad_fachadas.gd -- altos=2.0 umbral=0.1 ancho=0.5 pegado=0.15`
+
+### Pruebas
+
+Con el ejecutor (`-Solo`). En las tres pasadas, la partida real, la carpeta real y el proyecto quedaron sin cambios. En el
+árbol estaba también el trabajo sin confirmar de otra tarea en `ciudad.gd` (el de las esquinas), que no es de este
+arreglo.
+
+- **`prueba_ciudad_plano`: SUPERADA** (14,4 s). FALLOS: 0. Entre otras:
+  - «OK 8: Kael visible desde la cámara en toda la muestra».
+  - «OK 8b': cada sector tiene como mucho 64 ocultables»: plaza_tapiz 61, barrio_alto 18.
+  - «OK 8c: … peor 67 %: fuente_columna».
+- **`prueba_ciudad_cargador`: SUPERADA** (5,4 s). FALLOS: 0. Entre otras:
+  - «OK C: un rayo que no cruza la casa no la aclara».
+  - «OK C: Redmi: el pilar fino de la lonja delante de Kael se aclara».
+  - «OK C: bajo: solo el rótulo del sector de Kael y los «(en obras)» a menos de 10 m».
+  - «OK C: Redmi: los rótulos de puerta se dibujan desde 10 m, como antes».
+  - Registros en `D:\REBELUM_diagnostico\pruebas\2026-11-18_203039`.
+- **`recorrido_ciudad`** (`-Manual`, 1280×720 bajo): **MANUAL**, «terminó sin errores», 613,8 s.
+  - «RECORRIDO: 430 tramos, 0 fallos».
+  - 2 avisos: las dos lonas de los carros de la Puerta del Sur no tienen suelo debajo y no se recorren.
+  - 164 capturas en `D:\REBELUM_diagnostico\pruebas\2026-11-18_203147\recorrido_ciudad`.
+
+### Pendiente
+
+- Probarlo en el Redmi con el dedo: el soportal sur y el rellano 1 tocando la casa, y los rótulos en la plaza alta.
+- Los 92 bloques del barrido (arriba).
+- `diag_ciudad_visibilidad` no se ha pasado: anda el recorrido entero con ventana y el encargo pedía solo las pruebas
+  afectadas.

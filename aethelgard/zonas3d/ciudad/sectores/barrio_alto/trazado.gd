@@ -172,7 +172,10 @@ const BLOQUES := [
 # Lo que la escena aclara cuando tapa a Kael (además de cubiertas y copas): las dos casas de la Calle del Árbol que quedan
 # al sur del rellano 1, la casa del borde de la Colina (al sur del mirador) y el TRONCO del Árbol cuando Kael anda por
 # detrás de él y los pilares del pórtico (la cámara está al sur).
-const OCULTABLES := ["casa_calle_o", "casa_calle_e", "casa_bajada", "arbol_tronco", "portico_pilar_o", "portico_pilar_e"]
+# (18/11, Redmi t02_diag) Y las dos casas del rellano 1, con la puerta en su fachada de lado: al tocarlas, Kael se queda
+# pegado a ella y la casa le tapaba media figura (trazado_comun.gd, MARGEN_LADO).
+const OCULTABLES := ["casa_calle_o", "casa_calle_e", "casa_bajada", "arbol_tronco", "portico_pilar_o", "portico_pilar_e",
+	"casa_rellano_o", "casa_rellano_e"]
 
 # ---------------------------------------------------------------------------------------------------- anclas
 # Puntos EN el suelo (la «y» la da altura()). «puerta_*» son umbrales; «n_*», nodos del grafo; el resto, sitios con
