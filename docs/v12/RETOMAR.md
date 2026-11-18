@@ -1058,3 +1058,15 @@ Validado: `dc878e9` (`validado/v12/20261115-170245`, 188 · 0). APK v834 instala
   medio/alto, si el kit sustituye a los constructores del barrio, P1 de la memoria (soltar la caché del barrio a cambio
   del tirón), si carros, caño y tablón pasan a ocultables.
 - La rama local `revisa-ciudad` (revisor, sin commits propios) la puede borrar el usuario si quiere (el gancho no deja).
+
+## RELEVO 18/11, 03:47: VALIDADO `3d354b5` (196 · 0 · 116 · 0) (LEER PRIMERO)
+- Etiqueta local `validado/v12/20261118-034537`. Batería `D:\REBELUM_diagnostico\pruebas6-11-18_031513`. Todo lo del
+  relevo de las 02:33 queda validado.
+- El fallo de `prueba_bosque_pastos` (paso 8) era de la PRUEBA, no del juego: esperaba al combate contando fotogramas y,
+  con el PC cargado, pedía la región durante el cambio, que `Recursos.cambiar_escena` ignora a propósito. Arreglo: espera
+  por reloj, volcado del estado y fin inmediato si el cambio no acaba. Contraprueba determinista del revisor (retraso de
+  5 s en la carga del combate: falla sin arreglo, pasa con él). `docs/v12/BOSQUE_RECARGA_18_11.md`.
+  Riesgo latente anotado: otras pruebas que esperan `not cambiando` contando fotogramas; aplicar el mismo patrón si
+  aparece la misma firma («60 s de más / la escena no llega»).
+- Sigue igual: Redmi sin probar con lo nuevo (APK nueva que instala el usuario estando presente) y las decisiones del
+  usuario listadas en el relevo anterior. Ramas locales `revisa-ciudad` y similares de revisores, sin commits propios.
