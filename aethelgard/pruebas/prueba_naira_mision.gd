@@ -47,6 +47,7 @@ var n_foto := 0
 var foto_cielo := false
 var perfil := "alto"                   # «perfil=bajo|medio|alto» (el bajo tiene su luz propia: LUZ_SIN_SOMBRAS)
 var t_ms := 0
+var t_inicio := 0                     # (18/11) reloj del tope global
 
 
 func _mal(t: String) -> void:
@@ -152,7 +153,12 @@ func _foto(nombre: String) -> void:
 func _process(_dt: float) -> bool:
 	frames += 1
 	_apuntar_orden()
-	if frames > 30 * 900:
+	# (18/11) tope por RELOJ (300 s; normal, unos 10 s). Era de 27000 fotogramas, y mientras Recursos.cambiar_escena carga
+	# en su hilo (tiempo real) los fotogramas sin ventana vuelan: con la carga retrasada 5 s se agotaba en la fase
+	# «aclara» (docs/v12/PRUEBAS_CARRERAS_18_11.md).
+	if t_inicio == 0:
+		t_inicio = Time.get_ticks_msec()
+	if Time.get_ticks_msec() - t_inicio > 300000:
 		_mal("se pasa de tiempo en la fase «%s»" % fase)
 		return _fin()
 	match fase:
