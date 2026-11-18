@@ -161,9 +161,80 @@ static func trazado(id: String):
 
 
 # ¿Se puede estar en (x, z)? Lo dice el trazado del sector de esa caja (sus suelos caen dentro de su caja).
+# (18/11, coste: MEDIDAS_PC.md §7) Con el ÍNDICE por casillas (abajo): solo los suelos y sólidos de la casilla de (x, z), en
+# vez de recorrer todos los bloques del sector (el trazado: Comun.andable). Mismo resultado (prueba_ciudad_plano lo compara).
 static func andable(x: float, z: float) -> bool:
 	var s := sector_en_caja(x, z)
-	return s != "" and TRAZADOS[s].andable(x, z)
+	if s == "":
+		return false
+	var q := Vector2(x, z)
+	var c = _indice().get(Vector2i(floori(q.x / CELDA_INDICE), floori(q.y / CELDA_INDICE)))
+	if c == null:
+		return false
+	var d = c.get(s)
+	if d == null:
+		return false
+	var en_suelo := false
+	for r in d[0]:
+		if (r as Rect2).has_point(q):
+			en_suelo = true
+			break
+	if not en_suelo:
+		return false
+	for r in d[1]:
+		if (r as Rect2).has_point(q):
+			return false
+	return true
+
+
+# (18/11, coste de los arreglos del Redmi: MEDIDAS_PC.md §7) ÍNDICE por casillas de CELDA_INDICE m, hecho una vez: en cada
+# casilla, por sector, [suelos, sólidos] que la tocan (para andable) y, en «holgura», [sector, rect, techo] de los sólidos
+# que cuentan para el CUERPO (Comun.holgura: no finos) crecidos Comun.RADIO_CUERPO (+1 cm). andable y holgura miraban todos
+# los bloques del sector en cada llamada (55-270 µs en el PC por paso de Kael, rayo del grupo o toque); con el índice,
+# solo los de la casilla. Las cajas son las mismas Rect2 y has_point/distancia_planta, las mismas: el resultado no cambia.
+const CELDA_INDICE := 2.0
+static var _celdas := {}
+
+
+static func _indice() -> Dictionary:
+	if _celdas.is_empty():
+		for s in ORDEN:
+			var t = TRAZADOS[s]
+			for su in t.SUELOS:
+				for k in _casillas(su[1]):
+					_de_sector(k, s)[0].append(su[1])
+			for b in t.BLOQUES:
+				if not b[6]:
+					continue
+				for k in _casillas(b[2]):
+					_de_sector(k, s)[1].append(b[2])
+				if not Comun.fino(b):
+					var techo := float(b[3]) + float(b[4])
+					for k in _casillas((b[2] as Rect2).grow(Comun.RADIO_CUERPO + 0.01)):
+						var c: Dictionary = _celdas[k]
+						if not c.has("holgura"):
+							c["holgura"] = []
+						c["holgura"].append([s, b[2], techo])
+	return _celdas
+
+
+# Las casillas que toca r (y las crea en el índice).
+static func _casillas(r: Rect2) -> Array:
+	var ks: Array = []
+	for j in range(floori(r.position.y / CELDA_INDICE), floori(r.end.y / CELDA_INDICE) + 1):
+		for i in range(floori(r.position.x / CELDA_INDICE), floori(r.end.x / CELDA_INDICE) + 1):
+			var k := Vector2i(i, j)
+			if not _celdas.has(k):
+				_celdas[k] = {}
+			ks.append(k)
+	return ks
+
+
+static func _de_sector(k: Vector2i, s: String) -> Array:
+	var c: Dictionary = _celdas[k]
+	if not c.has(s):
+		c[s] = [[], []]
+	return c[s]
 
 
 # (17/11, Redmi) El CUERPO de Kael: cuánto sitio hay en (x, z) hasta la pared, pilar o jardinera alta más cercana
@@ -175,9 +246,11 @@ static func holgura(x: float, z: float) -> float:
 	var y := altura(x, z)
 	var p := Vector2(x, z)
 	var h := Comun.RADIO_CUERPO
-	for s in ORDEN:
-		if distancia_a_sector(s, p) < Comun.RADIO_CUERPO:
-			h = minf(h, Comun.holgura(TRAZADOS[s].BLOQUES, x, z, y))
+	# (18/11) solo los sólidos de la casilla (índice, arriba); los de fuera están a más de RADIO_CUERPO y no cambian h
+	var c: Dictionary = _indice().get(Vector2i(floori(p.x / CELDA_INDICE), floori(p.y / CELDA_INDICE)), {})
+	for e in c.get("holgura", []):
+		if float(e[2]) > y + Comun.ALTO_PARED and distancia_a_sector(e[0], p) < Comun.RADIO_CUERPO:
+			h = minf(h, Comun.distancia_planta(e[1], p))
 	return h
 
 

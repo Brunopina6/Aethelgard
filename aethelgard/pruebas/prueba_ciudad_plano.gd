@@ -23,6 +23,9 @@ extends SceneTree
 #      torso (diag_ciudad_silueta.gd); con su cuerpo (RADIO_CUERPO) se llega junto a todas las anclas, puertas y conexiones.
 #   9. Sin huecos junto a lo andable (16/11, revisiones de la maqueta): ninguna casilla andable tiene una vecina sin suelo de
 #      ningún sector ni bloque (salvo cubierta, copa o puerta) encima: eso es una zanja o una pared invisible.
+#  10. (18/11, coste: MEDIDAS_PC.md §7) plano.andable y plano.holgura con el ÍNDICE por casillas dan lo mismo que
+#      recorriendo todos los bloques (como antes): en 30 000 puntos al azar (semilla fija) y en las esquinas de cada suelo y
+#      bloque, justo en el borde, a 1 mm y a la distancia del cuerpo.
 # Imprime «FALLOS: n».
 
 const P := preload("res://zonas3d/ciudad/plano.gd")
@@ -58,6 +61,7 @@ func _correr() -> void:
 	_visible()
 	_redmi()
 	_huecos()
+	_indice_igual()
 	print("(%.1f s)" % ((Time.get_ticks_msec() - t0) / 1000.0))
 	print("FALLOS: %d" % fallos)
 	quit(1 if fallos > 0 else 0)
@@ -595,3 +599,59 @@ func _huecos() -> void:
 				if ej.size() < 12:
 					ej.append("%s junto a %s" % [s, str(Vector2((q.x + 0.5) * PASO, (q.y + 0.5) * PASO))])
 	_ok(por.is_empty(), "9: ningún borde de lo andable da a un hueco sin suelo ni bloque (por sector %s; ej. %s)" % [str(por), str(ej)])
+
+
+# ================================================================= 10
+
+func _andable_ref(x: float, z: float) -> bool:
+	var s := P.sector_en_caja(x, z)
+	return s != "" and P.TRAZADOS[s].andable(x, z)
+
+
+func _holgura_ref(x: float, z: float) -> float:
+	if not _andable_ref(x, z):
+		return 0.0
+	var y := P.altura(x, z)
+	var p := Vector2(x, z)
+	var h := Comun.RADIO_CUERPO
+	for s in P.ORDEN:
+		if P.distancia_a_sector(s, p) < Comun.RADIO_CUERPO:
+			h = minf(h, Comun.holgura(P.TRAZADOS[s].BLOQUES, x, z, y))
+	return h
+
+
+func _indice_igual() -> void:
+	var caja := Rect2()
+	for s in P.ORDEN:
+		caja = (P.SECTORES[s]["caja"] as Rect2) if caja.size == Vector2.ZERO else caja.merge(P.SECTORES[s]["caja"])
+	var puntos: Array = []
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 1811
+	for i in 30000:
+		puntos.append(Vector2(rng.randf_range(caja.position.x, caja.end.x), rng.randf_range(caja.position.y, caja.end.y)))
+	for s in P.ORDEN:
+		var t = P.TRAZADOS[s]
+		var rects: Array = []
+		for su in t.SUELOS:
+			rects.append(su[1])
+		for b in t.BLOQUES:
+			rects.append(b[2])
+		for r in rects:
+			for e in [(r as Rect2).position, (r as Rect2).end]:
+				for d in [0.0, 0.001, -0.001, Comun.RADIO_CUERPO, -Comun.RADIO_CUERPO, Comun.RADIO_CUERPO + 0.001]:
+					puntos.append(e + Vector2(d, d))
+					puntos.append(e + Vector2(d, -d))
+	var mal: Array = []
+	var andables := 0
+	for q in puntos:
+		var a := P.andable(q.x, q.y)
+		if a != _andable_ref(q.x, q.y):
+			mal.append("andable %s" % str(q))
+		elif a:
+			andables += 1
+			if P.holgura(q.x, q.y) != _holgura_ref(q.x, q.y):
+				mal.append("holgura %s: %.4f / %.4f" % [str(q), P.holgura(q.x, q.y), _holgura_ref(q.x, q.y)])
+		if mal.size() > 10:
+			break
+	_ok(mal.is_empty(), "10: andable y holgura con el índice = recorriendo todos los bloques (%d puntos, %d andables) %s" % [
+		puntos.size(), andables, str(mal)])
