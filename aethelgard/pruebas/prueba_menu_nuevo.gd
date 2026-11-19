@@ -10,8 +10,10 @@ extends SceneTree
 #      sin ejecutar nada; tocar su flecha la devuelve a ATACAR.
 #   2. Tocar MAGIA abre su submenú; tocar la cabecera «‹ Kael» vuelve al menú.
 #   3. Tocar ATACAR pide objetivo; tocar al enemigo lo ataca (Kael actúa una vez y el enemigo pierde vida).
-#   4. Turno de Lya con la Armonía llena: tocar INVOCACIÓN, luego Érebo y luego al enemigo invoca (solo Lya invoca: la
-#      Armonía se gasta una vez y el combate sigue); al final se huye para no dejar nada a medias.
+#   4. Turno de Lya con la Armonía llena (puesta a mano: c.armonia = 1.0 y c._mostrar_menu(), un atajo de prueba, no
+#      el llenado del combate): tocar INVOCACIÓN, luego Érebo y luego al enemigo invoca. Se comprueba que la Armonía
+#      queda a 0 tras tocar al enemigo y que la invocación termina (vuelta al menú, enemigos derrotados o «Fin»); que
+#      no se gaste dos veces no se mira aparte (revisión 19/11). Al final se huye para no dejar nada a medias.
 # Imprime «FALLOS: n» y sale con 1 si hay alguno.
 
 const ARCHIVO := "user://prueba_menu_nuevo.save"
@@ -210,11 +212,11 @@ func _kael() -> void:
 	else:
 		await _tocar(flecha.get_global_rect().get_center())
 		carta = _carta()
-		if carta["lado"] != "a" or c.estado != "menu":
-			_fallo("1: tocar la flecha no devuelve la carta a ATACAR (lado %s, estado %s)" % [carta["lado"], c.estado])
+		if carta.get("lado", "?") != "a" or c.estado != "menu":   # (revisión 19/11) sin carta: FALLO, no error de script
+			_fallo("1: tocar la flecha no devuelve la carta a ATACAR (lado %s, estado %s)" % [carta.get("lado", "sin carta"), c.estado])
 		else:
 			hechos.append("flecha vuelve a ATACAR")
-		print("1. flecha: lado %s, estado %s" % [carta["lado"], c.estado])
+		print("1. flecha: lado %s, estado %s" % [carta.get("lado", "sin carta"), c.estado])
 	# 2. MAGIA y la cabecera «‹ Kael»
 	await _tocar(_centro_fila("MAGIA"))
 	if c.estado != "magia" or not c.menu.submenu_abierto:

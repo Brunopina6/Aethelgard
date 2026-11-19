@@ -30,7 +30,9 @@ extends SceneTree
 # Uso: lista_pruebas.txt (fotos_barrio_recorrido, ventana): «3d sin_prologo salida={salida}»; mejor con --fixed-fps 30
 # (el tiempo del juego va a 30 por segundo, igual que con el Movie Maker) y, para ver la franja negra, --resolution
 # 1600x720 (o «tam=1600x720»). «solo=normal», solo la misión A (para grabarla: --write-movie x.avi --fixed-fps 30);
-# «modo=rutinas», una visita a cada rutina (vídeo). Partida del banco (user://banco_pruebas.save, carpeta aislada).
+# «modo=rutinas», una visita a cada rutina (vídeo). «carga_falla=N» (revisión 19/11, solo para comprobar la
+# herramienta): la carga N del barrio se da por agotada al momento, y debe salir un FALLO y «FALLOS: n» sin errores de
+# script (2 = la recarga «A dentro de la vivienda»). Partida del banco (user://banco_pruebas.save, carpeta aislada).
 # Imprime «FALLOS: n».
 
 const ESCENA := "res://zonas3d/barrio/barrio.tscn"
@@ -73,6 +75,8 @@ func _initialize() -> void:
 			modo = a.trim_prefix("modo=")
 		if a.begins_with("tam="):
 			tam = a.trim_prefix("tam=")
+		if a.begins_with("carga_falla="):
+			carga_falla = int(a.trim_prefix("carga_falla="))
 	if salida == "":
 		salida = OS.get_user_data_dir().path_join("recorrido_barrio")
 	DirAccess.make_dir_recursive_absolute(salida)
@@ -529,22 +533,33 @@ func _aviso() -> String:
 
 
 # (19/11, PC-10) Por reloj (antes, 600 fotogramas): la recarga va por Recursos.cambiar_escena (carga en hilo, en tiempo
-# real). Al agotarse, «FALLO» con el estado y v = null (quien llama lo da por fallido y no sigue).
+# real). Al agotarse, «FALLO» con el estado y la herramienta TERMINA ahí (revisión 19/11): _terminar() escribe
+# recorrido.txt, imprime «FALLOS: n» y sale con 1, y esta corrutina se queda esperando un temporizador que ya no llega,
+# para que quien la llamó (_jugar, _guardar_y_recargar, _mision_galga_primero) no siga con v nulo (antes seguía:
+# errores de script «on a base object of type 'Nil'» y fallos de rebote que no eran tales).
 const TOPE_CARGA := 90.0
+var carga_falla := 0                         # «carga_falla=N»: la carga N (1 = la primera) se da por agotada al momento
+var n_carga := 0                             # (solo para comprobar la salida con FALLO; ver la cabecera)
 
 
 func _cargar_region() -> void:
 	v = null
+	n_carga += 1
+	var tope := 0.0 if n_carga == carga_falla else TOPE_CARGA
 	var t0 := Time.get_ticks_msec()
-	while Time.get_ticks_msec() - t0 < int(TOPE_CARGA * 1000.0):
+	while Time.get_ticks_msec() - t0 < int(tope * 1000.0):
 		await process_frame
 		var c = current_scene
-		if c != null and c.scene_file_path == ESCENA and c.get("kael") != null and c.get("vivo") != null 				and not root.get_node("Recursos").cambiando:
+		if c != null and c.scene_file_path == ESCENA and c.get("kael") != null and c.get("vivo") != null \
+				and not root.get_node("Recursos").cambiando:
 			v = c
 			break
 	if v == null:
-		_ok(false, "el barrio no termina de cargarse en %.0f s (R.cambiando=%s, escena %s)" % [TOPE_CARGA,
+		_ok(false, "el barrio no termina de cargarse en %.0f s (R.cambiando=%s, escena %s)" % [tope,
 			root.get_node("Recursos").cambiando, current_scene.scene_file_path if current_scene != null else "(ninguna)"])
+		_terminar()
+		await create_timer(3600.0).timeout         # no llega: quit() cierra al acabar este fotograma
+		return
 	await _segundos(1.0)
 
 

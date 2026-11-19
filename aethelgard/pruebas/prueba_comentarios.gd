@@ -114,9 +114,10 @@ func _datos() -> void:
 
 
 # 1b (19/11, PC-12). ENGANCHES dice la verdad: cada escena que pide un momento (una llamada con el nombre del momento
-# entre comillas: _comentar, _comentar_luego, _programar_comentario, Comentarios.elegir o «_comentario_pendiente =»)
-# sale nombrada en su texto, y el
-# tramo de esa escena (separados por «;») no dice «pendiente». Se miran las escenas que usan comentarios.gd.
+# entre comillas: _comentar, _comentar_luego, _programar_comentario, Comentarios.elegir o «_comentario_pendiente =»;
+# o, desde la revisión del 19/11, el momento entre comillas dentro de su _momento_llegada, que lo devuelve con
+# «return») sale nombrada en su texto, y el tramo de esa escena (separados por «;») no dice «pendiente». Se miran las
+# escenas que usan comentarios.gd.
 const ESCENAS_COMENTARIOS := ["res://zona.gd", "res://ciudad_oakhaven.gd", "res://zonas3d/pastos_verdes_3d.gd",
 	"res://zonas3d/garganta_3d.gd", "res://zonas3d/ciclopea_3d.gd", "res://zonas3d/gran_bosque_3d.gd"]
 
@@ -129,9 +130,16 @@ func _enganches() -> void:
 			_fallo("1b: no se puede leer %s" % ruta)
 			continue
 		var archivo: String = ruta.get_file()
+		# (revisión 19/11) el cuerpo de _momento_llegada, hasta la siguiente «func»: ahí el momento va en un «return» y
+		# la escena lo pide después en una variable (_comentar_luego(m, 0.0)), así que la expresión de abajo no lo ve
+		var llegada := ""
+		var i_llegada := codigo.find("func _momento_llegada(")
+		if i_llegada >= 0:
+			var fin := codigo.find("\nfunc ", i_llegada + 1)
+			llegada = codigo.substr(i_llegada, fin - i_llegada if fin >= 0 else -1)
 		for m in C.MOMENTOS:
 			var re := RegEx.create_from_string("((_comentar|_comentar_luego|_programar_comentario|elegir)\\(|_comentario_pendiente = )\"%s\"" % m)
-			if re.search(codigo) == null:
+			if re.search(codigo) == null and not ("\"%s\"" % m) in llegada:
 				continue
 			llamadas += 1
 			var texto: String = C.ENGANCHES.get(m, "")
@@ -143,7 +151,7 @@ func _enganches() -> void:
 				_fallo("1b: %s pide «%s», pero ENGANCHES no lo nombra («%s»)" % [archivo, m, texto])
 			elif "pendiente" in tramo:
 				_fallo("1b: %s ya pide «%s», pero ENGANCHES lo da por pendiente («%s»)" % [archivo, m, tramo.strip_edges()])
-	if llamadas < 6:
+	if llamadas < 15:                   # (revisión 19/11) las 15 de hoy: si baja, ha cambiado la forma de pedirlos
 		_fallo("1b: solo encuentro %d llamadas a comentarios en las escenas (¿ha cambiado la forma de pedirlos?)" % llamadas)
 	print("ENGANCHES: %d llamadas comprobadas" % llamadas)
 

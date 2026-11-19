@@ -233,8 +233,8 @@ func _pestana_ajustes() -> void:
 	if ms > 100.0:
 		_fallo("4: la primera pulsación en Música da un fotograma de %.0f ms en el PC (un parón visible en el móvil; %d intentos: %s)"
 			% [ms, intentos.size(), intentos])
-	if Son.volumen("Musica") != 90:
-		_fallo("4: una pulsación de Intro en ◀ deja Música en %d (esperaba 90)" % Son.volumen("Musica"))
+	# (revisión 19/11) la comprobación de «Música en 90» va arriba, tras los intentos; aquí sobraba (Son.fijar la deja
+	# en 90 tras la pulsación informativa) y, si fallaba, se imprimía dos veces
 	if absf(_db("Musica") - linear_to_db(0.9)) > 0.01:
 		_fallo("4: Música al 90 %% está a %.2f dB" % _db("Musica"))
 	if _clave_foco() != "volumen:Musica:-1" or not _foco().has_focus(true):

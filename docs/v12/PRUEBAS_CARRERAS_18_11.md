@@ -229,3 +229,18 @@ Antes, con el mismo retraso: 2 de 3 pasadas fallaban (pasadas 16 y 17 de este do
 - Volver a probar en `prueba_sunken3d` la entrada desde el mapa con `cambiar_escena` (la nota de su línea 416).
 - `fotos_barrio_recorrido`: repetir la contraprueba con 15 s de retraso (sin y con el arreglo de `prueba_barrio_interiores`)
   y mirar el fallo intermitente de Tobías en A7 (2 de 3 pasadas con 5 s de retraso).
+
+## Seguimiento del 19/11 (PRUEBAS_19_11, C-11 / PC-10, y su revisión)
+
+Hecho: la lista de arriba (`medir_mapamundi3d`, `medir_sunken3d`, `medir_memoria_texturas` y las esperas de
+`fotos_barrio_recorrido`) espera ya por reloj, con FALLO al agotarse. En la revisión, `fotos_barrio_recorrido` termina
+en cuanto se agota la carga del barrio (antes seguía con la región nula: cinco errores de script «on a base object of
+type 'Nil'» y fallos de rebote en A5 y A6); «carga_falla=N» lo comprueba.
+
+Sigue pendiente (PC-10 no queda cerrado):
+
+- Los otros 46 archivos de `pruebas/` que esperan a «cambiando» (`BOSQUE_RECARGA_18_11.md`, «Pendiente»): no se ha
+  mirado cuáles cuentan fotogramas en vez de reloj.
+- Herramientas con ventana que siguen esperando por fotogramas, por ejemplo `fotos_erebo_hibrida.gd` (l. 79 y 95, 3000 y 4000 fotogramas),
+  `grabar_erebo_transicion.gd` (l. 38) y `grabar_erebo_hibrida.gd` (l. 45), hasta 3000 fotogramas, y `medir_erebo_teatro.gd` (l. 19). No se han barrido.
+- El barrido completo con `REBELUM_RETRASO_CARGA_MS` (solo en una copia local) sigue sin hacerse.

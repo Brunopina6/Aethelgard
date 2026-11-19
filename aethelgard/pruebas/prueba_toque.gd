@@ -13,6 +13,10 @@ extends SceneTree
 #   6. Un toque mientras se escribe la frase la completa y no la salta.
 #   7. Dos toques seguidos en menos de 0,15 s pasan una sola frase (un toque del móvil da también un clic).
 #   8. Tocando, el diálogo se acaba y «SEGUIR» se oculta.
+# Los pasos 2, 3, 4 y 7 comprueban además (revisión 19/11) que la frase la pasa boton_dialogo.gd (BotonDialogo._seguir
+# cambia _ultimo) y no la entrada propia de Dialogic, que también avanza con el clic izquierdo: con la zona de toque
+# en MOUSE_FILTER_IGNORE el clic del paso 3 seguía pasando la frase. El paso 5 acepta cero o una frase (lo de fuera del
+# cuadro es de Dialogic o de la escena): solo vigila que no pasen dos.
 # Imprime «FALLOS: n» y sale con 1 si hay alguno.
 
 const FRASES := [                                 # largas: escribirlas lleva un rato (el paso 6 toca a medias)
@@ -116,11 +120,16 @@ func _clic(p: Vector2) -> void:
 # Hace «accion» con la frase «antes» entera y comprueba que pasa a la siguiente, una sola.
 func _paso(n: int, que: String, accion: Callable) -> void:
 	var antes := _frase()
+	var ultimo: int = B._ultimo
 	await accion.call()
 	await _lista()
 	var despues := _frase()
 	if despues != antes + 1:
 		_fallo("%d: %s pasa de la frase %d a la %d (esperaba la %d)" % [n, que, antes + 1, despues + 1, antes + 2])
+	elif B._ultimo == ultimo:
+		# (revisión 19/11) la frase pasa, pero no por boton_dialogo.gd (_seguir apunta _ultimo): la ha pasado la entrada
+		# propia de Dialogic (contraprueba con zona.mouse_filter = IGNORE: el clic del paso 3 seguía pasando la frase)
+		_fallo("%d: %s pasa la frase, pero no por boton_dialogo.gd (BotonDialogo._seguir no se llama)" % [n, que])
 	else:
 		hechos.append(que)
 	print("%d. %s: frase %d → %d" % [n, que, antes + 1, despues + 1])
