@@ -37,6 +37,17 @@ func _hasta(cond: Callable, segundos := 30.0) -> bool:
 	return false
 
 
+# (19/11, PC-10) por RELOJ, para montar la región: con ventana el ritmo lo pone la pantalla (a 144 Hz, «120 s» contados
+# en fotogramas eran 25 s) y la carga va en tiempo real. El resto espera en tiempo de JUEGO a propósito.
+func _hasta_reloj(cond: Callable, segundos := 60.0) -> bool:
+	var t0 := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - t0 < int(segundos * 1000.0):
+		if cond.call():
+			return true
+		await _esperar(1)
+	return cond.call()
+
+
 func _foto(nombre: String) -> void:
 	var ruta := "%s/%s_%s.png" % [salida, perfil, nombre]
 	root.get_viewport().get_texture().get_image().save_png(ruta)
@@ -65,9 +76,9 @@ func _entrar(hitos: Array, grupo: Array) -> Object:
 	Engine.set_meta("pos_3d_ok", false)
 	Engine.set_meta("comentarios_dichos", {})
 	change_scene_to_file(REGION)
-	if not await _hasta(func(): return current_scene != null and current_scene.scene_file_path == REGION \
+	if not await _hasta_reloj(func(): return current_scene != null and current_scene.scene_file_path == REGION \
 			and current_scene.get("kael") != null and not R.cambiando, 120.0):
-		print("FALLO: no se abre la región")
+		print("FALLO: no se abre la región en 120 s (R.cambiando=%s)" % R.cambiando)
 		fallos += 1
 		return null
 	var r = current_scene

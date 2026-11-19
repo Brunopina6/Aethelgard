@@ -119,6 +119,13 @@ func _medir() -> void:
 		await process_frame
 		if Time.get_ticks_usec() - t0 > 60000000:
 			break
+	if R.cambiando or current_scene == null or current_scene.scene_file_path != ruta:
+		# (19/11, PC-10) antes, al agotarse los 60 s se seguía midiendo en silencio con la escena a medias
+		print("FALLO: %s no termina de cargarse en 60 s (R.cambiando=%s, escena %s)" % [ruta, R.cambiando,
+			current_scene.scene_file_path if current_scene != null else "(ninguna)"])
+		print("FALLOS: 1")
+		quit(1)
+		return
 	var carga := (Time.get_ticks_usec() - t0) / 1000.0
 	var tras: Array = await _ms_reales(2.0)
 	_nota("[%s] entrada (Recursos.cambiar_escena, primera del proceso): carga hasta el control %.0f ms · los 2 s siguientes: %s · %s" % [

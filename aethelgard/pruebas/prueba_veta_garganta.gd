@@ -17,6 +17,8 @@ const HIERRO := "Hierro de la Falla"
 var frames := 0
 var paso := 0
 var f_paso := 0
+var t_paso := 0
+const ESPERA_MAX_MS := 60000            # (19/11, PC-10) tope de cada paso por RELOJ (antes, 3600 fotogramas en total)
 var R
 var P
 var inv
@@ -44,6 +46,7 @@ func _initialize() -> void:
 func _siguiente(n: int) -> void:
 	paso = n
 	f_paso = frames
+	t_paso = Time.get_ticks_msec()
 
 
 func _lista() -> bool:
@@ -63,8 +66,9 @@ func _terminar() -> void:
 
 func _process(_d: float) -> bool:
 	frames += 1
-	if frames > 30 * 120:
-		fallos.append("se pasa el tiempo (paso %d)" % paso)
+	if paso > 0 and Time.get_ticks_msec() - t_paso > ESPERA_MAX_MS:
+		fallos.append("el paso %d no terminó en %d s (escena=%s, R.cambiando=%s)" % [paso, ESPERA_MAX_MS / 1000,
+			current_scene.scene_file_path if current_scene != null else "(ninguna)", R.cambiando])
 		_terminar()
 		return false
 	var dg = root.get_node_or_null("Dialogic")

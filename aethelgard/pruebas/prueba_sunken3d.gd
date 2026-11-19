@@ -78,6 +78,24 @@ func _hasta(cond: Callable, max_frames := 600) -> bool:
 	return cond.call()
 
 
+# (19/11, PC-10) Montar una escena se espera por RELOJ (antes, 300 fotogramas y, si se agotaban, la prueba seguía en
+# silencio con la escena que hubiera). Al agotarse: FALLO con el estado, _fin() («FALLOS: n», salida 1) y esta corrutina
+# se queda esperando un temporizador que no llega, para que quien llama no siga con la escena equivocada.
+const TOPE_ESCENA := 60.0
+
+
+func _montar(ruta: String, con_kael: bool) -> void:
+	var t0 := Time.get_ticks_msec()
+	while not (current_scene != null and current_scene.scene_file_path == ruta and (not con_kael or current_scene.get("kael") != null)):
+		if Time.get_ticks_msec() - t0 > int(TOPE_ESCENA * 1000.0):
+			_mal("%s no se monta en %.0f s (escena %s)" % [ruta, TOPE_ESCENA,
+				current_scene.scene_file_path if current_scene != null else "(ninguna)"])
+			_fin()
+			await create_timer(3600.0).timeout         # no llega: quit() cierra al acabar este fotograma
+			return
+		await process_frame
+
+
 func _limpiar_partida() -> void:
 	for k in P.CLAVES + ["partida_lista", "pos_3d", "pos_3d_ok", "comentarios_dichos"]:
 		if Engine.has_meta(k):
@@ -89,7 +107,7 @@ func _limpiar_partida() -> void:
 
 func _cargar_region() -> void:
 	change_scene_to_file(REGION)
-	await _hasta(func(): return current_scene != null and current_scene.scene_file_path == REGION and current_scene.get("kael") != null, 300)
+	await _montar(REGION, true)
 	await _frames(20)
 	v = current_scene
 
@@ -426,7 +444,7 @@ func _correr() -> void:
 func _desde_el_mapa() -> void:
 	if current_scene == null or current_scene.scene_file_path != P.MAPA:
 		change_scene_to_file(P.MAPA)
-		await _hasta(func(): return current_scene != null and current_scene.scene_file_path == P.MAPA, 300)
+		await _montar(P.MAPA, false)
 		await _frames(30)
 	var mapa = current_scene
 	var lugar: Dictionary = mapa.lugares[5]

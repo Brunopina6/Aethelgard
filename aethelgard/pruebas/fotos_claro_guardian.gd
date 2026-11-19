@@ -59,9 +59,15 @@ func _foto(nombre: String) -> void:
 
 
 func _fotos() -> void:
-	for i in 600:
-		if current_scene != null and current_scene.scene_file_path == REGION and not R.cambiando:
-			break
+	# (19/11, PC-10) por RELOJ (antes, 600 fotogramas, y al agotarse se seguía con la escena que hubiera)
+	var t_region := Time.get_ticks_msec()
+	while not (current_scene != null and current_scene.scene_file_path == REGION and not R.cambiando):
+		if Time.get_ticks_msec() - t_region > 60000:
+			print("FALLO: la región no se monta en 60 s (R.cambiando=%s, escena %s)" % [R.cambiando,
+				current_scene.scene_file_path if current_scene != null else "(ninguna)"])
+			print("FALLOS: 1")
+			quit(1)
+			return
 		await process_frame
 	await _esperar(40)
 	if D.current_timeline != null:

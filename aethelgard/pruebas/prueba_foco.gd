@@ -221,13 +221,14 @@ func _diario() -> void:
 # 5. Mapa: barra, ventanas, andar y entrar.
 func _mapa() -> void:
 	change_scene_to_file(MAPA)
-	for i in 300:
+	var limite := Time.get_ticks_msec() + 60000          # (19/11, PC-10) por RELOJ; antes, 300 fotogramas
+	while Time.get_ticks_msec() < limite:
 		await _esperar(1)
 		if _escena() == MAPA and current_scene.jugador != null and not R.cambiando:
 			break
 	var m = current_scene
-	if _escena() != MAPA:
-		_fallo("5: el mapa no carga")
+	if _escena() != MAPA or m.jugador == null or R.cambiando:
+		_fallo("5: el mapa no carga en 60 s (escena %s, R.cambiando=%s)" % [_escena(), R.cambiando])
 		return
 	await _esperar(10)
 	await _pulsar(KEY_TAB)

@@ -47,6 +47,15 @@ func _esperar(ruta: String) -> void:
 		if _escena() == ruta and not R.cambiando and current_scene.get("kael") != null:
 			break
 		await process_frame
+	if not (_escena() == ruta and not R.cambiando and current_scene.get("kael") != null):
+		# (19/11, PC-10) antes, al agotarse los 60 s se seguía grabando con la escena que hubiera
+		print("FALLO: %s no termina de cargarse en 60 s (R.cambiando=%s, escena %s)" % [ruta, R.cambiando, _escena()])
+		print("FALLOS: 1")
+		if Engine.has_meta("archivo_partida_prueba"):
+			Engine.remove_meta("archivo_partida_prueba")
+		quit(1)
+		await create_timer(3600.0).timeout         # no llega: quit() cierra al acabar este fotograma
+		return
 	v = current_scene
 
 

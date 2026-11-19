@@ -6,6 +6,11 @@ extends "res://pruebas/prueba_erebo_video.gd"
 # la sesión (V.elegir) y se deja en «no» al acabar.
 # Uso: godot --path aethelgard --write-movie <salida.avi> --fixed-fps 30 --resolution 1280x720
 #      --script res://pruebas/grabar_erebo_transicion.gd -- erebo=exito modo=abreviada|completa
+# Esperas (19/11, PC-10): el turno de Lya y el vídeo se esperan por RELOJ (antes, 3000 y 1200 fotogramas, y al agotarse
+# se seguía grabando en silencio y salía con 0). Al agotarse: «FALLO: …», «FALLOS: 1», la opción en «no» y salida 1.
+# Los topes son holgados porque el Movie Maker graba más despacio que el tiempo real.
+const TOPE_LYA_MS := 120000
+const TOPE_VIDEO_MS := 300000
 
 var _modo := "abreviada"
 
@@ -35,11 +40,15 @@ func _grupo3() -> Dictionary:
 	seed(semilla)
 	for e in c.enemigos:
 		e["atb"] = randf() * 30.0
-	for i in 3000:                                    # Kael y Garon se defienden hasta que le toca a Lya
+	var t_lya := Time.get_ticks_msec()
+	while true:                                       # Kael y Garon se defienden hasta que le toca a Lya
 		if c.estado == "menu" and c.menu.activo and c.actor is Dictionary:
 			if c.actor["nombre"] == "Lya":
 				break
 			c._defender()
+		if Time.get_ticks_msec() - t_lya > TOPE_LYA_MS:
+			await _abortar("no llega el turno de Lya en %d s (estado %s)" % [TOPE_LYA_MS / 1000, c.estado])
+			return {}
 		await _esperar(1)
 	return c.enemigos[0]
 
@@ -53,7 +62,12 @@ func _probar() -> void:
 	await _esperar(75)                                # 2,5 s de combate con el menú de Lya y la Armonía llena
 	c._invocar_sobre(grim)
 	var visto := false
-	for i in 30 * 40:                                 # hasta 40 s: entra el vídeo y vuelve el combate
+	var t_video := Time.get_ticks_msec()
+	while true:                                       # entra el vídeo y vuelve el combate
+		if Time.get_ticks_msec() - t_video > TOPE_VIDEO_MS:
+			await _abortar("el vídeo %s en %d s (estado %s)" % ["no termina" if visto else "no entra",
+				TOPE_VIDEO_MS / 1000, c.estado])
+			return
 		await _esperar(1)
 		if _capa() != null:
 			visto = true
@@ -67,3 +81,16 @@ func _probar() -> void:
 			Engine.remove_meta(k)
 	Engine.remove_meta("archivo_partida_prueba")
 	quit(0)
+
+
+# Al agotarse una espera: lo dice, deja la opción en «no» y los datos de prueba como al empezar, y sale con 1. No vuelve
+# (quien llama no sigue).
+func _abortar(texto: String) -> void:
+	print("FALLO: ", texto)
+	print("FALLOS: 1")
+	V.elegir("no")
+	for k in P.CLAVES + ["partida_lista", "grupo_combate", "tipo_combate", "zona", "grupo_activo", "archivo_partida_prueba"]:
+		if Engine.has_meta(k):
+			Engine.remove_meta(k)
+	quit(1)
+	await create_timer(3600.0).timeout             # no llega: quit() cierra al acabar este fotograma

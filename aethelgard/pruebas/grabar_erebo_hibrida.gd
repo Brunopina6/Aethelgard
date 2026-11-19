@@ -5,6 +5,13 @@ extends "res://pruebas/prueba_erebo_hibrida.gd"
 # (archivo de partida de prueba); la opción se elige solo en la sesión y se deja en «no» al acabar.
 # Uso: godot --path aethelgard --write-movie <salida.avi> --fixed-fps 30 --resolution 1280x720
 #      --script res://pruebas/grabar_erebo_hibrida.gd -- erebo=exito|fallo grupo=9 modo=hibrida [saltar=agarra]
+# Esperas (19/11, PC-10): el turno de Lya y la vuelta del combate tras la invocación se esperan por RELOJ (antes, 3000 y
+# 1800 fotogramas, y al agotarse se seguía grabando en silencio y salía con 0). Al agotarse: «FALLO: …», «FALLOS: 1», la
+# opción en «no» y salida 1. Los topes son holgados porque el Movie Maker graba más despacio que el tiempo real.
+# Ojo: si se agota a MITAD de la híbrida, Godot se cierra con 0xC0000005 al salir (con ventana y sin ella; también
+# saliendo sin más, sin liberar el combate): el código sigue siendo distinto de 0 y el FALLO ya está escrito.
+const TOPE_LYA_MS := 120000
+const TOPE_INVOCACION_MS := 300000
 
 var _modo := "hibrida"
 var _grupo := 9
@@ -42,11 +49,15 @@ func _probar() -> void:
 	seed(semilla)
 	for e in c.enemigos:
 		e["atb"] = randf() * 30.0
-	for i in 3000:                                    # Kael y Garon se defienden hasta que le toca a Lya
+	var t_lya := Time.get_ticks_msec()
+	while true:                                       # Kael y Garon se defienden hasta que le toca a Lya
 		if c.estado == "menu" and c.menu.activo and c.actor is Dictionary:
 			if c.actor["nombre"] == "Lya":
 				break
 			c._defender()
+		if Time.get_ticks_msec() - t_lya > TOPE_LYA_MS:
+			await _abortar("no llega el turno de Lya en %d s (estado %s)" % [TOPE_LYA_MS / 1000, c.estado])
+			return
 		await _esperar(1)
 	var obj: Dictionary = c.enemigos[0]
 	c.armonia = 1.0
@@ -62,7 +73,12 @@ func _probar() -> void:
 	var ult_reg: Array = []
 	c._invocar_sobre(obj)
 	var saltado := false
-	for i in 30 * 60:
+	var t_inv := Time.get_ticks_msec()
+	while true:
+		if Time.get_ticks_msec() - t_inv > TOPE_INVOCACION_MS:
+			await _abortar("el combate no vuelve tras la invocación en %d s (estado %s, última fase %s)" % [
+				TOPE_INVOCACION_MS / 1000, c.estado, ult_reg[-1][0] if ult_reg.size() > 0 else "ninguna"])
+			return
 		await _esperar(1)
 		var inv = c.get_node_or_null("EreboHibrida")
 		mus_min = minf(mus_min, AudioServer.get_bus_volume_db(i_mus))
@@ -93,3 +109,16 @@ func _probar() -> void:
 			Engine.remove_meta(k)
 	Engine.remove_meta("archivo_partida_prueba")
 	quit(0)
+
+
+# Al agotarse una espera: lo dice, deja la opción en «no» y los datos de prueba como al empezar, y sale con 1. No vuelve
+# (quien llama no sigue).
+func _abortar(texto: String) -> void:
+	print("FALLO: ", texto)
+	print("FALLOS: 1")
+	H.elegir_modo("no")
+	for k in P.CLAVES + ["partida_lista", "grupo_combate", "tipo_combate", "zona", "grupo_activo", "archivo_partida_prueba"]:
+		if Engine.has_meta(k):
+			Engine.remove_meta(k)
+	quit(1)
+	await create_timer(3600.0).timeout             # no llega: quit() cierra al acabar este fotograma

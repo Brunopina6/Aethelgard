@@ -41,13 +41,25 @@ func _hasta(cond: Callable, segundos := 30.0) -> bool:
 	return false
 
 
+# (19/11, PC-10) por RELOJ, solo para montar la región: con --fixed-fps los fotogramas vuelan y una carga va en tiempo
+# real. El resto espera en tiempo de JUEGO a propósito (diálogos y Lya que llega corriendo).
+func _hasta_reloj(cond: Callable, segundos := 60.0) -> bool:
+	var t0 := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - t0 < int(segundos * 1000.0):
+		if cond.call():
+			return true
+		await process_frame
+	return cond.call()
+
+
 func _grupo(r) -> Array:
 	return (r.grupo.nodos() if r.grupo != null else []).map(func(n): return String(n.name))
 
 
 func _probar() -> void:
-	if not await _hasta(func(): return current_scene != null and current_scene.scene_file_path == REGION and not R.cambiando, 90.0):
-		print("FALLO: no se llega a la región")
+	if not await _hasta_reloj(func(): return current_scene != null and current_scene.scene_file_path == REGION and not R.cambiando, 90.0):
+		print("FALLO: no se llega a la región en 90 s (R.cambiando=%s)" % R.cambiando)
+		print("FALLOS: 1")
 		quit(1)
 		return
 	var r = current_scene

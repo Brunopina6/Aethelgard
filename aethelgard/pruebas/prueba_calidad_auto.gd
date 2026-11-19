@@ -470,13 +470,17 @@ func _en_la_region() -> void:
 	Engine.set_meta("hitos", {"pv_02": true, "pv_03": true})
 	change_scene_to_file(REGION)
 	var R = root.get_node("Recursos")
-	for i in 600:
+	# (19/11, PC-10) por RELOJ (antes, 600 fotogramas), con al menos 11 fotogramas como antes
+	var t0 := Time.get_ticks_msec()
+	var nf := 0
+	while Time.get_ticks_msec() - t0 < 60000:
 		await process_frame
-		if current_scene != null and current_scene.scene_file_path == REGION and not R.cambiando and i > 10:
+		nf += 1
+		if current_scene != null and current_scene.scene_file_path == REGION and not R.cambiando and nf > 11:
 			break
 	var esc = current_scene
-	if esc == null or esc.scene_file_path != REGION:
-		_fallo("6: no se entra en Pastos Verdes 3D")
+	if esc == null or esc.scene_file_path != REGION or R.cambiando:
+		_fallo("6: no se entra en Pastos Verdes 3D en 60 s (R.cambiando=%s)" % R.cambiando)
 		return
 	if esc.regulador == null:
 		_fallo("6: la región no tiene regulador con el forzado puesto")
@@ -519,10 +523,17 @@ func _en_la_region() -> void:
 	# al volver a cargar, la escena se construye ya con los recortes
 	esc.guardar_posicion()
 	change_scene_to_file(REGION)
-	for i in 600:
+	var vieja = esc
+	t0 = Time.get_ticks_msec()
+	nf = 0
+	while Time.get_ticks_msec() - t0 < 60000:
 		await process_frame
-		if current_scene != null and current_scene != esc and current_scene.scene_file_path == REGION and i > 10:
+		nf += 1
+		if current_scene != null and current_scene != vieja and current_scene.scene_file_path == REGION and nf > 11:
 			break
+	if current_scene == null or current_scene == vieja or current_scene.scene_file_path != REGION:
+		_fallo("6: la región no se vuelve a cargar en 60 s (antes se seguía con la escena vieja)")
+		return
 	esc = current_scene
 	_ok(esc.regulador != null and esc.regulador.nivel == tope, "6: al recargar no sigue en el escalón %d" % tope)
 	_ok(is_equal_approx(esc.get_viewport().scaling_3d_scale, fin["escala_3d"]), "6: al recargar, resolución %.2f" % esc.get_viewport().scaling_3d_scale)

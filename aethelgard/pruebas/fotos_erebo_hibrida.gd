@@ -6,6 +6,10 @@ extends SceneTree
 # Argumentos: salida=<carpeta> grupos=9,7,18 (GRUPOS de combate.gd) erebo=exito|fallo erebo_cine=hibrida|hibrida_3d
 # Ejemplo: Godot --path aethelgard -s res://pruebas/fotos_erebo_hibrida.gd -- salida=D:/x grupos=9 erebo=exito erebo_cine=hibrida
 # No toca la partida real: archivo de partida de prueba (y el ejecutor aísla user://).
+# Esperas (19/11, PC-10): el turno de Lya y la vuelta del combate tras la invocación se esperan por RELOJ (antes, 3000 y
+# 4000 fotogramas, y al agotarse se seguían sacando capturas en silencio). Al agotarse: «FALLO: …», «FALLOS: 1» y salida 1.
+const TOPE_LYA_MS := 120000
+const TOPE_INVOCACION_MS := 300000
 
 const ARCHIVO := "user://fotos_erebo_hibrida.save"
 # fase del registro de la invocación → [segundos después, nombre de la captura]
@@ -76,11 +80,15 @@ func _uno(grupo: int) -> void:
 	Engine.set_meta("grupo_combate", grupo)
 	c = load("res://combate.tscn").instantiate()
 	root.add_child(c)
-	for i in 3000:
+	var t_lya := Time.get_ticks_msec()
+	while true:
 		if c.estado == "menu" and c.menu.activo and c.actor is Dictionary:
 			if c.actor["nombre"] == "Lya":
 				break
 			c._defender()
+		if Time.get_ticks_msec() - t_lya > TOPE_LYA_MS:
+			await _abortar("g%d: no llega el turno de Lya en %d s (estado %s)" % [grupo, TOPE_LYA_MS / 1000, c.estado])
+			return
 		await process_frame
 		if c.estado != "accion":
 			for e in c.enemigos:
@@ -92,7 +100,12 @@ func _uno(grupo: int) -> void:
 	c._invocar_sobre(obj)
 	var hechas := {}
 	var vuelta := false
-	for i in 4000:
+	var t_inv := Time.get_ticks_msec()
+	while true:
+		if Time.get_ticks_msec() - t_inv > TOPE_INVOCACION_MS:
+			await _abortar("g%d: el combate no vuelve tras la invocación en %d s (estado %s, %d capturas)" % [grupo,
+				TOPE_INVOCACION_MS / 1000, c.estado, hechas.size()])
+			return
 		await process_frame
 		var inv = c.get_node_or_null("EreboHibrida")
 		if inv != null:
@@ -134,3 +147,13 @@ func _uno(grupo: int) -> void:
 
 var _ultimo_registro: Array = []
 var _t_cada := 0.0
+
+
+# Al agotarse una espera: lo dice, deja los datos de prueba como al empezar y sale con 1. No vuelve (quien llama no sigue).
+func _abortar(texto: String) -> void:
+	print("FALLO: ", texto)
+	print("FALLOS: 1")
+	if Engine.has_meta("archivo_partida_prueba"):
+		Engine.remove_meta("archivo_partida_prueba")
+	quit(1)
+	await create_timer(3600.0).timeout             # no llega: quit() cierra al acabar este fotograma

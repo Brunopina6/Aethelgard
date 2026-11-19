@@ -50,9 +50,19 @@ func _limpiar() -> void:
 	Engine.set_meta("pos_3d_ok", false)
 
 
+# (19/11, PC-10) los 25 fotogramas de siempre y, si la región aún no está montada, espera por RELOJ hasta 60 s (antes
+# se seguía con la escena que hubiera). Al agotarse: FALLO, _fin() y esta corrutina no vuelve (quien llama no sigue).
 func _cargar() -> void:
 	change_scene_to_file(REGION)
 	await _frames(25)
+	var t0 := Time.get_ticks_msec()
+	while not (current_scene != null and current_scene.scene_file_path == REGION and current_scene.get("kael") != null):
+		if Time.get_ticks_msec() - t0 > 60000:
+			_mal("la región no se monta en 60 s (escena %s)" % (current_scene.scene_file_path if current_scene != null else "(ninguna)"))
+			_fin()
+			await create_timer(3600.0).timeout         # no llega: quit() cierra al acabar este fotograma
+			return
+		await _frames(1)
 	v = current_scene
 
 

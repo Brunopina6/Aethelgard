@@ -60,6 +60,17 @@ func _hasta(cond: Callable, segundos := 30.0) -> bool:
 	return false
 
 
+# (19/11, PC-10) por RELOJ, solo para montar la región: con --fixed-fps los fotogramas vuelan y una carga va en tiempo
+# real. El resto espera en tiempo de JUEGO a propósito.
+func _hasta_reloj(cond: Callable, segundos := 60.0) -> bool:
+	var t0 := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - t0 < int(segundos * 1000.0):
+		if cond.call():
+			return true
+		await process_frame
+	return cond.call()
+
+
 func _limpiar() -> void:
 	for k in P.CLAVES:
 		if Engine.has_meta(k):
@@ -189,9 +200,9 @@ func _entrar(hitos: Array, grupo: Array) -> Object:
 	Engine.set_meta("grupo_activo", grupo)
 	Engine.set_meta("pos_3d_ok", false)
 	change_scene_to_file(REGION)
-	if not await _hasta(func(): return current_scene != null and current_scene.scene_file_path == REGION \
+	if not await _hasta_reloj(func(): return current_scene != null and current_scene.scene_file_path == REGION \
 			and current_scene.get("kael") != null and not R.cambiando, 120.0):
-		_fallo("no se abre Pastos Verdes 3D")
+		_fallo("no se abre Pastos Verdes 3D en 120 s (R.cambiando=%s)" % R.cambiando)
 		return null
 	var r = current_scene
 	if not await _hasta(func(): return r.rincones != null and r.rincones.puntos.size() == 3 and r.rincones.bandadas.size() == 3, 10.0):

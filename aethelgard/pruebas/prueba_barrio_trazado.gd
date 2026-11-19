@@ -284,13 +284,14 @@ func _region() -> void:
 	Engine.set_meta("calidad_proto", "bajo")
 	change_scene_to_file(ESCENA)
 	v = null
-	for i in 300:
+	var t0 := Time.get_ticks_msec()                       # (19/11, PC-10) por RELOJ; antes, 300 fotogramas
+	while Time.get_ticks_msec() - t0 < 60000:
 		await process_frame
 		if current_scene != null and current_scene.scene_file_path == ESCENA and current_scene.get("kael") != null:
 			v = current_scene
 			break
 	await _frames(10)
-	_ok(v != null, "6: la región carga en el banco")
+	_ok(v != null, "6: la región carga en el banco (en 60 s)")
 	if v == null:
 		return
 	var Barrio = load("res://ciudades/oakhaven_barrio.gd")

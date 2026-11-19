@@ -222,14 +222,24 @@ func _utensilios() -> void:
 
 # ================================================================= 3. en el banco: entrar y salir
 
+# (19/11, PC-10) por RELOJ (antes, 400 fotogramas, y al agotarse se seguía con v nulo): al agotarse, FALLO, «FALLOS: n»
+# y salida 1; esta corrutina se queda esperando un temporizador que no llega, para que quien llama no siga.
 func _cargar() -> void:
 	v = null
-	for i in 400:
+	var t0 := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - t0 < 60000:
 		await process_frame
 		if current_scene != null and current_scene.scene_file_path == ESCENA and current_scene.get("kael") != null \
 				and current_scene.get("interiores") != null:
 			v = current_scene
 			break
+	if v == null:
+		print("FALLO: el barrio no se monta en 60 s (escena %s)" % (current_scene.scene_file_path if current_scene != null else "(ninguna)"))
+		fallos += 1
+		print("FALLOS: %d" % fallos)
+		quit(1)
+		await create_timer(3600.0).timeout             # no llega: quit() cierra al acabar este fotograma
+		return
 	await _frames(8)
 
 

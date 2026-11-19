@@ -116,8 +116,10 @@ func _cerrar_dialogos() -> void:
 
 
 func _probar() -> void:
-	if not await _hasta(_region_lista, 90.0):
-		_fallo("no se llega a la región")
+	# (19/11, PC-10) la entrada también por RELOJ: al agotarse, FALLO y salida 1 (antes, 2700 fotogramas)
+	if not await _hasta_reloj(_region_lista, 90.0):
+		_fallo("no se llega a la región en 90 s (R.cambiando=%s, escena=%s)" % [R.cambiando,
+			current_scene.scene_file_path if current_scene != null else "(ninguna)"])
 		quit(1)
 		return
 	await _esperar(20)
