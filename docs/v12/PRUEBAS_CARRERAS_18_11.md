@@ -244,3 +244,66 @@ Sigue pendiente (PC-10 no queda cerrado):
 - Herramientas con ventana que siguen esperando por fotogramas, por ejemplo `fotos_erebo_hibrida.gd` (l. 79 y 95, 3000 y 4000 fotogramas),
   `grabar_erebo_transicion.gd` (l. 38) y `grabar_erebo_hibrida.gd` (l. 45), hasta 3000 fotogramas, y `medir_erebo_teatro.gd` (l. 19). No se han barrido.
 - El barrido completo con `REBELUM_RETRASO_CARGA_MS` (solo en una copia local) sigue sin hacerse.
+
+## ESPERAS_19_11 (PC-10, el resto; commit `709e03a`)
+
+Revisados uno a uno los 67 archivos de `pruebas/` que nombran «cambiando» (los 46 de `BOSQUE_RECARGA_18_11.md` y los
+ya arreglados). Criterio de arriba: contar fotogramas solo es una carrera si se espera una carga **en hilo**
+(`Recursos.cambiar_escena`). En las 39 automáticas de la lista, todas esas esperas ya iban por reloj (arreglos del
+18/11) o por un tope de reloj en cada paso (`ESPERA_MAX_MS`). Lo que quedaba eran esperas por fotogramas tras
+`change_scene_to_file` (síncrono: correctas, pero sin FALLO claro si se agotaban, o siguiendo en silencio). Se han
+pasado a reloj, sin cambiar lo que miden ni el juego:
+
+- Batería (auto): `prueba_bosque_pastos`, `prueba_comentarios_3d`, `prueba_orden_pv03`, `prueba_mc_rincon`,
+  `prueba_rincones_pastos` (montar la región, `_hasta_reloj`; el resto sigue en tiempo de juego), `prueba_sunken3d`
+  (`_montar`, 60 s; antes 300 fotogramas y seguía en silencio), `prueba_barrio_interiores` (`_cargar`, 60 s, y termina),
+  `prueba_barrio_trazado`, `prueba_foco` (el mapa), `prueba_calidad_auto` (entrada y recarga: la recarga agotada seguía
+  con la escena vieja y podía pasar en falso), `prueba_ciclopea3d` (los 25 fotogramas de siempre y hasta 60 s más) y
+  `prueba_veta_garganta` (60 s por paso en vez de 3600 fotogramas en total).
+- Érebo (a mano, sin tocar su contenido): `fotos_erebo_hibrida` (l. 79 y 95), `grabar_erebo_transicion` (l. 38 y la
+  espera del vídeo), `grabar_erebo_hibrida` (l. 45 y la de la invocación) y `medir_erebo_teatro` (l. 19). Topes de 120 s
+  (turno de Lya) y 180-300 s (invocación o vídeo; holgados por el Movie Maker). Al agotarse: FALLO, «FALLOS: 1», la opción
+  en «no» y salida 1. `medir_erebo_teatro` no cargaba desde `661c1c5` («Too few arguments for "_combate()"»): ahora
+  `_combate(9)`, el de antes; mide **19,69 s**, lo mismo que `EREBO_CINEMATICA_V12.md`.
+- Con ventana o a mano: `fotos_mc_oasis`, `fotos_mc_rincon`, `fotos_rincones_pastos` (con ventana, «120 s» en
+  fotogramas eran 25 s a 144 Hz), `fotos_bosque`, `fotos_claro_guardian`; y `medir_isla`, `medir_muestra_calle`,
+  `medir_barrio` y `grabar_mapamundi3d`, que ya esperaban 60 s por reloj pero al agotarse seguían en silencio.
+
+Comprobaciones (registros en `D:\REBELUM_diagnostico\pruebas\<carpeta>`):
+
+- Sin retraso, las 12 automáticas tocadas y `prueba_integridad`: 13 superadas, 0 fallidas (`2026-11-19_104755`).
+- Herramientas de Érebo con el ejecutor (`D:\REBELUM_diagnostico\esperas_19_11\lista_erebo.txt`): `medir_erebo_teatro`,
+  `grabar_erebo_transicion` y `grabar_erebo_hibrida` (sin Movie Maker) superadas; `fotos_erebo_hibrida` con ventana, 16
+  capturas, MANUAL (`2026-11-19_104008`). Las demás herramientas tocadas, solo `--check-only` (sin errores).
+- Contraprueba local (copias `zz_cp_*` con el tope a 0, sin commit y ya borradas; `lista_contraprueba.txt`): las 11
+  acaban FALLIDAS por su propio «FALLO: …» y código 1, sin errores de script (`2026-11-19_104151`). Excepción:
+  `grabar_erebo_hibrida` cortada a MITAD de la híbrida sale con 0xC0000005 (con ventana y sin ella, también saliendo sin
+  liberar nada); el FALLO ya está escrito y el código es distinto de 0. `fotos_erebo_hibrida` cortada igual sale con 1.
+  No se ha investigado ese cierre (es del juego, opción de Auditoría apagada).
+
+Barrido con `REBELUM_RETRASO_CARGA_MS` (el parche de arriba, solo en la copia de trabajo, sin commit y quitado;
+`recursos.gd` limpio; diff en `D:\REBELUM_diagnostico\esperas_19_11\retraso_contraprueba_recursos.diff`):
+
+| Pasada | Pruebas | Retraso | Resultado | Cargas retrasadas |
+|---|---|---|---|---|
+| `2026-11-19_105002` | las 12 automáticas tocadas | 1500 ms | 12 superadas, 0 fallidas | 6, en 5 pruebas |
+| `2026-11-19_105138` | las 12 automáticas tocadas | 4000 ms | 12 superadas, 0 fallidas | 6, en 5 pruebas |
+| `2026-11-19_105335` | otras 14 automáticas que nombran «cambiando» | 4000 ms | 14 superadas, 0 fallidas | 47, en 10 pruebas |
+| `2026-11-19_105909` | las 13 restantes de esas 39 | 4000 ms | 13 superadas, 0 fallidas | 24, en 6 pruebas |
+
+Las 7 tocadas sin cargas retrasadas solo usan `change_scene_to_file` (síncrono): el retraso no las alcanza. En todas
+las pasadas, partida real, carpeta real de datos y proyecto sin cambios y ningún otro Godot abierto.
+
+Sigue pendiente (PC-10 no queda cerrado del todo):
+
+- Herramientas de medida con tope GLOBAL en fotogramas que, al agotarse, escriben la medida a medias sin FALLO:
+  `medir_garganta3d.gd:191` y `medir_ruta.gd:164` (20000; el combate de `_encuentro`, l. 169 y 140, va en hilo),
+  `medir_primeras_veces.gd:258` (20000; `R.cambiar_escena`, l. 114) y `medir_escenas.gd:232` (30000).
+  `sonda_oclusion_repetida.gd:120` (3000, carga síncrona) sale con 1 pero escribe «TIEMPO AGOTADO», no «FALLO».
+- `medir_ciudad.gd:616` (`_esperar_banco`, 30 s de reloj) y `diag_ciudad_romper.gd:723` (15 s) siguen en silencio al
+  agotarse; `medir_memoria_escenas` y `recorrido_ciudad` esperan por reloj (`_pulsar`), sin revisar qué hacen al agotarse.
+- Fuera de los 46: `prueba_erebo_video.gd:296` y `:370` y `prueba_erebo_hibrida.gd:168` (3000 fotogramas hasta el turno
+  de Lya, tiempo de juego; quien llama comprueba el turno) y `prueba_salir_en_cambio.gd:34` (900, a propósito: el primer
+  fotograma con la carga en curso).
+- El barrido no cubre la batería entera (211 automáticas), solo las 39 que nombran «cambiando», ni las pruebas con
+  ventana, ni un retraso mayor que el tope de las esperas.
