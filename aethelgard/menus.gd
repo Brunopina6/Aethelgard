@@ -25,8 +25,11 @@ var pestanas: Array = PESTANAS
 var heroe := ""
 var Grupo
 var Inv
-var cuerpo: VBoxContainer
+var cuerpo: VBoxContainer                        # el de la pestaña que se ve (dentro de «caja»)
 var marco: ScrollContainer
+var caja: VBoxContainer                          # (PESTANAS_19_11) el único hijo de la lista: el cuerpo y, oculto, Ajustes
+var _pintada := ""                               # la pestaña que tiene «cuerpo»
+var _ajustes_guardado: VBoxContainer = null      # el cuerpo de Ajustes, oculto mientras se ve otra pestaña
 var botones_pestana: Array = []
 var vista_formacion := false                     # V12: en la pestaña Grupo, la Formación en vez de la ficha
 var aviso_formacion := ""                        # por qué no se pudo el último cambio de la Formación
@@ -73,11 +76,13 @@ func _ready() -> void:
 	marco.custom_minimum_size = Vector2(1080, 560)    # con la ranura Accesorio (T-092), su efecto se ve sin desplazar
 	marco.follow_focus = true                      # con teclado o mando, la lista sigue al botón con el foco
 	todo.add_child(marco)
-	cuerpo = VBoxContainer.new()
-	cuerpo.add_theme_constant_override("separation", 8)
-	cuerpo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	marco.add_child(cuerpo)
-	_pintar()
+	caja = VBoxContainer.new()                     # (PESTANAS_19_11) el cuerpo de la pestaña y, oculto, el de Ajustes
+	caja.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	marco.add_child(caja)
+	cuerpo = _cuerpo_nuevo()
+	_pintar()                                      # (PESTANAS_19_11) fuera del árbol, y a la lista de una vez
+	caja.add_child(cuerpo)
+	_pintada = pestana
 	Entrada.enfocar(botones_pestana[pestanas.find(pestana)])
 	Sonido.efecto("ui_abrir")                      # sonido.gd (T-083)
 
@@ -124,16 +129,58 @@ func _unhandled_input(ev: InputEvent) -> void:
 
 # Rehace el cuerpo. Los botones viejos salen del árbol al momento (y se borran después) y el foco, si estaba en esta
 # ventana, vuelve al botón de la misma clave.
+# PESTANAS_19_11 (medido en el PC, docs en el commit): casi todo el coste de repintar no era meter los nodos uno a uno,
+# sino dar forma a los textos con «●», «○», «◀», «▶» o «✔», que la fuente del juego (Saira) no tiene: Godot busca cada
+# vez esa letra en las fuentes del sistema al entrar el botón en el árbol (≈0,6-0,9 ms por botón en el PC; Ajustes
+# tiene 98). Ocultar y volver a enseñar un nodo no vuelve a dar forma al texto; sacarlo del árbol y volver a meterlo,
+# sí. Así que:
+#   - el cuerpo se rehace fuera del árbol y entra en la lista de una vez (algo más barato que nodo a nodo);
+#   - el de Ajustes no se tira al cambiar de pestaña: se queda oculto y, al volver, se enseña y se pone al día
+#     (_ajustes_al_dia: lo mismo que un repintado entero, solo lee ajustes; prueba_pestanas lo compara).
+# Las demás pestañas se rehacen siempre (lo que enseñan cambia con lo que se hace en el menú).
 func _pintar_de_nuevo() -> void:
 	var clave := Entrada.clave_enfocada(self)
-	for c in cuerpo.get_children():
-		cuerpo.remove_child(c)
-		c.queue_free()
-	_pintar()
+	_poner_cuerpo()
 	var defecto := Entrada.primero(cuerpo)          # si ese botón ya no sirve (p. ej. sin puntos), el más cercano
 	if defecto == null:
 		defecto = botones_pestana[pestanas.find(pestana)]
 	Entrada.restaurar(self, clave, defecto)
+
+
+func _cuerpo_nuevo() -> VBoxContainer:
+	var c := VBoxContainer.new()
+	c.add_theme_constant_override("separation", 8)
+	c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	return c
+
+
+# Deja en «cuerpo» la pestaña «pestana», recién pintada (o, si es Ajustes y ya estaba pintada, al día). Los botones
+# viejos salen del árbol al momento (y se borran después), como antes.
+func _poner_cuerpo() -> void:
+	if _pintada == pestana:                        # la misma pestaña: se rehace fuera de la lista
+		caja.remove_child(cuerpo)
+		for c in cuerpo.get_children():
+			cuerpo.remove_child(c)
+			c.queue_free()
+		_pintar()
+		caja.add_child(cuerpo)
+		return
+	if _pintada == "Ajustes":                      # Ajustes se queda, oculto
+		cuerpo.visible = false
+		_ajustes_guardado = cuerpo
+	else:
+		caja.remove_child(cuerpo)
+		cuerpo.queue_free()
+	_pintada = pestana
+	if pestana == "Ajustes" and _ajustes_guardado != null:
+		cuerpo = _ajustes_guardado
+		_ajustes_guardado = null
+		cuerpo.visible = true
+		_ajustes_al_dia()
+		return
+	cuerpo = _cuerpo_nuevo()
+	_pintar()
+	caja.add_child(cuerpo)
 
 
 func _pintar() -> void:
@@ -150,7 +197,19 @@ func _pintar() -> void:
 
 # ---------------------------------------------------------------- Grupo
 
+# PESTANAS_19_11: en la ficha, «+», «Repartir» y ◀ ▶ ya no repintan la pestaña entera (≈25-35 ms por pulsación en
+# el PC, medido; en el Redmi, más): cambian solo lo suyo (_ficha_al_dia): la línea de PV, PM, Ataque y Defensa, los
+# puntos, los valores de los atributos y sus «+» y, con ◀ ▶, la fila de su ranura (nombre, icono y resumen). Lo demás
+# de la ficha no depende de eso. Los botones son los mismos, así que el foco no se mueve, salvo que el pulsado ya no
+# se pueda usar (el último punto apaga los «+»; «Repartir» se va): entonces va donde iba al repintar. Cambiar de
+# héroe, la Formación y el Firmamento siguen repintando la pestaña. prueba_pestanas lo compara con un repintado.
+var _ficha := {}                                 # "vida", "puntos" (Label), "valores", "mas" (por atributo), "repartir"
+var _ranuras := {}                               # ranura → {"fila", "nombre", "icono", "resumen"}
+
+
 func _pintar_grupo() -> void:
+	_ficha = {}
+	_ranuras = {}
 	if vista_formacion and Grupo.hay_formacion():  # V12: la Formación (activos y reserva)
 		_pintar_formacion()
 		return
@@ -213,13 +272,15 @@ func _pintar_grupo() -> void:
 	izq.add_child(_texto(cabecera, 26, COLOR_TITULO))
 	if Grupo.HEROES[heroe].get("provisional", false):   # V12: Naira es una propuesta (NAIRA.md), no canon
 		izq.add_child(_texto("Personaje provisional, en pruebas.", 16, COLOR_SUAVE))
+	_ficha = {"repartir": null, "valores": {}, "mas": {}}
 	if Grupo.CRECIMIENTO.has(heroe) and int(h["puntos"]) > 0:   # V12: su reparto recomendado (los puntos, a mano igual)
 		var rep := _boton("Repartir como recomienda", 18, Vector2(300, 36), "repartir:" + heroe)
 		rep.pressed.connect(func():
 			if Grupo.repartir_recomendado(heroe) > 0:
 				Sonido.efecto("ui_mejora")
-				_pintar_de_nuevo())
+				_ficha_al_dia())
 		izq.add_child(rep)
+		_ficha["repartir"] = rep
 	izq.add_child(_texto("Nivel %d     EXP %d / %d" % [h["nivel"], h["exp"], Grupo.exp_para(h["nivel"])], 20, COLOR_TEXTO))
 	var barra := ProgressBar.new()
 	barra.custom_minimum_size = Vector2(420, 3)
@@ -227,18 +288,17 @@ func _pintar_grupo() -> void:
 	barra.max_value = Grupo.exp_para(h["nivel"])
 	barra.value = h["exp"]
 	izq.add_child(barra)
-	izq.add_child(_texto("PV %d / %d     PM %d / %d     Ataque %d     Defensa %d" % [e["pv"], e["pv_max"], e["pm"], e["pm_max"],
-		e["ataque"], e["defensa"]], 18, COLOR_SUAVE))
-	izq.add_child(_texto("Puntos para mejorar: %d" % h["puntos"], 22, COLOR_BIEN if h["puntos"] > 0 else COLOR_SUAVE))
+	_ficha["vida"] = _texto(_linea_vida(e), 18, COLOR_SUAVE)
+	izq.add_child(_ficha["vida"])
+	_ficha["puntos"] = _texto("Puntos para mejorar: %d" % h["puntos"], 22, COLOR_BIEN if h["puntos"] > 0 else COLOR_SUAVE)
+	izq.add_child(_ficha["puntos"])
 	for k in Grupo.ATRIBUTOS:
 		var f := HBoxContainer.new()
 		f.add_theme_constant_override("separation", 10)
-		var base: int = h["atributos"][k]
-		var total: int = e["atributos"][k]
 		var nombre := _texto(Grupo.NOMBRES[k], 20, COLOR_TEXTO)
 		nombre.custom_minimum_size = Vector2(120, 0)
 		f.add_child(nombre)
-		var valor := _texto("%d" % total + ("  (%+d)" % (total - base) if total != base else ""), 20, COLOR_TEXTO)
+		var valor := _texto(_linea_valor(h, e, k), 20, COLOR_TEXTO)
 		valor.custom_minimum_size = Vector2(90, 0)
 		f.add_child(valor)
 		var mas := _boton("+", 20, Vector2(40, 34), "mas:" + k)
@@ -247,10 +307,12 @@ func _pintar_grupo() -> void:
 		mas.pressed.connect(func():
 			if Grupo.subir_atributo(heroe, atr):
 				Sonido.efecto("ui_mejora")
-				_pintar_de_nuevo())
+				_ficha_al_dia())
 		f.add_child(mas)
 		f.add_child(_texto(Grupo.AYUDA[k], 16, COLOR_SUAVE))
 		izq.add_child(f)
+		_ficha["valores"][k] = valor
+		_ficha["mas"][k] = mas
 
 	# derecha: equipo
 	var der := VBoxContainer.new()
@@ -264,7 +326,6 @@ func _pintar_grupo() -> void:
 	pista.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	titulo.add_child(pista)
 	der.add_child(titulo)
-	var lleva: Dictionary = Inv.equipo_de(heroe)
 	for r in Inv.RANURAS:
 		var f := HBoxContainer.new()
 		f.add_theme_constant_override("separation", 8)
@@ -275,21 +336,89 @@ func _pintar_grupo() -> void:
 		var atras := _boton("◀", 18, Vector2(36, 34), "ranura:%s:-1" % r)
 		atras.pressed.connect(func(): _cambiar(ranura, -1))
 		f.add_child(atras)
-		var id: String = lleva.get(r, "")
-		var nombre := _texto(Inv.objeto(id).get("nombre", "—") if id != "" else "—", 20, COLOR_TEXTO)   # un id desconocido: «—»
-		nombre.custom_minimum_size = Vector2(220, 0)
-		var icono: Control = load("res://icono_equipo.gd").para(id) if id != "" else null   # V12, accesorios: rareza
-		if icono != null:                             # (icono y color; sin rareza, como siempre)
-			nombre.add_theme_color_override("font_color", load("res://equipo_extra.gd").rareza(id)["color"])
-			nombre.custom_minimum_size = Vector2(220 - icono.custom_minimum_size.x - 8, 0)
-			f.add_child(icono)
+		var nombre := _texto("", 20, COLOR_TEXTO)    # (su texto, color, ancho e icono: _poner_ranura)
 		f.add_child(nombre)
 		var adelante := _boton("▶", 18, Vector2(36, 34), "ranura:%s:1" % r)
 		adelante.pressed.connect(func(): _cambiar(ranura, 1))
 		f.add_child(adelante)
 		der.add_child(f)
-		if id != "" and Inv.resumen(id) != "":
-			der.add_child(_texto("      " + Inv.resumen(id), 16, COLOR_BIEN))
+		_ranuras[r] = {"fila": f, "nombre": nombre, "icono": null, "resumen": null}
+		_poner_ranura(r)
+
+
+func _linea_vida(e: Dictionary) -> String:
+	return "PV %d / %d     PM %d / %d     Ataque %d     Defensa %d" % [e["pv"], e["pv_max"], e["pm"], e["pm_max"],
+		e["ataque"], e["defensa"]]
+
+
+func _linea_valor(h: Dictionary, e: Dictionary, k: String) -> String:
+	var base: int = h["atributos"][k]
+	var total: int = e["atributos"][k]
+	return "%d" % total + ("  (%+d)" % (total - base) if total != base else "")
+
+
+# Lo que lleva el héroe en esa ranura: el nombre (un id desconocido: «—») y, si tiene rareza (V12, accesorios), su
+# icono delante y su color; debajo de la fila, su resumen (si lo tiene).
+func _poner_ranura(r: String) -> void:
+	var d: Dictionary = _ranuras[r]
+	var id: String = Inv.equipo_de(heroe).get(r, "")
+	var nombre: Label = d["nombre"]
+	nombre.text = Inv.objeto(id).get("nombre", "—") if id != "" else "—"
+	nombre.add_theme_color_override("font_color", COLOR_TEXTO)
+	nombre.custom_minimum_size = Vector2(220, 0)
+	if d["icono"] != null:
+		d["fila"].remove_child(d["icono"])
+		d["icono"].queue_free()
+		d["icono"] = null
+	var icono: Control = load("res://icono_equipo.gd").para(id) if id != "" else null
+	if icono != null:                             # (icono y color; sin rareza, como siempre)
+		nombre.add_theme_color_override("font_color", load("res://equipo_extra.gd").rareza(id)["color"])
+		nombre.custom_minimum_size = Vector2(220 - icono.custom_minimum_size.x - 8, 0)
+		d["fila"].add_child(icono)
+		d["fila"].move_child(icono, nombre.get_index())
+		d["icono"] = icono
+	var resumen: String = Inv.resumen(id) if id != "" else ""
+	if resumen == "":
+		if d["resumen"] != null:
+			d["resumen"].get_parent().remove_child(d["resumen"])
+			d["resumen"].queue_free()
+			d["resumen"] = null
+	elif d["resumen"] == null:
+		d["resumen"] = _texto("      " + resumen, 16, COLOR_BIEN)
+		d["fila"].add_sibling(d["resumen"])
+	else:
+		d["resumen"].text = "      " + resumen
+
+
+# Tras «+», «Repartir» o ◀ ▶ (en «ranura»): solo lo que cambian (ver arriba). Sin la ficha a la vista, la pestaña
+# entera, como antes.
+func _ficha_al_dia(ranura := "") -> void:
+	if _ficha.is_empty() or not is_instance_valid(_ficha["puntos"]) or not cuerpo.is_ancestor_of(_ficha["puntos"]):
+		_pintar_de_nuevo()
+		return
+	var clave := Entrada.clave_enfocada(self)
+	if ranura != "":
+		_poner_ranura(ranura)
+	var h: Dictionary = Grupo.datos()[heroe]
+	var e: Dictionary = Grupo.estadisticas(heroe)
+	_ficha["vida"].text = _linea_vida(e)
+	_ficha["puntos"].text = "Puntos para mejorar: %d" % h["puntos"]
+	_ficha["puntos"].add_theme_color_override("font_color", COLOR_BIEN if h["puntos"] > 0 else COLOR_SUAVE)
+	for k in Grupo.ATRIBUTOS:
+		_ficha["valores"][k].text = _linea_valor(h, e, k)
+		_ficha["mas"][k].disabled = h["puntos"] <= 0
+	var rep = _ficha["repartir"]
+	if rep != null and not (Grupo.CRECIMIENTO.has(heroe) and int(h["puntos"]) > 0):
+		rep.get_parent().remove_child(rep)
+		rep.queue_free()
+		_ficha["repartir"] = null
+	# el foco, si estaba en la ventana y el pulsado ya no se puede usar: adonde iba con el repintado entero
+	if clave != "" and Entrada.buscar(self, clave) == null:
+		var defecto := Entrada.primero(cuerpo)
+		if defecto == null:
+			defecto = botones_pestana[pestanas.find(pestana)]
+		Entrada.restaurar(self, clave, defecto)
+	_sin_resalte()
 
 
 # V12: abre el Firmamento de los Ecos del héroe de la ficha, encima del menú; al cerrarlo, la ficha se repinta (las
@@ -416,7 +545,7 @@ func _cambiar(ranura: String, paso: int) -> void:
 	var nuevo: String = lista[posmod(i + paso, lista.size())]
 	Inv.equipar(heroe, ranura, nuevo)
 	Sonido.efecto("ui_equipar_arma" if ranura == "arma" else "ui_equipar")
-	_pintar_de_nuevo()
+	_ficha_al_dia(ranura)
 
 
 # ---------------------------------------------------------------- Objetos
@@ -589,14 +718,30 @@ func _pintar_habilidades() -> void:
 # su selector (_remarcar; en «Calidad gráfica», el bloque entero, porque el perfil cambia los FPS y la nota). Los
 # botones son los mismos, así que el foco (teclado, mando o dedo) no se mueve y la lista no salta arriba. Nada de lo
 # demás de la pestaña depende de lo que se toca (cada selector lee lo suyo); prueba_ajustes_parcial lo comprueba
-# botón a botón contra un repintado entero. _pintar_de_nuevo sigue rehaciendo todo (al cambiar de pestaña, etc.).
+# botón a botón contra un repintado entero. _pintar_de_nuevo sigue rehaciendo la pestaña (PESTANAS_19_11: al volver
+# a Ajustes desde otra, su cuerpo de antes se enseña y se pone al día con _ajustes_al_dia).
 var _filas_volumen := {}                         # bus → [cifra (Label), barra (Control)] de su fila
+var _selectores: Array = []                      # (PESTANAS_19_11) los de la pestaña, para _ajustes_al_dia
+var _notas: Array = []                           # (PESTANAS_19_11) lo demás que se pone al día (la nota de Calidad)
 
 
 # Un selector de Ajustes: «● » delante de la opción en uso y «○ » delante de las demás. «leer» devuelve la opción en
 # uso (se lee una vez al pintar y otra al pulsar). Sus botones se crean con _opcion y, al pulsarlos, _remarcar(sel).
 func _selector(leer: Callable) -> Dictionary:
-	return {"leer": leer, "en_uso": leer.call(), "botones": []}
+	var sel := {"leer": leer, "en_uso": leer.call(), "botones": []}
+	_selectores.append(sel)
+	return sel
+
+
+# (PESTANAS_19_11) Al volver a Ajustes (su cuerpo estaba oculto): cada selector, cada fila de volumen y la nota de
+# Calidad, como los pintaría un repintado entero. Solo cambia lo que no coincide (dar forma a «●»/«○» es lo caro).
+func _ajustes_al_dia() -> void:
+	for sel in _selectores:
+		_remarcar(sel, false)
+	for bus in _filas_volumen:
+		_poner_volumen(bus, false)
+	for f in _notas:
+		f.call()
 
 
 func _opcion(sel: Dictionary, valor, texto: String, tam: int, minimo: Vector2, clave: String) -> Button:
@@ -606,13 +751,16 @@ func _opcion(sel: Dictionary, valor, texto: String, tam: int, minimo: Vector2, c
 
 
 # Vuelve a leer la opción en uso y cambia solo el texto de sus botones (lo mismo que saldría al repintar).
-func _remarcar(sel: Dictionary) -> void:
+# «resalte»: false al volver a la pestaña (_ajustes_al_dia), donde no se ha pulsado nada.
+func _remarcar(sel: Dictionary, resalte := true) -> void:
 	var en_uso = sel["leer"].call()
 	sel["en_uso"] = en_uso
 	for o in sel["botones"]:
-		if is_instance_valid(o[0]):
-			o[0].text = ("● " if o[1] == en_uso else "○ ") + o[2]
-	_sin_resalte()
+		var t: String = ("● " if o[1] == en_uso else "○ ") + o[2]
+		if is_instance_valid(o[0]) and o[0].text != t:
+			o[0].text = t
+	if resalte:
+		_sin_resalte()
 
 
 # Con el dedo o el ratón, el botón que queda bajo el puntero se ve sin resalte (la línea brillante de «hover»), como
@@ -629,6 +777,8 @@ func _sin_resalte() -> void:
 # este aparato, aparte de la partida.
 func _pintar_ajustes() -> void:
 	_filas_volumen = {}
+	_selectores = []
+	_notas = []
 	cuerpo.add_child(_texto("Sonido", 26, COLOR_TITULO))
 	for bus in Sonido.VISIBLES:
 		var b: String = bus
@@ -1048,6 +1198,7 @@ func _pintar_calidad() -> void:
 		_remarcar(sel_cal)
 		_remarcar(sel_fps)
 		nota.text = _nota_calidad(auto, auto.estado())
+	_notas.append(func(): nota.text = _nota_calidad(auto, auto.estado()))
 	cuerpo.add_child(_texto("Calidad gráfica", 26, COLOR_TITULO))
 	var fc := HBoxContainer.new()
 	fc.add_theme_constant_override("separation", 8)
@@ -1126,19 +1277,28 @@ func _cambiar_volumen(bus: String, paso: int) -> void:
 # pestaña de Ajustes), la pestaña entera, como antes.
 func _volumen_en_su_fila(bus: String) -> void:
 	var fila: Array = _filas_volumen.get(bus, [])
-	if fila.is_empty() or not is_instance_valid(fila[0]) or not fila[0].is_inside_tree():
+	if fila.is_empty() or not is_instance_valid(fila[0]) or not fila[0].is_inside_tree() or not cuerpo.is_ancestor_of(fila[0]):
 		_pintar_de_nuevo()
 		return
+	_poner_volumen(bus, true)
+	_sin_resalte()
+
+
+# La cifra y la barra de la fila de ese bus. «siempre»: false al volver a Ajustes (solo si no coincide).
+func _poner_volumen(bus: String, siempre: bool) -> void:
+	var fila: Array = _filas_volumen[bus]
 	var v: int = Sonido.volumen(bus)
 	var cifra: Label = fila[0]
-	cifra.text = ("%d %%" % v) if v > 0 else "Sin sonido"
+	var t := ("%d %%" % v) if v > 0 else "Sin sonido"
+	if not siempre and cifra.text == t:            # (el texto dice el volumen: la barra también coincide)
+		return
+	cifra.text = t
 	cifra.add_theme_color_override("font_color", COLOR_TEXTO if v > 0 else COLOR_SUAVE)
 	var barra := _barra(v)                          # la barra, nueva en el mismo sitio (dos paneles: no cuesta nada)
 	fila[1].add_sibling(barra)
 	fila[1].get_parent().remove_child(fila[1])
 	fila[1].queue_free()
 	fila[1] = barra
-	_sin_resalte()
 
 
 # Barra dorada fina con el volumen. Solo se mira: los toques van a ◀ ▶.
