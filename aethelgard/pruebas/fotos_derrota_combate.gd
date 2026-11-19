@@ -4,10 +4,20 @@ extends SceneTree
 #     [versiones=originales,v2,v3]
 # Copia de fotos_capa_garon_combate.gd con el héroe a elegir y solo reposo y derrota: se recorta su zona en instantes
 # fijos (cae, tumbado, tumbado más tarde), los mismos antes y después de un arreglo (docs/v12/DERROTA_SUELO_18_11.md).
+# 19/11 (C-5): heroe=Naira|Nix pone el caso «Derrotas de Naira y Nix» del banco (Kael, Naira y Nix con sus interruptores
+# solo en esta sesión, su nivel, sus enemigos y la llanura); «versiones=originales,fbx»: fbx es la Nix del FBX
+# (nix_fbx.gd). En «ko» guarda también la pantalla entera (<heroe>_<versión>_ko_pantalla.png).
 
 const GUION := [
 	["reposo", 30, "reposo"],
 	["morir", 15, "cae"], ["", 45, "ko"], ["", 60, "ko_tarde"],
+]
+# (19/11) Naira y Nix: más instantes en la caída (Naira mete la punta de los pies 0,14 m a los 0,8 s: diag_derrota_suelo)
+# y los mismos «ko» (2 s) y «ko_tarde» (4 s) que los demás.
+const GUION_RECLUTAS := [
+	["reposo", 30, "reposo"],
+	["morir", 15, "cae"], ["", 6, "cae_0.7"], ["", 3, "cae_0.8"], ["", 3, "cae_0.9"], ["", 33, "ko"],
+	["", 60, "ko_tarde"],
 ]
 const RECORTE := Vector2i(360, 440)
 
@@ -46,9 +56,17 @@ func _siguiente() -> void:
 		quit(0)
 		return
 	var v: String = versiones[vi]
-	Engine.set_meta("heroes_version", v)
-	Engine.set_meta("heroes_v2", v != "originales")
-	Engine.set_meta("heroes_v3", v == "v3")
+	var vh := "originales" if v == "fbx" else v
+	Engine.set_meta("heroes_version", vh)
+	Engine.set_meta("heroes_v2", vh != "originales")
+	Engine.set_meta("heroes_v3", vh == "v3")
+	if heroe in ["Naira", "Nix"]:                    # como el botón del caso (banco_pruebas.gd, _combate): grupo,
+		var BP = load("res://banco_pruebas.gd")      # nivel, enemigos (sus slimes) y zona
+		var caso: Dictionary = BP.COMBATES["derrotas_reclutas"]
+		Engine.set_meta("nix_fbx", v == "fbx")
+		BP.poner_grupo(caso["activos"], BP.NIVEL_COMBATE)
+		Engine.set_meta("zona", "llanura")
+		Engine.set_meta("grupo_combate", int(caso["grupo"]))
 	seed(7)
 	c = load("res://combate.tscn").instantiate()
 	root.add_child(c)
@@ -79,10 +97,11 @@ func _process(_d: float) -> bool:
 			print("SIN ", heroe, " 3D en ", versiones[vi])
 			_siguiente()
 			return false
-	if paso >= GUION.size():
+	var guion: Array = GUION_RECLUTAS if heroe in ["Naira", "Nix"] else GUION
+	if paso >= guion.size():
 		_siguiente()
 		return false
-	var s: Array = GUION[paso]
+	var s: Array = guion[paso]
 	if hecho != paso:
 		hecho = paso
 		match s[0]:
@@ -105,6 +124,8 @@ func _process(_d: float) -> bool:
 		r.position = r.position.clamp(Vector2i.ZERO, img.get_size() - RECORTE)
 		var rec := img.get_region(r)
 		rec.save_png(salida.path_join("%s_%s_%s.png" % [heroe.to_lower(), versiones[vi], s[2]]))
+		if s[2] == "ko":
+			img.save_png(salida.path_join("%s_%s_ko_pantalla.png" % [heroe.to_lower(), versiones[vi]]))
 		fotos.append(rec)
 	paso += 1
 	return false
