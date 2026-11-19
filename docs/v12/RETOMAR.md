@@ -1163,3 +1163,17 @@ Validado: `dc878e9` (`validado/v12/20261115-170245`, 188 · 0). APK v834 instala
   (PC-5); endurecer el límite de `prueba_audio` (PC-13).
 - Siguientes sin el usuario: C-5 (medir las derrotas de Naira y Nix), C-6 (emisión de los adornos de Nix), el resto
   de PC-10, el cambio de pestaña de Ajustes y la pestaña Grupo fuera del árbol, C-4 (cabeza de Kael, baja).
+
+## RELEVO 19/11, 11:50: VALIDADA la tanda 3 (211 · 0 · 117 · 0) y en GitHub (LEER PRIMERO)
+- Encima del relevo de las 09:30 (tandas 1 y 2, `bdbf6c2`). Batería 211 · 0 · 117 · 0 (2026-11-19_111045); la etiqueta `validado/v12/` de
+  esta hora apunta al commit de este relevo, subido por avance normal a `claude/rebelum-v12-validado-20261118`.
+- C-5 derrotas de Naira y Nix medidas en el PC sin cambiar el juego (`5fdd1e7`, `99d7b7c`): Naira cae de rodillas,
+  astrolabio −0,097 m y cadera −0,109 m, sin corte visible en la cámara del combate; Nix sin nada bajo el suelo.
+  Era falso que «heredan el desplome» de `maga_3d.gd` (tachado en `DERROTA_SUELO_18_11.md`).
+- C-6/PC-4 emisión de los ornamentos de Nix FBX en 3 intensidades y su limpieza (`bbe3d96`, `0777cad`), APAGADO;
+  con la emisión a 0, 0 píxeles distintos. Decisiones: intensidades, colores, tabla habilidad → intensidad.
+- PC-10 esperas por reloj con FALLO claro en 12 pruebas de la batería y en las herramientas de Érebo (`709e03a`,
+  `7353f4e`); `medir_erebo_teatro` vuelve a cargar. Nuevo PC-19: cerrar a mitad de la híbrida de Érebo da 0xC0000005
+  (opción apagada). Nuevo PC-20: socket `arma_d`, encuadre y texturas de 2048 de Nix FBX.
+- **Siguiente:** nada visto en Android. Guion «Para la próxima APK» de `GUION_REDMI_19_11.md` (incluye las derrotas
+  de Naira y Nix). Sin copiar APK al teléfono ni pedir instalar. Inventario con 139 filas.
