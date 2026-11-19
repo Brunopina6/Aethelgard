@@ -460,10 +460,13 @@ const ENEMIGOS := {
 	"cencerrante": {"nombre": "Cencerrante", "modelo": "cencerrante", "hp": 70, "atk": 10, "vel": 12.0, "exp": 18,
 		"oro": 14, "personalidad": "agresivo"},
 }
+# PV_SLIMES_19_11 (PC-11, Redmi 18/11 garon_menu.png): en [1] y [2] los slimes se solapaban (18-20 px) y la vida de uno
+# caía sobre el cuerpo del otro. Solo cambia dónde se dibujan (antes: [1] (250, 40), (60, 130), (440, 130); [2] el
+# primero en (30, 90)): ahora quedan ≈ 8 px entre cuerpos (pruebas/prueba_vida_enemigos_solape.gd).
 const GRUPOS := [
 	[["grimfang", Vector2(230, 150)], ["grimfang", Vector2(410, 115)]],
-	[["slime", Vector2(250, 40)], ["slime", Vector2(60, 130)], ["slime", Vector2(440, 130)]],
-	[["slime", Vector2(30, 90)], ["grimfang", Vector2(410, 115)], ["slime", Vector2(215, 135)]],
+	[["slime", Vector2(200, 40)], ["slime", Vector2(-40, 130)], ["slime", Vector2(440, 130)]],
+	[["slime", Vector2(-25, 90)], ["grimfang", Vector2(410, 115)], ["slime", Vector2(215, 135)]],
 	[["grimfang", Vector2(230, 150)], ["slime", Vector2(410, 115)]],
 	[["guardian", Vector2(150, 120)], ["grimfang", Vector2(420, 125)]],
 	# combates fijos (Engine.set_meta("grupo_combate", n)); no salen al azar
@@ -1059,6 +1062,7 @@ func _crear_interfaz() -> void:
 	menu.atras.connect(_atras)
 	for e in enemigos:
 		_crear_vida_enemigo(e)
+	_repartir_vidas()                             # PV_SLIMES_19_11: sin pisarse entre vecinos
 
 	# texto de lo que pasa, arriba en el centro (sin ventana)
 	registro = _etiqueta("¡Combate!" if not enemigos.any(func(e): return e.get("elite", false)) else
@@ -1375,11 +1379,75 @@ func _crear_vida_enemigo(e: Dictionary) -> void:
 	e["lbl_estado"] = est
 
 
-# Dónde va la vida de un enemigo en pantalla: encima de su cabeza (centrada en los 3D).
+# Dónde va la vida de un enemigo en pantalla: encima de su cabeza (centrada en los 3D). «vida_dy»: lo que
+# _repartir_vidas la sube para no pisar la de otro enemigo (0 casi siempre).
 func _ancla_vida(e: Dictionary) -> Vector2:
+	var dy := Vector2(0, e.get("vida_dy", 0.0))
 	if e.has("centro_ofs"):
-		return _a_pantalla(Vector2(_centro(e).x, e["pos"].y + _alto_barra(e))) - Vector2(60, 0)
-	return _a_pantalla(e["pos"] + Vector2(48, _alto_barra(e)))
+		return _a_pantalla(Vector2(_centro(e).x, e["pos"].y + _alto_barra(e))) - Vector2(60, 0) + dy
+	return _a_pantalla(e["pos"] + Vector2(48, _alto_barra(e))) + dy
+
+
+# PV_SLIMES_19_11 (PC-11, Redmi 18/11): la vida de un enemigo («PV n/n», su barra, su estado y la señal «⚠») no pisa la
+# de otro. Con dos enemigos a menos de un ancho de barra, el estado del de delante caía sobre la barra del de detrás (o
+# un estado largo, como el del Velador, sobre la vida del vecino). Se colocan de delante (más abajo en pantalla) hacia
+# atrás y la vida que chocaría sube lo justo por encima. Solo presentación: se llama al crear las vidas, al cambiar sus
+# textos (_actualizar) y al poner o quitar la señal (_marcar_aviso). Mueve los nodos lo que cambia su «vida_dy» (no los
+# recoloca desde cero: respeta un sitio puesto a mano, como en las fotos de los modelos).
+const HUECO_VIDAS := 2.0
+const TECHO_VIDAS := 70.0                          # (debajo del registro de arriba, que acaba en y = 64)
+
+
+func _piezas_vida(e: Dictionary) -> Array:
+	var r: Array = []
+	for k in ["lbl_estado", "lbl_hp"]:
+		var l = e.get(k, null)
+		if l != null and is_instance_valid(l) and l.visible and l.text.strip_edges() != "":
+			r.append(Rect2(l.position, l.get_minimum_size()))
+	var b = e.get("barra_hp", null)
+	if b != null and is_instance_valid(b) and b.visible:
+		r.append(Rect2(b.position, b.size))
+	var s = e.get("aviso_nodo", null)
+	if s != null and is_instance_valid(s):         # el triángulo de sena_arte.gd _aviso (radio 26 que late ×1,1 y su contorno)
+		var k: float = absf(escena.scale.x)
+		r.append(Rect2(_a_pantalla(s.position) + Vector2(-29.0, -31.0) * k, Vector2(58.0, 53.0) * k))
+	return r
+
+
+func _repartir_vidas() -> void:
+	var puestos: Array = []
+	var orden: Array = enemigos.filter(func(e): return e["hp"] > 0 and e.has("lbl_hp"))
+	orden.sort_custom(func(a, b): return _ancla_vida(a).y - a.get("vida_dy", 0.0) > _ancla_vida(b).y - b.get("vida_dy", 0.0))
+	for e in orden:
+		var antes: float = e.get("vida_dy", 0.0)
+		var natural: Array = _piezas_vida(e).map(func(r: Rect2): return Rect2(r.position - Vector2(0, antes), r.size))
+		if natural.is_empty():
+			continue
+		var limite: float = minf(0.0, TECHO_VIDAS - natural.map(func(r: Rect2): return r.position.y).min())   # (no sube más)
+		var dy := 0.0
+		for intento in 8:
+			var subir := 0.0
+			for r in natural:
+				var m := Rect2(r.position + Vector2(0, dy), r.size)
+				for o in puestos:
+					if m.intersects(o):
+						subir = minf(subir, o.position.y - HUECO_VIDAS - m.end.y)
+			if subir == 0.0:
+				break
+			dy += subir
+			if dy <= limite:
+				dy = limite
+				break
+		if not is_equal_approx(dy, antes):
+			for k in ["lbl_estado", "lbl_hp", "barra_hp"]:
+				if e.has(k) and is_instance_valid(e[k]):
+					e[k].position.y += dy - antes
+			var s = e.get("aviso_nodo", null)
+			if s != null and is_instance_valid(s):
+				s.position.y += (dy - antes) / absf(escena.scale.y)
+			e["vida_dy"] = dy
+		for r in natural:
+			puestos.append(Rect2(r.position + Vector2(0, dy), r.size))
 
 
 # Sombra suave en el suelo, bajo los pies. Se mueve con el luchador y se encoge si salta.
@@ -2650,6 +2718,8 @@ func _marcar_aviso(f: Dictionary, si: bool) -> void:
 		# encima de «⚠ Cargando» y de la vida, sin taparlos (la señal vive en «escena», escalada: se pasa a sus medidas)
 		s.position = (_ancla_vida(f) + Vector2(60, -40 - 24 * TAM_ESCENA) - escena.position) / TAM_ESCENA
 		f["aviso_nodo"] = s
+	if f.has("lbl_hp"):
+		_repartir_vidas()                            # PV_SLIMES_19_11: la señal también cuenta para no pisar al vecino
 
 
 # Devorar (Gorthor, segunda fase): se cura el 60 % de lo que de verdad mordió. Lo que paró la coraza de Escarcha
@@ -7565,3 +7635,4 @@ func _actualizar() -> void:
 					_quitar_nodo_negra(e, "mn_marca_nodo")
 			e["lbl_estado"].text = "  ".join(estados)
 			e["lbl_estado"].visible = vivo
+	_repartir_vidas()                                   # PV_SLIMES_19_11: con los textos de ahora, sin pisarse

@@ -1038,3 +1038,46 @@ sin cambios en todas las pasadas.
 - Ninguna obligatoria.
 - Si el coordinador lo quiere, la nota del caso «custodio_rotacion» del banco puede decir «unos 7 turnos suyos (2-3 min
   a ritmo de menú)». No la he cambiado.
+
+## 2026-11-19, 03:45 · PV_SLIMES_19_11: la vida de los enemigos ya no se pisa (PC-11 / C-3; rama `claude/rebelum-v12`)
+
+Fallo del Redmi del 18/11 (`REDMI_18_11.md`, problema 7, `garon_menu.png`): en el combate de tres slimes (GRUPOS[1]) los
+cuerpos se solapaban y las etiquetas «PV» se veían encima del slime de al lado.
+
+### Qué pasaba (comprobado ejecutando, aislado, 19/11, sobre `41b38a9`)
+
+- Pasa también **fuera del banco**: GRUPOS[1] con la vida normal mide lo mismo que el caso del banco (×6).
+- GRUPOS[1]: el slime de atrás pisaba a los de delante (17-18 × 34 px), la barra del izquierdo y la etiqueta, la barra y
+  el estado del derecho caían sobre el cuerpo del de atrás (hasta 17 × 31 px). Entre etiquetas no había cruce estricto.
+- Cruces estrictos entre vidas en otros grupos al azar: GRUPOS[0] (dos Grimfang congelados), [2] (barra de un slime
+  sobre el «⚠ Cargando» del otro y cuerpos 20 × 66 px), [3] (la señal «⚠» del slime sobre la barra del Grimfang) y, con
+  `enemigos_v12`, [24] (Peones) y [27] (el estado largo del Velador sobre la vida del Grimfang, 70 × 19 px).
+
+### Arreglo (solo presentación; fórmulas, turnos, dianas y PV sin tocar)
+
+- `combate.gd`, GRUPOS[1] y [2]: los slimes, separados (≈ 8 px entre cuerpos). Antes [1] (250, 40), (60, 130),
+  (440, 130) y [2] el primero en (30, 90); ahora (200, 40), (-40, 130), (440, 130) y (-25, 90).
+- `combate.gd`, `_repartir_vidas()`: de delante hacia atrás, la vida que chocaría con otra (estado, «PV», barra y la
+  señal «⚠») sube lo justo (2 px de hueco, sin pasar de y = 70). Se llama al crear las vidas, en `_actualizar()` y en
+  `_marcar_aviso()`; `_ancla_vida()` suma «vida_dy». Mueve los nodos solo lo que cambia (respeta sitios puestos a mano).
+
+### Pruebas
+
+- Nueva `pruebas/prueba_vida_enemigos_solape.gd` (auto, en `lista_pruebas.txt`): 16 casos (GRUPOS 0-4, 7-10, 22-27 y
+  GRUPOS[1] del banco «agua» ×6), con tres estados (todos cargando con señal, todos congelados y la mezcla de la captura).
+  - Sin el arreglo (`032216`): **FALLOS: 52**. Con él (`032521`): **PRUEBA SUPERADA**.
+- Superadas con el arreglo: `prueba_hud_combate`, `prueba_banco_pruebas`, `prueba_enemigos_v12`, `prueba_integridad`,
+  `prueba_huir`, `prueba_garon`, `prueba_equilibrio`, `prueba_ia`, `prueba_menu_magia` (`032800`);
+  `prueba_grupos_combate`, `prueba_centinela`, `prueba_turnos_v12`, `prueba_patrones_enemigos`,
+  `prueba_zarzalin_combate`, `prueba_cencerrante_combate`, `prueba_velaria_combate`, `prueba_incorporacion` (`032927`);
+  `prueba_peon_v12`, `prueba_velador_v12` (`033245`); `prueba_guardian_modelo`, `prueba_zarzalin_modelo`,
+  `prueba_bramavidrio_combate`, `prueba_coloso`, `prueba_meshy_e01`, `prueba_centinela_v12`, `prueba_golem_v12`
+  (`033648`); `prueba_combate_huella` (`034123`: la huella de 9 combates, E2 con GRUPOS[2], sigue igual).
+- Capturas con ventana (`-- fotos=<carpeta>`), antes y después: `D:\REBELUM_diagnostico\pv_slimes_19_11\antes` y
+  `\despues` (banco_GRUPOS1_mezcla, GRUPOS0/1/2/3/27).
+
+### Límites
+
+- No se ha visto en el Redmi. Los cuerpos 3D (Grimfang, Velador, Peón) no se miden: solo los del Slime (de sus PNG).
+- Con un estado que aparece y desaparece, la vida del de detrás puede subir y bajar (solo si no, se pisarían).
+- La espada de Garon sigue rozando al slime derecho de GRUPOS[1] (estaba antes; ese slime no se ha movido).
