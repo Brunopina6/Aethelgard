@@ -125,8 +125,10 @@ func _u() -> void:
 		_ok(C.GRUPOS[i][0][0] == PE.CLAVE, "U: GRUPOS[%d] no empieza por el Custodio" % i)
 	# (19/11: + GRUPOS[30], el de Velaria, combate_velaria.gd; los 28 de antes y los 2 suyos siguen en su sitio)
 	# (19/11: + GRUPOS[31] y [32], los del Cencerrante, combate_cencerrante.gd)
-	_ok(C.GRUPOS.size() == 33 and C.GRUPOS[30][0][0] == "velaria" and C.GRUPOS[31][0][0] == "cencerrante",
-		"U: GRUPOS tiene %d entradas (28 de antes, las 2 suyas, la de Velaria y las 2 del Cencerrante)" % C.GRUPOS.size())
+	# (19/11, HILANDERA_19_11: + GRUPOS[33], el de la Hilandera del Eco, combate_hilandera.gd)
+	_ok(C.GRUPOS.size() == 34 and C.GRUPOS[30][0][0] == "velaria" and C.GRUPOS[31][0][0] == "cencerrante"
+		and C.GRUPOS[33][0][0] == "hilandera",
+		"U: GRUPOS tiene %d entradas (28 de antes, las 2 suyas, la de Velaria, las 2 del Cencerrante y la de la Hilandera)" % C.GRUPOS.size())
 	var apagados: Dictionary = load("res://recursos.gd").APAGADOS
 	_ok(apagados.get("res://enemigos/meshy_e01/", "") == PE.INTERRUPTOR, "U: su carpeta se precargaría apagado")
 	for encendido in [false, true]:

@@ -102,6 +102,11 @@ const Velaria := preload("res://combate_velaria.gd")
 # solo con su interruptor «cencerrante_v12» (el caso «cencerrante» del banco de Auditoría) y en sus combates de prueba
 # GRUPOS[31] y [32]; nunca al azar. Los ganchos llevan «V12, Cencerrante».
 const Cencerrante := preload("res://combate_cencerrante.gd")
+# V12 (19/11): la Hilandera del Eco, élite de una gruta del bestiario (T-097; combate_hilandera.gd: marca a su presa y la
+# muerde al turno siguiente; trama de eco a todo el grupo con una resolución y un turno de recuperación). APAGADA: solo
+# con su interruptor «hilandera_v12» (el caso «hilandera» del banco de Auditoría) y en su combate de prueba GRUPOS[33];
+# nunca al azar. Los ganchos llevan «V12, Hilandera».
+const Hilandera := preload("res://combate_hilandera.gd")
 # Menú de combate minimalista (menu_combate.gd). Ocupa el 40 % derecho de la pantalla, por eso los
 # héroes van más a la izquierda y los enemigos se juntan a la izquierda: x = x * ENEMIGOS_X.x + ENEMIGOS_X.y
 const ENEMIGOS_X := Vector2(0.75, -190.0)
@@ -398,6 +403,14 @@ const MODELOS := {
 		"tipo": "3d", "esc": 0.6, "script": "res://enemigos/cencerrante/cencerrante_3d.gd", "gestos": "res://gestos_3d.gd",
 		"rutas": ["res://enemigos/cencerrante/cencerrante_completo.glb"], "vp": Vector2i(840, 560), "alto_vista": 2.0,
 		"centro_y": 0.8, "barra_y": 60.0, "centro_3d": 0.95, "caida": 1.3, "respaldo": "slime"},
+	# V12, Hilandera (19/11; enemigos/hilandera/, hilandera_3d.gd). 1,50 m de alto y 1,9 m de pata a pata: 2,0 m de alto de
+	# vista mirando a 0,8 m (como el Cencerrante) en una ventana más ancha (900 × 600) para las patas abiertas de la
+	# mordida y de la derrota; números y efectos a 0,9 m. «caida» 1,4: su derrota (1,17 s) y un margen. Encuadre
+	# PROPUESTO, sin ver en el Redmi.
+	"hilandera": {
+		"tipo": "3d", "esc": 0.6, "script": "res://enemigos/hilandera/hilandera_3d.gd", "gestos": "res://gestos_3d.gd",
+		"rutas": ["res://enemigos/hilandera/hilandera_completo.glb"], "vp": Vector2i(900, 600), "alto_vista": 2.0,
+		"centro_y": 0.8, "barra_y": 50.0, "centro_3d": 0.9, "caida": 1.4, "respaldo": "slime"},
 }
 
 # Enemigos disponibles y grupos que pueden aparecer en un encuentro (se elige uno al azar).
@@ -459,6 +472,11 @@ const ENEMIGOS := {
 	# «cencerrante_v12» y en GRUPOS[31]/[32]). De apoyo: menos ataque y más lento que el Zarzalín. Cifras PROPUESTAS.
 	"cencerrante": {"nombre": "Cencerrante", "modelo": "cencerrante", "hp": 70, "atk": 10, "vel": 12.0, "exp": 18,
 		"oro": 14, "personalidad": "agresivo"},
+	# V12 (19/11): la Hilandera del Eco, élite de una gruta (T-097; combate_hilandera.gd; APAGADA: solo con «hilandera_v12»
+	# y en GRUPOS[33]). Élite: más vida que el Velador y el Custodio, su ataque y una velocidad media. Cifras PROPUESTAS
+	# [P], sin equilibrar (decisión del usuario).
+	"hilandera": {"nombre": "Hilandera del Eco", "modelo": "hilandera", "hp": 160, "atk": 13, "vel": 13.0, "exp": 48,
+		"oro": 30, "personalidad": "agresivo"},
 }
 # PV_SLIMES_19_11 (PC-11, Redmi 18/11 garon_menu.png): en [1] y [2] los slimes se solapaban (18-20 px) y la vida de uno
 # caía sobre el cuerpo del otro. Solo cambia dónde se dibujan (antes: [1] (250, 40), (60, 130), (440, 130); [2] el
@@ -514,6 +532,8 @@ const GRUPOS := [
 	# salen al azar
 	[["cencerrante", Vector2(150, 105)], ["zarzalin", Vector2(410, 130)]],  # 31: con un Zarzalín (el refuerzo)
 	[["cencerrante", Vector2(250, 120)]],                                   # 32: solo (prepara su propia campanada)
+	# V12, Hilandera: su combate de prueba (combate_hilandera.gd; con «hilandera_v12», el caso del banco); no sale al azar
+	[["hilandera", Vector2(250, 120)]],                                     # 33: sola (élite)
 ]
 const GRUPOS_AL_AZAR := 5           # solo los primeros salen en encuentros aleatorios (con el grupo de tres)
 # Encuentros al azar según cuántos héroes hay ahora en el grupo (grupo.gd, activos). Kael solo no tiene cura ni a
@@ -565,6 +585,7 @@ const ANIM := {
 	"meshy_e01": {"distancia": 210.0},          # V12, Custodio: los puños caen 0,6 m por delante
 	"velaria": {"distancia": 150.0},            # V12, Velaria (su corte lo coloca combate_velaria.gd)
 	"cencerrante": {"distancia": 150.0},        # V12, Cencerrante (su campanada la coloca combate_cencerrante.gd)
+	"hilandera": {"distancia": 150.0},          # V12, Hilandera (su mordida la coloca combate_hilandera.gd)
 	"gorthor_v12": {"distancia": 220.0},        # V12, fase C: la cuchilla
 	"guardian_bosque2d": {"distancia": 170.0},     # fase 3: el Guardián del Bosque (respaldo 2D)
 	"guardian_bosque": {"distancia": 170.0},       # fase 3: ataca desde su sitio (_anim_guardian)
@@ -868,6 +889,7 @@ func _elegir_enemigos() -> void:
 		Custodio.preparar(e)                          # V12, Custodio: con «meshy_e01», su personalidad (si no, nada)
 		Velaria.preparar(e)                           # V12, Velaria: con «velaria_v12», su personalidad (si no, nada)
 		Cencerrante.preparar(e)                       # V12, Cencerrante: con «cencerrante_v12», su personalidad (si no, nada)
+		Hilandera.preparar(e)                         # V12, Hilandera: con «hilandera_v12», su personalidad (si no, nada)
 		var mod: Dictionary = MODELOS[e["modelo"]]
 		if mod.get("tipo", "") == "3d" and _ruta_3d(mod) == "" and mod.has("respaldo"):   # falta el 3D: su dibujo 2D
 			push_warning("Falta el modelo 3D de %s: se usa su respaldo 2D" % e["nombre"])
@@ -2228,6 +2250,10 @@ func _turno_enemigo(f: Dictionary) -> void:
 		return
 	if p == Cencerrante.PERSONALIDAD:                # V12, Cencerrante: toque de alarma (una vez) y campanada baja
 		await Cencerrante.turno(self, f, vivos, mult)
+		_fin_turno_enemigo(f)
+		return
+	if p == Hilandera.PERSONALIDAD:                  # V12, Hilandera: marca y mordida, o trama de eco y recuperación
+		await Hilandera.turno(self, f, vivos, mult)
 		_fin_turno_enemigo(f)
 		return
 	if p == "embiste":                               # Zarzalín: aviso, embestida y recuperación (T-097)
@@ -6042,6 +6068,8 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 		await Velaria.animar_golpe(self, origen, objetivo, _ligar(impacto))
 	elif Cencerrante.de_el(self, origen):                                     # V12, Cencerrante: la campanada baja
 		await Cencerrante.animar_golpe(self, origen, objetivo, _ligar(impacto))
+	elif Hilandera.de_ella(self, origen):                                      # V12, Hilandera: mordida o trama de eco
+		await Hilandera.animar_golpe(self, origen, objetivo, _ligar(impacto))
 	elif _p3d(origen) != null and _p3d(origen).has_method("avisar"):           # Zarzalín (T-097)
 		await _anim_zarzalin(origen, objetivo, impacto, str(origen.get("ataque_3d", "colmillo_lateral")))
 	elif _p3d(origen) != null and _p3d(origen).has_method("despertar"):        # Guardián del Bosque (fase 3): desde su sitio
@@ -7471,6 +7499,7 @@ func _comprobar_fin() -> bool:
 		Peon.al_acabar(enemigos)                      # V12, Peón: la marca de la Zancada, fuera
 		Velador.al_acabar(enemigos)                   # V12, Velador: la marca de la Raíz, fuera
 		Custodio.al_acabar(enemigos)                  # V12, Custodio: la marca de la Prensa, fuera
+		Hilandera.al_acabar(enemigos)                 # V12, Hilandera: la marca sobre su presa, fuera
 		Sonido.efecto("victoria" if ganan else "derrota")   # sonido.gd
 		if ganan:                                      # el gesto de uno de los que siguen en pie (tanda 5)
 			voz_pedida.emit("", "victoria")
@@ -7659,6 +7688,7 @@ func _actualizar() -> void:
 				estados.append("Furia")
 			if vivo:                                    # V12, Cencerrante: «▲ Reforzado» en el aliado que tocó (sin la marca, nada)
 				estados.append_array(Cencerrante.estados(e))
+			Hilandera.repasar(e)                        # V12, Hilandera: si cae ella o su presa, la marca fuera
 			if Coloso.es_coloso(e):                     # V9: piel de piedra, coraza rúnica, expuesto, runas leídas
 				estados.append_array(Coloso.estados(e))
 			if Brama.es(e):                             # V12, Bramavidrio: «⚠ Fractura» o «⚠ Aliento: córtalo n/m»

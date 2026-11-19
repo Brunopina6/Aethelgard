@@ -36,7 +36,8 @@ const METAS_SESION := ["meshy_e01", "banco_caso", "nix_v12", "oakhaven_propuesta
 	"ciudad_v12",                                    # (16/11: la ciudad completa de Oakhaven, maqueta: activada)
 	"naira_v12",                                     # (18/11: Naira, solo en el caso de las derrotas de Naira y Nix)
 	"velaria_v12",                                   # (19/11: Velaria, la polilla del bestiario, solo en su caso)
-	"cencerrante_v12"]                               # (19/11: el Cencerrante, la campana del bestiario, solo en su caso)
+	"cencerrante_v12",                               # (19/11: el Cencerrante, la campana del bestiario, solo en su caso)
+	"hilandera_v12"]                                 # (19/11: la Hilandera del Eco, élite del bestiario, solo en su caso)
 # Calidad elegida en la sesión (CAL, el selector «Calidad 3D», los bancos A/B de vista3d): sigue entre los casos de la
 # sesión y se quita SOLO al salir.
 const METAS_CALIDAD := ["calidad_proto", "calidad_extra", "muestra_precalentar",
@@ -117,6 +118,11 @@ const COMBATES := {
 	"cencerrante_solo": {"titulo": "Cencerrante solo: prepara su campanada (prueba)", "grupo": 32,
 		"activos": ["Kael", "Lya", "Garon"], "vida": 4.0, "armonia": false, "cencerrante": true,
 		"nota": "Solo, prepara su campanada («⚠ Cargando») y la suelta al turno siguiente: Defender la deja a la mitad. Vida ×4 para VERLA. Cifras PROPUESTAS."},
+	# 19/11: la Hilandera del Eco (bestiario T-097, combate_hilandera.gd), APAGADA fuera de aquí: su interruptor
+	# «hilandera_v12» solo en este caso. Modelo de Meshy con licencia sin confirmar: solo APK de prueba privadas (D-075).
+	"hilandera": {"titulo": "Hilandera del Eco: mordida resonante y trama de eco (prueba)", "grupo": 33,
+		"activos": ["Kael", "Lya", "Garon"], "vida": 3.0, "armonia": false, "hilandera": true,
+		"nota": "Marca a su presa (señal sobre el héroe) y la muerde al turno siguiente: Defender la deja a la mitad. La trama de eco golpea a todo el grupo una vez y luego se recupera. Vida ×3 para VERLO todo. Cifras PROPUESTAS."},
 }
 const EXPLORAR := {
 	"oakhaven": {"titulo": "Oakhaven con Kael, Lya y Garon", "activos": ["Kael", "Lya", "Garon"],
@@ -397,6 +403,8 @@ func _combate(clave: String) -> void:
 		Engine.set_meta("velaria_v12", true)
 	if d.get("cencerrante", false):                # (19/11) el Cencerrante, solo en su caso
 		Engine.set_meta("cencerrante_v12", true)
+	if d.get("hilandera", false):                  # (19/11) la Hilandera del Eco, solo en su caso
+		Engine.set_meta("hilandera_v12", true)
 	Engine.set_meta("zona", "llanura")
 	Engine.set_meta("tipo_combate", "normal")
 	Engine.set_meta("grupo_combate", int(d["grupo"]))

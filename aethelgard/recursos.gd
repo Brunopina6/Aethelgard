@@ -407,6 +407,8 @@ const APAGADOS := {
 	"res://enemigos/velaria/": "velaria_v12",
 	# V12 (19/11): el Cencerrante (combate_cencerrante.gd), solo con su interruptor (antes, prototipo sin enganchar: "")
 	"res://enemigos/cencerrante/": "cencerrante_v12",
+	# V12 (19/11): la Hilandera del Eco (combate_hilandera.gd), solo con su interruptor (≈ 9 MB de GLB y sus tres texturas)
+	"res://enemigos/hilandera/": "hilandera_v12",
 	"res://audio/efectos/centinela/": "enemigos_v12",
 	"res://audio/efectos/golem/": "enemigos_v12",
 	"res://audio/efectos/gorthor/": "enemigos_v12",

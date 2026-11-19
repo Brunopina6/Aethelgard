@@ -181,6 +181,8 @@ func _estatica_de(e: Dictionary) -> String:
 		return "combate_velaria.gd"
 	if load("res://combate_cencerrante.gd").de_el(c, e):
 		return "combate_cencerrante.gd"
+	if load("res://combate_hilandera.gd").de_ella(c, e):          # (19/11, HILANDERA_19_11)
+		return "combate_hilandera.gd"
 	return "otra (no es estática de enemigo v12)"
 
 

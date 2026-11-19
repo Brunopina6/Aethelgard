@@ -30,8 +30,9 @@ const PATRONES := {
 	"golpe_v12": "DIAG estatica combate_vidracran\\.gd · impacto guardado nuevo \\[\\d",
 }
 # los diez enemigos v12 cuya estática animar_golpe espera a nodos (PC-21), por el nombre de su constante en combate.gd
+# (19/11, HILANDERA_19_11: + la Hilandera del Eco, combate_hilandera.gd: once ramas)
 const ENEMIGOS_LIGADOS := ["Humbaba", "Vidracran", "Centinela", "Golem", "Gorthor", "Peon", "Velador", "Custodio",
-	"Velaria", "Cencerrante"]
+	"Velaria", "Cencerrante", "Hilandera"]
 
 var fallos := 0
 
