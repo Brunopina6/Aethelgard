@@ -245,6 +245,15 @@ func _recoger_precargas() -> void:
 				_en_hilo.erase(ruta)
 
 
+# V12 (19/11, PRECARGA_19_11): al cerrar el juego con una precarga aún en curso, se espera a que acabe. Si no, el motor
+# corta la carga del guion de la escena y escribe «Parse Error: Failed. [Resource file res://combate.tscn:6]» (el de
+# prueba_mar_cristal del 11/11). Lo mismo hace carga.gd con su precarga (_exit_tree).
+func _exit_tree() -> void:
+	for ruta in _en_hilo.keys():
+		ResourceLoader.load_threaded_get(ruta)
+	_en_hilo.clear()
+
+
 func esta(ruta: String) -> bool:
 	for g in grupos:
 		if grupos[g].has(ruta):

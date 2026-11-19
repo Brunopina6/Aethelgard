@@ -321,6 +321,20 @@ static func _a_la_vez() -> int:
 	return 1 if DisplayServer.get_name() == "headless" else A_LA_VEZ
 
 
+# V12 (19/11, PRECARGA_19_11): si la pantalla se va con archivos aún cargándose en hilo (se cierra el juego a mitad de la
+# carga, o una prueba cambia de escena o sale antes de que acabe), se espera a que terminen (como mucho «a_la_vez»
+# archivos) y se guardan en Recursos. Sin esto, al cerrar con una escena a medias el motor corta la carga de su guion y
+# escribe «Parse Error: Failed. [Resource file res://ciudad_oakhaven.tscn:6]» (prueba_musica_titulo en la batería del
+# 19/11; pruebas/herramientas/salir_en_precarga.gd lo reproduce). En el juego normal la escena solo se va con la carga
+# acabada (en_curso vacío): esto no hace nada.
+func _exit_tree() -> void:
+	for ruta in en_curso:
+		var r := ResourceLoader.load_threaded_get(ruta)   # espera a que acabe
+		if r != null:
+			Recursos.guardar(ruta, r)
+	en_curso.clear()
+
+
 func _fallo(ruta: String) -> void:
 	push_warning("Carga: no se pudo cargar %s (se sigue con el resto)" % ruta)
 	fallos += 1
