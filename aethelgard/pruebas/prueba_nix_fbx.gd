@@ -305,7 +305,7 @@ func _process(delta: float) -> bool:
 				_ok(_es(NixFBX.FUERTE), "volver a la guardia no corta la canalización: sigue fuerte (%.2f)" % _orn())
 				if nix.has_method("apagar_emision"):
 					nix.apagar_emision()         # lo que hace combate.gd _conjuro_roto
-				_ok(_orn() == 0.0, "INTERRUPCIÓN (conjuro roto): a 0 en el acto (%.2f)" % _orn())
+				_ok(_orn() == 0.0, "apagar_emision (lo que llama _conjuro_roto; el camino real está en prueba_nix_emision): a 0 en el acto (%.2f)" % _orn())
 				nix.morir()
 				marca = t
 				paso = 4

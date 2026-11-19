@@ -397,6 +397,7 @@ cambia. Evidencias en `D:\REBELUM_diagnostico\v12\nix_emision_19_11\`.
   | Ascuas de Nácar (rango I, P01) y Aguja de Invierno (rango I, P02) | básica | durante la anticipación, hasta el lanzamiento (0,7 / 0,8 s) | `nix_3d.gd lanzar_negra` |
   | Canalizar (concentrarse mientras se prepara un hechizo con barra; hoy, el Colapso) | fuerte | 0,6 s; se mantiene mientras prepara (volver a la guardia por un golpe no la corta) | `concentrar` |
   | Colapso del Firmamento (rango VI, gasta los 3 sellos de Eclipse, P07) | suprema | desde la fuerte hasta el lanzamiento (1,6 s) | `lanzar_negra` |
+  | Otras magias y artes de Nix (magia normal, artes y el gesto del dúo: pasan por `lanzar_magia`, que llama a `lanzar_negra("nix_ascuas")`; revisión del 19/11) | básica | como Ascuas; vuelve a 0 con `fin_magia` | `lanzar_magia` |
   | Fin del hechizo | 0 | 0,5 s | `fin_magia` |
 
   Un hechizo nuevo sin fila toma la intensidad por los sellos que gasta (3 suprema, 2 fuerte, si no básica).
