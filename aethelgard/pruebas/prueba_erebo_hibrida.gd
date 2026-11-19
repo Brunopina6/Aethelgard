@@ -19,6 +19,8 @@ extends SceneTree
 # «sale vacía» una vez, sin daño) y un jefe (siempre 20 %).
 # Semillas: «semilla_hibrida=N». No toca la partida real: archivo de partida de prueba y user:// aislado del ejecutor.
 
+# (19/11, PC-10, KAEL_ESPERAS_19_11) Esperas por RELOJ con FALLO al agotarse (antes, 3000 fotogramas); lo medido no cambia.
+const TOPE_TURNO_LYA_MS := 120000
 const ARCHIVO := "user://prueba_erebo_hibrida.save"
 
 var P
@@ -165,11 +167,15 @@ func _combate(grupo: int) -> Dictionary:
 	seed(semilla)
 	for e in c.enemigos:
 		e["atb"] = randf() * 30.0
-	for i in 3000:
+	var t_lya := Time.get_ticks_msec()             # (19/11, PC-10, KAEL_ESPERAS_19_11) por reloj (antes, 3000 fotogramas, sin FALLO aquí)
+	while true:
 		if c.estado == "menu" and c.menu.activo and c.actor is Dictionary:
 			if c.actor["nombre"] == "Lya":
 				break
 			c._defender()
+		if Time.get_ticks_msec() - t_lya > TOPE_TURNO_LYA_MS:
+			_ok(false, "no llega el turno de Lya en %d s de reloj (estado %s)" % [TOPE_TURNO_LYA_MS / 1000, c.estado])
+			break
 		await _esperar(1)
 	return c.enemigos[0]
 
@@ -455,6 +461,10 @@ func _sin_video() -> void:
 func _invocar_sin_video(tipo: String) -> void:
 	H.elegir_modo("hibrida_breve")
 	var obj: Dictionary = await _combate(9)
+	if not (c.actor is Dictionary and c.actor["nombre"] == "Lya"):     # (19/11, PC-10) sin el turno, sin invocar
+		c.queue_free()                                                # (el FALLO ya lo escribe _combate)
+		await _esperar(5)
+		return
 	c.armonia = 1.0
 	var pv0: int = obj["hp"]
 	seed(semilla + 1)

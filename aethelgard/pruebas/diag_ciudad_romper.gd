@@ -722,6 +722,9 @@ func _salir_del_banco() -> void:
 	var tt := Time.get_ticks_msec()
 	while Time.get_ticks_msec() - tt < 15000 and (R0.cambiando or current_scene == null):
 		await process_frame
+	if R0.cambiando or current_scene == null:          # (19/11, PC-10, KAEL_ESPERAS_19_11) antes, seguía en silencio
+		_nota("FALLO: tras «Salir del banco» el cambio de escena no termina en 15 s de reloj (R.cambiando=%s)" % R0.cambiando)
+		fallos += 1
 	await _segundos(1.0)
 	var quedan: Array = []
 	for m in ["ciudad_v12", "banco_pruebas", "archivo_partida_prueba", "prologo_visto", "pos_3d", "pos_3d_lugar", "pos_3d_ok", "calidad_proto"]:

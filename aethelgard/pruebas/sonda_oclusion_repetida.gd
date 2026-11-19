@@ -9,6 +9,8 @@ extends SceneTree
 const REGION := "res://zonas3d/pastos_verdes_3d.tscn"
 var v
 var frames := 0
+const TOPE_MS := 300000           # (19/11, PC-10, KAEL_ESPERAS_19_11) tope global por reloj (antes, 3000 fotogramas y «TIEMPO AGOTADO»)
+var t_inicio := Time.get_ticks_msec()
 var u_ant := 0
 var piezas: Array = []
 var sitio := Vector3.ZERO
@@ -117,8 +119,9 @@ func _process(_d: float) -> bool:
 			if f >= 30:
 				fase = "una_a_una"
 				f0 = frames
-	if frames > 3000:
-		print("TIEMPO AGOTADO en la fase ", fase)
+	if Time.get_ticks_msec() - t_inicio > TOPE_MS:
+		print("FALLO: la sonda no termina en %d s de reloj (fase «%s», %d fotogramas)" % [TOPE_MS / 1000, fase, frames])
+		print("FALLOS: 1")
 		quit(1)
 		return true
 	return false

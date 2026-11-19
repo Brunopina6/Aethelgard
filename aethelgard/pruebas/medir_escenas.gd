@@ -43,6 +43,8 @@ var etiqueta := ""
 var R
 var v = null
 var frames := 0
+const TOPE_MS := 600000           # (19/11, PC-10, KAEL_ESPERAS_19_11) tope global por reloj (antes, 30000 fotogramas)
+var t_inicio := Time.get_ticks_msec()
 var fase := ""
 var f_fase := 0
 var ciclo := 0
@@ -229,10 +231,18 @@ func _process(_d: float) -> bool:
 				_apuntar_memoria()
 				ciclo += 1
 				_lanzar_combate()
-	if frames > 30000:
-		print("MEDIDA: se acaba el tiempo en «%s»" % _clave(fase))
-		return _terminar()
+	if Time.get_ticks_msec() - t_inicio > TOPE_MS:
+		return _agotado()
 	return false
+
+
+# (19/11, PC-10, KAEL_ESPERAS_19_11) Tope GLOBAL por RELOJ (antes, 30000 fotogramas: «MEDIDA: se acaba el tiempo» y se escribía la medida a medias): al agotarse, FALLO y salida 1, sin escribir la medida a medias
+# como si estuviera completa. Lo que se mide cuando no se agota no cambia.
+func _agotado() -> bool:
+	print("FALLO: la medida no termina en %d s de reloj (fase «%s», %d fotogramas)" % [TOPE_MS / 1000, _clave(fase), frames])
+	print("FALLOS: 1")
+	quit(1)
+	return true
 
 
 func _ir() -> void:

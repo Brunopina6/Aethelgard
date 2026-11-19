@@ -296,7 +296,7 @@ Barrido con `REBELUM_RETRASO_CARGA_MS` (el parche de arriba, solo en la copia de
 Las 7 tocadas sin cargas retrasadas solo usan `change_scene_to_file` (síncrono): el retraso no las alcanza. En todas
 las pasadas, partida real, carpeta real de datos y proyecto sin cambios y ningún otro Godot abierto.
 
-Sigue pendiente (PC-10 no queda cerrado del todo):
+Sigue pendiente (PC-10 no queda cerrado del todo): *(19/11: los tres primeros puntos, hechos en «KAEL_ESPERAS_19_11», al final; `prueba_salir_en_cambio` se deja así a propósito)*
 
 - Herramientas de medida con tope GLOBAL en fotogramas que, al agotarse, escriben la medida a medias sin FALLO:
   `medir_garganta3d.gd:191` y `medir_ruta.gd:164` (20000; el combate de `_encuentro`, l. 169 y 140, va en hilo),
@@ -309,3 +309,43 @@ Sigue pendiente (PC-10 no queda cerrado del todo):
   fotograma con la carga en curso).
 - El barrido no cubre la batería entera (211 automáticas), solo las 39 que nombran «cambiando», ni las pruebas con
   ventana, ni un retraso mayor que el tope de las esperas.
+
+## KAEL_ESPERAS_19_11 (PC-10, lo que quedaba de la lista de arriba)
+
+Solo pruebas y herramientas; el juego no se toca. Esperas por fotogramas pasadas a **reloj** (`Time.get_ticks_msec`) con
+un «FALLO: …», «FALLOS: n» y salida 1 al agotarse; cuando no se agotan, miden lo mismo:
+
+| Archivo | Antes | Ahora |
+|---|---|---|
+| `medir_garganta3d.gd`, `medir_ruta.gd`, `medir_primeras_veces.gd` | 20000 fotogramas en total y, al agotarse, escribía la medida a medias como buena | 300 s de reloj en total; al agotarse, FALLO con la fase (o pasada y paso) y salida 1, sin escribir la medida |
+| `medir_escenas.gd` | 30000 fotogramas, «MEDIDA: se acaba el tiempo» y la medida a medias | 600 s de reloj, igual que las anteriores |
+| `sonda_oclusion_repetida.gd` | 3000 fotogramas, «TIEMPO AGOTADO» | 300 s de reloj, «FALLO: …» y «FALLOS: 1» |
+| `medir_ciudad.gd` | `_esperar_banco` (30 s de reloj) seguía en silencio; `_terminar` salía con 0 aunque hubiera FALLO | `_esperar_banco` devuelve si el banco está; si no, FALLO y se termina (o `_volver_al_banco` da false); cada línea «FALLO…» cuenta, «FALLOS: n» al final del registro y salida 1 |
+| `diag_ciudad_romper.gd` | la espera tras «Salir del banco» (15 s) seguía en silencio | FALLO y cuenta en `fallos` (sale con 1 por `recorrido_ciudad._terminar`) |
+| `prueba_erebo_video.gd` | turno de Lya (`_combate`) y vuelta de la invocación (`_invocar`): 3000 fotogramas | 120 s y 180 s de reloj (`TOPE_TURNO_LYA_MS`, `TOPE_VUELTA_INVOCACION_MS`); el turno agotado da su FALLO; la vuelta ya lo daba (`colgado`), ahora con el tope en el texto |
+| `prueba_erebo_hibrida.gd` | turno de Lya: 3000 fotogramas; `_invocar_sin_video` invocaba sin mirar si era el turno de Lya | 120 s de reloj con FALLO; sin el turno, `_invocar_sin_video` no invoca (antes, error de script en `combate._mostrar_menu`) |
+| `prueba_veta_garganta.gd` | 60 s por paso, sin tope global (el ejecutor corta a 180 s) | además, 150 s de reloj para toda la prueba, con FALLO |
+
+`prueba_salir_en_cambio.gd:34` (900 fotogramas, a propósito) no se toca. Las subclases de las dos de Érebo
+(`medir_erebo_teatro`, `grabar_erebo_*`, `prueba_erebo_*_fallo`, `diag_salir_hibrida`) cargan sin errores
+(`--check-only`); los nombres de los topes nuevos no chocan con los suyos. **Hallazgo aparte, sin tocar:**
+`fotos_erebo_video.gd:44` no carga («Too few arguments for "_combate()"», como `medir_erebo_teatro` antes de `709e03a`).
+
+Comprobaciones (`D:\REBELUM_diagnostico\kael_esperas_19_11\` y `D:\REBELUM_diagnostico\pruebas\<carpeta>`):
+- **Mismo resultado con el tope normal.** Antes (`2026-11-19_173649`, el código de antes) y después
+  (`2026-11-19_173859` y `2026-11-19_174519`): `prueba_erebo_video`, `prueba_erebo_video_fallo`, `prueba_erebo_hibrida`,
+  `prueba_erebo_hibrida_fallo` y `prueba_veta_garganta`, superadas y con el registro **idéntico byte a byte**;
+  `prueba_integridad` superada. Herramientas, antes y después (`esperas\antes_*`, `esperas\despues_*`,
+  `esperas\comparar_json.txt`, `esperas\cmp_escenas.txt`): `medir_ruta` (bajo, con grupo) con las mismas fases y los
+  mismos fotogramas por fase salvo `entrada_combate` (338 y 348: la carga del combate va en hilo y dura lo que dura,
+  2,25 y 2,30 s); `medir_escenas` (pastos, medio, 2 ciclos) con las mismas fases, fotogramas, dibujos y primitivas
+  (en `reposo#1`, 327560 y 327568); los tiempos por fotograma cambian lo normal entre pasadas.
+- **Contraprueba** (copias locales `zz_cp_*` con el tope a 0, sin commit y ya borradas;
+  `lista_contraprueba_b.txt`; `2026-11-19_174256`, `2026-11-19_174333` y `2026-11-19_174446`): las 11 acaban FALLIDAS
+  por su propio «FALLO: …» y código 1, sin errores de script. La de `diag_ciudad_romper` va directa a «Salir del banco»
+  y su texto dice «15 s» aunque la copia espere 0. Para la vuelta de la invocación de `prueba_erebo_video` hay una copia
+  aparte (`zz_cp_prueba_erebo_video_inv`). La primera copia de la híbrida dio dos errores de script (invocar sin el turno
+  de Lya); con la guarda de `_invocar_sin_video`, ninguno.
+
+Sigue sin revisar: `medir_memoria_escenas` y `recorrido_ciudad` (esperan por reloj en `_pulsar`); el barrido con
+retraso de carga sigue sin cubrir la batería entera ni las pruebas con ventana.

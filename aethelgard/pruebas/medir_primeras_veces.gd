@@ -33,6 +33,8 @@ var D
 var v
 var pasada := 0
 var frames := 0
+const TOPE_MS := 300000           # (19/11, PC-10, KAEL_ESPERAS_19_11) tope global por reloj (antes, 20000 fotogramas)
+var t_inicio := Time.get_ticks_msec()
 var paso := ""
 var f_paso := 0
 var u_ant := 0
@@ -255,8 +257,8 @@ func _process(_d: float) -> bool:
 					_ir_a_region()
 				else:
 					return _terminar()
-	if frames > 20000:
-		return _terminar()
+	if Time.get_ticks_msec() - t_inicio > TOPE_MS:
+		return _agotado()
 	var c2 := current_scene
 	if paso == "carga_juego" and c2 != null and c2.scene_file_path == CARGA:
 		etiqueta = "carga·" + str(c2.fase)
@@ -319,4 +321,13 @@ func _terminar() -> bool:
 				r["p95"], r["max"], r["suma_ms"]])
 	print("MEDICION: ", ruta)
 	quit(0)
+	return true
+
+
+# (19/11, PC-10, KAEL_ESPERAS_19_11) Tope GLOBAL por RELOJ (antes, 20000 fotogramas, y se escribía la medida a medias): al agotarse, FALLO y salida 1, sin escribir la medida a medias
+# como si estuviera completa. Lo que se mide cuando no se agota no cambia.
+func _agotado() -> bool:
+	print("FALLO: la medida no termina en %d s de reloj (pasada %d, paso «%s», %d fotogramas)" % [TOPE_MS / 1000, pasada, paso, frames])
+	print("FALLOS: 1")
+	quit(1)
 	return true

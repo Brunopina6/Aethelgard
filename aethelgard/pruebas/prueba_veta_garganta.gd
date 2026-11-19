@@ -19,6 +19,8 @@ var paso := 0
 var f_paso := 0
 var t_paso := 0
 const ESPERA_MAX_MS := 60000            # (19/11, PC-10) tope de cada paso por RELOJ (antes, 3600 fotogramas en total)
+const TOPE_TOTAL_MS := 150000           # (19/11, PC-10, KAEL_ESPERAS_19_11) y de toda la prueba, por debajo de los 180 s del ejecutor
+var t_inicio := Time.get_ticks_msec()
 var R
 var P
 var inv
@@ -66,6 +68,11 @@ func _terminar() -> void:
 
 func _process(_d: float) -> bool:
 	frames += 1
+	if paso > 0 and Time.get_ticks_msec() - t_inicio > TOPE_TOTAL_MS:
+		fallos.append("la prueba no terminó en %d s de reloj (paso %d, escena=%s)" % [TOPE_TOTAL_MS / 1000, paso,
+			current_scene.scene_file_path if current_scene != null else "(ninguna)"])
+		_terminar()
+		return false
 	if paso > 0 and Time.get_ticks_msec() - t_paso > ESPERA_MAX_MS:
 		fallos.append("el paso %d no terminó en %d s (escena=%s, R.cambiando=%s)" % [paso, ESPERA_MAX_MS / 1000,
 			current_scene.scene_file_path if current_scene != null else "(ninguna)", R.cambiando])

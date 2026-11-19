@@ -149,7 +149,13 @@ func _initialize() -> void:
 
 # ================================================================= utilidades
 
+const TOPE_BANCO_MS := 30000          # (19/11, PC-10, KAEL_ESPERAS_19_11) la espera del banco (la de antes), ahora con FALLO
+var fallos := 0                         # líneas «FALLO…» de _nota: salida 1
+
+
 func _nota(t: String) -> void:
+	if t.begins_with("FALLO"):
+		fallos += 1
 	print(t)
 	lineas.append(t)
 
@@ -613,15 +619,23 @@ func _andar_a(meta: Vector3) -> Array:
 
 # ================================================================= banco y entrada
 
-func _esperar_banco() -> void:
+# (19/11, PC-10, KAEL_ESPERAS_19_11) Antes, al agotarse los 30 s seguía en silencio con el banco a medias: ahora, FALLO y false.
+func _esperar_banco() -> bool:
 	var t0 := Time.get_ticks_msec()
-	while Time.get_ticks_msec() - t0 < 30000:
+	var listo := false
+	while Time.get_ticks_msec() - t0 < TOPE_BANCO_MS:
 		await process_frame
 		if current_scene != null and current_scene.scene_file_path == BANCO and current_scene.get("marco") != null:
 			var R = root.get_node_or_null("Recursos")
 			if R == null or not R.cambiando:
+				listo = true
 				break
+	if not listo:
+		_nota("FALLO: el banco no termina de cargarse en %d s de reloj (escena %s)" % [TOPE_BANCO_MS / 1000,
+			current_scene.scene_file_path if current_scene != null else "(ninguna)"])
+		return false
 	await _esperar(1.0)
+	return true
 
 
 func _ciudad_lista() -> bool:
@@ -680,7 +694,8 @@ func _volver_al_banco() -> bool:
 	await _pulsar(b, func(): return current_scene == null or current_scene.scene_file_path != ESCENA, 3.0)
 	v = null
 	mu.escena = null
-	await _esperar_banco()
+	if not await _esperar_banco():
+		return false
 	return current_scene != null and current_scene.scene_file_path == BANCO
 
 
@@ -1033,7 +1048,9 @@ func _medir() -> void:
 		Time.get_datetime_string_from_system()])
 	_preparar_rejilla()
 	change_scene_to_file(BANCO)
-	await _esperar_banco()
+	if not await _esperar_banco():
+		_terminar()
+		return
 	if not await _entrar("en frío (la primera del proceso)"):
 		_terminar()
 		return
@@ -1072,6 +1089,7 @@ func _terminar() -> void:
 		DirAccess.make_dir_recursive_absolute(salida)
 		var nombre := "medidas_ciudad_%s%s.txt" % [perfil, ("_escala%d" % int(round(escala * 100))) if escala > 0.0 else ""]
 		var f := FileAccess.open(salida.path_join(nombre), FileAccess.WRITE)
-		f.store_string("\n".join(lineas) + "\n")
+		f.store_string("\n".join(lineas) + "\n" + "FALLOS: %d\n" % fallos)
 		f.close()
-	quit(0)
+	print("FALLOS: %d" % fallos)
+	quit(1 if fallos > 0 else 0)          # (19/11, PC-10, KAEL_ESPERAS_19_11) antes, siempre 0 (también con FALLO)

@@ -29,6 +29,9 @@ extends SceneTree
 # _invocar_sobre; «semilla_video=N» para reproducir otra.
 # No toca la partida real: archivo de partida de prueba y user:// aislado del ejecutor.
 
+# (19/11, PC-10, KAEL_ESPERAS_19_11) Esperas por RELOJ con FALLO al agotarse (antes, 3000 fotogramas); lo medido no cambia.
+const TOPE_TURNO_LYA_MS := 120000
+const TOPE_VUELTA_INVOCACION_MS := 180000
 const ARCHIVO := "user://prueba_erebo_video.save"
 const NO_EXISTE := "res://videos/no_existe_prueba_erebo.ogv"
 const NO_ARRANCA := "res://videos/no_arranca_prueba_erebo.ogv"   # (solo en la caché de recursos de esta prueba)
@@ -293,11 +296,15 @@ func _combate(grupo: int) -> Dictionary:
 	seed(semilla)                                     # desde aquí, el azar del combate es fijo
 	for e in c.enemigos:
 		e["atb"] = randf() * 30.0                     # el ATB inicial, como en combate.gd, ya con la semilla
-	for i in 3000:
+	var t_lya := Time.get_ticks_msec()             # (19/11, PC-10, KAEL_ESPERAS_19_11) por reloj (antes, 3000 fotogramas, sin FALLO aquí)
+	while true:
 		if c.estado == "menu" and c.menu.activo and c.actor is Dictionary:
 			if c.actor["nombre"] == "Lya":
 				break
 			c._defender()
+		if Time.get_ticks_msec() - t_lya > TOPE_TURNO_LYA_MS:
+			_ok(false, "no llega el turno de Lya en %d s de reloj (estado %s)" % [TOPE_TURNO_LYA_MS / 1000, c.estado])
+			break
 		await _esperar(1)
 	return c.enemigos[0]
 
@@ -367,7 +374,8 @@ func _invocar(caso: String, modo: String, video: bool, grupo := 9) -> void:
 	var atb_al_teatro := {}
 	var anuncios := {"corazon": 0, "roba": 0, "vacia": 0}
 	var reg_previo := ""
-	for i in 3000:
+	var t_inv := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - t_inv < TOPE_VUELTA_INVOCACION_MS:    # (antes, 3000 fotogramas)
 		var capa := _capa()
 		if capa != null:
 			if not vio_capa:
@@ -420,7 +428,7 @@ func _invocar(caso: String, modo: String, video: bool, grupo := 9) -> void:
 	await _esperar(5)
 	if grim["hp"] != hp_previo[0]:
 		quitados[0] += 1
-	_ok(not colgado, "%s: el combate no vuelve (estado «%s»)" % [caso, c.estado])
+	_ok(not colgado, "%s: el combate no vuelve en %d s de reloj (estado «%s»)" % [caso, TOPE_VUELTA_INVOCACION_MS / 1000, c.estado])
 	if modo in ["no_arranca", "theora_no_abre"]:
 		_ok(vio_capa and vio_teatro, "%s: no intenta el vídeo (%s) o no cae al teatro (%s)" % [caso, vio_capa, vio_teatro])
 		_ok(not tocado, "%s: hizo falta tocar" % caso)
