@@ -474,8 +474,8 @@ static func _campana() -> AudioStreamWAV:
 # «REBELUM — When the World Forgets» la pone musica.gd (contexto «titulo»: una sola reproducción, bus Musica, sigue
 # sin cortes de la carga al menú y funde al entrar en el juego). Aquí solo se siguen sus momentos para las luces:
 # el logo respira con la introducción; al entrar el grupo (TITULO_ROCK) un destello del cristal y la escena se aviva;
-# en la gran subida (TITULO_SUBIDA), un poco más. Todo suave y lejos de las opciones del menú. Si la canción no está
-# (es privada: fuera de Git), todo sigue como antes.
+# en la gran subida (TITULO_SUBIDA), un poco más. Todo suave y lejos de las opciones del menú. Si la canción
+# faltara en una copia (es «privada»; está en Git y en las APK desde el 11/11), todo sigue como antes.
 var intensidad_cancion := 0.0
 var _rock_visto := false
 var _subida_vista := false

@@ -934,7 +934,8 @@ func _pintar_ajustes() -> void:
 	cuerpo.add_child(fp)
 	cuerpo.add_child(_texto("Se nota la próxima vez que se abre el juego.", 16, COLOR_SUAVE))
 	# La música de Pastos Verdes (11/11): «Pastoral Pulse», la elegida por el usuario, o solo el ambiente de siempre
-	# (musica.gd, MUSICA_PASTOS). Solo si el archivo está en esta versión (es privado: pruebas).
+	# (musica.gd, MUSICA_PASTOS). Está en Git y en las APK desde el 11/11 (Suno Pro, autorizada); la opción sale solo
+	# si el archivo está en esta copia («privada» en musica.gd: si faltara, ni opción ni música).
 	var Mu = load("res://musica.gd")
 	if ResourceLoader.exists(Mu.CONTEXTOS["pradera_musica"]["musica"]):
 		var sel_mu := _selector(func(): return Mu.musica_pastos_elegida())

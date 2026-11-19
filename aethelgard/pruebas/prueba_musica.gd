@@ -93,7 +93,7 @@ func _contextos() -> void:
 			if ruta == "":
 				continue
 			var s = load(ruta) if ResourceLoader.exists(ruta) else null
-			if s == null and Mus.CONTEXTOS[c].get("privada", false):   # V12: la canción del título (Suno, fuera de Git)
+			if s == null and Mus.CONTEXTOS[c].get("privada", false):   # V12: título y Pastos (Suno; en Git desde el 11/11)
 				print("AVISO: «%s» pide %s, que es privada y no está en esta copia: silencio" % [c, ruta])
 				continue
 			if s is AudioStreamOggVorbis:                 # V12: los vientos del desierto (OGG, bucle en su .import)

@@ -7,7 +7,8 @@ extends SceneTree
 #   3. Al irse al juego (el mapa), se funde y se calla: ninguna reproducción del título sigue sonando.
 #   4. Al volver a la pantalla de inicio, empieza otra vez desde el principio (una sola reproducción).
 #   5. Respeta el volumen: con el bus Musica en silencio, no se oye (el bus manda).
-# La canción es privada (Suno, fuera de Git): si no está en esta copia, se avisa y la prueba no falla.
+# La canción es «privada» (Suno Pro; en Git y en las APK desde el 11/11; sus maestras, fuera): si faltara en una
+# copia, se avisa y la prueba no falla.
 # Las esperas van en milisegundos reales: el audio avanza con el reloj, no con --fixed-fps.
 
 const ESCENA := "res://portada/inicio_alternativo.tscn"

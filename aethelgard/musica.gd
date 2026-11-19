@@ -7,8 +7,11 @@ extends Node
 # - El combate tiene su propia música (combate.gd): al empezar, la exploración se calla con un fundido y recuerda por
 #   dónde iba; al volver (gane, huya o pierda), sigue desde ahí.
 # - Al pausar la app (Android), todo se pausa; al volver, sigue.
-# - Solo pistas con permiso (docs/audio/inventario_sonidos.md): hoy, ambientes CC0. Las canciones de Suno no están en
-#   el juego. Sin pista para un contexto: silencio controlado.
+# - Solo pistas con permiso (docs/audio/inventario_sonidos.md y docs/recursos.md): los ambientes CC0 y, desde el
+#   11/11, las tres canciones de Suno Pro que autorizó el usuario, en Git (audio/musica/) y en las APK (la v607 las
+#   publicó): «When the World Forgets» (título), «Pastoral Pulse» (Pastos Verdes, elegible) y «Volverá a amanecer»
+#   (clímax de los jefes; la pone combate_climax.gd, no este gestor). Fuera de Git solo quedan sus maestras
+#   (D:\REBELUM_musica\maestros) y las demás canciones de Suno. Sin pista para un contexto: silencio controlado.
 
 const FUNDIDO_SALIDA := 1.2
 const FUNDIDO_ENTRADA := 2.0

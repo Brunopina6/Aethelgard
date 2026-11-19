@@ -7,7 +7,7 @@ extends SceneTree
 #   3. El combate la calla con un fundido y, al volver, sigue por donde iba (no desde el principio), una sola vez.
 #   4. Al ir al mapa se calla.
 #   5. Con «Solo ambiente» no suena (lo de siempre).
-# Es privada (Suno, fuera de Git): si no está en esta copia, se avisa y no falla.
+# Es «privada» (Suno Pro; en Git y en las APK desde el 11/11): si faltara en una copia, se avisa y no falla.
 
 const PASTOS := "res://zonas3d/pastos_verdes_3d.tscn"
 var Mu

@@ -2,6 +2,12 @@
 
 Pega esto en una conversación nueva de Claude Code:
 
+> **ACTUALIZADO el 19/11 (DOCUMENTOS_19_11):** el relevo vigente es la ÚLTIMA sección «RELEVO 19/11» de
+> `docs/v12/RETOMAR.md` (tanda 3 validada, 211 · 0 · 117 · 0). La lista de trabajos con su estado es
+> `docs/v12/PENDIENTES_GENERALES.md`; la matriz por elemento, `docs/v12/MATRIZ_ELEMENTOS_V12.md`; las fases del
+> encargo del 13/11, `docs/v12/encargos/FASES_ENCARGO_COORDINADOR.md`. Lo validado se sube solo por avance normal a
+> `claude/rebelum-v12-validado-20261118`. El aviso del 13/11 de abajo y el resto del archivo son históricos.
+>
 > **ACTUALIZADO el 13/11 a las 23:59:** el relevo vigente es la sección «RELEVO 13/11» al final de
 > `docs/v12/RETOMAR.md`, y el encargo en curso está en `D:\REBELUM_entrada_13_11\ENCARGO_COORDINADOR_13_11.md`.
 > Lo que sigue en este archivo es histórico (11/11).
