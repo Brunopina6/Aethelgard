@@ -1081,3 +1081,58 @@ cuerpos se solapaban y las etiquetas «PV» se veían encima del slime de al lad
 - No se ha visto en el Redmi. Los cuerpos 3D (Grimfang, Velador, Peón) no se miden: solo los del Slime (de sus PNG).
 - Con un estado que aparece y desaparece, la vida del de detrás puede subir y bajar (solo si no, se pisarían).
 - La espada de Garon sigue rozando al slime derecho de GRUPOS[1] (estaba antes; ese slime no se ha movido).
+
+## 2026-11-19, 04:20 · PV_SLIMES_19_11_REVISION: arreglos de la revisión (rama `claude/rebelum-v12`, sobre `4452229`)
+
+### Hallazgo medio: el solape de cuerpos seguía en el estado real del Redmi (confirmado ejecutando)
+
+- La revisión tenía razón. Con el Slime **aplastado** como en el juego cuando prepara su golpe (`_turno_patron`, plan
+  «encoge»: rig ×(1,12; 0,78), el estado de `garon_menu.png`), con las posiciones de `4452229` los cuerpos se volvían a
+  pisar: GRUPOS[1] «cargando» A↔B 6 × 11 px y A↔C 4 × 12 px; «mezcla» A↔C 8 × 74 px; GRUPOS[2] 4-8 px; y también
+  **GRUPOS[8]** (dos slimes, no tocado antes) 5-9 px. La frase del informe anterior «los tres slimes quedan separados»
+  solo valía SIN aplastar (las capturas de `pv_slimes_19_11\despues` no tenían el aplastamiento). Cifra corregida: los
+  cuerpos de GRUPOS[2] eran 20 × 68 px (registro `032216`), no 20 × 66.
+- Arreglo (`combate.gd`, GRUPOS): [1] (230, 40), (-40, 130), (505, 130) (antes de la revisión (200, 40) y (440, 130));
+  [2] (-50, 90) y (222, 135) (antes (-25, 90) y (215, 135)); [8] el segundo en (416, 125) (antes 380). Medido: ≥ 9,8 px
+  entre cuerpos, aplastados o no (GRUPOS[1] «cargando»: A 168-307, B …-158, C 321-…; «mezcla»: A 187-311, C 321-…).
+  **Cambia el juego normal**: dónde están esos slimes, adónde corren los héroes, partículas, etc.
+
+### Hallazgos bajos
+
+- Comprobación «solo presentación» de la prueba: reescrito el comentario (comprueba que e["pos"] sale de su fila de
+  GRUPOS, no que la colocación sea la de antes; GRUPOS[1], [2] y [8] cambiaron a propósito).
+- Cámara (×1,08): `_ancla_vida`, `_piezas_vida`, `_repartir_vidas` y `_marcar_aviso` miden y colocan con la escena **en
+  reposo** (`_en_reposo()`: PIVOTE_ESCENA·(1−TAM_ESCENA) + p·TAM_ESCENA). Antes, con la escena acercada, la señal «⚠»
+  quedaba 10-85 px fuera de su sitio y la vida del Grimfang de GRUPOS[3] o del Peón B de [24] cambiaba de «vida_dy».
+- Estados largos: nuevo `_texto_estado()` (ANCHO_ESTADO = 130 px): si el rótulo no cabe, sigue en otra línea y crece
+  hacia arriba (la última línea donde estaba; la señal «⚠» sube con él). Con uno o con los que caben, el texto es el
+  de siempre. Motivo: «❄ Congelado  ⚠ Cargando» (se da en el juego normal: congelar no corta la carga) caía sobre el
+  cuerpo del slime de detrás (79-80 × 27 px). `combate_turnos_v12.gd _avisos()` lee también el rótulo en varias líneas.
+- Techo (y = 70): **no arreglado, anotado**. Con la magia negra de desarrollo (APAGADA en el juego normal) y cinco
+  estados por enemigo, en GRUPOS[0], [24] y [27] una vida llega al techo y sigue cruzando a la otra (3-23 px de ancho).
+  La prueba lo saca como AVISO (12 cruces), no como fallo. Recortar el texto o mover la vida en horizontal queda para
+  cuando la magia negra entre en el juego normal (decisión del usuario).
+
+### Pruebas (comprobado ejecutando, aislado, 19/11)
+
+- `prueba_vida_enemigos_solape` ampliada: Slime aplastado al cargar, cuerpos en todos los estados, cinco estados
+  («doble» = «❄ Congelado  ⚠ Cargando»; «negra» = la doble con tres estados de magia negra), su señal sin tapar su
+  rótulo y la cámara acercada. Sin el arreglo (código de `4452229`, prueba nueva): **FALLOS: 61** (7 cargando,
+  5 mezcla, 7 doble, 8 negra, 34 cámara; `D:\REBELUM_diagnostico\pruebas\2026-11-19_035703`). Con él: **PRUEBA
+  SUPERADA** (`2026-11-19_035632` y `035749`).
+- Superadas con el arreglo: `prueba_integridad`, `prueba_hud_combate`, `prueba_banco_pruebas`, `prueba_enemigos_v12`,
+  `prueba_huir`, `prueba_garon`, `prueba_equilibrio`, `prueba_ia`, `prueba_menu_magia` (`035749`; `prueba_menu_nuevo`
+  es MANUAL); `prueba_grupos_combate`, `prueba_centinela`, `prueba_turnos_v12`, `prueba_patrones_enemigos`,
+  `prueba_zarzalin_combate`, `prueba_cencerrante_combate`, `prueba_velaria_combate`, `prueba_incorporacion`,
+  `prueba_peon_v12`, `prueba_velador_v12`, `prueba_magia_negra`, `prueba_bramavidrio_combate`, `prueba_coloso`
+  (`035916`); `prueba_combate_huella`, `prueba_meshy_e01`, `prueba_guardian_modelo`, `prueba_zarzalin_modelo`,
+  `prueba_centinela_v12`, `prueba_golem_v12`, `prueba_naira_combate`, `prueba_humbaba_combate` (`040653`).
+- Capturas con ventana, slimes aplastados: `D:\REBELUM_diagnostico\pv_slimes_19_11\revision\antes` y `\despues`
+  (`banco_GRUPOS1_mezcla`, `_doble`, `_negra`, GRUPOS0/1/2/3/27).
+
+### Límites
+
+- No se ha visto en el Redmi. Los cuerpos 3D (Grimfang, Velador, Peón) siguen sin medirse: en GRUPOS[2] el arma del
+  Grimfang queda muy cerca del borde derecho del slime B (≈ 4 px más cerca que antes); en GRUPOS[1] el slime derecho,
+  ahora más a la derecha, queda justo encima de la espada de Garon (no se pisan en la captura, pero casi).
+- El aplastamiento se reproduce poniendo el final de su tween, no pasando por `_turno_patron` (azar y temporizadores).

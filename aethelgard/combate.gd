@@ -463,10 +463,14 @@ const ENEMIGOS := {
 # PV_SLIMES_19_11 (PC-11, Redmi 18/11 garon_menu.png): en [1] y [2] los slimes se solapaban (18-20 px) y la vida de uno
 # caía sobre el cuerpo del otro. Solo cambia dónde se dibujan (antes: [1] (250, 40), (60, 130), (440, 130); [2] el
 # primero en (30, 90)): ahora quedan ≈ 8 px entre cuerpos (pruebas/prueba_vida_enemigos_solape.gd).
+# PV_SLIMES_19_11_REVISION: medido con el Slime APLASTADO, como cuando prepara su golpe (_turno_patron, plan «encoge»:
+# ×(1,12; 0,78), el estado de la captura del Redmi), ensancha unos 19 px y sube unos 40: con (200, 40) y (440, 130)
+# volvían a pisarse 6-9 px. Ahora [1] (230, 40) y (505, 130), [2] (-50, 90) y (222, 135) y [8] el segundo en (416, 125)
+# (antes 380): ≥ 8 px entre cuerpos, aplastados o no.
 const GRUPOS := [
 	[["grimfang", Vector2(230, 150)], ["grimfang", Vector2(410, 115)]],
-	[["slime", Vector2(200, 40)], ["slime", Vector2(-40, 130)], ["slime", Vector2(440, 130)]],
-	[["slime", Vector2(-25, 90)], ["grimfang", Vector2(410, 115)], ["slime", Vector2(215, 135)]],
+	[["slime", Vector2(230, 40)], ["slime", Vector2(-40, 130)], ["slime", Vector2(505, 130)]],
+	[["slime", Vector2(-50, 90)], ["grimfang", Vector2(410, 115)], ["slime", Vector2(222, 135)]],
 	[["grimfang", Vector2(230, 150)], ["slime", Vector2(410, 115)]],
 	[["guardian", Vector2(150, 120)], ["grimfang", Vector2(420, 125)]],
 	# combates fijos (Engine.set_meta("grupo_combate", n)); no salen al azar
@@ -474,7 +478,7 @@ const GRUPOS := [
 	[["golem_ambar", Vector2(150, 120)], ["grimfang", Vector2(420, 125)]],   # 6: nido de la Garganta
 	# para un grupo de uno o dos (versión experimental: Kael solo hasta PV-03, con Lya hasta PV-05)
 	[["slime", Vector2(250, 120)]],                                         # 7
-	[["slime", Vector2(140, 110)], ["slime", Vector2(380, 125)]],           # 8
+	[["slime", Vector2(140, 110)], ["slime", Vector2(416, 125)]],           # 8 (PV_SLIMES_19_11_REVISION: antes 380)
 	[["grimfang", Vector2(300, 130)]],                                      # 9
 	[["zarzalin", Vector2(250, 120)]],                                      # 10: Zarzalín (Pastos Verdes)
 	[["guardian_bosque", Vector2(150, -120)]],                               # 11: Guardián del Bosque (Pastos Verdes, fase 3)
@@ -1380,12 +1384,19 @@ func _crear_vida_enemigo(e: Dictionary) -> void:
 
 
 # Dónde va la vida de un enemigo en pantalla: encima de su cabeza (centrada en los 3D). «vida_dy»: lo que
-# _repartir_vidas la sube para no pisar la de otro enemigo (0 casi siempre).
+# _repartir_vidas la sube para no pisar la de otro enemigo (0 casi siempre). Con la escena en reposo
+# (PV_SLIMES_19_11_REVISION): la vida vive en «capa» y no se acerca con la cámara de combate.
 func _ancla_vida(e: Dictionary) -> Vector2:
 	var dy := Vector2(0, e.get("vida_dy", 0.0))
 	if e.has("centro_ofs"):
-		return _a_pantalla(Vector2(_centro(e).x, e["pos"].y + _alto_barra(e))) - Vector2(60, 0) + dy
-	return _a_pantalla(e["pos"] + Vector2(48, _alto_barra(e))) + dy
+		return _en_reposo(Vector2(_centro(e).x, e["pos"].y + _alto_barra(e))) - Vector2(60, 0) + dy
+	return _en_reposo(e["pos"] + Vector2(48, _alto_barra(e))) + dy
+
+
+# PV_SLIMES_19_11_REVISION: una posición de la escena en pantalla con la escena en reposo (sin la cámara de combate de
+# combate_anim_v12.gd, que la acerca ×1,08). Es lo que usan la vida y la señal «⚠» para medirse y colocarse.
+func _en_reposo(p: Vector2) -> Vector2:
+	return PIVOTE_ESCENA * (1.0 - TAM_ESCENA) + p * TAM_ESCENA
 
 
 # PV_SLIMES_19_11 (PC-11, Redmi 18/11): la vida de un enemigo («PV n/n», su barra, su estado y la señal «⚠») no pisa la
@@ -1409,9 +1420,38 @@ func _piezas_vida(e: Dictionary) -> Array:
 		r.append(Rect2(b.position, b.size))
 	var s = e.get("aviso_nodo", null)
 	if s != null and is_instance_valid(s):         # el triángulo de sena_arte.gd _aviso (radio 26 que late ×1,1 y su contorno)
-		var k: float = absf(escena.scale.x)
-		r.append(Rect2(_a_pantalla(s.position) + Vector2(-29.0, -31.0) * k, Vector2(58.0, 53.0) * k))
+		var k: float = TAM_ESCENA                  # (en reposo, como las etiquetas: no con la cámara acercada)
+		r.append(Rect2(_en_reposo(s.position) + Vector2(-29.0, -31.0) * k, Vector2(58.0, 53.0) * k))
 	return r
+
+
+# PV_SLIMES_19_11_REVISION: el rótulo de estado de un enemigo («❄ Congelado  ⚠ Cargando», o la magia negra «Prisión 1
+# Lento 2  Def ↓ 3») no se ensancha más de ANCHO_ESTADO: lo que no cabe pasa a otra línea y el rótulo crece hacia arriba
+# (su última línea, donde estaba; la señal «⚠» sube con él). Así no cae sobre el cuerpo del enemigo de al lado. Con un
+# solo estado, o los que caben, el texto es el de siempre («  » entre estados).
+const ANCHO_ESTADO := 130.0
+
+
+func _texto_estado(e: Dictionary, estados: PackedStringArray) -> void:
+	var l: Label = e["lbl_estado"]
+	var fuente: Font = l.get_theme_font("font")
+	var tam: int = l.get_theme_font_size("font_size")
+	var lineas := PackedStringArray()
+	for t in estados:
+		var n := lineas.size()
+		if n > 0 and fuente.get_string_size(lineas[n - 1] + "  " + t, HORIZONTAL_ALIGNMENT_LEFT, -1, tam).x <= ANCHO_ESTADO:
+			lineas[n - 1] = lineas[n - 1] + "  " + t
+		else:
+			lineas.append(t)
+	l.text = "\n".join(lineas)
+	var extra: float = maxf(0.0, lineas.size() - 1) * (fuente.get_height(tam) + l.get_theme_constant("line_spacing"))
+	var d: float = extra - float(e.get("estado_extra", 0.0))
+	if not is_zero_approx(d):
+		l.position.y -= d
+		var s = e.get("aviso_nodo", null)
+		if s != null and is_instance_valid(s):
+			s.position.y -= d / TAM_ESCENA
+		e["estado_extra"] = extra
 
 
 func _repartir_vidas() -> void:
@@ -1444,7 +1484,7 @@ func _repartir_vidas() -> void:
 					e[k].position.y += dy - antes
 			var s = e.get("aviso_nodo", null)
 			if s != null and is_instance_valid(s):
-				s.position.y += (dy - antes) / absf(escena.scale.y)
+				s.position.y += (dy - antes) / TAM_ESCENA
 			e["vida_dy"] = dy
 		for r in natural:
 			puestos.append(Rect2(r.position + Vector2(0, dy), r.size))
@@ -2716,7 +2756,8 @@ func _marcar_aviso(f: Dictionary, si: bool) -> void:
 	if si and f.has("rig"):
 		var s := _sena_arte("aviso", f, {"dur": 9999.0})
 		# encima de «⚠ Cargando» y de la vida, sin taparlos (la señal vive en «escena», escalada: se pasa a sus medidas)
-		s.position = (_ancla_vida(f) + Vector2(60, -40 - 24 * TAM_ESCENA) - escena.position) / TAM_ESCENA
+		var arriba: float = 40.0 + 24.0 * TAM_ESCENA + float(f.get("estado_extra", 0.0))   # (sobre las líneas del estado)
+		s.position = (_ancla_vida(f) + Vector2(60, -arriba) - PIVOTE_ESCENA * (1.0 - TAM_ESCENA)) / TAM_ESCENA
 		f["aviso_nodo"] = s
 	if f.has("lbl_hp"):
 		_repartir_vidas()                            # PV_SLIMES_19_11: la señal también cuenta para no pisar al vecino
@@ -7633,6 +7674,6 @@ func _actualizar() -> void:
 				if not vivo:                            # (huido o caído sin pasar por _quitar_pv: su jaula y su sello, fuera)
 					_quitar_nodo_negra(e, "mn_prision_nodo")
 					_quitar_nodo_negra(e, "mn_marca_nodo")
-			e["lbl_estado"].text = "  ".join(estados)
+			_texto_estado(e, estados)                    # PV_SLIMES_19_11_REVISION: si no cabe, en varias líneas hacia arriba
 			e["lbl_estado"].visible = vivo
 	_repartir_vidas()                                   # PV_SLIMES_19_11: con los textos de ahora, sin pisarse

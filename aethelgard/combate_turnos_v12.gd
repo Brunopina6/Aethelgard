@@ -176,7 +176,7 @@ func _avisos() -> String:
 		var txt: String = e["lbl_estado"].text
 		var i := txt.find("⚠")
 		if i >= 0:
-			var trozo := txt.substr(i).split("  ")[0]
+			var trozo := txt.substr(i).replace("\n", "  ").split("  ")[0]   # (el rótulo puede ir en varias líneas)
 			return "%s · %s" % [trozo, e["nombre"]]
 	return ""
 
