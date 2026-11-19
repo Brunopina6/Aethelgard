@@ -589,3 +589,74 @@ Con el arreglo, `-Solo` (pasada `2026-11-18_210030` y `…_210139`): `prueba_ciu
 eventos (§10).
 
 Sin probar: en el Redmi con el dedo (Barrio Alto, rellano 1). En las demás regiones 3D el problema sigue (`vista3d.gd`).
+
+## 12. Tocar sobre un edificio, tras el Redmi del 18/11 (19/11, PC-16)
+
+En el Redmi (`docs/v12/REDMI_18_11.md`, problema 2: `t03_plaza_4/5`, `t03_plaza_7/8`, `t04_este_3…10`), al tocar sobre
+un edificio Kael andaba hasta la pared y se quedaba pegado a ella. Causa, en dos partes:
+- `_punto_suelo` no cuenta lo que está a más de 1 m sobre el suelo (para tocar a través de tejados y cubiertas), así que
+  el rayo de un toque en el tejado de una casa la atravesaba y caía en el suelo de DETRÁS, a veces a 30-40 m (en la
+  tienda de la plaza, tocando su tejado, el suelo salía en el Barrio Alto o en los Oficios);
+- la recta hasta ese punto se cortaba en la pared (`_ajustar_recto`, el antiguo `_ajustar_destino`), lejos de lo tocado,
+  y nada buscaba otro camino.
+
+**Comportamiento decidido** (solo en `zonas3d/ciudad/ciudad.gd`; `prototipos/vista3d.gd` y las demás regiones sin cambios;
+la búsqueda de caminos general sigue siendo la propuesta PD-4):
+1. Si lo primero que se ve en el píxel tocado es una casa o un muro (sólido, de más de 1,5 m, que no es «rodeable», ni
+   cubierta, copa ni puerta) **sin aclarar**, el toque es «sobre el edificio» y la META es el punto del edificio donde da
+   el rayo, en su planta (`_edificio_tocado`). Si es una pieza aclarada (se ve a través) o cualquier otra cosa, la meta
+   es el suelo tocado, como siempre. `_punto_suelo` devuelve lo mismo que antes; lo del edificio va aparte.
+2. Si la recta llega a la meta, o la deja ante algo rodeable o una esquina (§8 y §11), nada cambia.
+3. Si no, y lo que corta la recta es una casa o un muro (o se tocó el edificio), Kael va al **punto andable y holgado más
+   cercano a la meta al que llega SIN ATRAVESAR NADA con un RODEO CORTO**: un camino por lo andable y holgado del plano
+   (rejilla de 0,5 m, escalones ≤ 0,5 m) que no sea más de **8 m** (`RODEO_EXTRA`) más largo que la recta hasta ese punto
+   (`_buscar_rodeo`, A* con montículo y cota del recorrido). Así:
+   - **tocar una casa**: va a la fachada más cercana a lo tocado a la que se llega con ese rodeo; si la otra fachada queda
+     lejos, al punto de su lado más cercano a lo tocado (no donde la recta daba en la pared);
+   - **tocar al otro lado de una casa entera** (GUION_REDMI_19_11 punto 1): si se rodea con ≤ 8 m de más, la rodea y llega;
+     si no, va al punto más cercano a lo tocado que permite ese rodeo, de su lado o doblando la esquina. Nunca la
+     atraviesa ni busca caminos largos;
+   - solo si ese punto queda 0,5 m más cerca de la meta que lo que daba la recta (`RODEO_MEJORA`); si no, la recta.
+4. Kael sigue el camino por puntos de paso (`_ruta`, `_seguir_ruta`): tramos rectos comprobados en el plano cada 0,1 m
+   (andable, holgado, sin escalón de más de 0,5 m: `_recta_libre`). Al acercarse a un punto de paso pasa al siguiente sin
+   pararse si ya va en recta; si se para lejos de él (atasco, teclas, otro toque, «Guardar y recargar», un diálogo), el
+   camino se olvida. Al arrastrar el dedo, el rodeo en curso se mantiene y se busca como mucho uno cada 0,3 s.
+
+**Coste**: en el PC, el toque con rodeo más caro de la prueba tarda 14,7 ms (2-160 casillas exploradas; tope de 5000).
+En el Redmi no se ha medido (es un coste de un solo fotograma, al tocar; al arrastrar, como mucho una búsqueda cada
+0,3 s).
+
+**Límites conocidos**: no es una búsqueda de caminos general. Junto a la tienda de la plaza (28×19 m, `t04_este_6`), tocar
+su tejado ya no deja a Kael pegado donde la recta daba en la pared, pero tampoco lo lleva a la Calle de los Oficios: no
+hay rodeo de ≤ 8 m y va al punto de la fachada oeste más cercano a lo tocado. En los tramos de un rodeo, Kael anda (no
+corre) los últimos 3 m antes de cada punto de paso (vista3d decide correr por la distancia al destino).
+
+**Prueba nueva** `prueba_ciudad_toque_edificio` (auto, en la lista): toques de verdad (`InputEventMouseButton` en 1280×720
+por `ciudad._unhandled_input`) en el tejado de 18 casas no ocultables de los 8 sectores, dos de ellas los sitios del
+Redmi (la tienda desde su puerta y la casa alta del oeste desde su cara este). La referencia la calcula la prueba aparte
+(rejilla de 0,25 m, escalones ≤ 0,3 m): el punto andable más cercano a lo tocado con un rodeo de ≤ 6 m. Se eligen casos en
+que la recta de antes deja a Kael ≥ 1,5 m más lejos que esa referencia. Además, 8 guardas «al otro lado» (casas y muros
+cruzados de cara a cara, sin rodeo de ≤ 6 m en ninguno), 8 toques en suelo libre (el destino es el toque), el arrastre
+sobre lo tocado (sigue el mismo rodeo) y el coste (≤ 60 ms en el PC).
+- **Sin el arreglo** (`ciudad.gd` de `0970c02`, pasada `2026-11-19_021908`): **FALLOS: 18**, las 18 casas; por ejemplo
+  «plaza_tapiz/tienda (sitio del Redmi): … Kael acaba en (16.53, -5.85), a 9.09 m de lo tocado (referencia 1.90 …)».
+- **Con el arreglo** (pasada `2026-11-19_021756`): **FALLOS: 0** (42 OK); «… tienda (sitio del Redmi): … Kael acaba en
+  (16.25, 3.21), a 2.16 m de lo tocado (referencia 1.90 en (16.50, 3.00); la recta de antes, 9.37)».
+
+`prueba_ciudad_esquinas`: el caso «a través» ahora acepta como destino el primer punto de paso del rodeo (de su lado, ante
+la casa) y comprueba que ningún tramo la atraviesa. Con el arreglo, en la misma pasada: `prueba_ciudad_esquinas`,
+`prueba_ciudad_plano`, `prueba_ciudad_cargador`, `prueba_ciudad_fachadas`, `prueba_atasco_destino` y `prueba_integridad`
+SUPERADAS. `recorrido_ciudad` (ventana, 1280×720, bajo, sin vídeo) en cuatro partes de dos sectores (cada parte anda
+también las 12 conexiones; la pasada entera dura más que el tope de una orden): puerta_sur y plaza_tapiz **138 tramos, 0
+fallos**; oficios y ribera **147, 0**; terrazas y cuervo **159, 0**; pasajes y barrio_alto **154, 0**
+(`D:\REBELUM_diagnostico\pc16_19_11\recorrido_a…d`).
+
+Capturas antes/después en los dos sitios del Redmi (`D:\REBELUM_diagnostico\pc16_19_11\capturas`, el cuadro rojo marca
+dónde se tocó en la pantalla al tocar; la cámara sigue a Kael después): `tienda_antes_2_final.jpg` (Kael junto a la
+puerta, en la pared) y `tienda_despues_2_final.jpg` (en la esquina suroeste, junto a lo tocado); lo mismo con
+`casa_o_alta_*`.
+
+Sin probar: en el Redmi con el dedo (plaza: tienda y casa alta del oeste; Calle del Mercado). Necesita una APK nueva: el
+punto 1 de `GUION_REDMI_19_11.md` («tocar al otro lado de una casa entera: debe pararse ante ella») describe la APK
+`9d1baef`; con este arreglo, si el rodeo es corto, la rodea. Decisión del usuario: el tamaño del «rodeo corto» (8 m) y si
+quiere ir más allá (PD-4).

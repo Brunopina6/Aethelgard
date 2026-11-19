@@ -10,8 +10,9 @@ extends SceneTree
 #      (Sin el arreglo: el destino se queda ante la esquina y Kael, parado a más de 1 m del toque.)
 #   (2 y 3 son guardas de regresión: pasaban también sin el arreglo; la que lo reproduce es la 1.)
 #   2. ROZANDO: la recta no entra en la casa pero pasa a menos de RADIO_CUERPO de la esquina: también llega.
-#   3. A TRAVÉS: tocar al otro lado de la casa, cruzándola entera de cara a cara opuesta, sigue dando el último punto
-#      andable de la recta, ante ella (no se rodea una casa entera).
+#   3. A TRAVÉS: tocar al otro lado de la casa, cruzándola entera de cara a cara opuesta, sigue dando un destino de su
+#      lado, ante ella: el último punto andable de la recta o, desde el 19/11 (PC-16, RECORRIDO.md §12), el primer punto
+#      de paso del rodeo corto; y ningún tramo del rodeo la atraviesa (lo de llegar lo prueba prueba_ciudad_toque_edificio).
 # Imprime «FALLOS: n».
 
 const ESCENA := "res://zonas3d/ciudad/ciudad.tscn"
@@ -200,7 +201,14 @@ func _correr() -> void:
 		await _frames(8)
 		var d = v._ajustar_destino(tr[2])
 		var rect: Rect2 = tr[3]
-		_ok(d != null and d.x < rect.position.x and P.andable(d.x, d.z),
-			"%s: tocar al otro lado de la casa sigue dando el último punto andable ante ella (%s)" % [tr[0], str(d)])
+		var tramos: Array = [v.kael.global_position, d] + (v.get("_ruta") if v.get("_ruta") is Array else [])
+		var cruza := false
+		for i in tramos.size() - 1:
+			for j in 21:
+				var q: Vector3 = (tramos[i] as Vector3).lerp(tramos[i + 1], j / 20.0)
+				cruza = cruza or rect.has_point(Vector2(q.x, q.z))
+		_ok(d != null and d.x < rect.position.x and P.andable(d.x, d.z) and not cruza,
+			"%s: tocar al otro lado de la casa da un destino de su lado, ante ella (%s), y %d tramos que no la atraviesan" % [
+				tr[0], str(d), tramos.size() - 1])
 	print("FALLOS: %d" % fallos)
 	quit(1 if fallos > 0 else 0)
