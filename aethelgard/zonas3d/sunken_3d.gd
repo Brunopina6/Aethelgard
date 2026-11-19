@@ -131,20 +131,20 @@ static func opcion_ajustes(m: Object, cuerpo: Control) -> void:
 	if not load("res://prototipos/calidad_proto.gd").pruebas_permitidas():
 		return
 	var m3d = load("res://modo3d.gd")
-	var si_ahora: bool = m3d.elegida(CLAVE)
+	var sel: Dictionary = m._selector(func(): return m3d.elegida(CLAVE))   # AJUSTES_19_11: al pulsar, solo sus marcas
 	cuerpo.add_child(m._texto("Sunken City", 26, m.COLOR_TITULO))
 	var fila := HBoxContainer.new()
 	fila.add_theme_constant_override("separation", 8)
 	for op in [[false, "2D (la de siempre)"], [true, "3D (en pruebas)"]]:
 		var en_3d: bool = op[0]
-		var b: Button = m._boton(("● " if en_3d == si_ahora else "○ ") + op[1], 18, Vector2(300, 34),
+		var b: Button = m._opcion(sel, en_3d, op[1], 18, Vector2(300, 34),
 			"sunken:%s" % ("3d" if en_3d else "2d"))
 		b.pressed.connect(func():
 			m3d.elegir(CLAVE, en_3d)
 			var son = m.get_node_or_null("/root/Sonido")
 			if son != null:
 				son.efecto("ui_tic")
-			m._pintar_de_nuevo())
+			m._remarcar(sel))
 		fila.add_child(b)
 	cuerpo.add_child(fila)
 	cuerpo.add_child(m._texto("Se nota la próxima vez que se entra en Sunken City. Primer sector, PROPUESTA.", 16, m.COLOR_SUAVE))

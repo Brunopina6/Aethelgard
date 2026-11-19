@@ -584,9 +584,51 @@ func _pintar_habilidades() -> void:
 
 # ---------------------------------------------------------------- Ajustes
 
+# AJUSTES_19_11: en Ajustes, una pulsación ya no repinta la pestaña entera (≈75-90 ms por pulsación en el PC, medido;
+# en el Redmi, más: un parón visible), solo lo suyo: la fila de volumen tocada (_volumen_en_su_fila) o las marcas de
+# su selector (_remarcar; en «Calidad gráfica», el bloque entero, porque el perfil cambia los FPS y la nota). Los
+# botones son los mismos, así que el foco (teclado, mando o dedo) no se mueve y la lista no salta arriba. Nada de lo
+# demás de la pestaña depende de lo que se toca (cada selector lee lo suyo); prueba_ajustes_parcial lo comprueba
+# botón a botón contra un repintado entero. _pintar_de_nuevo sigue rehaciendo todo (al cambiar de pestaña, etc.).
+var _filas_volumen := {}                         # bus → [cifra (Label), barra (Control)] de su fila
+
+
+# Un selector de Ajustes: «● » delante de la opción en uso y «○ » delante de las demás. «leer» devuelve la opción en
+# uso (se lee una vez al pintar y otra al pulsar). Sus botones se crean con _opcion y, al pulsarlos, _remarcar(sel).
+func _selector(leer: Callable) -> Dictionary:
+	return {"leer": leer, "en_uso": leer.call(), "botones": []}
+
+
+func _opcion(sel: Dictionary, valor, texto: String, tam: int, minimo: Vector2, clave: String) -> Button:
+	var b := _boton(("● " if valor == sel["en_uso"] else "○ ") + texto, tam, minimo, clave)
+	sel["botones"].append([b, valor, texto])
+	return b
+
+
+# Vuelve a leer la opción en uso y cambia solo el texto de sus botones (lo mismo que saldría al repintar).
+func _remarcar(sel: Dictionary) -> void:
+	var en_uso = sel["leer"].call()
+	sel["en_uso"] = en_uso
+	for o in sel["botones"]:
+		if is_instance_valid(o[0]):
+			o[0].text = ("● " if o[1] == en_uso else "○ ") + o[2]
+	_sin_resalte()
+
+
+# Con el dedo o el ratón, el botón que queda bajo el puntero se ve sin resalte (la línea brillante de «hover»), como
+# cuando la pestaña se repintaba entera: el botón era nuevo y no se resaltaba hasta mover el puntero. Así un toque en
+# el móvil deja ◀ ▶ y las opciones como antes (capturas del 19/11). Con el ratón vuelve a resaltarse al salir y entrar.
+func _sin_resalte() -> void:
+	var v := get_viewport()
+	var h = v.gui_get_hovered_control() if v != null and v.has_method("gui_get_hovered_control") else null
+	if h is BaseButton and cuerpo.is_ancestor_of(h):
+		h.notification(NOTIFICATION_MOUSE_EXIT)
+
+
 # El volumen de cada parte del sonido (sonido.gd): ◀ ▶ lo bajan o suben un 10 % y suena una muestra. Se guarda en
 # este aparato, aparte de la partida.
 func _pintar_ajustes() -> void:
+	_filas_volumen = {}
 	cuerpo.add_child(_texto("Sonido", 26, COLOR_TITULO))
 	for bus in Sonido.VISIBLES:
 		var b: String = bus
@@ -606,26 +648,28 @@ func _pintar_ajustes() -> void:
 		var mas := _boton("▶", 18, Vector2(36, 34), "volumen:%s:1" % b)
 		mas.pressed.connect(func(): _cambiar_volumen(b, 1))
 		f.add_child(mas)
-		f.add_child(_barra(v))
+		var barra := _barra(v)
+		f.add_child(barra)
 		f.add_child(_texto("   " + Sonido.AYUDA[b], 16, COLOR_SUAVE))
 		cuerpo.add_child(f)
+		_filas_volumen[b] = [cifra, barra]
 	cuerpo.add_child(_texto("Se guarda en este aparato, aparte de la partida.", 16, COLOR_SUAVE))
 	# El mapa del mundo pintado o el de siempre (T-085), solo en la versión experimental: para comparar en el móvil.
 	# Se guarda en el mismo archivo de ajustes (mapa_arte.gd, sección [mapa]) y se nota al volver a abrir el mapa.
 	if load("res://modo3d.gd").activo():
 		var arte = load("res://mapa_arte/mapa_arte.gd")
-		var clasico: bool = arte.clasico_elegido()
+		var sel_mapa := _selector(func(): return arte.clasico_elegido())
 		cuerpo.add_child(_texto("Mapa del mundo", 26, COLOR_TITULO))
 		var fm := HBoxContainer.new()
 		fm.add_theme_constant_override("separation", 8)
 		for op in [[false, "Pintado"], [true, "De siempre"]]:
 			var es_clasico: bool = op[0]
-			var b := _boton(("● " if es_clasico == clasico else "○ ") + op[1], 18, Vector2(200, 34),
+			var b := _opcion(sel_mapa, es_clasico, op[1], 18, Vector2(200, 34),
 				"mapa:%s" % ("clasico" if es_clasico else "pintado"))
 			b.pressed.connect(func():
 				arte.elegir("clasico", es_clasico)
 				Sonido.efecto("ui_tic")
-				_pintar_de_nuevo())
+				_remarcar(sel_mapa))
 			fm.add_child(b)
 		cuerpo.add_child(fm)
 		cuerpo.add_child(_texto("Se nota la próxima vez que se abre el mapa.", 16, COLOR_SUAVE))
@@ -633,88 +677,88 @@ func _pintar_ajustes() -> void:
 		# se puede elegir (modo3d.gd, POR_DEFECTO_2D_ELEGIBLE). Solo cambian el botón marcado (la versión en uso) y el
 		# texto y orden de las dos opciones.
 		var m3d = load("res://modo3d.gd")
-		var g3d: bool = m3d.region_activa(m3d.GARGANTA)
+		var sel_g := _selector(func(): return m3d.region_activa(m3d.GARGANTA))
 		cuerpo.add_child(_texto("Garganta del Diablo", 26, COLOR_TITULO))
 		var fg := HBoxContainer.new()
 		fg.add_theme_constant_override("separation", 8)
 		for op in [[true, "3D"], [false, "2D (la de siempre)"]]:
 			var en_3d: bool = op[0]
-			var bg := _boton(("● " if en_3d == g3d else "○ ") + op[1], 18, Vector2(240, 34),
+			var bg := _opcion(sel_g, en_3d, op[1], 18, Vector2(240, 34),
 				"garganta:%s" % ("3d" if en_3d else "2d"))
 			bg.pressed.connect(func():
 				m3d.elegir("garganta3d", en_3d)
 				Sonido.efecto("ui_tic")
-				_pintar_de_nuevo())
+				_remarcar(sel_g))
 			fg.add_child(bg)
 		cuerpo.add_child(fg)
 		cuerpo.add_child(_texto("Se nota la próxima vez que se entra en la Garganta.", 16, COLOR_SUAVE))
 		_pintar_calidad()
 		# La invocación de Érebo (T-101): la de siempre o la nueva, en pruebas (invocacion_erebo_nueva.gd).
 		var ere = load("res://invocacion_erebo_nueva.gd")
-		var nueva: bool = ere.elegida()
+		var sel_e := _selector(func(): return ere.elegida())
 		cuerpo.add_child(_texto("Invocación de Érebo", 26, COLOR_TITULO))
 		var fe := HBoxContainer.new()
 		fe.add_theme_constant_override("separation", 8)
 		for op in [[false, "La de siempre"], [true, "Nueva (en pruebas)"]]:
 			var es_nueva: bool = op[0]
-			var be := _boton(("● " if es_nueva == nueva else "○ ") + op[1], 18, Vector2(240, 34),
+			var be := _opcion(sel_e, es_nueva, op[1], 18, Vector2(240, 34),
 				"erebo:%s" % ("nueva" if es_nueva else "actual"))
 			be.pressed.connect(func():
 				ere.elegir(es_nueva)
 				Sonido.efecto("ui_tic")
-				_pintar_de_nuevo())
+				_remarcar(sel_e))
 			fe.add_child(be)
 		cuerpo.add_child(fe)
 		cuerpo.add_child(_texto("Se nota la próxima vez que Lya invoca a Érebo.", 16, COLOR_SUAVE))
 		# Oakhaven en 3D (T-103). V12, migración de Oakhaven (12/11): la 3D completa va por defecto y la 2D de siempre se
 		# puede elegir (modo3d.gd, POR_DEFECTO_2D_ELEGIBLE), como la Garganta: solo cambian el botón marcado (la versión en
 		# uso) y el texto y orden de las dos opciones.
-		var o3d: bool = m3d.region_activa(m3d.OAKHAVEN)
+		var sel_o := _selector(func(): return m3d.region_activa(m3d.OAKHAVEN))
 		cuerpo.add_child(_texto("Oakhaven", 26, COLOR_TITULO))
 		var fo := HBoxContainer.new()
 		fo.add_theme_constant_override("separation", 8)
 		for op in [[true, "3D"], [false, "2D (la de siempre)"]]:
 			var en_3d: bool = op[0]
-			var bo := _boton(("● " if en_3d == o3d else "○ ") + op[1], 18, Vector2(240, 34),
+			var bo := _opcion(sel_o, en_3d, op[1], 18, Vector2(240, 34),
 				"oakhaven:%s" % ("3d" if en_3d else "2d"))
 			bo.pressed.connect(func():
 				m3d.elegir("oakhaven3d", en_3d)
 				Sonido.efecto("ui_tic")
-				_pintar_de_nuevo())
+				_remarcar(sel_o))
 			fo.add_child(bo)
 		cuerpo.add_child(fo)
 		cuerpo.add_child(_texto("Se nota la próxima vez que se entra en Oakhaven.", 16, COLOR_SUAVE))
 		# --- V12, migración del Gran Bosque Verde (12/11) --- el bosque 3D va por defecto y la 2D de siempre se puede
 		# elegir (modo3d.gd, POR_DEFECTO_2D_ELEGIBLE), como la Garganta y Oakhaven.
-		var b3d: bool = m3d.region_activa(m3d.GRAN_BOSQUE)
+		var sel_b := _selector(func(): return m3d.region_activa(m3d.GRAN_BOSQUE))
 		cuerpo.add_child(_texto("Gran Bosque Verde", 26, COLOR_TITULO))
 		var fb := HBoxContainer.new()
 		fb.add_theme_constant_override("separation", 8)
 		for op in [[true, "3D"], [false, "2D (la de siempre)"]]:
 			var en_3d: bool = op[0]
-			var bb := _boton(("● " if en_3d == b3d else "○ ") + op[1], 18, Vector2(240, 34),
+			var bb := _opcion(sel_b, en_3d, op[1], 18, Vector2(240, 34),
 				"granbosque:%s" % ("3d" if en_3d else "2d"))
 			bb.pressed.connect(func():
 				m3d.elegir("granbosque3d", en_3d)
 				Sonido.efecto("ui_tic")
-				_pintar_de_nuevo())
+				_remarcar(sel_b))
 			fb.add_child(bb)
 		cuerpo.add_child(fb)
 		cuerpo.add_child(_texto("Se nota la próxima vez que se entra en el Gran Bosque.", 16, COLOR_SUAVE))
 		# --- fin del bloque del Gran Bosque Verde ---
 		# El Mar de Cristal (V12), en pruebas: el primer sector del Mar de Arena de Calid en 3D.
-		var mc3d: bool = m3d.elegida("mardecristal")
+		var sel_mc := _selector(func(): return m3d.elegida("mardecristal"))
 		cuerpo.add_child(_texto("Mar de Arena de Calid", 26, COLOR_TITULO))
 		var fm3 := HBoxContainer.new()
 		fm3.add_theme_constant_override("separation", 8)
 		for op in [[false, "2D (la de siempre)"], [true, "Mar de Cristal 3D (en pruebas)"]]:
 			var en_3d: bool = op[0]
-			var bm := _boton(("● " if en_3d == mc3d else "○ ") + op[1], 18, Vector2(300, 34),
+			var bm := _opcion(sel_mc, en_3d, op[1], 18, Vector2(300, 34),
 				"mardecristal:%s" % ("3d" if en_3d else "2d"))
 			bm.pressed.connect(func():
 				m3d.elegir("mardecristal", en_3d)
 				Sonido.efecto("ui_tic")
-				_pintar_de_nuevo())
+				_remarcar(sel_mc))
 			fm3.add_child(bm)
 		cuerpo.add_child(fm3)
 		cuerpo.add_child(_texto("Se nota la próxima vez que se entra en el Mar de Arena.", 16, COLOR_SUAVE))
@@ -724,18 +768,18 @@ func _pintar_ajustes() -> void:
 	# La pantalla de inicio (11/11): desde el 11/11 por la noche, el usuario eligió la nueva como la de siempre; la original
 	# sigue entera y se puede volver a ella aquí, en cualquier versión (portada/eleccion.gd, [portada]).
 	var por = load("res://portada/eleccion.gd")
-	var alt: bool = por.elegida()
+	var sel_p := _selector(func(): return por.elegida())
 	cuerpo.add_child(_texto("Pantalla de inicio", 26, COLOR_TITULO))
 	var fp := HBoxContainer.new()
 	fp.add_theme_constant_override("separation", 8)
 	for op in [[true, "Nueva"], [false, "Original"]]:
 		var es_alt: bool = op[0]
-		var bp := _boton(("● " if es_alt == alt else "○ ") + op[1], 18, Vector2(260, 34),
+		var bp := _opcion(sel_p, es_alt, op[1], 18, Vector2(260, 34),
 			"portada:%s" % ("alternativa" if es_alt else "original"))
 		bp.pressed.connect(func():
 			por.elegir(es_alt)
 			Sonido.efecto("ui_tic")
-			_pintar_de_nuevo())
+			_remarcar(sel_p))
 		fp.add_child(bp)
 	cuerpo.add_child(fp)
 	cuerpo.add_child(_texto("Se nota la próxima vez que se abre el juego.", 16, COLOR_SUAVE))
@@ -743,18 +787,18 @@ func _pintar_ajustes() -> void:
 	# (musica.gd, MUSICA_PASTOS). Solo si el archivo está en esta versión (es privado: pruebas).
 	var Mu = load("res://musica.gd")
 	if ResourceLoader.exists(Mu.CONTEXTOS["pradera_musica"]["musica"]):
-		var con_musica: bool = Mu.musica_pastos_elegida()
+		var sel_mu := _selector(func(): return Mu.musica_pastos_elegida())
 		cuerpo.add_child(_texto("Música de Pastos Verdes", 26, COLOR_TITULO))
 		var fmp := HBoxContainer.new()
 		fmp.add_theme_constant_override("separation", 8)
 		for op in [[true, "Pastoral Pulse"], [false, "Solo ambiente"]]:
 			var nueva: bool = op[0]
-			var bmp := _boton(("● " if nueva == con_musica else "○ ") + op[1], 18, Vector2(260, 34),
+			var bmp := _opcion(sel_mu, nueva, op[1], 18, Vector2(260, 34),
 				"musica_pastos:%s" % ("nueva" if nueva else "ambiente"))
 			bmp.pressed.connect(func():
 				Mu.elegir_musica_pastos(nueva)
 				Sonido.efecto("ui_tic")
-				_pintar_de_nuevo())
+				_remarcar(sel_mu))
 			fmp.add_child(bmp)
 		cuerpo.add_child(fmp)
 		cuerpo.add_child(_texto("Se nota la próxima vez que se entra en Pastos Verdes.", 16, COLOR_SUAVE))
@@ -765,7 +809,7 @@ func _pintar_ajustes() -> void:
 	# 12/11, noche: y la prueba de la versión 5 («la v4 resuelta»: mandíbulas, colmillos y movimientos). Con cinco
 	# opciones la fila no cabe en el ancho de Ajustes (1080): van en un HFlowContainer, que las pasa a otra fila.
 	var BV = load("res://enemigos/bramavidrio/bramavidrio_version.gd")
-	var vb: int = BV.en_ajustes()
+	var sel_bv := _selector(func(): return BV.en_ajustes())
 	cuerpo.add_child(_texto("Bramavidrio", 26, COLOR_TITULO))
 	var fbv := HFlowContainer.new()
 	fbv.add_theme_constant_override("h_separation", 8)
@@ -773,11 +817,11 @@ func _pintar_ajustes() -> void:
 	for op in [[2, "Nuevo (la Sierpe)"], [3, "Prueba v3: el Excavador"], [4, "Prueba v4: el Ancestral"],
 			[5, "Prueba v5: la v4 resuelta"], [1, "Anterior"]]:
 		var v: int = op[0]
-		var bbv := _boton(("● " if v == vb else "○ ") + op[1], 18, Vector2(300 if v in [3, 4, 5] else 260, 34), "bramavidrio:%d" % v)
+		var bbv := _opcion(sel_bv, v, op[1], 18, Vector2(300 if v in [3, 4, 5] else 260, 34), "bramavidrio:%d" % v)
 		bbv.pressed.connect(func():
 			BV.elegir_en_ajustes(v)
 			Sonido.efecto("ui_tic")
-			_pintar_de_nuevo())
+			_remarcar(sel_bv))
 		fbv.add_child(bbv)
 	cuerpo.add_child(fbv)
 	cuerpo.add_child(_texto("Se nota en el próximo encuentro con Bramavidrio.", 16, COLOR_SUAVE))
@@ -785,17 +829,17 @@ func _pintar_ajustes() -> void:
 	# (personajes/heroes_v2/heroes_v2.gd, [heroes] version), para que el usuario los compare en el móvil. Por defecto,
 	# los originales.
 	var HV = load("res://personajes/heroes_v2/heroes_v2.gd")
-	var hv: String = HV.version()
+	var sel_hv := _selector(func(): return HV.version())
 	cuerpo.add_child(_texto("Protagonistas", 26, COLOR_TITULO))
 	var fhv := HBoxContainer.new()
 	fhv.add_theme_constant_override("separation", 8)
 	for op in [["originales", "Originales"], ["v2", "v2 (prueba)"], ["v3", "v3 (prueba)"]]:
 		var vh: String = op[0]
-		var bhv := _boton(("● " if vh == hv else "○ ") + op[1], 18, Vector2(220, 34), "heroes:%s" % vh)
+		var bhv := _opcion(sel_hv, vh, op[1], 18, Vector2(220, 34), "heroes:%s" % vh)
 		bhv.pressed.connect(func():
 			HV.elegir_version(vh)
 			Sonido.efecto("ui_tic")
-			_pintar_de_nuevo())
+			_remarcar(sel_hv))
 		fhv.add_child(bhv)
 	cuerpo.add_child(fhv)
 	cuerpo.add_child(_texto("Se nota en el próximo combate o al entrar en una región.", 16, COLOR_SUAVE))
@@ -803,17 +847,17 @@ func _pintar_ajustes() -> void:
 	# compararlo en el móvil; en las versiones normales no sale (y el interruptor no lee Ajustes).
 	var Orb = load("res://firmamento/orbes.gd")
 	if Orb.herramienta_dev():
-		var oa: bool = Orb.activo()
+		var sel_orb := _selector(func(): return Orb.activo())
 		cuerpo.add_child(_texto("Firmamento de los Ecos (prueba)", 26, COLOR_TITULO))
 		var fob := HBoxContainer.new()
 		fob.add_theme_constant_override("separation", 8)
 		for op in [[false, "Apagado"], [true, "Encendido"]]:
 			var so: bool = op[0]
-			var bo := _boton(("● " if so == oa else "○ ") + op[1], 18, Vector2(260, 34), "orbes:%s" % ("si" if so else "no"))
+			var bo := _opcion(sel_orb, so, op[1], 18, Vector2(260, 34), "orbes:%s" % ("si" if so else "no"))
 			bo.pressed.connect(func():
 				Orb.elegir_en_ajustes(so)
 				Sonido.efecto("ui_tic")
-				_pintar_de_nuevo())
+				_remarcar(sel_orb))
 			fob.add_child(bo)
 		cuerpo.add_child(fob)
 		cuerpo.add_child(_texto("Solo Auditoría: tablero de Orbes Cristalinos en la ficha del Grupo.", 16, COLOR_SUAVE))
@@ -824,40 +868,40 @@ func _pintar_ajustes() -> void:
 		cuerpo.add_child(_texto("Gran Bosque: pruebas de rendimiento", 26, COLOR_TITULO))
 		for clave in CP.EXTRA_PRUEBAS:
 			var k: String = clave
-			var act: bool = CP.extra_activo(k)
+			var sel_gb := _selector(func(): return CP.extra_activo(k))
 			var fgb := HBoxContainer.new()
 			fgb.add_theme_constant_override("separation", 8)
 			fgb.add_child(_texto(CP.EXTRA_PRUEBAS[k]["nombre"], 18, COLOR_SUAVE))
 			for op in [[false, "No"], [true, "Sí"]]:
 				var so: bool = op[0]
-				var bg := _boton(("● " if so == act else "○ ") + op[1], 18, Vector2(120, 34), "gb:%s:%s" % [k, "si" if so else "no"])
+				var bg := _opcion(sel_gb, so, op[1], 18, Vector2(120, 34), "gb:%s:%s" % [k, "si" if so else "no"])
 				bg.pressed.connect(func():
 					CP.elegir_extra(k, so)
 					Sonido.efecto("ui_tic")
-					_pintar_de_nuevo())
+					_remarcar(sel_gb))
 				fgb.add_child(bg)
 			cuerpo.add_child(fgb)
 		cuerpo.add_child(_texto("Solo Auditoría. Se nota al volver a entrar en el Gran Bosque.", 16, COLOR_SUAVE))
 		# V12 (14/11): el orbe experimental de Érebo (erebo_orbe_v12.gd), APAGADO por defecto. Solo Auditoría o editor.
 		var EO = load("res://erebo_orbe_v12.gd")
-		var eo_act: bool = EO.activo()
+		var sel_eo := _selector(func(): return EO.activo())
 		var feo := HBoxContainer.new()
 		feo.add_theme_constant_override("separation", 8)
 		feo.add_child(_texto("Érebo: orbe experimental", 18, COLOR_SUAVE))
 		for op in [[false, "No"], [true, "Sí"]]:
 			var so: bool = op[0]
-			var be := _boton(("● " if so == eo_act else "○ ") + op[1], 18, Vector2(120, 34), "erebo_orbe:%s" % ("si" if so else "no"))
+			var be := _opcion(sel_eo, so, op[1], 18, Vector2(120, 34), "erebo_orbe:%s" % ("si" if so else "no"))
 			be.pressed.connect(func():
 				EO.elegir(so)
 				Sonido.efecto("ui_tic")
-				_pintar_de_nuevo())
+				_remarcar(sel_eo))
 			feo.add_child(be)
 		cuerpo.add_child(feo)
 		cuerpo.add_child(_texto("Solo Auditoría: espiral violeta, negra y plateada al agarrar el orbe. No cambia el daño.", 16, COLOR_SUAVE))
 		# V12 (14/11): la invocación cinematográfica en vídeo (invocacion_erebo_video.gd), APAGADA por defecto.
 		var EV = load("res://invocacion_erebo_video.gd")
 		var EH = load("res://invocacion_erebo_hibrida.gd")   # V12, Érebo híbrida (15/11): su valor, en el mismo selector
-		var ev_act: String = EH.valor_selector()
+		var sel_ev := _selector(func(): return EH.valor_selector())
 		var fev := HBoxContainer.new()
 		fev.add_theme_constant_override("separation", 6)
 		cuerpo.add_child(_texto("Érebo: invocación cinematográfica", 18, COLOR_SUAVE))
@@ -866,28 +910,28 @@ func _pintar_ajustes() -> void:
 		for op in [["no", "No"], ["abreviada", "Abreviada"], ["completa", "Completa"], ["primera", "1.ª completa"],
 				["hibrida", "Híbrida"], ["hibrida_breve", "Híbrida abreviada"]]:
 			var mo: String = op[0]
-			var bv := _boton(("● " if mo == ev_act else "○ ") + op[1], 18, Vector2(140, 34), "erebo_cine:%s" % mo)
+			var bv := _opcion(sel_ev, mo, op[1], 18, Vector2(140, 34), "erebo_cine:%s" % mo)
 			bv.pressed.connect(func():
 				EH.elegir_modo(mo)                            # (los del vídeo los guarda el vídeo)
 				Sonido.efecto("ui_tic")
-				_pintar_de_nuevo())
+				_remarcar(sel_ev))
 			(fhb if mo.begins_with("hibrida") else fev).add_child(bv)
 		cuerpo.add_child(fev)
 		cuerpo.add_child(fhb)
 		cuerpo.add_child(_texto("Solo Auditoría: vídeo prerenderizado (≈20 s o ≈7 s). «1.ª completa»: la primera vez entera, luego la abreviada. «Híbrida»: Érebo va hasta el enemigo elegido, le saca un corazón espectral y sigue el ritual del vídeo (≈24 s; «Híbrida abreviada», con el ritual corto, ≈16 s). Tocar la pantalla la salta. No cambia el daño.", 16, COLOR_SUAVE))
 		# V12 (14/11), fase 3C: la magia Agua mejorada (vfx/agua_v12.gd), APAGADA por defecto. Solo Auditoría o editor.
 		var AGV = load("res://vfx/agua_v12.gd")
-		var ag_act: bool = AGV.activo()
+		var sel_ag := _selector(func(): return AGV.activo())
 		var fag := HBoxContainer.new()
 		fag.add_theme_constant_override("separation", 8)
 		fag.add_child(_texto("Magia Agua v12", 18, COLOR_SUAVE))
 		for op in [[false, "No"], [true, "Sí"]]:
 			var so: bool = op[0]
-			var ba := _boton(("● " if so == ag_act else "○ ") + op[1], 18, Vector2(120, 34), "agua_v12:%s" % ("si" if so else "no"))
+			var ba := _opcion(sel_ag, so, op[1], 18, Vector2(120, 34), "agua_v12:%s" % ("si" if so else "no"))
 			ba.pressed.connect(func():
 				AGV.elegir(so)
 				Sonido.efecto("ui_tic")
-				_pintar_de_nuevo())
+				_remarcar(sel_ag))
 			fag.add_child(ba)
 		cuerpo.add_child(fag)
 		cuerpo.add_child(_texto("Solo Auditoría: Agua, Torrente y Maremoto con anticipación, orbe, impacto y ola nuevos. No cambia el daño.", 16, COLOR_SUAVE))
@@ -902,14 +946,15 @@ func _pintar_ajustes() -> void:
 			var sec_p: String = op_p[1]
 			var clave_p: String = op_p[2]
 			var valor_si = op_p[3]
-			var cfg_p := ConfigFile.new()
-			var act_p: bool = cfg_p.load("user://ajustes.cfg") == OK and str(cfg_p.get_value(sec_p, clave_p, "")) == str(valor_si)
+			var sel_pi := _selector(func():
+				var cfg_p := ConfigFile.new()
+				return cfg_p.load("user://ajustes.cfg") == OK and str(cfg_p.get_value(sec_p, clave_p, "")) == str(valor_si))
 			var f_piloto := HBoxContainer.new()
 			f_piloto.add_theme_constant_override("separation", 8)
 			f_piloto.add_child(_texto(op_p[0], 18, COLOR_SUAVE))
 			for op in [[false, "No"], [true, "Sí"]]:
 				var so: bool = op[0]
-				var bp := _boton(("● " if so == act_p else "○ ") + op[1], 18, Vector2(120, 34), "piloto:%s:%s" % [clave_p, "si" if so else "no"])
+				var bp := _opcion(sel_pi, so, op[1], 18, Vector2(120, 34), "piloto:%s:%s" % [clave_p, "si" if so else "no"])
 				bp.pressed.connect(func():
 					var c := ConfigFile.new()
 					if FileAccess.file_exists("user://ajustes.cfg"):
@@ -919,7 +964,7 @@ func _pintar_ajustes() -> void:
 					if clave_p in ["nix_v12", "nix_fbx"]:
 						Engine.set_meta(clave_p, so)          # (nix_v12/nix_fbx: la meta manda sobre el archivo)
 					Sonido.efecto("ui_tic")
-					_pintar_de_nuevo())
+					_remarcar(sel_pi))
 				f_piloto.add_child(bp)
 			cuerpo.add_child(f_piloto)
 		cuerpo.add_child(_texto("Solo Auditoría: pilotos de Nix, de la capa de Garon y la misión propuesta del cantero. Se notan en la siguiente zona o combate.", 16, COLOR_SUAVE))
@@ -948,6 +993,7 @@ func _pintar_ajustes() -> void:
 	var fav5 := HBoxContainer.new()
 	fav5.add_theme_constant_override("separation", 8)
 	var AC = load("res://combate_acciones_v12.gd")
+	var sels_av := {}
 	for op in [["anim_v12", false, "Animación de siempre"], ["anim_v12", true, "Animación v12 (prueba)"],
 			["camaras", true, "Cámaras: sí"], ["camaras", false, "Cámaras: no"],
 			["pausa_atb", true, "ATB quieto al actuar: sí"], ["pausa_atb", false, "ATB quieto al actuar: no"],
@@ -956,11 +1002,13 @@ func _pintar_ajustes() -> void:
 			["blanca", true, "Magia blanca v12 de Lya: sí"], ["blanca", false, "Magia blanca v12 de Lya: no"]]:
 		var cl: String = op[0]
 		var si: bool = op[1]
-		var actual: bool = AV.activado() if cl == "anim_v12" else (AV.camaras() if cl == "camaras" else
-			(AV.pausa_atb() if cl == "pausa_atb" else (TV.activado() if cl == "turnos" else
-			(AC.esgrima_activa() if cl == "esgrima" else AC.blanca_activa()))))
+		if not sels_av.has(cl):                         # un selector por ajuste (sus dos botones)
+			sels_av[cl] = _selector(func(): return AV.activado() if cl == "anim_v12" else (AV.camaras() if cl == "camaras" else
+				(AV.pausa_atb() if cl == "pausa_atb" else (TV.activado() if cl == "turnos" else
+				(AC.esgrima_activa() if cl == "esgrima" else AC.blanca_activa())))))
+		var sel_av: Dictionary = sels_av[cl]
 		var ancho := 300 if cl != "camaras" else 180
-		var bav := _boton(("● " if actual == si else "○ ") + op[2], 18, Vector2(ancho, 34),
+		var bav := _opcion(sel_av, si, op[2], 18, Vector2(ancho, 34),
 			"combate:%s:%s" % [cl, "si" if si else "no"])
 		bav.pressed.connect(func():
 			if cl == "turnos":
@@ -970,7 +1018,7 @@ func _pintar_ajustes() -> void:
 			else:
 				AV.elegir_en_ajustes(cl, si)
 			Sonido.efecto("ui_tic")
-			_pintar_de_nuevo())
+			_remarcar(sel_av))
 		(fav if cl in ["anim_v12", "camaras"] else (fav2 if cl == "pausa_atb" else (fav3 if cl == "turnos" else
 			(fav4 if cl == "esgrima" else fav5)))).add_child(bav)
 	cuerpo.add_child(fav)
@@ -992,20 +1040,26 @@ func _pintar_calidad() -> void:
 	var auto = load("res://prototipos/calidad_auto.gd")
 	var cal = load("res://prototipos/calidad_proto.gd")
 	var e: Dictionary = auto.estado()
-	var elegida: String = "auto" if e["auto"] or e["perfil"] == "" else e["perfil"]
+	# (AJUSTES_19_11) el perfil cambia los FPS en uso y la nota: cualquier botón del bloque lo pone al día entero
+	var sel_cal := _selector(func(): return _calidad_elegida(auto.estado()))
+	var sel_fps := _selector(func(): return _fps_en_uso(auto, cal, auto.estado()))
+	var nota := _texto(_nota_calidad(auto, e), 16, COLOR_SUAVE)
+	var al_dia := func():
+		_remarcar(sel_cal)
+		_remarcar(sel_fps)
+		nota.text = _nota_calidad(auto, auto.estado())
 	cuerpo.add_child(_texto("Calidad gráfica", 26, COLOR_TITULO))
 	var fc := HBoxContainer.new()
 	fc.add_theme_constant_override("separation", 8)
 	for op in CALIDADES:
 		var clave: String = op[0]
-		var b := _boton(("● " if clave == elegida else "○ ") + op[1], 18, Vector2(170, 34), "calidad:" + clave)
+		var b := _opcion(sel_cal, clave, op[1], 18, Vector2(170, 34), "calidad:" + clave)
 		b.pressed.connect(func():
 			_elegir_calidad(clave)
 			Sonido.efecto("ui_tic")
-			_pintar_de_nuevo())
+			al_dia.call())
 		fc.add_child(b)
 	cuerpo.add_child(fc)
-	var fps_en_uso: int = auto.fps_de(cal.actual(), e, int(cal.PERFILES[cal.actual()]["fps"]))
 	var ff := HBoxContainer.new()
 	ff.add_theme_constant_override("separation", 8)
 	var nombre_fps := _texto("Límite de FPS", 20, COLOR_TEXTO)
@@ -1013,13 +1067,26 @@ func _pintar_calidad() -> void:
 	ff.add_child(nombre_fps)
 	for n in auto.FPS_VALIDOS:
 		var cifra: int = n
-		var b := _boton(("● " if cifra == fps_en_uso else "○ ") + str(cifra), 18, Vector2(110, 34), "fps:%d" % cifra)
+		var b := _opcion(sel_fps, cifra, str(cifra), 18, Vector2(110, 34), "fps:%d" % cifra)
 		b.pressed.connect(func():
 			auto.guardar({"fps": cifra})
 			Sonido.efecto("ui_tic")
-			_pintar_de_nuevo())
+			al_dia.call())
 		ff.add_child(b)
 	cuerpo.add_child(ff)
+	cuerpo.add_child(nota)
+
+
+func _calidad_elegida(e: Dictionary) -> String:
+	return "auto" if e["auto"] or e["perfil"] == "" else e["perfil"]
+
+
+func _fps_en_uso(auto, cal, e: Dictionary) -> int:
+	return auto.fps_de(cal.actual(), e, int(cal.PERFILES[cal.actual()]["fps"]))
+
+
+func _nota_calidad(auto, e: Dictionary) -> String:
+	var elegida := _calidad_elegida(e)
 	var nota := "Se aplica la próxima vez que se entra en una región 3D."
 	if elegida == "auto":
 		var p: String = auto.perfil_de(e)
@@ -1029,7 +1096,7 @@ func _pintar_calidad() -> void:
 		nota = "En este aparato, %s no llega a sus FPS de forma estable. " % _nombre_calidad(elegida) + nota
 	if auto.aislada():                             # (15/11) desde el banco de pruebas de Auditoría
 		nota = "Banco de pruebas: vale solo para este caso del banco (no cambia tus ajustes). " + nota
-	cuerpo.add_child(_texto(nota, 16, COLOR_SUAVE))
+	return nota
 
 
 func _nombre_calidad(p: String) -> String:
@@ -1052,7 +1119,26 @@ func _elegir_calidad(clave: String) -> void:
 func _cambiar_volumen(bus: String, paso: int) -> void:
 	Sonido.fijar(bus, Sonido.volumen(bus) + paso * Sonido.PASO)
 	Sonido.probar(bus)
-	_pintar_de_nuevo()
+	_volumen_en_su_fila(bus)
+
+
+# (AJUSTES_19_11) Solo la fila de ese bus: su cifra y su barra, como las pinta _pintar_ajustes. Sin su fila (no es la
+# pestaña de Ajustes), la pestaña entera, como antes.
+func _volumen_en_su_fila(bus: String) -> void:
+	var fila: Array = _filas_volumen.get(bus, [])
+	if fila.is_empty() or not is_instance_valid(fila[0]) or not fila[0].is_inside_tree():
+		_pintar_de_nuevo()
+		return
+	var v: int = Sonido.volumen(bus)
+	var cifra: Label = fila[0]
+	cifra.text = ("%d %%" % v) if v > 0 else "Sin sonido"
+	cifra.add_theme_color_override("font_color", COLOR_TEXTO if v > 0 else COLOR_SUAVE)
+	var barra := _barra(v)                          # la barra, nueva en el mismo sitio (dos paneles: no cuesta nada)
+	fila[1].add_sibling(barra)
+	fila[1].get_parent().remove_child(fila[1])
+	fila[1].queue_free()
+	fila[1] = barra
+	_sin_resalte()
 
 
 # Barra dorada fina con el volumen. Solo se mira: los toques van a ◀ ▶.

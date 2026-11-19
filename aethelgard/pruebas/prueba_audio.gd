@@ -204,6 +204,9 @@ func _pestana_ajustes() -> void:
 	# a ras del límite y un tropiezo suelto del PC lo pasa. El límite sigue en 100 ms y se sigue midiendo una primera
 	# pulsación de verdad; si la pasa, se repite como primera (sin la muestra ni su reproductor, lo único que solo hace
 	# la primera) hasta 2 veces más y vale la mejor: un coste de cada primera pulsación falla igual; un tropiezo, no.
+	# AJUSTES_19_11: la causa de fondo, arreglada: ◀ ▶ ya no repintan la pestaña entera, solo su fila (menus.gd
+	# _volumen_en_su_fila; prueba_ajustes_parcial comprueba que se ve igual que un repintado). Medido en el PC: la
+	# primera pulsación ≈4-9 ms (crear la muestra) y las demás ≈2 ms. El límite sigue en 100 ms (no se relaja).
 	var fps_antes := Engine.max_fps
 	Engine.max_fps = 0
 	await _esperar(2)
@@ -228,7 +231,7 @@ func _pestana_ajustes() -> void:
 	await _esperar(2)
 	Engine.max_fps = fps_antes
 	var ms: float = intentos.min()
-	print("  primera pulsación en ◀ de Música (crear su muestra y repintar), sin tope de fps: peor fotograma %s ms"
+	print("  primera pulsación en ◀ de Música (crear su muestra y poner al día su fila), sin tope de fps: peor fotograma %s ms"
 		% ", ".join(intentos.map(func(x): return "%.1f" % x)) + "; una pulsación cualquiera: %.1f ms" % estable)
 	if ms > 100.0:
 		_fallo("4: la primera pulsación en Música da un fotograma de %.0f ms en el PC (un parón visible en el móvil; %d intentos: %s)"

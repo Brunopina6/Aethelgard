@@ -153,20 +153,20 @@ static func elegir_en_ajustes(si: bool) -> Error:
 
 # Ajustes (menus.gd, una línea, junto a «Protagonistas»): «Oakhaven: de siempre / mundo vivo (prueba)».
 static func opcion_ajustes(m: Object, cuerpo: Control) -> void:
-	var si_ahora := activado()
+	var sel: Dictionary = m._selector(func(): return activado())   # AJUSTES_19_11: al pulsar, solo sus marcas
 	cuerpo.add_child(m._texto("Oakhaven", 26, m.COLOR_TITULO))
 	var fila := HBoxContainer.new()
 	fila.add_theme_constant_override("separation", 8)
 	for op in [[false, "De siempre"], [true, "Mundo vivo (prueba)"]]:
 		var si: bool = op[0]
-		var b: Button = m._boton(("● " if si == si_ahora else "○ ") + op[1], 18, Vector2(300, 34),
+		var b: Button = m._opcion(sel, si, op[1], 18, Vector2(300, 34),
 			"mundo_vivo:%s" % ("si" if si else "no"))
 		b.pressed.connect(func():
 			elegir_en_ajustes(si)
 			var son = m.get_node_or_null("/root/Sonido")
 			if son != null:
 				son.efecto("ui_tic")
-			m._pintar_de_nuevo())
+			m._remarcar(sel))
 		fila.add_child(b)
 	cuerpo.add_child(fila)
 	cuerpo.add_child(m._texto("Vecinos con oficio y rutinas. Se nota al entrar en Oakhaven.", 16, m.COLOR_SUAVE))
