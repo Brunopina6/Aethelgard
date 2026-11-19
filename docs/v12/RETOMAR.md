@@ -1206,3 +1206,20 @@ Validado: `dc878e9` (`validado/v12/20261115-170245`, 188 · 0). APK v834 instala
 - **Siguiente (orden del usuario del 19/11 por la tarde):** contenido jugable antes que investigaciones técnicas.
   Tanda 6: Hilandera del Eco en combate (PC-17, apagada), conversaciones que recuerdan decisiones y rumores en
   Oakhaven 3D (AM-8, [P]) y sonido de Sunken y la Arboleda (AM-9). Nada visto en Android; sin APK al teléfono.
+
+## RELEVO 19/11, 21:38: VALIDADA la tanda 6 (216 · 0 · 117 · 0), contenido jugable, y en GitHub (LEER PRIMERO)
+- Encima del relevo de las 19:06 (tanda 5, `f4611bf`). Batería 216 · 0 · 117 · 0 (2026-11-19_210350); la etiqueta `validado/v12/` de
+  esta hora es el punto de recuperación y apunta al commit de este relevo, subido por avance normal a
+  `claude/rebelum-v12-validado-20261118`.
+- Hilandera del Eco (`c8fddb1`, `fddc179`, `0d2c743`, PC-17): en el combate, APAGADA tras `hilandera_v12`; marca, mordida
+  al turno siguiente y trama de eco; clips nuevos de Blender; caso «hilandera» del banco. Faltan Custodio y Posadero.
+- Conversaciones (`c64d907`, `7e7aa6e`, `9ab380f`, AM-8): comentarios que recuerdan decisiones (Ferro, Gorthor, el
+  Guardián) y rumores del corrillo en la Oakhaven 3D. Son 26 textos [P] que debe aprobar el usuario.
+- Sonido (`b2da680`, `e629f9e`, `9cac67a`, AM-9): olas y gaviotas en Sunken (la 2D tras el interruptor [P]
+  `puerto_sunken_2d`) y campanillas en la Arboleda. Nadie lo ha oído. Faltan charcas y lava de las zonas 2D.
+- **Siguiente (orden del usuario del 19/11, 19:20):** 1) pruebas en el Redmi cuando lo enchufe (APK de Auditoría
+  desde el validado, respaldo de la partida y los ajustes antes de instalar; guion «Para la próxima APK» de
+  `GUION_REDMI_19_11.md` más derrota de Kael, transparencias, pestañas, Velaria, Cencerrante e Hilandera);
+  2) los NPC que entregó el usuario (10 de Tripo sin rig, Brumak y Borek con clips de Mixamo; copias y mapa en
+  `D:\REBELUM_diagnostico\entradas\2026-11-19_npc_tripo\MAPA_NPC.md`) en sustitución de los chibis genéricos de
+  `personajes\npc_v12\`, en una rama aparte con commits locales. Nara, Ruván y Luma no tienen modelo (bloqueados).
