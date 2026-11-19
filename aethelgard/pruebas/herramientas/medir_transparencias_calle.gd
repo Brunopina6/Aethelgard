@@ -1,19 +1,33 @@
 extends SceneTree
 # MEDIDA (19/11, TRANSPARENCIAS_19_11, PC-9): la rareza de la muestra de la calle (MUESTRA_CALLE_OAKHAVEN.md §7: «una
 # capa transparente oscura no oscurecía nada en bajo y medio»), en la escena REAL. Carga la muestra con cada perfil
-# (y, si se pide, con la escala 3D cambiada por calidad_extra), pone la cámara de la muestra sobre Kael, hace una
-# captura SIN capas y otra CON una fila de cuadros negros al 50 % (mezcla estándar, sombreado propio con ALPHA,
-# multiplicar, Sprite3D) en el suelo delante de Kael y otra fila flotando a 1,5 m, y mide el color en el centro de
-# cada cuadro antes y después. No es una prueba: guarda capturas y medidas.json en la carpeta de salida.
+# (y, si se pide, con la escala 3D cambiada por calidad_extra o con el ambiente tocado), pone la cámara de la muestra
+# sobre Kael, hace una captura SIN capas y otra CON una fila de cuadros negros al 50 % de cada tipo (mezcla estándar,
+# con luz, multiplicar, sombreado propio con ALPHA, trama, mezcla sin niebla, y un negro OPACO con y sin niebla, que
+# dice de qué color sale «el negro» por sí solo) a 4 cm, 1,5 cm y 5 mm del adoquín y otra fila flotando a 1,5 m, y
+# mide el color en el centro de cada cuadro antes y después. No es una prueba: guarda capturas y medidas.json.
 #   Godot --path aethelgard --resolution 1280x720 --script res://pruebas/herramientas/medir_transparencias_calle.gd
-#     -- 3d sin_prologo salida=<carpeta> casos=bajo,medio,alto,bajo@1.0,alto@0.75
-#   («perfil@escala»: el perfil con escala_3d cambiada; «perfil#singlow», «perfil#glow»: resplandor forzado)
+#     -- 3d sin_prologo salida=<carpeta> casos=bajo,medio,alto,bajo@1.0,alto@0.75,bajo#sinniebla+lineal
+#   «perfil@escala»: el perfil con escala_3d cambiada. «perfil#mod+mod...»: el ambiente tocado; mod = glow, singlow
+#   (resplandor forzado), sinniebla (fog_enabled = false), lineal (mapeo de tonos lineal), sinajustes
+#   (adjustment_enabled = false). «filas=antigua»: la colocación del primer informe (la fila de 5 mm caía FUERA de la
+#   pantalla y sobre el camino de tierra; se deja para enseñarlo).
+# (revisión) Un punto que cae fuera de la ventana o detrás de la cámara sale como «fuera» (antes se recortaba al borde
+# en silencio y daba números normales), y uno cuyo color «sin» cambia entre dos capturas seguidas (hierba que se mueve
+# con el viento, Kael que respira) sale como «inestable»: sus relaciones no valen.
 
 const MUESTRA := "res://zonas3d/muestra_calle/muestra_calle.tscn"
 const CAPA := Color(0.0, 0.0, 0.0, 0.5)
+# [altura, nombre, z respecto a Kael] y los x de las columnas. Las filas del suelo van DETRÁS de Kael (z < 0), que es
+# donde la cámara de la muestra ve adoquín; delante (z > 0,7) empieza el camino de tierra con hierba.
+const FILAS := [[0.04, "suelo", -0.7], [0.015, "suelo15mm", -1.4], [0.005, "suelo5mm", -2.1], [1.5, "aire", 3.0]]
+const COLUMNAS := [-6.0, -5.0, -4.0, -3.0, -2.0, 2.0, 3.0, 4.0, 5.0]
+const LADO := 0.5
+const FILAS_ANTIGUAS := [[0.04, "suelo", 1.2], [0.015, "suelo15mm", 2.4], [0.005, "suelo5mm", 3.4], [1.5, "aire", 1.2]]
 
 var salida := "D:/REBELUM_diagnostico/transparencias_19_11/calle"
 var casos: Array = ["bajo", "medio", "alto"]
+var antigua := false
 var ic := 0
 var v
 var frames := 0
@@ -22,6 +36,8 @@ var f_fase := 0
 var capas: Array = []            # [nombre, nodo, posición del centro]
 var antes := {}
 var resultado := {}
+var img_sin: Image
+var img_sin2: Image
 
 
 func _initialize() -> void:
@@ -30,6 +46,8 @@ func _initialize() -> void:
 			salida = a.substr(7)
 		elif a.begins_with("casos="):
 			casos = Array(a.substr(6).split(","))
+		elif a == "filas=antigua":
+			antigua = true
 	DirAccess.make_dir_recursive_absolute(salida)
 	Engine.set_meta("archivo_partida_prueba", "user://medir_transparencias_calle.save")
 	_cargar()
@@ -37,9 +55,9 @@ func _initialize() -> void:
 
 func _caso() -> Dictionary:
 	var c: String = casos[ic]
-	var r := {"perfil": c, "extra": {}, "glow": ""}
+	var r := {"perfil": c, "extra": {}, "mods": []}
 	if "#" in c:
-		r.glow = c.get_slice("#", 1)
+		r.mods = Array(c.get_slice("#", 1).split("+"))
 		c = c.get_slice("#", 0)
 		r.perfil = c
 	if "@" in c:
@@ -86,19 +104,37 @@ func _materiales() -> Array:
 	var ph := m.duplicate()
 	ph.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_HASH
 	r.append(["trama", ph])
+	if antigua:
+		return r
+	var msn := m.duplicate()
+	msn.disable_fog = true
+	r.append(["mezcla_sn", msn])
+	var s2 := Shader.new()
+	s2.code = "shader_type spatial;\nrender_mode unshaded, blend_mix, depth_draw_never, cull_disabled, fog_disabled;\nvoid fragment(){ ALBEDO = vec3(0.0); ALPHA = 0.5; }\n"
+	var sm2 := ShaderMaterial.new()
+	sm2.shader = s2
+	r.append(["sh_mix_sn", sm2])
+	var ng := StandardMaterial3D.new()               # negro OPACO: el color que da «el negro» de la capa por sí solo
+	ng.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	ng.albedo_color = Color.BLACK
+	r.append(["negro", ng])
+	var ngs := ng.duplicate()
+	ngs.disable_fog = true
+	r.append(["negro_sn", ngs])
 	return r
 
 
 func _poner_capas() -> void:
 	var k: Vector3 = v.kael.global_position
 	var mats := _materiales()
-	# filas: a 4 cm del suelo, a 1,5 cm y a 5 mm (como una sombra falsa pegada al suelo), y en el aire a 1,5 m
-	for fila in [[0.04, "suelo", 1.2], [0.015, "suelo15mm", 2.4], [0.005, "suelo5mm", 3.4], [1.5, "aire", 1.2]]:
+	var filas: Array = FILAS_ANTIGUAS if antigua else FILAS
+	for fila in filas:
 		for i in mats.size():
-			var p: Vector3 = k + Vector3(-3.0 + 1.5 * i, fila[0], fila[2])
+			var x: float = (-3.0 + 1.5 * i) if antigua else float(COLUMNAS[i])
+			var p: Vector3 = k + Vector3(x, fila[0], fila[2])
 			var mi := MeshInstance3D.new()
 			var pm := PlaneMesh.new()
-			pm.size = Vector2(0.8, 0.8)
+			pm.size = Vector2(0.8, 0.8) if antigua else Vector2(LADO, LADO)
 			if fila[1] == "aire":
 				pm.orientation = PlaneMesh.FACE_Z
 			mi.mesh = pm
@@ -110,33 +146,57 @@ func _poner_capas() -> void:
 			capas.append([mats[i][0] + "_" + fila[1], mi, p])
 
 
-# Cobertura: de una rejilla de 9×9 puntos dentro del cuadro (±0,3 m), qué parte sale al menos un 5 % más oscura.
-func _cobertura(sin: Image, con: Image, q: Array) -> float:
+# El píxel de la imagen donde cae un punto del mundo, o (-1, -1) si cae fuera de la ventana o detrás de la cámara.
+func _pixel(img: Image, p: Vector3) -> Vector2i:
+	if v.cam.is_position_behind(p):
+		return Vector2i(-1, -1)
+	var px := Vector2i(v.cam.unproject_position(p) * Vector2(img.get_size()) / root.get_viewport().get_visible_rect().size)
+	if px.x < 0 or px.y < 0 or px.x >= img.get_width() or px.y >= img.get_height():
+		return Vector2i(-1, -1)
+	return px
+
+
+func _suma(c: Color) -> float:
+	return c.r + c.g + c.b
+
+
+# Cobertura: de una rejilla de 9×9 puntos dentro del cuadro (±40 % del lado), qué parte sale al menos un 5 % más
+# oscura, contando solo los puntos dentro de la ventana y estables (mismo color en las dos capturas «sin»).
+func _cobertura(con: Image, q: Array) -> Dictionary:
 	var n := 0
 	var osc := 0
-	var esc := Vector2(sin.get_size()) / root.get_viewport().get_visible_rect().size
+	var fuera := 0
+	var inest := 0
+	var m: float = (0.8 if antigua else LADO) * 0.4
 	var aire: bool = String(q[0]).ends_with("_aire")
 	for i in 9:
 		for j in 9:
-			var d := Vector3(-0.3 + 0.075 * i, -0.3 + 0.075 * j if aire else 0.0, 0.0 if aire else -0.3 + 0.075 * j)
-			var px := Vector2i(v.cam.unproject_position(q[2] + d) * esc).clamp(Vector2i.ZERO, sin.get_size() - Vector2i.ONE)
-			var a := sin.get_pixelv(px)
-			var b := con.get_pixelv(px)
+			var a_ := -m + m * 0.25 * i
+			var b_ := -m + m * 0.25 * j
+			var d := Vector3(a_, b_ if aire else 0.0, 0.0 if aire else b_)
+			var px := _pixel(img_sin, q[2] + d)
+			if px.x < 0:
+				fuera += 1
+				continue
+			var a := img_sin.get_pixelv(px)
+			if absf(_suma(a) - _suma(img_sin2.get_pixelv(px))) > 0.03:
+				inest += 1
+				continue
 			n += 1
-			if b.r + b.g + b.b < (a.r + a.g + a.b) * 0.95:
+			if _suma(con.get_pixelv(px)) < _suma(a) * 0.95:
 				osc += 1
-	return snappedf(float(osc) / float(n), 0.001)
-
-
-var img_sin: Image
+	return {"cobertura": snappedf(float(osc) / float(n), 0.001) if n > 0 else -1.0, "fuera": fuera, "inestables": inest}
 
 
 func _medir(img: Image) -> Dictionary:
 	var med := {}
 	for q in capas:
-		var px: Vector2 = v.cam.unproject_position(q[2]) * Vector2(img.get_size()) / root.get_viewport().get_visible_rect().size
-		var col := img.get_pixelv(Vector2i(px).clamp(Vector2i.ZERO, img.get_size() - Vector2i.ONE))
-		med[q[0]] = [snappedf(col.r, 0.001), snappedf(col.g, 0.001), snappedf(col.b, 0.001), snappedf(col.a, 0.001)]
+		var px := _pixel(img, q[2])
+		if px.x < 0:
+			med[q[0]] = null
+			continue
+		var col := img.get_pixelv(px)
+		med[q[0]] = [snappedf(col.r, 0.001), snappedf(col.g, 0.001), snappedf(col.b, 0.001), snappedf(col.a, 0.001), px.x, px.y]
 	return med
 
 
@@ -153,12 +213,25 @@ func _process(_d: float) -> bool:
 				v.set_process(false)
 				load("res://zonas3d/muestra_calle/muestra_calle.gd").camara_muestra(v.cam, v.kael.global_position)
 				var c := _caso()
-				if c.glow != "" and v.ambiente != null:
-					v.ambiente.glow_enabled = c.glow == "glow"
-					v.ambiente.glow_intensity = 0.35
-					v.ambiente.glow_bloom = 0.02
-					v.ambiente.glow_hdr_threshold = 1.1
+				if v.ambiente != null:
+					for mod in c.mods:
+						match mod:
+							"glow", "singlow":
+								v.ambiente.glow_enabled = mod == "glow"
+								v.ambiente.glow_intensity = 0.35
+								v.ambiente.glow_bloom = 0.02
+								v.ambiente.glow_hdr_threshold = 1.1
+							"sinniebla":
+								v.ambiente.fog_enabled = false
+							"lineal":
+								v.ambiente.tonemap_mode = Environment.TONE_MAPPER_LINEAR
+							"sinajustes":
+								v.ambiente.adjustment_enabled = false
+							_:
+								push_error("medir_transparencias_calle: modificador desconocido «%s»" % mod)
 				_poner_capas()
+			elif frames - f_fase == 20:
+				img_sin2 = root.get_viewport().get_texture().get_image()
 			elif frames - f_fase == 30:
 				var img := root.get_viewport().get_texture().get_image()
 				img.save_png("%s/%s_sin.png" % [salida, casos[ic]])
@@ -173,14 +246,28 @@ func _process(_d: float) -> bool:
 				var vp := root.get_viewport()
 				var info := {"escala": vp.scaling_3d_scale, "msaa": vp.msaa_3d,
 					"glow": v.ambiente.glow_enabled if v.ambiente != null else null,
+					"niebla": v.ambiente.fog_enabled if v.ambiente != null else null,
+					"ajustes": v.ambiente.adjustment_enabled if v.ambiente != null else null,
 					"mapa_tonos": v.ambiente.tonemap_mode if v.ambiente != null else null}
 				var r := {"info": info}
+				var fueras := 0
 				for q in capas:
-					var a: Array = antes[q[0]]
-					var d: Array = despues[q[0]]
-					r[q[0]] = {"sin": a, "con": d, "ratio": snappedf((d[0] + d[1] + d[2]) / maxf(a[0] + a[1] + a[2], 0.001), 0.001), "cobertura": _cobertura(img_sin, img, q)}
+					var a = antes[q[0]]
+					var d = despues[q[0]]
+					if a == null or d == null:
+						r[q[0]] = "fuera"
+						fueras += 1
+						continue
+					var cob := _cobertura(img, q)
+					var pa := Vector2i(a[4], a[5])
+					var estable: bool = absf(_suma(img_sin.get_pixelv(pa)) - _suma(img_sin2.get_pixelv(pa))) <= 0.03
+					r[q[0]] = {"sin": a.slice(0, 4), "con": d.slice(0, 4), "px": [a[4], a[5]], "estable": estable,
+						"ratio": snappedf((d[0] + d[1] + d[2]) / maxf(a[0] + a[1] + a[2], 0.001), 0.001)}
+					r[q[0]].merge(cob)
 				resultado[casos[ic]] = r
 				print("CASO %s %s" % [casos[ic], JSON.stringify(r)])
+				if fueras > 0:
+					print("AVISO %s: %d cuadros caen FUERA de la pantalla (sin medida)" % [casos[ic], fueras])
 				v.set_process(true)
 				ic += 1
 				if ic >= casos.size():
