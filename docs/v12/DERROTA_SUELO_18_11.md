@@ -57,7 +57,7 @@ En el combate real (`fotos_derrota_combate.gd`, nueva, ventana de 1600×720; *19
 resolución del viewport del juego*): antes, el borde de abajo del cuerpo salía cortado en
 recto contra la hierba (medio enterrada); después se ve entera, tumbada encima. Capturas: `D:\REBELUM_diagnostico\derrota_suelo_18_11\antes_combate`
 y `D:\REBELUM_diagnostico\derrota_suelo_18_11\despues_combate_0.3` (hoja_derrota_lya_originales.png). `revivir()` vuelve a la posición 0 como antes.
-Kael original (la cabeza, −0,13 m) no se ha tocado: en esta cámara cae detrás de Garon y no se distingue.
+Kael original (la cabeza, −0,13 m) no se ha tocado: en esta cámara cae detrás de Garon y no se distingue. *(19/11: arreglado con un gesto en la cabeza; ver «Kael original: la cabeza, encima del suelo», al final.)*
 
 **También heredan este desplome** (no tienen `morir()` propio): ~~Naira, Nix y~~ Érebo. ~~Medido con 0,3:~~ Naira, lo más bajo
 −0,11 m (cadera y astrolabio~~; con 0,1 serían unos −0,31~~); Nix, +0,03 m (prácticamente apoyada~~; con 0,1, unos −0,17~~).
@@ -294,3 +294,53 @@ fotograma, en vez de cada 5) y `vertices=todos` (sin submuestreo de vértices). 
 rígido y recto, como una tabla que sale de la rodilla hacia Kael. No atraviesa el suelo (resto +0,058 en la caída,
 +0,075 ya de rodillas), pero se ve. La Nix del FBX es un prototipo apagado por defecto (`nix_fbx`); queda para el
 coordinador, con el pilotaje de esa Nix. No se ha tocado.
+
+## Kael original: la cabeza, encima del suelo (19/11, `KAEL_ESPERAS_19_11`)
+
+C-4 / PC-15. El clip es el correcto (`kael_3d.gd`, «Death = dying_backwards»); lo que se hundía era la nuca: tumbado boca
+arriba, la cabeza era lo único bajo y = 0. Salidas y capturas en `D:\REBELUM_diagnostico\kael_esperas_19_11\`.
+
+**Primero, la herramienta.** `diag_derrota_suelo.gd` leía `get_bone_global_pose()` desde `_process`, que da la pose del
+**clip**: los gestos de `gestos_3d.gd` (un `SkeletonModifier3D`) se aplican al actualizar el esqueleto, se dibujan y Godot
+vuelve a dejar la pose del clip. Un gesto en la cabeza no cambiaba ninguna cifra (barrido de 0 a 40°: siempre −0,162).
+Nueva opción `pose=final`: guarda las poses en la señal `skeleton_updated` (ya con los gestos; como mucho un fotograma por
+detrás). Sin ella, las cifras salen como siempre. Lya y Garon (originales, v2, v3) dan **lo mismo** con y sin `pose=final`
+(`despues\diag_lya_*.txt`, `diag_garon_*.txt`): las cifras de arriba siguen valiendo.
+
+**Arreglo** (`kael_3d.gd`): gesto `k_muerto` (cuello 12° y cabeza 24° hacia «arriba» del personaje, la barbilla hacia el
+pecho), registrado en `_ready()` y puesto en `morir()` con 1,5 s de transición (acompaña la caída). Lo quita `reposo()`
+(`quitar_todos`), que es lo que hace `revivir()`. Kael v2 y v3 tienen su propio `morir()` y no lo ponen; Lya, Garon,
+Naira y Nix no lo tienen registrado. Barrido (`barrido\kf_*.txt`, cuello,cabeza → lo más bajo de la cabeza al final):
+0,0 → −0,157 · 0,20 → −0,073 · 0,25 → −0,054 · 8,16 → −0,048 · 10,20 → −0,021 · **12,24 → +0,003** · 13,26 → +0,012 ·
+15,30 → +0,029. Se elige el más pequeño que la deja en el suelo.
+
+**Medido** (PC, sin ventana, `--fixed-fps 30`, `solo=kael paso=1 pose=final`; respecto a y = 0):
+
+| Kael original | Antes | Después |
+|---|---|---|
+| cabeza, peor en la caída | −0,162 (1,90 s) | **−0,000** (1,90 s) |
+| cabeza, tumbado (2-6 s) | −0,160 | **+0,001** |
+| cabeza, último instante | 19 % bajo el suelo, de −0,157 a +0,421 | **0 %**, de +0,003 a +0,563 |
+| cuerpo más bajo, al final | −0,157 (la cabeza) | +0,001 (pierna derecha) |
+| hundido bajo los pies | 0,127 | **0,000** |
+| resto, manos, pies, cadera, arma | sin cambios | sin cambios |
+
+Kael v2 y v3: idénticos a antes (−0,228 y −0,293; siguen pendientes con el resto de los v2 y v3, sección de arriba).
+Comprobado aparte (`despues\revivir.txt`, guion temporal): peso de `k_muerto` 0 de pie, 1 tumbado y 0 un segundo después de
+`revivir()` en el original; 0 siempre en v2 y v3; sin registrar en Lya y Garon.
+
+**Capturas.** En el combate (`fotos_derrota_combate.gd heroe=Kael versiones=originales`, con `semilla=7` para los mismos
+enemigos): `fotos_antes\` y `fotos_despues\` (hojas y pantallas), ampliaciones ×3 `comparar\zoom_antes_vs_despues_*.png`.
+De cerca, Kael solo sobre un suelo opaco (guion temporal, fuera del repositorio): `cerca_antes\`, `cerca_despues\` y
+`comparar\cerca_ko_*.png` (antes a la izquierda). Lo que se ve:
+- De cerca, de lado: antes, el pelo de la nuca acaba en una línea recta contra el suelo (cortado); después, la cabeza se
+  apoya entera, algo levantada, como sobre una almohada. Desde arriba: la barbilla más cerca del pecho, la cara igual.
+- En la cámara del combate: antes, la cabeza quedaba detrás de los pies de Lya, aplastada y sin cara; después asoma
+  entre sus pies con la cara a la vista. La caída (0,53 s) apenas cambia.
+- No es «píxel a píxel» porque cambia a propósito la pose; y dos pasadas del combate con la misma semilla tampoco son
+  idénticas entre sí (hierba y efectos: un 22 % de píxeles distintos de «antes» contra «antes»), así que la comparación
+  del combate es a ojo. El reposo no cambia (el gesto solo existe con Kael muerto).
+
+**Pruebas** (`ejecutar_pruebas.ps1`): `prueba_integridad`, `prueba_banco_derrotas`, `prueba_heroes_v2`, `prueba_heroes_v3`,
+`prueba_anim_pies`, `prueba_esperas` y `prueba_combate_huella`: 7 superadas, 0 fallidas; proyecto y partida real sin
+cambios. **Pendiente:** verlo en el Redmi (el caso del banco «Derrotas: los héroes empiezan casi sin vida»).

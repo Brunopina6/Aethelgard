@@ -13,6 +13,10 @@ extends SceneTree
 # (19/11, revisión) Las cifras son MUESTREADAS: cada 5 fotogramas (paso=N para otro, p. ej. paso=1 cada fotograma) y
 # con un submuestreo de vértices (~6000 con piel y ~3000 sin piel por superficie; vertices=todos, sin submuestreo): el
 # mínimo real puede ser algo más bajo. «En el último instante» es UNA muestra, la de 6 s tras morir() (antes juntaba las dos últimas).
+# (19/11, KAEL_ESPERAS_19_11) get_bone_global_pose() desde _process da la pose del CLIP, sin los gestos de gestos_3d.gd
+# (SkeletonModifier3D: Godot los aplica al actualizar el esqueleto, dibuja la piel y vuelve a dejar la pose del clip).
+# pose=final mide la pose que se DIBUJA: guarda las poses en la señal skeleton_updated (ya con los gestos; la última
+# actualización, como mucho un fotograma por detrás). Sin pose=final, las cifras salen como antes (solo el clip).
 
 const SCRIPTS := {
 	"kael": {"originales": "res://kael_3d.gd", "v2": "res://personajes/heroes_v2/kael_v2_3d.gd",
@@ -48,6 +52,8 @@ var ultimo := false
 var parte_de := {}           # nombre de hueso → parte (PARTES)
 var partes := {}             # parte → [peor, a los s, peor tumbado, hueso del peor tumbado]
 var medir_partes := false
+var pose_final := false      # pose=final: la pose con los gestos (skeleton_updated)
+var _poses := {}             # id del esqueleto → poses globales de la última actualización
 
 
 func _initialize() -> void:
@@ -59,6 +65,8 @@ func _initialize() -> void:
 			paso = maxi(1, int(a.trim_prefix("paso=")))
 		elif a == "vertices=todos":
 			todos = true
+		elif a == "pose=final":
+			pose_final = true
 	for h in SCRIPTS:
 		if solo != "" and h != solo:
 			continue
@@ -145,7 +153,7 @@ func _process(_dt: float) -> bool:
 						hc = i
 						break
 			if hc >= 0:
-				cadera_min = minf(cadera_min, (sk.global_transform * sk.get_bone_global_pose(hc).origin).y - g.global_position.y)
+				cadera_min = minf(cadera_min, (sk.global_transform * _pose(sk, hc).origin).y - g.global_position.y)
 	if f >= ESPERA + DURA:
 		_siguiente()
 	return false
@@ -153,10 +161,27 @@ func _process(_dt: float) -> bool:
 
 func _esqueleto() -> Skeleton3D:
 	var s = g.get("skel")
-	if s is Skeleton3D:
-		return s
-	var l := g.find_children("*", "Skeleton3D", true, false)
-	return l[0] if not l.is_empty() else null
+	if not (s is Skeleton3D):
+		var l := g.find_children("*", "Skeleton3D", true, false)
+		s = l[0] if not l.is_empty() else null
+	if pose_final and s != null and not s.skeleton_updated.is_connected(_guardar_poses):
+		s.skeleton_updated.connect(_guardar_poses.bind(s))
+	return s
+
+
+func _guardar_poses(sk: Skeleton3D) -> void:
+	var a: Array = []
+	for i in sk.get_bone_count():
+		a.append(sk.get_bone_global_pose(i))
+	_poses[sk.get_instance_id()] = a
+
+
+func _pose(sk: Skeleton3D, i: int) -> Transform3D:
+	if pose_final:
+		var a: Array = _poses.get(sk.get_instance_id(), [])
+		if i < a.size():
+			return a[i]
+	return sk.get_bone_global_pose(i)
 
 
 # El punto más bajo de los vértices con piel colgados del esqueleto (una muestra de ~6000 por malla).
@@ -171,7 +196,7 @@ func _bajo(sk: Skeleton3D) -> float:
 		for k in skin.get_bind_count():
 			var bn := String(skin.get_bind_name(k))
 			var bi := sk.find_bone(bn) if bn != "" else skin.get_bind_bone(k)
-			mats.append(gsk * sk.get_bone_global_pose(bi) * skin.get_bind_pose(k) if bi >= 0 else gsk)
+			mats.append(gsk * _pose(sk, bi) * skin.get_bind_pose(k) if bi >= 0 else gsk)
 		for s in mi.mesh.get_surface_count():
 			var arr: Array = mi.mesh.surface_get_arrays(s)
 			var V: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]

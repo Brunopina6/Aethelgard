@@ -41,6 +41,12 @@ const SABLE_GESTOS := {
 	"k_magia": [Vector3(0.15, 1.0, 0.0), Vector3(1.0, -0.1, 0.0)],
 }
 
+# (19/11, C-4 / PC-15) Tumbado con su clip «Death» (dying_backwards), la nuca atravesaba el suelo 0,16 m (la cabeza era
+# lo único bajo y = 0; docs/v12/DERROTA_SUELO_18_11.md). Mientras está muerto, cuello y cabeza se acercan a «arriba» del
+# personaje como mucho 12° y 24° (la barbilla hacia el pecho): lo más bajo de la cabeza queda en +0,00 m, como las piernas.
+# Solo lo pone morir() de este script (los v2 y v3 tienen su propio morir() y no lo usan); reposo() lo quita al revivir.
+const K_MUERTO := {"cuello": [Vector3(0, 1, 0), 12], "cabeza": [Vector3(0, 1, 0), 24]}
+
 var sable: Node3D
 var con_arma := true          # el arma solo se lleva en combate (para el muñeco del mapa, false)
 var _hoja_local := Vector3.UP     # dirección de la hoja respecto a la mano (se calcula en el reposo)
@@ -61,6 +67,8 @@ func _init() -> void:
 
 func _ready() -> void:
 	super._ready()
+	if gestos != null:
+		gestos.registrar("k_muerto", K_MUERTO)
 	if skel != null and con_arma:
 		_crear_sable()
 
@@ -350,6 +358,7 @@ func morir() -> void:
 	gestos.quitar_todos(0.3)
 	anim.speed_scale = 1.0
 	play("Death", 0.15)
+	gestos.poner("k_muerto", 1.0, 1.5)        # la cabeza, encima del suelo (K_MUERTO); se va en revivir() → reposo()
 
 
 func revivir() -> void:
