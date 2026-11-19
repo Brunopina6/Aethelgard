@@ -64,6 +64,11 @@ func _contextos() -> void:
 	var casos := {"res://carga.tscn": "carga", "res://combate.tscn": "combate", "res://mapa.tscn": "mapa",
 		"res://isla.tscn": "viento", "res://garganta.tscn": "mazmorra", "res://zonas3d/garganta_3d.tscn": "mazmorra", "res://zonas3d/pastos_verdes_3d.tscn": "pradera",
 		"res://ciudad_oakhaven.tscn": "ciudad",          # Oakhaven hecha a mano (T-089, hereda de zona.gd)
+		"res://zonas3d/oakhaven_3d.tscn": "ciudad",      # Oakhaven 3D (T-103)
+		# V12 (19/11, C-10): la ciudad completa, el barrio y la muestra de la calle (las tres, Oakhaven en el banco)
+		# suenan como Oakhaven 3D, no en «silencio»
+		"res://zonas3d/ciudad/ciudad.tscn": "ciudad", "res://zonas3d/barrio/barrio.tscn": "ciudad",
+		"res://zonas3d/muestra_calle/muestra_calle.tscn": "ciudad",
 		"res://escena_que_no_existe.tscn": "silencio"}
 	for ruta in casos:
 		var n := Node.new()

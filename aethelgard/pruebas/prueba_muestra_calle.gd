@@ -81,7 +81,15 @@ func _sin_usos_fuera() -> void:
 	# solo del banco / con su interruptor, reutilizan sus sombreados por la ruta (sin copiarlos: sin programas nuevos);
 	# y la ciudad completa (zonas3d/ciudad/, también solo del banco: su kit de Blender viste con los mismos sombreados)
 	var fuera := usos.filter(func(u): return not String(u).begins_with("res://zonas3d/barrio/") and not String(u).begins_with("res://zonas3d/sunken/quilla/") and not String(u).begins_with("res://zonas3d/ciudad/"))
-	_ok(fuera == ["res://banco_pruebas.gd", "res://carga.gd"], "2: fuera del banco nadie nombra la muestra, salvo el precalentado de la carga, el barrio, la Quilla y la ciudad (%s)" % str(usos))
+	# (19/11, C-10) musica.gd la nombra solo para darle el contexto «ciudad» (compara la ruta de la escena que ya está
+	# abierta): no la carga ni lleva a ella. Se comprueba aparte.
+	fuera.erase("res://musica.gd")
+	_ok(fuera == ["res://banco_pruebas.gd", "res://carga.gd"], "2: fuera del banco nadie nombra la muestra, salvo el precalentado de la carga, el barrio, la Quilla, la ciudad y el contexto sonoro (%s)" % str(usos))
+	var lineas_musica := Array(FileAccess.get_file_as_string("res://musica.gd").split("\n")).filter(
+		func(l): return "muestra_calle" in l and not l.strip_edges().begins_with("#"))
+	var solo_compara := lineas_musica.all(func(l): return not "load(" in l and not "change_scene" in l \
+		and not "cambiar_escena" in l)
+	_ok(solo_compara, "2: musica.gd solo compara la ruta de la muestra, no la carga ni lleva a ella (%s)" % str(lineas_musica))
 	# (15/11) carga.gd la precalienta SOLO si el banco está permitido (Auditoría/editor): la línea que la nombra lo exige
 	var lineas_carga := Array(FileAccess.get_file_as_string("res://carga.gd").split("
 ")).filter(

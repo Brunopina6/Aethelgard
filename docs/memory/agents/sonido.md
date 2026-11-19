@@ -806,3 +806,19 @@ importé con datos aislados. **No he podido escuchar nada. No se ha usado el Red
 Informe completo en [`sonido_v9_guardian.md`](sonido_v9_guardian.md) (rama `claude/v9-sonido-guardian`): identidad sonora
 del Guardián (título, entrada, voz «corteza», latigazo, raíces, latido, rugido, derrumbe y purificación), el tratamiento
 de su combate (paso bajo en la música y un bosque antiguo por debajo, sin música nueva) y el orbe del altar.
+
+## 2026-11-19, 04:30 · V12, C-10 (parte de AM-9): la ciudad completa, el barrio y la muestra de la calle suenan como Oakhaven 3D
+
+- `aethelgard/musica.gd` (`contexto_de`): `zonas3d/ciudad/ciudad.tscn`, `zonas3d/barrio/barrio.tscn` y
+  `zonas3d/muestra_calle/muestra_calle.tscn` dan «ciudad» (antes «silencio»), el mismo contexto que Oakhaven 3D:
+  `audio/ambiente/pradera.wav` a −10 dB (CC0) y los detalles `DETALLES["ciudad"]`. Sin audio nuevo ni cambios en la
+  música aprobada de otros sitios. Las tres escenas solo se abren desde el banco de pruebas.
+- `aethelgard/pruebas/prueba_musica.gd`: casos de las tres rutas y de Oakhaven 3D. Falla sin el arreglo (FALLOS: 3) y
+  pasa con él (FALLOS: 0), aislado.
+- `prueba_musica_senal.gd`: mide también «ciudad» (RMS −33,0 dBFS, pico −11,3 dBFS; muestras en
+  `D:\REBELUM_diagnostico\sonido_muestras6-11-19_ciudad\`). `prueba_muestra_calle.gd`: admite que `musica.gd`
+  nombre la muestra y comprueba que solo compara la ruta (sin cargarla).
+- Detalle y decisiones pendientes en `docs/audio/inventario_sonidos.md`, sección «V12 (2026-11-19)». No se ha oído
+  (prueba muda). Pendiente del usuario: las fuentes 3D de plaza, fuente y mercado y la hora «tarde» en el barrio y la
+  muestra. `docs/v12/MUESTRA_CALLE_OAKHAVEN.md:231` («ni sonido ambiente») queda desfasado: lo corrige quien lleve ese
+  documento.

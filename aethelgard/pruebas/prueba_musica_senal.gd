@@ -41,7 +41,7 @@ func _grabar() -> void:
 	var rec := AudioEffectRecord.new()
 	AudioServer.add_bus_effect(0, rec)
 	var tramos := [["carga", "carga"], ["mapa", "mapa"], ["pradera", "pradera"], ["bosque", "bosque"],
-		["desierto", "desierto"], ["mazmorra", "mazmorra"]]
+		["desierto", "desierto"], ["mazmorra", "mazmorra"], ["ciudad", "ciudad"]]   # (19/11, C-10: Oakhaven 3D, la ciudad, el barrio y la muestra)
 	for t in tramos:
 		Mus.pedir(t[1])
 		await _real(2.5)                           # el fundido de entrada (2 s) ya ha terminado

@@ -843,6 +843,30 @@ por nivel (RMS), no por bandas: el paso bajo quita sobre todo agudos, que es don
 que la mejora al oído debería ser mayor que esos 3 dB (sin comprobar). Muestras y qué escuchar:
 `D:\REBELUM_diagnostico\sonido_muestras\2026-11-10_guardian\indice.md`.
 
+## V12 (2026-11-19): el contexto «ciudad» para la ciudad completa, el barrio y la muestra de la calle (C-10, parte de AM-9)
+
+Antes, `Musica.contexto_de` no conocía `res://zonas3d/ciudad/ciudad.tscn`, `res://zonas3d/barrio/barrio.tscn` ni
+`res://zonas3d/muestra_calle/muestra_calle.tscn` (las tres son Oakhaven, en pruebas y solo desde el banco de Auditoría)
+y caían en «silencio»: solo sonaban los pasos y los avisos. Ahora `musica.gd` les da el **mismo contexto que Oakhaven 3D,
+«ciudad»**: el ambiente `audio/ambiente/pradera.wav` a −10 dB por el bus Ambiente (CC0, fila de arriba) y, por
+`sonido.gd`, los detalles de `DETALLES["ciudad"]` (de vez en cuando `pajaro` o `pajaro_ciudad`, cada 14–28 s). Sin
+pistas nuevas ni archivos de audio nuevos; la capa de música sigue en silencio como en Oakhaven 3D, y la música aprobada
+de los demás sitios (título, Pastos Verdes, combate, jefes) no cambia. Ninguna de las tres escenas tenía un ambiente
+propio que pudiera sonar dos veces.
+
+Comprobado sin ventana (aislado, 19/11): `prueba_musica` ampliada con las tres rutas (y la de Oakhaven 3D) **falla sin
+el arreglo** («`res://zonas3d/ciudad/ciudad.tscn da «silencio» (esperaba «ciudad»)`», lo mismo con el barrio y la
+muestra; FALLOS: 3) y **pasa con él** (FALLOS: 0). `prueba_musica_senal` (con ventana) mide ahora también el contexto
+«ciudad» por el bus Master: **RMS −33,0 dBFS, pico −11,3 dBFS** en 5 s (la pradera, la misma pista a −6 dB: −29,0 /
+−8,5). No se ha oído: muestras para escuchar en `D:\REBELUM_diagnostico\sonido_muestras\2026-11-19_ciudad\indice.md`.
+`prueba_muestra_calle` admite ahora que `musica.gd` nombre la muestra, con una comprobación de que solo compara la
+ruta (no la carga ni lleva a ella).
+
+**Queda para decidir (usuario):** lo que Oakhaven 3D añade en su escena y no es del contexto (`oakhaven_3d.gd`: el
+murmullo y la fuente de la plaza y el mercado con `Sonido.fuente_3d`, y la campana al entrar), y la hora del lugar
+(`Sonido.fijar_momento(…, "tarde")` para la tarde dorada del barrio y de la muestra: grillos y la campana que marca la
+hora). Necesitan posiciones de cada escena (la plaza y la fuente del barrio y de la ciudad) y no se han puesto.
+
 ## Candidatos aún sin usar
 
 - **Alternativas para escuchar y elegir:** `victory_…_01_s29` y `…_02_s29` (otra victoria), InspectorJ

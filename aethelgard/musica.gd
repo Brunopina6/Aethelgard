@@ -134,6 +134,9 @@ static func contexto_de(e: Node) -> String:
 			return "puerto"
 		"res://ciudad_oakhaven.tscn", "res://zonas3d/oakhaven_3d.tscn":   # Oakhaven hecha a mano (T-089) y la 3D (T-103): el ambiente
 			return "ciudad"                            # de las ciudades, como la Oakhaven generada (sus sonidos: fuente_2d)
+		"res://zonas3d/ciudad/ciudad.tscn", "res://zonas3d/barrio/barrio.tscn", \
+				"res://zonas3d/muestra_calle/muestra_calle.tscn":   # V12 (19/11, C-10): la ciudad completa, el barrio y la
+			return "ciudad"                            # muestra de la calle (Oakhaven, en el banco), el mismo ambiente que Oakhaven 3D
 		"res://zona.tscn":
 			var l: Dictionary = Engine.get_meta("lugar", {})
 			if l.get("tipo", "") == "ciudad":
