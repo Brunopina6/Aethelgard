@@ -228,7 +228,7 @@ llamadas y 165 000 primitivas en el bajo; ver §3) y ≈ 5 ciclos por fragmento 
   en sombra, se lee algo ruidoso.
 - La sombra de Kael es sutil en el plano general; no se proyecta sobre paredes ni muebles.
 - Una sola hora (tarde dorada), distinta de la hora azul canónica de Oakhaven. El cielo no se ve con esta cámara.
-- No hay vecinos, ni sonido ambiente, ni interacción: es una muestra visual.
+- No hay vecinos ni interacción: es una muestra visual. Ambiente «ciudad» como Oakhaven 3D (19/11, C-10).
 
 **Riesgos de rendimiento en el Redmi (PENDIENTE de medir):**
 - Por GPU, poco riesgo: sombreados de ≈ 5 ciclos sin luz ni descartes, 27-31 llamadas y sin transparencias en el bajo.

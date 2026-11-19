@@ -816,9 +816,28 @@ de su combate (paso bajo en la música y un bosque antiguo por debajo, sin músi
 - `aethelgard/pruebas/prueba_musica.gd`: casos de las tres rutas y de Oakhaven 3D. Falla sin el arreglo (FALLOS: 3) y
   pasa con él (FALLOS: 0), aislado.
 - `prueba_musica_senal.gd`: mide también «ciudad» (RMS −33,0 dBFS, pico −11,3 dBFS; muestras en
-  `D:\REBELUM_diagnostico\sonido_muestras6-11-19_ciudad\`). `prueba_muestra_calle.gd`: admite que `musica.gd`
+  `D:\REBELUM_diagnostico\sonido_muestras\2026-11-19_ciudad\`). `prueba_muestra_calle.gd`: admite que `musica.gd`
   nombre la muestra y comprueba que solo compara la ruta (sin cargarla).
 - Detalle y decisiones pendientes en `docs/audio/inventario_sonidos.md`, sección «V12 (2026-11-19)». No se ha oído
   (prueba muda). Pendiente del usuario: las fuentes 3D de plaza, fuente y mercado y la hora «tarde» en el barrio y la
   muestra. `docs/v12/MUESTRA_CALLE_OAKHAVEN.md:231` («ni sonido ambiente») queda desfasado: lo corrige quien lleve ese
   documento.
+
+## 2026-11-19, 04:35 · V12, C-10, revisión (SONIDO_CIUDAD_19_11_REVISION)
+
+- Ruta de las muestras de la sección anterior arreglada: era `sonido_muestras` + U+0082 + `6-11-19_ciudad` (el «\202»
+  se tomó como escape octal al escribir). Ahora `D:\REBELUM_diagnostico\sonido_muestras\2026-11-19_ciudad\indice.md`,
+  escrita por bytes con Python.
+- `aethelgard/pruebas/prueba_muestra_calle.gd`, comprobación 2: `all()` sobre una lista vacía daba verdadero, así que
+  pasaba aunque `musica.gd` dejara de nombrar la muestra; y el filtro por líneas no veía una ruta guardada en una
+  variable y cargada en otra línea. Ahora exige que la nombre (`size() > 0`), que cada línea que la nombra sea solo
+  rutas entre comillas de un `match` (expresión regular) y que no haya `load("res://zonas3d/muestra_calle` en el
+  archivo. Demostrado con dos mutaciones temporales de `musica.gd` (quitar la ruta; guardarla en una constante y
+  cargarla en otra función): la prueba vieja las daba por buenas y la nueva las suspende; con el código real pasa.
+- `docs/v12/MUESTRA_CALLE_OAKHAVEN.md:231`: «ni sonido ambiente» cambiado a «Ambiente «ciudad» como Oakhaven 3D
+  (19/11, C-10)».
+- Decisión del usuario (nueva): en el barrio y la ciudad completa, que tienen interiores, el ambiente exterior
+  (pradera.wav a −10 dB) y los pájaros de `DETALLES["ciudad"]` siguen sonando dentro. ¿Debe bajar el ambiente en los
+  interiores? No he comprobado qué hace Oakhaven 3D en los suyos. Tampoco se han copiado las fuentes 3D propias de
+  `oakhaven_3d.gd` (plaza, fuente, mercado, campana): sigue pendiente de decidir.
+- Sin oír (prueba muda y señal medida: «ciudad» RMS −32,9 dBFS, pico −11,3 dBFS el 19/11 04:28).
