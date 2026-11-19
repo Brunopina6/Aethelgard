@@ -295,12 +295,13 @@ No se pasó la batería completa (solo toca archivos de Nix y sus pruebas). Hab�
 | 4. Emblema de la espalda | **verificado** en render y en Godot (`24_emblema_cerca.png`) |
 | 5. Cetro propio por socket | **verificado** en Godot (prueba: es `cetro_nix` y sigue a `arma_d`; la magia sale de la amatista) |
 | 6. Brillo excesivo | **corregido** en la textura (mono negro, pelo ceniza, tela mate); visto en combate real en el PC; Redmi pendiente |
-| Emisión de iris y ornamentos (básica, fuerte, suprema) | iris: **hecho** (suave, fija; §11). Ornamentos y las tres intensidades: **pendiente** |
+| Emisión de iris y ornamentos (básica, fuerte, suprema) | iris: **hecho** (suave, fija; §11). Ornamentos con las tres intensidades y su limpieza: **hecho en el PC** (§12, 19/11); intensidades y colores sin decidir por el usuario; Redmi **pendiente** |
 | Android (Redmi) | **pendiente**: ni instalado ni medido |
 
 ### 9.7 Pendientes
 
 - Emisión separada de iris y ornamentos con las tres intensidades y su limpieza en interrupción, muerte, pausa y fin.
+  **19/11: hecho en el PC** (§12); falta la decisión del usuario sobre intensidades y colores y verlo en el Redmi.
 - Verla en el Redmi y medir (coste de 19,5 mil triángulos y 2 materiales; overdraw de capucha y faldones) sin otra carga.
 - Texturas de 2048 para el perfil de PC: no se rehicieron con el mono negro y el pelo ceniza (solo las de 1024).
 - `RightHandMiddle1` sigue sin pesos; los texeles oscuros de la mandíbula quedan bajo la capucha y el cuello alto negro, **15/11: arreglado** (la mano del cetro cierra los dedos; ver `REVISION_PERSONAJES_15_11.md` §3).
@@ -364,3 +365,91 @@ cambian). Lo anterior, en `aethelgard/personajes/nix/fbx/anterior_14_11b/` (con 
   (con y sin emisión en la misma pasada) y `fotos_nix_revision.gd` (estudio, combate, Pastos y Oakhaven).
 - Queda: en exploración la capucha y el flequillo tapan a menudo los ojos (desde arriba solo se ve uno); sin forro
   púrpura visible en la capa salvo desde abajo (antes asomaba por los defectos); tiempos en el Redmi.
+
+## 12. Emisión de los ornamentos en tres intensidades y su limpieza (19/11/2026, C-6 / PC-4) — sigue APAGADO
+
+Encargo del 13/11 §6 («emisión separada para iris y ornamentos; intensidades básica, fuerte y suprema»; «interrupciones,
+muerte, pausa y fin de combate deben resolver correctamente [...] la emisión»). Rama `claude/rebelum-v12`. Solo con
+`nix_fbx` (que sigue APAGADO, `nix_fbx.gd:21`) y `nix_v12`: sin ellos no se carga ningún material nuevo y el juego no
+cambia. Evidencias en `D:\REBELUM_diagnostico\v12\nix_emision_19_11\`.
+
+**Qué se hizo**
+- **Máscara sin textura nueva** (`personajes/nix/fbx/nix_fbx_ropa.gdshader`): los ornamentos están solo en la ropa
+  (`ropa_nix`; el cuerpo tiene metal 0 en su material). En el atlas de la ropa (`p8_dibujos.py`) el **oro** es lo único
+  con metal = 1 (tela, forro, cuero y botas: 0) y las **amatistas** tienen rugosidad 0,12 (oro 0,36; tela y cuero ≥ 0,55)
+  y color violeta. La máscara es la «m» de metal que el material de los v2 ya calcula (mismo umbral) más las amatistas
+  por rugosidad y color; se leen las mismas tres texturas que antes (ninguna lectura de más). Sonda del atlas
+  descomprimido: 60.357 texeles de oro (m > 0,5) y 213 de amatista de 1.048.576; el forro púrpura (9.483 texeles
+  violetas) no entra por rugosidad.
+  - **De cerca**, emisión = color del propio texel × máscara: nítida, y los bloques de la compresión (BC1/ETC2) que marcan
+    metal en tela negra no emiten porque su color es negro.
+  - **De lejos** (≥ 6 texeles por píxel, como el iris: combate y exploración) los ribetes finos ocupan menos de un píxel y
+    el umbral del mipmap los borraba (primera prueba, `prueba1\`: el combate casi sin brillo y, con «dorado × metal
+    medio», bloques dorados sobre los faldones: 13-14 % de la energía fuera de los ornamentos). Ahora: color MEDIO del
+    mipmap × puerta baja de metal medio (0,03-0,2): «dorado × cobertura», sin parpadeos y sin bloques.
+- **Intensidades** (`nix_fbx.gd NIVELES`, valor del uniforme `ornamentos`): apagada 0 · **básica 0,8** · **fuerte 1,6** ·
+  **suprema 2,8**. Color: el **propio** de cada ornamento (oro envejecido y violeta de la amatista), sin tinte añadido.
+- **Habilidad → intensidad** (`nix_fbx.gd NIVEL_HECHIZO`, DECISIÓN REVISABLE): en el juego solo existen los tres
+  hechizos piloto, así que:
+
+  | Momento | Intensidad | Cómo sube | Gancho |
+  |---|---|---|---|
+  | Ascuas de Nácar (rango I, P01) y Aguja de Invierno (rango I, P02) | básica | durante la anticipación, hasta el lanzamiento (0,7 / 0,8 s) | `nix_3d.gd lanzar_negra` |
+  | Canalizar (concentrarse mientras se prepara un hechizo con barra; hoy, el Colapso) | fuerte | 0,6 s; se mantiene mientras prepara (volver a la guardia por un golpe no la corta) | `concentrar` |
+  | Colapso del Firmamento (rango VI, gasta los 3 sellos de Eclipse, P07) | suprema | desde la fuerte hasta el lanzamiento (1,6 s) | `lanzar_negra` |
+  | Fin del hechizo | 0 | 0,5 s | `fin_magia` |
+
+  Un hechizo nuevo sin fila toma la intensidad por los sellos que gasta (3 suprema, 2 fuerte, si no básica).
+- **Limpieza** (a 0 en el acto, parando la subida en curso; `nix_3d.gd apagar_emision`): **conjuro roto**
+  (`combate.gd _conjuro_roto`: 3 líneas, solo actúa si el modelo tiene `apagar_emision`, que solo tiene Nix), **muerte**
+  (`morir`; ya muerta no vuelve a subir aunque el hechizo termine de resolverse), **pausa** (`NOTIFICATION_PAUSED` del
+  árbol y `NOTIFICATION_APPLICATION_PAUSED`, Android en segundo plano; tras la pausa sigue a 0 hasta la siguiente
+  habilidad), **fin del combate** (`victoria`; en la derrota todos han muerto; la huida sale de la escena) y **salida de
+  la escena** (`NOTIFICATION_EXIT_TREE`). Hoy el combate no tiene menú de pausa: lo cubierto es la pausa del árbol y la
+  de la aplicación. El «deja ir» del conjuro (sin blancos) solo ocurre con todos los enemigos caídos: lo cubre la victoria.
+- El iris (§11) no cambia: emisión separada y fija.
+
+**Cifras**
+- Apagada = igual que antes: misma pose y luz con el material de siempre (`heroe_v2.gdshader`) en la ropa frente al
+  nuevo a 0: **0 píxeles distintos** en 7 de 8 fotos; en la octava, 449 píxeles, todos en el contador de FPS de la
+  esquina (caja 39×12 en y = 8), ninguno en Nix (`fotos\*_antes_heroe_v2.png`, `medidas_estudio.txt`).
+- Fugas (luz del combate, suprema; referencia: la fuente `.webp` sin comprimir con sus mipmaps): de la energía que se
+  aclara, a más de 1 px de un ornamento 0,65-0,77 % de cerca, 2,61 % en la cámara del combate y 2,67 % en la de
+  exploración; **a más de 3 px, 0,29-0,66 %**. Básica: 0,15-1,18 % (> 1 px) y 0,05-0,28 % (> 3 px). Son bordes
+  pegados a los ribetes (`diferencia_*.png`: amarillo dentro, cian fuera). La cámara de exploración varía algo de una
+  pasada a otra (en una anterior, 3,16 % y 0,63 % con la suprema).
+- Coste: ninguna textura nueva (0 bytes), mismas llamadas de dibujo y triángulos, el mismo número de lecturas de textura
+  (1,50 en malioc). malioc (Mali-G57, traducción aproximada, `malioc\malioc_ropa.txt`), fragmento de la ropa: con el sol
+  16,88 → 18,75 ciclos y sin él 11,62 → 13,50 (+1,87, el camino más largo: con la emisión encendida; apagada se salta
+  por una rama uniforme). Sin medir en el Redmi.
+
+**Pruebas** (datos aislados con `ejecutar_pruebas.ps1`; partida y carpeta real sin cambios en todas)
+- `prueba_nix_fbx`: 64 → **90** comprobaciones, 0 fallos (26 nuevas: material de la ropa, cada nivel, cada limpieza y
+  la Nix de siempre sin nada). Sin el arreglo (`nix_3d.gd` y `combate.gd` de `99d7b7c`): **25 fallos**.
+- `prueba_nix_emision` (nueva, combate de verdad, 28 comprobaciones): Ascuas básica; Colapso fuerte y suprema; conjuro
+  roto por un golpe real (`_quitar_pv`); muerte; pausa; victoria; salida; sin `nix_fbx` nada. Sin el arreglo: **10 fallos**;
+  solo sin las 3 líneas de `combate.gd`: **3 fallos** (el conjuro roto se queda en la fuerte, 1,59-1,60).
+- También SUPERADAS: `prueba_integridad`, `prueba_nix_v12` (y con `-- nix_fbx`), `prueba_magia_negra`,
+  `prueba_audio_magia_negra`, `prueba_combate_huella`, `prueba_naira_combate`, `prueba_banco_derrotas` y
+  `prueba_rasgos_grupo`.
+- Fotos: `pruebas/fotos_nix_emision.gd` (estudio con luz del combate y anochecer con resplandor; «modo=combate» en un
+  combate real). Hojas: `fotos\HOJA_combate.png`, `fotos\HOJA_anochecer.png` (filas: frente, espalda, cámara del
+  combate, exploración; columnas: apagada, básica, fuerte, suprema) y `fotos\HOJA_combate_llanura.png` (combate real).
+
+**Decisiones del usuario (pendientes)**
+- Intensidades (0,8 / 1,6 / 2,8). Visto en las fotos: la básica se nota de cerca y poco a la distancia del combate; la
+  suprema hace casi blancas las punteras de las botas y el ribete de la capucha y, con resplandor (anochecer), un halo.
+- Colores: hoy el propio de cada ornamento. Alternativas: teñir la fuerte o la suprema con el violeta del Colapso
+  (`A58ACB`) o el púrpura del sello.
+- La correspondencia habilidad → intensidad (tabla de arriba), sobre todo «fuerte = canalizar», porque el piloto no tiene
+  un hechizo intermedio; si se añaden rangos II-V, darles fila en `NIVEL_HECHIZO`.
+- Si el cetro propio (su amatista ya emite suave y fija) debe subir con los niveles.
+
+**Fuera de esta tarea (pendiente, sin hacer)**
+- Mover el socket `arma_d` 1-2 cm para que el asta quede dentro del puño (`REVISION_PERSONAJES_15_11.md` §3): obliga a
+  volver a exportar los 23 clips en Blender.
+- El encuadre del combate `nix3d` (`combate.gd`: `esc` 0,56, `alto_vista` 2,45, `centro_y` 1,12), que es el de la Nix
+  chibi.
+- Las texturas de 2048 del perfil de PC (solo se rehicieron las de 1024).
+- **Redmi**: ni instalado ni medido (coste real de la rama de emisión y de las 19,5 mil caras; si la básica se lee a
+  tamaño de teléfono).

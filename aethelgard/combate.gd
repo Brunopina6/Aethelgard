@@ -4148,6 +4148,9 @@ func _resolver_conjuro(f: Dictionary) -> void:
 func _conjuro_roto(f: Dictionary) -> void:
 	_quitar_carga(f.get("conjuro_nodo", null))
 	f.erase("conjuro_nodo")
+	var p = _p3d(f)                                  # V12, Nix FBX (C-6): la emisión de sus ornamentos, a 0 (solo ella la tiene)
+	if p != null and is_instance_valid(p) and p.has_method("apagar_emision"):
+		p.apagar_emision()
 	_sonar(MN.sonido_de(MN.SONIDO_ROTO, _existe_sonido))
 	_numero_flotante(f, "¡Conjuro roto!", Color(1.0, 0.92, 0.45), 32, Vector2(-30, -60))
 	registro.text = "¡Rompen el conjuro de %s!" % f["nombre"]

@@ -10,6 +10,12 @@ extends SceneTree
 #      ABIERTOS; al volver a la guardia bajan y se cierran; morir y revivir.
 #   3. (14/11, tarde) con él, el cuerpo lleva la emisión del iris (nix_fbx_cuerpo.gdshader, con sus texturas) y la
 #      ropa no; sin él, ningún material la lleva.
+#   4. (19/11, C-6) con él, la ropa lleva la emisión de los ornamentos (nix_fbx_ropa.gdshader), APAGADA en guardia; el
+#      uniforme del material sigue a la habilidad: canalizar fuerte (y volver a la guardia no la corta: sigue
+#      preparando), Ascuas y Aguja básica, Colapso suprema, al acabar (fin_magia) 0; y la limpieza: a 0 en el acto al
+#      romperse el conjuro (apagar_emision, lo llama combate.gd), al morir, en pausa (SceneTree.paused y la de la
+#      aplicación), al ganar (victoria) y al salir de la escena, sin volver a subir. Sin él, nada de eso hace nada.
+#      (prueba_nix_emision.gd lo comprueba además en un combate de verdad.)
 # No toca la partida (no guarda) ni deja encendido el interruptor.
 
 const NixFBX := preload("res://personajes/nix/fbx/nix_fbx.gd")
@@ -20,6 +26,7 @@ var nix: Node3D
 var vieja: Node3D
 var raiz: Node3D
 var marca := 0.0
+var mat_ropa: ShaderMaterial = null
 
 
 func _ok(c: bool, que: String) -> void:
@@ -56,6 +63,18 @@ func _comprobar_vieja() -> void:
 			if sm != null and sm.shader != null and sm.shader.resource_path == NixFBX.SHADER_CUERPO:
 				con_iris += 1
 	_ok(con_iris == 0, "sin interruptor: ningún material con la emisión del iris (%d)" % con_iris)
+	var con_orn := 0
+	for m in vieja.find_children("*", "MeshInstance3D", true, false):
+		for s in m.get_surface_override_material_count():
+			var sm := m.get_surface_override_material(s) as ShaderMaterial
+			if sm != null and sm.shader != null and sm.shader.resource_path == NixFBX.SHADER_ROPA:
+				con_orn += 1
+	_ok(con_orn == 0 and vieja.get("_mat_ropa") == null, "sin interruptor: ningún material con la emisión de los ornamentos (%d)" % con_orn)
+	vieja.concentrar()
+	_ok(vieja.has_method("apagar_emision") and vieja.has_method("nivel_emision"), "nix_3d.gd tiene apagar_emision y nivel_emision")
+	if vieja.has_method("apagar_emision"):
+		vieja.apagar_emision()
+		_ok(vieja.nivel_emision() == 0.0, "sin interruptor: concentrarse y apagar no mueven ninguna emisión")
 	vieja.queue_free()
 
 
@@ -174,8 +193,12 @@ func _comprobar_ropa(cuerpo: MeshInstance3D) -> void:
 		"ropa: atlas de 1024 comprimido en VRAM (%s)" % (str(im.get_format()) if im else "sin textura"))
 	_ok(ropa.get_surface_override_material(0) is ShaderMaterial, "ropa con el material de los héroes v2")
 	var smr := ropa.get_surface_override_material(0) as ShaderMaterial
-	_ok(smr != null and smr.shader != null and smr.shader.resource_path == "res://personajes/heroes_v2/heroe_v2.gdshader",
-		"ropa: sin la emisión del iris (heroe_v2.gdshader)")
+	# 19/11 (C-6): la ropa, con la emisión de los ornamentos (apagada) y sin la del iris; conserva sus texturas
+	_ok(smr != null and smr.shader != null and smr.shader.resource_path == NixFBX.SHADER_ROPA
+		and smr.get_shader_parameter("albedo_tex") == tex and smr.get_shader_parameter("tiene_metal") == true,
+		"ropa: material de los v2 con la emisión de los ornamentos (%s), sin la del iris, y sus texturas" % (smr.shader.resource_path if smr and smr.shader else "-"))
+	_ok(smr != null and smr.get_shader_parameter("ornamentos") != null and float(smr.get_shader_parameter("ornamentos")) == 0.0,
+		"ropa: ornamentos apagados al cargar")
 	# sin restos: solo las dos mallas bajo el esqueleto y ninguna cámara ni luz del archivo de Blender
 	var mallas := []
 	for c in sk.get_children():
@@ -211,6 +234,31 @@ func _rel_rest() -> Basis:
 		* sk.get_bone_global_rest(sk.find_bone("mechon_i_2")).basis).orthonormalized()
 
 
+# El uniforme «ornamentos» del material de la ropa (lo que de verdad se dibuja; -1 si no hay material).
+func _orn() -> float:
+	if mat_ropa == null and is_instance_valid(nix):
+		var ropa := nix.find_child("ropa_nix", true, false) as MeshInstance3D
+		if ropa != null:
+			mat_ropa = ropa.get_surface_override_material(0) as ShaderMaterial
+	if mat_ropa == null or mat_ropa.get_shader_parameter("ornamentos") == null:
+		return -1.0
+	return float(mat_ropa.get_shader_parameter("ornamentos"))
+
+
+func _es(nivel: int) -> bool:
+	return absf(_orn() - NixFBX.NIVELES[nivel]) < 0.02
+
+
+func _lanzamiento(clip: String) -> float:
+	return nix.instante(clip, "lanzamiento", 0.7)
+
+
+# El gesto de un hechizo (lo que pide combate.gd _resolver_negra), sin esperar a que salga.
+func _lanzar(fam: String) -> void:
+	marca = t
+	nix.lanzar_negra(fam)
+
+
 func _process(delta: float) -> bool:
 	t += delta
 	if nix == null or (paso >= 0 and nix.skel == null):
@@ -229,6 +277,7 @@ func _process(delta: float) -> bool:
 				_ok(dv < 0.01, "el cetro sigue al hueso arma_d (%.3f m)" % dv)
 				_ok(_angulo_mechon() < 3.0, "en guardia los mechones están en reposo (%.1f°)" % _angulo_mechon())
 				_ok(_angulo_faldon() < 13.0, "en guardia los faldones caen (%.1f°)" % _angulo_faldon())
+				_ok(_orn() == 0.0, "en guardia, ornamentos apagados (%.2f)" % _orn())
 				nix.concentrar()
 				marca = t
 				paso = 1
@@ -243,6 +292,7 @@ func _process(delta: float) -> bool:
 				_ok(a > 8.0, "los mechones delanteros están levantados (%.1f°)" % a)
 				var fa := _angulo_faldon()
 				_ok(fa > 14.0, "los faldones se abren al canalizar (%.1f°)" % fa)
+				_ok(_es(NixFBX.FUERTE), "canalizando: ornamentos en la FUERTE (%.2f)" % _orn())
 				nix.reposo()
 				marca = t
 				paso = 3
@@ -252,6 +302,10 @@ func _process(delta: float) -> bool:
 				_ok(a < 3.0, "al volver a la guardia bajan (%.1f°)" % a)
 				var fa := _angulo_faldon()
 				_ok(fa < 13.0, "y los faldones se cierran (%.1f°)" % fa)
+				_ok(_es(NixFBX.FUERTE), "volver a la guardia no corta la canalización: sigue fuerte (%.2f)" % _orn())
+				if nix.has_method("apagar_emision"):
+					nix.apagar_emision()         # lo que hace combate.gd _conjuro_roto
+				_ok(_orn() == 0.0, "INTERRUPCIÓN (conjuro roto): a 0 en el acto (%.2f)" % _orn())
 				nix.morir()
 				marca = t
 				paso = 4
@@ -264,6 +318,85 @@ func _process(delta: float) -> bool:
 		5:
 			if t - marca > 1.8:
 				_ok(not nix._muerta and String(nix.anim.assigned_animation) == "guardia", "revivir: vuelve a la guardia (%s)" % nix.anim.assigned_animation)
+				_ok(_orn() == 0.0, "tras la interrupción, la muerte y revivir sigue a 0 (%.2f)" % _orn())
+				_lanzar("nix_ascuas")
+				paso = 6
+		6:
+			if t - marca > _lanzamiento("magia_lanzar") + 0.1:
+				_ok(_es(NixFBX.BASICA), "Ascuas de Nácar: BÁSICA en el lanzamiento (%.2f)" % _orn())
+				nix.fin_magia()
+				marca = t
+				paso = 7
+		7:
+			if t - marca > 0.7:
+				_ok(_orn() == 0.0, "al acabar el hechizo (fin_magia), a 0 (%.2f)" % _orn())
+				_lanzar("nix_aguja")
+				paso = 8
+		8:
+			if t - marca > _lanzamiento("magia_estado") + 0.1:
+				_ok(_es(NixFBX.BASICA), "Aguja de Invierno: BÁSICA (%.2f)" % _orn())
+				nix.concentrar()
+				marca = t
+				paso = 9
+		9:
+			if t - marca > 0.8:
+				_ok(_es(NixFBX.FUERTE), "canalizar el Colapso: FUERTE (%.2f)" % _orn())
+				_lanzar("nix_colapso")
+				paso = 10
+		10:
+			if t - marca > _lanzamiento("magia_culminante") + 0.1:
+				_ok(_es(NixFBX.SUPREMA), "Colapso del Firmamento al soltarlo: SUPREMA (%.2f)" % _orn())
+				paused = true
+				_ok(_orn() == 0.0, "PAUSA (SceneTree.paused): a 0 en el acto (%.2f)" % _orn())
+				marca = t
+				paso = 11
+		11:
+			if t - marca > 0.4:
+				_ok(_orn() == 0.0, "y quieta mientras dura la pausa (%.2f)" % _orn())
+				paused = false
+				_lanzar("nix_ascuas")
+				paso = 12
+		12:
+			if t - marca > 0.4:
+				_ok(_orn() > 0.1, "de nuevo encendida (%.2f)" % _orn())
+				nix.notification(Node.NOTIFICATION_APPLICATION_PAUSED)
+				_ok(_orn() == 0.0, "PAUSA de la aplicación (Android en segundo plano): a 0 en el acto (%.2f)" % _orn())
+				_lanzar("nix_aguja")
+				paso = 13
+		13:
+			if t - marca > 0.4:
+				_ok(_orn() > 0.1, "encendida otra vez (%.2f)" % _orn())
+				nix.morir()
+				_ok(_orn() == 0.0, "MUERTE: a 0 en el acto (%.2f)" % _orn())
+				marca = t
+				paso = 14
+		14:
+			if t - marca > 1.0:
+				_ok(_orn() == 0.0, "muerta no vuelve a subir aunque siga el gesto (%.2f)" % _orn())
+				nix.revivir()
+				marca = t
+				paso = 15
+		15:
+			if t - marca > 1.8:
+				_lanzar("nix_colapso")
+				paso = 16
+		16:
+			if t - marca > 0.8:
+				_ok(_orn() > 0.5, "subiendo hacia la suprema (%.2f)" % _orn())
+				nix.victoria()
+				_ok(_orn() == 0.0, "FIN DEL COMBATE (victoria): a 0 en el acto (%.2f)" % _orn())
+				marca = t
+				paso = 17
+		17:
+			if t - marca > 1.0:
+				_ok(_orn() == 0.0, "tras la victoria sigue a 0 (%.2f)" % _orn())
+				_lanzar("nix_ascuas")
+				paso = 18
+		18:
+			if t - marca > 0.4:
+				_ok(_orn() > 0.1, "encendida antes de salir (%.2f)" % _orn())
+				raiz.remove_child(nix)
+				_ok(_orn() == 0.0, "SALIDA de la escena: a 0 en el acto (%.2f)" % _orn())
 				nix.queue_free()
 				print("FALLOS: %d" % fallos)
 				quit(1 if fallos > 0 else 0)

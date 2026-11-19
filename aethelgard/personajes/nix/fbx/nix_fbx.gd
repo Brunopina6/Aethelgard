@@ -27,6 +27,19 @@ const CETRO_PUNTA := 0.50
 const CETRO_PROVISIONAL := "cetro_loto"
 # 14/11 (tarde): el cuerpo lleva el material de los v2 con una emisión SUAVE solo en el iris (nix_fbx_cuerpo.gdshader).
 const SHADER_CUERPO := "res://personajes/nix/fbx/nix_fbx_cuerpo.gdshader"
+# 19/11 (C-6): la ROPA lleva el material de los v2 con la emisión de los ornamentos (oro y amatistas), APAGADA salvo
+# mientras Nix usa una habilidad (nix_fbx_ropa.gdshader, uniforme «ornamentos»; lo mueve nix_3d.gd).
+const SHADER_ROPA := "res://personajes/nix/fbx/nix_fbx_ropa.gdshader"
+# Intensidades (valor de «ornamentos»): 0 apagada, 1 básica, 2 fuerte, 3 suprema. DECISIÓN REVISABLE (sin la del usuario).
+const NIVELES := [0.0, 0.8, 1.6, 2.8]
+const BASICA := 1
+const FUERTE := 2
+const SUPREMA := 3
+# Qué intensidad lleva cada habilidad (DECISIÓN REVISABLE, docs/v12/NIX_PILOTO_FBX.md §12): los dos hechizos de rango I,
+# básica; la canalización (concentrarse mientras se prepara un hechizo con barra), fuerte; el culminante de rango VI
+# que gasta los tres sellos de Eclipse, suprema. Uno nuevo sin fila: por los sellos que gasta (3 suprema, 2 fuerte).
+const NIVEL_HECHIZO := {"nix_ascuas": BASICA, "nix_aguja": BASICA, "nix_colapso": SUPREMA}
+const NIVEL_CANALIZAR := FUERTE
 
 
 static func activo() -> bool:
@@ -48,3 +61,25 @@ static func poner_iris(nodo: Node) -> bool:
 		return false
 	sm.shader = load(SHADER_CUERPO)
 	return true
+
+
+# Ornamentos de la ropa (19/11, C-6): cambia el shader del material que puso el ayudante de los v2 en «ropa_nix» por
+# el suyo (los mismos parámetros + la emisión, a 0). Devuelve ese material (null si no se pudo).
+static func poner_ornamentos(nodo: Node) -> ShaderMaterial:
+	var mi := nodo.find_child("ropa_nix", true, false) as MeshInstance3D
+	if mi == null or not ResourceLoader.exists(SHADER_ROPA):
+		return null
+	var sm := mi.get_surface_override_material(0) as ShaderMaterial
+	if sm == null:
+		return null
+	sm.shader = load(SHADER_ROPA)
+	sm.set_shader_parameter("ornamentos", 0.0)
+	return sm
+
+
+# La intensidad de un hechizo (índice de NIVELES).
+static func nivel_de(fam: String, d := {}) -> int:
+	if NIVEL_HECHIZO.has(fam):
+		return NIVEL_HECHIZO[fam]
+	var s := int(d.get("sellos", 0))
+	return SUPREMA if s >= 3 else (FUERTE if s == 2 else BASICA)

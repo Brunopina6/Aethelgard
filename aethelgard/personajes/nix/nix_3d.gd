@@ -17,6 +17,10 @@ extends "res://maga_3d.gd"
 # nix_fbx.glb (la Nix del FBX con su vestuario canónico como malla aparte, «ropa_nix») y su JSON; el cetro va por
 # socket en «arma_d» (el del inventario o, sin arma, su cetro propio cetro_nix.glb), sin LOD manuales (los genera el importador) y concentrarse empieza por «canalizar» (los
 # mechones se elevan con retraso). Apagado, todo lo de abajo es exactamente lo de antes.
+# 19/11 (C-6), también solo con el piloto: la EMISIÓN DE LOS ORNAMENTOS de la ropa (oro y amatistas; nix_fbx_ropa.gdshader)
+# sigue a la habilidad con tres intensidades (básica, fuerte y suprema: nix_fbx.gd NIVEL_HECHIZO) y vuelve a 0 al
+# acabar, al romperse el conjuro (combate.gd _conjuro_roto llama a apagar_emision), al morir, al ganar, en pausa y al
+# salir de la escena. Sin el piloto no hay material de ornamentos y nada de eso hace nada.
 
 const RUTA_NIX := "res://personajes/nix/nix.glb"
 const JSON_CLIPS := "res://personajes/nix/nix_clips.json"
@@ -37,6 +41,9 @@ var _i_arma := -1
 var _exploracion := false
 var _fbx := false                        # piloto del FBX (nix_fbx.gd)
 var _ruta_json := JSON_CLIPS
+var _mat_ropa: ShaderMaterial = null     # piloto FBX: la ropa con la emisión de los ornamentos (null sin el piloto)
+var _emision := 0.0                      # valor actual de «ornamentos» (0 apagada)
+var _tw_emision: Tween = null
 
 
 func _init() -> void:
@@ -77,6 +84,7 @@ func _ready() -> void:
 	v2.preparar(self, "Nix")
 	if _fbx:
 		NixFBX.poner_iris(self)             # 14/11: emisión suave solo en el iris (nix_fbx_cuerpo.gdshader)
+		_mat_ropa = NixFBX.poner_ornamentos(self)   # 19/11: los ornamentos, apagados hasta que use una habilidad
 		if vara != null:
 			_largo_cristal = _vara_punta    # la magia sale de la punta del cetro
 	else:
@@ -202,6 +210,7 @@ func lanzar_negra(fam: String, _d := {}) -> void:
 	reproducir(clip, 0.15)
 	v2.poner_expresion("decidido", 0.4)
 	var t := instante(clip, "lanzamiento", 0.7)
+	_emitir(NixFBX.nivel_de(fam, _d), t)      # piloto FBX: sube durante la anticipación hasta el lanzamiento
 	if clip == "magia_culminante":
 		get_tree().create_timer(instante(clip, "preparacion", 1.1)).timeout.connect(func():
 			if is_instance_valid(self) and not _muerta:
@@ -217,6 +226,7 @@ func magia_poderosa() -> void:
 
 func fin_magia() -> void:
 	if not _muerta:
+		_emitir(0, 0.5)                     # piloto FBX: los ornamentos se apagan al acabar el hechizo
 		get_tree().create_timer(0.35).timeout.connect(func():
 			if is_instance_valid(self) and not _muerta and String(anim.assigned_animation).begins_with("magia_"):
 				reposo(), CONNECT_ONE_SHOT)
@@ -235,6 +245,7 @@ func concentrar() -> void:
 		else:
 			reproducir("magia_concentrar", 0.25)
 		v2.poner_expresion("entrecerrados")
+		_emitir(NixFBX.NIVEL_CANALIZAR, 0.6)  # piloto FBX: canalizando, fuerte hasta que lo suelte o se rompa
 
 
 func preparar_golpe() -> void:
@@ -286,6 +297,7 @@ func fin_defensa() -> void:
 
 
 func victoria() -> void:
+	apagar_emision()                        # fin del combate
 	if _muerta:
 		return
 	cansada(false)
@@ -300,6 +312,7 @@ func morir() -> void:
 	if _muerta:
 		return
 	_muerta = true
+	apagar_emision()
 	if gestos != null:
 		gestos.quitar_todos(0.3)
 	anim.speed_scale = 1.0
@@ -331,3 +344,47 @@ func hablar(animo := "") -> String:
 func expresion(nombre: String, dur := 0.0) -> void:
 	if v2 != null:
 		v2.poner_expresion(nombre, dur)
+
+
+# ---------------------------------------------------------------- emisión de los ornamentos (piloto FBX, C-6, 19/11)
+# Sin el piloto (_mat_ropa null) nada de esto hace nada.
+func nivel_emision() -> float:
+	return _emision
+
+
+func _poner_emision(v: float) -> void:
+	_emision = v
+	if _mat_ropa != null:
+		_mat_ropa.set_shader_parameter("ornamentos", v)
+
+
+func _parar_emision() -> void:
+	if _tw_emision != null and _tw_emision.is_valid():
+		_tw_emision.kill()
+	_tw_emision = null
+
+
+# Lleva la emisión a la intensidad «nivel» (índice de NixFBX.NIVELES) en «dur» segundos.
+func _emitir(nivel: int, dur: float) -> void:
+	if _mat_ropa == null or (_muerta and nivel > 0):
+		return
+	_parar_emision()
+	var meta: float = NixFBX.NIVELES[nivel]
+	if dur <= 0.0 or not is_inside_tree():
+		_poner_emision(meta)
+		return
+	_tw_emision = create_tween()
+	_tw_emision.tween_method(_poner_emision, _emision, meta, dur).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+
+# Limpieza: a 0 en el acto (conjuro roto, muerte, fin del combate, pausa y salida de la escena).
+func apagar_emision() -> void:
+	if _mat_ropa == null:
+		return
+	_parar_emision()
+	_poner_emision(0.0)
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PAUSED or what == NOTIFICATION_APPLICATION_PAUSED or what == NOTIFICATION_EXIT_TREE:
+		apagar_emision()
