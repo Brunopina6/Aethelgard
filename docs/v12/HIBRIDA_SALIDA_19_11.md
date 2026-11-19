@@ -36,16 +36,18 @@ Combate de verdad (Kael y Lya, grupo 9), Lya invoca y se sale con `quit(0)`; ant
   En el vídeo del ritual (`ritual_video`, `video_arranca` y 30 fotogramas después): 0 (7 de 7).
 - Por modo, 2 y 30 fotogramas después de invocar: teatro de siempre (`no`) y vídeo (`abreviada`): 0; `hibrida` e
   `hibrida_3d`: 139. Sin invocar (menú de Lya): 0.
-- Liberando antes de salir (la híbrida con `free()` o `queue_free()`, o el combate entero, y 5 fotogramas; 1 pasada cada una): 139 igual.
-  No es un nodo, ni el vídeo, ni el teatro, ni sombras, ni hilos: con todo liberado sigue.
+- Liberando antes de salir (la híbrida con `free()` o `queue_free()`, o el combate entero, y 5 fotogramas; **n = 1**
+  pasada por variante, sin el rc guardado en el registro: el lanzador solo lo escribía en la consola): 139 igual.
+  Indicio (no medida repetida) de que no es un nodo, ni el vídeo, ni el teatro, ni sombras, ni hilos; lo que sostiene
+  la causa es el caso mínimo de arriba, sin nada del juego.
 - Por piezas, llamando sin `combate._invocar_sobre`: el tween de la música, `_senalar`, `_montar_escenario`,
   `dirigir` y hasta `H.invocar` con una anónima del propio diagnóstico: 0. Solo falla con la anónima de `combate.gd`
   en la pila de la estática (`_invocar_sobre` → `invocar` → `dirigir`), lo que llevó al caso mínimo.
 - `--verbose`: el registro bueno sigue tras el `quit` con «XR: Clearing primary interface» (limpieza de Godot); el
   malo se corta antes, sin traza ni error de script.
 
-Por qué el vídeo del ritual no falla: no se ha medido en detalle (en esa fase la espera de `dirigir` queda colgada de
-otra forma y Godot suelta antes la de la estática). No cambia el arreglo.
+Por qué el vídeo del ritual no falla: **no se ha medido**. Hipótesis sin medir: en esa fase la espera de `dirigir`
+queda colgada de otra forma y Godot suelta antes la de la estática. No cambia el arreglo.
 
 ## Arreglo (`aethelgard/invocacion_erebo_hibrida.gd`, 7 líneas)
 
@@ -88,15 +90,84 @@ El mismo patrón (estática que espera a un método de un nodo con una anónima 
 (`ataque_kael`, `ataque_lya`, `ataque_garon`, `magia`: `impacto`) y en las animaciones estáticas de los enemigos v12
 (`combate_gorthor.gd`, `combate_golem.gd`, `combate_peon.gd`, `combate_velador.gd`, `combate_velaria.gd`,
 `combate_centinela.gd`, `combate_cencerrante.gd`, `combate_humbaba.gd`, `combate_meshy_e01.gd`, `combate_vidracran.gd`:
-`animar_golpe(..., impacto)`). Todos van detrás de interruptores APAGADOS por defecto. Medido: la Hoguera de Gorthor v12
-(`enemigos_v12`, `gt_ataque`, grupo 5) cortada a 10, 20 y 40 fotogramas: 0 (5 de 5); el ataque de Lya sin v12: 0 (6 de 6). No se
-ha visto el cierre en ellos, pero el patrón es el mismo y el orden en que Godot descarga los scripts no está garantizado.
+`animar_golpe(..., impacto)`). Todos van detrás de interruptores APAGADOS por defecto. Lo que pasa con cada uno, en la
+revisión de abajo.
+
+## Revisión (HIBRIDA_SALIDA_19_11_REVISION, 19/11)
+
+Registros, lanzador, copias de antes y comparaciones en `D:\REBELUM_diagnostico\hibrida_salida_19_11_revision_aplicada\`.
+El lanzador nuevo (`lanzar.sh`) escribe `rc=<código>` al final de cada `.log` y una línea por pasada en `resumen.txt`:
+las cifras de esta sección se pueden revisar con los archivos (el de la primera tanda solo lo dejaba en la consola).
+
+### Casos mínimos nuevos (`diag_estatica_lambda.gd`, 3 pasadas cada uno)
+
+| Caso | Qué hay pendiente al salir | Resultado |
+|---|---|---|
+| `cadena_lambda` (control) | el de siempre | 139, 3 de 3 |
+| `guardada` (control) | el arreglo de la híbrida | 0, 3 de 3 |
+| `guardada_arg` | como `guardada`, pero la estática pasa `inv._cb` como **argumento** del método esperado | **139, 3 de 3** |
+| `guardada_campo` | como `guardada`, y el método del nodo **lee** la anónima del nodo | 0, 3 de 3 |
+| `otra_clase` | la estática espera a un nodo de **otro** script (como los enemigos v12, que esperan al modelo 3D) | **139, 3 de 3** |
+| `propia` | la anónima es de la propia estática; nadie le pasa ninguna | 0, 3 de 3 |
+| `metodo_ligado` | a la estática le llega un método de A ligado a una clave (`_llamar_pendiente.bind(0)`), no la anónima | 0, 3 de 3 |
+
+Consecuencias: (1) vaciar la variable no basta si después se pasa la anónima como argumento de la llamada esperada: la
+copia temporal se queda en la pila de la estática (`guardada_arg`); el nodo tiene que leerla él (`guardada_campo`).
+(2) Que la estática espere a un nodo de otro script no la libra (`otra_clase`): el riesgo de los enemigos v12 existe en
+el caso mínimo, aunque en el juego no se ha visto (abajo).
+
+### `combate_anim_v12.gd`: arreglado
+
+Con `heroes_v2 combate_anim_v12`, `diag_salir_hibrida.gd fase=ataque:N` (el ataque de Lya v12 a medias; el registro
+dice «v12 true»):
+
+| Medida | Antes (archivo de `HEAD` puesto un momento) | Después |
+|---|---|---|
+| `ataque:10`, `ataque:30`, `ataque:60`, sin ventana | **139, 8 de 8** (2 + 4 + 2) | **0, 10 de 10** (3 + 5 + 2) |
+| `ataque:30` con ventana y `antes=cerrar_ventana` | **139, 2 de 2** | **0, 2 de 2** |
+
+Arreglo: las cuatro estáticas guardan `impacto` en el nodo (`_impacto`), vacían la suya y esperan a `d_ataque_kael`,
+`d_ataque_lya`, `d_ataque_garon` o `d_magia`, que la toman del nodo (`_tomar_impacto()`, en la misma llamada, antes de
+la primera espera) y llaman a los `i_*` de siempre con ella. Mismo orden (`_accion`, la acción, `_fin_accion`) y mismos
+instantes. `prueba_combate_anim_v12` antes y después (ejecutor): por defecto superada y superada; `esgrima=Juicio`
+superada y superada; `magia=Fuego` FALLIDA y FALLIDA con el mismo «FALLO: encendido: el pie de Garon patina (146 px por
+acción; apagado 195; …)», que ya estaba en `HEAD` (no es de este cambio y no está en la batería). En las tres, los
+registros de antes y después tienen las mismas líneas de impacto, duraciones (fotogramas animando) y fotogramas por
+pasada; solo cambian en ±1 la mediana en px/s o los px en vertical de algún pie, que también cambian en la pasada
+APAGADA (donde este código no corre): ruido de la medida. Comparación en `comparar.txt`.
+
+### Enemigos v12: medidos, sin cambios
+
+`diag_salir_hibrida.gd fase=golpe_enemigo:N` (golpe del primer enemigo a Kael, cortado a N fotogramas), sin ventana:
+
+| Enemigo (interruptor, grupo) | Pasadas | Resultado |
+|---|---|---|
+| Gorthor, Hoguera (`enemigos_v12 gt_ataque`, 5; «hoguera true») | 10, 20 (2), 40 | 0, 4 de 4 |
+| Gólem (`enemigos_v12`, 20), Peón (22), Velador (25), «Guardián de piedra» (18) | 10, 20, 40 | 0, 3 de 3 cada uno |
+| Velaria (`velaria_v12`, 30), Humbaba (`humbaba_v12`, 17), Vidracrán (`encuentro_desierto_v12`, 14), Custodio (`meshy_e01`, 28) | 10, 20, 40 | 0, 3 de 3 cada uno |
+
+Ninguno se ha cerrado con 0xC0000005 en el juego (28 de 28 con 0, más los 5 de 5 de Gorthor de la primera tanda), pero
+el caso mínimo `otra_clase` dice que el mecanismo les alcanza; el orden en que Godot descarga los scripts no está
+garantizado. Salvo Gorthor, el registro no comprueba que cada uno vaya por su `animar_golpe` estático (el combate
+lo elige por su `es()`/`de_ella()`/`de_el()` con el interruptor puesto). No se ha medido el Cencerrante (sin grupo de
+prueba propio). No se han cambiado: la cadena de estáticas de cada uno (`animar_golpe` → `_ir_y_golpear`, `_lanzar`,
+`_atacar`… → el modelo 3D) lleva `impacto` o anónimas que lo capturan en varias pilas, y arreglarlo enemigo por enemigo
+no es un cambio pequeño. La forma segura medida en el caso mínimo es que a la estática no le llegue la anónima de
+`combate.gd` sino un método ligado (`metodo_ligado`), por ejemplo en `combate.gd` `_animar_golpe`, solo en las ramas de
+los enemigos v12; no hecho.
+
+### Cierre de la ventana (WM_CLOSE_REQUEST)
+
+`diag_salir_hibrida.gd antes=cerrar_ventana`: en lugar de `quit()`, la notificación `WM_CLOSE_REQUEST` a todos los nodos
+y la señal `close_requested` de la raíz, con la que SceneTree sale solo (lo que hace Godot al cerrar la ventana con el
+ratón). Híbrida en `mano`: antes (`HEAD~1` puesto un momento) **139, 4 de 4** (2 sin ventana y 2 con ella); después
+**0, 4 de 4**. El ataque de Lya v12: arriba.
 
 ## Lo que queda
 
-- Propuesta (no hecha): al encender cualquiera de esos interruptores, aplicar el mismo cambio (la anónima en el nodo,
-  no en la pila de la estática) o medirlos con `diag_salir_hibrida.gd` (`golpe_enemigo:N`) antes.
+- Enemigos v12: antes de encender `enemigos_v12`, `velaria_v12`, `cencerrante_v12`, `humbaba_v12`,
+  `encuentro_desierto_v12` o `meshy_e01` por defecto, quitar la anónima de las pilas estáticas (propuesta de arriba) o
+  aceptar el riesgo medido (0 en 28 de 28 en el juego, 139 en el caso mínimo). Lo apunta el coordinador.
 - Propuesta (no hecha): una prueba de la batería que salga a mitad de la híbrida (`diag_salir_hibrida.gd fase=mano`
   sale con 0 desde el arreglo; antes, 0xC0000005), como `prueba_salir_en_cambio`. Lo decide el coordinador.
-- No se ha probado el cierre de la ventana con el ratón (WM_CLOSE_REQUEST) en Auditoría; se ha probado `quit()` con
-  ventana, que recorre la misma limpieza.
+- El clic real en la X de la ventana no se ha hecho (se ha simulado lo que Godot hace con él, arriba).

@@ -12,6 +12,8 @@ extends "res://pruebas/prueba_erebo_hibrida.gd"
 #           sale «tras» (10) fotogramas después · «ataque:N» → el ataque de Lya · «golpe_enemigo:N» → el golpe del
 #           primer enemigo (con «enemigos_v12 gt_ataque» y grupo=5, la Hoguera estática de Gorthor v12)
 #   antes=liberar_inv,liberar_c_cola,esperar... → lo que se hace justo antes del quit()
+#   antes=cerrar_ventana → en lugar de quit(): lo que hace Godot al cerrar la ventana con el ratón (la notificación
+#           WM_CLOSE_REQUEST a todos los nodos y la señal close_requested de la raíz, con la que SceneTree sale solo)
 # Medidas y causa: docs/v12/HIBRIDA_SALIDA_19_11.md. Sin datos reales: lánzala con APPDATA en una carpeta temporal.
 
 var _modo := "hibrida"
@@ -121,6 +123,7 @@ func _probar() -> void:
 
 func _salir(codigo: int, texto: String) -> void:
 	print(texto)
+	var cerrar := false
 	for a in OS.get_cmdline_user_args():
 		if not a.begins_with("antes="):
 			continue
@@ -140,6 +143,8 @@ func _salir(codigo: int, texto: String) -> void:
 				"esperar":
 					for i in 5:
 						await process_frame
+				"cerrar_ventana":
+					cerrar = true
 				_:
 					print("DIAG paso desconocido ", paso)
 			print("DIAG paso ", paso, " hecho")
@@ -147,5 +152,10 @@ func _salir(codigo: int, texto: String) -> void:
 	for k in P.CLAVES + ["partida_lista", "grupo_combate", "tipo_combate", "zona", "grupo_activo", "archivo_partida_prueba"]:
 		if Engine.has_meta(k):
 			Engine.remove_meta(k)
+	if cerrar:
+		print("DIAG cierra la ventana (WM_CLOSE_REQUEST y close_requested), sin quit()")
+		root.propagate_notification(Node.NOTIFICATION_WM_CLOSE_REQUEST)
+		root.close_requested.emit()
+		return
 	print("DIAG quit(%d)" % codigo)
 	quit(codigo)

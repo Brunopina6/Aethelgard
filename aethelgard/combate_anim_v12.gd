@@ -42,6 +42,8 @@ const RETROCESO := 22.0             # px que retrocede el golpeado (los grandes 
 const ZOOM_MAX := 1.1               # acercamiento máximo de la cámara
 const RETRASO_VICTORIA := {"Kael": 0.0, "Lya": 0.22, "Garon": 0.45}
 
+var _impacto := Callable()          # el «impacto» de combate.gd de camino al nodo (ver ataque_kael() y _tomar_impacto())
+
 
 
 # ---------------------------------------------------------------- interruptores
@@ -901,28 +903,68 @@ static func _m(c: Node) -> Node:
 	return m
 
 
+# (19/11, HIBRIDA_SALIDA_19_11_REVISION) «impacto» (una función anónima de combate.gd) no puede quedarse en la pila de
+# estas funciones ESTÁTICAS mientras esperan al nodo: si el juego se cierra a mitad del ataque, esa espera queda colgada
+# hasta después de descargar los scripts y Godot 4.7.2 se cerraba con 0xC0000005 (como la híbrida de Érebo, PC-19). Ni
+# siquiera como argumento de la llamada esperada (la copia temporal también queda en la pila: caso «guardada_arg» de
+# pruebas/herramientas/diag_estatica_lambda.gd): va al nodo, se vacía aquí y el nodo la toma (d_*). Mismo orden y mismos
+# instantes: _tomar_impacto() se hace en la misma llamada, antes de la primera espera.
 static func ataque_kael(c: Node, o: Dictionary, obj: Dictionary, impacto: Callable) -> void:
 	_accion(c, 1, "ataque_Kael")
-	await _m(c).i_ataque_kael(c, o, obj, impacto)
+	var m = _m(c)
+	m._impacto = impacto
+	impacto = Callable()
+	await m.d_ataque_kael(c, o, obj)
 	await _fin_accion(c)
 
 
 static func ataque_lya(c: Node, o: Dictionary, obj: Dictionary, impacto: Callable) -> void:
 	_accion(c, 1, "ataque_Lya")
-	await _m(c).i_ataque_lya(c, o, obj, impacto)
+	var m = _m(c)
+	m._impacto = impacto
+	impacto = Callable()
+	await m.d_ataque_lya(c, o, obj)
 	await _fin_accion(c)
 
 
 static func ataque_garon(c: Node, o: Dictionary, obj: Dictionary, impacto: Callable, metodo: String) -> void:
 	_accion(c, 1, metodo)
-	await _m(c).i_ataque_garon(c, o, obj, impacto, metodo)
+	var m = _m(c)
+	m._impacto = impacto
+	impacto = Callable()
+	await m.d_ataque_garon(c, o, obj, metodo)
 	await _fin_accion(c)
 
 
 static func magia(c: Node, o: Dictionary, obj: Dictionary, magia_n: String, impacto: Callable) -> void:
 	_accion(c, 1, "magia_" + str(o.get("nombre", "")))
-	await _m(c).i_magia(c, o, obj, magia_n, impacto)
+	var m = _m(c)
+	m._impacto = impacto
+	impacto = Callable()
+	await m.d_magia(c, o, obj, magia_n)
 	await _fin_accion(c)
+
+
+func _tomar_impacto() -> Callable:
+	var i := _impacto
+	_impacto = Callable()
+	return i
+
+
+func d_ataque_kael(c: Node, o: Dictionary, obj: Dictionary) -> void:
+	await i_ataque_kael(c, o, obj, _tomar_impacto())
+
+
+func d_ataque_lya(c: Node, o: Dictionary, obj: Dictionary) -> void:
+	await i_ataque_lya(c, o, obj, _tomar_impacto())
+
+
+func d_ataque_garon(c: Node, o: Dictionary, obj: Dictionary, metodo: String) -> void:
+	await i_ataque_garon(c, o, obj, _tomar_impacto(), metodo)
+
+
+func d_magia(c: Node, o: Dictionary, obj: Dictionary, magia_n: String) -> void:
+	await i_magia(c, o, obj, magia_n, _tomar_impacto())
 
 
 static func victoria(c: Node, h: Dictionary) -> void:
