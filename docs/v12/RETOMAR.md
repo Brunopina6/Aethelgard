@@ -1134,3 +1134,32 @@ Validado: `dc878e9` (`validado/v12/20261115-170245`, 188 · 0). APK v834 instala
   rótulos y derrotas). Nada de esto validado en Android.
 - Pendientes sin decisión: 92 bloques no ocultables que aún tapan a Kael pegado a ellos (§10), la memoria tras muchas
   escenas (1 045 MB con el Custodio), el perfil alto, los 5 clips del Custodio y la derrota de los v2/v3 (decisión v3).
+
+## RELEVO 19/11, 09:30: VALIDADO `5ace0bd` (210 · 0 · 116 · 0) y en GitHub; tandas 1 y 2 de pendientes (LEER PRIMERO)
+- Orden del usuario del 18/11 por la noche: «recuperar y terminar trabajos pendientes». Inventario completo en
+  `docs/v12/PENDIENTES_GENERALES.md` (137 filas, 7 estados; las tandas están al final). No se ha tocado main, desarollo
+  ni `claude/rebelum-v12` remota (`a4db536`). Partida real sin tocar (pruebas con datos aislados).
+- **Tanda 1**, VALIDADA `0970c02` (203 · 0 · 118 · 0, `validado/v12/20261119-012759`, en GitHub): clips del Custodio
+  (`1e776f6`), Velaria (`33e4203`, `50f6487`), Cencerrante en combate (`9fe7565`), agua del oasis (`4e1f492`) y arreglos
+  de revisión (`89dc6b6`). Custodio, Velaria y Cencerrante siguen APAGADOS con su interruptor.
+- **Tanda 2**, VALIDADA `5ace0bd` (batería 210 · 0 · 116 · 0 (2026-11-19_084727), etiqueta `validado/v12/20261119-… de las 09:30, que apunta al commit de este relevo`), subida por avance normal a
+  `claude/rebelum-v12-validado-20261118`. Cada trabajo con implementador, revisor y ronda de arreglos:
+  - PC-16 rodeo al tocar un edificio en la ciudad (`22856a0`, `41b38a9`; A* acotado a 5 ms, interruptor
+    `ciudad_rodeo`);
+  - PC-11/C-3 rótulos de vida de los slimes que se pisaban (`4452229`, `ab006a7`; **cambia** las posiciones de los
+    grupos 1, 2 y 8);
+  - C-10 ciudad, barrio y muestra con el ambiente «ciudad» (`f421017`, `029c7f6`);
+  - PC-5/C-9 sonido y llave iluminada del Custodio, APAGADO (`93f9fa7`, `2c28607`: máscara en gris y sin mipmaps,
+    porque los mips encendían caras lejos de la llave);
+  - PC-8, PC-12, PC-13 y parte de PC-10, pruebas frágiles (`5fae7e0`, `d0bac34`, `cbfe934`, `4f71991`, `ab44c31`);
+  - PC-18 `Parse Error` al cerrar con la precarga en hilo a medias (`d52a34d`, `70d09aa`, `1fe9072`; causa del caso
+    de la batería probable, no comprobada);
+  - PC-13 Ajustes ya no repinta la pestaña entera en cada pulsación (`5ace0bd`; 82 → 2,3 ms en el PC, capturas
+    idénticas en 29 estados; la lista ya no salta arriba tras pulsar).
+- **Siguiente:** nada de las tandas está visto en Android. Sección «Para la próxima APK» de `GUION_REDMI_19_11.md`
+  (la APK `9d1baef` no sirve para lo nuevo). No se ha copiado ninguna APK al teléfono ni se ha pedido instalar.
+- **Decisiones del usuario** (detalle en las filas del inventario): cifras del rodeo (PC-16); posiciones nuevas de los
+  slimes y rótulo en varias líneas (PC-11); ambiente en interiores, fuentes y campana (AM-9); escucha del Custodio
+  (PC-5); endurecer el límite de `prueba_audio` (PC-13).
+- Siguientes sin el usuario: C-5 (medir las derrotas de Naira y Nix), C-6 (emisión de los adornos de Nix), el resto
+  de PC-10, el cambio de pestaña de Ajustes y la pestaña Grupo fuera del árbol, C-4 (cabeza de Kael, baja).
