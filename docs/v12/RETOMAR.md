@@ -1192,3 +1192,17 @@ Validado: `dc878e9` (`validado/v12/20261115-170245`, 188 · 0). APK v834 instala
   respaldo en `D:\REBELUM_respaldos\2026-11-19_memoria_local_antes_c12\`. Publicarla es decisión del usuario (PD-44).
 - **Siguiente:** nada visto en Android. Guion «Para la próxima APK» de `GUION_REDMI_19_11.md`. Sin copiar APK al
   teléfono ni pedir instalar. Inventario con 140 filas.
+
+## RELEVO 19/11, 19:06: VALIDADA la tanda 5 (213 · 0 · 117 · 0) y en GitHub (LEER PRIMERO)
+- Encima del relevo de las 14:55 (tanda 4, `69a428e`). Batería 213 · 0 · 117 · 0 (2026-11-19_182602); la etiqueta `validado/v12/` de
+  esta hora es el punto de recuperación y apunta al commit de este relevo, subido por avance normal a
+  `claude/rebelum-v12-validado-20261118`.
+- Cierres al apagar (`463f68d`, `dc2bc51`): los diez enemigos v12 sin la anónima en sus estáticas (preventivo, PC-21)
+  y `prueba_salir_a_mitad` nueva en la batería. AM-11 (banco) no se reproduce: 0 en 60 pasadas; sin causa.
+- Kael original (`6814df7`): la cabeza ya no atraviesa el suelo en su derrota (−0,16 → 0 m); falta verlo en el Redmi.
+- Esperas (`65c740a`): el resto de PC-10 por reloj con FALLO claro. `.gd.uid` de 5 guiones (`c34d6ad`).
+- Transparencias (`25c1635`, `170ad84`, solo investigación, 30 min): la escala 3D no influye; la niebla aclara las
+  capas oscuras y multiplicar con resplandor oscurece de más. Sin cambios en el juego; decisión de arte y Redmi.
+- **Siguiente (orden del usuario del 19/11 por la tarde):** contenido jugable antes que investigaciones técnicas.
+  Tanda 6: Hilandera del Eco en combate (PC-17, apagada), conversaciones que recuerdan decisiones y rumores en
+  Oakhaven 3D (AM-8, [P]) y sonido de Sunken y la Arboleda (AM-9). Nada visto en Android; sin APK al teléfono.
