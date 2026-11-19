@@ -339,7 +339,8 @@ Medido con `pruebas/medir_custodio_rotacion.gd` en el combate del banco (partida
   No es un archivo de este encargo.
 - Redmi: la legibilidad del disco a tamaño de teléfono y su coste (un dibujo 2D por fotograma: un círculo, dos arcos y
   el ojo).
-- (19/11: hecha, §12, con una máscara de las caras de la llave en el UV.) La «llave iluminada» de la ficha: sin máscara de UV, no se ha hecho.
+- ~~La «llave iluminada» de la ficha: sin máscara de UV, no se ha hecho.~~ Hecha el 19/11 con una máscara de las caras
+  de la llave en el UV (§12.3).
 
 
 ## 10. 15/11, tarde: «Sello en 3» en el Redmi y el Sello no llegaba (el contador)
@@ -635,8 +636,15 @@ se oye ni se ve fuera del banco de pruebas y de sus grupos 28 y 29.
   rasteriza su UV a 512 px con 2 px de margen y borra lo que caiga en caras lejos del pecho (Meshy empaqueta las islas
   muy juntas: con el margen, 8 caras del cuello, la cadera y una pierna tocaban la máscara). Resultado
   (`fuente/p3_comprobar_mascara.py`): **0 caras lejos** tocan la máscara y la llave queda cubierta al **97,4 %**
-  (1 364 de 1 400 muestras). Archivo: `enemigos/meshy_e01/meshy_e01_llave_mascara.png` (4,5 KB; importada comprimida
-  en VRAM con mipmaps: 175 KB por formato, solo cargada con el Custodio). Si el GLB cambia, hay que rehacerla.
+  (1 364 de 1 400 muestras). Archivo: `enemigos/meshy_e01/meshy_e01_llave_mascara.png`. Si el GLB cambia, hay que
+  rehacerla.
+- **Importación (revisión del 19/11, 06:30):** al principio iba comprimida en VRAM **con mipmaps**. La comprobación
+  repetida con la máscara reducida como un mip (`p3_comprobar_mascara.py` sobre copias a 256, 128 y 64 px) daba
+  **30, 50 y 107 caras lejos** con valor de máscara de hasta 0,34, 0,46 y 0,48 (cadera, una pierna, el brazo): a la
+  distancia del combate habrían brillado un poco. Ahora la máscara es **gris de un canal** (mismos valores: diferencia
+  0) e importada **sin pérdida y sin mipmaps** (`compress/mode=0`, `mipmaps/generate=false`): la tarjeta lee siempre el
+  nivel de 512 px, el mismo que da 0 caras lejos. Coste: 256 KB (L8) solo con el Custodio cargado. `p3_mascara_llave.py`
+  la escribe en color: si se rehace, pasarla a gris y mantener esa importación.
 - **Material:** una copia del material del cuerpo solo para esa instancia (el del GLB no se toca) con emisión
   `LLAVE_COLOR` (1,0, 0,62, 0,22) × la máscara (**operador MULTIPLICAR**: con el de serie, SUMAR, brillaba el cuerpo
   entero; visto en la primera captura y ahora comprobado por la prueba) × `LLAVE_ENERGIA` 1,2. Sin luces. Se pone al
