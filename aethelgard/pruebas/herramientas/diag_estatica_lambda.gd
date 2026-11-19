@@ -15,6 +15,11 @@ extends SceneTree
 #   otra_clase (la estática espera a un nodo de OTRO script, como los animar_golpe de los enemigos v12) → 139
 #   propia (la anónima es de la propia estática, nadie le pasa nada) → 0
 #   metodo_ligado (a la estática le llega un método de A ligado a una clave, no la anónima) → 0
+# CIERRES_19_11 (PC-21, 3 pasadas cada uno; docs/v12/CIERRES_19_11.md), las formas de los animar_golpe de los enemigos v12:
+#   envuelta (la estática envuelve la anónima de A en una suya y se la pasa al método esperado de otro nodo) → 0 ·
+#   anidada (se la pasa tal cual a otra estática que la envuelve, como Humbaba) → 0 · propia_arg → 0 ·
+#   a_padre (la estática espera a un método de A pasándole la anónima de A, como el Vidracrán con pinzas) → 139 ·
+#   envuelta_ligado, anidada_ligado, a_padre_ligado (con el método ligado de A: el arreglo de combate.gd _ligar) → 0
 
 class Hijo extends Node:
 	signal dirigida
@@ -113,10 +118,47 @@ class Hijo extends Node:
 		return true
 
 
+	# (CIERRES_19_11) la forma REAL de los animar_golpe de los enemigos v12: la estática envuelve lo que le llega en una
+	# anónima PROPIA («golpe», que lo captura) y se la pasa como argumento al método esperado del modelo (otro script)
+	static func invocar_envuelta(padre: Node, cb: Callable) -> bool:
+		var hecho := [false]
+		var golpe := func():
+			hecho[0] = true
+			cb.call()
+		var inv := Otro.new()
+		padre.add_child(inv)
+		await inv.dirigir_con(golpe)
+		return true
+
+	# (CIERRES_19_11) como Humbaba: la estática pasa lo que le llega, tal cual, a OTRA estática que lo envuelve
+	static func invocar_anidada(padre: Node, cb: Callable) -> bool:
+		await invocar_envuelta(padre, cb)
+		return true
+
+	# (CIERRES_19_11) como el Vidracrán (pinzas): la estática espera a un método de A (quien la llamó) y le pasa la
+	# anónima de A como argumento
+	static func invocar_a_padre(padre: Node, cb: Callable) -> bool:
+		await padre.esperar_con(cb)
+		return true
+
+	# (CIERRES_19_11) solo la anónima propia como argumento del método esperado del modelo; nadie le pasa nada
+	static func invocar_propia_arg(padre: Node) -> bool:
+		var out := {"x": 0}
+		var golpe := func(): out["x"] = 1
+		var inv := Otro.new()
+		padre.add_child(inv)
+		await inv.dirigir_con(golpe)
+		return true
+
+
 class Otro extends Node:
 	func dirigir() -> void:
 		while true:
 			await get_tree().process_frame
+
+	func dirigir_con(cb: Callable) -> void:
+		await dirigir()
+		cb.call()
 
 
 class Padre extends Node:
@@ -171,6 +213,40 @@ class Padre extends Node:
 		_pendientes[0] = func(): out["x"] = 1
 		await Hijo.invocar_otra(self, _llamar_pendiente.bind(0))
 
+	# (CIERRES_19_11) los enemigos v12 antes del arreglo: la anónima de A, envuelta por la estática
+	func con_envuelta() -> void:
+		var out := {"x": 0}
+		await Hijo.invocar_envuelta(self, func(): out["x"] = 1)
+
+	# (CIERRES_19_11) los enemigos v12 con el arreglo de combate.gd: un método de A ligado a una clave, envuelto igual
+	func con_envuelta_ligado() -> void:
+		var out := {"x": 0}
+		_pendientes[1] = func(): out["x"] = 1
+		await Hijo.invocar_envuelta(self, _llamar_pendiente.bind(1))
+
+	func con_anidada() -> void:
+		var out := {"x": 0}
+		await Hijo.invocar_anidada(self, func(): out["x"] = 1)
+
+	func con_anidada_ligado() -> void:
+		var out := {"x": 0}
+		_pendientes[2] = func(): out["x"] = 1
+		await Hijo.invocar_anidada(self, _llamar_pendiente.bind(2))
+
+	func esperar_con(cb: Callable) -> void:
+		while true:
+			await get_tree().process_frame
+		cb.call()
+
+	func con_a_padre() -> void:
+		var out := {"x": 0}
+		await Hijo.invocar_a_padre(self, func(): out["x"] = 1)
+
+	func con_a_padre_ligado() -> void:
+		var out := {"x": 0}
+		_pendientes[3] = func(): out["x"] = 1
+		await Hijo.invocar_a_padre(self, _llamar_pendiente.bind(3))
+
 	func con_senal() -> void:
 		var out := {"x": 0}
 		await Hijo.invocar_senal(self, func(): out["x"] = 1)
@@ -213,6 +289,13 @@ func _process(_d: float) -> bool:
 			"otra_clase": p.con_otra()
 			"propia": Hijo.invocar_propia(p)
 			"metodo_ligado": p.con_metodo_ligado()
+			"envuelta": p.con_envuelta()
+			"envuelta_ligado": p.con_envuelta_ligado()
+			"propia_arg": Hijo.invocar_propia_arg(p)
+			"anidada": p.con_anidada()
+			"anidada_ligado": p.con_anidada_ligado()
+			"a_padre": p.con_a_padre()
+			"a_padre_ligado": p.con_a_padre_ligado()
 	if n == 6:
 		print("MIN caso %s: quit" % caso)
 		return true

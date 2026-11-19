@@ -5925,6 +5925,25 @@ func _espera_invocacion(seg: float) -> void:
 
 # ================================================================= animaciones
 
+# CIERRES_19_11 (PC-21): las animaciones de los golpes de los enemigos v12 (combate_gorthor.gd, combate_golem.gd...:
+# animar_golpe) son funciones ESTÁTICAS que esperan a nodos. Si el juego sale a mitad, esa espera no vuelve y Godot vacía
+# su pila al descargar los guiones; si en ella va la anónima «impacto» de este guion, puede destruirla cuando este ya está
+# descargado: 0xC0000005 (docs/v12/HIBRIDA_SALIDA_19_11.md y CIERRES_19_11.md). A ellas no se les pasa la anónima sino un
+# método de este nodo ligado a una clave (_ligar): la anónima se queda aquí (y se va con el nodo) y se llama igual, las
+# veces que la llamen. No se borra al acabar el golpe: alguna estática podría llamarla después (un proyectil en el aire).
+var _impactos := {}
+
+
+func _ligar(impacto: Callable) -> Callable:
+	var k := _impactos.size()
+	_impactos[k] = impacto
+	return _impacto_guardado.bind(k)
+
+
+func _impacto_guardado(k: int) -> void:
+	_impactos[k].call()
+
+
 func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: String) -> void:
 	dano = Cencerrante.reforzar(self, origen, dano)   # V12, Cencerrante: el golpe reforzado por su toque (sin la marca, igual)
 	var critico: bool = magia == "" and randf() < Extra.prob_critico(PROB_CRITICO, origen.get("efectos", {}))   # Diente: la misma tirada
@@ -6004,25 +6023,25 @@ func _animar_golpe(origen: Dictionary, objetivo: Dictionary, dano: int, magia: S
 	elif brama != null and Brama.es(origen):                                   # V12, Bramavidrio: desde su agujero
 		await brama.animar_golpe(objetivo, impacto)
 	elif Humbaba.es(origen):                                                   # V12: Humbaba, desde su sitio
-		await Humbaba.animar_golpe(self, origen, objetivo, impacto)
+		await Humbaba.animar_golpe(self, origen, objetivo, _ligar(impacto))
 	elif Vidracran.es(origen):                                                 # V12, encuentro del desierto: pinzas o aguijón
-		await Vidracran.animar_golpe(self, origen, objetivo, impacto)
+		await Vidracran.animar_golpe(self, origen, objetivo, _ligar(impacto))
 	elif Centinela.es(origen):                                                # V12, Centinela: tajo, barrido o Juicio
-		await Centinela.animar_golpe(self, origen, objetivo, impacto)
+		await Centinela.animar_golpe(self, origen, objetivo, _ligar(impacto))
 	elif Golem.es(origen):                                                    # V12, Gólem: puñetazo, terrón o Pisotón
-		await Golem.animar_golpe(self, origen, objetivo, impacto)
+		await Golem.animar_golpe(self, origen, objetivo, _ligar(impacto))
 	elif Gorthor.es(origen) and origen.has("gt_ataque"):                      # V12, Gorthor: la Hoguera, desde su sitio
-		await Gorthor.animar_golpe(self, origen, objetivo, impacto)
+		await Gorthor.animar_golpe(self, origen, objetivo, _ligar(impacto))
 	elif Peon.es(origen):                                                     # V12, Peón: piquete, estaca o Zancada
-		await Peon.animar_golpe(self, origen, objetivo, impacto)
+		await Peon.animar_golpe(self, origen, objetivo, _ligar(impacto))
 	elif Velador.es(origen):                                                  # V12, Velador: mazazo, empuje o Raíz
-		await Velador.animar_golpe(self, origen, objetivo, impacto)
+		await Velador.animar_golpe(self, origen, objetivo, _ligar(impacto))
 	elif Custodio.es(origen):                                                 # V12, Custodio: la Prensa del Umbral
-		await Custodio.animar_golpe(self, origen, objetivo, impacto)
+		await Custodio.animar_golpe(self, origen, objetivo, _ligar(impacto))
 	elif Velaria.de_ella(self, origen):                                       # V12, Velaria: corte de ala o destello
-		await Velaria.animar_golpe(self, origen, objetivo, impacto)
+		await Velaria.animar_golpe(self, origen, objetivo, _ligar(impacto))
 	elif Cencerrante.de_el(self, origen):                                     # V12, Cencerrante: la campanada baja
-		await Cencerrante.animar_golpe(self, origen, objetivo, impacto)
+		await Cencerrante.animar_golpe(self, origen, objetivo, _ligar(impacto))
 	elif _p3d(origen) != null and _p3d(origen).has_method("avisar"):           # Zarzalín (T-097)
 		await _anim_zarzalin(origen, objetivo, impacto, str(origen.get("ataque_3d", "colmillo_lateral")))
 	elif _p3d(origen) != null and _p3d(origen).has_method("despertar"):        # Guardián del Bosque (fase 3): desde su sitio
