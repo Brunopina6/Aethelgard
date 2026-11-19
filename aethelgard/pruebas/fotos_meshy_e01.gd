@@ -14,6 +14,8 @@ const CLIPS_SELLO := {"sello": [0.45, 0.95, 1.3]}             # 15/11, con «sel
 const CLIPS_1811 := {"entrada": [0.0, 0.22, 0.6, 1.05], "guardia": [0.0, 1.0], "tambaleo": [0.1, 0.22, 0.36, 0.7, 1.05],
 	"girar_izq": [0.23, 0.42, 0.65], "girar_der": [0.23, 0.42, 0.65]}
 # («sello» además juega su Sello de Clausura en el combate real; «porton», el Avance; «derrota», su clip de derrota)
+# 19/11, con «llave»: la llave iluminada en el estudio (encendida en los instantes del Sello, del aviso a 1,50) y de cerca
+# (llave_000/095_apagada/encendida.png: reposo y Sello a 0,95 s, sin y con brillo); en el combate se enciende sola.
 var fotos := ""
 var C
 var G
@@ -118,6 +120,7 @@ func _estudio() -> void:
 		clips.merge(CLIPS_SELLO)
 	if "clips1811" in OS.get_cmdline_user_args():
 		clips.merge(CLIPS_1811)
+	var con_llave: bool = "llave" in OS.get_cmdline_user_args() and cus.has_method("llave")
 	for vista in [["frente", 0.0], ["perfil", 90.0], ["espalda", 180.0]]:
 		for clip in clips:
 			for t in clips[clip]:
@@ -125,9 +128,26 @@ func _estudio() -> void:
 				cus.anim.play(clip)
 				cus.anim.seek(t, true)
 				cus.anim.speed_scale = 0.0
+				if con_llave:                                   # (19/11) en el Sello, como en el combate: del aviso a 1,50
+					cus.llave(clip == "sello" and t >= 0.2 and t < 1.5, 0.0)
 				await _esperar(4)
 				var img := vp.get_texture().get_image()
 				img.save_png(fotos.path_join("estudio_%s_%03d_%s.png" % [clip, int(round(t * 100)), vista[0]]))
+	# (19/11, «llave») la llave iluminada de cerca, de frente a 0,95 s del Sello: apagada (como antes) y encendida
+	if con_llave and cus.tiene("sello"):
+		cus.mirar(Vector3(0, 0, 1), 0.0)
+		cam.size = 0.9
+		cam.look_at_from_position(Vector3(0.15, 1.3, 8), Vector3(0.15, 1.3, 0))
+		for t in [0.0, 0.95]:
+			for si in [false, true]:
+				cus.anim.play("sello" if t > 0.0 else "reposo")
+				cus.anim.seek(t, true)
+				cus.anim.speed_scale = 0.0
+				cus.llave(si, 0.0)
+				await _esperar(4)
+				vp.get_texture().get_image().save_png(fotos.path_join("llave_%03d_%s.png" % [int(round(t * 100)),
+					"encendida" if si else "apagada"]))
+		cus.llave(false, 0.0)
 	cus.anim.speed_scale = 1.0
 	vp.queue_free()
 	await _esperar(5)
@@ -183,6 +203,15 @@ func _combate() -> void:
 			if at.has(k) and int(at[k]) >= 0 and not visto.has(k):
 				visto[k] = true
 				indice.append("%s: f_%05d.jpg" % [k, n_foto])
+		var p3 = c._p3d(cus)                                    # (19/11) la llave iluminada: cuándo se enciende y se apaga
+		if p3 != null and p3.has_method("llave_energia"):
+			var e: float = p3.llave_energia()
+			if e >= p3.LLAVE_ENERGIA * 0.99 and not visto.has("llave"):
+				visto["llave"] = true
+				indice.append("llave encendida del todo: f_%05d.jpg" % n_foto)
+			elif e == 0.0 and visto.has("llave") and not visto.has("llave_fin"):
+				visto["llave_fin"] = true
+				indice.append("llave apagada: f_%05d.jpg" % n_foto)
 		if empezado and c.atacante_actual == null:
 			break
 	indice.append("fin del turno: f_%05d.jpg" % n_foto)

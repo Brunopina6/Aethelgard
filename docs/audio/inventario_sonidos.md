@@ -867,6 +867,26 @@ murmullo y la fuente de la plaza y el mercado con `Sonido.fuente_3d`, y la campa
 (`Sonido.fijar_momento(…, "tarde")` para la tarde dorada del barrio y de la muestra: grillos y la campana que marca la
 hora). Necesitan posiciones de cada escena (la plaza y la fuente del barrio y de la ciudad) y no se han puesto.
 
+## V12 (2026-11-19): el Custodio de Porcelana, meshy_e01 (C-9 / PC-5; APAGADO, interruptor `meshy_e01`)
+
+Seis claves nuevas en `sonido.gd` (`EFECTOS`, bus Efectos), derivados de `audio/efectos/meshy_e01/` hechos con
+`pruebas/herramientas/preparar_sonido_custodio.gd` (filas `meshy_e01/…` de `efectos_procedencia.csv`). Licencia: paquetes
+GDC de Sonniss 2017-2020 (`Licensing.pdf` / `License.pdf` de cada paquete). Fuera de la precarga mientras va apagado
+(`recursos.gd`). Tabla completa (originales, tramos, capas y medidas) en `docs/v12/CUSTODIO_E01_V12.md` §12.2.
+
+| Efecto | Evento real (dónde) | Archivo | Original principal | dB · p |
+|---|---|---|---|---|
+| `meshy_e01_entrada` | su entrada (alerta), `combate.gd` (`_sonar(clave + "_entrada")`) | `meshy_e01/entrada.wav` | Eiravaein «CookieJar, ceramic… jostle» (2018) + piedra PMSFX | −9,5 · 2 |
+| `meshy_e01_ataque` | impacto de la Prensa del Umbral (señal `impacto`, `_sonidos_bestia`) | `meshy_e01/prensa.wav` | PMSFX «PM_RI_Designed_7» (2020) + taza rota Griffin (2017) | −10,5 · 3 |
+| `meshy_e01_aviso_porton` | aviso del Avance del Portón (`combate_meshy_e01.gd`, evento `aviso`) | `meshy_e01/aviso_porton.wav` | Mindful Audio «large gear 03» (2017) | −1,5 · 3 |
+| `meshy_e01_porton` | impacto del Avance (señal `impacto`) | `meshy_e01/porton.wav` | Double Trouble «Plate_Impact_Hard_02» (2017) + Shapeforms thud (2020), paso bajo | −11,5 · 3 |
+| `meshy_e01_aviso_sello` | aviso del Sello de Clausura (`combate_meshy_e01.gd`, evento `aviso`) | `meshy_e01/aviso_sello.wav` | Alexander Ahura «Lock01_outdoor_opening_lite03» (2017) | 0 · 3 |
+| `meshy_e01_sello` | impacto del Sello (señal `impacto`) | `meshy_e01/sello.wav` | Shapeforms thud (2020) + 3maze «door_lock_007» (2019) + piedra PMSFX | −16 · 3 |
+
+Una vez por evento (`max` 1 y su `espera`; `prueba_meshy_e01` sección L). Señal medida (pico −1/−2 dBFS; RMS en el juego
+≈ −28 dBFS). **Sin escuchar:** muestras y secuencias simuladas en
+`D:\REBELUM_diagnostico\sonido_muestras\2026-11-19\custodio_meshy_e01\indice.md`.
+
 ## Candidatos aún sin usar
 
 - **Alternativas para escuchar y elegir:** `victory_…_01_s29` y `…_02_s29` (otra victoria), InspectorJ

@@ -95,6 +95,12 @@ const COLOR_MARFIL := Color(0.97, 0.93, 0.82)     # el pulso y el borde (sin luc
 const ROTACION := ["prensa", "porton", "sello"]
 const CD_DE := {"prensa": CD_TURNOS, "porton": CD_TURNOS, "sello": SELLO_CD_TURNOS}
 
+# (19/11, C-9 / PC-5) Sonido propio (sonido.gd, «meshy_e01_*»; audio/efectos/meshy_e01/). La entrada y los tres impactos los
+# pide combate.gd por la clave (_sonar(clave + "_entrada") y _sonidos_bestia con la señal «impacto»: meshy_e01_ataque,
+# _porton y _sello); los dos avisos, aquí, en el evento «aviso» de su clip (una vez por ejecución).
+const SONIDO_AVISO_PORTON := "meshy_e01_aviso_porton"
+const SONIDO_AVISO_SELLO := "meshy_e01_aviso_sello"
+
 static var _instancias := 0                       # attack_instance_id: uno por ejecución de la Prensa
 
 
@@ -139,8 +145,10 @@ static func _al_evento(clip: String, nombre: String, c, e: Dictionary) -> void:
 		at["t_aviso"] = Engine.get_process_frames()
 		if at.get("ataque", "") == ATAQUE_ID_A3:
 			_marcar_sello(c, e, at)
+			_sonar(c, SONIDO_AVISO_SELLO)                 # (19/11) la llave que gira (la ficha: «llave girando»)
 		elif at.get("ataque", "") == ATAQUE_ID_A2:
 			_marcar_franja(c, e, at)
+			_sonar(c, SONIDO_AVISO_PORTON)                # (19/11) «sonido mecánico creciente» hasta el impacto
 		else:
 			_marcar(c, e, at)
 	elif nombre == "fija_direccion":
@@ -724,6 +732,12 @@ static func _marcar_sello(c, f: Dictionary, at: Dictionary) -> void:
 			if not at.get("centro_fijo", false):
 				r.position = _centro_sello(c, f, at)
 			r.queue_redraw(), 0.0, 1.0, 0.25)
+
+
+# (19/11) Un sonido del catálogo por el combate (combate.gd _sonar: emite «sonido_pedido» y suena si existe).
+static func _sonar(c, nombre: String) -> void:
+	if c != null and c.has_method("_sonar"):
+		c._sonar(nombre)
 
 
 # Un pulso marfil que se abre en el suelo (al fijar el centro y al golpear). Sin luces: la onda 2D de siempre.

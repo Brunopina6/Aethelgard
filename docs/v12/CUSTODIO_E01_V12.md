@@ -160,7 +160,7 @@ Estados: pendiente · parcial · verificado · bloqueado.
 - (18/11: hechos los cinco que quedaban, §11.) **Clips que faltan (6 de 12):** alert, turn_l, turn_r, guard (hoy la guardia usa el reposo y el tinte de defensa),
   stagger y attack_03 «Sello de Clausura» con su ataque (a3). Hechos el 14/11 por la noche: attack_02, hit_front y
   death (sección 8).
-- **Sonido propio** (golpe pétreo grave, astillas): necesita claves nuevas en `sonido.gd` y derivados con procedencia;
+- (19/11: hecho, §12.) **Sonido propio** (golpe pétreo grave, astillas): necesita claves nuevas en `sonido.gd` y derivados con procedencia;
   hoy suena el golpe físico de siempre y el temblor. `_sonidos_bestia` pide `meshy_e01_ataque` y `meshy_e01_entrada`, que
   no existen (no suena nada; no da error).
 - **Encuadre y desplazamiento en pantalla:** el combate lo lleva andando hasta el blanco con el clip de andar a su ritmo
@@ -334,12 +334,12 @@ Medido con `pruebas/medir_custodio_rotacion.gd` en el combate del banco (partida
 ### 9.5 Pendientes
 
 - Equilibrio de las tres cifras: sin partidas reales. Las constantes llevan «PROPUESTA».
-- Sonido propio: el Sello suena con el golpe de siempre; hacen falta claves de llave girando y golpe corto.
+- (19/11: hecho, §12.) Sonido propio: el Sello suena con el golpe de siempre; hacen falta claves de llave girando y golpe corto.
 - La nota del caso «custodio» de `banco_pruebas.gd` aún dice «Prensa del Umbral»: debería nombrar los tres especiales.
   No es un archivo de este encargo.
 - Redmi: la legibilidad del disco a tamaño de teléfono y su coste (un dibujo 2D por fotograma: un círculo, dos arcos y
   el ojo).
-- La «llave iluminada» de la ficha: sin máscara de UV, no se ha hecho.
+- (19/11: hecha, §12, con una máscara de las caras de la llave en el UV.) La «llave iluminada» de la ficha: sin máscara de UV, no se ha hecho.
 
 
 ## 10. 15/11, tarde: «Sello en 3» en el Redmi y el Sello no llegaba (el contador)
@@ -579,4 +579,110 @@ Capturas (revisadas a ojo):
   sigue sin pasos (el combate pone a andar en el mismo fotograma).
 - **Guardia:** al recibir un golpe pequeño en guardia pone el golpe de siempre y vuelve a la guardia (no hay clip de
   «bloqueo»; el paquete no lo pide).
-- Sonido propio de la alerta y del tambaleo: sin claves (como en §7).
+- Sonido propio de la alerta y del tambaleo: sin claves (como en §7). (19/11: la alerta ya suena, §12; el tambaleo, no.)
+
+
+## 12. 19/11: sonido propio y llave iluminada (C-9 / PC-5)
+
+Encargo del coordinador (C-9 / PC-5, aprobado: encargo del 13/11 §9 y ficha del paquete). Rama `claude/rebelum-v12`, en
+`D:\Aethelgard_v12`. Comprobado ejecutando en el PC el 19/11 con datos aislados; la partida real, sin cambios. El
+Custodio sigue **APAGADO** (interruptor `meshy_e01`): con él apagado no sale en el juego normal, así que nada de esto
+se oye ni se ve fuera del banco de pruebas y de sus grupos 28 y 29.
+
+### 12.1 Qué pedía la ficha y qué faltaba
+
+- `combate.gd` ya pedía `meshy_e01_entrada` (al empezar su entrada) y, por la señal `impacto` del modelo
+  (`_sonidos_bestia`), `meshy_e01_ataque` (la Prensa), `meshy_e01_porton` y `meshy_e01_sello`. Ninguno existía en
+  `sonido.gd`: no sonaba nada (sin error). Su voz (`Sonido.voz`) sigue sin familia: no suena (no se pidió).
+- Ficha (`ataques_propuestos.json`, `vfx_audio`): Prensa, «astillas de cerámica… y golpe pétreo grave»; Avance, «sonido
+  mecánico creciente; impacto metálico amortiguado»; Sello, «sonido de llave girando seguido de golpe corto»; en sus
+  `motion_constraints`, iluminar la llave con una máscara si su UV lo permite, sin suponer un material propio; en las
+  poses del Sello, el foco se apaga a 1,50.
+
+### 12.2 Sonido (6 claves nuevas, `sonido.gd`)
+
+| Clave | Cuándo (quién lo pide) | Archivo | Original (biblioteca, Sonniss GDC) y capas | dB · p | Pico · RMS del derivado |
+|---|---|---|---|---|---|
+| `meshy_e01_entrada` | al empezar su entrada (alerta), `combate.gd` | `audio/efectos/meshy_e01/entrada.wav` | 2018 Eiravaein «CookieJar, ceramic… jostle» [2,80-3,60] + 2020 PMSFX «PM_RI_Source_92» [0-0,55] a 0,50 s −3 dB; tono ×0,85 | −9,5 · 2 | −1,0 · −18,3 dBFS, 1,24 s |
+| `meshy_e01_ataque` | Prensa, impacto (0,90), `_sonidos_bestia` | `…/prensa.wav` | 2020 PMSFX «PM_RI_Designed_7» [0-0,34] + 2017 Griffin «MUG_Tile_Floor_Drop_and_Break» [0,03-0,70] −7 dB; tono ×0,9 | −10,5 · 3 | −1,0 · −16,9, 0,77 s |
+| `meshy_e01_aviso_porton` | Avance, aviso (0,00), `combate_meshy_e01.gd` | `…/aviso_porton.wav` | 2017 Mindful Audio «large gear 03 metal slow» [0,50-1,58], entrada de 1 s (crece); tono ×0,85 | −1,5 · 3 | −2,0 · −26,9, 1,27 s (acaba antes del impacto) |
+| `meshy_e01_porton` | Avance, impacto (1,30), `_sonidos_bestia` | `…/porton.wav` | 2017 Double Trouble «Plate_Impact_Hard_02» [0,03-0,62] + 2020 Shapeforms «IMPACT_LOW_THUD_10» −2 dB; tono ×0,85; paso bajo 2,6 kHz (amortiguado) | −11,5 · 3 | −1,0 · −16,0, 0,69 s |
+| `meshy_e01_aviso_sello` | Sello, aviso (0,20), `combate_meshy_e01.gd` | `…/aviso_sello.wav` | 2017 Alexander Ahura «Lock01_outdoor_opening_lite03» [2,22-3,35] (el chasquido de la llave cae a ~0,8 s del aviso); tono ×0,85 | 0 · 3 | −2,0 · −28,0, 1,33 s |
+| `meshy_e01_sello` | Sello, impacto (1,30), `_sonidos_bestia` | `…/sello.wav` | 2020 Shapeforms «IMPACT_LOW_THUD_10» + 2019 3maze «door_lock_007» [0,42-0,62] −3 dB + 2020 PMSFX «PM_RI_Source_53» [0-0,30] −9 dB; tono ×0,9 | −16 · 3 | −1,0 · −11,3, 0,33 s |
+
+- **Cómo se hicieron:** `aethelgard/pruebas/herramientas/preparar_sonido_custodio.gd` (usa las funciones de
+  `prueba_efectos_preparar.gd`: tramo, capas, mono, 48 kHz, tono, paso bajo, fundidos y normalización; WAV de 16 bits,
+  QOA al importar). Solo toca las filas `meshy_e01/…` de `docs/audio/efectos_procedencia.csv` (con la huella SHA-256 de
+  cada original); la herramienta general reescribe el CSV entero con sus recetas y perdería las filas de otras ramas
+  (Peón, Velador, Gólem…), así que no se usó. Los originales no se tocan. El paso bajo del `porton` no queda escrito en
+  la columna de capas del CSV (la función común no lo apunta): está en la receta.
+- **Licencia:** paquetes GDC de Sonniss 2017-2020 (`Licensing.pdf` / `License.pdf` en la carpeta de cada paquete; el de
+  2020 releído el 19/11): uso en juegos comerciales sin atribución, editarlos dentro de la producción, no venderlos tal
+  cual. Nada de Suno.
+- **Volumen:** el del catálogo sale del RMS medido para que en el juego queden en ≈ −28 dBFS de RMS, como el Peón y el
+  Velador. Prioridad 3 en los avisos y los impactos de los especiales (un golpe normal es 2), 2 en la entrada; `max` 1
+  y `espera` de 0,4 a 1,0 s: **una vez por evento**. En los impactos suenan junto al `Sonido.golpe()` de siempre.
+- **Precarga:** `res://audio/efectos/meshy_e01/` va en `recursos.gd` `APAGADOS` con el interruptor `meshy_e01` (como el
+  Peón y el Velador con el suyo): apagado no se precarga (`prueba_audio_memoria` y `prueba_precarga` superadas).
+- **Escucha: NO hecha** (el agente no puede oír). Muestras para el usuario, con su medida, en
+  `D:\REBELUM_diagnostico\sonido_muestras\2026-11-19\custodio_meshy_e01\` (`indice.md`; los 6 derivados y tres
+  secuencias SIMULADAS de cada especial con el golpe de siempre).
+
+### 12.3 La llave iluminada (`meshy_e01_3d.gd`)
+
+- **Máscara:** la llave es parte de la malla soldada, sin material propio. `fuente/p3_mascara_llave.py` (Blender 5.2.3)
+  elige las **50 caras** de la llave (zona del pecho, de frente, y todas sus muestras de la textura de color naranjas),
+  rasteriza su UV a 512 px con 2 px de margen y borra lo que caiga en caras lejos del pecho (Meshy empaqueta las islas
+  muy juntas: con el margen, 8 caras del cuello, la cadera y una pierna tocaban la máscara). Resultado
+  (`fuente/p3_comprobar_mascara.py`): **0 caras lejos** tocan la máscara y la llave queda cubierta al **97,4 %**
+  (1 364 de 1 400 muestras). Archivo: `enemigos/meshy_e01/meshy_e01_llave_mascara.png` (4,5 KB; importada comprimida
+  en VRAM con mipmaps: 175 KB por formato, solo cargada con el Custodio). Si el GLB cambia, hay que rehacerla.
+- **Material:** una copia del material del cuerpo solo para esa instancia (el del GLB no se toca) con emisión
+  `LLAVE_COLOR` (1,0, 0,62, 0,22) × la máscara (**operador MULTIPLICAR**: con el de serie, SUMAR, brillaba el cuerpo
+  entero; visto en la primera captura y ahora comprobado por la prueba) × `LLAVE_ENERGIA` 1,2. Sin luces. Se pone al
+  cargar el modelo con la energía a 0, para que su sombreador se compile con la entrada del combate y no a media
+  animación.
+- **Cuándo:** solo en el Sello. Sube en el evento `aviso` (0,20 s; 0,25 s de fundido, cuando las manos llegan a la llave a
+  0,45), se sostiene durante el impacto (1,30) y se apaga en `fin_activo` (1,50, «se apaga el foco»; 0,2 s). Si el Sello
+  se corta o el Custodio cae a media carga, se apaga. La Prensa y el Avance no la encienden (la ficha no lo pide).
+- **Coste en el Mali-G57 (estimado, sin medir):** una lectura de textura más (la máscara) en los píxeles del Custodio,
+  siempre (la energía a 0 no la quita); sin luces dinámicas ni pasadas extra. Medirlo en el Redmi lo programa el
+  coordinador.
+- **Energía, probada a ojo en el estudio:** 2,4 la dejaba blanca y plana; 0,8, solo más clara; 1,2 queda amarillo oro sobre
+  el naranja. Capturas (estudio, de cerca) y recortes del combate en `D:\REBELUM_diagnostico\custodio_llave_19_11\`
+  (`llave_095_apagada.png` / `llave_095_encendida.png`; las descartadas, con su nombre; la máscara sobre el cuerpo,
+  `blender_mascara_cuerpo_*.png`).
+- **Lo que se ve en el combate (PC, revisado a ojo):** con la cámara del combate el Custodio está de tres cuartos y en
+  el Sello sus manos enmarcan la llave: se ve un **destello dorado pequeño** (2-3 píxeles a media resolución) entre el
+  aviso y el impacto (`combate_recorte_x6_f02_f05_f07_f09.png`). Puede ser poco legible en el teléfono: ver «Lo que queda».
+
+### 12.4 Pruebas (salidas literales)
+
+- `prueba_meshy_e01`, sección nueva **L** (sonido y llave). **Sin el arreglo** (los cuatro archivos de código de
+  `HEAD` y la prueba nueva, pasada `D:\REBELUM_diagnostico\pruebas\2026-11-19_044646`): `prueba_meshy_e01 FALLIDA
+  12,1 s código de salida 1`, con `FALLOS: 17`, entre ellos `FALLO: L1: no existe el sonido «meshy_e01_ataque» (o su
+  archivo)`, `FALLO: L2: la entrada suena 0 veces (1)`, `FALLO: L3: el modelo no tiene llave iluminada (llave_energia)`,
+  `FALLO: L4 prensa: se pide «meshy_e01_ataque», que no existe`.
+- **Sin el operador MULTIPLICAR** (solo esa línea quitada, `2026-11-19_045513`): `FALLO: L3: la máscara no multiplica la
+  emisión (operador 0): brillaría todo el cuerpo` · `FALLOS: 1`.
+- **Con el arreglo** (`2026-11-19_045544`): `prueba_meshy_e01 SUPERADA 11 s`, y su línea L: «L: 6 sonidos en el catálogo
+  y fuera de la precarga apagado; entrada una vez; prensa: meshy_e01_ataque; porton: meshy_e01_aviso_porton,
+  meshy_e01_porton; Sello: llave 0 antes del aviso, encendida (máx 1.2) del aviso al impacto; sello:
+  meshy_e01_aviso_sello, meshy_e01_sello; vencido a media carga, llave apagada».
+- Misma pasada: `prueba_efectos` (catálogo de 226 efectos y 329 archivos: los 6 nuevos cargan como QOA mono 48 kHz, ni
+  saturan ni son mudos), `prueba_audio`, `prueba_audio_memoria`, `prueba_precarga`, `prueba_enemigos_v12`,
+  `prueba_banco_pruebas`, `medir_custodio_rotacion` y `prueba_integridad`: **SUPERADAS 9 · FALLIDAS 0**.
+- `fotos_meshy_e01` con «sello llave» (ventana, `-Manual`): `MANUAL`, revisadas a ojo; su `indice.txt`: «t_aviso:
+  f_00003 · llave encendida del todo: f_00007 · t_fija: f_00012 · t_impacto: f_00020 · llave apagada: f_00025».
+
+### 12.5 Lo que queda
+
+- **Escucha (usuario):** los 6 sonidos y las secuencias simuladas (`sonido_muestras\2026-11-19\custodio_meshy_e01\`).
+  Volúmenes medidos, no escuchados.
+- **Redmi:** si el destello de la llave se lee a tamaño de teléfono (en el PC es pequeño, y las manos la tapan en
+  parte) y su coste (una textura más). Si no se lee, **decisión del usuario**: más energía (se vuelve blanca), un halo 2D
+  sobre el pecho en el Sello o dejarlo así. No se ha añadido nada de eso.
+- Sin sonido propio: su voz (herido y caída: no tiene familia en `Sonido.FAMILIAS`) y el tambaleo. No se pidió; sería
+  otra tanda.
+- Los grupos 28 y 29 a la fuerza con el interruptor apagado (solo pruebas): el Custodio sale sin su personalidad, pero
+  su entrada y sus impactos ya suenan con estas claves y su material lleva la máscara (a 0). En el juego normal no sale.

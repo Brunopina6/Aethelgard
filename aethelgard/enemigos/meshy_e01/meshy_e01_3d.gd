@@ -23,7 +23,8 @@ extends "res://enemigos/v12_comun/enemigo_v12_3d.gd"
 # El combate pide los clips por los nombres del juego (reposo, caminar, correr, ataque): aquí se añaden como ALIAS del
 # mismo recurso Animation (no son clips nuevos ni copias).
 # Materiales: los del GLB (color, normal y metálico-rugosidad de Meshy a 1024 px), sin el atlas ni el brillo de la
-# base: este modelo no tiene superficie «_brillo» (los ojos rojos están pintados en la textura).
+# base: este modelo no tiene superficie «_brillo» (los ojos rojos están pintados en la textura). (19/11) La llave del pecho
+# brilla en el Sello con una máscara de emisión sobre una copia del material del cuerpo (más abajo, «la llave iluminada»).
 
 const RUTA_MODELO := "res://enemigos/meshy_e01/meshy_e01.glb"
 const RUTA_CLIPS := "res://enemigos/meshy_e01/meshy_e01_clips.json"
@@ -81,6 +82,85 @@ func _cargar_modelo() -> void:
 # Los materiales del GLB se quedan (la base pondría el atlas WebP de los enemigos hechos a mano).
 func _materiales() -> void:
 	calidad_usada = calidad_en_uso()
+	_preparar_llave()
+
+
+# ================================================================= 19/11: la llave iluminada (C-9 / PC-5)
+# La ficha (ataques_propuestos.json, e01_a3): «Iluminar la llave mediante máscara si sus UV permiten aislarla; no suponer
+# un material independiente» y, en las poses, «1,50: se apaga el foco». La llave es parte de la malla soldada (sin material
+# propio): una MÁSCARA de sus caras en el UV del cuerpo (meshy_e01_llave_mascara.png, 512 px; fuente/p3_mascara_llave.py:
+# las 50 caras naranjas del pecho, sin fugas a otras islas, comprobado con fuente/p3_comprobar_mascara.py) como textura de
+# EMISIÓN de una copia del material del cuerpo (solo de esta instancia). Sin luces: en el Mali-G57, una lectura de textura
+# más en los píxeles del Custodio. La energía está a 0 (no se ve nada) salvo en el Sello: sube en el aviso (0,20; las
+# manos llegan a la llave a 0,45), se sostiene hasta el fin del golpe y se apaga en «fin_activo» (1,50). Solo presentación.
+# El material emisivo se pone al cargar (y no al encender) para que su sombreador se compile con la entrada del combate y no
+# a media animación. Si el GLB cambia (otra malla u otro UV), hay que rehacer la máscara.
+const RUTA_MASCARA_LLAVE := "res://enemigos/meshy_e01/meshy_e01_llave_mascara.png"
+const LLAVE_COLOR := Color(1.0, 0.62, 0.22)       # oro cálido: sobre el naranja de la llave queda amarillo claro
+const LLAVE_ENERGIA := 1.2                         # (2,4 la dejaba blanca y plana; 0,8, solo más clara: capturas del 19/11)
+const LLAVE_SUBE := 0.25                           # s: del aviso (0,20) a las manos en la llave (0,45)
+const LLAVE_BAJA := 0.2                            # s: «se apaga el foco»
+const CLIPS_SELLO := ["sello", "e01__attack_sello"]
+var _mat_llave: BaseMaterial3D
+var _tw_llave: Tween
+
+
+func _preparar_llave() -> void:
+	if _mat_llave != null or not ResourceLoader.exists(RUTA_MASCARA_LLAVE):
+		return
+	var cuerpo: MeshInstance3D = null
+	for n in find_children("*", "MeshInstance3D", true, false):
+		if String(n.name).begins_with("e01_cuerpo"):
+			cuerpo = n
+			break
+	if cuerpo == null or cuerpo.mesh == null or cuerpo.mesh.get_surface_count() < 1:
+		return
+	var base = cuerpo.get_active_material(0)
+	if not base is BaseMaterial3D:
+		return
+	_mat_llave = base.duplicate()                   # (el del GLB lo comparten todas las instancias: no se toca)
+	_mat_llave.emission_enabled = true
+	_mat_llave.emission = LLAVE_COLOR
+	_mat_llave.emission_texture = load(RUTA_MASCARA_LLAVE)
+	# MULTIPLICAR: color × máscara (con «sumar», el de serie, brilla el cuerpo entero: visto en las capturas del 19/11)
+	_mat_llave.emission_operator = BaseMaterial3D.EMISSION_OP_MULTIPLY
+	_mat_llave.emission_energy_multiplier = 0.0
+	cuerpo.set_surface_override_material(0, _mat_llave)
+	if not evento.is_connected(_al_evento_llave):
+		evento.connect(_al_evento_llave)
+
+
+func _al_evento_llave(clip: String, nombre: String) -> void:
+	if not clip in CLIPS_SELLO:
+		return
+	if nombre == "aviso":
+		llave(true)
+	elif nombre == "fin_activo":
+		llave(false)
+
+
+# Enciende (con un fundido de LLAVE_SUBE) o apaga (LLAVE_BAJA) el brillo de la llave. dur < 0: el de cada caso.
+func llave(encendida: bool, dur := -1.0) -> void:
+	if _mat_llave == null:
+		return
+	if _tw_llave != null and _tw_llave.is_valid():
+		_tw_llave.kill()
+	var meta := LLAVE_ENERGIA if encendida and not _muerta else 0.0
+	var t := dur if dur >= 0.0 else (LLAVE_SUBE if encendida else LLAVE_BAJA)
+	if t <= 0.0 or not is_inside_tree():
+		_mat_llave.emission_energy_multiplier = meta
+		return
+	_tw_llave = create_tween()
+	_tw_llave.tween_property(_mat_llave, "emission_energy_multiplier", meta, t)
+
+
+# Lo que brilla la llave ahora (0: apagada). Para las pruebas.
+func llave_energia() -> float:
+	return _mat_llave.emission_energy_multiplier if _mat_llave != null else -1.0
+
+
+func material_llave() -> BaseMaterial3D:
+	return _mat_llave
 
 
 func _clip_de(ataque: String) -> String:
@@ -111,11 +191,14 @@ func porton(al_golpear := Callable()) -> void:
 # e01_a3 · Sello de Clausura: el clip en su sitio con su impacto (al_golpear UNA vez, en 1,30 s); muerto a medias, nada.
 func sello(al_golpear := Callable()) -> void:
 	await atacar("sello", al_golpear)
+	if llave_energia() > 0.0:                       # (19/11) cortado antes de «fin_activo»: la llave no se queda encendida
+		llave(false)
 
 
 # Con e01__death (14/11, noche), la derrota de la base (el clip, y el combate lo desvanece tras su «caida»). Sin él
 # (un GLB antiguo): se para en la pose en que está y el combate lo desvanece.
 func derrota() -> void:
+	llave(false, 0.1)                               # (19/11) vencido a media carga: se apaga la llave
 	if tiene("derrota"):
 		await super.derrota()
 		return

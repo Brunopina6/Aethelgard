@@ -33,6 +33,14 @@ extends SceneTree
 #      girar_izq/der en dos pasos (andar lo corta; un reposo pedido espera al final), giros pequeños sin clip. En combate:
 #      empieza con la alerta, su turno de guardia pone «guardia» y su turno siguiente la quita, vuelve de la Prensa con
 #      un giro en pasos, y vigilar() marca el golpe fuerte y la Quiebra sin tocar vida, recarga, ATB ni guardia.
+# 19/11 (C-9 / PC-5): sonido propio y llave iluminada.
+#   L. Catálogo: cada sonido del Custodio que se pide (la entrada, los tres impactos por la señal «impacto» y los dos
+#      avisos) existe en sonido.gd con su archivo, y su carpeta va fuera de la precarga mientras está apagado. En combate:
+#      la entrada suena UNA vez; en la Prensa, el Avance y el Sello, cada sonido suyo se pide y suena UNA vez por
+#      ejecución (el aviso en el fotograma del aviso; el impacto en el del impacto) y ninguno «meshy_e01_*» pedido falta
+#      en el catálogo. La llave: un material emisivo propio con la máscara; energía 0 al empezar, en la Prensa y en el
+#      Avance; en el Sello, 0 antes del aviso, encendida desde el aviso y durante el impacto, y apagada al acabar;
+#      vencido a media carga del Sello, apagada.
 # Azar (15/11): la semilla, DESPUÉS de root.add_child (combate._ready hace randomize()).
 
 const ARCHIVO := "user://prueba_meshy_e01.save"
@@ -94,6 +102,7 @@ func _probar() -> void:
 	await _r()
 	await _k()
 	await _n()
+	await _l()
 	_limpiar()
 	Engine.remove_meta("archivo_partida_prueba")
 	print("OK: ", "\n    ".join(hechos))
@@ -966,3 +975,127 @@ func _n() -> void:
 	await _cerrar()
 	hechos.append("N: 12 clips; %s; alerta -> reposo; guardia en lugar del reposo y fuera al acabar; tambaleo con golpe fuerte (>= 12 %%) o Quiebra y de vuelta a la guardia; giros >= 60° en pasos (girar_izq/der; el nodo gira durante el clip; andar lo corta); en combate: alerta al empezar, guardia en su turno de guardia y fuera en el siguiente, vuelta de la Prensa con %s; vigilar no toca vida, recarga, ATB ni guardia" % [
 		", ".join(duraciones), "/".join(vistos.keys())])
+
+
+# ================================================================= L: sonido propio y llave iluminada (19/11, C-9 / PC-5)
+
+const SONIDOS_L := ["meshy_e01_entrada", "meshy_e01_ataque", "meshy_e01_aviso_porton", "meshy_e01_porton",
+	"meshy_e01_aviso_sello", "meshy_e01_sello"]
+# lo que suena en cada especial: [aviso o "", impacto]
+const SONIDOS_DE := {"prensa": ["", "meshy_e01_ataque"], "porton": ["meshy_e01_aviso_porton", "meshy_e01_porton"],
+	"sello": ["meshy_e01_aviso_sello", "meshy_e01_sello"]}
+const ANTERIOR := {"prensa": "sello", "porton": "prensa", "sello": "porton"}   # (fuerza el especial siguiente)
+
+
+func _veces(son: Node, nombre: String) -> int:
+	return int(son.contador.get(nombre, 0))
+
+
+func _l() -> void:
+	var son: Node = root.get_node("Sonido")
+	var SON = load("res://sonido.gd")
+	# L1: catálogo y precarga
+	for n in SONIDOS_L:
+		var d: Dictionary = SON.EFECTOS.get(n, {})
+		_ok(not d.is_empty() and ResourceLoader.exists(SON.ruta_archivo(d)), "L1: no existe el sonido «%s» (o su archivo)" % n)
+	var apagados: Dictionary = load("res://recursos.gd").APAGADOS
+	_ok(apagados.get("res://audio/efectos/meshy_e01/", "") == PE.INTERRUPTOR, "L1: sus sonidos se precargarían apagado")
+	# L2: la entrada, una vez
+	var entrada0 := _veces(son, "meshy_e01_entrada")
+	await _combate(true)
+	if custodio.is_empty():
+		return
+	await _esperar(10)
+	_ok(_veces(son, "meshy_e01_entrada") - entrada0 == 1, "L2: la entrada suena %d veces (1)" % (_veces(son, "meshy_e01_entrada") - entrada0))
+	var q = c._p3d(custodio)
+	var con_llave: bool = q != null and q.has_method("llave_energia")
+	_ok(con_llave, "L3: el modelo no tiene llave iluminada (llave_energia)")
+	if con_llave:
+		var m: BaseMaterial3D = q.material_llave()
+		_ok(m != null and m.emission_enabled and m.emission_texture != null
+			and m.emission_texture.resource_path == q.RUTA_MASCARA_LLAVE and q.llave_energia() == 0.0,
+			"L3: sin material de la llave con su máscara, o encendida al empezar (%s)" % [q.llave_energia()])
+		# la máscara MULTIPLICA el color (con «sumar», el de serie, brilla el cuerpo entero)
+		_ok(m != null and m.emission_operator == BaseMaterial3D.EMISSION_OP_MULTIPLY,
+			"L3: la máscara no multiplica la emisión (operador %s): brillaría todo el cuerpo" % [m.emission_operator if m != null else "-"])
+	var pedidos: Array = []
+	c.sonido_pedido.connect(func(n: String): pedidos.append([n, Engine.get_process_frames()]))
+	var resumen: Array = []
+	for especial in ["prensa", "porton", "sello"]:
+		for h in c.heroes:                                   # (que nadie caiga ni le llegue el turno en la prueba)
+			h["hp"] = h["hp_max"]
+			h["atb"] = 0.0
+			h["defendiendo"] = false
+		custodio["e01_especial"] = ANTERIOR[especial]
+		custodio["e01_cd"] = 0
+		custodio["e01_guardia"] = false
+		custodio["defendiendo"] = false
+		var p0 := pedidos.size()
+		var veces0 := {}
+		for n in SONIDOS_L:
+			veces0[n] = _veces(son, n)
+		var energia: Array = []                              # [fotograma, energía]
+		var r := await _turno(Callable(), func():
+			if con_llave:
+				energia.append([Engine.get_process_frames(), q.llave_energia()]))
+		var at: Dictionary = custodio.get("e01_ultimo", {})
+		_ok(r["que"] == especial, "L: se esperaba %s y llegó %s" % [especial, r["que"]])
+		var mios: Array = pedidos.slice(p0).filter(func(x): return String(x[0]).begins_with("meshy_e01"))
+		for x in mios:
+			_ok(SON.EFECTOS.has(x[0]), "L4 %s: se pide «%s», que no existe" % [especial, x[0]])
+		var aviso: String = SONIDOS_DE[especial][0]
+		var golpe: String = SONIDOS_DE[especial][1]
+		for n in SONIDOS_L:
+			var pedido := mios.filter(func(x): return x[0] == n)
+			var sono := _veces(son, n) - int(veces0[n])
+			var debe := 1 if n == aviso or n == golpe else 0
+			_ok(pedido.size() == debe and sono == debe, "L4 %s: «%s» pedido %d y sonado %d veces (%d)" % [especial, n,
+				pedido.size(), sono, debe])
+			if debe == 1 and pedido.size() == 1:
+				var t_debe: int = int(at.get("t_aviso" if n == aviso else "t_impacto", -1))
+				_ok(int(pedido[0][1]) == t_debe, "L4 %s: «%s» en el fotograma %d y su %s en el %d" % [especial, n,
+					pedido[0][1], "aviso" if n == aviso else "impacto", t_debe])
+		if con_llave:
+			var t_av: int = int(at.get("t_aviso", -1))
+			var t_imp: int = int(at.get("t_impacto", -1))
+			var antes := energia.filter(func(x): return x[0] < t_av).map(func(x): return x[1])
+			var lleno := energia.filter(func(x): return x[0] > t_av + 2 and x[0] <= t_imp).map(func(x): return x[1])
+			var en_imp := energia.filter(func(x): return x[0] == t_imp).map(func(x): return x[1])
+			var maximo: float = energia.map(func(x): return x[1]).max() if not energia.is_empty() else -1.0
+			if especial == "sello":
+				_ok(not antes.is_empty() and antes.max() == 0.0, "L5 sello: la llave brilla antes del aviso (%s)" % [antes.max() if not antes.is_empty() else "sin datos"])
+				_ok(not lleno.is_empty() and lleno.min() > 0.0 and lleno.max() >= q.LLAVE_ENERGIA * 0.99,
+					"L5 sello: entre el aviso y el impacto la llave no está encendida (mín %s, máx %s)" % [
+					lleno.min() if not lleno.is_empty() else "-", lleno.max() if not lleno.is_empty() else "-"])
+				_ok(not en_imp.is_empty() and en_imp[0] >= q.LLAVE_ENERGIA * 0.99, "L5 sello: en el impacto la llave brilla %s" % [en_imp])
+				resumen.append("Sello: llave 0 antes del aviso, encendida (máx %.1f) del aviso al impacto" % maximo)
+			else:
+				_ok(maximo == 0.0, "L5 %s: la llave se enciende (máx %.2f)" % [especial, maximo])
+			_ok(q.llave_energia() == 0.0, "L5 %s: la llave sigue encendida al acabar (%.2f)" % [especial, q.llave_energia()])
+		resumen.append("%s: %s" % [especial, ", ".join(mios.map(func(x): return x[0]))])
+	_ok(PE.nodos_vivos(c.enemigos).is_empty(), "L: quedan marcas")
+	await _cerrar()
+	# L6: vencido a media carga del Sello, la llave se apaga
+	await _combate(true)
+	if custodio.is_empty():
+		return
+	q = c._p3d(custodio)
+	custodio["e01_especial"] = "porton"
+	custodio["e01_cd"] = 0
+	var muerto := [false]
+	var encendida := [0.0]
+	await _turno(Callable(), func():
+		if con_llave and not muerto[0] and custodio.has("e01_marca") and q.llave_energia() > 0.0:
+			muerto[0] = true
+			encendida[0] = q.llave_energia()
+			custodio["hp"] = 0
+			PE.vigilar(c, custodio, 1)
+			c._restablecer_color(custodio)
+			c._actualizar())
+	await _esperar(20)
+	if con_llave:
+		_ok(muerto[0] and encendida[0] > 0.0 and q != null and is_instance_valid(q) and q.llave_energia() == 0.0,
+			"L6: vencido a media carga, la llave queda en %s (vista encendida %s)" % [
+			q.llave_energia() if q != null and is_instance_valid(q) else "-", encendida[0]])
+	await _cerrar()
+	hechos.append("L: 6 sonidos en el catálogo y fuera de la precarga apagado; entrada una vez; %s; vencido a media carga, llave apagada" % "; ".join(resumen))

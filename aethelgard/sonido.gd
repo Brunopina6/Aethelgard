@@ -442,6 +442,21 @@ const EFECTOS := {
 	"velador_carga": {"a": "velador/carga", "db": -4.0, "p": 3, "max": 1, "espera": 0.5},
 	"velador_rota": {"a": "velador/rota", "db": -7.0, "p": 3, "max": 1, "espera": 0.3},
 	"velador_derrumbe": {"a": "velador/derrumbe", "db": -8.0, "p": 3, "max": 1, "espera": 0.8},
+	# ---- V12, Custodio (19/11, C-9 / PC-5): meshy_e01 · el Custodio de Porcelana (combate_meshy_e01.gd; APAGADO, interruptor
+	# «meshy_e01»). Derivados propios de los paquetes GDC 2017-2020 de Sonniss (#GameAudioGDC), WAV mono 48 kHz de
+	# audio/efectos/meshy_e01/ (pruebas/herramientas/preparar_sonido_custodio.gd; procedencia en
+	# docs/audio/efectos_procedencia.csv), con lo que pide la ficha («vfx_audio» de ataques_propuestos.json).
+	# «_entrada» (la alerta) la pide combate.gd al empezar su entrada; «_ataque» (la Prensa: golpe pétreo grave con astillas
+	# de cerámica), «_porton» (impacto metálico amortiguado) y «_sello» (golpe corto) los pide combate.gd _sonidos_bestia por
+	# la señal «impacto» de su modelo, junto al Sonido.golpe de siempre; los dos avisos («mecánico creciente» y «llave
+	# girando»), combate_meshy_e01.gd en el evento «aviso» de su clip. Volúmenes por el RMS medido (salida ≈ −28 dBFS, como
+	# el Peón y el Velador): medido, NO escuchado (la escucha final es del usuario).
+	"meshy_e01_entrada": {"a": "meshy_e01/entrada", "db": -9.5, "p": 2, "max": 1, "espera": 1.0},
+	"meshy_e01_ataque": {"a": "meshy_e01/prensa", "db": -10.5, "tono": 0.03, "p": 3, "max": 1, "espera": 0.4},
+	"meshy_e01_aviso_porton": {"a": "meshy_e01/aviso_porton", "db": -1.5, "p": 3, "max": 1, "espera": 0.5},
+	"meshy_e01_porton": {"a": "meshy_e01/porton", "db": -11.5, "tono": 0.03, "p": 3, "max": 1, "espera": 0.4},
+	"meshy_e01_aviso_sello": {"a": "meshy_e01/aviso_sello", "db": 0.0, "p": 3, "max": 1, "espera": 0.5},
+	"meshy_e01_sello": {"a": "meshy_e01/sello", "db": -16.0, "tono": 0.03, "p": 3, "max": 1, "espera": 0.4},
 }
 
 # V12 (11/11): el Mar de Cristal. Sus sonidos son OGG (audio/desierto/), así que van aparte de EFECTOS (cuyas comprobaciones
