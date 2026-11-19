@@ -313,11 +313,25 @@ func _ajustar_recto(p):
 #     así (la de su lado si la otra queda lejos). Nunca la atraviesa ni busca caminos largos (eso es PD-4);
 #   - solo si ese punto queda RODEO_MEJORA m más cerca de la meta que lo de la recta; si no, la recta como antes.
 # Kael sigue el camino por puntos de paso (_ruta, _seguir_ruta) en tramos rectos comprobados en el plano.
+# (19/11, revisión: RECORRIDO.md §12) COSTE ACOTADO: la búsqueda tiene un tope de RODEO_MS ms y de RODEO_NODOS casillas
+# (al pasarlo se queda con el mejor punto hallado hasta ahí, con un camino válido) y los tramos rectos, de RECTAS_MS ms
+# (pasado, el resto del camino va por sus casillas). Antes no tenía tope y un toque al otro lado de una manzana grande
+# costaba 87-92 ms en el PC (981-1390 casillas). Además: A* con peso (PESO_H) y las consultas del plano de una vez
+# (plano.holgura_y_cota, cota_andable; altura con el índice). Con el tope, el resultado depende de la velocidad del
+# aparato: en uno lento (el Redmi, sin medir) se corta antes y Kael puede llegar menos lejos. Los valores (8 m, 12 m,
+# ×1,25, 2,5, 5 ms, 3 ms, 1500) son ajustes sin aprobar: decisión del usuario. Engine.set_meta("ciudad_rodeo", false)
+# apaga el rodeo y deja la recta de antes (para comparar en el Redmi).
 const REJILLA := 0.5
 const RODEO_EXTRA := 8.0                   # «rodeo corto»: como mucho esto más que la recta
-const RODEO_NODOS := 5000                  # casillas que se exploran como mucho (lo que cuesta cada toque)
+const RODEO_NODOS := 1500                  # casillas que se exploran como mucho
+const RODEO_MS := 5.0                      # tope de tiempo de la búsqueda (anillos y A*), en ms
+const RECTAS_MS := 3.0                     # tope de tiempo de los tramos rectos (después), en ms
 const RODEO_MEJORA := 0.5
+const PESO_H := 2.5                        # A* con peso: f = g + PESO_H·h (va antes hacia la meta; caminos algo menos cortos)
 const META_CERCA := 12.0                   # el punto libre más cercano a la meta, como mucho a esto
+const VECINAS := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 1), Vector2i(1, -1),
+	Vector2i(-1, 1), Vector2i(-1, -1)]
+const LADOS := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 var _toque_edificio = null                 # [suelo que dio _punto_suelo, punto tocado del edificio] (o null)
 var _ruta: Array = []                      # los puntos de paso que quedan tras «destino»
 var _paso = null                           # el punto de paso que es ahora «destino» (o null)
@@ -333,6 +347,9 @@ func _ajustar_destino(p):
 	_toque_edificio = null
 	if kael == null:
 		return null
+	if not Engine.get_meta("ciudad_rodeo", true):
+		_borrar_ruta()
+		return _ajustar_recto(p)                   # (rodeo apagado: lo de antes del 19/11)
 	var meta = p
 	var edificio := false
 	if toque != null and toque[0] == p and toque[1] != null:
@@ -386,12 +403,14 @@ func _centro(c: Vector2i) -> Vector2:
 	return Vector2((c.x + 0.5) * REJILLA, (c.y + 0.5) * REJILLA)
 
 
-# La cota de la casilla si su centro es andable y holgado (cabe el cuerpo de Kael), o NAN.
+# La cota de la casilla si su centro es andable y holgado (cabe el cuerpo de Kael), o NAN. (Lo mismo que
+# «P.altura si P.holgado», de una vez: plano.holgura_y_cota.)
 func _libre(c: Vector2i) -> float:
 	var h = _celdas.get(c)
 	if h == null:
 		var q := _centro(c)
-		h = P.altura(q.x, q.y) if P.holgado(q.x, q.y) else NAN
+		var hy := P.holgura_y_cota(q.x, q.y)
+		h = hy[1] if hy[0] >= Comun.RADIO_CUERPO - 0.001 else NAN
 		_celdas[c] = h
 	return h
 
@@ -419,16 +438,27 @@ func _corta_un_edificio(recto: Vector3, meta: Vector3) -> bool:
 # llega), o [] si no hay casillas libres cerca. A* por casillas libres (8 vecinas; en diagonal, solo si las dos de los
 # lados son libres; el punto medio de cada paso andable y sin escalón de más de SUBE_MAX), con h = distancia a la meta;
 # cada casilla, como mucho RODEO_EXTRA m más lejos por el camino que en recta desde Kael; se para al llegar a la casilla
-# libre más cercana a la meta o tras RODEO_NODOS. Junto a una pared el paso cuesta un 25 % más (camino algo apartado).
-# Después, los tramos rectos más largos que pasan por lo holgado (_recta_libre).
+# libre más cercana a la meta, tras RODEO_NODOS o al pasar RODEO_MS (con lo mejor hallado). Junto a una pared el paso
+# cuesta un 25 % más (camino algo apartado). Después, los tramos rectos más largos que pasan por lo holgado
+# (_recta_libre). En ultimo_rodeo, el coste de cada parte (ms_anillos, ms_busca, ms_rectas) y si se cortó por el tope.
 func _buscar_rodeo(meta: Vector3) -> Array:
 	var t0 := Time.get_ticks_usec()
+	var tope_us := t0 + int(RODEO_MS * 1000.0)
 	_celdas.clear()
 	var k := kael.global_position
 	var ini := Vector2(k.x, k.z)
 	var m := Vector2(meta.x, meta.z)
-	ultimo_rodeo = {"meta": meta, "nodos": 0, "puntos": []}
-	# la casilla libre más cercana a la meta (por anillos)
+	ultimo_rodeo = {"meta": meta, "nodos": 0, "puntos": [], "cortado": false}
+	# la casilla libre más cercana a la meta (por anillos); dentro de la planta del edificio de la meta no se busca (no
+	# es andable: el centro de la tienda, 28×19 m, eran ~1700 casillas)
+	var planta = null
+	var sm := P.sector_en_caja(m.x, m.y)
+	if sm != "":
+		var id: String = P.trazado(sm).bloque_en(m.x, m.y)
+		for bl in P.trazado(sm).BLOQUES:
+			if id != "" and bl[0] == id:
+				planta = bl[2]
+				break
 	var cm := _casilla(m)
 	var r0 := INF
 	var anillo := 0
@@ -438,9 +468,12 @@ func _buscar_rodeo(meta: Vector3) -> Array:
 				if maxi(absi(i), absi(j)) != anillo:
 					continue
 				var c := cm + Vector2i(i, j)
+				if planta != null and (planta as Rect2).has_point(_centro(c)):
+					continue
 				if not is_nan(_libre(c)):
 					r0 = minf(r0, _centro(c).distance_to(m))
 		anillo += 1
+	ultimo_rodeo["ms_anillos"] = (Time.get_ticks_usec() - t0) / 1000.0
 	if r0 == INF:
 		ultimo_rodeo["ms"] = (Time.get_ticks_usec() - t0) / 1000.0
 		return []
@@ -459,11 +492,15 @@ func _buscar_rodeo(meta: Vector3) -> Array:
 				continue
 			g[c] = q.distance_to(ini)
 			largo[c] = g[c]
-			_meter(monton, [g[c] + q.distance_to(m), c])
+			_meter(monton, [g[c] + PESO_H * q.distance_to(m), c])
 	var mejor = null
 	var mejor_d := INF
 	var nodos := 0
+	var t_busca := Time.get_ticks_usec()
 	while not monton.is_empty() and nodos < RODEO_NODOS:
+		if nodos % 8 == 7 and Time.get_ticks_usec() > tope_us:
+			ultimo_rodeo["cortado"] = true           # (tope de tiempo: con lo mejor hallado)
+			break
 		var e := _sacar(monton)
 		var c: Vector2i = e[1]
 		if cerrado.has(c):
@@ -482,8 +519,9 @@ func _buscar_rodeo(meta: Vector3) -> Array:
 		if d <= r0 + 0.001:
 			break
 		var hc: float = _celdas[c]
-		for v in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 1), Vector2i(1, -1),
-				Vector2i(-1, 1), Vector2i(-1, -1)]:
+		var gc: float = g[c]
+		var lc: float = largo[c]
+		for v in VECINAS:
 			var n: Vector2i = c + v
 			if cerrado.has(n):
 				continue
@@ -492,32 +530,37 @@ func _buscar_rodeo(meta: Vector3) -> Array:
 				continue
 			if v.x != 0 and v.y != 0 and (is_nan(_libre(c + Vector2i(v.x, 0))) or is_nan(_libre(c + Vector2i(0, v.y)))):
 				continue
+			# (primero las cuentas y lo ya sabido; lo que mira el plano, después: este orden no cambia el resultado)
 			var qn := _centro(n)
-			var medio := (q + qn) * 0.5
-			if not P.andable(medio.x, medio.y):
-				continue
-			var hm := P.altura(medio.x, medio.y)
-			if absf(hm - hc) > SUBE_MAX or absf(hn - hm) > SUBE_MAX:
-				continue
 			var paso := q.distance_to(qn)
-			var l: float = largo[c] + paso
+			var l: float = lc + paso
 			if l - qn.distance_to(ini) > RODEO_EXTRA or l + qn.distance_to(m) > recta + 2.0 * mejor_d + RODEO_EXTRA:
 				continue
+			if gc + paso >= g.get(n, INF):
+				continue                                 # (ni sin el recargo de la pared mejora)
+			var medio := (q + qn) * 0.5
+			var hm := P.cota_andable(medio.x, medio.y)       # (NAN si no es andable)
+			if is_nan(hm):
+				continue
+			if absf(hm - hc) > SUBE_MAX or absf(hn - hm) > SUBE_MAX:
+				continue
 			var junto := false
-			for w in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			for w in LADOS:
 				if is_nan(_libre(n + w)):
 					junto = true
 					break
-			var ng: float = g[c] + paso * (1.25 if junto else 1.0)
+			var ng: float = gc + paso * (1.25 if junto else 1.0)
 			if ng < g.get(n, INF):
 				g[n] = ng
 				largo[n] = l
 				padre[n] = c
-				_meter(monton, [ng + qn.distance_to(m), n])
+				_meter(monton, [ng + PESO_H * qn.distance_to(m), n])
 	ultimo_rodeo["nodos"] = nodos
+	ultimo_rodeo["ms_busca"] = (Time.get_ticks_usec() - t_busca) / 1000.0
 	if mejor == null:
 		ultimo_rodeo["ms"] = (Time.get_ticks_usec() - t0) / 1000.0
 		return []
+	var t_rectas := Time.get_ticks_usec()
 	var camino: Array = []
 	var cc = mejor
 	while cc != null:
@@ -525,13 +568,25 @@ func _buscar_rodeo(meta: Vector3) -> Array:
 		camino.push_front(Vector3(qc.x, _celdas[cc], qc.y))
 		cc = padre.get(cc)
 	camino.push_front(k)
-	# tramos rectos: desde cada punto, el más lejano del camino al que se va en recta por lo holgado (búsqueda binaria)
+	# tramos rectos: desde cada punto, el más lejano del camino al que se va en recta por lo holgado (búsqueda binaria).
+	# (Tope RECTAS_MS: pasado, lo que queda del camino va por las casillas donde cambia de dirección, sin comprobar más
+	# rectas: cada paso entre casillas ya está comprobado por la búsqueda.)
 	var puntos: Array = []
 	var a := 0
+	var tope_rectas := t_rectas + int(RECTAS_MS * 1000.0)
 	while a < camino.size() - 1:
+		if Time.get_ticks_usec() > tope_rectas:
+			ultimo_rodeo["rectas_cortadas"] = true
+			for i in range(a + 1, camino.size() - 1):
+				var d1 := Vector2(camino[i].x - camino[i - 1].x, camino[i].z - camino[i - 1].z)
+				var d2 := Vector2(camino[i + 1].x - camino[i].x, camino[i + 1].z - camino[i].z)
+				if absf(d1.angle_to(d2)) > 0.01:
+					puntos.append(camino[i])
+			puntos.append(camino[-1])
+			break
 		var lo := a + 1
 		var hi := camino.size()
-		while hi - lo > 1:
+		while hi - lo > 1 and Time.get_ticks_usec() <= tope_rectas:   # («lo» siempre vale: comprobado o el contiguo)
 			var mitad := (lo + hi) / 2
 			if _recta_libre(camino[a], camino[mitad]):
 				lo = mitad
@@ -540,6 +595,7 @@ func _buscar_rodeo(meta: Vector3) -> Array:
 		puntos.append(camino[lo])
 		a = lo
 	ultimo_rodeo["puntos"] = puntos
+	ultimo_rodeo["ms_rectas"] = (Time.get_ticks_usec() - t_rectas) / 1000.0
 	ultimo_rodeo["ms"] = (Time.get_ticks_usec() - t0) / 1000.0
 	return puntos
 
@@ -582,12 +638,19 @@ func _sacar(monton: Array) -> Array:
 func _recta_libre(a: Vector3, b: Vector3) -> bool:
 	var n := maxi(1, int(ceil(Vector2(b.x - a.x, b.z - a.z).length() / 0.1)))
 	var minimo := minf(Comun.RADIO_CUERPO, P.holgura(a.x, a.z)) - 0.001
+	# (19/11, coste) primero 1 de cada 5 puntos, solo la holgura: si alguno falla, falla igual (es la misma comprobación en
+	# el mismo punto), y la mitad de las rectas que prueba _buscar_rodeo fallan
+	for i in range(5, n + 1, 5):
+		var q := a.lerp(b, float(i) / n)
+		if P.holgura_y_cota(q.x, q.z)[0] < minimo:
+			return false
 	var y := a.y
 	for i in range(1, n + 1):
 		var q := a.lerp(b, float(i) / n)
-		if P.holgura(q.x, q.z) < minimo:
+		var hy := P.holgura_y_cota(q.x, q.z)               # (= holgura y altura, de una vez)
+		if hy[0] < minimo:
 			return false
-		var h := P.altura(q.x, q.z)
+		var h: float = hy[1] if not is_nan(hy[1]) else P.altura(q.x, q.z)
 		if absf(h - y) > SUBE_MAX:
 			return false
 		y = h
@@ -618,6 +681,24 @@ func _seguir_ruta(delta: float) -> void:
 		destino = _paso
 	elif destino == null:
 		_borrar_ruta()
+
+
+# (19/11, revisión: RECORRIDO.md §12) Sin TIRONES en los puntos de paso intermedios: vista3d corre si el destino está a
+# más de CORRER_DESDE y anda si no, así que Kael pasaba a andar los últimos 3 m antes de cada punto de paso y volvía a
+# correr después. Si quedan más puntos de paso, durante el paso de vista3d el destino es un punto en la MISMA dirección,
+# más allá del punto de paso (a CORRER_DESDE + 0,5 m de Kael): va por el mismo sitio, corriendo; el último paso antes de
+# llegar (a menos de un paso y 0,2 m) va al punto de paso exacto. Solo en la ciudad; vista3d.gd no cambia. true si alarga.
+func _alargar_paso(delta: float) -> bool:
+	if _paso == null or _ruta.is_empty() or destino == null or not (destino as Vector3).is_equal_approx(_paso) \
+			or direccion_teclas.length() > 0.1 or ocupado():
+		return false
+	var k := kael.global_position
+	var falta := Vector2(_paso.x - k.x, _paso.z - k.z)
+	if falta.length() > CORRER_DESDE + 0.5 or falta.length() <= VELOCIDAD * 1.8 * delta + 0.2:
+		return false
+	var dir := falta.normalized() * (CORRER_DESDE + 0.5)
+	destino = Vector3(k.x + dir.x, _paso.y, k.z + dir.y)
+	return true
 
 
 # (18/11, Redmi: REDMI_18_11.md, RECORRIDO.md §5 problema 2) Con TOQUES en DIAGONAL junto a una casa, la recta corta su
@@ -938,7 +1019,10 @@ func _process(delta: float) -> void:
 	_t_juego += delta
 	var k0 := kael.global_position
 	var d0 = destino
+	var corre_paso := _alargar_paso(delta)
 	super(delta)
+	if corre_paso and destino != null:
+		destino = _paso                                # (fuera del paso de vista3d, el destino es el punto de paso)
 	_deslizar(delta, k0)
 	_bordear(delta, k0, d0)
 	_seguir_ruta(delta)

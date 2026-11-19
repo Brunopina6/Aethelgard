@@ -608,10 +608,23 @@ func _andable_ref(x: float, z: float) -> bool:
 	return s != "" and P.TRAZADOS[s].andable(x, z)
 
 
+# (19/11) La cota recorriendo los suelos del sector (el trazado: Comun.altura), y el sector recorriendo SECTORES.
+func _altura_ref(x: float, z: float) -> float:
+	var s := _sector_ref(x, z)
+	return 0.0 if s == "" else P.TRAZADOS[s].altura(x, z)
+
+
+func _sector_ref(x: float, z: float) -> String:
+	for s in P.ORDEN:
+		if (P.SECTORES[s]["caja"] as Rect2).has_point(Vector2(x, z)):
+			return s
+	return ""
+
+
 func _holgura_ref(x: float, z: float) -> float:
 	if not _andable_ref(x, z):
 		return 0.0
-	var y := P.altura(x, z)
+	var y := _altura_ref(x, z)
 	var p := Vector2(x, z)
 	var h := Comun.RADIO_CUERPO
 	for s in P.ORDEN:
@@ -645,13 +658,23 @@ func _indice_igual() -> void:
 	var andables := 0
 	for q in puntos:
 		var a := P.andable(q.x, q.y)
+		if P.sector_en_caja(q.x, q.y) != _sector_ref(q.x, q.y):
+			mal.append("sector_en_caja %s" % str(q))
+		if P.altura(q.x, q.y) != _altura_ref(q.x, q.y):
+			mal.append("altura %s: %.4f / %.4f" % [str(q), P.altura(q.x, q.y), _altura_ref(q.x, q.y)])
+		var hy := P.holgura_y_cota(q.x, q.y)
+		var ca := P.cota_andable(q.x, q.y)
 		if a != _andable_ref(q.x, q.y):
 			mal.append("andable %s" % str(q))
 		elif a:
 			andables += 1
 			if P.holgura(q.x, q.y) != _holgura_ref(q.x, q.y):
 				mal.append("holgura %s: %.4f / %.4f" % [str(q), P.holgura(q.x, q.y), _holgura_ref(q.x, q.y)])
+			if hy[0] != _holgura_ref(q.x, q.y) or hy[1] != _altura_ref(q.x, q.y) or ca != _altura_ref(q.x, q.y):
+				mal.append("holgura_y_cota/cota_andable %s: %s, %.4f" % [str(q), str(hy), ca])
+		elif hy[0] != 0.0 or not is_nan(hy[1]) or not is_nan(ca):
+			mal.append("holgura_y_cota/cota_andable fuera de lo andable %s: %s, %.4f" % [str(q), str(hy), ca])
 		if mal.size() > 10:
 			break
-	_ok(mal.is_empty(), "10: andable y holgura con el índice = recorriendo todos los bloques (%d puntos, %d andables) %s" % [
+	_ok(mal.is_empty(), "10: andable, holgura, altura y sector_en_caja con el índice (y holgura_y_cota y cota_andable, 19/11) = recorriendo todos los bloques y suelos (%d puntos, %d andables) %s" % [
 		puntos.size(), andables, str(mal)])

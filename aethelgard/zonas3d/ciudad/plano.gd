@@ -143,11 +143,19 @@ const MARGEN_CAMARA := 2.5
 # ==================================================================================================== funciones
 
 # El sector cuya CAJA contiene (x, z), o "".
+# (19/11, coste del rodeo de ciudad.gd: RECORRIDO.md §12) Las cajas, en una lista hecha una vez (sin buscar en SECTORES en
+# cada llamada); el mismo orden (ORDEN) y las mismas Rect2: el resultado no cambia.
+static var _cajas: Array = []
+
+
 static func sector_en_caja(x: float, z: float) -> String:
+	if _cajas.is_empty():
+		for s in ORDEN:
+			_cajas.append([SECTORES[s]["caja"], s])
 	var q := Vector2(x, z)
-	for s in ORDEN:
-		if (SECTORES[s]["caja"] as Rect2).has_point(q):
-			return s
+	for e in _cajas:
+		if (e[0] as Rect2).has_point(q):
+			return e[1]
 	return ""
 
 
@@ -204,6 +212,7 @@ static func _indice() -> Dictionary:
 			for su in t.SUELOS:
 				for k in _casillas(su[1]):
 					_de_sector(k, s)[0].append(su[1])
+					_de_sector(k, s)[2].append(su)       # (19/11) el suelo entero, para altura (en el orden de SUELOS)
 			for b in t.BLOQUES:
 				if not b[6]:
 					continue
@@ -235,7 +244,7 @@ static func _casillas(r: Rect2) -> Array:
 static func _de_sector(k: Vector2i, s: String) -> Array:
 	var c: Dictionary = _celdas[k]
 	if not c.has(s):
-		c[s] = [[], []]
+		c[s] = [[], [], []]
 	return c[s]
 
 
@@ -261,11 +270,72 @@ static func holgado(x: float, z: float) -> bool:
 
 
 # La cota de lo que se pisa en (x, z) (fuera de lo andable, la del suelo más cercano de su sector; fuera de la ciudad, 0).
+# (19/11, coste del rodeo de ciudad.gd: RECORRIDO.md §12) Con el ÍNDICE: el primer suelo de la casilla que contiene (x, z),
+# en el orden de SUELOS, es el primero del sector que lo contiene (Comun.suelo_en); si ninguno, lo de siempre (el suelo
+# más cercano). Mismo resultado (prueba_ciudad_plano lo compara).
 static func altura(x: float, z: float) -> float:
 	var s := sector_en_caja(x, z)
 	if s == "":
 		return 0.0
+	var c = _indice().get(Vector2i(floori(x / CELDA_INDICE), floori(z / CELDA_INDICE)))
+	if c != null and c.has(s):
+		var q := Vector2(x, z)
+		for su in c[s][2]:
+			if (su[1] as Rect2).has_point(q):
+				return Comun.cota_suelo(su, x, z)
 	return TRAZADOS[s].altura(x, z)
+
+
+# (19/11, coste del rodeo de ciudad.gd) Lo de andable, altura y holgura de una vez (una sola búsqueda del sector y de la
+# casilla): [holgura, cota] si (x, z) es andable, o [0, NAN] si no. Igual que
+# [holgura(x, z), altura(x, z)] en lo andable (en un Array: con un Vector2 la cota perdería precisión) (prueba_ciudad_plano lo compara).
+static func holgura_y_cota(x: float, z: float) -> Array:
+	var s := sector_en_caja(x, z)
+	if s == "":
+		return [0.0, NAN]
+	var c = _indice().get(Vector2i(floori(x / CELDA_INDICE), floori(z / CELDA_INDICE)))
+	if c == null or not c.has(s):
+		return [0.0, NAN]
+	var d: Array = c[s]
+	var q := Vector2(x, z)
+	var y := NAN
+	for su in d[2]:
+		if (su[1] as Rect2).has_point(q):
+			y = Comun.cota_suelo(su, x, z)
+			break
+	if is_nan(y):
+		return [0.0, NAN]
+	for r in d[1]:
+		if (r as Rect2).has_point(q):
+			return [0.0, NAN]
+	var h := Comun.RADIO_CUERPO
+	for e in c.get("holgura", []):
+		if float(e[2]) > y + Comun.ALTO_PARED and distancia_a_sector(e[0], q) < Comun.RADIO_CUERPO:
+			h = minf(h, Comun.distancia_planta(e[1], q))
+	return [h, y]
+
+
+# (19/11) La cota si (x, z) es andable, o NAN (andable y altura de una vez).
+static func cota_andable(x: float, z: float) -> float:
+	var s := sector_en_caja(x, z)
+	if s == "":
+		return NAN
+	var c = _indice().get(Vector2i(floori(x / CELDA_INDICE), floori(z / CELDA_INDICE)))
+	if c == null or not c.has(s):
+		return NAN
+	var d: Array = c[s]
+	var q := Vector2(x, z)
+	var y := NAN
+	for su in d[2]:
+		if (su[1] as Rect2).has_point(q):
+			y = Comun.cota_suelo(su, x, z)
+			break
+	if is_nan(y):
+		return NAN
+	for r in d[1]:
+		if (r as Rect2).has_point(q):
+			return NAN
+	return y
 
 
 # Un ancla: las globales y, si no, la de un trazado con el formato «<sector>/<ancla>».

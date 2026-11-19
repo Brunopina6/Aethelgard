@@ -57,3 +57,24 @@ Lo que se sabe del PC (`prueba_banco_derrotas`, sin ventana, SUPERADA):
 
 - Los mismos SHA de `files/` que tras instalar, sin restaurar nada automáticamente. Si algo cambió, decirlo.
 - Resultados en `docs/v12/REDMI_19_11.md`, separando lo visto en el Redmi de lo medido en el PC.
+
+## Para la próxima APK (con `22856a0` y su revisión; NO para la APK `9d1baef` de arriba)
+
+En la APK `9d1baef` de arriba, el punto 1 sigue igual: si se toca al otro lado de una casa entera, Kael se para ante ella.
+En una APK hecha con `22856a0` y `CIUDAD_TOQUE_19_11_REVISION` (PC-16, `RECORRIDO.md` §12), Kael busca un rodeo corto:
+- **Toques en tejados**, con Kael cerca y con Kael a 10-20 m:
+  - la tienda al este de la plaza, desde su puerta (Calle del Mercado, `t04_este_6`), en el tejado y en su centro;
+  - la casa alta del oeste de la plaza (`t03_plaza_4`);
+  - una casa de la Calle del Mercado vista desde la otra acera.
+
+  Kael debe ir a la fachada más cercana a lo tocado a la que llegue con un rodeo corto. No debe quedarse pegado a la pared
+  donde la recta daba en ella.
+- **Al otro lado de una casa entera**:
+  - una casa pequeña con suelo alrededor (por ejemplo, `casa_pie` en el Cuervo, de 4×4 m): Kael debe rodearla y
+    llegar;
+  - una manzana grande: Kael debe acercarse lo que permita el rodeo corto, de su lado o doblando la esquina, sin
+    atravesarla.
+- **Velocidad en los rodeos**: Kael no debe frenar a paso de andar en las esquinas del rodeo, solo al final.
+- **Coste**: con el panel RND abierto, mirar si al tocar sobre un edificio o al otro lado de una manzana hay un tirón (los
+  ms por fotograma del momento del toque). En el PC el peor caso es ≤ 8,8 ms. En el Redmi no se ha medido: con el tope
+  de tiempo, la búsqueda se corta antes y Kael puede llegar menos lejos que en el PC.

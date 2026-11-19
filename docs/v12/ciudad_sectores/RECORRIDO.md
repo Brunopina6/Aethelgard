@@ -622,14 +622,16 @@ la búsqueda de caminos general sigue siendo la propuesta PD-4):
    pararse si ya va en recta; si se para lejos de él (atasco, teclas, otro toque, «Guardar y recargar», un diálogo), el
    camino se olvida. Al arrastrar el dedo, el rodeo en curso se mantiene y se busca como mucho uno cada 0,3 s.
 
-**Coste**: en el PC, el toque con rodeo más caro de la prueba tarda 14,7 ms (2-160 casillas exploradas; tope de 5000).
-En el Redmi no se ha medido (es un coste de un solo fotograma, al tocar; al arrastrar, como mucho una búsqueda cada
-0,3 s).
+**Coste** (corregido en la revisión, abajo): la cifra que se dio aquí («el toque más caro, 14,7 ms; 2-160 casillas») solo
+contaba los toques de la prueba. Las búsquedas de los casos «al otro lado», que van derechas a `_ajustar_destino`, no se
+cronometraban, y en esa misma pasada costaban hasta **87-88 ms** (981 casillas). Con la prueba nueva, el código de
+`22856a0` llega a **92,0 ms** (1390 casillas). Desde la revisión hay topes de tiempo: **≤ 8,8 ms** en el PC. En el Redmi
+no se ha medido.
 
 **Límites conocidos**: no es una búsqueda de caminos general. Junto a la tienda de la plaza (28×19 m, `t04_este_6`), tocar
 su tejado ya no deja a Kael pegado donde la recta daba en la pared, pero tampoco lo lleva a la Calle de los Oficios: no
-hay rodeo de ≤ 8 m y va al punto de la fachada oeste más cercano a lo tocado. En los tramos de un rodeo, Kael anda (no
-corre) los últimos 3 m antes de cada punto de paso (vista3d decide correr por la distancia al destino).
+hay rodeo de ≤ 8 m y va al punto de la fachada oeste más cercano a lo tocado. (Lo de que Kael anda los últimos 3 m antes
+de cada punto de paso está arreglado desde la revisión, abajo.)
 
 **Prueba nueva** `prueba_ciudad_toque_edificio` (auto, en la lista): toques de verdad (`InputEventMouseButton` en 1280×720
 por `ciudad._unhandled_input`) en el tejado de 18 casas no ocultables de los 8 sectores, dos de ellas los sitios del
@@ -660,3 +662,77 @@ Sin probar: en el Redmi con el dedo (plaza: tienda y casa alta del oeste; Calle 
 punto 1 de `GUION_REDMI_19_11.md` («tocar al otro lado de una casa entera: debe pararse ante ella») describe la APK
 `9d1baef`; con este arreglo, si el rodeo es corto, la rodea. Decisión del usuario: el tamaño del «rodeo corto» (8 m) y si
 quiere ir más allá (PD-4).
+
+### Revisión de PC-16 (19/11, `CIUDAD_TOQUE_19_11_REVISION`)
+
+Los arreglos que pidió la revisión de `22856a0`, solo en la ciudad (`vista3d.gd` sin cambios):
+
+1. **Coste acotado** (gravedad alta). Antes no había tope de tiempo: con un tope de 5000 casillas a ~0,09 ms cada una,
+   el peor caso podía rondar los 450 ms en el PC. Ahora:
+   - `_buscar_rodeo` tiene un tope de **`RODEO_MS` = 5 ms** (anillos y A\*) y de **`RODEO_NODOS` = 1500** casillas. Al
+     pasarlo, se queda con el mejor punto hallado y con un camino válido.
+   - Los tramos rectos tienen un tope de **`RECTAS_MS` = 3 ms**. Pasado ese tope, el resto del camino va por las casillas
+     donde cambia de dirección; cada paso entre casillas ya lo comprobó la búsqueda.
+   - **A\* con peso** (`PESO_H` = 2,5): va antes hacia la meta.
+   - Los anillos no miran dentro de la planta del edificio tocado.
+   - Las consultas del plano se hacen de una vez: `plano.holgura_y_cota` y `plano.cota_andable` son nuevas, y `altura`
+     y `sector_en_caja` usan el índice. Dan **el mismo resultado**: `prueba_ciudad_plano` §10 lo compara en 50 256 puntos.
+     Cada casilla cuesta ahora ~0,03 ms en vez de ~0,09 ms.
+   - `prueba_ciudad_toque_edificio` cuenta ahora en `ms_max` el `ultimo_rodeo.ms` de **cada** búsqueda, también las del
+     caso 2. Hay casos nuevos de peor coste: el centro del tejado de la tienda desde la plaza (desde (13, -9) y (12, -1);
+     el centro exacto no se ve desde la cámara, así que se toca el punto visible más cercano a él) y el otro lado de los
+     tres bloques altos más grandes con suelo a los dos lados (`casa_cuervo_s` 13×28 m, `casas_corro_so` 27×11 m y
+     `almacen_so` 23×11 m). El límite de la prueba es de **12 ms**.
+   - **Precio del tope** (decisión del usuario). Tocando al otro lado de una manzana sin rodeo corto, la búsqueda se corta
+     y Kael llega menos lejos que sin tope. Distancia al toque, de `22856a0` a ahora:
+     | Caso | `22856a0` | Ahora |
+     |---|---|---|
+     | `cuerpo_guardia` | 3,97 m | 11,30 m |
+     | `casa_cuervo_s` | 5,86 m | 15,87 m |
+     | `almacen_so` | 3,81 m | 6,35 m |
+     | `casa_pip_e` | 0,74 m | 0,30 m |
+     | los otros cuatro | igual (±0,02 m) | igual |
+
+     Siempre queda mejor que la recta de antes de `22856a0`: 14,19 m, 28,90 m, 23,30 m y 6,54 m. Con un tope de tiempo,
+     el resultado **depende del aparato**: en el Redmi se cortará antes. En el PC, ningún toque sobre un edificio de la
+     prueba se corta (como mucho 63 casillas); solo los «al otro lado».
+2. **Rodeo corto comprobado de verdad** (gravedad media). El caso 2b busca, en todos los sectores, casas y muros altos
+   de ≤ 8 m de lado con suelo libre alrededor y una referencia de rodeo de ≤ 6 m. Hay tres: `pasajes/gallinero` (3×2,5 m),
+   `cuervo/casa_pie` (4×4 m) y `barrio_alto/ladera_e2_e` (8×6 m). En los tres, Kael la rodea y llega: a 0,10, 0,33 y
+   0,10 m del toque (exigido < 0,6 m). Con `22856a0` también llegaba (0,16, 0,36 y 0,12 m); lo que faltaba era la prueba.
+3. **Toques desde lejos** (baja). Hay tres toques en tejados con Kael a 12-18 m de la casa (otra acera u otra calle):
+   `puerta_sur/casa_mayor_o` a 12 m, `puerta_sur/cuerpo_guardia` a 14 m y `plaza_tapiz/casa_n_e` a 18 m. Usan la misma
+   referencia de 0,25 m y acaban a 3,56, 2,27 y 2,38 m de lo tocado (referencias de 3,15, 2,00 y 2,00 m).
+4. **Sin tirones en los puntos de paso** (baja; «calidad visual primero»). Antes, Kael andaba los últimos 3 m antes de
+   cada punto de paso intermedio y luego volvía a correr. Ahora `_alargar_paso` pone el destino de vista3d, solo durante
+   su paso, en la misma dirección pero más allá del punto de paso, así que Kael corre por el mismo sitio. La prueba mide
+   lo andado a paso de andar con más de 3,5 m de camino por delante (≤ 0,5 m). Con `22856a0` eran **1,82-5,18 m** por
+   recorrido; ahora, **0-0,28 m** (el último paso antes de cada punto de paso va al punto exacto).
+5. **Interruptor** (baja). `Engine.set_meta("ciudad_rodeo", false)` apaga el rodeo y devuelve la recta de antes, para
+   comparar en el Redmi. Por defecto, encendido. No tiene botón en el juego.
+
+**Antes y después** de la revisión, con la prueba nueva:
+- **Antes**, con el código de `22856a0` (pasada `2026-11-19_024545`): **FALLOS: 20**. Por ejemplo: «lo más caro (toque o
+  búsqueda de rodeo, también las del caso 2) tarda 92.0 ms en el PC (≤ 12)», «… 2 puntos de paso, 2.66 m a paso de andar
+  con camino por delante (≤ 0.5)» y «con el rodeo apagado … el destino es el de la recta de antes ((16.25, 4.0, 3.25);
+  recta (16.64223, 4.0, -5.945946))».
+- **Después** (pasada `2026-11-19_024829`): **FALLOS: 0**. «lo más caro … tarda 8.8 ms en el PC (≤ 12): ribera/almacen_so
+  al otro lado; búsquedas cortadas por el tope: 9».
+
+En la misma pasada, `prueba_ciudad_esquinas`, `prueba_ciudad_plano`, `prueba_ciudad_cargador`, `prueba_ciudad_fachadas`,
+`prueba_atasco_destino` y `prueba_integridad` salen SUPERADAS. `recorrido_ciudad` (ventana, 1280×720, bajo, sin vídeo,
+en las mismas cuatro partes): **138, 147, 159 y 154 tramos, 0 fallos**, en
+`D:\REBELUM_diagnostico\pc16_19_11_revision\recorrido_a…d`.
+
+**Sin comprobar:** todo en el Redmi. Falta el coste real con el tope (cuántas búsquedas se cortan y si se nota el
+tirón), el comportamiento al tocar tejados y al otro lado, y que no haya cambios de velocidad en los rodeos. Ver
+`GUION_REDMI_19_11.md`, «Para la próxima APK».
+
+**Decisiones del usuario (ajustes sin aprobar):**
+- `RODEO_EXTRA` 8 m;
+- `META_CERCA` 12 m;
+- recargo junto a la pared ×1,25;
+- `PESO_H` 2,5;
+- topes `RODEO_MS` 5 ms, `RECTAS_MS` 3 ms y `RODEO_NODOS` 1500;
+- el precio del tope (arriba);
+- si se quiere ir más allá (PD-4).

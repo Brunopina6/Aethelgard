@@ -17,11 +17,21 @@ extends SceneTree
 #      prueba_ciudad_esquinas, porque el suelo de detrás de una casa casi nunca se ve desde la cámara): con un rodeo corto
 #      (referencia ≤ 6 m de más) Kael la rodea y llega (< 0,6 m); sin él, no la atraviesa y no acaba más lejos del toque
 #      que antes (+1 m: antes se paraba algo antes del último punto andable de la recta, por el cuerpo y las rodillas).
-#      Hoy (19/11) ningún caso de los 8 sectores tiene rodeo de ≤ 6 m: con el arreglo Kael se acerca rodeándola hasta
-#      donde llega el rodeo corto (ciudad.RODEO_EXTRA) o se queda de su lado.
+#      Los dos primeros de cada sector no tienen rodeo de ≤ 6 m: con el arreglo Kael se acerca rodeándola hasta donde
+#      llega el rodeo corto (ciudad.RODEO_EXTRA) o se queda de su lado.
+#   2b. (revisión 19/11) RODEO CORTO DE VERDAD: casas y muros altos de ≤ 8 m de lado de todos los sectores con suelo libre
+#      alrededor, al otro lado, con referencia de ≤ 6 m de rodeo hasta el toque: Kael ha de llegar (< 0,6 m).
+#   1b. (revisión 19/11) DESDE LEJOS: toques en tejados con Kael a 10-20 m de la casa (otra acera u otra calle del mismo
+#      sector), con la misma referencia que el caso 1.
+#   1c. (revisión 19/11) PEOR COSTE: el centro del tejado de la tienda (28×19 m) desde la plaza, y al otro lado de la
+#      tienda y de la casa alta del oeste.
 #   3. SUELO LIBRE (guarda): un toque en el suelo con la recta libre da el mismo destino que antes (el punto tocado).
-#   4. COSTE: cuánto tarda cada toque con rodeo en el PC (≤ 60 ms; en el Redmi, sin medir).
+#   4. COSTE: lo que tarda cada toque y CADA búsqueda de rodeo (también las del caso 2, que van derechas a
+#      _ajustar_destino) en el PC: ≤ LIMITE_MS (en el Redmi, sin medir).
 #   (y 5. ARRASTRE: arrastrar sobre lo tocado sigue con el mismo rodeo, sin rehacerlo.)
+#   (y 6. SIN TIRONES: en cada recorrido con rodeo, lo andado a paso de ANDAR con más de 3,5 m de camino por delante
+#      (puntos de paso incluidos) ha de ser ≤ 0,5 m: Kael no frena en los puntos de paso intermedios.)
+#   (y 7. APAGADO: con Engine.set_meta("ciudad_rodeo", false), el destino es el de la recta de antes.)
 # Imprime «FALLOS: n».
 
 const ESCENA := "res://zonas3d/ciudad/ciudad.tscn"
@@ -31,9 +41,13 @@ const C := 0.25
 const RODEO_REF := 6.0
 const POR_SECTOR := 2
 const TAM := Vector2(1280, 720)
+const LIMITE_MS := 12.0
+const LENTO_MAX := 0.5
 var fallos := 0
 var v
 var ms_max := 0.0
+var peor := ""
+var cortados := 0
 
 
 func _initialize() -> void:
@@ -168,23 +182,62 @@ func _tocar(t: Vector2) -> void:
 	ev.position = t
 	var t0 := Time.get_ticks_usec()
 	v._unhandled_input(ev)
-	var ms := (Time.get_ticks_usec() - t0) / 1000.0
-	ms_max = maxf(ms_max, ms)
+	_coste("toque", (Time.get_ticks_usec() - t0) / 1000.0)
+
+
+# (revisión 19/11) El coste de lo último: «ms» (el toque entero, o -1 si fue derecho a _ajustar_destino) y el de la
+# búsqueda de rodeo que hiciera (ultimo_rodeo.ms), con sus partes si las hay. Todo cuenta para ms_max.
+func _coste(que: String, ms: float) -> void:
+	if ms > ms_max:
+		ms_max = ms
+		peor = que + " (el toque entero)"
 	var r = v.get("ultimo_rodeo")
 	if r is Dictionary and r.has("ms"):
-		print("   (toque: %.1f ms; rodeo: %.1f ms, %d casillas, %d puntos de paso)" % [ms, r["ms"], r["nodos"],
+		if float(r["ms"]) > ms_max:
+			ms_max = float(r["ms"])
+			peor = que
+		if r.get("cortado", false):
+			cortados += 1
+		print("   (%s: %s; rodeo: %.1f ms [anillos %s, búsqueda %s, tramos %s], %d casillas%s, %d puntos de paso)" % [que,
+			"%.1f ms" % ms if ms >= 0.0 else "directo", r["ms"], _ms(r, "ms_anillos"), _ms(r, "ms_busca"),
+			_ms(r, "ms_rectas"), r["nodos"], (", CORTADA por el tope" if r.get("cortado", false) else "") + (
+				", tramos por casillas (tope)" if r.get("rectas_cortadas", false) else ""),
 			(r["puntos"] as Array).size()])
 		r.clear()
 
 
-# Anda hasta que Kael se para; vigila cada fotograma lo que pisa. {k, mal}
+func _ms(r: Dictionary, clave: String) -> String:
+	return "%.1f" % r[clave] if r.has(clave) else "—"
+
+
+# Lo que queda de camino: hasta el destino y, si es un punto de paso, por los que siguen.
+func _resto() -> float:
+	if v.destino == null:
+		return 0.0
+	var k: Vector3 = v.kael.global_position
+	var d := Vector2(v.destino.x - k.x, v.destino.z - k.z).length()
+	var paso = v.get("_paso")
+	if paso != null and (v.destino as Vector3).is_equal_approx(paso):
+		var a: Vector3 = paso
+		for p in v.get("_ruta"):
+			d += Vector2(p.x - a.x, p.z - a.z).length()
+			a = p
+	return d
+
+
+# Anda hasta que Kael se para; vigila cada fotograma lo que pisa y lo que anda a paso de andar con más de 3,5 m de
+# camino por delante («lento»). {k, mal, lento}
 func _andar() -> Dictionary:
 	var mal: Array = []
 	var quieto := 0
+	var lento := 0.0
 	var anterior: Vector3 = v.kael.global_position
 	for f in 900:
+		var resto := _resto()
 		await process_frame
 		var k: Vector3 = v.kael.global_position
+		if v.movimiento == "andar" and resto > 3.5:
+			lento += Vector2(k.x - anterior.x, k.z - anterior.z).length()
 		if not P.andable(k.x, k.z):
 			mal.append("no andable en (%.2f, %.2f)" % [k.x, k.z])
 		elif absf(k.y - P.altura(k.x, k.z)) > 0.15:
@@ -196,7 +249,7 @@ func _andar() -> Dictionary:
 	var k: Vector3 = v.kael.global_position
 	v._parar_kael()
 	await _frames(2)
-	return {"k": k, "mal": mal}
+	return {"k": k, "mal": mal, "lento": lento}
 
 
 # Kael a un lado de la casa y el toque en el suelo al otro lado (de oeste a este, de este a oeste, de norte a sur o de sur
@@ -281,13 +334,16 @@ func _salidas(b: Array, s: String) -> Array:
 # Caso 1 en una casa desde «s»: un punto de su tejado que se vea (el primer choque del rayo es la casa) y, con
 # «exigir», que la recta de antes deje a Kael al menos 1,5 m más lejos de lo tocado que la referencia. Con «pasos»
 # fracciones del tejado, se queda con el de más diferencia. [pantalla, lo tocado, referencia, lo de antes] o [].
-func _caso_tejado(b: Array, s: Vector3, fracciones: Array, exigir: bool) -> Array:
+func _caso_tejado(b: Array, s: Vector3, fracciones: Array, exigir: bool, unico = null) -> Array:
 	var rect: Rect2 = b[2]
 	var techo := float(b[3]) + float(b[4])
 	var alc := {}
 	var mejor: Array = []
 	for fz in fracciones:
 		for fx in fracciones:
+			if unico != null:
+				fx = unico.x
+				fz = unico.y
 			var r := Vector3(lerpf(rect.position.x, rect.end.x, fx), techo, lerpf(rect.position.y, rect.end.y, fz))
 			if v.cam.is_position_behind(r):
 				continue
@@ -372,6 +428,60 @@ func _correr() -> void:
 					break
 	_ok(casos.size() >= 6 and sectores.size() >= 3, "hay casos de tocar una casa: %d en %d sectores %s" % [
 		casos.size(), sectores.size(), str(sectores.keys())])
+	# ---- 1b. desde lejos (revisión 19/11): Kael a 10-20 m de la casa, en otra acera u otra calle del mismo sector
+	var lejos := 0
+	var intentos := 0
+	var candidatas: Array = []
+	for f in fijos:
+		for b in P.trazado(f[0]).BLOQUES:
+			if b[0] == f[1]:
+				candidatas.append([f[0], b])
+	for sec in P.ORDEN:
+		for b in _casas(sec).slice(0, 2):
+			candidatas.append([sec, b])
+	for cb in candidatas:
+		if lejos >= 4 or intentos >= 24:
+			break
+		var sec: String = cb[0]
+		var b: Array = cb[1]
+		var rect: Rect2 = b[2]
+		var hecho := false
+		for dist in [12.0, 17.0]:
+			for ang in 8:
+				if hecho or intentos >= 24:
+					break
+				var dir := Vector2.RIGHT.rotated(ang * PI / 4.0)
+				var q: Vector2 = rect.get_center() + dir * (0.5 * rect.size.length() + float(dist))
+				var fuera := Comun.distancia_planta(rect, q)
+				if fuera < 9.0 or fuera > 21.0 or not _libre(q) or P.sector_de(q.x, q.y) != sec:
+					continue
+				var s := Vector3(q.x, P.altura(q.x, q.y), q.y)
+				await _colocar(s)
+				intentos += 1
+				var c := _caso_tejado(b, s, [0.15, 0.5, 0.85], true)
+				if not c.is_empty():
+					casos.append(["%s/%s desde lejos (a %.0f m)" % [sec, b[0], fuera], s, c])
+					lejos += 1
+					hecho = true
+	_ok(lejos >= 3, "hay toques en tejados desde lejos (%d, %d intentos)" % [lejos, intentos])
+
+	# ---- 1c. peor coste (revisión 19/11): el centro del tejado de la tienda desde la plaza
+	var tienda: Array = []
+	for b in P.trazado("plaza_tapiz").BLOQUES:
+		if b[0] == "tienda":
+			tienda = b
+	var centro_tienda := 0
+	for q in [Vector2(13.0, -9.0), Vector2(12.0, -1.0), Vector2(8.0, -5.0), Vector2(6.0, -10.0), Vector2(3.0, -5.0)]:
+		if not _libre(q):
+			continue
+		var s := Vector3(q.x, P.altura(q.x, q.y), q.y)
+		await _colocar(s)
+		var c := _caso_centro(tienda, s)
+		if not c.is_empty():
+			casos.append(["plaza_tapiz/tienda, centro del tejado desde (%.0f, %.0f) (peor coste)" % [q.x, q.y], s, c])
+			centro_tienda += 1
+	_ok(centro_tienda >= 1, "hay toques en el centro del tejado de la tienda (%d)" % centro_tienda)
+
 	var arrastre := false
 	for caso in casos:
 		var s: Vector3 = caso[1]
@@ -380,6 +490,9 @@ func _correr() -> void:
 		var ref: Array = caso[2][2]
 		await _colocar(s)
 		_tocar(t)
+		var puntos := 0
+		if v.get("_paso") != null:
+			puntos = 1 + (v.get("_ruta") as Array).size()
 		if not arrastre and v.get("_ruta") is Array and not (v.get("_ruta") as Array).is_empty():
 			# arrastrar el dedo (o el ratón con el botón) sobre el mismo sitio no rehace ni pierde el rodeo en curso
 			arrastre = true
@@ -394,10 +507,10 @@ func _correr() -> void:
 		var r := await _andar()
 		var k: Vector3 = r["k"]
 		var d := Vector2(k.x, k.z).distance_to(m)
-		_ok(d <= float(ref[0]) + 0.6 and (r["mal"] as Array).is_empty(),
-			"%s: desde (%.1f, %.1f), toque en el tejado sobre (%.1f, %.1f): Kael acaba en (%.2f, %.2f), a %.2f m de lo tocado (referencia %.2f en (%.2f, %.2f); la recta de antes, %.2f) %s" % [
-				caso[0], s.x, s.z, m.x, m.y, k.x, k.z, d, ref[0], ref[1].x, ref[1].z, caso[2][3],
-				str((r["mal"] as Array).slice(0, 3))])
+		_ok(d <= float(ref[0]) + 0.6 and (r["mal"] as Array).is_empty() and float(r["lento"]) <= LENTO_MAX,
+			"%s: desde (%.1f, %.1f), toque en el tejado sobre (%.1f, %.1f): Kael acaba en (%.2f, %.2f), a %.2f m de lo tocado (referencia %.2f en (%.2f, %.2f); la recta de antes, %.2f); %d puntos de paso, %.2f m a paso de andar con camino por delante (≤ %.1f) %s" % [
+				caso[0], s.x, s.z, m.x, m.y, k.x, k.z, d, ref[0], ref[1].x, ref[1].z, caso[2][3], puntos, r["lento"],
+				LENTO_MAX, str((r["mal"] as Array).slice(0, 3))])
 
 	# ---- 2. al otro lado de una casa (guarda)
 	var otros := 0
@@ -412,32 +525,54 @@ func _correr() -> void:
 			var par := _par_otro_lado(rect, sec)
 			if par.is_empty():
 				continue
-			var s3: Vector3 = par[0]
-			var g3: Vector3 = par[1]
-			var g := Vector2(g3.x, g3.z)
-			await _colocar(s3)
-			var alc := _alcance(s3, s3.distance_to(g3) + 16.0)
-			var ref := _referencia(alc, s3, g)
-			var ref_largo := _referencia(alc, s3, g, 10.0)
-			var antes := _fin_recto(s3, g3).distance_to(g)
-			v.set("_toque_edificio", null)
-			v.destino = v._ajustar_destino(g3)
-			var r := await _andar()
-			var k: Vector3 = r["k"]
-			var d := Vector2(k.x, k.z).distance_to(g)
-			var limpio := (r["mal"] as Array).is_empty()
-			if ref[1] != null and float(ref[0]) < 0.5:
-				_ok(d < 0.6 and limpio, "%s/%s al otro lado, con rodeo corto: Kael la rodea y acaba a %.2f m del toque (< 0,6) %s" % [
-					sec, b[0], d, str((r["mal"] as Array).slice(0, 3))])
-			else:
-				_ok(d <= antes + 1.0 and limpio,
-					"%s/%s al otro lado, sin rodeo de ≤ 6 m (%s): no la atraviesa y acaba en (%.2f, %.2f), %s, a %.2f m del toque (antes %.2f) %s" % [
-						sec, b[0], "con uno de ≤ 10 m" if ref_largo[1] != null and float(ref_largo[0]) < 0.5 else "ni de ≤ 10 m",
-						k.x, k.z, "de su lado" if _su_lado(k, s3, rect) else "rodeándola", d, antes,
-						str((r["mal"] as Array).slice(0, 3))])
+			await _otro_lado("%s/%s" % [sec, b[0]], rect, par)
 			otros += 1
 			n_sec += 1
 	_ok(otros >= 3, "hay casas con suelo a los dos lados para tocar al otro lado (%d)" % otros)
+
+	# ---- 1c (bis). peor coste al otro lado de los bloques altos más grandes de la ciudad (de más de 150 m² de planta)
+	var grandes_c: Array = []
+	for sec in P.ORDEN:
+		for b in P.trazado(sec).BLOQUES:
+			var rect: Rect2 = b[2]
+			if b[6] and v._bloque_alto(b) and rect.get_area() >= 150.0:
+				grandes_c.append([rect.get_area(), sec, b])
+	grandes_c.sort_custom(func(x: Array, y: Array) -> bool: return x[0] > y[0])
+	var grandes := 0
+	for gc in grandes_c:
+		if grandes >= 3:
+			break
+		var par := _par_otro_lado(gc[2][2], gc[1])
+		if not par.is_empty():
+			var rect: Rect2 = gc[2][2]
+			await _otro_lado("%s/%s (%.0f×%.0f m, grande, peor coste)" % [gc[1], gc[2][0], rect.size.x, rect.size.y], rect, par)
+			grandes += 1
+	_ok(grandes >= 2, "hay bloques grandes con suelo a los dos lados (%d de %d)" % [grandes, grandes_c.size()])
+
+	# ---- 2b. rodeo corto de verdad (revisión 19/11): casas y muros altos de ≤ 8 m de lado, con referencia de ≤ 6 m
+	var cortos := 0
+	var mirados := 0
+	for sec in P.ORDEN:
+		var en_sec := 0
+		for b in P.trazado(sec).BLOQUES:
+			if cortos >= 4 or en_sec >= 1:
+				break
+			var rect: Rect2 = b[2]
+			if not (b[6] and v._bloque_alto(b) and maxf(rect.size.x, rect.size.y) <= 8.0):
+				continue
+			var par := _par_otro_lado(rect, sec)
+			if par.is_empty():
+				continue
+			mirados += 1
+			var s3: Vector3 = par[0]
+			var g3: Vector3 = par[1]
+			var ref := _referencia(_alcance(s3, s3.distance_to(g3) + RODEO_REF + 2.0), s3, Vector2(g3.x, g3.z))
+			if ref[1] == null or float(ref[0]) >= 0.5:
+				continue
+			await _otro_lado("%s/%s (%.1f×%.1f m, rodeo corto)" % [sec, b[0], rect.size.x, rect.size.y], rect, par)
+			cortos += 1
+			en_sec += 1
+	_ok(cortos >= 1, "hay bloques con rodeo corto de verdad al otro lado (%d de %d mirados)" % [cortos, mirados])
 
 	# ---- 3. suelo libre (guarda): el destino es el toque
 	var libres := 0
@@ -462,7 +597,68 @@ func _correr() -> void:
 			libres += 1
 	_ok(libres >= 4, "hay toques en suelo libre (%d)" % libres)
 
+	# ---- 7. apagado (revisión 19/11): sin el rodeo, la recta de antes
+	if not casos.is_empty():
+		var s: Vector3 = casos[0][1]
+		var t: Vector2 = casos[0][2][0]
+		await _colocar(s)
+		var suelo = v._punto_suelo(t)
+		var recto = v._ajustar_recto(suelo)
+		Engine.set_meta("ciudad_rodeo", false)
+		v._punto_suelo(t)
+		var d = v._ajustar_destino(suelo)
+		Engine.remove_meta("ciudad_rodeo")
+		_ok(d != null and recto != null and (d as Vector3).is_equal_approx(recto) and v.get("_paso") == null,
+			"%s: con el rodeo apagado (ciudad_rodeo = false), el destino es el de la recta de antes (%s; recta %s)" % [
+				casos[0][0], str(d), str(recto)])
+		v._parar_kael()
+
 	# ---- 4. coste
-	_ok(ms_max <= 60.0, "el toque más caro tarda %.1f ms en el PC (≤ 60)" % ms_max)
+	_ok(ms_max <= LIMITE_MS, "lo más caro (toque o búsqueda de rodeo, también las del caso 2) tarda %.1f ms en el PC (≤ %.0f): %s; búsquedas cortadas por el tope: %d" % [
+		ms_max, LIMITE_MS, peor, cortados])
 	print("FALLOS: %d" % fallos)
 	quit(1 if fallos > 0 else 0)
+
+
+# Kael a un lado y el toque al otro (par de _par_otro_lado), derecho a _ajustar_destino. Con referencia de ≤ 6 m que
+# llega al toque, Kael ha de llegar (< 0,6 m); si no, no la atraviesa ni acaba más lejos que antes (+1 m). Sin tirones.
+func _otro_lado(nombre: String, rect: Rect2, par: Array) -> void:
+	var s3: Vector3 = par[0]
+	var g3: Vector3 = par[1]
+	var g := Vector2(g3.x, g3.z)
+	await _colocar(s3)
+	var alc := _alcance(s3, s3.distance_to(g3) + 16.0)
+	var ref := _referencia(alc, s3, g)
+	var ref_largo := _referencia(alc, s3, g, 10.0)
+	var antes := _fin_recto(s3, g3).distance_to(g)
+	v.set("_toque_edificio", null)
+	v.destino = v._ajustar_destino(g3)
+	_coste(nombre + " al otro lado", -1.0)
+	var r := await _andar()
+	var k: Vector3 = r["k"]
+	var d := Vector2(k.x, k.z).distance_to(g)
+	var limpio := (r["mal"] as Array).is_empty() and float(r["lento"]) <= LENTO_MAX
+	if ref[1] != null and float(ref[0]) < 0.5:
+		_ok(d < 0.6 and limpio, "%s al otro lado, con rodeo corto (referencia %.2f m): Kael la rodea y acaba en (%.2f, %.2f), a %.2f m del toque (< 0,6; antes %.2f); %.2f m a paso de andar con camino por delante %s" % [
+			nombre, ref[0], k.x, k.z, d, antes, r["lento"], str((r["mal"] as Array).slice(0, 3))])
+	else:
+		_ok(d <= antes + 1.0 and limpio,
+			"%s al otro lado, sin rodeo de ≤ 6 m (%s): no la atraviesa y acaba en (%.2f, %.2f), %s, a %.2f m del toque (antes %.2f); %.2f m a paso de andar con camino por delante %s" % [
+				nombre, "con uno de ≤ 10 m" if ref_largo[1] != null and float(ref_largo[0]) < 0.5 else "ni de ≤ 10 m",
+				k.x, k.z, "de su lado" if _su_lado(k, s3, rect) else "rodeándola", d, antes, r["lento"],
+				str((r["mal"] as Array).slice(0, 3))])
+
+
+# El punto del tejado de «b» más cercano a su centro que se ve desde la cámara (el primer choque es la casa), sin exigir
+# diferencia con la recta de antes: [pantalla, lo tocado, referencia, lo de antes] o [].
+func _caso_centro(b: Array, s: Vector3) -> Array:
+	var fr: Array = []
+	for i in 9:
+		for j in 9:
+			fr.append(Vector2(0.1 + 0.1 * i, 0.1 + 0.1 * j))
+	fr.sort_custom(func(x: Vector2, y: Vector2) -> bool: return x.distance_to(Vector2(0.5, 0.5)) < y.distance_to(Vector2(0.5, 0.5)))
+	for f in fr:
+		var c := _caso_tejado(b, s, [f], false, f)
+		if not c.is_empty():
+			return c
+	return []
