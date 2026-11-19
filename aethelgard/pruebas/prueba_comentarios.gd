@@ -110,6 +110,42 @@ func _datos() -> void:
 			caja.free()
 	capa.free()
 	print("FRASES %d" % total)
+	_enganches()
+
+
+# 1b (19/11, PC-12). ENGANCHES dice la verdad: cada escena que pide un momento (una llamada con el nombre del momento
+# entre comillas: _comentar, _comentar_luego, _programar_comentario, Comentarios.elegir o «_comentario_pendiente =»)
+# sale nombrada en su texto, y el
+# tramo de esa escena (separados por «;») no dice «pendiente». Se miran las escenas que usan comentarios.gd.
+const ESCENAS_COMENTARIOS := ["res://zona.gd", "res://ciudad_oakhaven.gd", "res://zonas3d/pastos_verdes_3d.gd",
+	"res://zonas3d/garganta_3d.gd", "res://zonas3d/ciclopea_3d.gd", "res://zonas3d/gran_bosque_3d.gd"]
+
+
+func _enganches() -> void:
+	var llamadas := 0
+	for ruta in ESCENAS_COMENTARIOS:
+		var codigo := FileAccess.get_file_as_string(ruta)
+		if codigo == "":
+			_fallo("1b: no se puede leer %s" % ruta)
+			continue
+		var archivo: String = ruta.get_file()
+		for m in C.MOMENTOS:
+			var re := RegEx.create_from_string("((_comentar|_comentar_luego|_programar_comentario|elegir)\\(|_comentario_pendiente = )\"%s\"" % m)
+			if re.search(codigo) == null:
+				continue
+			llamadas += 1
+			var texto: String = C.ENGANCHES.get(m, "")
+			var tramo := ""
+			for t in texto.split(";"):
+				if archivo in t:
+					tramo = t
+			if tramo == "":
+				_fallo("1b: %s pide «%s», pero ENGANCHES no lo nombra («%s»)" % [archivo, m, texto])
+			elif "pendiente" in tramo:
+				_fallo("1b: %s ya pide «%s», pero ENGANCHES lo da por pendiente («%s»)" % [archivo, m, tramo.strip_edges()])
+	if llamadas < 6:
+		_fallo("1b: solo encuentro %d llamadas a comentarios en las escenas (¿ha cambiado la forma de pedirlos?)" % llamadas)
+	print("ENGANCHES: %d llamadas comprobadas" % llamadas)
 
 
 # 2. Quién habla.

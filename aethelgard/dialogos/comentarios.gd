@@ -16,7 +16,8 @@ extends RefCounted
 # (animaciones/esperas/<héroe>.res: espera_vigilar, espera_brazalete, espera_flor, espera_apoyarse…). En 2D no se usa.
 #
 # Dónde se enganchan (ver «ENGANCHES» abajo): en las zonas 2D (zona.gd) la llegada y los cofres; en Oakhaven
-# (ciudad_oakhaven.gd), además, quedarse quieto; lo de 3D queda listo para quien lleve esas escenas.
+# (ciudad_oakhaven.gd), además, quedarse quieto; en 3D, Pastos Verdes (cofre y quieto), la Garganta (llegada, cofre y
+# cascada), Ciclópea y el Gran Bosque (cofre). prueba_comentarios (1b) comprueba que ENGANCHES siga al día.
 
 const META := "comentarios_dichos"
 const COLORES := {"Kael": Color(0.5608, 0.8275, 1.0), "Lya": Color(0.9098, 0.7686, 0.4157), "Garon": Color(0.75, 0.82, 0.95)}
@@ -85,13 +86,19 @@ const MOMENTOS := {
 }
 
 # ENGANCHES: dónde va cada momento y en qué archivo (el responsable de cada escena lo decide).
+# Tramos separados por «;», uno por escena: «(hecho)» si ya lo pide y «(pendiente)» si falta (19/11, PC-12: puesto al
+# día; prueba_comentarios 1b falla si una escena que ya lo pide no sale nombrada o sigue «pendiente»).
 const ENGANCHES := {
 	"llegar:oakhaven": "ciudad_oakhaven.gd, al entrar (hecho, con zona.gd _momento_llegada)",
-	"cofre": "zona.gd _abrir_cofre y ciudad_oakhaven.gd (hechos); garganta_3d.gd y pastos_verdes_3d.gd (pendiente)",
-	"quieto": "ciudad_oakhaven.gd tras 14 s sin moverse (hecho); en 3D, con las esperas de animaciones (pendiente)",
+	"cofre": "zona.gd _abrir_cofre (hecho); ciudad_oakhaven.gd (hecho); garganta_3d.gd tras el cofre raro, 1,2 s (hecho)"
+		+ "; pastos_verdes_3d.gd tras el premio, 1,2 s (hecho); ciclopea_3d.gd y gran_bosque_3d.gd tras el premio y sus"
+		+ " avisos (hecho)",
+	"quieto": "ciudad_oakhaven.gd tras 14 s sin moverse (hecho); pastos_verdes_3d.gd tras 14 s sin moverse, QUIETO_COMENTARIO"
+		+ " (hecho, prueba_comentarios_3d); en la Garganta, Ciclópea y el Gran Bosque 3D no se pide (pendiente: lo decide"
+		+ " quien lleve esas escenas)",
 	"llegar:lugar_nuevo": "zona.gd, la primera vez en la sesión que se entra en un lugar (hecho)",
-	"llegar:garganta": "la Garganta 2D por zona.gd (hecho); garganta_3d.gd al entrar (pendiente)",
-	"cascada_garganta": "garganta 3D al entrar en el mirador de la cascada (pendiente)",
+	"llegar:garganta": "la Garganta 2D por zona.gd (hecho); garganta_3d.gd al entrar, a los 2,5 s (hecho)",
+	"cascada_garganta": "garganta_3d.gd al acercarse a la cascada, a menos de 12 m de su eje (hecho)",
 }
 
 
