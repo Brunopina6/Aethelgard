@@ -132,7 +132,7 @@ func _unhandled_input(ev: InputEvent) -> void:
 # PESTANAS_19_11 (medido en el PC, docs en el commit): casi todo el coste de repintar no era meter los nodos uno a uno,
 # sino dar forma a los textos con «●», «○», «◀», «▶» o «✔», que la fuente del juego (Saira) no tiene: Godot busca cada
 # vez esa letra en las fuentes del sistema al entrar el botón en el árbol (≈0,6-0,9 ms por botón en el PC; Ajustes
-# tiene 98). Ocultar y volver a enseñar un nodo no vuelve a dar forma al texto; sacarlo del árbol y volver a meterlo,
+# tiene 90: 82 «●/○» y 8 «◀ ▶»). Ocultar y volver a enseñar un nodo no vuelve a dar forma al texto; sacarlo del árbol y volver a meterlo,
 # sí. Así que:
 #   - el cuerpo se rehace fuera del árbol y entra en la lista de una vez (algo más barato que nodo a nodo);
 #   - el de Ajustes no se tira al cambiar de pestaña: se queda oculto y, al volver, se enseña y se pone al día
@@ -775,6 +775,8 @@ func _sin_resalte() -> void:
 
 # El volumen de cada parte del sonido (sonido.gd): ◀ ▶ lo bajan o suben un 10 % y suena una muestra. Se guarda en
 # este aparato, aparte de la partida.
+# PESTANAS_19_11: este cuerpo se reutiliza oculto al cambiar de pestaña. Todo elemento que dependa de un estado debe
+# ir por _selector/_opcion, _filas_volumen o _notas para que _ajustes_al_dia lo ponga al día; si no, se queda desfasado.
 func _pintar_ajustes() -> void:
 	_filas_volumen = {}
 	_selectores = []

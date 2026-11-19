@@ -71,7 +71,7 @@
 |---|---|---|---|
 | Protagonistas v2/v3 de pie | V | V | **V**: `INFORME_REDMI_V12.md` (v694, §2): nadie se tumba en 30 s, ni v2 ni v3 (también 14/11 (RETOMAR), v717) |
 | NPC de Oakhaven sin bloquear | V | V (`prueba_npc_paso`) | P: `REDMI_15_11`, Kael cruza de la Puerta del Sur a la plaza con vecinos, de noche. La hora de más gente, sin probar |
-| Gran Bosque: mipmaps y matas | V (apagados) | V | V (medido): `INFORME_REDMI_V12.md` (v694, §1), ninguna combinación llega a 30 FPS en medio; las matas, descartadas para el móvil. Sigue AM-2 |
+| Gran Bosque: mipmaps y matas | V (apagados) | V | Medido, NO pasa: `INFORME_REDMI_V12.md` (v694, §1), ninguna combinación llega a 30 FPS en medio; las matas, descartadas para el móvil. Sigue AM-2 |
 
 **Documentos de cada elemento:**
 - `EREBO_ORBE_V12.md`, `EREBO_CINEMATICA_V12.md`, `EREBO_HIBRIDA_V12.md` y `HIBRIDA_SALIDA_19_11.md`;
