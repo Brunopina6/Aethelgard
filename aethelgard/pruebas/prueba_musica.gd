@@ -62,13 +62,15 @@ func _probar() -> void:
 # 1. Escenas, lugares y pistas.
 func _contextos() -> void:
 	var casos := {"res://carga.tscn": "carga", "res://combate.tscn": "combate", "res://mapa.tscn": "mapa",
-		"res://isla.tscn": "viento", "res://garganta.tscn": "mazmorra", "res://zonas3d/garganta_3d.tscn": "mazmorra", "res://zonas3d/pastos_verdes_3d.tscn": "pradera",
+		"res://isla.tscn": "arboleda", "res://garganta.tscn": "mazmorra", "res://zonas3d/garganta_3d.tscn": "mazmorra", "res://zonas3d/pastos_verdes_3d.tscn": "pradera",
 		"res://ciudad_oakhaven.tscn": "ciudad",          # Oakhaven hecha a mano (T-089, hereda de zona.gd)
 		"res://zonas3d/oakhaven_3d.tscn": "ciudad",      # Oakhaven 3D (T-103)
 		# V12 (19/11, C-10): la ciudad completa, el barrio y la muestra de la calle (las tres, Oakhaven en el banco)
 		# suenan como Oakhaven 3D, no en «silencio»
 		"res://zonas3d/ciudad/ciudad.tscn": "ciudad", "res://zonas3d/barrio/barrio.tscn": "ciudad",
 		"res://zonas3d/muestra_calle/muestra_calle.tscn": "ciudad",
+		# V12 (19/11, AM-9): el puerto de Sunken City 3D (olas y gaviotas) y la Arboleda (viento y campanillas)
+		"res://zonas3d/sunken_3d.tscn": "puerto", "res://zonas3d/arboleda_tramo/arboleda_tramo.tscn": "arboleda",
 		"res://escena_que_no_existe.tscn": "silencio"}
 	for ruta in casos:
 		var n := Node.new()
@@ -78,7 +80,8 @@ func _contextos() -> void:
 		n.free()
 	var lugares := [[{"tipo": "ciudad", "zona": "llanura"}, "ciudad"], [{"tipo": "lugar", "zona": "bosque"}, "bosque"],
 		[{"tipo": "lugar", "zona": "desierto"}, "desierto"], [{"tipo": "lugar", "zona": "llanura"}, "pradera"],
-		[{"tipo": "lugar", "zona": "nieve"}, "viento"]]
+		[{"tipo": "lugar", "zona": "nieve"}, "viento"],
+		[{"indice": 5, "nombre": "Sunken City", "tipo": "ciudad", "zona": "llanura"}, "puerto"]]   # (19/11, AM-9: la 2D)
 	var z := Node.new()
 	z.scene_file_path = "res://zona.tscn"
 	for l in lugares:
@@ -107,7 +110,38 @@ func _contextos() -> void:
 				_fallo("1: %s no es un bucle comprimido (bucle %d, formato %d)" % [ruta, s.loop_mode, s.format])
 			elif "suno" in ruta.to_lower():
 				_fallo("1: %s parece una canción de Suno" % ruta)
+	_regiones()
 	hechos.append("contextos y pistas")
+
+
+# 1b. V12 (19/11, AM-9): Sunken con olas y gaviotas; la Arboleda con campanillas (y sin ellas dentro de la Hospedería).
+func _regiones() -> void:
+	var puerto: String = Mus.CONTEXTOS["puerto"]["ambiente"]
+	if puerto.ends_with("viento.wav") or not ResourceLoader.exists(puerto) or not load(puerto) is AudioStreamOggVorbis \
+			or not load(puerto).loop:
+		_fallo("1b: el puerto no tiene su bucle de olas (pide %s)" % puerto)
+	var amb_a: String = Mus.CONTEXTOS["arboleda"]["ambiente"]
+	if amb_a == "" or Mus.CONTEXTOS["arboleda_interior"]["ambiente"] != amb_a \
+			or float(Mus.CONTEXTOS["arboleda_interior"]["db"]) > float(Mus.CONTEXTOS["arboleda"]["db"]) - 6.0:
+		_fallo("1b: dentro de la Hospedería el viento no es la misma pista al menos 6 dB más baja")
+	var esperado := {"puerto": "gaviota", "arboleda": "campanillas"}
+	for ctx in esperado:
+		var lista: Array = Son.DETALLES.get(ctx, {}).get("efectos", [])
+		if not esperado[ctx] in lista:
+			_fallo("1b: los detalles de «%s» no tienen «%s» (%s)" % [ctx, esperado[ctx], str(lista)])
+		for e in lista:
+			var d: Dictionary = Son.EFECTOS.get(e, {})
+			if d.is_empty() or String(d.get("bus", "")) != "Ambiente":
+				_fallo("1b: el detalle «%s» de «%s» no está en el catálogo o no va por Ambiente" % [e, ctx])
+				continue
+			for i in int(d.get("n", 1)):
+				var r: String = Son.ruta_archivo(d, i if d.has("n") else -1)
+				if not ResourceLoader.exists(r) or not load(r) is AudioStreamWAV:
+					_fallo("1b: falta %s («%s»)" % [r, e])
+	for ctx in ["arboleda_interior", "viento", "mapa"]:   # dentro y en las montañas, sin campanillas ni gaviotas
+		for e in Son.DETALLES.get(ctx, {}).get("efectos", []):
+			if e in ["campanillas", "gaviota"]:
+				_fallo("1b: «%s» suena en «%s»" % [e, ctx])
 
 
 # 2 y 3. Pedir, fundir y no reiniciar.
@@ -140,7 +174,51 @@ func _pedir_y_fundir() -> void:
 	await _esperar(5)
 	if Mus.arranques != arr or _amb()["activo"] != q or not q.playing:
 		_fallo("3: volver a pedir el mismo contexto reinicia la pista")
+	await _detalles_region()
 	hechos.append("pedir, fundir y no reiniciar")
+
+
+# 3b. V12 (19/11, AM-9): en el puerto suenan gaviotas; en la Arboleda, campanillas; al entrar en la Hospedería
+# («arboleda_interior») el viento sigue sin reiniciarse, baja y no suena ningún detalle.
+func _detalles_region() -> void:
+	for par in [["puerto", "gaviota"], ["arboleda", "campanillas"]]:
+		Mus.pedir(par[0])
+		await _esperar(3)
+		var p: AudioStreamPlayer = _amb()["activo"]
+		if not p.playing or p.stream == null or p.stream.resource_path != Mus.CONTEXTOS[par[0]]["ambiente"]:
+			_fallo("3b: «%s» no suena con su pista" % par[0])
+		var antes := int(Son.contador.get(par[1], 0))
+		var vistos := {}
+		for k in 40:                               # forzar el siguiente detalle (sin esperar 10-25 s)
+			Son._det_t = 0.0
+			Son._ultimo.clear()
+			await _esperar(1)
+			if Son.registro.size() > 0:
+				vistos[Son.registro[Son.registro.size() - 1][1]] = true
+		if int(Son.contador.get(par[1], 0)) <= antes:
+			_fallo("3b: en «%s» no suena «%s» (sonaron %s)" % [par[0], par[1], str(vistos.keys())])
+		Son.cortar()
+	var p: AudioStreamPlayer = _amb()["activo"]
+	var arr: int = Mus.arranques
+	await _esperar(70)
+	var v0 := p.volume_db
+	Mus.pedir("arboleda_interior")
+	await _esperar(80)
+	if Mus.arranques != arr or _amb()["activo"] != p or not p.playing:
+		_fallo("3b: al entrar en la Hospedería el viento se reinicia")
+	if p.volume_db > v0 - 6.0:
+		_fallo("3b: dentro de la Hospedería el viento no baja (%.1f → %.1f dB)" % [v0, p.volume_db])
+	var n := 0
+	for k in 40:
+		Son._det_t = 0.0
+		Son._ultimo.clear()
+		var c0 := int(Son.contador.get("campanillas", 0)) + int(Son.contador.get("rafaga_hierba", 0))
+		await _esperar(1)
+		n += int(Son.contador.get("campanillas", 0)) + int(Son.contador.get("rafaga_hierba", 0)) - c0
+	if n > 0:
+		_fallo("3b: dentro de la Hospedería suenan %d detalles" % n)
+	Mus.pedir("arboleda")
+	hechos.append("regiones (gaviotas, campanillas, Hospedería)")
 
 
 # 4. Pausa de la app.

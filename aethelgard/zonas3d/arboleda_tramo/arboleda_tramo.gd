@@ -371,6 +371,9 @@ func _cambiar_sala(entrar: bool, inmediato: bool) -> void:
 		t.tween_property(fundido, "color", Color(0, 0, 0, 1), 0.3)
 		await t.finished
 	dentro = entrar
+	var mus = get_node_or_null("/root/Musica")           # (19/11, AM-9) dentro, el viento más bajo y sin campanillas
+	if mus != null:
+		mus.pedir("arboleda_interior" if entrar else "arboleda")
 	for c in exterior:
 		c.visible = not entrar
 	hosp.mostrar(entrar)

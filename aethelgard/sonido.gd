@@ -65,6 +65,8 @@ extends Node
 #   («orbe_vision», «orbe_cierra»). Dónde se piden: docs/audio/inventario_sonidos.md, sección V9.
 # V12 (11/11): el Mar de Cristal (EFECTOS_DESIERTO, en OGG): el viento en calma y la tormenta de arena (bucles del lugar),
 #   la fogata y el oasis (emisores 3D), el temblor y el rugido del gusano, la pala y los pitidos del buscador.
+# V12 (19/11, AM-9): gaviotas en el puerto de Sunken City y campanillas de viento en la Arboleda Mítica (DETALLES «puerto» y
+#   «arboleda»; el contexto lo da musica.gd). Dentro de la Hospedería de la Arboleda, ninguna (contexto «arboleda_interior»).
 # V12 (12/11): identidad sonora propia de Bramavidrio (EFECTOS_BRAMAVIDRIO, en OGG, audio/bramavidrio/): rugido,
 #   respiración, mandíbula, placas, cristales, arena aspirada y escupida, impacto sísmico y derrota; su voz (familia
 #   «brama»). Los pide combate_bramavidrio.gd en los instantes de sus clips. Interruptor: BRAMAVIDRIO_IDENTIDAD (o
@@ -376,6 +378,11 @@ const EFECTOS := {
 	"hojas": {"a": "ambiente/hojas_", "n": 2, "bus": "Ambiente", "db": -16.0, "tono": 0.06, "p": 0, "max": 1, "espera": 3.0},
 	"gota": {"a": "ambiente/gota_", "n": 3, "bus": "Ambiente", "db": -16.0, "tono": 0.1, "p": 0, "max": 2, "espera": 0.5},
 	"gota_cueva": {"a": "ambiente/gota_cueva_", "n": 2, "bus": "Ambiente", "db": -14.0, "tono": 0.08, "p": 0, "max": 2, "espera": 0.5},
+	# V12 (19/11, AM-9): las gaviotas del puerto de Sunken City (DETALLES «puerto») y las campanillas de viento de la Arboleda
+	# Mítica (DETALLES «arboleda»). Derivados propios de Sonniss GDC 2019 (#GameAudioGDC), mono 48 kHz con pico −3 dBFS
+	# (gaviotas RMS −18 a −19; campanillas −19 a −27); procedencia y SHA-256: docs/v12/SONIDO_REGIONES_19_11.md. Medido, no oído
+	"gaviota": {"a": "ambiente/gaviota_", "n": 3, "bus": "Ambiente", "db": -20.0, "tono": 0.06, "p": 0, "max": 1, "espera": 4.0},
+	"campanillas": {"a": "ambiente/campanilla_", "n": 3, "bus": "Ambiente", "db": -15.0, "tono": 0.04, "p": 0, "max": 1, "espera": 5.0},
 	# ---- V12, enemigos (12/11): el Guardián de piedra, «el Centinela del Anillo» (combate_centinela.gd; APAGADO, interruptor
 	# «enemigos_v12»). Derivados propios de los paquetes GDC 2018-2020 de Sonniss (#GameAudioGDC), WAV mono 48 kHz de
 	# audio/efectos/centinela/ (procedencia: docs/audio/efectos_procedencia.csv). «guardian_barrido» y «guardian_golpe» los pide
@@ -627,6 +634,10 @@ const DETALLES := {
 	"ciudad_noche": {"cada": [10.0, 22.0], "efectos": ["grillo", "grillo", "mochuelo"], "campana": [180.0, 300.0]},
 	"bosque": {"cada": [8.0, 18.0], "efectos": ["rafaga_arbol", "rafaga_arbol", "hojas"]},
 	"viento": {"cada": [10.0, 22.0], "efectos": ["rafaga_hierba"]},
+	# V12 (19/11, AM-9): el puerto de Sunken City (gaviotas lejanas; las olas son el bucle de musica.gd) y la Arboleda Mítica
+	# (campanillas de viento y alguna ráfaga). Sin «arboleda_interior»: dentro de la Hospedería no suena ninguna.
+	"puerto": {"cada": [12.0, 26.0], "efectos": ["gaviota"]},
+	"arboleda": {"cada": [9.0, 20.0], "efectos": ["campanillas", "campanillas", "rafaga_hierba"]},
 	"mazmorra": {"cada": [4.0, 11.0], "efectos": ["gota", "gota", "gota_cueva"]},
 }
 

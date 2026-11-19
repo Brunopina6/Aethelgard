@@ -41,14 +41,28 @@ func _grabar() -> void:
 	var rec := AudioEffectRecord.new()
 	AudioServer.add_bus_effect(0, rec)
 	var tramos := [["carga", "carga"], ["mapa", "mapa"], ["pradera", "pradera"], ["bosque", "bosque"],
-		["desierto", "desierto"], ["mazmorra", "mazmorra"], ["ciudad", "ciudad"]]   # (19/11, C-10: Oakhaven 3D, la ciudad, el barrio y la muestra)
+		["desierto", "desierto"], ["mazmorra", "mazmorra"], ["ciudad", "ciudad"],   # (19/11, C-10: Oakhaven 3D, la ciudad, el barrio y la muestra)
+		# (19/11, AM-9) el puerto de Sunken City (olas) y la Arboleda (viento), con un detalle forzado al grabar (una gaviota,
+		# unas campanillas) para oírlo en la muestra; y dentro de la Hospedería, sin detalles y más bajo
+		["puerto", "puerto", true], ["arboleda", "arboleda", true], ["arboleda_interior", "arboleda_interior", true]]
+	var Son = root.get_node("Sonido")
+	var niveles := {}
 	for t in tramos:
 		Mus.pedir(t[1])
 		await _real(2.5)                           # el fundido de entrada (2 s) ya ha terminado
 		rec.set_recording_active(true)
-		await _real(SEGUNDOS)
+		if t.size() > 2:                           # el siguiente detalle de la región, ya (y otro a mitad)
+			Son._det_t = 0.0
+			await _real(SEGUNDOS * 0.5)
+			Son._det_t = 0.0
+			await _real(SEGUNDOS * 0.5 + 2.0)
+		else:
+			await _real(SEGUNDOS)
 		rec.set_recording_active(false)
-		_medir(rec.get_recording(), salida, t[0], t[1] == "carga")
+		niveles[t[0]] = _medir(rec.get_recording(), salida, t[0], t[1] == "carga")
+	if niveles.get("arboleda_interior", 0.0) > niveles.get("arboleda", 0.0) - 6.0:
+		fallos.append("dentro de la Hospedería el ambiente no baja 6 dB (%.1f frente a %.1f dBFS)" % [
+			niveles.get("arboleda_interior", 0.0), niveles.get("arboleda", 0.0)])
 	# el combate: su propia música (combate.gd), por el bus Musica; la exploración se calla
 	load("res://grupo.gd").datos()
 	Engine.set_meta("grupo_activo", ["Kael"])
@@ -66,10 +80,10 @@ func _grabar() -> void:
 	quit(1 if fallos.size() > 0 else 0)
 
 
-func _medir(w: AudioStreamWAV, salida: String, nombre: String, debe_callar: bool) -> void:
+func _medir(w: AudioStreamWAV, salida: String, nombre: String, debe_callar: bool) -> float:
 	if w == null:
 		fallos.append("%s: no hay grabación (¿driver de audio?)" % nombre)
-		return
+		return 0.0
 	w.save_to_wav("%s/sonido_%s.wav" % [salida, nombre])
 	var n := _nivel(w)
 	print("SEÑAL %-9s RMS %6.1f dBFS · pico %6.1f dBFS · %.1f s grabados" % [nombre, n[0], n[1], w.get_length()])
@@ -77,3 +91,4 @@ func _medir(w: AudioStreamWAV, salida: String, nombre: String, debe_callar: bool
 		fallos.append("%s debería ser silencio y da %.1f dBFS" % [nombre, n[0]])
 	elif not debe_callar and n[0] < -60.0:
 		fallos.append("%s no da señal (%.1f dBFS)" % [nombre, n[0]])
+	return n[0]

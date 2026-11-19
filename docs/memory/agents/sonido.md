@@ -841,3 +841,22 @@ de su combate (paso bajo en la música y un bosque antiguo por debajo, sin músi
   interiores? No he comprobado qué hace Oakhaven 3D en los suyos. Tampoco se han copiado las fuentes 3D propias de
   `oakhaven_3d.gd` (plaza, fuente, mercado, campana): sigue pendiente de decidir.
 - Sin oír (prueba muda y señal medida: «ciudad» RMS −32,9 dBFS, pico −11,3 dBFS el 19/11 04:28).
+
+## 2026-11-19, 20:50 · V12, AM-9: Sunken City con olas y gaviotas, la Arboleda con campanillas (SONIDO_REGIONES_19_11)
+
+- **Hecho:** `musica.gd` «puerto» suena con `audio/ambiente/puerto.ogg` (olas lejanas y agua en la madera, bucle de 36 s,
+  −12 dB) en Sunken 3D y ahora también en la 2D (lugar 5); gaviotas de vez en cuando (`DETALLES["puerto"]`). La Arboleda
+  (isla 2D y tramo de la Hospedería) tiene su contexto «arboleda»: el viento de siempre y campanillas de viento
+  (`DETALLES["arboleda"]`); dentro de la Hospedería, «arboleda_interior»: el mismo viento sin reiniciarse a −24 dB y sin
+  detalles (lo pide `arboleda_tramo.gd` al entrar y al salir). Siete derivados nuevos de Sonniss GDC 2019 y 2016, con
+  procedencia y SHA-256 en `docs/v12/SONIDO_REGIONES_19_11.md` y `docs/audio/efectos_procedencia.csv`; fila en
+  `docs/recursos.md`.
+- **Pruebas** (aisladas): `prueba_musica` 0 fallos (con el código anterior, 5: falla sin el cambio),
+  `prueba_integridad`, `prueba_efectos`, `prueba_audio_memoria` (20,79 de 21 MB), `prueba_sunken3d`,
+  `prueba_sunken3d_apagada` y `prueba_sunken_quilla` superadas; `prueba_musica_senal`, `prueba_arboleda_tramo` y
+  `prueba_isla` (con ventana) sin errores y «FALLOS: 0». Resúmenes en `D:\REBELUM_diagnostico\pruebas\2026-11-19_2036*`
+  a `…_204105\`.
+- **Empalme** de `puerto.ogg` comprobado con `empalme.py` sobre el OGG: sin clic (1,12 frente al resto del agua).
+- **Muestras:** `D:\REBELUM_diagnostico\sonido_muestras\2026-11-19_regiones\indice.md`. Nadie lo ha oído; nada en el Redmi.
+- **Queda:** las charcas y la lava de las zonas 2D; un emisor de olas contra el casco en Sunken 3D (sigue el bucle del
+  río); poco margen de memoria del audio (0,21 MB).

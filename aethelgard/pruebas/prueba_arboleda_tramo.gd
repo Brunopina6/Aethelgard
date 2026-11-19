@@ -3,7 +3,8 @@ extends SceneTree
 # docs/v12/ARBOLEDA_HOSPEDERIA.md; plan: docs/v12/SUNKEN_ARBOLEDA_PLAN.md §3.8). Con ventana (lee píxeles), como
 # prueba_isla. Todo en la partida AISLADA del banco (banco_pruebas.gd): la de siempre no se lee ni se escribe.
 #   A. Nadie más la enlaza: mapa.gd, mapamundi_3d.gd e isla.gd no la nombran; solo el banco, recursos.gd (EXCLUIR) y
-#      musica.gd; fuera de las APK 0, 1 y 2; isla_paso.png sin cambios (suma MD5); no se precarga; música «viento».
+#      musica.gd; fuera de las APK 0, 1 y 2; isla_paso.png sin cambios (suma MD5); no se precarga; ambiente «arboleda»
+#      (19/11: viento y campanillas; dentro de la Hospedería, «arboleda_interior»).
 #   B. Máscara combinada (isla_paso + paso_extra): desde LLEGADA se llega a la terraza, a la puerta y a la cornisa, y
 #      ninguna celda nueva queda suelta.
 #   B2. Con las piezas y los vecinos puestos (_choca_pieza y _choca_npc, como al andar): desde la puerta de la terraza se
@@ -121,12 +122,12 @@ func _estatico() -> void:
 	_ok(en_comun.is_empty(), "A: hay recursos del tramo en la precarga común: %s" % str(en_comun))
 	var n := Node2D.new()
 	n.scene_file_path = ESCENA
-	_ok(load("res://musica.gd").contexto_de(n) == "viento", "A: el tramo no tiene la música de viento")
+	_ok(load("res://musica.gd").contexto_de(n) == "arboleda", "A: el tramo no tiene el ambiente «arboleda» (viento y campanillas)")
 	n.free()
 	_ok(BP.EXPLORAR.has("arboleda") and BP.EXPLORAR["arboleda"].get("escena", "") == ESCENA, "A: falta la entrada del banco")
 	_ok("arboleda_flor" in BP.METAS_SESION, "A: «arboleda_flor» no es de la sesión del banco")
 	_ok(load("res://hallazgos.gd").FUERA.has("cinta_lumi"), "E: la Cinta de Lumi ha salido de FUERA")
-	hechos.append("A: nadie más la enlaza; fuera de las APK 0-2; isla_paso intacta; sin precarga; música «viento»")
+	hechos.append("A: nadie más la enlaza; fuera de las APK 0-2; isla_paso intacta; sin precarga; ambiente «arboleda»")
 	# G: frases
 	var F = load(CARPETA + "lumi_flor.gd")
 	var H = load(CARPETA + "hospederia.gd")
@@ -470,6 +471,10 @@ func _hospederia(v) -> void:
 	_ok(v.hosp.visible, "F: el interior no se ve")
 	_ok(v.camara.limit_left == int(v.hosp.ORIGEN.x), "F: la cámara no cambia sus límites al interior")
 	_ok(v.jugador.position.distance_to(v.hosp.entrada()) < 2.0, "F: Kael no aparece en la entrada de dentro")
+	# (19/11, AM-9) dentro: el viento más bajo (la misma pista, sin reiniciar) y sin campanillas
+	var mus = root.get_node("Musica")
+	_ok(mus.contexto == "arboleda_interior", "F: dentro de la Hospedería el ambiente es «%s»" % mus.contexto)
+	_ok(not root.get_node("Sonido").DETALLES.has("arboleda_interior"), "F: dentro de la Hospedería suenan detalles")
 	_foto("6_interior")
 	# Yedra
 	v.jugador.position = v.hosp.ORIGEN + v.hosp.anclas["mostrador"]
@@ -552,6 +557,7 @@ func _hospederia(v) -> void:
 	await _frames(10)
 	_ok(not v.dentro and v.jugador.position.distance_to(v.PUERTA_HOSPEDERIA) < 20.0, "F: al salir no se vuelve a la terraza")
 	_ok(v.exterior.all(func(c): return c.visible), "F: al salir la isla no vuelve")
+	_ok(root.get_node("Musica").contexto == "arboleda", "F: al salir el ambiente no vuelve a «arboleda»")
 	v.jugador.position = v.PORTAL + Vector2(0, 40)
 	v.camara.reset_smoothing()
 	v._comprobar_cerca()

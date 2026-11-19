@@ -699,7 +699,8 @@ func _salir() -> void:
 func _sonido_3d() -> void:
 	Sonido.oyente_3d(kael, cam)
 	Sonido.pasos_3d(kael, suelo_de_pasos)
-	# (no hay olas ni gaviotas en audio/: el agua que lame el casco es el bucle del río, bajo; pendiente de sonido)
+	# (19/11, AM-9: las olas y las gaviotas las pone el contexto «puerto» de musica.gd; aquí, el agua junto al casco sigue
+	# siendo el bucle del río, bajo: un emisor propio de olas contra la madera queda pendiente)
 	Sonido.fuente_linea(self, "rio", Vector3(29.6, -0.6, 52.0), Vector3(29.6, -0.6, 16.0), -15.0)
 	Sonido.fuente_linea(self, "rio", Vector3(50.4, -0.6, 52.0), Vector3(50.4, -0.6, 16.0), -15.0)
 	Sonido.fuente_linea(self, "puente_cruje", Vector3(40.0, 0.5, 44.0), Vector3(40.0, 0.5, 30.0))

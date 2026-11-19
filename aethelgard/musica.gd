@@ -33,9 +33,16 @@ const CONTEXTOS := {
 	# V12, el Mar de Cristal (sonido_v12_desierto.md §2): el viento en calma y la tormenta de arena (clima.gd los alterna)
 	"mar_cristal": {"musica": "", "ambiente": "res://audio/desierto/viento.ogg", "db": -13.0},
 	"tormenta_arena": {"musica": "", "ambiente": "res://audio/desierto/tormenta.ogg", "db": -9.0},
-	# V12 (15/11): Sunken City 3D, el puerto en la laguna: el viento suave de la costa (no hay olas ni gaviotas en audio/:
-	# pendiente). El agua, la madera y el mercado los pone la escena (Sonido.fuente_3d / fuente_linea).
-	"puerto": {"musica": "", "ambiente": AMB + "viento.wav", "db": -15.0},
+	# V12 (15/11): Sunken City 3D, el puerto en la laguna. Desde el 19/11 (AM-9), las olas: puerto.ogg, un bucle de 36 s de
+	# olas lejanas y agua que lame la madera (Sonniss GDC 2019 y 2016; docs/v12/SONIDO_REGIONES_19_11.md; RMS −25 dBFS), y
+	# las gaviotas de vez en cuando (Sonido, DETALLES «puerto»). El agua del casco, la madera y el mercado los pone la escena
+	# (Sonido.fuente_3d / fuente_linea). También la Sunken City 2D (zona.tscn, lugar 5).
+	"puerto": {"musica": "", "ambiente": AMB + "puerto.ogg", "db": -12.0},
+	# V12 (19/11, AM-9): la Arboleda Mítica (la isla 2D y su tramo de la Hospedería): el viento de siempre y campanillas de
+	# viento de vez en cuando (Sonido, DETALLES «arboleda»). Dentro de la Hospedería, el mismo viento más bajo (no se
+	# reinicia: es la misma pista) y sin campanillas: lo pide la escena del tramo al entrar y al salir.
+	"arboleda": {"musica": "", "ambiente": AMB + "viento.wav", "db": -10.0},
+	"arboleda_interior": {"musica": "", "ambiente": AMB + "viento.wav", "db": -24.0},
 	# V12 (11/11): «REBELUM — When the World Forgets», la canción del usuario (Suno Pro, incluida con su permiso) para la pantalla de inicio
 	# nueva, y RESERVADA para el desenlace del juego (docs/v12/MUSICA_TITULO.md). Está en Git desde el 11/11 (el usuario
 	# tiene Suno Pro y la autorizó; maestras en D:\REBELUM_musica\maestros). «privada»: si el archivo faltara en una
@@ -50,6 +57,7 @@ const CONTEXTOS := {
 	"pradera_musica": {"musica": "res://audio/musica/pastos/pastoral_pulse.ogg", "ambiente": AMB + "pradera.wav",
 		"db": -9.0, "db_musica": -9.0, "bucle": true, "bucle_desde": 11.17, "privada": true},
 }
+const LUGAR_SUNKEN := 5                           # Sunken City en mapa.gd (LUGARES)
 const MUSICA_PASTOS := ["musica", "pastos"]       # [sección, clave] de user://ajustes.cfg: «nueva» o «ambiente»
 
 
@@ -122,7 +130,7 @@ static func contexto_de(e: Node) -> String:
 		"res://zonas3d/cueva_provisional_3d.tscn":               # V12, mapamundi 3D: la cueva provisional
 			return "mazmorra"
 		"res://isla.tscn", "res://zonas3d/arboleda_tramo/arboleda_tramo.tscn":   # (16/11: el tramo experimental de la Arboleda)
-			return "viento"
+			return "arboleda"                             # (19/11, AM-9: el viento y sus campanillas)
 		"res://garganta.tscn", "res://zonas3d/garganta_3d.tscn":   # la Garganta 2D y la 3D (T-095)
 			return "mazmorra"
 		"res://zonas3d/pastos_verdes_3d.tscn", "res://prototipos/sendero_puente.tscn":
@@ -142,6 +150,8 @@ static func contexto_de(e: Node) -> String:
 			return "ciudad"                            # muestra de la calle (Oakhaven, en el banco), el mismo ambiente que Oakhaven 3D
 		"res://zona.tscn":
 			var l: Dictionary = Engine.get_meta("lugar", {})
+			if int(l.get("indice", -1)) == LUGAR_SUNKEN:          # V12 (19/11, AM-9): la Sunken City 2D, el puerto como la 3D
+				return "puerto"
 			if l.get("tipo", "") == "ciudad":
 				return "ciudad"
 			match l.get("zona", ""):
