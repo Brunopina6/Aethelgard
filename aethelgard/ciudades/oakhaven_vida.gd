@@ -122,6 +122,36 @@ const VOCES := [
 		{"texto": "¿Quién ha dejado este libro abierto?"},
 		{"texto": "Los faroles de la muralla, encendidos. Bien.", "si": "hito:oak_faroles"},
 	]},
+	# AM-8 (19/11, CONVERSACIONES_19_11): PROPUESTA [P], SIN CANON hasta que el usuario la apruebe
+	# (docs/v12/CONVERSACIONES_19_11.md). Un corrillo de vecinos sin nombre en el Pórtico del Concejo (sin modelo, como
+	# las demás voces; ningún NPC del usuario). Sigue su rutina: a la mañana, lo de las caravanas; a la tarde, los
+	# peajes; al anochecer, la ronda; y, de tarde y al anochecer, después del trabajo, lo que se cuenta de lo que hizo el
+	# grupo (solo con la decisión tomada en la partida, «decisiones»). Los rumores de siempre son las afirmaciones del
+	# barrio («af»: ciudades/oakhaven_barrio.gd, AFIRMACIONES, con su fuente «de», como en SABER), y valen sus reglas:
+	# solo caravanas, caminos, precios y guardia, y nada reservado (prueba_conversaciones). Las de decisión, primero.
+	{"id": "voz_corrillo", "nombre": "Unos vecinos", "casilla": Vector2(48, 22), "p": true, "frases": [
+		{"texto": "Al goblin de la Garganta lo dejaron ir, dicen.", "si": "decision:gorthor=perdonado",
+			"franja": ["tarde", "anochecer"], "p": true},
+		{"texto": "Ya no hay goblin en la Garganta. Eso dicen.", "si": "decision:gorthor=muerto",
+			"franja": ["tarde", "anochecer"], "p": true},
+		{"texto": "Del bosque de los Pastos traen brotes nuevos.", "si": "decision:guardian_bosque=purificado",
+			"franja": ["tarde", "anochecer"], "p": true},
+		{"texto": "Ha llegado madera gris de los Pastos. Dura.", "si": "decision:guardian_bosque=derrotado",
+			"franja": ["tarde", "anochecer"], "p": true},
+		{"texto": "Ferro vende hierro que canta. Y no es barato.", "si": "decision:hierro_ferro=entregado",
+			"franja": ["tarde", "anochecer"], "p": true},
+		{"texto": "Dicen que Ferro templa la espada de un chico.", "si": "decision:hierro_ferro=kael",
+			"franja": ["tarde", "anochecer"], "p": true},
+		{"texto": "Pip va enseñando una moneda nueva a todos.", "si": "decision:pip_oak=pagado",
+			"franja": ["tarde", "anochecer"], "p": true},
+		{"texto": "La caravana del sur llegó tres días tarde.", "franja": "manana", "af": "caravana_retraso",
+			"de": "caravaneros", "p": true},
+		{"texto": "Han vuelto a subir los peajes del sur.", "franja": "tarde", "af": "peaje_sube", "de": "caravaneros",
+			"p": true},
+		{"texto": "Ya ni el hilo se puede pagar. Todo sube.", "franja": ["manana", "tarde"], "p": true},
+		{"texto": "La guardia dobla la ronda del camino del este.", "franja": "anochecer", "af": "ronda_doble",
+			"de": "guardia", "p": true},
+	]},
 ]
 
 

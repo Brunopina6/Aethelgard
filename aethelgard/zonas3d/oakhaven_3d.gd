@@ -29,6 +29,13 @@ const Vida3D := preload("res://zonas3d/oakhaven/vida3d.gd")
 const MundoVivo := preload("res://zonas3d/oakhaven/mundo_vivo.gd")
 const Materiales := preload("res://zonas3d/garganta/materiales.gd")
 const Progreso := preload("res://progreso.gd")
+# AM-8 (19/11): lo que dicen los héroes al explorar (dialogos/comentarios.gd), como en la Oakhaven 2D: al llegar y al
+# quedarse quietos; ahí salen también, una sola vez, los que recuerdan una decisión [P]. Abajo a la derecha; no a la vez
+# que un aviso (comparten altura) y las voces callan mientras se ve uno.
+const Comentarios := preload("res://dialogos/comentarios.gd")
+const LLEGADA_COMENTARIO := 2.5           # s tras entrar
+const QUIETO_COMENTARIO := 14.0          # s sin moverse (como en la 2D y en Pastos Verdes 3D)
+const PAUSA_COMENTARIOS := 45.0          # s de pausa tras un comentario por estar quietos
 
 const INDICE := 0                          # lugar del mapa (mapa.gd; modo3d.OAKHAVEN)
 const INICIO := Vector3(40.0, 0.0, 53.2)   # ciudades/oakhaven.gd, INICIO (40, 53.5)
@@ -74,6 +81,9 @@ var salida := {"armada": false}
 var _dist_jugador := 18.0
 var _dist_puesta := 18.0
 var dialogo_actual := ""
+var _llegada_t := LLEGADA_COMENTARIO      # AM-8: > 0, lo que falta para el comentario de llegada
+var _quieto_t := 0.0
+var _pos_quieto := Vector3.INF
 
 
 func _ready() -> void:
@@ -313,6 +323,8 @@ func _process(delta: float) -> void:
 	if ocupado():
 		_parar_kael()
 		boton_accion.visible = false
+		_quitar_comentarios()                         # AM-8: un diálogo o un panel lo quita
+		_quieto_t = 0.0
 		_colocar_camara(1.0 - exp(-suavizado * delta))
 		_oclusion()
 		return
@@ -329,13 +341,14 @@ func _process(delta: float) -> void:
 			_salir()
 			return
 		_voces(delta)
+	_comentarios(delta)
 	_comprobar_cerca()
 
 
 # Las voces de la ciudad (oakhaven_vida.gd): cerca de la taberna se oye a la clientela, una frase cada pocos segundos.
 func _voces(delta: float) -> void:
 	_t_voz -= delta
-	if _t_voz > 0.0:
+	if _t_voz > 0.0 or _hay_comentario():      # AM-8: no encima de un comentario
 		return
 	for v in Vida.VOCES:
 		var c: Vector2 = v["casilla"]
@@ -357,6 +370,67 @@ func _voces(delta: float) -> void:
 				_t_voz = Vida.duracion(texto) + Vida.PAUSA
 				return
 	_t_voz = 1.0
+
+
+# AM-8 (19/11): los comentarios de los héroes (dialogos/comentarios.gd). La llegada, una vez a los 2,5 s; quieto,
+# tras 14 s sin moverse fuera de la posada (moverse reinicia la cuenta) y luego una pausa.
+func _comentarios(delta: float) -> void:
+	if _llegada_t > 0.0:
+		_llegada_t -= delta
+		if _llegada_t <= 0.0:
+			if _hay_hueco():
+				_comentar("llegar:oakhaven")          # (si no toca nada, no se insiste)
+			else:
+				_llegada_t = 0.5                     # sin hueco (un aviso en pantalla): se intenta enseguida
+	var p := kael.global_position
+	var movido := _pos_quieto == Vector3.INF or Vector2(p.x - _pos_quieto.x, p.z - _pos_quieto.z).length() > 0.002
+	_pos_quieto = p
+	if _quieto_t < 0.0:                              # pausa tras un comentario por estar quietos
+		_quieto_t = minf(_quieto_t + delta, 0.0)
+		return
+	if movido or destino != null or movimiento != "" or en_posada:
+		_quieto_t = 0.0
+		return
+	_quieto_t += delta
+	if _quieto_t >= QUIETO_COMENTARIO:
+		if not _hay_hueco():                         # un aviso en pantalla: se vuelve a mirar en 1 s
+			_quieto_t = QUIETO_COMENTARIO - 1.0
+		else:
+			_quieto_t = -PAUSA_COMENTARIOS if _comentar("quieto") else 0.0
+
+
+# Enseña un comentario si toca y hay hueco (nada abierto, ningún otro comentario ni aviso). Devuelve si salió.
+func _comentar(momento: String) -> bool:
+	if not _hay_hueco():
+		return false
+	var c := Comentarios.elegir(momento)
+	if c.is_empty():
+		return false
+	Comentarios.mostrar(capa_ui, c)
+	return true
+
+
+func _hay_hueco() -> bool:
+	if capa_ui == null or ocupado() or saliendo or cambiando or _hay_comentario():
+		return false
+	return aviso.modulate.a <= 0.05
+
+
+func _hay_comentario() -> bool:
+	if capa_ui == null:
+		return false
+	for n in capa_ui.get_children():
+		if n.name.begins_with("comentario") and not n.is_queued_for_deletion():
+			return true
+	return false
+
+
+func _quitar_comentarios() -> void:
+	if capa_ui == null:
+		return
+	for n in capa_ui.get_children():
+		if n.name.begins_with("comentario"):
+			n.queue_free()
 
 
 func _piezas_al_alcance() -> Array:

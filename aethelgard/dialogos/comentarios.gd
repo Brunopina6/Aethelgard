@@ -1,7 +1,8 @@
 extends RefCounted
 # Comentarios de los héroes al explorar (narrativa, 09/11): frases cortas que dicen solos, sin abrir un diálogo ni
 # parar al jugador, al llegar a un sitio, al abrir un cofre, al ver la cascada de la Garganta o al quedarse quietos.
-# La voz de cada uno sigue docs/narrativa/voces_heroes.md. Ninguna cambia la partida: solo se ven.
+# La voz de cada uno sigue docs/narrativa/voces_heroes.md. Ninguna cambia la partida: solo se ven (salvo el «ya dicho»
+# de los de DECISIONES [P], abajo).
 #
 #   const Comentarios := preload("res://dialogos/comentarios.gd")
 #   var c := Comentarios.elegir("cofre")                 # {} si no toca (nadie presente, ya dicho, sin datos)
@@ -16,8 +17,9 @@ extends RefCounted
 # (animaciones/esperas/<héroe>.res: espera_vigilar, espera_brazalete, espera_flor, espera_apoyarse…). En 2D no se usa.
 #
 # Dónde se enganchan (ver «ENGANCHES» abajo): en las zonas 2D (zona.gd) la llegada y los cofres; en Oakhaven
-# (ciudad_oakhaven.gd), además, quedarse quieto; en 3D, Pastos Verdes (cofre y quieto), la Garganta (llegada, cofre y
-# cascada), Ciclópea y el Gran Bosque (llegada y cofre). prueba_comentarios (1b) comprueba que ENGANCHES siga al día.
+# (ciudad_oakhaven.gd), además, quedarse quieto; en 3D, Oakhaven (llegada y quieto, AM-8 19/11), Pastos Verdes (cofre y
+# quieto), la Garganta (llegada, cofre y cascada), Ciclópea y el Gran Bosque (llegada y cofre). prueba_comentarios (1b)
+# comprueba que ENGANCHES siga al día.
 
 const META := "comentarios_dichos"
 const COLORES := {"Kael": Color(0.5608, 0.8275, 1.0), "Lya": Color(0.9098, 0.7686, 0.4157), "Garon": Color(0.75, 0.82, 0.95)}
@@ -89,11 +91,13 @@ const MOMENTOS := {
 # Tramos separados por «;», uno por escena: «(hecho)» si ya lo pide y «(pendiente)» si falta (19/11, PC-12: puesto al
 # día; prueba_comentarios 1b falla si una escena que ya lo pide no sale nombrada o sigue «pendiente»).
 const ENGANCHES := {
-	"llegar:oakhaven": "ciudad_oakhaven.gd, al entrar (hecho, con zona.gd _momento_llegada)",
+	"llegar:oakhaven": "ciudad_oakhaven.gd, al entrar (hecho, con zona.gd _momento_llegada); oakhaven_3d.gd al entrar, a"
+		+ " los 2,5 s (hecho, AM-8 19/11)",
 	"cofre": "zona.gd _abrir_cofre (hecho); ciudad_oakhaven.gd (hecho); garganta_3d.gd tras el cofre raro, 1,2 s (hecho)"
 		+ "; pastos_verdes_3d.gd tras el premio, 1,2 s (hecho); ciclopea_3d.gd y gran_bosque_3d.gd tras el premio y sus"
 		+ " avisos (hecho)",
-	"quieto": "ciudad_oakhaven.gd tras 14 s sin moverse (hecho); pastos_verdes_3d.gd tras 14 s sin moverse, QUIETO_COMENTARIO"
+	"quieto": "ciudad_oakhaven.gd tras 14 s sin moverse (hecho); oakhaven_3d.gd tras 14 s sin moverse, fuera de la posada"
+		+ " (hecho, AM-8 19/11); pastos_verdes_3d.gd tras 14 s sin moverse, QUIETO_COMENTARIO"
 		+ " (hecho, prueba_comentarios_3d); en la Garganta, Ciclópea y el Gran Bosque 3D no se pide (pendiente: lo decide"
 		+ " quien lleve esas escenas)",
 	"llegar:lugar_nuevo": "zona.gd, la primera vez en la sesión que se entra en un lugar (hecho); ciclopea_3d.gd y"
@@ -101,6 +105,60 @@ const ENGANCHES := {
 	"llegar:garganta": "la Garganta 2D por zona.gd (hecho); garganta_3d.gd al entrar, a los 2,5 s (hecho)",
 	"cascada_garganta": "garganta_3d.gd al acercarse a la cascada, a menos de 12 m de su eje (hecho)",
 }
+
+# ================================================================= lo que recuerdan de una decisión [P]
+# AM-8 (19/11, CONVERSACIONES_19_11): PROPUESTA, SIN CANON hasta que el usuario la apruebe (docs/v12/CONVERSACIONES_19_11.md).
+# Comentarios que solo salen si el jugador ya tomó esa decisión (las que de verdad guarda la partida en «decisiones»:
+# gorthor, guardian_bosque, hierro_ferro y pip_oak) y UNA SOLA VEZ EN LA PARTIDA: al decirse se apunta su id como bool en
+# mazmorras[DECISIONES_ESTADO] (ninguna clave nueva de partida; una partida antigua no lo tiene y vale «sin decir»).
+# Es lo único de este archivo que escribe en la partida, y solo ese «ya dicho».
+# Cuándo: en los momentos tranquilos de DECISIONES_EN, ANTES que las frases de siempre (son pocas y de una vez). Habla
+# quien esté en el grupo; si no está, espera a otra ocasión; la respuesta, solo si está quien responde.
+# Mismo formato que MOMENTOS (quien, texto, intencion, gesto, espera, respuesta) más «id», «si» (condición de
+# ciudades/oakhaven.gd, cumple()) y «p» (propuesta). Lo prueba prueba_conversaciones.
+const DECISIONES_ESTADO := "comentarios_decisiones"
+const DECISIONES_EN := ["quieto", "llegar:oakhaven", "llegar:lugar_nuevo"]
+const DECISIONES := [
+	{"id": "dec_gorthor_perdonado_kael", "si": "decision:gorthor=perdonado", "p": true, "quien": "Kael",
+		"texto": "Dejé ir a Gorthor. Supongo que hoy tocaba ser blando.",
+		"intencion": "Le pesa la duda y la tapa con una broma contra sí mismo", "gesto": "duda", "espera": "espera_empunadura",
+		"respuesta": {"quien": "Garon", "texto": "Blando, no. Bajar la espada cuesta más.",
+			"intencion": "Le da la razón sin adornos; es su forma de decir «bien hecho»", "gesto": "", "espera": "espera_hombros"}},
+	{"id": "dec_gorthor_perdonado_lya", "si": "decision:gorthor=perdonado", "p": true, "quien": "Lya",
+		"texto": "Kael… dejaste ir a Gorthor. No era fácil. Lo he apuntado.",
+		"intencion": "Se lo reconoce a su manera: con un dato y apuntándolo", "gesto": "decidida", "espera": "espera_cetro"},
+	{"id": "dec_gorthor_muerto_kael", "si": "decision:gorthor=muerto", "p": true, "quien": "Kael",
+		"texto": "Lo de Gorthor… No me sale ninguna broma. Vamos.",
+		"intencion": "Por una vez deja la broma: tres palabras y a andar", "gesto": "duda", "espera": "espera_brazalete",
+		"respuesta": {"quien": "Lya", "texto": "Kael… no hace falta que la busques.",
+			"intencion": "Le cuida sin pedirle que lo explique", "gesto": "preocupada", "espera": "espera_pelo"}},
+	{"id": "dec_gorthor_muerto_garon", "si": "decision:gorthor=muerto", "p": true, "quien": "Garon",
+		"texto": "Lo de Gorthor pesa. Se carga. Juntos.",
+		"intencion": "Un parte militar; el corazón, en la última palabra", "gesto": "", "espera": "espera_espalda"},
+	{"id": "dec_bosque_purificado_kael", "si": "decision:guardian_bosque=purificado", "p": true, "quien": "Kael",
+		"texto": "Un árbol me dio las gracias. Sigo sin saber qué contestar.",
+		"intencion": "Asombro que despacha con humor", "gesto": "ligero", "espera": "espera_vigilar",
+		"respuesta": {"quien": "Lya", "texto": "«De nada», Kael. Se dice «de nada».",
+			"intencion": "Le corrige la versión con cariño", "gesto": "", "espera": "espera_flor"}},
+	{"id": "dec_bosque_derrotado_lya", "si": "decision:guardian_bosque=derrotado", "p": true, "quien": "Lya",
+		"texto": "Esos árboles grises… Volveremos con semillas, ¿vale?",
+		"intencion": "Le duele y propone el siguiente paso", "gesto": "decidida", "espera": "espera_flor",
+		"respuesta": {"quien": "Garon", "texto": "Volveremos. Yo cavo.",
+			"intencion": "Literal y seco; se pone el primero sin decirlo", "gesto": "", "espera": "espera_apoyarse"}},
+	{"id": "dec_hierro_kael", "si": "decision:hierro_ferro=kael", "p": true, "quien": "Kael",
+		"texto": "Desde que Ferro la templó, la espada canta. Yo sigo desafinando.",
+		"intencion": "Orgullo que se ríe de sí mismo", "gesto": "ligero", "espera": "espera_empunadura",
+		"respuesta": {"quien": "Garon", "texto": "A practicar, entonces. Mañana, temprano.",
+			"intencion": "Una orden que es cariño: le entrenará", "gesto": "", "espera": "espera_hombros"}},
+	{"id": "dec_hierro_entregado_garon", "si": "decision:hierro_ferro=entregado", "p": true, "quien": "Garon",
+		"texto": "Rejas nuevas en la muralla. Con vuestro hierro. Bien.",
+		"intencion": "Soldado de Oakhaven: orgullo por su ciudad, dicho en tres golpes", "gesto": "", "espera": "espera_hombros"},
+	{"id": "dec_pip_pagado_kael", "si": "decision:pip_oak=pagado", "p": true, "quien": "Kael",
+		"texto": "Una moneda a Pip por un secreto. Mi mejor inversión.",
+		"intencion": "Presume en broma de un negocio diminuto", "gesto": "ligero", "espera": "espera_vigilar",
+		"respuesta": {"quien": "Lya", "texto": "Tu única inversión, Kael.",
+			"intencion": "Le pincha la vanidad, con humor suave", "gesto": "", "espera": "espera_pelo"}},
+]
 
 
 static func dichos() -> Dictionary:
@@ -114,13 +172,26 @@ static func elegir(momento: String, presentes: Array = []) -> Dictionary:
 	if presentes.is_empty():
 		presentes = load("res://grupo.gd").activos()
 	var d := dichos()
+	if momento in DECISIONES_EN:                   # [P] lo que recuerdan de una decisión, antes que lo de siempre
+		var libres_dec := decisiones_pendientes(presentes)
+		if not libres_dec.is_empty():
+			var fd := _por_turno(libres_dec, d, presentes)
+			fd["momento"] = "decision"              # no gasta el momento «unico» (la llegada sale otra vez)
+			return fd
 	var m: Dictionary = MOMENTOS[momento]
 	if m.get("unico", false) and d.has("@" + momento):
 		return {}
 	var libres: Array = m["frases"].filter(func(f): return f["quien"] in presentes and not d.has(f["texto"]))
 	if libres.is_empty():
 		return {}
-	# habla quien lleva más tiempo callado (el turno se guarda con los dichos); a igualdad, el orden de la lista
+	var f := _por_turno(libres, d, presentes)
+	f["momento"] = momento
+	return f
+
+
+# Habla quien lleva más tiempo callado (el turno se guarda con los dichos); a igualdad, el orden de la lista. Sin la
+# respuesta si quien responde no está.
+static func _por_turno(libres: Array, d: Dictionary, presentes: Array) -> Dictionary:
 	var turnos: Dictionary = d.get("@turnos", {})
 	var elegida: Dictionary = libres[0]
 	for x in libres:                               # (sort_custom no es estable: se busca a mano)
@@ -130,8 +201,20 @@ static func elegir(momento: String, presentes: Array = []) -> Dictionary:
 	var r = f.get("respuesta")
 	if r is Dictionary and not r["quien"] in presentes:
 		f.erase("respuesta")
-	f["momento"] = momento
 	return f
+
+
+# [P] Los comentarios de decisión que pueden salir ya: su decisión tomada, sin decir aún en esta partida, y quien habla
+# en el grupo (y no dicho en la sesión, por si la partida aún no se ha guardado).
+static func decisiones_pendientes(presentes: Array) -> Array:
+	var Oak = load("res://ciudades/oakhaven.gd")
+	var d := dichos()
+	return DECISIONES.filter(func(f): return f["quien"] in presentes and not decision_dicha(f["id"]) \
+		and not d.has(f["texto"]) and Oak.cumple(f["si"]))
+
+
+static func decision_dicha(id: String) -> bool:
+	return load("res://progreso.gd").estado(DECISIONES_ESTADO, id)
 
 
 # Apunta que se dijo (lo llama mostrar(); las pruebas pueden llamarlo sin interfaz).
@@ -145,6 +228,8 @@ static func apuntar(c: Dictionary) -> void:
 	d["@turnos"] = turnos
 	d["@cuenta"] = int(d.get("@cuenta", 0)) + 1
 	Engine.set_meta(META, d)
+	if c.has("id") and c.has("si"):                # [P] un comentario de decisión: una sola vez en la partida
+		load("res://progreso.gd").poner_estado(DECISIONES_ESTADO, c["id"])
 
 
 # Lo enseña en una caja pequeña abajo a la derecha (el nombre en su color y la frase) y, si la hay, la respuesta

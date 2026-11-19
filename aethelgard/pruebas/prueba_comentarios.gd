@@ -119,7 +119,8 @@ func _datos() -> void:
 # «return») sale nombrada en su texto, y el tramo de esa escena (separados por «;») no dice «pendiente». Se miran las
 # escenas que usan comentarios.gd.
 const ESCENAS_COMENTARIOS := ["res://zona.gd", "res://ciudad_oakhaven.gd", "res://zonas3d/pastos_verdes_3d.gd",
-	"res://zonas3d/garganta_3d.gd", "res://zonas3d/ciclopea_3d.gd", "res://zonas3d/gran_bosque_3d.gd"]
+	"res://zonas3d/garganta_3d.gd", "res://zonas3d/ciclopea_3d.gd", "res://zonas3d/gran_bosque_3d.gd",
+	"res://zonas3d/oakhaven_3d.gd"]                 # (AM-8, 19/11) la Oakhaven 3D: llegada y quieto
 
 
 func _enganches() -> void:
@@ -151,7 +152,8 @@ func _enganches() -> void:
 				_fallo("1b: %s pide «%s», pero ENGANCHES no lo nombra («%s»)" % [archivo, m, texto])
 			elif "pendiente" in tramo:
 				_fallo("1b: %s ya pide «%s», pero ENGANCHES lo da por pendiente («%s»)" % [archivo, m, tramo.strip_edges()])
-	if llamadas < 15:                   # (revisión 19/11) las 15 de hoy: si baja, ha cambiado la forma de pedirlos
+	if llamadas < 17:                   # (revisión 19/11) las 15 de entonces y (AM-8) las 2 de la Oakhaven 3D: si baja,
+										# ha cambiado la forma de pedirlos
 		_fallo("1b: solo encuentro %d llamadas a comentarios en las escenas (¿ha cambiado la forma de pedirlos?)" % llamadas)
 	print("ENGANCHES: %d llamadas comprobadas" % llamadas)
 
