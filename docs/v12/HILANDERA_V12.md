@@ -87,7 +87,7 @@ añadido, el objeto no existe. Encuadre (ventana 900 × 600, 2,0 m de alto de vi
 
 - Nuevos: `aethelgard/combate_hilandera.gd` (y `.uid`); `aethelgard/enemigos/hilandera/` (`hilandera_3d.gd` y `.uid`,
   `hilandera_3d.tscn`, el GLB y sus tres texturas con sus `.import`, `fuentes_blender/crear_clips.py` con `.gdignore`);
-  `aethelgard/pruebas/prueba_hilandera_combate.gd` (y `.uid`).
+  `aethelgard/pruebas/prueba_hilandera_combate.gd` y `prueba_hilandera_modelo.gd` (y sus `.uid`).
 - `aethelgard/combate.gd`: precarga del módulo; `MODELOS["hilandera"]`, `ENEMIGOS["hilandera"]`, GRUPOS[33],
   `ANIM["hilandera"]`; ganchos «V12, Hilandera» en `_elegir_enemigos` (preparar), `_turno_enemigo` (su IA),
   `_animar_golpe` (su rama con `_ligar(impacto)`), `_actualizar` (repasar la marca) y `_comprobar_fin` (al_acabar).
@@ -148,6 +148,25 @@ SUPERADAS 6 · FALLIDAS 0 · MANUALES 0 · NO SEGURAS 0
 partida.save real: sin cambios · carpeta real de datos: sin cambios · proyecto: sin cambios · otros Godot: 0
 ```
 
+`2026-11-19_193336` (prueba de modelo nueva, `prueba_hilandera_modelo`, en la lista; repetida con `prueba_integridad` y
+`prueba_hilandera_combate` en `2026-11-19_193418`: SUPERADAS 3 · FALLIDAS 0, `git status` igual):
+
+```
+prueba_hilandera_modelo SUPERADA     2,3 s
+  ok    la mordida adelanta las mandíbulas 0.765 m en el impacto
+  ok    en reposo, las mandíbulas 0.730 m por delante de su sitio
+  ok    mordida_resonante: impacto a 0.733 s de la orden (esperado 0.733 ± 0.05)
+  ok    trama_de_eco: impacto a 0.833 s de la orden (esperado 0.833 ± 0.05)
+  ok    aviso de la marca a 0.400 s (0,40)
+  ok    cae al suelo: la raíz baja de 0.001 a -0.478 m
+FALLOS: 0
+```
+
+(Comprueba los 8 clips, que cada uno gira los 22 huesos, que los ataques, la marca, el golpe y la entrada acaban en la
+pose del reposo, los bucles, las texturas 2K comprimidas, que el GLB no trae cámaras, aviso e impacto una vez y en su
+ancla también con pausa y con un golpe a medias, la derrota en el suelo sin atacar ni avisar, revivir, la entrada desde
+1,0 m por detrás, el alcance, ALTURA y `.new()`.)
+
 Qué comprueba `prueba_hilandera_combate`: **U** (apagada: interruptor, `preparar()`, solo su grupo, nada al azar,
 precarga, afinidades, modelo y sus 7 sonidos en el catálogo); **A** (encendida con Kael, Lya y Garon; se defienden hasta
 verlo todo y luego atacan): la entrada con su clip; cada marca con una señal «aviso», sin impacto ni daño, «⚠ Cargando» y
@@ -178,5 +197,5 @@ Garon; tendida en el suelo, sus patas derechas llegan bajo Garon.
   privadas.
 - **Redmi:** ver el caso del banco: encuadre 900 × 600, legibilidad de la marca y del anillo con el perfil bajo,
   rendimiento (GLB de 8,6 MB y tres texturas 2K). Sin probar en el móvil.
-- **Sin prueba de modelo propia** (como `prueba_cencerrante_modelo`: clips, bucles, anclas con pausa, texturas). La
-  cubren en parte `prueba_hilandera_combate` (anclas, señales, entrada, derrota) y los renders; queda pendiente.
+- **Sin capturas de estudio** del modelo (como `prueba_cencerrante_fotos`, con la textura sin comprimir frente a
+  comprimida): las texturas van comprimidas como las del Cencerrante, sin esa comparación propia.
