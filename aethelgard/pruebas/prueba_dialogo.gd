@@ -1,4 +1,7 @@
 extends SceneTree
+# RETIRADA el 19/11 (PC-8; lista_pruebas.txt): diagnóstico desfasado desde el 10/11, sin aserciones. Lo cubren
+# prueba_mando (4), prueba_prologo (1 y 4), prueba_dialogo_interfaz (8), prueba_oakhaven y, con el dedo, prueba_toque.
+# Se conserva como estaba, por si sirve para mirar a mano.
 # Prueba de Dialogic: abre una escena; en la zona habla con el NPC más cercano. Cada 25
 # fotogramas pulsa la acción de avanzar el texto y dice qué se está mostrando.
 
