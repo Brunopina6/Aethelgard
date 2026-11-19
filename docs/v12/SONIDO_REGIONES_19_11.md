@@ -114,4 +114,14 @@ y `empalmes.txt` (el `viento.wav` de siempre, que usa la Arboleda: clic 0,64, co
   emisor propio de olas contra la madera (por ejemplo, de la rampa de barcas de arriba, en mono) sería mejor.
 - **Charcas y lava de las zonas 2D:** no hechas. `sonido.gd` (`agua_zona`, `AGUA_2D`) solo pone sonido al río de agua;
   la lava (`ceniza`) y el veneno (`yermo`) no suenan, y las charcas tampoco (por diseño, `mascara_rio`). Haría falta un
-  bucle de lava (burbujeo grave) y otro de charca, y que `agua_zona` acepte esos estilos y las manchas que no son río.
+  bucle de lava (burbujeo grave) y otro de charca, y que `agua_zona` acepte esos estilos y las manchas que no son río
+  (`AGUA_2D := {"agua": "rio_2d", "lava": "lava_2d"}` y un efecto `lava_2d` con `dos_d`, como `rio_2d`).
+  - Candidatos de lava mirados (Sonniss, misma licencia): GDC 2018 / Discover Oregon «Lava from the Kilauea Volcano in
+    Hawaii» (4 archivos; medido el 19/11: casi toda la energía por debajo de 250 Hz, que es viento en el micrófono, y los
+    chasquidos de la lava muy bajos, medios a −55/−65 dBFS: dudoso sin oírlo); GDC 2018 / Charlie Atanasyan «Geyser»
+    (`GEY Steam release hot with medium pressure and light muddy bubbles.wav`); GDC 2017 / Mattia Cellotto «Water
+    Volumes» (`Dry,Ice,Bubbling,Medium,Intensity,Liquid,Loop_01.wav`, bajado de tono para un burbujeo espeso); GDC 2019 /
+    Charlie Atanasyan «Ethiopia» (`ETH Volcano medium activity magma erupting continuously degassing and rock falling.wav`).
+  - Memoria: con 0,21 MB de margen, el bucle de lava tendría que ir a 22 050 Hz (y entrar en `FRECUENCIA` de
+    `prueba_audio_memoria.gd`), como el viento.
+  - Se dejó por el límite de tiempo del encargo: mejor entregar lo de Sunken y la Arboleda probado que una lava a medias.
