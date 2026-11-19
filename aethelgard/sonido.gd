@@ -380,7 +380,8 @@ const EFECTOS := {
 	"gota_cueva": {"a": "ambiente/gota_cueva_", "n": 2, "bus": "Ambiente", "db": -14.0, "tono": 0.08, "p": 0, "max": 2, "espera": 0.5},
 	# V12 (19/11, AM-9): las gaviotas del puerto de Sunken City (DETALLES «puerto») y las campanillas de viento de la Arboleda
 	# Mítica (DETALLES «arboleda»). Derivados propios de Sonniss GDC 2019 (#GameAudioGDC), mono 48 kHz con pico −3 dBFS
-	# (gaviotas RMS −18 a −19; campanillas −19 a −27); procedencia y SHA-256: docs/v12/SONIDO_REGIONES_19_11.md. Medido, no oído
+	# (gaviotas RMS −18 a −19; campanillas −26,3 a −26,7: la 2, igualada por RMS en la revisión del 19/11, pico −10);
+	# procedencia y SHA-256: docs/v12/SONIDO_REGIONES_19_11.md. Medido, no oído
 	"gaviota": {"a": "ambiente/gaviota_", "n": 3, "bus": "Ambiente", "db": -20.0, "tono": 0.06, "p": 0, "max": 1, "espera": 4.0},
 	"campanillas": {"a": "ambiente/campanilla_", "n": 3, "bus": "Ambiente", "db": -15.0, "tono": 0.04, "p": 0, "max": 1, "espera": 5.0},
 	# ---- V12, enemigos (12/11): el Guardián de piedra, «el Centinela del Anillo» (combate_centinela.gd; APAGADO, interruptor

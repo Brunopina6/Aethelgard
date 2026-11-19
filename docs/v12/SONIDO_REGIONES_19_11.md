@@ -14,7 +14,7 @@ mudas; la escucha final es del usuario, con las muestras de
 | Lugar | Antes | Ahora |
 |---|---|---|
 | Sunken City 3D (`zonas3d/sunken_3d.tscn`) | contexto «puerto»: `viento.wav` a −15 dB | contexto «puerto»: **`audio/ambiente/puerto.ogg`** (olas lejanas y agua que lame la madera, bucle de 36 s) a −12 dB, y **gaviotas** de vez en cuando (cada 12-26 s, `DETALLES["puerto"]`) |
-| Sunken City 2D (`zona.tscn`, lugar 5 de `mapa.gd`) | contexto «ciudad»: la pradera y pájaros | contexto «puerto», como la 3D |
+| Sunken City 2D (`zona.tscn`, lugar 5 de `mapa.gd`) | contexto «ciudad»: la pradera y pájaros | contexto «puerto», como la 3D. **[P]** desde la revisión: interruptor `puerto_sunken_2d` de `musica.gd` (encendido), pendiente de la decisión del usuario ([D] 1, §7) |
 | Arboleda Mítica (`isla.tscn`) y su tramo de la Hospedería (`zonas3d/arboleda_tramo/`) | contexto «viento»: `viento.wav` a −10 dB y ráfagas de hierba | contexto **«arboleda»**: el mismo viento a −10 dB y **campanillas de viento** (2 de cada 3 detalles; cada 9-20 s) o una ráfaga |
 | Dentro de la Hospedería del Peregrino | lo mismo que fuera | contexto **«arboleda_interior»**: el mismo viento, **sin reiniciarse**, a −24 dB, y **ningún detalle** |
 
@@ -40,7 +40,7 @@ tal cual ni atribuirse su autoría. Leída hoy en `Sonniss.com - GDC 2019 - Game
 | `audio/efectos/ambiente/gaviota_2.wav` | GDC 2019 / The Sound Pack Tree - Sonic Seaside/205300 - Crazy Harbor Seagulls - Loop.wav | 0,0-3,2 s, banda 450 Hz-7 kHz (sin el retumbo grave del puerto), fundidos 0,3/0,6 s | 3,20 s · −3,0 / −19,2 | `cd7c4557e5307fac21938ce2fbf421ac0be9a3471a60dd469fdf7be5c6552f77` |
 | `audio/efectos/ambiente/gaviota_3.wav` | ídem | 19,5-22,4 s, igual tratamiento | 2,90 s · −3,0 / −17,9 | `cd7c4557e5307fac21938ce2fbf421ac0be9a3471a60dd469fdf7be5c6552f77` |
 | `audio/efectos/ambiente/campanilla_1.wav` | GDC 2019 / Eiravaein Works - Helina/Helinä,windchimes,aluminum,pipes,woodclapper,aluminumwindcatcher,metalchain,twine,release,gentle,lingering,MidSide,alt.wav | canal Mid (grabado en Mid-Side: el canal 2 es el Side, 17 dB más bajo), 0,3-4,6 s, paso alto 150 Hz, fundido de salida 1,2 s | 4,30 s · −3,0 / −26,3 | `296439cca6b7c1ef7b5ad62cb653b5765d50d5566f6ed895b3bc54ebd7b89af6` |
-| `audio/efectos/ambiente/campanilla_2.wav` | ídem | canal Mid, 8,8-13,0 s (la segunda ráfaga) | 4,20 s · −3,0 / −19,5 | `296439cca6b7c1ef7b5ad62cb653b5765d50d5566f6ed895b3bc54ebd7b89af6` |
+| `audio/efectos/ambiente/campanilla_2.wav` | ídem | canal Mid, 8,8-13,0 s (la segunda ráfaga); desde la revisión del 19/11, igualada por RMS a las otras dos (§7) | 4,20 s · −10,0 / −26,5 (antes −3,0 / −19,5) | `296439cca6b7c1ef7b5ad62cb653b5765d50d5566f6ed895b3bc54ebd7b89af6` |
 | `audio/efectos/ambiente/campanilla_3.wav` | GDC 2019 / Eiravaein Works - Helina/Helinä,windchimes,mixed,paper,aluminum,tuned,glassclappermini,windcatcher,cottonrope,release,gentle,lingering,MidSide.wav | canal Mid, 0,0-6,0 s, paso alto 150 Hz, fundido de salida 1,5 s | 6,00 s · −3,0 / −26,7 | `ca9649eafb7a150bedd9b5a86271f3dc122a6675a726049e003bc7fcc53c3b77` |
 
 Los mismos SHA-256 están en `docs/audio/efectos_procedencia.csv` (las seis filas de `ambiente/gaviota_*` y
@@ -89,7 +89,7 @@ golpeteo que a campanillas.
 | Prueba | Resultado | Resumen |
 |---|---|---|
 | `prueba_musica` (aserciones nuevas 1b y 3b) | SUPERADA, «FALLOS: 0» | `D:\REBELUM_diagnostico\pruebas\2026-11-19_203630\` |
-| la misma con `musica.gd` y `sonido.gd` del commit anterior | FALLIDA, «FALLOS: 5» (isla y tramo dan «viento», la Sunken 2D da «ciudad», el puerto pide `viento.wav`, no suena ninguna gaviota) | `…\2026-11-19_203705\` |
+| la misma con `musica.gd` y `sonido.gd` del commit anterior | FALLIDA, «FALLOS: 5» (isla y tramo dan «viento», la Sunken 2D da «ciudad», el puerto pide `viento.wav`, no suena ninguna gaviota). **Corrección (revisión):** esa pasada tuvo además dos «SCRIPT ERROR: Invalid access to property or key 'arboleda'» que cortaron 1b y 3b a medias: las aserciones de la Hospedería no llegaron a evaluarse. Repetida sin errores en §7 | `…\2026-11-19_203705\` |
 | `prueba_integridad` | SUPERADA | `…\2026-11-19_203630\` |
 | `prueba_efectos` (catálogo: 228 efectos, 335 archivos QOA mono) y `prueba_audio_memoria` (20,79 MB de 21) | SUPERADAS | `…\2026-11-19_203727\` |
 | `prueba_musica_senal` (con ventana, driver real; aserción nueva: la Hospedería 6 dB más baja) y `prueba_arboleda_tramo` (con ventana; aserciones nuevas: «arboleda», y dentro «arboleda_interior» sin detalles) | MANUAL (terminan sin errores, «FALLOS: 0»; dejan grabaciones y capturas) | `…\2026-11-19_203816\` |
@@ -125,3 +125,41 @@ y `empalmes.txt` (el `viento.wav` de siempre, que usa la Arboleda: clic 0,64, co
   - Memoria: con 0,21 MB de margen, el bucle de lava tendría que ir a 22 050 Hz (y entrar en `FRECUENCIA` de
     `prueba_audio_memoria.gd`), como el viento.
   - Se dejó por el límite de tiempo del encargo: mejor entregar lo de Sunken y la Arboleda probado que una lava a medias.
+
+## 7. Revisión (19/11/2026, SONIDO_REGIONES_19_11_REVISION)
+
+Arreglos de los cuatro hallazgos de la revisión. Nadie lo ha oído; nada en el Redmi.
+
+1. **(media) La Sunken City 2D del juego normal pasaba de «ciudad» a «puerto» sin interruptor.** Ahora es una propuesta
+   **[P]** con interruptor: `static var puerto_sunken_2d := true` en `musica.gd`, que lee `contexto_de`. Con `false`
+   vuelve a «ciudad» como antes del 19/11; la Sunken 3D (banco) sigue en «puerto» en los dos casos. Se deja encendido
+   para que el usuario lo oiga jugando; si no lo aprueba, basta ponerlo a `false` (o quitar las dos líneas de
+   `LUGAR_SUNKEN` y el caso de la prueba).
+   - **[D] 1, decisión del usuario:** ¿la Sunken City 2D suena a puerto (olas y gaviotas) o como las demás ciudades?
+2. **(baja) La pasada negativa de `prueba_musica` abortaba con SCRIPT ERROR.** `_regiones` y `_detalles_region` ya no
+   indexan a ciegas: si falta un contexto, un fallo con su nombre. Además, antes de entrar en la Hospedería se comprueba
+   que el viento suena y que el contexto pasa a ser «arboleda_interior». Nueva aserción en el paso 1: el interruptor
+   existe, apagado da «ciudad» a la Sunken 2D y «puerto» a la 3D, y encendido de nuevo, «puerto».
+3. **(baja) El plan (`SUNKEN_ARBOLEDA_PLAN.md` l.261 y l.268) pone campanillas dentro de la Hospedería**; la
+   implementación las calla dentro (lectura de «que no suene en interiores donde no toque»). No cambia el código.
+   - **[D] 2, decisión del usuario:** ¿campanillas dentro de la Hospedería, más bajas y espaciadas, o ninguna (hoy)?
+4. **(baja) `campanilla_2.wav` sonaba unos 7 dB más fuerte** (RMS −19,5 frente a −26,3 y −26,7). Rehecha desde el
+   mismo original y tramo (canal Mid, 8,8-13,0 s, paso alto 150 Hz, fundidos 0,05/1,2 s), igualada por RMS a −26,5 dBFS
+   con techo de pico −3 (queda pico −10,0). Mismo SHA-256 de origen; fila actualizada en `efectos_procedencia.csv`.
+   Herramienta y medidas antes/después: `D:\REBELUM_diagnostico\sonido_muestras\2026-11-19_regiones_revision\`
+   (`indice.md`, `herramientas\campanilla_2_rms.py`, `despues\medidas_campanillas.json`).
+
+**Pruebas (datos aislados; `git status` igual antes y después de cada pasada; «otros Godot: 0»):**
+
+| Pasada | Resultado | Resumen |
+|---|---|---|
+| ANTES: `prueba_musica` vieja con `musica.gd`/`sonido.gd` de `b2da680^` | FALLIDA, 5 fallos y 2 «SCRIPT ERROR … key 'arboleda'» (se reproduce el hallazgo 2) | `D:\REBELUM_diagnostico\pruebas\2026-11-19_205248\` |
+| `prueba_musica`, `prueba_integridad`, `prueba_efectos`, `prueba_audio_memoria` (20,79 MB) con los arreglos | SUPERADAS, «FALLOS: 0», sin SCRIPT ERROR | `…\2026-11-19_205603\` |
+| DESPUÉS, negativa: `prueba_musica` nueva con `musica.gd`/`sonido.gd` de `b2da680^` | FALLIDA, 19 fallos y **0 SCRIPT ERROR**; ahora sí fallan por su mensaje las de la Hospedería (no existe «arboleda_interior», el contexto es «silencio», el viento no baja: −60,0 → −60,0 dB) y la del interruptor. El «4: al volver a la app, el ambiente no sigue» es arrastre (el código viejo deja el contexto en «silencio») | `…\2026-11-19_205722\` |
+| Negativa: `prueba_musica` nueva con el `musica.gd` de `e629f9e` (sin interruptor) | FALLIDA, 1 fallo: «musica.gd no tiene el interruptor «puerto_sunken_2d»» | `…\2026-11-19_205731\` |
+| Negativa: `prueba_arboleda_tramo` sin las 3 líneas de `_cambiar_sala` | FALLIDA, «F: dentro de la Hospedería el ambiente es «arboleda»» | `…\2026-11-19_205802\` |
+| `prueba_arboleda_tramo` (con ventana) | MANUAL, «FALLOS: 0» | `…\2026-11-19_205833\` |
+| `prueba_musica_senal` (con ventana, driver real) | MANUAL, «FALLOS: 0»: puerto RMS −36,0 / pico −20,0; arboleda −32,4 / −16,5 (detalle al azar); arboleda_interior −48,7 / −33,7 dBFS | `…\2026-11-19_205859\` |
+
+`campanilla_2.wav` se reimportó con `--import` (APPDATA aislado) antes de las pasadas con sonido real; su `.import` no
+cambia.

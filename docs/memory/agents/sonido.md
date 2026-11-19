@@ -860,3 +860,21 @@ de su combate (paso bajo en la música y un bosque antiguo por debajo, sin músi
 - **Muestras:** `D:\REBELUM_diagnostico\sonido_muestras\2026-11-19_regiones\indice.md`. Nadie lo ha oído; nada en el Redmi.
 - **Queda:** las charcas y la lava de las zonas 2D; un emisor de olas contra el casco en Sunken 3D (sigue el bucle del
   río); poco margen de memoria del audio (0,21 MB).
+
+## 2026-11-19, 21:10 · V12, AM-9, revisión (SONIDO_REGIONES_19_11_REVISION)
+
+Arreglos de la revisión de `b2da680`/`e629f9e` (detalle y tabla de pasadas en `docs/v12/SONIDO_REGIONES_19_11.md` §7):
+- **(media)** La Sunken City 2D como «puerto» pasa a ser **[P]** con interruptor `static var puerto_sunken_2d := true`
+  en `musica.gd` (con `false`, «ciudad» como antes; la 3D no depende). [D] 1 del usuario: ¿puerto o ciudad?
+- **(baja)** `prueba_musica`: sin indexar contextos a ciegas (fallo con nombre en vez de SCRIPT ERROR), comprobaciones
+  previas a la Hospedería y aserción del interruptor en los dos estados. Pasada negativa repetida: 19 fallos por su
+  mensaje y 0 SCRIPT ERROR (`D:\REBELUM_diagnostico\pruebas\2026-11-19_205722\`; antes, 5 fallos y 2 SCRIPT ERROR en
+  `…_205248\`). Negativa de `prueba_arboleda_tramo` sin las líneas de `_cambiar_sala`: falla la F (`…_205802\`).
+- **(baja)** Campanillas dentro de la Hospedería: el plan las pone, el código las calla. Registrado como [D] 2; sin
+  cambio de código.
+- **(baja)** `campanilla_2.wav` rehecha desde el original igualada por RMS (−19,5 → −26,5 dBFS; pico −3 → −10).
+  CSV de procedencia actualizado; reimportada con `--import` (APPDATA aislado).
+- Pruebas después: `prueba_musica`, `prueba_integridad`, `prueba_efectos`, `prueba_audio_memoria` SUPERADAS (`…_205603\`);
+  `prueba_arboleda_tramo` y `prueba_musica_senal` MANUAL sin fallos (`…_205833\`, `…_205859\`).
+- Muestras antes/después: `D:\REBELUM_diagnostico\sonido_muestras\2026-11-19_regiones_revision\indice.md`. Nadie lo ha
+  oído; nada en el Redmi.

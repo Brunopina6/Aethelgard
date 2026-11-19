@@ -58,6 +58,11 @@ const CONTEXTOS := {
 		"db": -9.0, "db_musica": -9.0, "bucle": true, "bucle_desde": 11.17, "privada": true},
 }
 const LUGAR_SUNKEN := 5                           # Sunken City en mapa.gd (LUGARES)
+# [P] V12 (19/11, revisión de AM-9): la Sunken City 2D del juego normal (zona.tscn, lugar 5) suena como el puerto de la
+# 3D (olas y gaviotas) en vez de como las demás ciudades («ciudad»: pradera y pájaros). PROPUESTA sin oír, pendiente de
+# la escucha y decisión del usuario (docs/v12/SONIDO_REGIONES_19_11.md §7, [D] 1). Con false vuelve a «ciudad», como
+# antes del 19/11; la Sunken 3D (banco) no depende de esto.
+static var puerto_sunken_2d := true              # estática: la lee contexto_de (estática)
 const MUSICA_PASTOS := ["musica", "pastos"]       # [sección, clave] de user://ajustes.cfg: «nueva» o «ambiente»
 
 
@@ -150,7 +155,7 @@ static func contexto_de(e: Node) -> String:
 			return "ciudad"                            # muestra de la calle (Oakhaven, en el banco), el mismo ambiente que Oakhaven 3D
 		"res://zona.tscn":
 			var l: Dictionary = Engine.get_meta("lugar", {})
-			if int(l.get("indice", -1)) == LUGAR_SUNKEN:          # V12 (19/11, AM-9): la Sunken City 2D, el puerto como la 3D
+			if puerto_sunken_2d and int(l.get("indice", -1)) == LUGAR_SUNKEN:   # V12 (19/11, AM-9): la Sunken 2D, el puerto [P]
 				return "puerto"
 			if l.get("tipo", "") == "ciudad":
 				return "ciudad"

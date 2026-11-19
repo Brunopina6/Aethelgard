@@ -88,6 +88,26 @@ func _contextos() -> void:
 		Engine.set_meta("lugar", l[0])
 		if Mus.contexto_de(z) != l[1]:
 			_fallo("1: una zona %s da «%s» (esperaba «%s»)" % [l[0], Mus.contexto_de(z), l[1]])
+	# (revisión 19/11) la Sunken 2D como puerto es una propuesta [P] con interruptor: apagado, vuelve a «ciudad» como
+	# antes del 19/11 (y la Sunken 3D sigue en «puerto»)
+	var sunken := {"indice": 5, "nombre": "Sunken City", "tipo": "ciudad", "zona": "llanura"}
+	var M: Script = Mus.get_script()
+	if not M.get("puerto_sunken_2d") is bool:
+		_fallo("1: musica.gd no tiene el interruptor «puerto_sunken_2d» de la Sunken City 2D")
+	else:
+		var antes_i: bool = M.get("puerto_sunken_2d")
+		M.set("puerto_sunken_2d", false)
+		Engine.set_meta("lugar", sunken)
+		if Mus.contexto_de(z) != "ciudad":
+			_fallo("1: con «puerto_sunken_2d» apagado, la Sunken City 2D da «%s» (esperaba «ciudad»)" % Mus.contexto_de(z))
+		var n3 := Node.new()
+		n3.scene_file_path = "res://zonas3d/sunken_3d.tscn"
+		if Mus.contexto_de(n3) != "puerto":
+			_fallo("1: con «puerto_sunken_2d» apagado, la Sunken 3D da «%s» (esperaba «puerto»)" % Mus.contexto_de(n3))
+		n3.free()
+		M.set("puerto_sunken_2d", antes_i)
+		if Mus.contexto_de(z) != "puerto":
+			_fallo("1: con «puerto_sunken_2d» encendido, la Sunken City 2D da «%s»" % Mus.contexto_de(z))
 	z.free()
 	Engine.remove_meta("lugar")
 	for c in Mus.CONTEXTOS:
@@ -116,13 +136,20 @@ func _contextos() -> void:
 
 # 1b. V12 (19/11, AM-9): Sunken con olas y gaviotas; la Arboleda con campanillas (y sin ellas dentro de la Hospedería).
 func _regiones() -> void:
-	var puerto: String = Mus.CONTEXTOS["puerto"]["ambiente"]
+	# (revisión 19/11: sin indexar a ciegas; si falta un contexto, un fallo con su nombre y no un error de script que
+	# corte la prueba a medias)
+	for ctx in ["puerto", "arboleda", "arboleda_interior"]:
+		if not Mus.CONTEXTOS.has(ctx):
+			_fallo("1b: no existe el contexto «%s» en musica.gd" % ctx)
+	var puerto: String = Mus.CONTEXTOS.get("puerto", {}).get("ambiente", "")
 	if puerto.ends_with("viento.wav") or not ResourceLoader.exists(puerto) or not load(puerto) is AudioStreamOggVorbis \
 			or not load(puerto).loop:
 		_fallo("1b: el puerto no tiene su bucle de olas (pide %s)" % puerto)
-	var amb_a: String = Mus.CONTEXTOS["arboleda"]["ambiente"]
-	if amb_a == "" or Mus.CONTEXTOS["arboleda_interior"]["ambiente"] != amb_a \
-			or float(Mus.CONTEXTOS["arboleda_interior"]["db"]) > float(Mus.CONTEXTOS["arboleda"]["db"]) - 6.0:
+	var arb: Dictionary = Mus.CONTEXTOS.get("arboleda", {})
+	var dentro: Dictionary = Mus.CONTEXTOS.get("arboleda_interior", {})
+	var amb_a: String = arb.get("ambiente", "")
+	if amb_a == "" or dentro.get("ambiente", "") != amb_a \
+			or float(dentro.get("db", 0.0)) > float(arb.get("db", 0.0)) - 6.0:
 		_fallo("1b: dentro de la Hospedería el viento no es la misma pista al menos 6 dB más baja")
 	var esperado := {"puerto": "gaviota", "arboleda": "campanillas"}
 	for ctx in esperado:
@@ -185,7 +212,9 @@ func _detalles_region() -> void:
 		Mus.pedir(par[0])
 		await _esperar(3)
 		var p: AudioStreamPlayer = _amb()["activo"]
-		if not p.playing or p.stream == null or p.stream.resource_path != Mus.CONTEXTOS[par[0]]["ambiente"]:
+		if not Mus.CONTEXTOS.has(par[0]):              # (revisión 19/11: un fallo con su nombre, no un error de script)
+			_fallo("3b: no existe el contexto «%s» (se pidió y suena «%s»)" % [par[0], Mus.contexto])
+		elif not p.playing or p.stream == null or p.stream.resource_path != Mus.CONTEXTOS[par[0]].get("ambiente", ""):
 			_fallo("3b: «%s» no suena con su pista" % par[0])
 		var antes := int(Son.contador.get(par[1], 0))
 		var vistos := {}
@@ -202,10 +231,16 @@ func _detalles_region() -> void:
 	var arr: int = Mus.arranques
 	await _esperar(70)
 	var v0 := p.volume_db
+	if not p.playing:
+		_fallo("3b: antes de entrar en la Hospedería no suena el viento de la Arboleda (contexto «%s»)" % Mus.contexto)
+	if not Mus.CONTEXTOS.has("arboleda_interior"):
+		_fallo("3b: no existe el contexto de la Hospedería («arboleda_interior»)")
 	Mus.pedir("arboleda_interior")
 	await _esperar(80)
+	if Mus.contexto != "arboleda_interior":
+		_fallo("3b: al entrar en la Hospedería el contexto es «%s»" % Mus.contexto)
 	if Mus.arranques != arr or _amb()["activo"] != p or not p.playing:
-		_fallo("3b: al entrar en la Hospedería el viento se reinicia")
+		_fallo("3b: al entrar en la Hospedería el viento se reinicia o se calla")
 	if p.volume_db > v0 - 6.0:
 		_fallo("3b: dentro de la Hospedería el viento no baja (%.1f → %.1f dB)" % [v0, p.volume_db])
 	var n := 0
