@@ -53,7 +53,8 @@ suelo se recorta. Siguiente paso: capturas en el combate real antes y después d
 
 `maga_3d.gd.morir()`: el destino del desplome pasa de y 0,1 a **0,3** (un solo número). Medido (`diag_derrota_suelo`,
 `solo=lya`): lo más bajo pasa de −0,26 a **−0,07 m** (borde de `Bone_005`, falda o pelo); muslo izquierdo de −0,21 a −0,01.
-En el combate real (`fotos_derrota_combate.gd`, nueva, 1600×720): antes, el borde de abajo del cuerpo salía cortado en
+En el combate real (`fotos_derrota_combate.gd`, nueva, ventana de 1600×720; *19/11: las imágenes salen a 1280×720, la
+resolución del viewport del juego*): antes, el borde de abajo del cuerpo salía cortado en
 recto contra la hierba (medio enterrada); después se ve entera, tumbada encima. Capturas: `D:\REBELUM_diagnostico\derrota_suelo_18_11\antes_combate`
 y `D:\REBELUM_diagnostico\derrota_suelo_18_11\despues_combate_0.3` (hoja_derrota_lya_originales.png). `revivir()` vuelve a la posición 0 como antes.
 Kael original (la cabeza, −0,13 m) no se ha tocado: en esta cámara cae detrás de Garon y no se distingue.
@@ -129,22 +130,23 @@ arriba). El paso de 0,1 a 0,3 en `maga_3d.gd` **no les afecta**.
   añadida (comprobado con `solo=lya`).
 - `pruebas/fotos_derrota_combate.gd`: `heroe=Naira|Nix` monta el caso del banco «Derrotas de Naira y Nix» (Kael, Naira y
   Nix con sus interruptores solo en esa sesión, nivel 12, grupo 1 de slimes y la llanura) y `versiones=originales,fbx`.
-  Para ellas toma más instantes: 0,5 · 0,7 · 0,8 · 0,9 · 2 · 4 s. En «ko» guarda también la pantalla entera.
+  Para ellas toma más instantes: ~~0,5 · 0,7 · 0,8 · 0,9 · 2 · 4 s~~ *(falso: salían a 0,53 · 0,80 · 0,97 · 1,13 · 2,30 ·
+  4,37 s; corregido en «Revisión del 19/11», al final)*. En «ko» guarda también la pantalla entera.
 
 **Cifras** (PC, sin ventana, `--fixed-fps 30`, en metros del modelo normalizado a 1,7 m, como el resto del documento;
-negativo = bajo el suelo):
+negativo = bajo el suelo; *cifras muestreadas cada 5 fotogramas y con submuestreo de vértices: ver «Revisión del 19/11»*):
 
 | Personaje | Parte | Peor en la caída | Ya en el suelo (2-6 s) | Último instante: bajo el suelo |
 |---|---|---|---|---|
 | Naira | cabeza | +0,746 | +0,746 | 0 % |
 | Naira | manos | +0,190 | +0,190 | 0 % |
-| Naira | pies | **−0,143** (a los 0,8 s) | +0,004 | 0 % |
-| Naira | cadera | **−0,109** (1,2 s) | **−0,109** | 7 % (de −0,109 a +0,556) |
-| Naira | astrolabio (su «arma») | **−0,097** (1,3 s) | **−0,097** | **48 %** (de −0,097 a +0,085) |
+| Naira | pies | **−0,143** (a los ~~0,8~~ 0,83 s) | +0,004 | 0 % |
+| Naira | cadera | **−0,109** (~~1,2~~ 1,17 s; cada fotograma: 1,13 s) | **−0,109** | 7 % (de −0,109 a +0,556) |
+| Naira | astrolabio (su «arma») | **−0,097** (~~1,3~~ 1,33 s; cada fotograma: 1,20 s) | **−0,097** | **48 %** (de −0,097 a +0,085) |
 | Naira | resto (piernas…) | −0,004 | −0,004 | 0 % |
 | Nix (`nix.glb`, la de siempre) | cabeza (con el sombrero) | +0,765 | +0,765 | 0 % |
 | Nix | manos | +0,399 | +0,399 | 0 % |
-| Nix | pies | −0,031 (0,5 s) | +0,078 | 0 % |
+| Nix | pies | −0,031 (0,5 s; cada fotograma: **−0,040** a los 0,57 s) | +0,078 | 0 % |
 | Nix | cadera | +0,269 | +0,269 | 0 % |
 | Nix | bastón (`arma_d`) | +0,165 (0,2 s) | +0,375 | 0 % |
 | Nix | resto (piernas) | +0,027 | +0,028 | 0 % |
@@ -159,7 +161,8 @@ De pie: Naira −0,003, Nix −0,012 y Nix del FBX +0,014. La Nix del FBX lleva 
 arma equipada; con otra arma del inventario no se ha medido.
 
 Salidas literales (`D:\REBELUM_diagnostico\derrotas_19_11\diag_naira.txt` y `diag_nix.txt`; `diag_lya.txt` es la
-comprobación de que los demás siguen igual):
+comprobación de que los demás siguen igual; son de antes de la revisión: instantes con un decimal y «último instante»
+de dos muestras):
 ```
 naira  originales de pie -0.003 m · cuerpo más bajo -0.143 m (a los 0.8 s) · al final -0.109 m · hundido bajo los pies 0.106 m · cadera más baja +0.413 m · lo más bajo, del hueso cadera
     bajo los pies, por hueso: cadera -0.11, astrolabio -0.09, pierna.L -0.00, pierna.R -0.00, pie.L +0.01, pie.R +0.02, muslo.R +0.03, muslo.L +0.03
@@ -172,22 +175,26 @@ nix    fbx        de pie +0.014 m · cuerpo más bajo -0.030 m (a los 0.5 s) · 
     por partes, respecto al suelo (y = 0), peor en la caída · peor tumbado (2-6 s) · en el último instante: cabeza +0.912 (a los 1.5 s) · tumbado +0.912 (mixamorig_Head) · al final 0 % bajo el suelo, de +0.927 a +1.322; manos +0.469 (a los 1.5 s) · tumbado +0.469 (mixamorig_RightHand) · al final 0 % bajo el suelo, de +0.480 a +0.632; pies -0.030 (a los 0.5 s) · tumbado +0.056 (mixamorig_LeftFoot) · al final 0 % bajo el suelo, de +0.057 a +0.211; cadera +0.431 (a los 1.5 s) · tumbado +0.432 (mixamorig_Hips) · al final 0 % bajo el suelo, de +0.437 a +0.670; arma +0.471 (a los 1.5 s) · tumbado +0.471 (malla cetro_nix) · al final 0 % bajo el suelo, de +0.481 a +0.604; resto +0.058 (a los 0.7 s) · tumbado +0.075 (mixamorig_RightLeg) · al final 0 % bajo el suelo, de +0.076 a +1.099
 ```
 
-**En la cámara del combate** (`fotos_derrota_combate.gd`, con ventana, 1600×720; el caso del banco con sus slimes).
+**En la cámara del combate** (`fotos_derrota_combate.gd`, con ventana, ~~1600×720~~ *ventana de 1600×720, imágenes de
+1280×720*; el caso del banco con sus slimes).
 Capturas en `D:\REBELUM_diagnostico\derrotas_19_11\combate\`:
 - hojas: `hoja_derrota_naira_originales.png`, `hoja_derrota_nix_originales.png`, `hoja_derrota_nix_fbx.png`, con reposo y
-  los instantes 0,5 · 0,7 · 0,8 · 0,9 · 2 · 4 s;
-- pantallas enteras a los 2 s: `*_ko_pantalla.png`;
-- ampliaciones de Naira: `zoom_naira_cae_0.7.png`, `zoom_naira_cae_0.8.png`, `zoom_naira_cae_0.9.png` y
+  los instantes ~~0,5 · 0,7 · 0,8 · 0,9 · 2 · 4 s~~ *0,53 · 0,80 · 0,97 · 1,13 · 2,30 · 4,37 s (medido en la revisión)*;
+- pantallas enteras a los ~~2 s~~ *2,30 s*: `*_ko_pantalla.png`;
+- ampliaciones de Naira: `zoom_naira_cae_0.7.png`, `zoom_naira_cae_0.8.png`, `zoom_naira_cae_0.9.png` *(en realidad, a
+  0,80 · 0,97 · 1,13 s)* y
   `zoom_naira_ko_astrolabio.png`. Las demás `zoom_*` de la carpeta son de una primera pasada con otros enemigos (Grimfang):
   no cuentan.
 
 Lo que se ve:
 - **Naira.** Cae de rodillas con la cabeza gacha. El astrolabio queda delante de la rodilla y **se ve entero** sobre la
-  hierba, sin corte. Los pies hacia los 0,8 s no se ven cortados. La cadera (−0,11) queda tapada por la capa y las
+  hierba, sin corte. ~~Los pies hacia los 0,8 s no se ven cortados~~ *(la foto que se presentó así es de 0,97 s; las de 0,80
+  y 0,83 s están en «Revisión del 19/11»)*. La cadera (−0,11) queda tapada por la capa y las
   piernas.
 - **Nix y la Nix del FBX.** De rodillas; nada bajo el suelo al final. Ocupa el sitio de Garon, delante (`combate.gd`,
   `SITIO_DE_RECLUTA`), y el slime más cercano le tapa parte de las piernas y del bastón. Eso es de la colocación, no de la
-  derrota.
+  derrota. *(Revisión: en la del FBX, un faldón trasero queda rígido y recto; ver el punto 4 de «Revisión del
+  19/11».)*
 
 **Por qué no se ve lo hundido** (deducido del código, no medido aparte): la ventana 3D de cada héroe en el combate
 (`combate.gd`, `estudio_3d`) tiene el fondo transparente y **no tiene suelo**. Lo que baja de y = 0 se dibuja encima de la
@@ -205,5 +212,85 @@ Naira unos 0,12 m en la pose final de su clip `derrota`. Se haría con el guion 
 sobre una copia; Naira es una propuesta provisional, no canon. Otra opción: un gesto en `naira_3d.gd.morir()` que suba el
 hueso `astrolabio`. Después habría que repetir esta medida y las capturas. Para Nix no hace falta nada.
 
-**Pendiente:** verlo en el Redmi (`GUION_REDMI_19_11.md`, «Para la próxima APK»). En el teléfono, la ventana 3D puede
+**Pendiente:** verlo en el Redmi (`GUION_REDMI_19_11.md`, ~~«Para la próxima APK»~~ *«Derrotas de los héroes», para
+las dos APK*). En el teléfono, la ventana 3D puede
 tener otra resolución (calidad), pero el encuadre es el mismo; no se ha comprobado.
+
+## Revisión del 19/11 (`DERROTAS_19_11_REVISION`)
+
+Solo herramientas y documentos; el juego no cambia. PC, `--fixed-fps 30`; salidas en
+`D:\REBELUM_diagnostico\derrotas_19_11_revision\`.
+
+**1. Los instantes de las fotos de Naira y Nix no eran los de su nombre** (gravedad media). En `fotos_derrota_combate.gd`
+cada paso del guion esperaba lo suyo, pero gastaba un fotograma en ponerse y otro en la foto, sin contarlos. Antes,
+con una copia de la herramienta de `5fdd1e7` que solo imprime el fotograma de cada foto respecto a `morir()`
+(`antes\`, repitiendo la ejecución de la mañana):
+```
+MEDIDO foto cae: 16 fotogramas tras morir() = 0.53 s
+MEDIDO foto cae_0.7: 24 fotogramas tras morir() = 0.80 s
+MEDIDO foto cae_0.8: 29 fotogramas tras morir() = 0.97 s
+MEDIDO foto cae_0.9: 34 fotogramas tras morir() = 1.13 s
+MEDIDO foto ko: 69 fotogramas tras morir() = 2.30 s
+MEDIDO foto ko_tarde: 131 fotogramas tras morir() = 4.37 s
+```
+Y con el guion de Kael, Lya y Garon (Lya): `cae` 16 (0,53 s), `ko` 63 (2,10 s), `ko_tarde` 125 (4,17 s), no «2 s» y
+«4 s». Por tanto `zoom_naira_cae_0.8.png` (los pies «hacia los 0,8 s») era de 0,97 s; la de 0,80 s era `cae_0.7`.
+
+Arreglo: cada paso dice en qué fotograma, contado desde la última acción (`reposo` o `morir`), sale su foto, y la
+herramienta imprime el instante real. Los de siempre conservan sus instantes del 18/11 (16, 63 y 125 fotogramas), para
+que las fotos de antes y después de un arreglo sigan siendo comparables. Naira y Nix se nombran por su instante
+(`cae_0.50s` … `ko_4.00s`), con uno nuevo a 0,83 s, la muestra de los pies más bajos de Naira. Después
+(`combate\`, salida literal de la herramienta):
+```
+foto originales reposo: 31 fotogramas tras reposo() = 1.03 s
+foto originales cae_0.50s: 15 fotogramas tras morir() = 0.50 s
+foto originales cae_0.70s: 21 fotogramas tras morir() = 0.70 s
+foto originales cae_0.80s: 24 fotogramas tras morir() = 0.80 s
+foto originales cae_0.83s: 25 fotogramas tras morir() = 0.83 s
+foto originales cae_0.90s: 27 fotogramas tras morir() = 0.90 s
+foto originales ko_2.00s: 60 fotogramas tras morir() = 2.00 s
+foto originales ko_4.00s: 120 fotogramas tras morir() = 4.00 s
+```
+(Igual para Nix y la Nix del FBX. Lya: `cae` 16 = 0,53 s, `ko` 63 = 2,10 s, `ko_tarde` 125 = 4,17 s, como antes.) El
+instante es el de la llamada a `morir()`; la imagen es la del último fotograma dibujado, así que puede ir un fotograma
+(0,03 s) por detrás.
+
+Capturas nuevas: hojas `hoja_derrota_naira_originales.png`, `hoja_derrota_nix_originales.png`,
+`hoja_derrota_nix_fbx.png`; pantallas enteras `*_ko_2.00s_pantalla.png`; ampliaciones (×3) de Naira
+`zoom_naira_cae_0.80s.png`, `zoom_naira_cae_0.83s.png` y `zoom_naira_ko_2.00s.png`. Lo que se ve, mirado de nuevo:
+- **Naira a 0,80 y 0,83 s** (los pies más bajos de toda la caída, −0,143 m): las botas se ven enteras, con la punta
+  redondeada, sin corte en recto; una mata de hierba delante tapa parte de la izquierda. La conclusión de la mañana se
+  mantiene, ahora con las fotos del instante que se decía.
+- **Naira a 2 s**: el astrolabio, entero delante de la rodilla.
+
+**2. Las capturas miden 1280×720** (baja): la ventana era de 1600×720 (`--resolution 1600x720`), pero la imagen es la
+del viewport del juego (`project.godot`, 1280×720; cabecera PNG de `naira_originales_ko_pantalla.png` de la mañana y
+de `naira_originales_ko_2.00s_pantalla.png` de ahora: 1280×720). Corregido arriba y en el comentario de la herramienta.
+
+**3. `diag_derrota_suelo`: «último instante» de una sola muestra, e instantes con dos decimales** (baja). Antes,
+«ultimo» valía en las dos últimas muestras (a 5,83 y a 6 s) y el % y el rango «de … a …» las juntaban; ahora es solo la
+de 6 s. Naira no cambia; en Nix cambian tres milésimas en los rangos (cabeza +1,766 → +1,765, cadera +0,689 → +0,688,
+bastón +0,623 → +0,622; Nix del FBX, resto +0,076 → +0,077); los % no cambian. Lya sale idéntica salvo el formato de los
+instantes (comprobado con `diff` contra `diag_lya.txt`). Los instantes salen con dos decimales: el peor de los pies de
+Naira es a los **0,83 s** (muestra de 25 fotogramas), no «0,8». Después (`diag_naira_paso5.txt`):
+```
+naira  originales de pie -0.003 m · cuerpo más bajo -0.143 m (a los 0.83 s) · al final -0.109 m · hundido bajo los pies 0.106 m · cadera más baja +0.413 m · lo más bajo, del hueso cadera
+    por partes, respecto al suelo (y = 0), peor en la caída · peor tumbado (2-6 s) · en el último instante: cabeza +0.746 (a los 1.67 s) · tumbado +0.746 (cabeza) · al final 0 % bajo el suelo, de +0.746 a +1.177; manos +0.190 (a los 1.67 s) · tumbado +0.190 (mano.L) · al final 0 % bajo el suelo, de +0.190 a +0.314; pies -0.143 (a los 0.83 s) · tumbado +0.004 (pie.L) · al final 0 % bajo el suelo, de +0.004 a +0.195; cadera -0.109 (a los 1.17 s) · tumbado -0.109 (cadera) · al final 7 % bajo el suelo, de -0.109 a +0.556; arma -0.097 (a los 1.33 s) · tumbado -0.097 (astrolabio) · al final 48 % bajo el suelo, de -0.097 a +0.085; resto -0.004 (a los 1.67 s) · tumbado -0.004 (pierna.L) · al final 0 % bajo el suelo, de -0.004 a +0.936
+```
+
+**Cifras muestreadas: cuánto se alejan del mínimo real.** La herramienta admite ahora `paso=1` (una muestra por
+fotograma, en vez de cada 5) y `vertices=todos` (sin submuestreo de vértices). Con los dos:
+- **Naira**: los mismos mínimos (pies −0,143 a los 0,83 s, cadera −0,109, astrolabio −0,097, % igual); solo cambia el
+  instante del peor de la cadera (1,13 s) y del astrolabio (1,20 s). `diag_naira_paso1_todos.txt`.
+- **Nix**: los pies bajan de −0,031 a **−0,040 m** (a los 0,57 s, un instante de la caída); lo demás, igual o a menos de
+  1 cm (manos +0,391, bastón +0,160 en la caída). Sigue sin nada bajo el suelo ya de rodillas. `diag_nix_paso1_todos.txt`:
+  ```
+  nix    originales de pie -0.012 m · cuerpo más bajo -0.040 m (a los 0.57 s) · al final +0.028 m · hundido bajo los pies 0.000 m · cadera más baja +0.520 m · lo más bajo, del hueso mixamorig_RightLeg
+  nix    fbx        de pie +0.014 m · cuerpo más bajo -0.030 m (a los 0.53 s) · al final +0.056 m · hundido bajo los pies 0.000 m · cadera más baja +0.550 m · lo más bajo, del hueso mixamorig_LeftFoot
+  ```
+- `vertices=todos` no cambia ninguna cifra respecto a `paso=1` solo (Naira y Nix): el submuestreo no esconde nada aquí.
+
+**4. Observación, no de C-5: el faldón trasero de la Nix del FBX.** En «ko» (`nix_fbx_ko_2.00s.png`) un faldón queda
+rígido y recto, como una tabla que sale de la rodilla hacia Kael. No atraviesa el suelo (resto +0,058 en la caída,
++0,075 ya de rodillas), pero se ve. La Nix del FBX es un prototipo apagado por defecto (`nix_fbx`); queda para el
+coordinador, con el pilotaje de esa Nix. No se ha tocado.

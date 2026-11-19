@@ -10,6 +10,9 @@ extends SceneTree
 # esqueleto (la vara de maga_3d.gd o el cetro por socket de la Nix del FBX). «nix fbx»: la Nix del FBX (nix_fbx.gd).
 # Naira y Nix ejecutan su PROPIO morir() (naira_3d.gd: clip «derrota»; nix_3d.gd: «derribo» y «derrota» en bucle), no
 # el desplome de maga_3d.gd (docs/v12/DERROTA_SUELO_18_11.md, «Naira y Nix medidas el 19/11»).
+# (19/11, revisión) Las cifras son MUESTREADAS: cada 5 fotogramas (paso=N para otro, p. ej. paso=1 cada fotograma) y
+# con un submuestreo de vértices (~6000 con piel y ~3000 sin piel por superficie; vertices=todos, sin submuestreo): el
+# mínimo real puede ser algo más bajo. «En el último instante» es UNA muestra, la de 6 s tras morir() (antes juntaba las dos últimas).
 
 const SCRIPTS := {
 	"kael": {"originales": "res://kael_3d.gd", "v2": "res://personajes/heroes_v2/kael_v2_3d.gd",
@@ -25,6 +28,8 @@ const VERSIONES := ["originales", "v2", "v3", "fbx"]
 const ESPERA := 20           # fotogramas antes de morir()
 const DURA := 180            # fotogramas tras morir() (6 s a 30)
 const TUMBADO := 60          # fotogramas tras morir() desde los que cuenta «tumbado» en las partes (2 s)
+var paso := 5                # fotogramas entre muestras (paso=N); ESPERA + DURA debe ser múltiplo
+var todos := false           # vertices=todos: cada vértice, sin submuestreo
 const PARTES := ["cabeza", "manos", "pies", "cadera", "arma", "resto"]
 
 var casos: Array = []
@@ -50,6 +55,10 @@ func _initialize() -> void:
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("solo="):
 			solo = a.trim_prefix("solo=")
+		elif a.begins_with("paso="):
+			paso = maxi(1, int(a.trim_prefix("paso=")))
+		elif a == "vertices=todos":
+			todos = true
 	for h in SCRIPTS:
 		if solo != "" and h != solo:
 			continue
@@ -61,7 +70,7 @@ func _initialize() -> void:
 
 func _siguiente() -> void:
 	if g != null:
-		print("%-6s %-10s de pie %+.3f m · cuerpo más bajo %+.3f m (a los %.1f s) · al final %+.3f m · hundido bajo los pies %.3f m · cadera más baja %+.3f m · lo más bajo, del hueso %s" % [
+		print("%-6s %-10s de pie %+.3f m · cuerpo más bajo %+.3f m (a los %.2f s) · al final %+.3f m · hundido bajo los pies %.3f m · cadera más baja %+.3f m · lo más bajo, del hueso %s" % [
 			casos[ci][0], casos[ci][1], de_pie, bajo, bajo_t, final_bajo, maxf(0.0, de_pie - final_bajo), cadera_min, hueso_bajo])
 		var hs := por_hueso.keys()
 		hs.sort_custom(func(a, b2): return float(por_hueso[a]) < float(por_hueso[b2]))
@@ -73,7 +82,7 @@ func _siguiente() -> void:
 		for k in PARTES:
 			if partes.has(k):
 				var d: Array = partes[k]
-				tp.append("%s %+.3f (a los %.1f s) · tumbado %+.3f (%s) · al final %d %% bajo el suelo, de %+.3f a %+.3f" % [
+				tp.append("%s %+.3f (a los %.2f s) · tumbado %+.3f (%s) · al final %d %% bajo el suelo, de %+.3f a %+.3f" % [
 					k, d[0], d[1], d[2], d[3], roundi(100.0 * d[5] / maxf(1.0, d[4])), d[7], d[6]])
 		print("    por partes, respecto al suelo (y = 0), peor en la caída · peor tumbado (2-6 s) · en el último instante: ",
 			"; ".join(tp))
@@ -112,10 +121,10 @@ func _process(_dt: float) -> bool:
 			de_pie = _bajo(sk0)
 	if f == ESPERA:
 		g.morir()
-	elif f > ESPERA and f % 5 == 0:
+	elif f > ESPERA and f % paso == 0:
 		var sk: Skeleton3D = _esqueleto()
 		if sk != null:
-			ultimo = f >= ESPERA + DURA - 5
+			ultimo = f == ESPERA + DURA                  # (una sola muestra: la de 6 s)
 			if ultimo:
 				por_hueso = {}
 			medir_partes = true
@@ -171,7 +180,7 @@ func _bajo(sk: Skeleton3D) -> float:
 			if B == null or W == null or V.is_empty():
 				continue
 			var por: int = B.size() / V.size()
-			var salto := maxi(1, V.size() / 6000)
+			var salto := 1 if todos else maxi(1, V.size() / 6000)
 			for v in range(0, V.size(), salto):
 				var p := Vector3.ZERO
 				var wmax := 0.0
@@ -201,7 +210,7 @@ func _bajo(sk: Skeleton3D) -> float:
 			var gt: Transform3D = mi.global_transform
 			for s in mi.mesh.get_surface_count():
 				var V: PackedVector3Array = mi.mesh.surface_get_arrays(s)[Mesh.ARRAY_VERTEX]
-				var salto := maxi(1, V.size() / 3000)
+				var salto := 1 if todos else maxi(1, V.size() / 3000)
 				for v in range(0, V.size(), salto):
 					_parte("arma", (gt * V[v]).y - g.global_position.y, "malla " + String(mi.name))
 	return b

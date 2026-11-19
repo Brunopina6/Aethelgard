@@ -6,18 +6,24 @@ extends SceneTree
 # fijos (cae, tumbado, tumbado más tarde), los mismos antes y después de un arreglo (docs/v12/DERROTA_SUELO_18_11.md).
 # 19/11 (C-5): heroe=Naira|Nix pone el caso «Derrotas de Naira y Nix» del banco (Kael, Naira y Nix con sus interruptores
 # solo en esta sesión, su nivel, sus enemigos y la llanura); «versiones=originales,fbx»: fbx es la Nix del FBX
-# (nix_fbx.gd). En «ko» guarda también la pantalla entera (<heroe>_<versión>_ko_pantalla.png).
+# (nix_fbx.gd). En «ko» guarda también la pantalla entera (<heroe>_<versión>_<foto>_pantalla.png). La imagen sale a la
+# resolución del viewport del juego (1280×720), aunque la ventana sea mayor (--resolution 1600x720).
 
+# Cada paso: [acción, fotograma de la foto CONTADO DESDE LA ÚLTIMA ACCIÓN (reposo o morir), nombre, pantalla entera].
+# (19/11, revisión) Antes eran esperas encadenadas y cada paso sumaba 2 fotogramas sin contar (ponerse y la foto): los
+# nombres de Naira y Nix no eran su instante. Ahora la foto sale en el fotograma escrito y se imprime el instante real
+# («foto … fotogramas tras …»). Los de siempre conservan los mismos instantes que el 18/11 (las mismas fotos de antes y
+# después de un arreglo): cae a 16 fotogramas de morir() (0,53 s), ko a 63 (2,10 s) y ko_tarde a 125 (4,17 s).
 const GUION := [
-	["reposo", 30, "reposo"],
-	["morir", 15, "cae"], ["", 45, "ko"], ["", 60, "ko_tarde"],
+	["reposo", 31, "reposo"],
+	["morir", 16, "cae"], ["", 63, "ko", true], ["", 125, "ko_tarde"],
 ]
-# (19/11) Naira y Nix: más instantes en la caída (Naira mete la punta de los pies 0,14 m a los 0,8 s: diag_derrota_suelo)
-# y los mismos «ko» (2 s) y «ko_tarde» (4 s) que los demás.
+# (19/11) Naira y Nix: más instantes en la caída. El nombre es el instante tras morir() (a 30 fotogramas por segundo):
+# 0,83 s es la muestra en la que diag_derrota_suelo da los pies de Naira más bajos (−0,14 m).
 const GUION_RECLUTAS := [
-	["reposo", 30, "reposo"],
-	["morir", 15, "cae"], ["", 6, "cae_0.7"], ["", 3, "cae_0.8"], ["", 3, "cae_0.9"], ["", 33, "ko"],
-	["", 60, "ko_tarde"],
+	["reposo", 31, "reposo"],
+	["morir", 15, "cae_0.50s"], ["", 21, "cae_0.70s"], ["", 24, "cae_0.80s"], ["", 25, "cae_0.83s"],
+	["", 27, "cae_0.90s"], ["", 60, "ko_2.00s", true], ["", 120, "ko_4.00s"],
 ]
 const RECORTE := Vector2i(360, 440)
 
@@ -32,6 +38,9 @@ var paso := 0
 var espera := 0
 var hecho := -1
 var fotos: Array = []
+var fr := 0                  # fotogramas del guion (desde que el héroe está listo)
+var fr_accion := 0           # fotograma de la última acción (reposo o morir)
+var accion := ""
 
 
 func _initialize() -> void:
@@ -74,6 +83,9 @@ func _siguiente() -> void:
 	hecho = -1
 	espera = 60
 	fotos = []
+	fr = 0
+	fr_accion = 0
+	accion = ""
 	p = null
 
 
@@ -101,9 +113,13 @@ func _process(_d: float) -> bool:
 	if paso >= guion.size():
 		_siguiente()
 		return false
+	fr += 1
 	var s: Array = guion[paso]
 	if hecho != paso:
 		hecho = paso
+		if s[0] != "":
+			fr_accion = fr
+			accion = s[0]
 		match s[0]:
 			"reposo":
 				p.reposo()
@@ -115,8 +131,12 @@ func _process(_d: float) -> bool:
 				p.victoria()
 			"morir":
 				p.morir()
-		espera = s[1]
+		if s[0] != "":
+			return false
+	if fr - fr_accion < int(s[1]):
 		return false
+	print("foto %s %s: %d fotogramas tras %s() = %.2f s" % [versiones[vi], s[2], fr - fr_accion, accion,
+		(fr - fr_accion) / 30.0])
 	if s[2] != "":
 		var img: Image = root.get_viewport().get_texture().get_image()
 		var centro: Vector2 = c._a_pantalla(c._centro(garon))
@@ -124,8 +144,8 @@ func _process(_d: float) -> bool:
 		r.position = r.position.clamp(Vector2i.ZERO, img.get_size() - RECORTE)
 		var rec := img.get_region(r)
 		rec.save_png(salida.path_join("%s_%s_%s.png" % [heroe.to_lower(), versiones[vi], s[2]]))
-		if s[2] == "ko":
-			img.save_png(salida.path_join("%s_%s_ko_pantalla.png" % [heroe.to_lower(), versiones[vi]]))
+		if s.size() > 3 and s[3]:
+			img.save_png(salida.path_join("%s_%s_%s_pantalla.png" % [heroe.to_lower(), versiones[vi], s[2]]))
 		fotos.append(rec)
 	paso += 1
 	return false

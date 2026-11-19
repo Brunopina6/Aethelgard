@@ -45,6 +45,23 @@ Qué mirar en cada derrota (capturas o vídeo de la pantalla):
   la que menos se ve. Si no da tiempo a verla, apuntarlo: no se ha cambiado la espera del combate.
 - Que, tras la derrota, el banco abra normal y que otro caso (por ejemplo, «Nix en combate») empiece con la vida llena.
 
+En el caso **«Derrotas de Naira y Nix (casi sin vida)»** (paso 4), mirar además lo siguiente (medidas del PC en `DERROTA_SUELO_18_11.md`,
+«Naira y Nix medidas el 19/11» y su revisión). Vale para esta APK `9d1baef` y para la próxima: `DERROTAS_19_11` solo
+toca herramientas y `naira_3d.gd`, `nix_3d.gd` y `maga_3d.gd` no han cambiado desde `9d1baef`. Lo que sí cambió en
+`combate.gd` (`PV_SLIMES_19_11` y su revisión) es la vida y la colocación de los slimes, así que lo que tapa el slime
+puede no ser igual en las dos APK. Mejor con vídeo de la pantalla.
+- **Naira** no se tumba: cae de rodillas en 1,6 s y se queda así.
+  - El astrolabio queda delante de la rodilla. En el PC, casi la mitad está bajo el suelo (−0,10 m), pero se ve entero.
+    Mirar si en el teléfono sale cortado en recto por abajo.
+  - Lo mismo con los pies hacia los 0,8 s de la caída (−0,14 m, un instante; en el PC, a 0,80 y 0,83 s, enteros).
+  - Si algo se corta, apuntar qué y en qué momento: hay un arreglo propuesto, sin hacer.
+- **Nix** cae («derribo», 1,5 s) y se queda de rodillas con un leve bucle. En el PC no queda nada bajo el suelo.
+  - Mirar que no flote (rodillas despegadas de la hierba) y que el bucle no dé saltos.
+  - Ocupa el sitio de Garon, delante, y en el PC el slime más cercano le tapa parte de las piernas (la colocación de los
+    slimes puede variar entre las dos APK). Apuntarlo si impide ver la caída.
+- Si en Ajustes está encendida la **Nix del FBX** (`nix_fbx`, la de capucha, con su cetro), apuntar cuál se ve. Se
+  midieron las dos. En la del FBX, de rodillas, un faldón trasero queda rígido y recto: apuntar si se ve.
+
 Lo que se sabe del PC (`prueba_banco_derrotas`, sin ventana, SUPERADA):
 - Con originales, v2 y v3, y con Naira y Nix, los tres héroes llegan a 0 PV y ejecutan su `morir()`.
 - Nadie abre su menú, sale «Derrota...» y se vuelve al banco.
@@ -78,16 +95,4 @@ En una APK hecha con `22856a0` y `CIUDAD_TOQUE_19_11_REVISION` (PC-16, `RECORRID
 - **Coste**: con el panel RND abierto, mirar si al tocar sobre un edificio o al otro lado de una manzana hay un tirón (los
   ms por fotograma del momento del toque). En el PC el peor caso es ≤ 8,8 ms. En el Redmi no se ha medido: con el tope
   de tiempo, la búsqueda se corta antes y Kael puede llegar menos lejos que en el PC.
-- **Derrotas de Naira y Nix** (caso «Derrotas de Naira y Nix (casi sin vida)»; medidas del PC en
-  `DERROTA_SUELO_18_11.md`, «Naira y Nix medidas el 19/11»). El juego no ha cambiado (`DERROTAS_19_11` solo toca
-  herramientas), así que esto también se puede mirar en la APK `9d1baef`. Mejor con vídeo de la pantalla.
-  - **Naira** no se tumba: cae de rodillas en 1,6 s y se queda así.
-    - El astrolabio queda delante de la rodilla. En el PC, casi la mitad está bajo el suelo (−0,10 m), pero se ve entero.
-      Mirar si en el teléfono sale cortado en recto por abajo.
-    - Lo mismo con los pies hacia los 0,8 s de la caída (−0,14 m, un instante).
-    - Si algo se corta, apuntar qué y en qué momento: hay un arreglo propuesto, sin hacer.
-  - **Nix** cae («derribo», 1,5 s) y se queda de rodillas con un leve bucle. En el PC no queda nada bajo el suelo.
-    - Mirar que no flote (rodillas despegadas de la hierba) y que el bucle no dé saltos.
-    - Ocupa el sitio de Garon, delante, y el slime más cercano le tapa parte de las piernas. Apuntarlo si impide ver la caída.
-  - Si en Ajustes está encendida la **Nix del FBX** (`nix_fbx`, la de capucha, con su cetro), apuntar cuál se ve. Se
-    midieron las dos.
+- **Derrotas de Naira y Nix**: lo mismo que en «Derrotas de los héroes», arriba (se mira en las dos APK).
