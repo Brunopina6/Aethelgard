@@ -222,6 +222,7 @@ func guardar(ruta: String, recurso: Resource, grupo := "comun") -> void:
 # aviso, zonas3d/mar_cristal/gusano.gd). No bloquea nada: si ya está en memoria o ya se pidió, no hace nada; lo que llega
 # se guarda en «grupo» (por defecto «zona»: se libera al volver al mapa del mundo). _process recoge lo terminado.
 var _en_hilo := {}
+var _escena_en_hilo := ""                # la escena que cambiar_escena está cargando en hilo ("" si ninguna)
 
 
 func precargar(rutas: Array, grupo := "zona") -> void:
@@ -248,10 +249,41 @@ func _recoger_precargas() -> void:
 # V12 (19/11, PRECARGA_19_11): al cerrar el juego con una precarga aún en curso, se espera a que acabe. Si no, el motor
 # corta la carga del guion de la escena y escribe «Parse Error: Failed. [Resource file res://combate.tscn:6]» (reproducido el
 # 19/11; el mismo mensaje que dejó prueba_mar_cristal el 11/11, probablemente por esto). Lo mismo hace carga.gd con su precarga (_exit_tree).
+# (PRECARGA_19_11_REVISION) también la escena que esté pidiendo cambiar_escena (cerrar justo en el negro de un cambio de
+# escena daba el mismo error, 3 de 3), y la espera tiene tope (esperar_en_hilo).
 func _exit_tree() -> void:
-	for ruta in _en_hilo.keys():
-		ResourceLoader.load_threaded_get(ruta)
+	var rutas: Array = _en_hilo.keys()
+	if _escena_en_hilo != "" and not _escena_en_hilo in rutas:
+		rutas.append(_escena_en_hilo)
+	esperar_en_hilo(rutas)
 	_en_hilo.clear()
+	_escena_en_hilo = ""
+
+
+# Espera a que acaben las cargas en hilo de «rutas» (pedidas con load_threaded_request) y devuelve {ruta: recurso} de las que
+# terminaron bien. Solo para la salida (_exit_tree de aquí y de carga.gd): bloquea el hilo principal, pero como mucho
+# «limite_ms» en total por llamada (carga.gd y Recursos llaman una vez cada uno); si alguna no acaba a tiempo (un móvil lento, o una carga que se atascara), se deja como está y se
+# apunta: a cambio vuelve el «Parse Error» de esa escena en el registro de salida, que no ve el jugador. Consultar el estado
+# desde el hilo principal en un bucle hace que el motor empuje la carga (load_threaded_get_status, «ensure progress»).
+const ESPERA_SALIDA_MS := 2000
+
+
+func esperar_en_hilo(rutas: Array, limite_ms := ESPERA_SALIDA_MS) -> Dictionary:
+	var hechos := {}
+	var hasta := Time.get_ticks_msec() + limite_ms
+	for r in rutas:
+		var ruta := str(r)
+		var st := ResourceLoader.load_threaded_get_status(ruta)
+		while st == ResourceLoader.THREAD_LOAD_IN_PROGRESS and Time.get_ticks_msec() < hasta:
+			OS.delay_msec(1)
+			st = ResourceLoader.load_threaded_get_status(ruta)
+		if st == ResourceLoader.THREAD_LOAD_LOADED:
+			var recurso := ResourceLoader.load_threaded_get(ruta)
+			if recurso != null:
+				hechos[ruta] = recurso
+		elif st == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
+			print("Recursos: al salir, %s sigue cargándose tras %d ms; se deja a medias" % [ruta, limite_ms])
+	return hechos
 
 
 func esta(ruta: String) -> bool:
@@ -506,9 +538,11 @@ func cambiar_escena(ruta: String) -> void:
 	await get_tree().process_frame                 # el aviso se ve antes de cualquier trabajo largo
 	var escena: PackedScene = null
 	if ResourceLoader.load_threaded_request(ruta) == OK:
+		_escena_en_hilo = ruta                       # por si se cierra el juego mientras carga (_exit_tree)
 		while ResourceLoader.load_threaded_get_status(ruta) == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
 			await get_tree().process_frame
 		escena = ResourceLoader.load_threaded_get(ruta) as PackedScene
+		_escena_en_hilo = ""
 	if ruta == "res://mapa.tscn" and desde != ESCENA_COMBATE and desde != ruta:   # se sale de una zona o mazmorra
 		liberar_grupo("zona")
 	elif ESCENA_BANCO in [ruta, desde]:   # (16/11) al volver al banco de pruebas o al salir de él, lo de la zona probada

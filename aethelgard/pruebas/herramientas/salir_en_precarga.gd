@@ -5,8 +5,10 @@ extends SceneTree
 #   modo=cambiar cambia a mapa.tscn (como la prueba al ir al juego) y sale 3 s después.
 # Sin ventana, con datos aislados. -- objetivo=res://ciudad_oakhaven.tscn modo=salir [3d sin_prologo]
 # Antes de PRECARGA_19_11, «salir» dejaba en la salida de errores «Parse Error: Failed. [Resource file
-# res://ciudad_oakhaven.tscn:6]» (el fallo de prueba_musica_titulo en la batería del 19/11, 5 de 5 pasadas); desde
-# entonces carga.gd (_exit_tree) espera a que acabe y no sale nada (5 de 5). Con ventana (a_la_vez=6) se ve igual.
+# res://ciudad_oakhaven.tscn:6]» (5 de 5 pasadas); desde entonces carga.gd (_exit_tree) espera a que acabe y no sale nada
+# (5 de 5). Con ventana (a_la_vez=6) se ve igual. Es el mismo error que dejó prueba_musica_titulo en la batería
+# 2026-11-19_063148, probablemente por esto, pero no está comprobado (esa prueba sola sale hacia el archivo ~430 de 1018 y
+# ciudad_oakhaven.tscn es el 650). El caso «salir» va en la batería: pruebas/prueba_salir_en_precarga.gd.
 
 const ESCENA := "res://portada/inicio_alternativo.tscn"
 var objetivo := "res://ciudad_oakhaven.tscn"

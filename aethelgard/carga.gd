@@ -323,15 +323,22 @@ static func _a_la_vez() -> int:
 
 # V12 (19/11, PRECARGA_19_11): si la pantalla se va con archivos aún cargándose en hilo (se cierra el juego a mitad de la
 # carga, o una prueba cambia de escena o sale antes de que acabe), se espera a que terminen (como mucho «a_la_vez»
-# archivos) y se guardan en Recursos. Sin esto, al cerrar con una escena a medias el motor corta la carga de su guion y
-# escribe «Parse Error: Failed. [Resource file res://ciudad_oakhaven.tscn:6]» (prueba_musica_titulo en la batería del
-# 19/11; pruebas/herramientas/salir_en_precarga.gd lo reproduce). En el juego normal la escena solo se va con la carga
-# acabada (en_curso vacío): esto no hace nada.
+# archivos, y con tope de tiempo: Recursos.esperar_en_hilo) y se guardan en Recursos. Sin esto, al cerrar con una escena a
+# medias el motor corta la carga de su guion y escribe «Parse Error: Failed. [Resource file res://ciudad_oakhaven.tscn:6]»
+# (pruebas/prueba_salir_en_precarga.gd y pruebas/herramientas/salir_en_precarga.gd lo reproducen). Es el mismo error que
+# dejó prueba_musica_titulo en la batería 2026-11-19_063148 y lo más probable es que fuera esto, pero no está comprobado:
+# esa prueba sola sale hacia el archivo ~430 de 1018 y ciudad_oakhaven.tscn es el 650. Para cerrarlo, al salir con la
+# carga a medias se apunta por dónde iba (la línea «Carga: se sale con la precarga a medias», en el .log de la prueba).
+# En el juego normal la escena solo se va con la carga acabada (en_curso vacío): esto no hace nada.
 func _exit_tree() -> void:
-	for ruta in en_curso:
-		var r := ResourceLoader.load_threaded_get(ruta)   # espera a que acabe
-		if r != null:
-			Recursos.guardar(ruta, r)
+	if fase == "archivos" and total > 0:
+		print("Carga: se sale con la precarga a medias (%d de %d archivos hechos, en curso %s, a los %.1f s)"
+			% [hechos, total, en_curso, tiempo])
+	if en_curso.is_empty():
+		return
+	var listos: Dictionary = Recursos.esperar_en_hilo(en_curso)
+	for ruta in listos:
+		Recursos.guardar(ruta, listos[ruta])
 	en_curso.clear()
 
 
