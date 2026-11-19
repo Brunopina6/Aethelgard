@@ -9,11 +9,15 @@ extends SceneTree
 #   - texturas con mipmaps que solo se usan en 2D (interfaz), y las 3D sin ellos;
 #   - duplicados: la misma imagen cargada con dos rutas (mismo tamaño, formato y contenido).
 # Escribe <salida>/memoria_<escena>_<perfil><etiqueta>.json y .txt.
+# Esperas (19/11, PC-10): todas por RELOJ, con «FALLO: …» y salida 1 al agotarse (antes contaban fotogramas: 6000 para la
+# pantalla de carga, cuya precarga va en tiempo real, y si se agotaban se seguía midiendo en silencio con la carga a
+# medias). «tope_carga=<s>» cambia el de la pantalla de carga (180 s por defecto; la precarga tarda unos 11 s).
 
 var salida := ""
 var id := "oakhaven"
 var perfil := "bajo"
 var etiqueta := ""
+var tope_carga := 180.0
 var R
 
 
@@ -27,6 +31,8 @@ func _initialize() -> void:
 			perfil = a.substr(7)
 		elif a.begins_with("etiqueta="):
 			etiqueta = "_" + a.substr(9)
+		elif a.begins_with("tope_carga="):
+			tope_carga = float(a.substr(11))
 	R = root.get_node("Recursos")
 	Engine.set_meta("calidad_proto", perfil)
 	Engine.set_meta("pos_3d_ok", false)
@@ -41,6 +47,36 @@ func _esperar(n: int) -> void:
 		await process_frame
 
 
+# Espera por reloj a que «cond» se cumpla; si no, «FALLO: <que> en N s» con el estado, y devuelve false.
+func _hasta(cond: Callable, segundos: float, que: String) -> bool:
+	var t0 := Time.get_ticks_msec()
+	while not cond.call():
+		if Time.get_ticks_msec() - t0 > int(segundos * 1000.0):
+			var e := current_scene.scene_file_path if current_scene != null else "(ninguna)"
+			print("FALLO: %s en %.0f s (escena %s, R.cambiando=%s, listo=%s, %d fotogramas)" % [que, segundos, e, R.cambiando,
+				current_scene.get("listo") if current_scene != null else null, Engine.get_process_frames()])
+			return false
+		await process_frame
+	return true
+
+
+func _carga_lista() -> bool:
+	var e := current_scene.scene_file_path if current_scene != null else ""
+	return e != "" and e != "res://carga.tscn" and not R.cambiando and current_scene.get("listo") != false
+
+
+func _oakhaven_puesta() -> bool:
+	return current_scene != null and current_scene.scene_file_path.ends_with("oakhaven_3d.tscn") and not R.cambiando
+
+
+func _abortar() -> void:
+	for k in ["calidad_proto", "pos_3d_ok", "grupo_activo", "archivo_partida_prueba", "zona", "tipo_combate", "grupo_combate"]:
+		if Engine.has_meta(k):
+			Engine.remove_meta(k)
+	print("FALLOS: 1")
+	quit(1)
+
+
 func _memoria() -> Dictionary:
 	return {"video_mb": snappedf(Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED) / 1048576.0, 0.1),
 		"texturas_mb": snappedf(Performance.get_monitor(Performance.RENDER_TEXTURE_MEM_USED) / 1048576.0, 0.1),
@@ -53,23 +89,21 @@ func _medir() -> void:
 	informe["arranque"] = _memoria()
 	if "con_carga" in OS.get_cmdline_user_args():     # como el juego: la pantalla de carga y su precarga común primero
 		change_scene_to_file("res://carga.tscn")
-		var t := 0
-		for i in 6000:
-			await process_frame
-			t += 1
-			var e := current_scene.scene_file_path if current_scene != null else ""
-			if e != "" and e != "res://carga.tscn" and not R.cambiando and t > 5 and current_scene.get("listo") != false:
-				break
+		await _esperar(6)
+		var t0 := Time.get_ticks_msec()
+		if not await _hasta(_carga_lista, tope_carga, "la pantalla de carga no termina"):
+			_abortar()
+			return
+		print("pantalla de carga lista en %.1f s" % ((Time.get_ticks_msec() - t0) / 1000.0))
 		await _esperar(30)
 		informe["tras_la_carga"] = _memoria()
 		informe["precarga"] = {"comun": R.grupos["comun"].size(), "zona": R.grupos["zona"].size()}
 	var c = null
 	if id == "oakhaven":
 		change_scene_to_file("res://zonas3d/oakhaven_3d.tscn")
-		for i in 900:
-			await process_frame
-			if current_scene != null and current_scene.scene_file_path.ends_with("oakhaven_3d.tscn") and not R.cambiando:
-				break
+		if not await _hasta(_oakhaven_puesta, 120.0, "Oakhaven 3D no se monta"):
+			_abortar()
+			return
 		await _esperar(150)                            # que se asiente (hierba por trozos, cachés)
 	else:
 		var P = load("res://progreso.gd")
@@ -91,20 +125,26 @@ func _medir() -> void:
 	informe["texturas"] = _inventario()
 	informe["mallas"] = _mallas(root)
 	if c != null:                                    # y con la invocación de Érebo en pantalla (su teatro y sus texturas)
-		for i in 3000:
+		var t_lya := Time.get_ticks_msec()
+		while not (c.estado == "menu" and c.menu.activo and c.actor is Dictionary and c.actor["nombre"] == "Lya"):
+			if Time.get_ticks_msec() - t_lya > 120000:
+				print("FALLO: no llega el turno de Lya en 120 s (estado %s)" % c.estado)
+				_abortar()
+				return
 			if c.estado == "menu" and c.menu.activo and c.actor is Dictionary:
-				if c.actor["nombre"] == "Lya":
-					break
 				c._defender()
 			for e in c.enemigos:
 				e["atb"] = 0.0
 			await process_frame
 		c.armonia = 1.0
 		c._invocar_sobre(c.enemigos[0])
-		for i in 600:
+		var t_ere := Time.get_ticks_msec()
+		while not (c.inv_erebo != null and c.inv_erebo.erebo != null and c.inv_erebo.erebo.visible):
+			if Time.get_ticks_msec() - t_ere > 60000:
+				print("FALLO: Érebo no aparece en la invocación en 60 s (estado %s)" % c.estado)
+				_abortar()
+				return
 			await process_frame
-			if c.inv_erebo != null and c.inv_erebo.erebo != null and c.inv_erebo.erebo.visible:
-				break
 		await _esperar(60)
 		informe["invocacion"] = _memoria()
 		informe["texturas_invocacion"] = _inventario()

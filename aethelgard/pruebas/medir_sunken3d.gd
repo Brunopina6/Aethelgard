@@ -77,8 +77,11 @@ func _entrar(n: int) -> void:
 	R.cambiar_escena(REGION)
 	while R.cambiando or current_scene == null or current_scene.scene_file_path != REGION:
 		await process_frame
-		if Time.get_ticks_usec() - t0 > 60000000:
-			break
+		if Time.get_ticks_usec() - t0 > 60000000:   # (19/11, PC-10) antes se seguía en silencio y la vuelta al mapa
+			print("FALLO: Sunken City 3D no termina de cargarse en 60 s (entrada %d, R.cambiando=%s, escena %s)" % [
+				n, R.cambiando, current_scene.scene_file_path if current_scene != null else "(ninguna)"])
+			quit(1)                                  # siguiente se pedía con el cambio aún en curso
+			return
 	var carga := (Time.get_ticks_usec() - t0) / 1000.0
 	var tras: Array = await _ms_reales(2.0)
 	_nota("[%s · %s] entrada %d (%s): carga hasta el control %.0f ms · los 2 s siguientes: %s · %s" % [perfil, etiqueta, n,

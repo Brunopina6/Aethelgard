@@ -44,7 +44,12 @@ func _anotar(t: String) -> void:
 func _cargar() -> int:
 	if _esc() != MAPA:
 		change_scene_to_file(MAPA)
+		var t_mapa := Time.get_ticks_msec()
 		while _esc() != MAPA:
+			if Time.get_ticks_msec() - t_mapa > 60000:   # (19/11, PC-10) tope por reloj también aquí
+				print("FALLO: el mapa 2D no se monta en 60 s")
+				quit(1)
+				return -1
 			await process_frame
 		await _ms(800)
 	Engine.set_meta(D.LLEGADA, "oakhaven")

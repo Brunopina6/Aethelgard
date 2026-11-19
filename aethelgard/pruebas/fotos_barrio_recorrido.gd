@@ -528,14 +528,23 @@ func _aviso() -> String:
 	return str(v.ultimo_aviso)
 
 
+# (19/11, PC-10) Por reloj (antes, 600 fotogramas): la recarga va por Recursos.cambiar_escena (carga en hilo, en tiempo
+# real). Al agotarse, «FALLO» con el estado y v = null (quien llama lo da por fallido y no sigue).
+const TOPE_CARGA := 90.0
+
+
 func _cargar_region() -> void:
 	v = null
-	for i in 600:
+	var t0 := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - t0 < int(TOPE_CARGA * 1000.0):
 		await process_frame
 		var c = current_scene
-		if c != null and c.scene_file_path == ESCENA and c.get("kael") != null and c.get("vivo") != null:
+		if c != null and c.scene_file_path == ESCENA and c.get("kael") != null and c.get("vivo") != null 				and not root.get_node("Recursos").cambiando:
 			v = c
 			break
+	if v == null:
+		_ok(false, "el barrio no termina de cargarse en %.0f s (R.cambiando=%s, escena %s)" % [TOPE_CARGA,
+			root.get_node("Recursos").cambiando, current_scene.scene_file_path if current_scene != null else "(ninguna)"])
 	await _segundos(1.0)
 
 
@@ -547,7 +556,8 @@ func _guardar_y_recargar(donde: String) -> void:
 	var k: Vector3 = _kael() if dentro == "" else T.PUERTAS[dentro]["fuera"]
 	var viejo = v
 	await _clic_boton(v.boton_recargar)
-	for i in 300:
+	var t0 := Time.get_ticks_msec()                 # (19/11, PC-10) por reloj; _cargar_region espera el resto
+	while Time.get_ticks_msec() - t0 < int(TOPE_CARGA * 1000.0):
 		await process_frame
 		if current_scene != viejo and current_scene != null and current_scene.scene_file_path == ESCENA:
 			break
