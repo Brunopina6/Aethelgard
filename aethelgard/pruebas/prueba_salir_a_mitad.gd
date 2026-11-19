@@ -10,17 +10,28 @@ extends SceneTree
 #   ataque_v12    el ataque v12 de Lya, 30 fotogramas después de empezar (combate_anim_v12.gd ataque_lya; antes de
 #                 1ee5644, 0xC0000005 siempre)
 #   golpe_v12     el golpe del Vidracrán (encuentro_desierto_v12), 10 fotogramas después de empezar: comprueba además
-#                 que su estática recibe el «impacto» guardado de combate.gd (_ligar, PC-21) y no la anónima
-# Cada hijo, con tope de tiempo (se cierra si se pasa) y su registro en user:// (--log-file).
+#                 que ese golpe guardó en combate.gd un «impacto» NUEVO (_ligar, PC-21: la lista de claves no vacía)
+# (CIERRES_19_11_REVISION) El código de salida no basta para PC-21: sin el arreglo, el juego ya salía con 0. Por eso,
+# además, una comprobación en el texto de combate.gd: en _animar_golpe, la llamada a la estática animar_golpe de CADA
+# uno de los diez enemigos v12 (ENEMIGOS_LIGADOS) pasa «_ligar(impacto)» y no la anónima «impacto».
+# Cada hijo, con tope de tiempo (se cierra si se pasa; 3 × TOPE_MS por debajo del tope de la lista, 450 s, para que
+# esta prueba cierre siempre a su hijo antes de que el ejecutor la cierre a ella) y su registro en user:// (--log-file).
 
 const DIAG := "res://pruebas/herramientas/diag_salir_hibrida.gd"
-const TOPE_MS := 150000
+const TOPE_MS := 100000
 const CASOS := [
 	["hibrida_mano", ["erebo=exito", "fase=mano"], ["DIAG sale en «mano»"]],
 	["ataque_v12", ["heroes_v2", "combate_anim_v12", "erebo=exito", "fase=ataque:30"], ["DIAG sale 30 fotogramas tras el ataque de Lya · v12 true"]],
 	["golpe_v12", ["encuentro_desierto_v12", "grupo=14", "erebo=exito", "fase=golpe_enemigo:10"],
-		["DIAG estatica combate_vidracran.gd · impacto guardado nuevo", "DIAG sale 10 fotogramas tras el golpe del enemigo"]],
+		["DIAG estatica combate_vidracran.gd · impacto guardado nuevo [", "DIAG sale 10 fotogramas tras el golpe del enemigo"]],
 ]
+# lo que, además del texto, tiene que cumplir el registro de cada caso (expresión regular)
+const PATRONES := {
+	"golpe_v12": "DIAG estatica combate_vidracran\\.gd · impacto guardado nuevo \\[\\d",
+}
+# los diez enemigos v12 cuya estática animar_golpe espera a nodos (PC-21), por el nombre de su constante en combate.gd
+const ENEMIGOS_LIGADOS := ["Humbaba", "Vidracran", "Centinela", "Golem", "Gorthor", "Peon", "Velador", "Custodio",
+	"Velaria", "Cencerrante"]
 
 var fallos := 0
 
@@ -34,7 +45,28 @@ func _fallo(texto: String) -> void:
 	print("FALLO: ", texto)
 
 
+func _comprobar_ligados() -> void:
+	var texto := FileAccess.get_file_as_string("res://combate.gd")
+	if texto == "":
+		_fallo("no se pudo leer res://combate.gd")
+		return
+	var bien := []
+	for nombre in ENEMIGOS_LIGADOS:
+		var lineas := []
+		for l in texto.split("\n"):
+			if ("await %s.animar_golpe(" % nombre) in l:
+				lineas.append(l.strip_edges())
+		if lineas.size() != 1:
+			_fallo("combate.gd: %d llamadas «await %s.animar_golpe(» (se esperaba 1)" % [lineas.size(), nombre])
+		elif not "_ligar(impacto)" in lineas[0]:
+			_fallo("combate.gd: %s.animar_golpe no recibe «_ligar(impacto)» (PC-21): %s" % [nombre, lineas[0]])
+		else:
+			bien.append(nombre)
+	print("ligados en combate.gd: %d de %d %s" % [bien.size(), ENEMIGOS_LIGADOS.size(), bien])
+
+
 func _probar() -> void:
+	_comprobar_ligados()
 	var godot := OS.get_executable_path()
 	var proyecto := ProjectSettings.globalize_path("res://")
 	for caso in CASOS:
@@ -66,6 +98,10 @@ func _probar() -> void:
 		for esperado in caso[2]:
 			if not esperado in texto:
 				_fallo("%s: el hijo no llegó a «%s» (registro: %s)" % [caso[0], esperado, log_hijo])
+		if PATRONES.has(caso[0]):
+			var re := RegEx.create_from_string(PATRONES[caso[0]])
+			if re.search(texto) == null:
+				_fallo("%s: el registro no cumple «%s» (sin «impacto» guardado nuevo: ¿la estática recibe la anónima?)" % [caso[0], PATRONES[caso[0]]])
 		for malo in ["SCRIPT ERROR", "Parse Error", "FALLO"]:
 			if malo in texto:
 				_fallo("%s: el registro del hijo tiene «%s» (%s)" % [caso[0], malo, log_hijo])

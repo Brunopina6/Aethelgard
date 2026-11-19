@@ -110,8 +110,9 @@ que Godot descarga los guiones, que no está garantizado) no se ha medido.
 - Capturas con ventana y `--fixed-fps 30`, 20 fotogramas después del impacto (Gólem, Velaria, Humbaba, Vidracrán,
   Custodio y Cencerrante; `capturas\`): **no se puede demostrar píxel a píxel**, porque la escena no es igual entre dos
   pasadas del MISMO código (brasas, bordes de los modelos, el brillo de las barras ATB y la cifra de FPS): después contra
-  después, 1,5-5,6 % de píxeles distintos; antes contra después, 1,9-7,7 %, en los mismos sitios (`dif_*.png`). Lo que
-  sí es idéntico es el fotograma del impacto (arriba) y los registros deterministas.
+  después, 1,5-5,6 % de píxeles distintos; antes contra después, 1,9-7,7 % (`dif_*.png`). Lo que sí es idéntico es el
+  fotograma del impacto (arriba) y los registros deterministas. (Revisión: con una sola captura de antes, «en los mismos
+  sitios» no estaba demostrado; con la referencia de antes contra antes y 4 + 4 capturas, ver la sección 6.)
 
 ## 3. Prueba nueva: `prueba_salir_a_mitad` (batería, `lista_pruebas.txt`)
 
@@ -121,13 +122,17 @@ comprueba su código de salida (0), que llegó al punto de salida y que no dejó
 
 - `hibrida_mano`: la híbrida de Érebo en «mano»;
 - `ataque_v12`: el ataque v12 de Lya, 30 fotogramas después de empezar («v12 true»);
-- `golpe_v12`: el golpe del Vidracrán, 10 fotogramas después, y que su estática recibe el `impacto` guardado (`_ligar`).
+- `golpe_v12`: el golpe del Vidracrán, 10 fotogramas después, y que ese golpe guardó un `impacto` nuevo en
+  `combate.gd` (`_ligar`: «impacto guardado nuevo [» seguido de una cifra; desde la revisión, sección 6);
+- y, sin lanzar hijos (desde la revisión), en el texto de `combate.gd`: que la llamada a la estática `animar_golpe` de
+  cada uno de los diez enemigos v12 pasa `_ligar(impacto)`. El código de salida no vigila PC-21 (sin el arreglo ya
+  salía con 0): lo vigilan estas dos comprobaciones.
 
 | Pasada (ejecutor) | Resultado |
 |---|---|
 | Con todo (`bateria\2026-11-19_160232`, `bat_despues\2026-11-19_162225`) | SUPERADA (30 s), dos veces |
 | Con `invocacion_erebo_hibrida.gd` de `208ea8b~1` y `combate_anim_v12.gd` de `1ee5644~1` puestos un momento (`contraprueba\2026-11-19_160320`) | **FALLIDA**: «hibrida_mano: código de salida -1073741819», «ataque_v12: código de salida -1073741819» |
-| Con `combate.gd` de HEAD (`bat_antes\2026-11-19_161057`) | **FALLIDA**: «golpe_v12: el hijo no llegó a «DIAG estatica combate_vidracran.gd · impacto guardado nuevo»» (los dos primeros, 0) |
+| Con `combate.gd` de HEAD (`bat_antes\2026-11-19_161057`) | **FALLIDA**: «golpe_v12: el hijo no llegó a «DIAG estatica combate_vidracran.gd · impacto guardado nuevo»» (los dos primeros, 0); falló solo porque ese archivo no tenía `_impactos` (ver la sección 6) |
 
 Los archivos de antes se devolvieron después de cada pasada (`git status` sin cambios en ellos).
 
@@ -151,3 +156,55 @@ Los archivos de antes se devolvieron después de cada pasada (`git status` sin c
 - Al generar el `.uid` de la prueba nueva (`--import`), Godot creó también los de `pruebas/herramientas/salir_en_precarga.gd`,
   `prueba_ajustes_parcial.gd`, `prueba_pestanas.gd`, `prueba_salir_en_cambio.gd` y `prueba_salir_en_precarga.gd`, que
   están en el repositorio sin el suyo; se han borrado (no son de esta tarea). Lo decide el coordinador.
+
+## 6. Revisión (CIERRES_19_11_REVISION)
+
+Medidas en `D:\REBELUM_diagnostico\cierres_19_11_revision\` (datos aislados; `git status` igual antes y después de cada
+pasada; ningún Godot abierto al acabar).
+
+**`prueba_salir_a_mitad` vigilaba PC-21 de forma débil (media).** Aceptaba «impacto guardado nuevo []»: con la rama del
+Vidracrán de `_animar_golpe` devuelta a `impacto` (y `_ligar` en el archivo), la prueba de `463f68d` daba **SUPERADA**
+(`pruebas\2026-11-19_164239`: «golpe_v12: código de salida 0 … impacto guardado nuevo [] …», «FALLOS: 0»). Ahora:
+
+- el registro del hijo tiene que cumplir «impacto guardado nuevo \[\d» (una clave de verdad);
+- y, en el texto de `combate.gd`, cada una de las diez llamadas `await <Enemigo>.animar_golpe(` (Humbaba, Vidracrán,
+  Centinela, Gólem, Gorthor, Peón, Velador, Custodio, Velaria, Cencerrante) tiene que ser única y pasar `_ligar(impacto)`.
+
+| `combate.gd` (prueba nueva) | Resultado |
+|---|---|
+| Rama del Vidracrán devuelta a `impacto` (`2026-11-19_164401`) | **FALLIDA**: «combate.gd: Vidracran.animar_golpe no recibe «_ligar(impacto)» (PC-21)» y «golpe_v12: el registro no cumple «… impacto guardado nuevo \[\d»» |
+| Rama del Gólem devuelta a `impacto` (`2026-11-19_164436`) | **FALLIDA**: «combate.gd: Golem.animar_golpe no recibe «_ligar(impacto)» (PC-21)» (el hijo, «impacto guardado nuevo [0]») |
+| El de HEAD (`2026-11-19_165111`) | SUPERADA: «ligados en combate.gd: 10 de 10», «golpe_v12: código de salida 0 … impacto guardado nuevo [0]» |
+
+La comprobación de los diez es de texto: demuestra que las diez ramas pasan `_ligar`, no que cada enemigo pase por su
+estática en ese momento (eso lo demostró la traza «DIAG impacto desde» de la sección 2, a mano).
+
+**Tope de los hijos (baja).** `TOPE_MS` pasa de 150 s a 100 s: 3 × 100 s queda por debajo de los 450 s de la lista, y la
+prueba siempre cierra a su hijo antes de que el ejecutor la cierre a ella. Hoy cada hijo tarda 7-13 s.
+
+**Capturas (baja).** Faltaba la referencia de antes contra antes. Con `combate.gd` de `HEAD~1` se sacaron más capturas
+de antes (las seis, y del Gólem, el Vidracrán y el Cencerrante, 4 de antes y 4 de después en total), con la misma orden
+(`capturas.sh`, ventana, `--fixed-fps 30`, 20 fotogramas después del impacto). Medida: píxeles con algún canal que
+difiere más de 0,1 (`comparar_4x4_*.txt`, `comparar_capturas.txt`):
+
+| Enemigo | antes-antes (6 parejas) | después-después (6) | antes-después (16) |
+|---|---|---|---|
+| Gólem | 1,47-3,86 % (media 2,68) | 1,20-3,65 % (2,50) | 0,75-3,78 % (2,32) |
+| Vidracrán | 1,07-1,57 % (1,29) | 0,89-1,70 % (1,21) | 0,52-1,70 % (1,17) |
+| Cencerrante | 0,67-1,62 % (1,18) | 0,53-1,30 % (0,95) | 0,27-1,48 % (1,00) |
+
+Con 2 + 2 capturas (Velaria, Humbaba, Custodio), antes contra después cae dentro de lo que varían dos pasadas del mismo
+código, o en el borde (Humbaba: antes-antes 3,16 %, después-después 1,66 %, antes-después 1,99-2,46 %; Custodio: 1,40 y
+0,61 %, antes-después 0,94-1,17 %; Velaria: 1,37 y 1,32 %, antes-después 0,93-1,39 %). El fotograma del impacto
+es idéntico en las capturas nuevas (31 a 46 según el enemigo, igual que antes). Demostrado: la diferencia antes-después
+no se distingue del ruido de la escena en estas medidas. No demostrado: igualdad píxel a píxel (la escena no la permite).
+
+**`_impactos` sin vaciar (baja): no se cambia.** El nodo del combate se crea de nuevo en cada combate y el diccionario se
+va con él; vaciarlo al terminar no libera antes nada y obligaría a que `_impacto_guardado` tolerase una clave ya borrada
+(un proyectil en el aire). Queda como estaba, documentado.
+
+**`.gd.uid` de cinco guiones ajenos (baja): no es de esta tarea**, sigue para el coordinador (sección 5).
+
+Pruebas después (ejecutor, `pruebas\2026-11-19_165111`): `prueba_integridad`, `prueba_salir_a_mitad`,
+`prueba_erebo_hibrida`, `prueba_combate_anim_v12`, `prueba_encuentro_desierto`: 5 superadas, 0 fallidas; «proyecto: sin
+cambios · otros Godot: 0». El juego (`combate.gd` y los enemigos) no cambia en esta revisión.
