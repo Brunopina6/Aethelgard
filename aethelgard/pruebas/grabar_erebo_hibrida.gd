@@ -8,8 +8,8 @@ extends "res://pruebas/prueba_erebo_hibrida.gd"
 # Esperas (19/11, PC-10): el turno de Lya y la vuelta del combate tras la invocación se esperan por RELOJ (antes, 3000 y
 # 1800 fotogramas, y al agotarse se seguía grabando en silencio y salía con 0). Al agotarse: «FALLO: …», «FALLOS: 1», la
 # opción en «no» y salida 1. Los topes son holgados porque el Movie Maker graba más despacio que el tiempo real.
-# Ojo: si se agota a MITAD de la híbrida, Godot se cierra con 0xC0000005 al salir (con ventana y sin ella; también
-# saliendo sin más, sin liberar el combate): el código sigue siendo distinto de 0 y el FALLO ya está escrito.
+# Si se agota a MITAD de la híbrida, antes de HIBRIDA_SALIDA_19_11 Godot se cerraba con 0xC0000005 al salir (la función
+# anónima «al_resultado» en la pila de invocar(), estática, colgada al salir); desde entonces sale con 1, como las demás.
 const TOPE_LYA_MS := 120000
 const TOPE_INVOCACION_MS := 300000
 

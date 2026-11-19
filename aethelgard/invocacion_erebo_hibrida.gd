@@ -52,6 +52,7 @@ var _db_mus := 0.0
 var _i_mus := -1
 var registro: Array = []             # [fase, segundos desde el principio] (pruebas y capturas)
 var _t0 := 0
+var _resultado_combate := Callable()  # la «al_resultado» de combate.gd mientras dura (ver invocar()); no la de la base
 
 
 # ---------------------------------------------------------------- Ajustes
@@ -124,7 +125,13 @@ static func invocar(c: Node, obj: Dictionary, es_jefe: bool, al_resultado: Calla
 	inv.name = "EreboHibrida"
 	c.add_child(inv)
 	c.inv_erebo = inv                           # tocar la pantalla o Esc la saltan (combate.gd → saltar())
+	# (19/11, HIBRIDA_SALIDA_19_11) «al_resultado» (una función anónima de combate.gd) espera en el nodo y no en la pila
+	# de esta función ESTÁTICA: si el juego se cierra a mitad, esta espera queda colgada hasta después de descargar los
+	# scripts y, con la función anónima dentro, Godot 4.7.2 se cerraba con 0xC0000005. Mismo orden y mismo resultado.
+	inv._resultado_combate = al_resultado
+	al_resultado = Callable()
 	await inv.dirigir(c, obj, es_jefe, exito)
+	al_resultado = inv._resultado_combate
 	c.inv_erebo = null
 	var corrido: float = tope - maxf(float(c.get_meta("c12_atb_resto", 0.0)), 0.0)
 	if pausa:

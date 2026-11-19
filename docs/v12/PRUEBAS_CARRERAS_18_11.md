@@ -279,7 +279,9 @@ Comprobaciones (registros en `D:\REBELUM_diagnostico\pruebas\<carpeta>`):
   acaban FALLIDAS por su propio «FALLO: …» y código 1, sin errores de script (`2026-11-19_104151`). Excepción:
   `grabar_erebo_hibrida` cortada a MITAD de la híbrida sale con 0xC0000005 (con ventana y sin ella, también saliendo sin
   liberar nada); el FALLO ya está escrito y el código es distinto de 0. `fotos_erebo_hibrida` cortada igual sale con 1.
-  No se ha investigado ese cierre (es del juego, opción de Auditoría apagada).
+  No se ha investigado ese cierre (es del juego, opción de Auditoría apagada). **Resuelto en HIBRIDA_SALIDA_19_11**
+  (`HIBRIDA_SALIDA_19_11.md`): era la función anónima `al_resultado` en la pila de `invocar()` (estática), colgada al
+  salir; ahora espera en el nodo de la invocación y la misma contraprueba sale con 1 (5 de 5, con ventana y sin ella).
 
 Barrido con `REBELUM_RETRASO_CARGA_MS` (el parche de arriba, solo en la copia de trabajo, sin commit y quitado;
 `recursos.gd` limpio; diff en `D:\REBELUM_diagnostico\esperas_19_11\retraso_contraprueba_recursos.diff`):
