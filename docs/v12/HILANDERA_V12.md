@@ -63,14 +63,17 @@ con `_ligar(impacto)`, CIERRES_19_11) y la presentación en `hilandera_3d.gd`.
   - **Marca:** alza el frente y orienta las placas hacia su presa (`avisar()`, clip `aviso_mordida`; la señal «aviso»
     pide `hilandera_aviso_mordida` una vez). Sobre su vida, «⚠ Cargando» y la señal de aviso; **sobre el héroe marcado,
     otra señal** (violeta, del color de sus placas). Son sprites, sin partículas: se leen en cualquier perfil gráfico,
-    como pide la ficha. Ningún daño. El cartel dice a quién ha marcado.
+    como pide la ficha. Ningún daño. El cartel dice a quién ha marcado con una frase neutra, que concuerda igual con
+    Kael que con Lya, Naira o Nix: «Hilandera del Eco orienta las placas hacia Lya: ¡es su presa!» (revisión 19/11;
+    antes decía «¡lo ha marcado!»).
   - **Mordida (el turno siguiente):** se acerca correteando hasta donde sus mandíbulas llegan al marcado en el impacto
     (su frente en reposo + `alcance()`, como el Cencerrante), alza el frente (`hilandera_aviso_mordida`) y muerde: el
     impacto (daño ×1,6 y `hilandera_mordida`) va UNA vez en el ancla del clip (0,733 s). Defender lo deja a la mitad,
     como cualquier golpe; Garon puede cubrir. La marca se quita y vuelve a su sitio. Si el marcado cayó, elige otro.
 - **trama_de_eco:** desde su sitio alza las placas (`hilandera_aviso_trama`) y suelta un pulso a **todo el grupo** con
-  **una sola resolución**: en el ancla del clip (0,833 s), un anillo violeta que se abre desde las placas (un sprite, se
-  ve con efectos reducidos), el daño de todos los héroes a la vez (×0,8 cada uno; menos la mitad de su defensa; Defender
+  **una sola resolución**: en el ancla del clip (0,833 s), un anillo violeta que se abre desde las placas (un sprite
+  con su propia textura, `textura_anillo()`: hueco, filo claro por dentro y oscuro por fuera, mezcla normal; se ve con
+  efectos reducidos), el daño de todos los héroes a la vez (×0,8 cada uno; menos la mitad de su defensa; Defender
   a la mitad; las reglas del golpe a todos de `_turno_patron`) y `hilandera_trama` una vez.
   **El turno siguiente se recupera** sin atacar («recoge las placas del lomo»): la presión es predecible.
 - No tiene golpe suelto: cada turno marca, muerde, teje la trama o se recupera. Sin presa marcada, trama con 0,4 y si no
@@ -168,11 +171,12 @@ ancla también con pausa y con un golpe a medias, la derrota en el suelo sin ata
 1,0 m por detrás, el alcance, ALTURA y `.new()`.)
 
 Qué comprueba `prueba_hilandera_combate`: **U** (apagada: interruptor, `preparar()`, solo su grupo, nada al azar,
-precarga, afinidades, modelo y sus 7 sonidos en el catálogo); **A** (encendida con Kael, Lya y Garon; se defienden hasta
+precarga, afinidades, modelo y sus 7 sonidos en el catálogo; desde la revisión, el anillo del pulso: textura propia,
+hueca, violeta y sin mezcla aditiva); **A** (encendida con Kael, Lya y Garon; se defienden hasta
 verlo todo y luego atacan): la entrada con su clip; cada marca con una señal «aviso», sin impacto ni daño, «⚠ Cargando» y
-la señal visible sobre el marcado; cada mordida el turno siguiente con un impacto, solo al marcado, la marca fuera y de
+la señal visible sobre el marcado y la frase neutra «¡es su presa!» con su nombre; cada mordida el turno siguiente con un impacto, solo al marcado, la marca fuera y de
 vuelta a su sitio (defendida, la mitad o menos); cada trama con un impacto y UNA resolución (todos los héroes vivos
-pierden PV una vez, en el mismo fotograma, con su pulso) y luego siempre recuperación sin golpe; nunca dos tramas
+pierden PV una vez, en el mismo fotograma, con su pulso y un solo anillo) y luego siempre recuperación sin golpe; nunca dos tramas
 seguidas; ganan los héroes, cae con su derrota y no quedan marcas; cada señal pide su sonido una vez y en su fotograma;
 la entrada suena una vez; **B** (apagada en su grupo: nunca marca, carga ni se recupera; sus golpes son la mordida).
 
@@ -199,3 +203,22 @@ Garon; tendida en el suelo, sus patas derechas llegan bajo Garon.
   rendimiento (GLB de 8,6 MB y tres texturas 2K). Sin probar en el móvil.
 - **Sin capturas de estudio** del modelo (como `prueba_cencerrante_fotos`, con la textura sin comprimir frente a
   comprimida): las texturas van comprimidas como las del Cencerrante, sin esa comparación propia.
+
+## 8. Revisión 19/11 (HILANDERA_19_11_REVISION)
+
+- **docs/recursos.md:** la fila de la Hilandera llevaba dos caracteres de control en las rutas de procedencia (U+0082 en
+  `entradas\2026-11-09_bestiario` y un retroceso en `hilandera_19_11\blender`). Reescritas con barras invertidas
+  literales; de paso, las mismas roturas en la fila del Zarzalín (`bestiario\2026-11-09\zarzalin\blender\…`) y en la
+  del Bramavidrio v3 (`animaciones\2026-11-12\bramavidrio3`), comprobadas contra las carpetas reales. Queda una: la
+  fila de Naira PROVISIONAL (l.26) nació cortada en 4f9e93b (un `\a` y un `\n` tomados como escapes: la ruta y el resto
+  de la fila se perdieron); no se reconstruye lo que no se sabe.
+- **La frase de la marca:** «¡lo ha marcado!» no concordaba con Lya, Naira o Nix; ahora «¡es su presa!». La prueba lo
+  mira en cada marca.
+- **El pulso de la trama:** era el brillo radial aditivo de combate.gd, que salía como un resplandor blanquecino que
+  teñía el cuerpo de azul. Ahora es un anillo de verdad (`textura_anillo()` / `sprite_anillo()`): hueco, filo claro
+  por dentro y violeta oscuro por fuera, con mezcla normal. Capturas con ventana:
+  `D:\REBELUM_diagnostico\hilandera_19_11_revision\capturas\10_impacto_trama_de_eco_1.png` (recién abierto) y
+  `11_pulso_abierto_trama_de_eco_1.png` (a 5 fotogramas): se lee como un aro violeta alrededor de ella, sin taparla.
+  La prueba mira la textura (hueca, banda violeta con alfa ≥ 0,8, sin material aditivo) y un anillo por pulso.
+  Sigue pendiente verlo en el Redmi con el perfil bajo.
+- **lista_pruebas.txt:** la descripción de `prueba_salir_a_mitad` decía «diez ramas» al final; ahora «once».

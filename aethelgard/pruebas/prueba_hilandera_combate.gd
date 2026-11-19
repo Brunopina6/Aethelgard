@@ -3,15 +3,16 @@ extends SceneTree
 # GRUPOS[33]), sin ventana y con datos aislados. El combate no guarda (sin «desde_mapa») y la partida apunta a su propio
 # archivo.
 #   U. Apagada: el interruptor «hilandera_v12» apagado por defecto y fuera de la partida; preparar() no cambia nada; solo
-#      GRUPOS[33] la trae y no sale al azar; su carpeta no se precarga apagada; fila de afinidades, modelo y sonidos.
+#      GRUPOS[33] la trae y no sale al azar; su carpeta no se precarga apagada; fila de afinidades, modelo y sonidos; el
+#      anillo del pulso es suyo: hueco, violeta y sin mezcla aditiva (revisión 19/11).
 #   A. Encendida, con Kael, Lya y Garon: entra con su clip. Mientras no se haya visto todo, los héroes se defienden; luego
 #      atacan hasta ganar. En cada turno suyo:
 #        · MARCA: una señal «aviso», ningún impacto ni cambio de PV, «⚠ Cargando» sobre su vida y la señal sobre el héroe
-#          marcado (un nodo vivo, visible);
+#          marcado (un nodo vivo, visible) y en el registro la frase neutra «¡es su presa!» con su nombre;
 #        · MORDIDA (el turno siguiente a marcar): un impacto «mordida_resonante», como mucho un cambio de PV y solo del
 #          objetivo, la marca fuera y vuelve a su sitio; defendida, la mitad o menos;
 #        · TRAMA: un impacto «trama_de_eco», UNA resolución (todos los héroes vivos pierden PV una vez y en el MISMO
-#          fotograma) y queda recuperándose;
+#          fotograma), UN anillo y queda recuperándose;
 #        · RECUPERACIÓN (siempre el turno siguiente a la trama): ningún impacto ni cambio de PV.
 #      Los héroes ganan, cae con su clip de derrota y no quedan marcas. Sonidos: cada señal «aviso» e «impacto» pide su
 #      sonido (hilandera_aviso_mordida / _aviso_trama / _mordida / _trama) UNA vez y en el fotograma de su señal; la
@@ -144,7 +145,36 @@ func _u() -> void:
 	for s in ["hilandera_aviso_mordida", "hilandera_mordida", "hilandera_aviso_trama", "hilandera_trama", "hilandera_entrada",
 			"hilandera_herido", "hilandera_caida"]:
 		_ok(load("res://sonido.gd").EFECTOS.has(s), "U: el sonido «%s» no está en el catálogo" % s)
+	_anillo_u()
 	hechos.append("U: apagada")
+
+
+# El pulso de la trama (revisión 19/11): un ANILLO del violeta de sus placas, hueco en el centro y sin mezcla aditiva
+# (la textura de brillo aditiva salía como un resplandor blanquecino sobre el cuerpo, no como un anillo violeta).
+func _anillo_u() -> void:
+	var metodos: Array = (H as Script).get_script_method_list().map(func(m): return m["name"])
+	if not "sprite_anillo" in metodos:
+		_ok(false, "U: no hay sprite_anillo(): el pulso de la trama no es un anillo propio")
+		return
+	var hs = load("res://combate_hilandera.gd")      # (sin el preload: que la prueba cargue aunque falte la función)
+	var s: Sprite2D = hs.call("sprite_anillo")
+	_ok(s.material == null, "U: el anillo lleva material %s (aditivo: sale blanquecino)" % s.material)
+	var t = s.texture
+	_ok(t is GradientTexture2D and t.fill == GradientTexture2D.FILL_RADIAL, "U: el anillo no es una textura radial")
+	if t is GradientTexture2D:
+		var gr: Gradient = t.gradient
+		var centro: Color = gr.sample(0.0)
+		var borde: Color = gr.sample(1.0)
+		var banda := Color(0, 0, 0, 0)
+		for i in 101:
+			var k: Color = gr.sample(i / 100.0)
+			if k.a > banda.a:
+				banda = k
+		var tinte: Color = Color(banda.r * s.modulate.r, banda.g * s.modulate.g, banda.b * s.modulate.b, banda.a * s.modulate.a)
+		_ok(centro.a < 0.05 and borde.a < 0.05, "U: el anillo no es hueco (centro %.2f, borde %.2f)" % [centro.a, borde.a])
+		_ok(tinte.a >= 0.8, "U: la banda del anillo apenas se ve (alfa %.2f)" % tinte.a)
+		_ok(tinte.b > tinte.g + 0.25 and tinte.r > tinte.g + 0.05, "U: la banda del anillo no es violeta: %s" % tinte)
+	s.free()
 
 
 # ---------------------------------------------------------------- A. encendida, Kael, Lya y Garon
@@ -178,6 +208,7 @@ func _a(semilla: int) -> void:
 	var impactos0 := 0
 	var avisos0 := 0
 	var pulsos0 := 0
+	var anillos0 := 0
 	var ultimo := ""                                # lo último que hizo (para ver que la trama va seguida de recuperar)
 	var f_fin := -1
 	for fr in MAX_FOTOGRAMAS:
@@ -201,6 +232,7 @@ func _a(semilla: int) -> void:
 			impactos0 = impactos.size()
 			avisos0 = avisos[0]
 			pulsos0 = int(z.get("hl_pulsos", 0))
+			anillos0 = int(z.get("hl_anillos", 0))
 		elif c.estado != "enemigo" and turno_z:        # acaba su turno: qué hizo
 			turno_z = false
 			var golpes: Array = impactos.slice(impactos0).map(func(x): return x[0])
@@ -228,6 +260,7 @@ func _a(semilla: int) -> void:
 				visto["trama"] += 1
 				_ok(ultimo != "trama", "A: dos tramas seguidas sin recuperarse")
 				_ok(int(z.get("hl_pulsos", 0)) - pulsos0 == 1, "A: la trama se resuelve %d veces" % (int(z.get("hl_pulsos", 0)) - pulsos0))
+				_ok(int(z.get("hl_anillos", 0)) - anillos0 == 1, "A: la trama abre %d anillos (uno por pulso)" % (int(z.get("hl_anillos", 0)) - anillos0))
 				var quienes: Array = cambios.map(func(x): return x[0])
 				var fotos: Array = cambios.map(func(x): return x[1])
 				_ok(quienes.size() == en_turno["vivos"].size() and en_turno["vivos"].all(func(n): return quienes.count(n) == 1), "A: la trama no alcanza una vez a cada héroe vivo %s: %s" % [en_turno["vivos"], cambios])
@@ -242,6 +275,11 @@ func _a(semilla: int) -> void:
 				_ok(z["lbl_estado"].text.contains("Cargando"), "A: no se ve «⚠ Cargando» sobre su vida")
 				var m = z.get("hl_marca", null)
 				_ok(m != null and is_instance_valid(m) and m.visible and z.get("objetivo_carga", null) is Dictionary, "A: no se ve la señal sobre el héroe marcado")
+				# (revisión 19/11: frase neutra, sin «lo/la», que concuerde con Lya, Naira o Nix igual que con Kael)
+				var presa = z.get("objetivo_carga", null)
+				var txt: String = c.registro.text
+				_ok(presa is Dictionary and txt.contains(presa["nombre"]) and txt.contains("¡es su presa!") and not txt.contains("lo ha marcado"),
+					"A: el registro de la marca no es la frase neutra: «%s»" % txt)
 				ultimo = "marca"
 			else:
 				_ok(false, "A: turno sin marca, mordida, trama ni recuperación: golpes %s, avisos %d, cambios %s" % [golpes, n_avisos, cambios])

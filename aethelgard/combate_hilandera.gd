@@ -100,7 +100,7 @@ static func turno(c, f: Dictionary, vivos: Array, mult: float) -> void:
 	f["objetivo_carga"] = presa
 	c._marcar_aviso(f, true)
 	_marcar(c, f, presa)
-	c.registro.text = "%s orienta las placas hacia %s: ¡lo ha marcado!" % [f["nombre"], presa["nombre"]]
+	c.registro.text = "%s orienta las placas hacia %s: ¡es su presa!" % [f["nombre"], presa["nombre"]]
 	c._numero_flotante(f, "⚠ ¡Mordida!", Color(1.0, 0.8, 0.2), 32)
 	c._actualizar()
 	var p = c._p3d(f)
@@ -166,14 +166,16 @@ static func _mordida(c, o: Dictionary, obj: Dictionary, golpe: Callable) -> void
 	o["animando"] = false
 
 
-# La trama: desde su sitio, mirando al grupo. En el impacto del clip, el pulso (un anillo violeta que se abre desde las
-# placas: un solo sprite, sin partículas de por medio, se ve con efectos reducidos) y el daño de todos a la vez.
+# La trama: desde su sitio, mirando al grupo. En el impacto del clip, el pulso (un anillo violeta, hueco, que se abre
+# desde las placas: un solo sprite con mezcla normal, sin partículas de por medio, se ve con efectos reducidos) y el
+# daño de todos a la vez.
 static func _trama(c, o: Dictionary, golpe: Callable) -> void:
 	var p = c._p3d(o)
 	o["animando"] = true
 	p.mirar(Vector3(1, 0, 0.1), 0.15)
 	var al_pulso := func():
 		_anillo(c, _pantalla(c, o))
+		o["hl_anillos"] = int(o.get("hl_anillos", 0)) + 1   # (para las pruebas: un anillo por pulso)
 		golpe.call()
 	await p.atacar(TRAMA, al_pulso)
 	if o["hp"] > 0:
@@ -200,12 +202,45 @@ static func _pulso_resto(c, o: Dictionary, principal: Dictionary) -> void:
 	c._temblor(6.0)
 
 
+# Revisión 19/11: antes era el brillo radial aditivo de combate.gd (_brillo), que sobre el cuerpo salía como un
+# resplandor blanquecino que la teñía de azul. Ahora es una textura propia: un aro violeta (oscuro por fuera, claro por
+# dentro, para que se lea sobre fondo claro y oscuro), hueco en el centro y con mezcla normal.
+static var _tex_anillo: GradientTexture2D = null
+
+
+static func textura_anillo() -> GradientTexture2D:
+	if _tex_anillo == null:
+		var gr := Gradient.new()
+		gr.offsets = PackedFloat32Array([0.0, 0.58, 0.72, 0.8, 0.88, 1.0])
+		gr.colors = PackedColorArray([
+			Color(COLOR_ECO, 0.0), Color(COLOR_ECO, 0.0),
+			Color(0.85, 0.75, 1.0, 0.9),                 # el filo de dentro, más claro
+			Color(COLOR_ECO, 1.0),
+			Color(0.36, 0.2, 0.62, 0.85),                # el de fuera, más oscuro: se lee sobre la niebla clara
+			Color(0.36, 0.2, 0.62, 0.0)])
+		_tex_anillo = GradientTexture2D.new()
+		_tex_anillo.gradient = gr
+		_tex_anillo.fill = GradientTexture2D.FILL_RADIAL
+		_tex_anillo.fill_from = Vector2(0.5, 0.5)
+		_tex_anillo.fill_to = Vector2(1.0, 0.5)
+		_tex_anillo.width = 256
+		_tex_anillo.height = 256
+	return _tex_anillo
+
+
+# El sprite del anillo (sin material: mezcla normal), sin colocar.
+static func sprite_anillo() -> Sprite2D:
+	var g := Sprite2D.new()
+	g.texture = textura_anillo()
+	g.modulate = Color(1, 1, 1, 1)
+	return g
+
+
 static func _anillo(c, desde: Vector2) -> void:
-	var g: Sprite2D = c._brillo(COLOR_ECO)
+	var g: Sprite2D = sprite_anillo()
 	g.z_index = 7
 	g.position = desde
 	g.scale = Vector2(0.4, 0.4)
-	g.modulate = Color(COLOR_ECO, 0.95)
 	c.escena.add_child(g)
 	var tw: Tween = c.create_tween()
 	tw.tween_property(g, "scale", Vector2(3.2, 1.6), 0.45).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
