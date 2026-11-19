@@ -1177,3 +1177,18 @@ Validado: `dc878e9` (`validado/v12/20261115-170245`, 188 · 0). APK v834 instala
   (opción apagada). Nuevo PC-20: socket `arma_d`, encuadre y texturas de 2048 de Nix FBX.
 - **Siguiente:** nada visto en Android. Guion «Para la próxima APK» de `GUION_REDMI_19_11.md` (incluye las derrotas
   de Naira y Nix). Sin copiar APK al teléfono ni pedir instalar. Inventario con 139 filas.
+
+## RELEVO 19/11, 14:55: VALIDADA la tanda 4 (212 · 0 · 117 · 0) y en GitHub (LEER PRIMERO)
+- Encima del relevo de las 11:50 (tanda 3, `f6041a8`). Batería 212 · 0 · 117 · 0 (2026-11-19_142029); la etiqueta `validado/v12/` de
+  esta hora apunta al commit de este relevo, subido por avance normal a `claude/rebelum-v12-validado-20261118`.
+- PC-19 resuelto (`208ea8b`, `1ee5644`): salir a mitad de la híbrida de Érebo, o del ataque y la magia v12 de los
+  héroes, ya no cierra Godot con 0xC0000005. Causa: una función estática que espera a un nodo con una anónima de otro
+  script en su pila (caso mínimo en `diag_estatica_lambda.gd`). Los enemigos v12 tienen el mismo patrón: PC-21, nueva,
+  condición para encender sus interruptores. `HIBRIDA_SALIDA_19_11.md`.
+- Menús (`77fb9c4`): volver a Ajustes 117 → 14 ms, «+» y ◀ ▶ de la ficha del Grupo 30 → 2 ms en el PC. El coste era
+  dar forma a «●○◀▶✔», que la fuente no tiene. Queda la primera visita a Ajustes (≈100 ms). `prueba_pestanas` nueva.
+- C-12 documentación (`06b41f1`, `c5abf8e`): matriz y fases al día con la columna del Redmi; comentarios de la música
+  (las tres canciones de Suno están en Git y en las APK); memoria local de `D:\Aethelgard` puesta al día con
+  respaldo en `D:\REBELUM_respaldos\2026-11-19_memoria_local_antes_c12\`. Publicarla es decisión del usuario (PD-44).
+- **Siguiente:** nada visto en Android. Guion «Para la próxima APK» de `GUION_REDMI_19_11.md`. Sin copiar APK al
+  teléfono ni pedir instalar. Inventario con 140 filas.
