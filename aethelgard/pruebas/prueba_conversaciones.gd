@@ -16,9 +16,10 @@ extends SceneTree
 #   4. Los rumores: sin decisiones no sale ninguno de decisión; con cada una, el suyo en la tarde y el anochecer y no a la
 #      mañana; las afirmaciones, cada una en su franja.
 #   5. En la Oakhaven 3D por defecto (zonas3d/oakhaven_3d.tscn) con Gorthor perdonado: al llegar sale un comentario de
-#      esa decisión y, quietos, el otro; quedan apuntados en la partida; en una sesión nueva ya no salen (la llegada de
-#      siempre); junto al Pórtico del Concejo, por la tarde, el corrillo cuenta lo de Gorthor; ni los hitos ni las
-#      decisiones cambian.
+#      esa decisión; si un diálogo lo quita enseguida, no consta como dicho y, quietos, salen los dos (el quitado otra
+#      vez); quedan apuntados en la partida; en una sesión nueva ya no salen (la llegada de siempre); junto al Pórtico
+#      del Concejo, por la tarde, el corrillo cuenta lo de Gorthor; ni los hitos ni las decisiones cambian.
+#   6. La llegada a la Oakhaven 3D: no con Kael sin haber salido aún (sin pv_02) ni dentro de la posada; sí en la calle.
 # Imprime «FALLOS: n» y sale con 1 si hay alguno.
 
 const C := preload("res://dialogos/comentarios.gd")
@@ -447,17 +448,36 @@ func _en_oakhaven_3d() -> void:
 		if not t1 in gorthor:
 			_fallo("5: al llegar sale «%s», no un comentario de Gorthor perdonado" % t1)
 		_mirar_caja(v, "llegada")
-		await _hasta(func(): return _caja(v) == null, 20.0)
-		# quietos: el otro (14 s sin moverse; a 30 fotogramas por segundo fijos)
-		v._quieto_t = 0.0
-		if not await _hasta(func(): return _caja(v) != null, 30.0):
-			_fallo("5: quietos, nadie dice nada")
+		# (revisión 19/11) un diálogo justo después lo quita: no cuenta como dicho y vuelve a salir más tarde
+		var D = root.get_node_or_null("Dialogic")
+		var id1: String = C.DECISIONES.filter(func(f): return f["texto"] == t1)[0]["id"]
+		await _esperar(10)
+		D.start("npc_aldric")
+		if not await _hasta(func(): return _caja(v) == null, 5.0):
+			_fallo("5: con un diálogo abierto sigue el comentario en pantalla")
+		await _esperar(3)
+		if C.decision_dicha(id1) or C.dichos().has(t1):
+			_fallo("5: %s, quitado por un diálogo a los pocos fotogramas, consta como dicho (no volvería a salir)" % id1)
 		else:
+			print("5: quitado por un diálogo: %s no consta como dicho" % id1)
+		D.end_timeline()
+		await _hasta(func(): return not v.ocupado(), 5.0)
+		# quietos: los dos de Gorthor, el quitado incluido (14 s sin moverse; a 30 fotogramas por segundo fijos)
+		var vistos: Array = []
+		for i in 2:
+			v._quieto_t = 0.0
+			if not await _hasta(func(): return _caja(v) != null, 30.0):
+				_fallo("5: quietos (%d), nadie dice nada" % (i + 1))
+				break
 			var t2: String = _caja(v).get_meta("texto")
 			print("5: quietos: %s — %s" % [_caja(v).get_meta("quien"), t2])
-			if not t2 in gorthor or t2 == t1:
-				_fallo("5: quietos sale «%s», no el otro comentario de Gorthor" % t2)
+			vistos.append(t2)
 			await _hasta(func(): return _caja(v) == null, 20.0)
+		vistos.sort()
+		var esperados_g := gorthor.duplicate()
+		esperados_g.sort()
+		if vistos != esperados_g:
+			_fallo("5: quietos salen %s y debían salir los dos de Gorthor %s (el quitado, otra vez)" % [vistos, esperados_g])
 	for f in C.DECISIONES.filter(func(x): return x["si"] == "decision:gorthor=perdonado"):
 		if not C.decision_dicha(f["id"]):
 			_fallo("5: %s no queda apuntado en la partida" % f["id"])
@@ -492,6 +512,43 @@ func _en_oakhaven_3d() -> void:
 		_fallo("5: cambian los hitos")
 	if Engine.get_meta("decisiones", {}) != antes["decisiones"]:
 		_fallo("5: cambian las decisiones")
+	await _llegada_3d_condiciones()
+
+
+# 6. (revisión 19/11) La llegada a la Oakhaven 3D solo se pide fuera de la posada y cuando Kael ya ha salido de Oakhaven
+# (cond:kael_salio, hito pv_02): al empezar a jugar, con Kael solo, no sale «el alivio de volver».
+func _llegada_3d_condiciones() -> void:
+	var Sala = load("res://zonas3d/oakhaven/posada3d.gd")
+	var casos := [
+		{"que": "Kael solo, sin pv_02 (empieza la partida)", "pv_02": false, "posada": false, "sale": false},
+		{"que": "tras pv_02, dentro de la posada", "pv_02": true, "posada": true, "sale": false},
+		{"que": "tras pv_02, en la calle", "pv_02": true, "posada": false, "sale": true},
+	]
+	for caso in casos:
+		_limpiar_partida()
+		G.empezar_solo()
+		if caso["pv_02"]:
+			P.poner_hito("pv_02")
+		Engine.set_meta("pos_3d_ok", caso["posada"])
+		Engine.set_meta("pos_3d_lugar", 0)
+		Engine.set_meta("pos_3d", Sala.ORIGEN + Sala.ENTRADA)
+		var v = await _abrir()
+		if v == null:
+			return
+		if caso["posada"] and not v.en_posada:
+			_fallo("6: %s: Kael no empieza en la posada" % caso["que"])
+		var salio := false                         # 200 fotogramas a 30 fijos: ~6,7 s de juego (la llegada, a los 2,5 s;
+		for i in 200:                              # quietos, a los 14: aquí no entran)
+			if _caja(v) != null:
+				salio = true
+				break
+			await process_frame
+		var texto: String = str(_caja(v).get_meta("texto")) if salio else "nada"
+		print("6: %s: al llegar → %s" % [caso["que"], texto])
+		if salio != caso["sale"]:
+			_fallo("6: %s: al llegar %s" % [caso["que"], "sale «%s»" % texto if salio else "no sale nada"])
+	Engine.set_meta("pos_3d_ok", false)
+	_limpiar_partida()
 
 
 func _abrir() -> Variant:

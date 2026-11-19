@@ -92,7 +92,7 @@ const MOMENTOS := {
 # día; prueba_comentarios 1b falla si una escena que ya lo pide no sale nombrada o sigue «pendiente»).
 const ENGANCHES := {
 	"llegar:oakhaven": "ciudad_oakhaven.gd, al entrar (hecho, con zona.gd _momento_llegada); oakhaven_3d.gd al entrar, a"
-		+ " los 2,5 s (hecho, AM-8 19/11)",
+		+ " los 2,5 s, fuera de la posada y con cond:kael_salio (hecho, AM-8 19/11)",
 	"cofre": "zona.gd _abrir_cofre (hecho); ciudad_oakhaven.gd (hecho); garganta_3d.gd tras el cofre raro, 1,2 s (hecho)"
 		+ "; pastos_verdes_3d.gd tras el premio, 1,2 s (hecho); ciclopea_3d.gd y gran_bosque_3d.gd tras el premio y sus"
 		+ " avisos (hecho)",
@@ -111,7 +111,9 @@ const ENGANCHES := {
 # Comentarios que solo salen si el jugador ya tomó esa decisión (las que de verdad guarda la partida en «decisiones»:
 # gorthor, guardian_bosque, hierro_ferro y pip_oak) y UNA SOLA VEZ EN LA PARTIDA: al decirse se apunta su id como bool en
 # mazmorras[DECISIONES_ESTADO] (ninguna clave nueva de partida; una partida antigua no lo tiene y vale «sin decir»).
-# Es lo único de este archivo que escribe en la partida, y solo ese «ya dicho».
+# Es lo único de este archivo que escribe en la partida, y solo ese «ya dicho». Si la caja se quita antes de haberse
+# leído entera (un diálogo o un panel que se abre, un cambio de escena), desapuntar() lo deshace y vuelve a salir otro
+# momento (revisión 19/11).
 # Cuándo: en los momentos tranquilos de DECISIONES_EN, ANTES que las frases de siempre (son pocas y de una vez). Habla
 # quien esté en el grupo; si no está, espera a otra ocasión; la respuesta, solo si está quien responde.
 # Mismo formato que MOMENTOS (quien, texto, intencion, gesto, espera, respuesta) más «id», «si» (condición de
@@ -146,13 +148,13 @@ const DECISIONES := [
 		"respuesta": {"quien": "Garon", "texto": "Volveremos. Yo cavo.",
 			"intencion": "Literal y seco; se pone el primero sin decirlo", "gesto": "", "espera": "espera_apoyarse"}},
 	{"id": "dec_hierro_kael", "si": "decision:hierro_ferro=kael", "p": true, "quien": "Kael",
-		"texto": "Desde que Ferro la templó, la espada canta. Yo sigo desafinando.",
+		"texto": "Ferro me enseñó a templar. El hierro canta; yo sigo desafinando.",
 		"intencion": "Orgullo que se ríe de sí mismo", "gesto": "ligero", "espera": "espera_empunadura",
 		"respuesta": {"quien": "Garon", "texto": "A practicar, entonces. Mañana, temprano.",
 			"intencion": "Una orden que es cariño: le entrenará", "gesto": "", "espera": "espera_hombros"}},
 	{"id": "dec_hierro_entregado_garon", "si": "decision:hierro_ferro=entregado", "p": true, "quien": "Garon",
-		"texto": "Rejas nuevas en la muralla. Con vuestro hierro. Bien.",
-		"intencion": "Soldado de Oakhaven: orgullo por su ciudad, dicho en tres golpes", "gesto": "", "espera": "espera_hombros"},
+		"texto": "Hierro para la muralla. Bien elegido.",
+		"intencion": "Soldado de Oakhaven: orgullo por su ciudad en dos golpes; aprueba sin adornos", "gesto": "", "espera": "espera_hombros"},
 	{"id": "dec_pip_pagado_kael", "si": "decision:pip_oak=pagado", "p": true, "quien": "Kael",
 		"texto": "Una moneda a Pip por un secreto. Mi mejor inversión.",
 		"intencion": "Presume en broma de un negocio diminuto", "gesto": "ligero", "espera": "espera_vigilar",
@@ -232,6 +234,20 @@ static func apuntar(c: Dictionary) -> void:
 		load("res://progreso.gd").poner_estado(DECISIONES_ESTADO, c["id"])
 
 
+# [P] Deshace el «ya dicho» de un comentario de decisión que no llegó a leerse (lo llama mostrar() si su caja se quita
+# antes de tiempo): vuelve a estar pendiente en la partida y en la sesión. El turno de quien habla no se toca.
+static func desapuntar(c: Dictionary) -> void:
+	if not (c.has("id") and c.has("si")):
+		return
+	var d: Dictionary = dichos().duplicate(true)
+	d.erase(c["texto"])
+	Engine.set_meta(META, d)
+	var m: Dictionary = Engine.get_meta("mazmorras", {})
+	if m.get(DECISIONES_ESTADO, null) is Dictionary:
+		m[DECISIONES_ESTADO].erase(c["id"])
+		Engine.set_meta("mazmorras", m)
+
+
 # Lo enseña en una caja pequeña abajo a la derecha (el nombre en su color y la frase) y, si la hay, la respuesta
 # después. No toma el foco ni el toque. Devuelve la caja (las pruebas la miran).
 static func mostrar(capa: Node, c: Dictionary) -> Control:
@@ -241,6 +257,11 @@ static func mostrar(capa: Node, c: Dictionary) -> Control:
 	var t := caja.create_tween()
 	t.tween_property(caja, "modulate:a", 1.0, 0.25)
 	t.tween_interval(duracion(c["texto"]))
+	if c.has("id") and c.has("si"):                # [P] revisión 19/11: si la caja se quita (un diálogo, un panel, otra
+		caja.tree_exiting.connect(func():          # escena) antes de haberse leído entera, el «ya dicho» se deshace
+			if not caja.get_meta("leido", false):
+				desapuntar(c))
+		t.tween_callback(func(): caja.set_meta("leido", true))
 	t.tween_property(caja, "modulate:a", 0.0, 0.4)
 	var r = c.get("respuesta")
 	if r is Dictionary:

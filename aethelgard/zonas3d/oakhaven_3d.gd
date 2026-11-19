@@ -372,13 +372,17 @@ func _voces(delta: float) -> void:
 	_t_voz = 1.0
 
 
-# AM-8 (19/11): los comentarios de los héroes (dialogos/comentarios.gd). La llegada, una vez a los 2,5 s; quieto,
-# tras 14 s sin moverse fuera de la posada (moverse reinicia la cuenta) y luego una pausa.
+# AM-8 (19/11): los comentarios de los héroes (dialogos/comentarios.gd). La llegada, una vez a los 2,5 s, solo fuera de
+# la posada y si Kael ya ha salido de Oakhaven (cond:kael_salio; revisión 19/11); quieto, tras 14 s sin moverse fuera de
+# la posada (moverse reinicia la cuenta) y luego una pausa.
 func _comentarios(delta: float) -> void:
 	if _llegada_t > 0.0:
 		_llegada_t -= delta
 		if _llegada_t <= 0.0:
-			if _hay_hueco():
+			if en_posada or not Oak.cumple("cond:kael_salio"):
+				pass                                 # revisión 19/11: dentro de la posada, o al empezar a jugar (Kael aún
+				                                     # no ha salido de Oakhaven, pv_02), no hay «llegada»: no se pide
+			elif _hay_hueco():
 				_comentar("llegar:oakhaven")          # (si no toca nada, no se insiste)
 			else:
 				_llegada_t = 0.5                     # sin hueco (un aviso en pantalla): se intenta enseguida
